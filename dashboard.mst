@@ -81,16 +81,22 @@ th, td {
             <table>
                 <tr class="table-header">
                     <th>Published_at</th>
-                    <th>Mouth</th>
-                    <th>Nose1</th>
-                    <th>Nose2</th>
+                    <th>State</th>
+                    <th>RPM</th>
+                    <th>Distance</th>
+                    <th>Movement Fast</th>
+                    <th>Movement Slow</th>
+                    <th>Device</th>
                 </tr>
                 {{#allData}}
                 <tr class="table-data">
                     <td>{{published_at}}</td>
-                    <td>{{mouth}}</td>
-                    <td>{{nose1}}</td>
-                    <td>{{nose2}}</td>
+                    <td>{{state}}</td>
+                    <td>{{rpm}}</td>
+                    <td>{{distance}}</td>
+                    <td>{{mov_f}}</td>
+                    <td>{{mov_s}}</td>
+                    <td>{{device}}</td>
                 </tr>
                 {{/allData}}
             </table>

@@ -6,6 +6,8 @@ var session = require('express-session');
 const Mustache = require('mustache');
 let fs = require('fs');
 
+require('dotenv').config();
+
 const app = express();
 
 const port = 3000
@@ -64,11 +66,11 @@ var sessionChecker = (req, res, next) => {
 };
 
 
-/*
+
 app.get('/', sessionChecker, (req, res) => {
     res.redirect('/login');
 });
-*/
+
 
 
 app.route('/login')
@@ -79,7 +81,7 @@ app.route('/login')
         var username = req.body.username,
             password = req.body.password;
 
-        if (username === "test" && (password === "")) {
+        if (username === process.env.WEB_USERNAME && (password === "")) {
         	req.session.user = username;
         	res.redirect('/dashboard');
         } 
@@ -91,19 +93,20 @@ app.route('/login')
 app.get('/dashboard', async (req, res) => {
     if (req.session.user && req.cookies.user_sid) {
         try {
-            //res.sendFile(__dirname + '/dashboard.html');
-           let data = db.getSensordata()    
+            //res.sendFile(__dirname + '/dashboard.html'); 
            let viewParams = {
                 sensordata: []
             }
             viewParams.sensordata.push({
                 published_at: "test",
-                mouth: "test",
-                nose1: "test",
-                nose2: "test"
+                state: "test",
+                rpm: "test",
+                distance: "test",
+                mov_f: "test",
+                mov_s: "test",
+                device: "test"
                 });
-            res.send(Mustache.render(dashboardTemplate, data));
-            console.log(data.type);
+            res.send(Mustache.render(dashboardTemplate, viewParams));
         }
         catch(err) {
             console.log(err);
