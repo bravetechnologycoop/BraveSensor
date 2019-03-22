@@ -1,0 +1,20 @@
+{
+  "name": "odetect_backend_local",
+  "version": "1.0.0",
+  "description": "Backend for the ODetect project.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "body-parser": "*",
+    "cookie-parser": "^1.4.4",
+    "express": "*",
+    "express-session": "^1.15.6",
+    "fs": "0.0.1-security",
+    "mustache": "^3.0.1",
+    "pg": "^7.8.2"
+  },
+  "author": "Sajan Rajdev",
+  "license": "ISC"
+}
