@@ -1,10 +1,12 @@
-let express = require('express');
-let bodyParser = require('body-parser');
+const express = require('express');
+const bodyParser = require('body-parser');
 const db = require('./db/db.js');
-var cookieParser = require('cookie-parser');
-var session = require('express-session');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
 const Mustache = require('mustache');
-let fs = require('fs');
+const fs = require('fs');
+const cors = require('cors')
+const socket = require('socket.io');
 
 require('dotenv').config();
 
@@ -17,26 +19,29 @@ const dashboardTemplate = fs.readFileSync(`${__dirname}/dashboard.mst`, 'utf-8')
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
 
-// Set Static Path
-//app.use(express.static(path.join(__dirname, 'public')))
+// Cors Middleware (Cross Origin Resource Sharing)
+app.use(cors()) /
 
 // Setting the HTTP request methods to the functions on db
 app.post('/', async (req, res) => {
     db.addSensordata(req, res)
     const {device, state, rpm, distance, mov_f, mov_s} = req.body
-    
-    
-    
-    
-    
-    
-    
-    
 });
 
+app.get('/StateData', db.getSensordata);
+
+
 //Setting the app to listen
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`App running on port ${port}.`)
+})
+
+// WebSocket implementations:
+const io = socket(server);
+
+io.sockets.on('connection', (socket) => {
+    console.log(`new connection id: ${socket.id}`);
+    sendStateData(socket);
 })
 
 
