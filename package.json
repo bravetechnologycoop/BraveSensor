@@ -2,7 +2,7 @@
   "name": "odetect_backend_local",
   "version": "1.0.0",
   "description": "Backend for the ODetect project.",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,7 +14,8 @@
     "express-session": "^1.15.6",
     "fs": "0.0.1-security",
     "mustache": "^3.0.1",
-    "pg": "^7.9.0"
+    "pg": "^7.9.0",
+    "socket.io": "^2.2.0"
   },
   "author": "Sajan Rajdev",
   "license": "ISC"
