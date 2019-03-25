@@ -21,9 +21,18 @@ app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the bo
 //app.use(express.static(path.join(__dirname, 'public')))
 
 // Setting the HTTP request methods to the functions on db
-
-// app.get('/', db.getSensordata)
-app.post('/', db.addSensordata)
+app.post('/', async (req, res) => {
+    db.addSensordata(req, res)
+    const {device, state, rpm, distance, mov_f, mov_s} = req.body
+    
+    
+    
+    
+    
+    
+    
+    
+});
 
 //Setting the app to listen
 app.listen(port, () => {

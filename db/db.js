@@ -14,7 +14,7 @@ pool.on('error', (err, client) => {
 // The following functions will route HTTP requests into database queries
 
 // GET all data
-/*
+
 const getSensordata = (request, response) => {
   pool.query('SELECT * FROM sensordata ORDER BY published_at', (error, results) => {
     if (error) {
@@ -23,7 +23,7 @@ const getSensordata = (request, response) => {
     response.status(200).json(results.rows)
   })
 }
-*/
+/*
 
 const getSensordata = async function() {
   pool.query('SELECT * FROM sensordata ORDER BY published_at', (error, results) => {
@@ -33,7 +33,7 @@ const getSensordata = async function() {
     return results
   })
 }
-
+*/
 // POST new data
 const addSensordata = (request, response) => {
   const {device, state, rpm, distance, mov_f, mov_s} = request.body
