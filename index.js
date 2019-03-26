@@ -5,30 +5,47 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const Mustache = require('mustache');
 const fs = require('fs');
-const cors = require('cors')
-const socket = require('socket.io');
-
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-
 const port = 3000
-
-const dashboardTemplate = fs.readFileSync(`${__dirname}/dashboard.mst`, 'utf-8')
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
 
 // Cors Middleware (Cross Origin Resource Sharing)
-app.use(cors()) /
+app.use(cors());
 
-// Setting the HTTP request methods to the functions on db
+// Handler for income XeThru data
 app.post('/', async (req, res) => {
-    db.addSensordata(req, res)
+    db.addXeThruSensordata(req, res)
     const {device, state, rpm, distance, mov_f, mov_s} = req.body
 });
 
-app.get('/StateData', db.getSensordata);
+app.get('/statedata', db.getXethruSensordata);
+
+// Web Socket to send current state to Frontend
+
+io.on('connection', (socket) => {
+    console.log("User Connected")
+    socket.emit('Hello', {
+        greeting: "Hello Sajan"
+    });
+});
+
+/*
+setInterval(function () {
+    let XeThruData = db.getLatestXeThruSensordata();
+    io.sockets.emit('xethrustatedata', XeThruData);
+}, 1000); // Set to transmit data every 1000 ms.
+
+io.on('connection', function (socket) {
+    console.log('a user connected');
+  });
+*/
 
 
 //Setting the app to listen
@@ -36,14 +53,11 @@ const server = app.listen(port, () => {
   console.log(`App running on port ${port}.`)
 })
 
-// WebSocket implementations:
-const io = socket(server);
+io.listen(server);
 
-io.sockets.on('connection', (socket) => {
-    console.log(`new connection id: ${socket.id}`);
-    sendStateData(socket);
-})
+/*
 
+//const dashboardTemplate = fs.readFileSync(`${__dirname}/dashboard.mst`, 'utf-8')
 
 // Login options
 
@@ -143,3 +157,4 @@ app.get('/logout', (req, res) => {
     }
 });
 
+*/
