@@ -36,16 +36,10 @@ io.on('connection', (socket) => {
     });
 });
 
-/*
-setInterval(function () {
-    let XeThruData = db.getLatestXeThruSensordata();
-    io.sockets.emit('xethrustatedata', XeThruData);
-}, 1000); // Set to transmit data every 1000 ms.
-
-io.on('connection', function (socket) {
-    console.log('a user connected');
-  });
-*/
+setInterval(async function () {
+    let XeThruData = await db.getLatestXeThruSensordata();
+    io.sockets.emit('xethrustatedata', {data: XeThruData});
+}, 1500); // Set to transmit data every 1000 ms.
 
 
 //Setting the app to listen

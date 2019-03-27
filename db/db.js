@@ -24,16 +24,6 @@ const getXethruSensordata = (request, response) => {
   })
 }
 
-// SELECT latest XeThru sensordata entry
-
-const getLatestXeThruSensordata = () => {
-  pool.query('SELECT * FROM sensordata ORDER BY published_at DESC LIMIT 1', (error, results) => {
-    if (error) {
-      throw error
-    }
-    return results.rows;
-  })
-}
 
 // POST new data
 const addXeThruSensordata = (request, response) => {
@@ -45,6 +35,20 @@ const addXeThruSensordata = (request, response) => {
     }
     response.status(200).json(results.rows)
   })
+}
+
+
+// SELECT latest XeThru sensordata entry
+
+async function getLatestXeThruSensordata(){
+  try{
+    results = await pool.query('SELECT * FROM sensordata ORDER BY published_at DESC LIMIT 1');
+    return results.rows[0];
+  }
+  catch(e){
+    console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
+  }
+
 }
 
 // Export functions to be able to access them on index.js
