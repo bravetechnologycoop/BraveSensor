@@ -4,14 +4,14 @@ const db = require('./db/db.js');
 let RPM_THRESHOLD = 12;
 
 const STATE = {
-	NO_PRESENCE: "0",
-	MOVEMENT: "1",
-	BREATH_TRACKING: "2",
-	SUSPECTED_OD: "3",
-	WAITING_FOR_RESPONSE: "4",
-	WAITING_FOR_CATEGORY: "5",
-	WAITING_FOR_DETAILS: "6",
-	COMPLETED: "7"
+	NO_PRESENCE: "No Presence",
+	MOVEMENT: "Movement",
+	BREATH_TRACKING: "Breathing",
+	SUSPECTED_OD: "Suspected Overdose",
+	WAITING_FOR_RESPONSE: "Waiting for Response",
+	WAITING_FOR_CATEGORY: "Waiting for Category",
+	WAITING_FOR_DETAILS: "Waiting for Details",
+	COMPLETED: "Completed"
 };
 
 const XETHRU_STATES = {
