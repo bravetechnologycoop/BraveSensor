@@ -37,6 +37,17 @@ const addXeThruSensordata = (request, response) => {
   })
 }
 
+// POST new state data
+async function addStateMachineData(state, id){
+
+    await pool.query('INSERT INTO statedata (state, sessionid) VALUES ($1, $2)', [state, id], (error, results) => {
+        if (error) {
+            throw error;
+        }
+        response.status(200).json(results.rows);
+    });
+}
+
 
 // SELECT latest XeThru sensordata entry
 

@@ -13,6 +13,8 @@ const port = 3000
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
+let SessionState = require('./SessionState.js')
+
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
 
@@ -21,8 +23,20 @@ app.use(cors());
 
 // Handler for income XeThru data
 app.post('/', async (req, res) => {
-    db.addXeThruSensordata(req, res)
-    const {device, state, rpm, distance, mov_f, mov_s} = req.body
+    db.addXeThruSensordata(req, res);
+    const {device, state, rpm, distance, mov_f, mov_s} = req.body;
+    sesh = new SessionState(1,1,6045316420,0,0,0,0,0,0,0,"",0);
+    if(sesh) {
+        sesh.state = state;
+        sesh.rpm = rpm;
+        sesh.distance = distance;
+        sesh.movement_fast = mov_f;
+        sesh.movement_slow = mov_s;
+        if(!sesh.od_flag) {
+            sesh.stateMachine("");
+            sesh.sendDataToDatabase();
+        }
+    }
 });
 
 app.get('/statedata', db.getXethruSensordata);
