@@ -24,20 +24,7 @@ app.use(cors());
 // Handler for income XeThru data
 app.post('/', async (req, res) => {
     db.addXeThruSensordata(req, res);
-    const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = req.body;
-    sesh = new SessionState(1, "test", 'No Presence',6045316420,0,0,0,0,0,0,0,"",0);
-    if(sesh) {
-        sesh.x_state = state;
-        sesh.rpm = rpm;
-        sesh.locationid = locationid;
-        sesh.distance = distance;
-        sesh.movement_fast = mov_f;
-        sesh.movement_slow = mov_s;
-        if(!sesh.od_flag) {
-            sesh.stateMachine("");
-            sesh.sendDataToDatabase();
-        }
-    }
+//    const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = req.body;
 });
 
 app.get('/statedata', db.getXethruSensordata);

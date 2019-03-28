@@ -164,6 +164,8 @@ class SessionState {
 			}
 		}
 		
+		this.sendDataToDatabase();
+
 		return returnMessage;
 	}
 
@@ -177,9 +179,9 @@ class SessionState {
     }
 
     sendDataToDatabase() {
-        //if (this.prev_state != this.state) { //new state is different than the previous state
+        if (this.prev_state != this.state) { //new state is different than the previous state
             db.addStateMachineData(this.state, this.id, this.locationid);
-        //}
+        }
 	}
 }
 
