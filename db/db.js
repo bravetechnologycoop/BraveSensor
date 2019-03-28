@@ -62,12 +62,12 @@ async function getLatestXeThruSensordata(){
 
 }
 
-function getLastUnclosedSessionFromLocationID(location_id) {
+async function getLastUnclosedSessionFromLocationID(location_id) {
     try{
         results = await pool.query(`SELECT * FROM xethru_sensordata WHERE locationid = ${location_id} ORDER BY published_at DESC LIMIT 1`);
         r = results.rows[0];
     }
-    catch(error){
+    catch(e){
         console.log(`Error getting XeThru Sensor Data for Last Unclosed Session for ${location_id}: ${e}`);
     }
     
@@ -75,15 +75,15 @@ function getLastUnclosedSessionFromLocationID(location_id) {
         results = await pool.query(`SELECT * FROM sessions WHERE locationid = ${location_id} AND end_time = NULL`);
         s = results.rows[0];
     }
-    catch(error{
+    catch(e){
         console.log(`Error getting Sessions Data for Last Unclosed Session for ${location_id}: ${e}`);
-    })
+    }
 
     try{
         results = await pool.query(`SELECT * FROM motion_sensordata WHERE locationid = ${location_id} ORDER BY published_at DESC LIMIT 1`);
         m = results.rows[0];
     }
-    catch(error){
+    catch(e){
         console.log(`Error getting Motion Sensor Data for Last Unclosed Session for ${location_id}: ${e}`);
     }
 
@@ -91,7 +91,7 @@ function getLastUnclosedSessionFromLocationID(location_id) {
         results = await pool.query(`SELECT * FROM door_sensordata WHERE locationid = ${location_id} ORDER BY published_at DESC LIMIT 1`);
         d = results.rows[0];
     }
-    catch(error){
+    catch(e){
         console.log(`Error getting Door Sensor Data for Last Unclosed Session for ${location_id}: ${e}`);
     }
 
