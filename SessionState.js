@@ -1,5 +1,28 @@
-const STATES = require('./SessionStateEnum.js');
+//const STATE = require('./SessionStateEnum.js');
 const db = require('./db/db.js');
+
+let RPM_THRESHOLD = 12;
+
+const STATE = {
+	NO_PRESENCE: "0",
+	MOVEMENT: "1",
+	BREATH_TRACKING: "2",
+	SUSPECTED_OD: "3",
+	WAITING_FOR_RESPONSE: "4",
+	WAITING_FOR_CATEGORY: "5",
+	WAITING_FOR_DETAILS: "6",
+	COMPLETED: "7"
+};
+
+const XETHRU_STATES = {
+	BREATHING: "0",
+	MOVEMENT: "1",
+	MOVEMENT_TRACKING: "2",
+	NO_MOVEMENT: "3",
+	INITIALIZING: "4",
+	ERROR: "5",
+	UNKNOWN: "6"
+};
 
 
 const incidentTypes = {

@@ -16,7 +16,7 @@ pool.on('error', (err, client) => {
 // GET all data
 
 const getXethruSensordata = (request, response) => {
-  pool.query('SELECT * FROM sensordata ORDER BY published_at', (error, results) => {
+  pool.query('SELECT * FROM xethru_sensordata ORDER BY published_at', (error, results) => {
     if (error) {
       throw error
     }
@@ -29,7 +29,7 @@ const getXethruSensordata = (request, response) => {
 const addXeThruSensordata = (request, response) => {
   const {device, state, rpm, distance, mov_f, mov_s} = request.body
 
-  pool.query('INSERT INTO sensordata (device, state, rpm, distance, mov_f, mov_s) VALUES ($1, $2, $3, $4, $5, $6)', [device, state, rpm, distance, mov_f, mov_s], (error, results) => {
+  pool.query('INSERT INTO xethru_sensordata (device, state, rpm, distance, mov_f, mov_s) VALUES ($1, $2, $3, $4, $5, $6)', [device, state, rpm, distance, mov_f, mov_s], (error, results) => {
     if (error) {
       throw error
     }
@@ -40,11 +40,10 @@ const addXeThruSensordata = (request, response) => {
 // POST new state data
 async function addStateMachineData(state, id){
 
-    await pool.query('INSERT INTO statedata (state, sessionid) VALUES ($1, $2)', [state, id], (error, results) => {
+    await pool.query('INSERT INTO sessions_states (state, sessionid) VALUES ($1, $2)', [state, id], (error, results) => {
         if (error) {
             throw error;
         }
-        response.status(200).json(results.rows);
     });
 }
 
@@ -53,7 +52,7 @@ async function addStateMachineData(state, id){
 
 async function getLatestXeThruSensordata(){
   try{
-    results = await pool.query('SELECT * FROM sensordata ORDER BY published_at DESC LIMIT 1');
+    results = await pool.query('SELECT * FROM xethru_sensordata ORDER BY published_at DESC LIMIT 1');
     return results.rows[0];
   }
   catch(e){
@@ -68,5 +67,6 @@ module.exports = {
     getXethruSensordata,
     addXeThruSensordata,
     getLatestXeThruSensordata,
+    addStateMachineData,
 }
 

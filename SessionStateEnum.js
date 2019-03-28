@@ -21,4 +21,6 @@ const XETHRU_STATES = {
 	UNKNOWN: "6"
 };
 
-module.exports = Object.freeze(STATES);
+module.exports = Object.freeze(STATE);
+module.exports = Object.freeze(XETHRU_STATES);
+
