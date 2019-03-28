@@ -1,17 +1,16 @@
-//const STATE = require('./SessionStateEnum.js');
 const db = require('./db/db.js');
 
 let RPM_THRESHOLD = 12;
 
 const STATE = {
-	NO_PRESENCE: "No Presence",
-	MOVEMENT: "Movement",
-	BREATH_TRACKING: "Breathing",
-	SUSPECTED_OD: "Suspected Overdose",
-	WAITING_FOR_RESPONSE: "Waiting for Response",
-	WAITING_FOR_CATEGORY: "Waiting for Category",
-	WAITING_FOR_DETAILS: "Waiting for Details",
-	COMPLETED: "Completed"
+	NO_PRESENCE: 'No Presence',
+	MOVEMENT: 'Movement',
+	BREATH_TRACKING: 'Breathing',
+	SUSPECTED_OD: 'Suspected Overdose',
+	WAITING_FOR_RESPONSE: 'Waiting for Response',
+	WAITING_FOR_CATEGORY: 'Waiting for Category',
+	WAITING_FOR_DETAILS: 'Waiting for Details',
+	COMPLETED: 'Completed'
 };
 
 const XETHRU_STATES = {
@@ -33,8 +32,9 @@ const incidentTypes = {
 					   
 class SessionState {
 
-	constructor(id, state, prev_state, phonenumber, rpm, x_state, movement_fast, movement_slow, door, motion, incidentType, notes, od_flag) {
+	constructor(id, locationid, state, prev_state, phonenumber, rpm, x_state, movement_fast, movement_slow, door, motion, incidentType, notes, od_flag) {
 		this.id = id						// id is session number (?)
+		this.locationid = locationid						
 		this.state = state
         this.prev_state = prev_state
 		this.phonenumber = phonenumber
@@ -177,9 +177,9 @@ class SessionState {
     }
 
     sendDataToDatabase() {
-        if (this.prev_state != this.state) { //new state is different than the previous state
-            db.addStateMachineData(this.state, this.id);
-        }
+        //if (this.prev_state != this.state) { //new state is different than the previous state
+            db.addStateMachineData(this.state, this.id, this.locationid);
+        //}
 	}
 }
 

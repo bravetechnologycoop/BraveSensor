@@ -27,9 +27,9 @@ const getXethruSensordata = (request, response) => {
 
 // POST new data
 const addXeThruSensordata = (request, response) => {
-  const {device, state, rpm, distance, mov_f, mov_s} = request.body
+  const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = request.body;
 
-  pool.query('INSERT INTO xethru_sensordata (device, state, rpm, distance, mov_f, mov_s) VALUES ($1, $2, $3, $4, $5, $6)', [device, state, rpm, distance, mov_f, mov_s], (error, results) => {
+  pool.query('INSERT INTO xethru_sensordata (deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s], (error, results) => {
     if (error) {
       throw error
     }
@@ -37,10 +37,11 @@ const addXeThruSensordata = (request, response) => {
   })
 }
 
-// POST new state data
-async function addStateMachineData(state, id){
+// The following function handle different database queries:
 
-    await pool.query('INSERT INTO sessions_states (state, sessionid) VALUES ($1, $2)', [state, id], (error, results) => {
+// POST new state data
+async function addStateMachineData(state, id, locationid){
+    await pool.query('INSERT INTO sessions_states (state, sessionid, locationid) VALUES ($1, $2, $3)', [state, id, locationid], (error, results) => {
         if (error) {
             throw error;
         }
