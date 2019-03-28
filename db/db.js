@@ -15,7 +15,7 @@ pool.on('error', (err, client) => {
 
 // GET all data
 
-const getSensordata = (request, response) => {
+const getXethruSensordata = (request, response) => {
   pool.query('SELECT * FROM sensordata ORDER BY published_at', (error, results) => {
     if (error) {
       throw error
@@ -23,19 +23,10 @@ const getSensordata = (request, response) => {
     response.status(200).json(results.rows)
   })
 }
-/*
 
-const getSensordata = async function() {
-  pool.query('SELECT * FROM sensordata ORDER BY published_at', (error, results) => {
-    if (error) {
-      throw error
-    }
-    return results
-  })
-}
-*/
+
 // POST new data
-const addSensordata = (request, response) => {
+const addXeThruSensordata = (request, response) => {
   const {device, state, rpm, distance, mov_f, mov_s} = request.body
 
   pool.query('INSERT INTO sensordata (device, state, rpm, distance, mov_f, mov_s) VALUES ($1, $2, $3, $4, $5, $6)', [device, state, rpm, distance, mov_f, mov_s], (error, results) => {
@@ -46,10 +37,25 @@ const addSensordata = (request, response) => {
   })
 }
 
+
+// SELECT latest XeThru sensordata entry
+
+async function getLatestXeThruSensordata(){
+  try{
+    results = await pool.query('SELECT * FROM sensordata ORDER BY published_at DESC LIMIT 1');
+    return results.rows[0];
+  }
+  catch(e){
+    console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
+  }
+
+}
+
 // Export functions to be able to access them on index.js
 
 module.exports = {
-    getSensordata,
-    addSensordata,
+    getXethruSensordata,
+    addXeThruSensordata,
+    getLatestXeThruSensordata,
 }
 

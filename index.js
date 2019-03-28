@@ -1,44 +1,57 @@
-let express = require('express');
-let bodyParser = require('body-parser');
+const express = require('express');
+const bodyParser = require('body-parser');
 const db = require('./db/db.js');
-var cookieParser = require('cookie-parser');
-var session = require('express-session');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
 const Mustache = require('mustache');
-let fs = require('fs');
-
+const fs = require('fs');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-
 const port = 3000
-
-const dashboardTemplate = fs.readFileSync(`${__dirname}/dashboard.mst`, 'utf-8')
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
 
-// Set Static Path
-//app.use(express.static(path.join(__dirname, 'public')))
+// Cors Middleware (Cross Origin Resource Sharing)
+app.use(cors());
 
-// Setting the HTTP request methods to the functions on db
+// Handler for income XeThru data
 app.post('/', async (req, res) => {
-    db.addSensordata(req, res)
+    db.addXeThruSensordata(req, res)
     const {device, state, rpm, distance, mov_f, mov_s} = req.body
-    
-    
-    
-    
-    
-    
-    
-    
 });
 
+app.get('/statedata', db.getXethruSensordata);
+
+// Web Socket to send current state to Frontend
+
+io.on('connection', (socket) => {
+    console.log("User Connected")
+    socket.emit('Hello', {
+        greeting: "Hello Sajan"
+    });
+});
+
+setInterval(async function () {
+    let XeThruData = await db.getLatestXeThruSensordata();
+    io.sockets.emit('xethrustatedata', {data: XeThruData});
+}, 1500); // Set to transmit data every 1000 ms.
+
+
 //Setting the app to listen
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`App running on port ${port}.`)
 })
 
+io.listen(server);
+
+/*
+
+//const dashboardTemplate = fs.readFileSync(`${__dirname}/dashboard.mst`, 'utf-8')
 
 // Login options
 
@@ -138,3 +151,4 @@ app.get('/logout', (req, res) => {
     }
 });
 
+*/
