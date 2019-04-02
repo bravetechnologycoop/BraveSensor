@@ -14,7 +14,7 @@
     "express": "*",
     "express-session": "^1.15.6",
     "fs": "0.0.1-security",
-    "mustache": "^3.0.1",
+    "http-signature": "^1.2.0",
     "pg": "^7.9.0",
     "socket.io": "^2.2.0"
   },

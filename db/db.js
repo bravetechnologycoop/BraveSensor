@@ -37,6 +37,28 @@ const addXeThruSensordata = (request, response) => {
   })
 }
 
+const addMotionSensordata = (request, response) => {
+  const {deviceid, locationid, devicetype, signal} = request.body;
+
+  pool.query('INSERT INTO motion_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.status(200).json(results.rows)
+  })
+}
+
+const addDoorSensordata = (request, response) => {
+  const {deviceid, locationid, devicetype, signal} = request.body;
+
+  pool.query('INSERT INTO door_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.status(200).json(results.rows)
+  })
+}
+
 // The following function handle different database queries:
 
 // POST new state data
@@ -62,12 +84,12 @@ async function getLatestXeThruSensordata(){
 
 }
 
-function getLastUnclosedSessionFromLocationID(location_id) {
+async function getLastUnclosedSessionFromLocationID(location_id) {
     try{
         results = await pool.query(`SELECT * FROM xethru_sensordata WHERE locationid = ${location_id} ORDER BY published_at DESC LIMIT 1`);
         r = results.rows[0];
     }
-    catch(error){
+    catch(e){
         console.log(`Error getting XeThru Sensor Data for Last Unclosed Session for ${location_id}: ${e}`);
     }
     
@@ -75,15 +97,15 @@ function getLastUnclosedSessionFromLocationID(location_id) {
         results = await pool.query(`SELECT * FROM sessions WHERE locationid = ${location_id} AND end_time = NULL`);
         s = results.rows[0];
     }
-    catch(error{
+    catch(e){
         console.log(`Error getting Sessions Data for Last Unclosed Session for ${location_id}: ${e}`);
-    })
+    }
 
     try{
         results = await pool.query(`SELECT * FROM motion_sensordata WHERE locationid = ${location_id} ORDER BY published_at DESC LIMIT 1`);
         m = results.rows[0];
     }
-    catch(error){
+    catch(e){
         console.log(`Error getting Motion Sensor Data for Last Unclosed Session for ${location_id}: ${e}`);
     }
 
@@ -91,7 +113,7 @@ function getLastUnclosedSessionFromLocationID(location_id) {
         results = await pool.query(`SELECT * FROM door_sensordata WHERE locationid = ${location_id} ORDER BY published_at DESC LIMIT 1`);
         d = results.rows[0];
     }
-    catch(error){
+    catch(e){
         console.log(`Error getting Door Sensor Data for Last Unclosed Session for ${location_id}: ${e}`);
     }
 
@@ -103,6 +125,8 @@ function getLastUnclosedSessionFromLocationID(location_id) {
 module.exports = {
     getXethruSensordata,
     addXeThruSensordata,
+    addMotionSensordata,
+    addDoorSensordata,
     getLatestXeThruSensordata,
     addStateMachineData,
     getLastUnclosedSessionFromLocationID
