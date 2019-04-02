@@ -37,25 +37,21 @@ const addXeThruSensordata = (request, response) => {
   })
 }
 
-const addMotionSensordata = (request, response) => {
-  const {deviceid, locationid, devicetype, signal} = request.body;
+const addMotionSensordata = (deviceid, locationid, devicetype, signal) => {
 
   pool.query('INSERT INTO motion_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
   })
 }
 
-const addDoorSensordata = (request, response) => {
-  const {deviceid, locationid, devicetype, signal} = request.body;
+const addDoorSensordata = (deviceid, locationid, devicetype, signal) => {
 
   pool.query('INSERT INTO door_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
   })
 }
 
@@ -76,6 +72,32 @@ async function addStateMachineData(state, id, locationid){
 async function getLatestXeThruSensordata(){
   try{
     results = await pool.query('SELECT * FROM xethru_sensordata ORDER BY published_at DESC LIMIT 1');
+    return results.rows[0];
+  }
+  catch(e){
+    console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
+  }
+
+}
+
+// SELECT latest Motion sensordata entry
+
+async function getLatestMotionSensordata(){
+  try{
+    results = await pool.query('SELECT * FROM motion_sensordata ORDER BY published_at DESC LIMIT 1');
+    return results.rows[0];
+  }
+  catch(e){
+    console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
+  }
+
+}
+
+// SELECT latest Door sensordata entry
+
+async function getLatestDoorSensordata(){
+  try{
+    results = await pool.query('SELECT * FROM door_sensordata ORDER BY published_at DESC LIMIT 1');
     return results.rows[0];
   }
   catch(e){
@@ -128,6 +150,8 @@ module.exports = {
     addMotionSensordata,
     addDoorSensordata,
     getLatestXeThruSensordata,
+    getLatestMotionSensordata,
+    getLatestDoorSensordata,
     addStateMachineData,
     getLastUnclosedSessionFromLocationID
 }

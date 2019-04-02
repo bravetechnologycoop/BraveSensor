@@ -1,0 +1,12 @@
+{
+	"pages.mainPage.name": "pages.mainPage.name",
+	"pages.mainPage.settings.contactSensor.name": "Contact Sensor",
+	"Tap to set": "Tap to set",
+	"pages.mainPage.sections.Select sensors.name": "Select sensors",
+	"pages.mainPage.settings.motionSensor.name": "Motion Sensor",
+	"pages.mainPage.settings.button.name": "Button",
+	"ODetect Configuration App": "ODetect Configuration App",
+	"pages.mainPage.settings.LocationID.name": "LocationID",
+	"pages.mainPage.settings.DeviceID.name": "DeviceID",
+	"pages.mainPage.sections.Location and Devices information.name": "Location and Devices information"
+}
