@@ -37,6 +37,28 @@ const addXeThruSensordata = (request, response) => {
   })
 }
 
+const addMotionSensordata = (request, response) => {
+  const {deviceid, locationid, devicetype, signal} = request.body;
+
+  pool.query('INSERT INTO motion_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.status(200).json(results.rows)
+  })
+}
+
+const addDoorSensordata = (request, response) => {
+  const {deviceid, locationid, devicetype, signal} = request.body;
+
+  pool.query('INSERT INTO door_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.status(200).json(results.rows)
+  })
+}
+
 // The following function handle different database queries:
 
 // POST new state data
@@ -103,6 +125,8 @@ async function getLastUnclosedSessionFromLocationID(location_id) {
 module.exports = {
     getXethruSensordata,
     addXeThruSensordata,
+    addMotionSensordata,
+    addDoorSensordata,
     getLatestXeThruSensordata,
     addStateMachineData,
     getLastUnclosedSessionFromLocationID

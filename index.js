@@ -1,30 +1,46 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const db = require('./db/db.js');
+const stConfig = require('./config/config');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
-const Mustache = require('mustache');
 const fs = require('fs');
 const cors = require('cors');
+const httpSignature = require('http-signature');
 require('dotenv').config();
 
 const app = express();
 const port = 3000
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
+const prettyjsonOptions = {};
 
 let SessionState = require('./SessionState.js')
 
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
+app.use(bodyParser.json()); 
 
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors());
 
 // Handler for income XeThru data
-app.post('/', async (req, res) => {
-    db.addXeThruSensordata(req, res);
-//    const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = req.body;
+app.post('/api/xethru', async (req, res) => {
+    const {devicetype} = req.body;
+    switch(devicetype){
+      case 'XeThru': {
+          db.addXeThruSensordata(req, res);
+          break;
+      }
+      case 'Motion': {
+          db.addMotionSensordata(req, res);
+          break;
+      }
+      case 'Door': {
+          db.addDoorSensordata(req, res);
+          break;
+      }
+    }   
 });
 
 app.get('/statedata', db.getXethruSensordata);
@@ -53,3 +69,4 @@ const server = app.listen(port, () => {
 })
 
 io.listen(server);
+
