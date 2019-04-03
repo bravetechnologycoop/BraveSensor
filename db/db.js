@@ -108,26 +108,63 @@ async function getLatestDoorSensordata(){
 
 async function getLastUnclosedSessionFromLocationID(location_id) {
     try{
+        const { results } = await pool.query('SELECT * FROM door_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [location]);
+        return results.rows[0];
+    }
+    catch(e){
+        console.log(`Error running the getLatestDoorSensordata query: ${e}`);
+    }
+}
+
+async function getLatestMotionSensorData(location){
+    try{
+        const { results } = await pool.query('SELECT * FROM motion_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [location]);
+        return results.rows[0];
+    }
+    catch(e){
+        console.log(`Error running the getLatestMotionSensordata query: ${e}`);
+    }
+}
+
+async function getMostRecentSession(location) {
+    const { results } = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [location]);
+    return results.rows[0];
+}
+
+async function getLastUnclosedSession(location) {
+    const { results } = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time = null ORDER BY sessionid DESC LIMIT 1", [location]);
+    return results.rows[0];
+}
+
+/*
+async function getLastUnclosedSessionFromLocationID(location_id) {
+    let results, s, r, m, d;
+    
+    try{
+        results = await pool.query(`SELECT * FROM sessions WHERE locationid = ${location_id}`);
+        s = results.rows[0];
+    }
+    catch(error){
+        console.log(`Error getting Sessions Data for Last Unclosed Session for ${location_id}: ${e}`);
+    }
+
+    if(s.end_time == null) {
+        return null;
+    }
+
+    try{
         results = await pool.query(`SELECT * FROM xethru_sensordata WHERE locationid = ${location_id} ORDER BY published_at DESC LIMIT 1`);
         r = results.rows[0];
     }
-    catch(e){
+    catch(error){
         console.log(`Error getting XeThru Sensor Data for Last Unclosed Session for ${location_id}: ${e}`);
     }
     
     try{
-        results = await pool.query(`SELECT * FROM sessions WHERE locationid = ${location_id} AND end_time = NULL`);
-        s = results.rows[0];
-    }
-    catch(e){
-        console.log(`Error getting Sessions Data for Last Unclosed Session for ${location_id}: ${e}`);
-    }
-
-    try{
         results = await pool.query(`SELECT * FROM motion_sensordata WHERE locationid = ${location_id} ORDER BY published_at DESC LIMIT 1`);
         m = results.rows[0];
     }
-    catch(e){
+    catch(error){
         console.log(`Error getting Motion Sensor Data for Last Unclosed Session for ${location_id}: ${e}`);
     }
 
@@ -135,11 +172,71 @@ async function getLastUnclosedSessionFromLocationID(location_id) {
         results = await pool.query(`SELECT * FROM door_sensordata WHERE locationid = ${location_id} ORDER BY published_at DESC LIMIT 1`);
         d = results.rows[0];
     }
-    catch(e){
+    catch(error){
         console.log(`Error getting Door Sensor Data for Last Unclosed Session for ${location_id}: ${e}`);
     }
 
-    return new SessionState(s.id, s.location, s.state, null, s.phonenumber, r.rpm, r.x_state, r.mov_f, r.mov_s, null, null, s.incidentType, s.notes, s.od_flag);
+    //Compare the current time with the last published times for the smart things and set the flag
+    //session = createSessionFromTables(s,r);
+    //session.door = d;
+    //session.motion = m;
+
+    return createSessionFromTables(s,r);
+}
+*/
+
+/*
+async function createSessionFromTables(sessions, xethru) {
+    return new SessionState(sessions.id, sessions.locationid, sessions.state, null, sessions.phonenumber, xethru.rpm, xethru.x_state, xethru.mov_f, xethru.mov_s, null, null, sessions.incidentType, sessions.notes, sessions.od_flag);
+}
+*/
+
+async function createSession(phone, location) {
+
+    const { rows } = await pool.query("INSERT INTO sessions(phonenumber, locationid, state, od_flag) VALUES ($1, $2, $3, $4) RETURNING *", [phone, location, "Movement", 0]);
+
+    return getLastUnclosedSession(location);
+}
+
+/*
+async function advanceStateMachine(location) {
+    const { rows } = await pool.query("SELECT * FROM location_states WHERE locationid = $1 ORDER BY timestamp DESC LIMIT 1", [location]);
+    const { xethru } = await pool.query("SELECT * FROM xethru_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1", [location]);
+    const { door } = await pool.query("SELECT * FROM door_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1", [location]);
+    const { motion } = await pool.query("SELECT * FROM motion_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1", [location]);
+
+
+}
+*/
+
+async function isSessionOpen(location) {
+    if(getLastUnclosedSession(location) != null) {
+        return true;
+    } 
+    else {
+        return false;
+    }
+}
+
+async function closeSession(location) {
+    if(isSessionOpen(location)) {
+        session = await getLastUnclosedSession(location);
+        session.end_time = Date.now();
+        updateSession(session);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+async function updateSession(session) {
+    await pool.query("UPDATE sessions SET end_time = $1 WHERE sessionID = $2", [session.end_time, session.id]);
+}
+
+async function isOverdosed(location) {
+    let session = getLastUnclosedSession(location);
+    session.od_flag = true;
 }
 
 // Export functions to be able to access them on index.js
@@ -153,6 +250,97 @@ module.exports = {
     getLatestMotionSensordata,
     getLatestDoorSensordata,
     addStateMachineData,
-    getLastUnclosedSessionFromLocationID
+    getLastUnclosedSession,
+    createSession,
+    isSessionOpen,
+    isOverdoseSuspected
 }
+
+
+async function advanceChatbot(location) {
+    //await message received;
+    session = getLastUnclosedSession(location);
+    if(session.od_flag && session.state != COMPLETED) {
+        //start chatbot sequence
+        startChatbot();
+    }
+    else {
+        sessionState.advanceStateMachine();
+    }
+}
+
+async function startChatbot() {
+    //send initial message via twilio
+}
+
+async function isOverdoseSuspected(location) {
+    let xethru = getLatestXeThruSensordata(location);
+    let door = getLatestDoorSensorData(location);
+    let motion = getLatestMotionSensorData(location);
+    let session = getLastUnclosedSession(location);
+    
+    //This method counts the conditions met and can distinguish which conditions were met and which were not
+    let conditions = (xethru.rpm <= 12 && xethru.rpm != 0) + 2*(1) + 4*(1) + 8*(1); //add more criteria
+    let count;
+    for(count = 0; conditions; count++)
+        conditions &= (conditions-1);
+    //If there are a majority of criteria met, trigger the overdose response
+    if(count >= 4) {
+        session.od_flag = true;
+        return true;
+    }
+
+    //This method just looks for a majority of conditions to be met
+    //This method can apply different weights for different criteria
+    if((xethru.rpm <= 12) + (1) + (1) + (1) >= 4) {
+        session.od_flag = true;
+        return true;
+    }
+    return false;
+}
+
+// This version of the function checks based on the publishing time of the sensor data
+/*
+async function checkSessionTrigger(location) {
+    let door = getLatestDoorSensorData(location);
+    if(Date.now() - door.published_at > 60*1000) {
+        if(isSessionOpen(location)) {
+            closeSession(location);
+        }
+        else {
+            createSession("123", location);
+        }
+    }
+    let motion = getLatestMotionSensorData(location);
+    if(Date.now() - motion.published_at > 30*1000 %% !isSessionOpen(location) {
+        createSession("123", location);
+    }
+}*/
+
+// This version of the function has a flag activated when the sensors are set off
+async function checkSessionTrigger(location) {
+    if(door_flag) {
+        if(isSessionOpen(location)) {
+            closeSession(location);
+        }
+        else {
+            createSession("123", location);
+        }
+        door_flag = false;
+    }
+    if(motion_flag) {
+        if(!isSessionOpen(location)) {
+            createSession("123", location);
+        }
+    }
+}
+
+async function updateSessionNotes(location, session) {
+    await pool.query("UPDATE sessions SET notes = $1 WHERE locationid = $2", [session.notes, location]);
+}
+
+async function updateSessionIncidentType(location, session) {
+    await pool.query("UPDATE sessions SET incidenttype = $1 WHERE locationid = $2", [session.incidentType, location]);
+}
+
 
