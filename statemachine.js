@@ -19,8 +19,7 @@ const XETHRU_STATES = {
 
 class XeThruStateMachine {
 
-    constructor(id, location, rpm, distance, mov_s, mov_f, state, prev_state, x_state, motion, door) {
-        this.id = id;
+    constructor(location, rpm, distance, mov_s, mov_f, state, prev_state, x_state, motion, door) {
         this.location = location;
         this.rpm = rpm;
         this.distance = distance;
@@ -45,7 +44,6 @@ class XeThruStateMachine {
                     if(this.x_state != XETHRU_STATES.NO_MOVEMENT) {
                         this.state = STATE.MOVEMENT;
                     }
-                    returnMessage = -1;
                     break;
                 }
             case STATE.MOVEMENT:
@@ -104,3 +102,5 @@ class XeThruStateMachine {
         }
     }
 }
+
+module.exports = XeThruStateMachine;
