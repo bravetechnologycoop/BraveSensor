@@ -14,7 +14,14 @@ const port = 3000
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
-let SessionState = require('./SessionState.js')
+let SessionState = require('./SessionState.js');
+
+var locations = ["BraveOffice"];
+
+var voidStates = ["MOVEMENT"]
+var triggerStates = ["DOOR_OPENS"]
+var closingStates = ["OVERDOSE_ATTENDED"]
+
 
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
@@ -79,28 +86,29 @@ smartapp
         console.log(`Button${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
 
-/* Handle POST requests */
+// Handler for income SmartThings POST requests
 app.post('/api/st', function(req, res, next) {
     smartapp.handleHttpCallback(req, res);
 });
 
-// Handler for income XeThru data
+// Handler for income XeThru POST requests
 app.post('/api/xethru', async (req, res) => {
     db.addXeThruSensordata(req, res); 
 });
 
-app.get('/statedata', db.getXethruSensordata);
 
-// Web Socket to send current state to Frontend
+// Web Socket connection to Frontend
 
 io.on('connection', (socket) => {
     console.log("Frontend Connected")
     socket.emit('Hello', {
-        greeting: "Hello Sajan"
+        greeting: "Hello ODetect Frontend"
     });
 });
 
-setInterval(async function () {
+// Used for Frontend example. Every 1.5 seconds sends the three sensors' raw data to the frontend
+
+/* setInterval(async function () {
     let XeThruData = await db.getLatestXeThruSensordata();
     let MotionData = await db.getLatestMotionSensordata();
     let DoorData = await db.getLatestDoorSensordata();
@@ -110,7 +118,48 @@ setInterval(async function () {
     io.sockets.emit('motionstatedata', {data: MotionData});
     io.sockets.emit('doorstatedata', {data: DoorData});
     //io.sockets.emit('sessionstatedata', {data: sessionstate});
-}, 1500); // Set to transmit data every 1000 ms.
+}, 1500); // Set to transmit data every 1000 ms. */
+
+setInterval(async function () {
+  for(let i = 0; i < locations.length; i++){
+    let currentState = "SessionState"; //State Machine function
+    let prevState = db.getLatestStateMachineData(locations[i]);
+     // To avoid filling the DB with repeated states in a row.
+    if(currentState != prevState.state){
+      db.addStateMachineData(currentState, locations[i]);
+      //Checks if current state belongs to voidStates
+      if(voidStates.includes(currentState)){
+        latestSession = db.getMostRecentSession(locations[i]);
+        if(latestSession.end_time == null){ //Checks if session is open. 
+          let currentSession = db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
+          io.sockets.emit('sessiondata', {data: currentSession});
+        }
+        break;
+      }
+      // Checks if current state belongs to the session triggerStates
+      else if(triggerStates.includes(currentState)){
+        let currentSession = db.createSession(env.PHONENUMBER, locations[i], currentState);
+        io.sockets.emit('sessiondata', {data: currentSession});
+      } 
+      // Checks if current state belongs to the session closingStates
+      else if(closingStates.includes(currentState)){
+        latestSession = db.getMostRecentSession(locations[i]);
+        let currentSession = db.updateSessionState(latestSession.sessionid, currentState, locations[i]); //Adds the closing state to session
+        if(db.closeSession(locations[i])){ // Adds the end_time to the latest open session from the LocationID
+          console.log(`Session at ${locations[i]} was close successfully.`);
+          io.sockets.emit('sessiondata', {data: currentSession}); // Sends currentSession data with end_time which will close the session in the frontend
+        }
+        else{
+          console.log(`No open session was found for ${locations[i]}`);
+        }
+      }
+      else{
+        console.log("Current State does not belong to any of the States groups");
+      }
+    }
+
+  }
+}, 1500); // Set to transmit data every 1500 ms.
 
 
 //Setting the app to listen

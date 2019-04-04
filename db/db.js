@@ -13,7 +13,7 @@ pool.on('error', (err, client) => {
 
 // The following functions will route HTTP requests into database queries
 
-// GET all data
+// GET all XeThru data
 
 const getXethruSensordata = (request, response) => {
   pool.query('SELECT * FROM xethru_sensordata ORDER BY published_at', (error, results) => {
@@ -25,7 +25,7 @@ const getXethruSensordata = (request, response) => {
 }
 
 
-// POST new data
+// POST new XeThru data
 const addXeThruSensordata = (request, response) => {
   const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = request.body;
 
@@ -37,6 +37,9 @@ const addXeThruSensordata = (request, response) => {
   })
 }
 
+// The following function handle different database queries:
+
+// INSERT motion sensor data
 const addMotionSensordata = (deviceid, locationid, devicetype, signal) => {
 
   pool.query('INSERT INTO motion_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
@@ -46,6 +49,7 @@ const addMotionSensordata = (deviceid, locationid, devicetype, signal) => {
   })
 }
 
+// INSERT door sensor data
 const addDoorSensordata = (deviceid, locationid, devicetype, signal) => {
 
   pool.query('INSERT INTO door_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
@@ -55,11 +59,9 @@ const addDoorSensordata = (deviceid, locationid, devicetype, signal) => {
   })
 }
 
-// The following function handle different database queries:
-
-// POST new state data
-async function addStateMachineData(state, id, locationid){
-    await pool.query('INSERT INTO sessions_states (state, sessionid, locationid) VALUES ($1, $2, $3)', [state, id, locationid], (error, results) => {
+// INSERT new state data
+async function addStateMachineData(state, locationid){
+    await pool.query('INSERT INTO states (state, locationid) VALUES ($1, $2)', [state, locationid], (error, results) => {
         if (error) {
             throw error;
         }
@@ -68,10 +70,9 @@ async function addStateMachineData(state, id, locationid){
 
 
 // SELECT latest XeThru sensordata entry
-
-async function getLatestXeThruSensordata(){
+async function getLatestXeThruSensordata(locationid){
   try{
-    results = await pool.query('SELECT * FROM xethru_sensordata ORDER BY published_at DESC LIMIT 1');
+    results = await pool.query('SELECT * FROM xethru_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
     return results.rows[0];
   }
   catch(e){
@@ -81,34 +82,44 @@ async function getLatestXeThruSensordata(){
 }
 
 // SELECT latest Motion sensordata entry
-
-async function getLatestMotionSensordata(){
+async function getLatestMotionSensordata(locationid){
   try{
-    results = await pool.query('SELECT * FROM motion_sensordata ORDER BY published_at DESC LIMIT 1');
+    results = await pool.query('SELECT * FROM motion_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
     return results.rows[0];
   }
   catch(e){
-    console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
+    console.log(`Error running the getLatestMotionSensordata query: ${e}`);
   }
 
 }
 
 // SELECT latest Door sensordata entry
-
-async function getLatestDoorSensordata(){
+async function getLatestDoorSensordata(locationid){
   try{
-    results = await pool.query('SELECT * FROM door_sensordata ORDER BY published_at DESC LIMIT 1');
+    results = await pool.query('SELECT * FROM door_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
     return results.rows[0];
   }
   catch(e){
-    console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
+    console.log(`Error running the getLatestDoorSensordata query: ${e}`);
   }
 
 }
 
-async function getLastUnclosedSessionFromLocationID(location_id) {
+// SELECT latest Door sensordata entry
+async function getLatestStateMachineData(locationid){
+  try{
+    results = await pool.query('SELECT * FROM states WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
+    return results.rows[0];
+  }
+  catch(e){
+    console.log(`Error running the getLatestStateMachineData query: ${e}`);
+  }
+
+}
+
+async function getLastUnclosedSessionFromLocationID(locationid) {
     try{
-        const { results } = await pool.query('SELECT * FROM door_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [location]);
+        const { results } = await pool.query('SELECT * FROM sessions WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
         return results.rows[0];
     }
     catch(e){
@@ -116,23 +127,13 @@ async function getLastUnclosedSessionFromLocationID(location_id) {
     }
 }
 
-async function getLatestMotionSensorData(location){
-    try{
-        const { results } = await pool.query('SELECT * FROM motion_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [location]);
-        return results.rows[0];
-    }
-    catch(e){
-        console.log(`Error running the getLatestMotionSensordata query: ${e}`);
-    }
-}
-
-async function getMostRecentSession(location) {
-    const { results } = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [location]);
+async function getMostRecentSession(locationid) {
+    const { results } = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [locationid]);
     return results.rows[0];
 }
 
-async function getLastUnclosedSession(location) {
-    const { results } = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time = null ORDER BY sessionid DESC LIMIT 1", [location]);
+async function getLastUnclosedSession(locationid) {
+    const { results } = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time = null ORDER BY sessionid DESC LIMIT 1", [locationid]);
     return results.rows[0];
 }
 
@@ -191,11 +192,11 @@ async function createSessionFromTables(sessions, xethru) {
 }
 */
 
-async function createSession(phone, location) {
+async function createSession(phone, locationid, state) {
 
-    const { rows } = await pool.query("INSERT INTO sessions(phonenumber, locationid, state, od_flag) VALUES ($1, $2, $3, $4) RETURNING *", [phone, location, "Movement", 0]);
+    const { rows } = await pool.query("INSERT INTO sessions(phonenumber, locationid, state, od_flag) VALUES ($1, $2, $3, $4) RETURNING *", [phone, location, state, 0]);
 
-    return getLastUnclosedSession(location);
+    return getLastUnclosedSession(locationid);
 }
 
 /*
@@ -222,7 +223,7 @@ async function closeSession(location) {
     if(isSessionOpen(location)) {
         session = await getLastUnclosedSession(location);
         session.end_time = Date.now();
-        updateSession(session);
+        updateSessionEndTime(session);
         return true;
     }
     else {
@@ -230,8 +231,18 @@ async function closeSession(location) {
     }
 }
 
-async function updateSession(session) {
-    await pool.query("UPDATE sessions SET end_time = $1 WHERE sessionID = $2", [session.end_time, session.id]);
+async function updateSessionEndTime(session) {
+    await pool.query("UPDATE sessions SET end_time = $1 WHERE sessionid = $2", [session.end_time, session.id]);
+}
+
+async function updateSessionState(sessionid, state, locationid) {
+  try{
+    await pool.query("UPDATE sessions SET state = $1 WHERE sessionid = $2", [state, sessionid]);
+  }
+  catch(e){
+    console.log(`Error running the updateSessionState query: ${e}`);
+  }
+  return getLastUnclosedSession(locationid);
 }
 
 async function isOverdosed(location) {
@@ -246,14 +257,17 @@ module.exports = {
     addXeThruSensordata,
     addMotionSensordata,
     addDoorSensordata,
+    addStateMachineData,
     getLatestXeThruSensordata,
     getLatestMotionSensordata,
     getLatestDoorSensordata,
-    addStateMachineData,
+    getLatestStateMachineData,
     getLastUnclosedSession,
+    getMostRecentSession,
     createSession,
     isSessionOpen,
-    isOverdoseSuspected
+    isOverdoseSuspected,
+    updateSessionState
 }
 
 
