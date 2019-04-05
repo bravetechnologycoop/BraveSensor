@@ -28,6 +28,7 @@ else
     # ufw default allow outgoing
     # ufw allow from $firstIP to any port 22
     # ufw allow from $secondIP to any port 22
+    ufw allow 22
     ufw allow http
     ufw allow https
     ufw enable
@@ -41,7 +42,7 @@ else
     n stable
     npm install
 
-    sudo -u postgres psql -c "CREATE ROLE $PG_USER PASSWORD '$PG_PASSWORD' LOGIN"
+    sudo -u postgres psql -c "CREATE ROLE $PG_USER PASSWORD $PG_PASSWORD LOGIN"
     sudo -u postgres createdb -O $PG_USER $PG_USER
     sudo -u postgres psql -d $PG_USER -c 'CREATE EXTENSION IF NOT EXISTS "pgcrypto"'
     sudo -u postgres PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -d $PG_USER -f ./db/setup.sql
