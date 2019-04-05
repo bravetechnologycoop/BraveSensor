@@ -117,24 +117,19 @@ async function getLatestStateMachineData(locationid){
 
 }
 
-async function getLastUnclosedSessionFromLocationID(locationid) {
-    try{
-        const { results } = await pool.query('SELECT * FROM sessions WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
-        return results.rows[0];
-    }
-    catch(e){
-        console.log(`Error running the getLatestDoorSensordata query: ${e}`);
-    }
-}
-
 async function getMostRecentSession(locationid) {
     const { results } = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [locationid]);
     return results.rows[0];
 }
 
 async function getLastUnclosedSession(locationid) {
+  try{
     const { results } = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time = null ORDER BY sessionid DESC LIMIT 1", [locationid]);
     return results.rows[0];
+  }
+  catch(e){
+    console.log(`Error running the getLastUnclosedSession query: ${e}`);
+  }
 }
 
 /*
@@ -222,7 +217,6 @@ async function isSessionOpen(location) {
 async function closeSession(location) {
     if(isSessionOpen(location)) {
         session = await getLastUnclosedSession(location);
-        session.end_time = Date.now();
         updateSessionEndTime(session);
         return true;
     }
@@ -232,7 +226,7 @@ async function closeSession(location) {
 }
 
 async function updateSessionEndTime(session) {
-    await pool.query("UPDATE sessions SET end_time = $1 WHERE sessionid = $2", [session.end_time, session.id]);
+    await pool.query("UPDATE sessions SET end_time = CURRENT_TIMESTAMP WHERE sessionid = $2", [session.id]);
 }
 
 async function updateSessionState(sessionid, state, locationid) {

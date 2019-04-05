@@ -108,19 +108,17 @@ io.on('connection', (socket) => {
 
 // Used for Frontend example. Every 1.5 seconds sends the three sensors' raw data to the frontend
 
-/* setInterval(async function () {
-    let XeThruData = await db.getLatestXeThruSensordata();
-    let MotionData = await db.getLatestMotionSensordata();
-    let DoorData = await db.getLatestDoorSensordata();
-    //let sessionstate = await db.getLastUnclosedSessionFromLocationID();
-    //sessionstate.stateMachine();
+setInterval(async function () {
+    let XeThruData = await db.getLatestXeThruSensordata(locations[0]);
+    let MotionData = await db.getLatestMotionSensordata(locations[0]);
+    let DoorData = await db.getLatestDoorSensordata(locations[0]);
+
     io.sockets.emit('xethrustatedata', {data: XeThruData});
     io.sockets.emit('motionstatedata', {data: MotionData});
     io.sockets.emit('doorstatedata', {data: DoorData});
-    //io.sockets.emit('sessionstatedata', {data: sessionstate});
-}, 1500); // Set to transmit data every 1000 ms. */
+}, 1500); // Set to transmit data every 1000 ms.
 
-setInterval(async function () {
+/* setInterval(async function () {
   for(let i = 0; i < locations.length; i++){
     let currentState = "SessionState"; //State Machine function
     let prevState = db.getLatestStateMachineData(locations[i]);
@@ -159,8 +157,8 @@ setInterval(async function () {
     }
 
   }
-}, 1500); // Set to transmit data every 1500 ms.
-
+}, 1000); // Set to transmit data every 1000 ms.
+ */
 
 //Setting the app to listen
 const server = app.listen(port, () => {
