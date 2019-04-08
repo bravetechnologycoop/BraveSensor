@@ -4,13 +4,14 @@ const db = require('./db/db.js');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const fs = require('fs');
+let https = require('https')
 const cors = require('cors');
 const httpSignature = require('http-signature');
 const smartapp   = require('@smartthings/smartapp');
 require('dotenv').config();
 
 const app = express();
-const port = 3000
+const port = 443
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
@@ -21,7 +22,6 @@ var locations = ["BraveOffice"];
 var voidStates = ["MOVEMENT"]
 var triggerStates = ["DOOR_OPENS"]
 var closingStates = ["OVERDOSE_ATTENDED"]
-
 
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
@@ -96,6 +96,10 @@ app.post('/api/xethru', async (req, res) => {
     db.addXeThruSensordata(req, res); 
 });
 
+app.get('/', function(req, res, next) {
+  res.send("The site is up and working")
+});
+
 
 // Web Socket connection to Frontend
 
@@ -160,10 +164,20 @@ setInterval(async function () {
 }, 1000); // Set to transmit data every 1000 ms.
  */
 
-//Setting the app to listen
-const server = app.listen(port, () => {
+// local http server for testing
+/* const server = app.listen(port, () => {
   console.log(`App running on port ${port}.`)
-})
+}) */
+
+let httpsOptions = {
+  key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
+  cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/fullchain.pem`)
+}
+server = https.createServer(httpsOptions, app).listen(port)
+console.log('ODetect brave server listening on port 443')
 
 io.listen(server);
+
+module.exports.server = server
+module.exports.db = db
 

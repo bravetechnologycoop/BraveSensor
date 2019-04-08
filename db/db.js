@@ -1,11 +1,11 @@
 const { Pool } = require('pg')
 const pool = new Pool({
-    user: 'postgres',
+    user: 'brave',
     host: 'Localhost',
-    database: 'ODetect_Local',
-    password: 'BraveODetect1029dev',
+    database: 'brave',
+    password: 'cowardlyarchaiccorp', // env variables are not working, hardcoding details for now. 
     port: 5432
-})
+}) 
 
 pool.on('error', (err, client) => {
     console.error('unexpected database error:', err)
