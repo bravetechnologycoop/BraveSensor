@@ -60,6 +60,7 @@ class XeThruStateMachine {
                     if(door.signal == false) { //Once the door has been closed
                         state = STATE.NO_PRESENCE;
                     }
+                    break;
                 }
             case STATE.NO_PRESENCE:
                 {
@@ -101,6 +102,7 @@ class XeThruStateMachine {
                 {
                     db.startSession(this.location);
                     state = STATE.MOVEMENT;
+                    break;
                 }
             case STATE.DOOR_OPENED_STOP:
                 {
