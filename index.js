@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const db = require('./db/db.js');
+const SessionState = require('./SessionState.js');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const fs = require('fs');
@@ -15,13 +16,36 @@ const port = 443
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
-let SessionState = require('./SessionState.js');
 
+// An array with the different possible locations
 var locations = ["BraveOffice"];
 
-var voidStates = ["MOVEMENT"]
-var triggerStates = ["DOOR_OPENS"]
-var closingStates = ["OVERDOSE_ATTENDED"]
+// These states do not start nor close a session
+let VOIDSTATES = [
+  'Reset',
+  'No Presence', 
+  "Movement with no active session",
+  'Movement',
+  'Still',
+  'Breathing',
+  'Suspected Overdose',
+  'Started',
+  'Waiting for Response',
+  'Waiting for Category',
+  'Waiting for Details'
+];
+
+// These stats will start a new session for a certain location
+let TRIGGERSTATES = [
+  "Door Opened: Start Session",
+  'Presence Detected',
+];
+
+// These states will close an ongoing session for a certain location
+let CLOSINGSTATES = [
+  "Door Opened: Stop Session",
+  'Completed'
+];
 
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
@@ -96,8 +120,9 @@ app.post('/api/xethru', async (req, res) => {
     db.addXeThruSensordata(req, res); 
 });
 
+// Used for Domain testing
 app.get('/', function(req, res, next) {
-  res.send("The site is up and working")
+  res.send("The site is up and running")
 });
 
 
@@ -112,7 +137,7 @@ io.on('connection', (socket) => {
 
 // Used for Frontend example. Every 1.5 seconds sends the three sensors' raw data to the frontend
 
-setInterval(async function () {
+/* setInterval(async function () {
     let XeThruData = await db.getLatestXeThruSensordata(locations[0]);
     let MotionData = await db.getLatestMotionSensordata(locations[0]);
     let DoorData = await db.getLatestDoorSensordata(locations[0]);
@@ -120,49 +145,71 @@ setInterval(async function () {
     io.sockets.emit('xethrustatedata', {data: XeThruData});
     io.sockets.emit('motionstatedata', {data: MotionData});
     io.sockets.emit('doorstatedata', {data: DoorData});
-}, 1500); // Set to transmit data every 1000 ms.
+}, 1500); // Set to transmit data every 1000 ms. */
 
-/* setInterval(async function () {
+// This function will run the state machine for each location once every second
+setInterval(async function () {
   for(let i = 0; i < locations.length; i++){
-    let currentState = "SessionState"; //State Machine function
-    let prevState = db.getLatestStateMachineData(locations[i]);
+    let statemachine = new SessionState(locations[i]);
+    let currentState = await statemachine.getNextState();
+    let prevState = await db.getLatestLocationStatesdata(locations[i]);
+
+    console.log(currentState);
+
      // To avoid filling the DB with repeated states in a row.
     if(currentState != prevState.state){
-      db.addStateMachineData(currentState, locations[i]);
+      await db.addStateMachineData(currentState, locations[i]);
+
       //Checks if current state belongs to voidStates
-      if(voidStates.includes(currentState)){
-        latestSession = db.getMostRecentSession(locations[i]);
-        if(latestSession.end_time == null){ //Checks if session is open. 
-          let currentSession = db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
-          io.sockets.emit('sessiondata', {data: currentSession});
+      if(VOIDSTATES.includes(currentState)){
+        let latestSession = await db.getMostRecentSession(locations[i]);
+        
+        if(latestSession != undefined){ // Checks if no session exists for this location yet.
+          if(latestSession.end_time == null){ // Checks if session is open. 
+            let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
+            io.sockets.emit('sessiondata', {data: currentSession});
+          }
+          break;
         }
-        break;
       }
+
       // Checks if current state belongs to the session triggerStates
-      else if(triggerStates.includes(currentState)){
-        let currentSession = db.createSession(env.PHONENUMBER, locations[i], currentState);
-        io.sockets.emit('sessiondata', {data: currentSession});
+      else if(TRIGGERSTATES.includes(currentState)){
+        let latestSession = await db.getMostRecentSession(locations[i]);
+
+        if(latestSession != undefined){ //Checks if session exists
+          if(latestSession.end_time == null){  // Checks if session is open for this location
+            let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
+            io.sockets.emit('sessiondata', {data: currentSession});
+          }
+          else{
+            let currentSession = await db.createSession(process.env.PHONENUMBER, locations[i], currentState); // Creates a new session
+            io.sockets.emit('sessiondata', {data: currentSession});
+          }
+        }
       } 
+
       // Checks if current state belongs to the session closingStates
-      else if(closingStates.includes(currentState)){
-        latestSession = db.getMostRecentSession(locations[i]);
-        let currentSession = db.updateSessionState(latestSession.sessionid, currentState, locations[i]); //Adds the closing state to session
-        if(db.closeSession(locations[i])){ // Adds the end_time to the latest open session from the LocationID
-          console.log(`Session at ${locations[i]} was close successfully.`);
+      else if(CLOSINGSTATES.includes(currentState)){
+        let latestSession = await db.getMostRecentSession(locations[i]);
+        let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]); //Adds the closing state to session
+        
+        if(await db.closeSession(locations[i])){ // Adds the end_time to the latest open session from the LocationID
+          console.log(`Session at ${locations[i]} was closed successfully.`);
           io.sockets.emit('sessiondata', {data: currentSession}); // Sends currentSession data with end_time which will close the session in the frontend
         }
         else{
-          console.log(`No open session was found for ${locations[i]}`);
+          console.log(`Attempted to close session but no open session was found for ${locations[i]}`);
         }
       }
+
       else{
         console.log("Current State does not belong to any of the States groups");
       }
     }
-
   }
 }, 1000); // Set to transmit data every 1000 ms.
- */
+ 
 
 // local http server for testing
 /* const server = app.listen(port, () => {
@@ -176,6 +223,7 @@ let httpsOptions = {
 server = https.createServer(httpsOptions, app).listen(port)
 console.log('ODetect brave server listening on port 443')
 
+// Socket.io server connection start
 io.listen(server);
 
 module.exports.server = server
