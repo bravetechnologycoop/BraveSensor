@@ -23,8 +23,7 @@ var locations = ["BraveOffice"];
 // These states do not start nor close a session
 let VOIDSTATES = [
   'Reset',
-  'No Presence', 
-  "Movement with no active session",
+  'No Presence, No active session', 
   'Movement',
   'Still',
   'Breathing',
@@ -38,12 +37,12 @@ let VOIDSTATES = [
 // These stats will start a new session for a certain location
 let TRIGGERSTATES = [
   "Door Opened: Start Session",
-  'Presence Detected',
+  "Motion has been detected"
 ];
 
 // These states will close an ongoing session for a certain location
 let CLOSINGSTATES = [
-  "Door Opened: Stop Session",
+  "No Presence, Closing active session",
   'Completed'
 ];
 
