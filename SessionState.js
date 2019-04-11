@@ -116,7 +116,7 @@ class SessionState {
                         }
 
 
-                        if (session.od_flag == false && await db.isOverdoseSuspected(this.location)) {
+                        if (session.od_flag == 0 && await db.isOverdoseSuspected(this.location)) {
                             //Need to update the od_flag here
                             //Also initiates chatbot somehow
                             console.log(`Overdose Suspected at ${this.location}, starting Chatbot`);

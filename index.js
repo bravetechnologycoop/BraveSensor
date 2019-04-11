@@ -186,6 +186,10 @@ setInterval(async function () {
             io.sockets.emit('sessiondata', {data: currentSession});
           }
         }
+        else{
+          let currentSession = await db.createSession(process.env.PHONENUMBER, locations[i], currentState); // Creates a new session
+          io.sockets.emit('sessiondata', {data: currentSession});
+        }
       } 
 
       // Checks if current state belongs to the session closingStates
