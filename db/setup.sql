@@ -62,11 +62,11 @@ CREATE TABLE sessions
     end_time timestamp without time zone,
     od_flag integer,
     state text COLLATE pg_catalog."default",
-    prev_state text COLLATE pg_catalog."default",
     phonenumber text COLLATE pg_catalog."default",
     notes text COLLATE pg_catalog."default",
     incidenttype text COLLATE pg_catalog."default",
-    sessionid SERIAL
+    sessionid SERIAL,
+    duration interval,
 )
 WITH (
     OIDS = FALSE

@@ -134,17 +134,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// Used for Frontend example. Every 1.5 seconds sends the three sensors' raw data to the frontend
-
-/* setInterval(async function () {
-    let XeThruData = await db.getLatestXeThruSensordata(locations[0]);
-    let MotionData = await db.getLatestMotionSensordata(locations[0]);
-    let DoorData = await db.getLatestDoorSensordata(locations[0]);
-
-    io.sockets.emit('xethrustatedata', {data: XeThruData});
-    io.sockets.emit('motionstatedata', {data: MotionData});
-    io.sockets.emit('doorstatedata', {data: DoorData});
-}, 1500); // Set to transmit data every 1000 ms. */
 
 // This function will run the state machine for each location once every second
 setInterval(async function () {
@@ -216,7 +205,7 @@ setInterval(async function () {
         console.log("Current State does not belong to any of the States groups");
       }
     }
-    else{ // If not statemachine doesn't run, emits latest session data to Frontend
+    else{ // If statemachine doesn't run, emits latest session data to Frontend
       let currentSession = await db.getMostRecentSession(locations[i]);
       io.sockets.emit('sessiondata', {data: currentSession}); 
     }
