@@ -152,6 +152,12 @@ setInterval(async function () {
     let statemachine = new SessionState(locations[i]);
     let currentState = await statemachine.getNextState();
     let prevState = await db.getLatestLocationStatesdata(locations[i]);
+    
+
+    // Query raw sensor data to transmit to the FrontEnd  
+    let XeThruData = await db.getLatestXeThruSensordata(locations[i]);
+    let MotionData = await db.getLatestMotionSensordata(locations[i]);
+    let DoorData = await db.getLatestDoorSensordata(locations[i]);
 
     console.log(currentState);
 
@@ -210,6 +216,16 @@ setInterval(async function () {
         console.log("Current State does not belong to any of the States groups");
       }
     }
+    else{ // If not statemachine doesn't run, emits latest session data to Frontend
+      let currentSession = await db.getMostRecentSession(locations[i]);
+      io.sockets.emit('sessiondata', {data: currentSession}); 
+    }
+
+    io.sockets.emit('xethrustatedata', {data: XeThruData});
+    io.sockets.emit('motionstatedata', {data: MotionData});
+    io.sockets.emit('doorstatedata', {data: DoorData});
+    io.sockets.emit('statedata', {data: prevState});
+
   }
 }, 1000); // Set to transmit data every 1000 ms.
  
