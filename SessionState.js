@@ -5,6 +5,8 @@ const STATE = {
     NO_PRESENCE_NO_SESSION: 'No Presence, No active session',
     NO_PRESENCE_CLOSE: "No Presence, Closing active session",
     DOOR_OPENED_START: "Door Opened: Start Session",
+    DOOR_CLOSED_START: "Door Closed: Start Session",
+    DOOR_OPENED_CLOSE: "Door Opened: Closing active session",
     MOTION_DETECTED: "Motion has been detected",
     MOVEMENT: 'Movement',
     STILL: 'Still',
@@ -62,7 +64,7 @@ class SessionState {
                     {
                         //Waits for the door to close before restarting the state machine
                         //What if 
-                        if(door.signal == "closed") { //Once the door has been closed
+                        if(door.signal == "closed" || (xethru.state == XETHRU_STATES.NO_MOVEMENT && motion.signal == "inactive")) { //Once the door has been closed
                             state = STATE.NO_PRESENCE_NO_SESSION;
                         }
                         break;
@@ -81,6 +83,20 @@ class SessionState {
                 case STATE.DOOR_OPENED_START:
                     {
                         //db.startSession(this.location);
+                        /*
+                        if (xethru.state != XETHRU_STATES.NO_MOVEMENT || motion.signal == "active") {
+                            state = STATE.MOVEMENT;
+                        }
+                        */
+                        
+                        // Waits for the door to close before continuing with session
+                        if (door.signal == "closed") {
+                            state = STATE.DOOR_CLOSED_START;
+                        }
+                        break;
+                    }
+                case STATE.DOOR_CLOSED_START:
+                    {
                         if (xethru.state != XETHRU_STATES.NO_MOVEMENT || motion.signal == "active") {
                             state = STATE.MOVEMENT;
                         }
@@ -93,6 +109,7 @@ class SessionState {
                         state = STATE.MOVEMENT;
                         break;
                     }
+                case STATE.DOOR_OPENED_CLOSE:
                 case STATE.NO_PRESENCE_CLOSE:
                     {
                         //db.startSession(this.location);
@@ -111,7 +128,7 @@ class SessionState {
                         else if (xethru.state == XETHRU_STATES.BREATHING) {
                             state = STATE.BREATH_TRACKING;
                         }
-                        else if (xethru.mov_f == 0) {
+                        else if (xethru.mov_f == 0 && xethru.state != XETHRU_STATES.NO_MOVEMENT) {
                             state = STATE.STILL;
                         }
 
@@ -181,6 +198,23 @@ class SessionState {
         }
         return state;
     }
+
+    /*
+    async checkDoorSession() {
+        
+        let door = await db.getLatestDoorSensordata(this.location);
+        let session = await db.getMostRecentSession(this.location);
+
+        if(session != undefined) {
+            if(door.signal == "open") {
+                return STATE.DOOR_OPENED_CLOSE;
+            }
+        }
+        else {
+            return null;
+        }
+    }
+    */
 }
 
 class Chatbot {
