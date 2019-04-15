@@ -217,6 +217,21 @@ async function updateSessionState(sessionid, state) {
   }
 }
 
+async function updateSessionStillCounter(stillcounter, sessionid) {
+  try{
+    const results = await pool.query("UPDATE sessions SET still_counter = $1 WHERE sessionid = $2 RETURNING *", [stillcounter, sessionid]);
+    if(results == undefined){
+      return null;
+    }
+    else{
+      return results.rows[0]; 
+    }
+  }
+  catch(e){
+    console.log(`Error running the updateSessionStillCounter query: ${e}`);
+  }
+}
+
 async function isOverdosed(location) {
     let session = getLastUnclosedSession(location);
     session.od_flag = true;
@@ -291,5 +306,6 @@ module.exports = {
   createSession,
   isOverdoseSuspected,
   updateSessionState,
+  updateSessionStillCounter,
   closeSession
 }

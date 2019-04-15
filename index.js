@@ -16,6 +16,7 @@ const port = 443
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
+const still_Treshold = 30;
 
 // An array with the different possible locations
 var locations = ["BraveOffice"];
@@ -208,8 +209,23 @@ setInterval(async function () {
       }
     }
     else{ // If statemachine doesn't run, emits latest session data to Frontend
-      let currentSession = await db.getMostRecentSession(locations[i]);
-      io.sockets.emit('sessiondata', {data: currentSession});
+      let currentSession = await db.getMostRecentSession(locations[i])
+
+      // Checks if session is in the STILL state and, if so, how long it has been in that state for.
+      if(currentSession.state == 'Still'){
+        if(currentSession.still_counter >= still_Treshold){
+          console.log(`User has been Still for more than ${still_Treshold} seconds.`);
+        }
+        else{
+          let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid);
+          io.sockets.emit('sessiondata', {data: updatedSession});
+        }
+      }
+      else{
+        // If current session is anything else than STILL it returns the counter to 0
+        let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid);
+        io.sockets.emit('sessiondata', {data: updatedSession});
+      }
     }
 
     io.sockets.emit('xethrustatedata', {data: XeThruData});

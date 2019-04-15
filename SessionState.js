@@ -128,6 +128,7 @@ class SessionState {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
                         else if (door.signal == "open" && !session.od_flag) {
+                            console.log("test1");
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                             //if in breathing state, change to that state
@@ -135,6 +136,7 @@ class SessionState {
                             state = STATE.BREATH_TRACKING;
                         }
                         else if (xethru.mov_f == 0 && xethru.state != XETHRU_STATES.NO_MOVEMENT) {
+                            console.log("test2");
                             state = STATE.STILL;
                         }
 
@@ -154,7 +156,7 @@ class SessionState {
                         if (xethru.state == XETHRU_STATES.NO_MOVEMENT && motion.signal == "inactive" && !session.od_flag) {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
-                        else if (door.signal == "open" && !session.od_flag) {
+                        else if (door.signal == "open") {
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                         else if (xethru.state == XETHRU_STATES.BREATHING) {
@@ -179,7 +181,7 @@ class SessionState {
                         if (xethru.state == XETHRU_STATES.NO_MOVEMENT && motion.signal == "inactive" && !session.od_flag) {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
-                        else if (door.signal == "open" && !session.od_flag) {
+                        else if (door.signal == "open") {
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                         else if(xethru.state != XETHRU_STATES.BREATHING && xethru.mov_f == 0) {

@@ -67,6 +67,7 @@ CREATE TABLE sessions
     incidenttype text COLLATE pg_catalog."default",
     sessionid SERIAL,
     duration text,
+    still_counter integer DEFAULT 0,
 )
 WITH (
     OIDS = FALSE
