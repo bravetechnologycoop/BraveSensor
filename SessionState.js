@@ -64,7 +64,7 @@ class SessionState {
                     {
                         //Waits for the door to close before restarting the state machine
                         //What if 
-                        if(door.signal == "closed" || (xethru.state == XETHRU_STATES.NO_MOVEMENT && motion.signal == "inactive")) { //Once the door has been closed
+                        if(door.signal == "closed") {// || (xethru.state == XETHRU_STATES.NO_MOVEMENT && motion.signal == "inactive")) { //Once the door has been closed
                             state = STATE.NO_PRESENCE_NO_SESSION;
                         }
                         break;
@@ -75,8 +75,8 @@ class SessionState {
                         if (door.signal == "open") {
                             state = STATE.DOOR_OPENED_START;
                         }
-                        // Waits for both the XeThru and motion sensor to be active
-                        else if (xethru.state != XETHRU_STATES.NO_MOVEMENT && motion.signal == "active") {
+                            // Waits for both the XeThru and motion sensor to be active
+                        else if (xethru.mov_f > 10 && xethru.state != XETHRU_STATES.NO_MOVEMENT && motion.signal == "active") {
                             state = STATE.MOTION_DETECTED;
                         }
                         break;
@@ -112,11 +112,15 @@ class SessionState {
                         state = STATE.MOVEMENT;
                         break;
                     }
-                case STATE.DOOR_OPENED_CLOSE: // Both of these cases do the same thing
+                case STATE.DOOR_OPENED_CLOSE: 
+                    {
+                        state = STATE.RESET;
+                        break;
+                    }
                 case STATE.NO_PRESENCE_CLOSE:
                     {
                         //db.startSession(this.location);
-                        state = STATE.RESET;
+                        state = STATE.NO_PRESENCE_NO_SESSION;
                         break;
                     }
                 case STATE.MOVEMENT:
@@ -128,15 +132,13 @@ class SessionState {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
                         else if (door.signal == "open" && !session.od_flag) {
-                            console.log("test1");
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                             //if in breathing state, change to that state
                         else if (xethru.state == XETHRU_STATES.BREATHING) {
                             state = STATE.BREATH_TRACKING;
                         }
-                        else if (xethru.mov_f == 0 && xethru.state != XETHRU_STATES.NO_MOVEMENT) {
-                            console.log("test2");
+                        else if (xethru.mov_f == 0 && xethru.state != XETHRU_STATES.NO_MOVEMENT) { // && motion.signal == "inactive"
                             state = STATE.STILL;
                         }
 
@@ -156,7 +158,7 @@ class SessionState {
                         if (xethru.state == XETHRU_STATES.NO_MOVEMENT && motion.signal == "inactive" && !session.od_flag) {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
-                        else if (door.signal == "open") {
+                        else if (door.signal == "open" && !session.od_flag) {
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                         else if (xethru.state == XETHRU_STATES.BREATHING) {
@@ -181,13 +183,13 @@ class SessionState {
                         if (xethru.state == XETHRU_STATES.NO_MOVEMENT && motion.signal == "inactive" && !session.od_flag) {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
-                        else if (door.signal == "open") {
+                        else if (door.signal == "open" && !session.od_flag) {
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                         else if(xethru.state != XETHRU_STATES.BREATHING && xethru.mov_f == 0) {
                             state = STATE.STILL;
                         }
-                        //returns to movement if not in breathing state
+                            //returns to movement if not in breathing state
                         else if (xethru.state != XETHRU_STATES.BREATHING) {
                             state = STATE.MOVEMENT;
                         }
