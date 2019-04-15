@@ -71,11 +71,12 @@ class SessionState {
                     }
                 case STATE.NO_PRESENCE_NO_SESSION:
                     {
-                        //if not in no presence state, anymore 
+                        // Door opens
                         if (door.signal == "open") {
                             state = STATE.DOOR_OPENED_START;
                         }
-                        else if (xethru.state != XETHRU_STATES.NO_MOVEMENT || motion.signal == "active") {
+                        // Waits for both the XeThru and motion sensor to be active
+                        else if (xethru.state != XETHRU_STATES.NO_MOVEMENT && motion.signal == "active") {
                             state = STATE.MOTION_DETECTED;
                         }
                         break;
@@ -89,7 +90,7 @@ class SessionState {
                         }
                         */
                         
-                        // Waits for the door to close before continuing with session
+                        // Waits for the door to close before continuing with state machine
                         if (door.signal == "closed") {
                             state = STATE.DOOR_CLOSED_START;
                         }
@@ -97,6 +98,8 @@ class SessionState {
                     }
                 case STATE.DOOR_CLOSED_START:
                     {
+                        // As long as there is movement, the state machine runs?
+                        // Might keep opening a session if it's still in this state though
                         if (xethru.state != XETHRU_STATES.NO_MOVEMENT || motion.signal == "active") {
                             state = STATE.MOVEMENT;
                         }
@@ -109,7 +112,7 @@ class SessionState {
                         state = STATE.MOVEMENT;
                         break;
                     }
-                case STATE.DOOR_OPENED_CLOSE:
+                case STATE.DOOR_OPENED_CLOSE: // Both of these cases do the same thing
                 case STATE.NO_PRESENCE_CLOSE:
                     {
                         //db.startSession(this.location);
