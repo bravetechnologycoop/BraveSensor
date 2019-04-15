@@ -209,7 +209,7 @@ setInterval(async function () {
     }
     else{ // If statemachine doesn't run, emits latest session data to Frontend
       let currentSession = await db.getMostRecentSession(locations[i]);
-      io.sockets.emit('sessiondata', {data: currentSession}); 
+      io.sockets.emit('sessiondata', {data: currentSession});
     }
 
     io.sockets.emit('xethrustatedata', {data: XeThruData});

@@ -195,7 +195,7 @@ async function closeSession(location) {
 async function updateSessionEndTime(sessionid) {
   try{
     await pool.query("UPDATE sessions SET end_time = CURRENT_TIMESTAMP WHERE sessionid = $1", [sessionid]);
-    await pool.query("UPDATE sessions SET duration = age(end_time, start_time) WHERE sessionid = $1", [sessionid]); // Sets the duration to the difference between the end and start time
+    await pool.query("UPDATE sessions SET duration = TO_CHAR(age(end_time, start_time),'HH24:MI:SS') WHERE sessionid = $1", [sessionid]); // Sets the duration to the difference between the end and start time
   }
   catch(e){
     console.log(`Error running the updateSessionEndTime query: ${e}`);

@@ -66,7 +66,7 @@ CREATE TABLE sessions
     notes text COLLATE pg_catalog."default",
     incidenttype text COLLATE pg_catalog."default",
     sessionid SERIAL,
-    duration interval,
+    duration text,
 )
 WITH (
     OIDS = FALSE
