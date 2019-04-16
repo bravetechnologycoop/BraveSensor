@@ -313,11 +313,15 @@ async function isOverdoseSuspected(location) {
 
 
 async function updateSessionNotes(session) {
-    await pool.query("UPDATE sessions SET notes = $1 WHERE locationid = $2", [session.notes, session.locationid]);
+    await pool.query("UPDATE sessions SET notes = $1 WHERE sessionid = $2", [session.notes, session.sessionid]);
 }
 
 async function updateSessionIncidentType(session) {
-    await pool.query("UPDATE sessions SET incidenttype = $1 WHERE locationid = $2", [session.incidentType, session.locationid]);
+    await pool.query("UPDATE sessions SET incidenttype = $1 WHERE sessionid = $2", [session.incidentType, session.sessionid]);
+}
+
+async function updateChatbotSessionState(session) {
+    await pool.query("UPDATE sessions SET chatbot_state = $1 WHERE sessionid = $2", ['Started', session.sessionid]);
 }
 
 // Export functions to be able to access them on index.js
@@ -338,5 +342,8 @@ module.exports = {
   isOverdoseSuspected,
   updateSessionState,
   updateSessionStillCounter,
-  closeSession
+  closeSession,
+  updateSessionNotes,
+  updateSessionIncidentType,
+  updateChatbotSessionState
 }
