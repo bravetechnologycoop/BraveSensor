@@ -21,6 +21,9 @@ const still_Treshold = 30;
 // An array with the different possible locations
 var locations = ["BraveOffice"];
 
+// Session start_times array. This array takes the size of the locations array as there will be one session slot per location.
+start_times = new Array(locations.length);
+
 // These states do not start nor close a session
 let VOIDSTATES = [
   'Reset',
@@ -153,6 +156,20 @@ setInterval(async function () {
 
     console.log(currentState);
 
+    // Get current time to compare to the session's start time
+    if(start_times[i] != null){
+      var today = new Date();
+      var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+      var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+      var dateTime_string = date+' '+time;
+
+      var dateTime = new Date(dateTime_string);
+      var start_time_sesh = new Date(start_times[i]);
+
+      // Current Session duration so far:
+      var sessionDuration = (dateTime - start_time_sesh)/1000;
+    }
+
      // To avoid filling the DB with repeated states in a row.
     if(currentState != prevState.state){
       await db.addStateMachineData(currentState, locations[i]);
@@ -178,15 +195,18 @@ setInterval(async function () {
           if(latestSession.end_time == null){  // Checks if session is open for this location
             let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
             io.sockets.emit('sessiondata', {data: currentSession});
+            start_times[i] = currentSession.start_time;
           }
           else{
             let currentSession = await db.createSession(process.env.PHONENUMBER, locations[i], currentState); // Creates a new session
             io.sockets.emit('sessiondata', {data: currentSession});
+            start_times[i] = currentSession.start_time;
           }
         }
         else{
           let currentSession = await db.createSession(process.env.PHONENUMBER, locations[i], currentState); // Creates a new session
           io.sockets.emit('sessiondata', {data: currentSession});
+          start_times[i] = currentSession.start_time;
         }
       } 
 
@@ -198,6 +218,7 @@ setInterval(async function () {
         if(await db.closeSession(locations[i])){ // Adds the end_time to the latest open session from the LocationID
           console.log(`Session at ${locations[i]} was closed successfully.`);
           io.sockets.emit('sessiondata', {data: currentSession}); // Sends currentSession data with end_time which will close the session in the frontend
+          start_times[i] = null;
         }
         else{
           console.log(`Attempted to close session but no open session was found for ${locations[i]}`);
@@ -212,9 +233,9 @@ setInterval(async function () {
       let currentSession = await db.getMostRecentSession(locations[i])
 
       // Checks if session is in the STILL state and, if so, how long it has been in that state for.
-      if(currentSession.state == 'Still'){
+      if(currentSession.state == 'Still' || currentSession.state == 'Breathing'){
         if(currentSession.still_counter >= still_Treshold){
-          console.log(`User has been Still for more than ${still_Treshold} seconds.`);
+          console.log(`User has been Still (or Breathing) for more than ${still_Treshold} seconds.`);
         }
         else{
           let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid);

@@ -1,11 +1,15 @@
-const { Pool } = require('pg')
-const pool = new Pool({
+const pg = require('pg')
+const pool = new pg.Pool({
     user: 'brave',
     host: 'Localhost',
     database: 'brave',
     password: 'cowardlyarchaiccorp', // env variables are not working, hardcoding details for now. 
     port: 5432
 }) 
+
+// 1114 is OID for timestamp in Postgres
+// return string as is
+pg.types.setTypeParser(1114, str => str);
 
 pool.on('error', (err, client) => {
     console.error('unexpected database error:', err)
