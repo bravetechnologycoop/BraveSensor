@@ -258,13 +258,22 @@ async function startChatbot() {
 }
 
 async function isOverdoseSuspected(location) {
-    let xethru = getLatestXeThruSensordata(location);
+    const rpm_threshold = 12;
+    let xethru = await getLatestXeThruSensordata(location);
     // let door = getLatestDoorSensordata(location);
     // let motion = getLatestMotionSensordata(location);
-    let session = getLastUnclosedSession(location);
+    let session = await getLastUnclosedSession(location);
     
+    //Could add more criteria for 
+    let condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0);
+    let condition2 = 1 * (session.counter > 3); //seconds
+    let condition3 = 1 * (/*currentTime*/ - session.start_time > 1234);
+    let condition4 = 1 * (0);
+    const conditionThreshold = 1;
+
+    /*
     //This method counts the conditions met and can distinguish which conditions were met and which were not
-    let conditions = (xethru.rpm <= 12 && xethru.rpm != 0) + 2*(1) + 4*(1) + 8*(1); //add more criteria
+    let conditions = (xethru.rpm <= rpm_threshold && xethru.rpm != 0) + 2*(1) + 4*(1) + 8*(1); //add more criteria
     let count;
     for(count = 0; conditions; count++)
         conditions &= (conditions-1);
@@ -273,13 +282,21 @@ async function isOverdoseSuspected(location) {
         session.od_flag = true;
         return true;
     }
+    */
 
     //This method just looks for a majority of conditions to be met
     //This method can apply different weights for different criteria
-    if((xethru.rpm <= 12) + (1) + (1) + (1) >= 4) {
-        session.od_flag = true;
+    if(condition1 + condition2 + condition3 + condition4 >= conditionThreshold) {
+        // update the table entry so od_flag is 1
+        try {
+            await pool.query("UPDATE sessions SET od_flag = 1 WHERE sessionid = $1", [session.sessionid]);
+        }
+        catch(e) {
+            console.log(`Error running the update od_flag query: ${e}
+        }
         return true;
     }
+
     return false;
 }
 
