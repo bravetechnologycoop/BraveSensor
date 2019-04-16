@@ -292,7 +292,7 @@ async function isOverdoseSuspected(location) {
             await pool.query("UPDATE sessions SET od_flag = 1 WHERE sessionid = $1", [session.sessionid]);
         }
         catch(e) {
-            console.log(`Error running the update od_flag query: ${e}
+            console.log(`Error running the update od_flag query: ${e}`);
         }
         return true;
     }
