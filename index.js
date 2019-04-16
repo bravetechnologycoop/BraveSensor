@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const db = require('./db/db.js');
 const SessionState = require('./SessionState.js');
+const Chatbot = require('./Chatbot.js');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const fs = require('fs');
@@ -50,6 +51,11 @@ let CLOSINGSTATES = [
   "No Presence, Closing active session",
   "Door Opened: Closing active session",
   'Completed'
+];
+
+// These states will start a chatbot session for a location
+let CHATBOTSTARTSTATES = [
+  "Suspected Overdose"
 ];
 
 // Body Parser Middleware
@@ -183,7 +189,6 @@ setInterval(async function () {
             let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
             io.sockets.emit('sessiondata', {data: currentSession});
           }
-          break;
         }
       }
 
@@ -223,6 +228,17 @@ setInterval(async function () {
         else{
           console.log(`Attempted to close session but no open session was found for ${locations[i]}`);
         }
+      }
+
+      else if(CHATBOTSTARTSTATES.includes(currentState)) {
+          let latestSession = await db.getMostRecentSession(location[i]);
+
+          if(latestSession.od_flag == 1) {
+              if(latestSession.chatbot_state == null) {
+                  //chatbot = new Chatbot(latestSession.sessionid, location[i], 'Started', '+12344567890', null, null);
+                  //db.sendInitialChatbotMessage(location[i]);
+              }
+          }
       }
 
       else{

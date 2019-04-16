@@ -264,10 +264,21 @@ async function isOverdoseSuspected(location) {
     // let motion = getLatestMotionSensordata(location);
     let session = await getLastUnclosedSession(location);
     
-    //Could add more criteria for 
+    var today = new Date();
+    var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    var dateTime_string = date+' '+time;
+
+    var dateTime = new Date(dateTime_string);
+    var start_time_sesh = new Date(session.start_time);
+
+    // Current Session duration so far:
+    var sessionDuration = (dateTime - start_time_sesh)/1000;
+
+    // number in front represents the weighting
     let condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0);
-    let condition2 = 1 * (session.counter > 3); //seconds
-    let condition3 = 1 * (/*currentTime*/ - session.start_time > 1234);
+    let condition2 = 1 * (session.still_counter > 30); //seconds
+    let condition3 = 1 * (sessionDuration > 123);
     let condition4 = 1 * (0);
     const conditionThreshold = 1;
 
@@ -301,14 +312,13 @@ async function isOverdoseSuspected(location) {
 }
 
 
-async function updateSessionNotes(location, session) {
-    await pool.query("UPDATE sessions SET notes = $1 WHERE locationid = $2", [session.notes, location]);
+async function updateSessionNotes(session) {
+    await pool.query("UPDATE sessions SET notes = $1 WHERE locationid = $2", [session.notes, session.locationid]);
 }
 
-async function updateSessionIncidentType(location, session) {
-    await pool.query("UPDATE sessions SET incidenttype = $1 WHERE locationid = $2", [session.incidentType, location]);
+async function updateSessionIncidentType(session) {
+    await pool.query("UPDATE sessions SET incidenttype = $1 WHERE locationid = $2", [session.incidentType, session.locationid]);
 }
-
 
 // Export functions to be able to access them on index.js
 
