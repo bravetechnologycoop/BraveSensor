@@ -19,13 +19,6 @@ const STATE = {
     COMPLETED: 'Completed'
 };
 
-
-const incidentTypes = {
-    '0': 'False Alarm',
-    '1': 'Overdose',
-    '2': 'Other'
-};
-
 const XETHRU_STATES = {
     BREATHING: "0",
     MOVEMENT: "1",
@@ -147,6 +140,7 @@ class SessionState {
                             //Need to update the od_flag here
                             //Also initiates chatbot somehow
                             console.log(`Overdose Suspected at ${this.location}, starting Chatbot`);
+                            state = STATE.SUSPECTED_OD;
                         }
 
                         break;
@@ -168,9 +162,9 @@ class SessionState {
                             state = STATE.MOVEMENT;
                         }
 
-                        if (session.od_flag == false && db.isOverdoseSuspected(this.location)) {
+                        if (session.od_flag == 0 && db.isOverdoseSuspected(this.location)) {
                             //startChatbot(location);
-                            //state = STATE.SUSPECTED_OD;
+                            state = STATE.SUSPECTED_OD;
                         }
 
                         break;
@@ -196,12 +190,17 @@ class SessionState {
 
 
                         //If the flag was originally false and the overdose criteria are met, an overdose is ssuspected and the flag is enabled.
-                        if (session.od_flag == false && db.isOverdoseSuspected(this.location)) {
+                        if (session.od_flag == 0 && db.isOverdoseSuspected(this.location)) {
                             //Somehow start the chatbot sequence and then continue with the state machine
                             //startChatbot(location);
-                            //state = STATE.SUSPECTED_OD;
+                            state = STATE.SUSPECTED_OD;
                         }
 
+                        break;
+                    }
+                case STATE.SUSPECTED_OD:
+                    {
+                        state = STATE.STILL;
                         break;
                     }
                 default:
@@ -231,88 +230,6 @@ class SessionState {
         }
     }
     */
-}
-
-class Chatbot {
-
-    constructor(id, locationid, state, prev_state, phonenumber, rpm, x_state, movement_fast, movement_slow, door, motion, incidentType, notes, od_flag) {
-        this.id = id						// id is session number (?)
-        this.locationid = locationid
-        this.state = state
-        this.phonenumber = phonenumber
-        this.incidentType = incidentType
-        this.notes = notes
-        this.od_flag = od_flag
-    }
-
-    advanceChatbot(messageText) {
-
-        let returnMessage;
-
-        switch (this.state) {
-            case STATE.STARTED:
-                {
-                    //Send an alert and something
-                    this.state = STATE.WAITING_FOR_CATEGORY;
-                    //this.od_flag = 1;
-                    returnMessage = "Respond with category";
-                    break;
-                }
-            case STATE.WAITING_FOR_RESPONSE:
-                {
-                    this.state = STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = "Respond with category";
-                    break;
-                }
-            case STATE.WAITING_FOR_CATEGORY:
-                {
-                    let isValid = this.setIncidentType(messageText.trim());
-                    this.state = isValid ? STATE.WAITING_FOR_DETAILS : STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = isValid ? "Any additional notes" : "Invalid category, try again";
-
-                    if (isValid) {
-                        db.updateSessionIncidentType(this);
-                    }
-
-                    break;
-                }
-            case STATE.WAITING_FOR_DETAILS:
-                {
-                    this.notes = messageText.trim();
-                    this.state = STATE.COMPLETED;
-                    returnMessage = "Thanks";
-
-                    db.updateSessionNotes(this);
-
-                    break;
-                }
-            case STATE.COMPLETED:
-                {
-                    returnMessage = "Thank you";
-                    break;
-                }
-            default:
-                {
-                    returnMessage = "Error";
-                    break;
-                }
-        }
-
-        //this.sendDataToDatabase();
-
-        return returnMessage;
-    }
-
-
-
-    setIncidentType(numType) {
-
-        if (numType in incidentTypes) {
-            this.incidentType = incidentTypes[numType];
-            return true;
-        }
-        return false;
-    }
 }
 
 module.exports = SessionState;
