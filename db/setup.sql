@@ -68,6 +68,7 @@ CREATE TABLE sessions
     sessionid SERIAL,
     duration text,
     still_counter integer DEFAULT 0,
+    chatbot_state text,
 )
 WITH (
     OIDS = FALSE
