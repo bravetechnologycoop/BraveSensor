@@ -33,7 +33,6 @@ let VOIDSTATES = [
   'Movement',
   'Still',
   'Breathing',
-  'Suspected Overdose',
   'Started',
   'Waiting for Response',
   'Waiting for Category',
@@ -65,6 +64,13 @@ app.use(express.json()); // Used for smartThings wrapper
 
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors());
+
+// Set up Twilio
+const accountSid = process.env.TWILIO_SID;
+const authToken = process.env.TWILIO_TOKEN;
+
+const client = require('twilio')(accountSid, authToken);
+const MessagingResponse = require('twilio').twiml.MessagingResponse;
 
 // SmartThings Smart App Implementations
 
@@ -128,7 +134,7 @@ app.post('/api/st', function(req, res, next) {
 
 // Handler for income XeThru POST requests
 app.post('/api/xethru', async (req, res) => {
-    db.addXeThruSensordata(req, res); 
+    await db.addXeThruSensordata(req, res); 
 });
 
 // Used for Domain testing
@@ -138,13 +144,47 @@ app.get('/', function(req, res, next) {
 
 
 // Web Socket connection to Frontend
-
 io.on('connection', (socket) => {
     console.log("Frontend Connected")
     socket.emit('Hello', {
         greeting: "Hello ODetect Frontend"
     });
 });
+
+// Twilio Functions
+async function sendTwilioMessage(fromPhone, toPhone, msg) {
+  try {
+      await client.messages.create({from: fromPhone, to: toPhone, body: msg})
+                           .then(message => console.log(message.sid));
+  }
+  catch(err) {
+      console.log(err);
+  }
+}
+
+app.post('/sms', async function (req, res) {
+  const twiml = new MessagingResponse();
+
+  var to = req.body.To;
+  var from = req.body.From;
+  var body = req.body.Body;
+
+  let session = await db.getMostRecentSessionPhone(from);
+  let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
+  let message = chatbot.advanceChatbot(body);
+
+  twiml.message(message);
+
+  res.writeHead(200, {'Content-Type': 'text/xml'});
+  res.end(twiml.toString());
+});
+
+async function sendInitialChatbotMessage(session) {
+  console.log("Intial message sent");
+  await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, "An overdose is suspected in the bathroom. Please respond with 'ok' once you have checked up on it.");
+  await db.updateChatbotSessionState(session);
+  //setTimeout(reminderMessage, unrespondedTimer, session.phonenumber);
+}
 
 
 // This function will run the state machine for each location once every second
@@ -174,6 +214,7 @@ setInterval(async function () {
 
       // Current Session duration so far:
       var sessionDuration = (dateTime - start_time_sesh)/1000;
+      io.sockets.emit('timerdata', {data: sessionDuration});
     }
 
      // To avoid filling the DB with repeated states in a row.
@@ -231,14 +272,16 @@ setInterval(async function () {
       }
 
       else if(CHATBOTSTARTSTATES.includes(currentState)) {
-          let latestSession = await db.getMostRecentSession(location[i]);
+          let latestSession = await db.getMostRecentSession(locations[i]);
 
           if(latestSession.od_flag == 1) {
+              console.log("test2");
               if(latestSession.chatbot_state == null) {
-                  //chatbot = new Chatbot(latestSession.sessionid, location[i], 'Started', '+12344567890', null, null);
-                  //db.sendInitialChatbotMessage(location[i]);
+                console.log("test3");
+                sendInitialChatbotMessage(latestSession);
               }
           }
+          console.log("test4");
       }
 
       else{

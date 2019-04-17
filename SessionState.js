@@ -162,7 +162,7 @@ class SessionState {
                             state = STATE.MOVEMENT;
                         }
 
-                        if (session.od_flag == 0 && db.isOverdoseSuspected(this.location)) {
+                        if (session.od_flag == 0 && await db.isOverdoseSuspected(this.location)) {
                             //startChatbot(location);
                             state = STATE.SUSPECTED_OD;
                         }
@@ -190,7 +190,7 @@ class SessionState {
 
 
                         //If the flag was originally false and the overdose criteria are met, an overdose is ssuspected and the flag is enabled.
-                        if (session.od_flag == 0 && db.isOverdoseSuspected(this.location)) {
+                        if (session.od_flag == 0 && await db.isOverdoseSuspected(this.location)) {
                             //Somehow start the chatbot sequence and then continue with the state machine
                             //startChatbot(location);
                             state = STATE.SUSPECTED_OD;

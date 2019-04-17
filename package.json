@@ -20,7 +20,8 @@
     "http-signature": "^1.2.0",
     "mocha": "^5.2.0",
     "pg": "^7.9.0",
-    "socket.io": "^2.2.0"
+    "socket.io": "^2.2.0",
+    "twilio": "^3.30.1"
   },
   "author": "Sajan Rajdev",
   "license": "ISC"

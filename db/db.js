@@ -145,7 +145,7 @@ async function getMostRecentSession(locationid) {
   try{
     const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [locationid]);
 
-    if(results.rows == undefined){
+    if(results == undefined){
       return null;
     }
     else{
@@ -154,6 +154,21 @@ async function getMostRecentSession(locationid) {
   }
   catch(e){
     console.log(`Error running the getMostRecentSession query: ${e}`);
+  }
+}
+
+async function getMostRecentSessionPhone(phone) {
+  try {
+      const results = await pool.query("SELECT * FROM sessions WHERE phonenumber = $1 ORDER BY sessionid DESC LIMIT 1", [phone]);
+      if(results == undefined){
+          return null;
+      }
+      else{
+          return results.rows[0];
+      }
+  }
+  catch(e){
+      console.log(`Error running the getMostRecentSessionPhone query: ${e}`);
   }
 }
 
@@ -258,11 +273,11 @@ async function startChatbot() {
 }
 
 async function isOverdoseSuspected(location) {
-    const rpm_threshold = 12;
+    const rpm_threshold = 17;
     let xethru = await getLatestXeThruSensordata(location);
     // let door = getLatestDoorSensordata(location);
     // let motion = getLatestMotionSensordata(location);
-    let session = await getLastUnclosedSession(location);
+    let session = await getMostRecentSession(location);
     
     var today = new Date();
     var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
@@ -278,7 +293,7 @@ async function isOverdoseSuspected(location) {
     // number in front represents the weighting
     let condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0);
     let condition2 = 1 * (session.still_counter > 30); //seconds
-    let condition3 = 1 * (sessionDuration > 123);
+    let condition3 = 1 * (sessionDuration > 1234);
     let condition4 = 1 * (0);
     const conditionThreshold = 1;
 
@@ -345,5 +360,6 @@ module.exports = {
   closeSession,
   updateSessionNotes,
   updateSessionIncidentType,
-  updateChatbotSessionState
+  updateChatbotSessionState,
+  getMostRecentSessionPhone
 }
