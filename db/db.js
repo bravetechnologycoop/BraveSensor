@@ -327,17 +327,15 @@ async function isOverdoseSuspected(location) {
 }
 
 
-async function updateSessionNotes(session) {
-    await pool.query("UPDATE sessions SET notes = $1 WHERE sessionid = $2", [session.notes, session.sessionid]);
+async function saveChatbotSession(chatbot) {
+    try {
+        await pool.query("UPDATE sessions SET chatbot_state = $1, incidenttype = $2, notes = $3 WHERE sessionid = $4", [chatbot.state, chatbot.incidentType, chatbot.notes, chatbot.id]);
+    }
+    catch(e) {
+        console.log(`Error running the saveChatbotSession query: ${e}`);
+    }
 }
 
-async function updateSessionIncidentType(session) {
-    await pool.query("UPDATE sessions SET incidenttype = $1 WHERE sessionid = $2", [session.incidentType, session.sessionid]);
-}
-
-async function updateChatbotSessionState(session) {
-    await pool.query("UPDATE sessions SET chatbot_state = $1 WHERE sessionid = $2", ['Started', session.sessionid]);
-}
 
 // Export functions to be able to access them on index.js
 
@@ -358,8 +356,6 @@ module.exports = {
   updateSessionState,
   updateSessionStillCounter,
   closeSession,
-  updateSessionNotes,
-  updateSessionIncidentType,
-  updateChatbotSessionState,
+  saveChatbotSession,
   getMostRecentSessionPhone
 }

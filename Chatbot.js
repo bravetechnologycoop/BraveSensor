@@ -46,35 +46,27 @@ class Chatbot {
                     //Send an alert and something
                     this.state = STATE.WAITING_FOR_CATEGORY;
                     //this.od_flag = 1;
-                    returnMessage = "Respond with category";
+                    returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2:Other";
                     break;
                 }
             case STATE.WAITING_FOR_RESPONSE:
                 {
                     this.state = STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = "Respond with category";
+                    returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2:Other";
                     break;
                 }
             case STATE.WAITING_FOR_CATEGORY:
                 {
                     let isValid = this.setIncidentType(messageText.trim());
                     this.state = isValid ? STATE.WAITING_FOR_DETAILS : STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = isValid ? "Any additional notes" : "Invalid category, try again";
-
-                    if (isValid) {
-                        db.updateSessionIncidentType(this);
-                    }
-
+                    returnMessage = isValid ? "Please provide any additional details to the incident" : "Invalid category, try again";
                     break;
                 }
             case STATE.WAITING_FOR_DETAILS:
                 {
                     this.notes = messageText.trim();
                     this.state = STATE.COMPLETED;
-                    returnMessage = "Thanks";
-
-                    db.updateSessionNotes(this);
-
+                    returnMessage = "Thank you";
                     break;
                 }
             case STATE.COMPLETED:

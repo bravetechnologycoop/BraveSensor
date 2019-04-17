@@ -172,6 +172,21 @@ app.post('/sms', async function (req, res) {
   let session = await db.getMostRecentSessionPhone(from);
   let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
   let message = chatbot.advanceChatbot(body);
+  await db.saveChatbotSession(chatbot);
+
+  if(chatbot.state == 'Completed') {
+      //closes the session, sets the session state to RESET
+      if(await db.closeSession(chatbot.locationid)){ // Adds the end_time to the latest open session from the LocationID
+          console.log(`Session at ${chatbot.locationid} was closed successfully.`);
+          io.sockets.emit('sessiondata', {data: session}); // Sends currentSession data with end_time which will close the session in the frontend
+          start_times[i] = null;
+      }
+      else{
+          console.log(`Attempted to close session but no open session was found for ${chatbot.locationid}`);
+     }
+    await db.addStateMachineData('Reset', chatbot.locationid);
+
+  }
 
   twiml.message(message);
 
