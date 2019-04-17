@@ -273,7 +273,7 @@ async function startChatbot() {
 }
 
 async function isOverdoseSuspected(location) {
-    const rpm_threshold = 17;
+    const rpm_threshold = 10;
     let xethru = await getLatestXeThruSensordata(location);
     // let door = getLatestDoorSensordata(location);
     // let motion = getLatestMotionSensordata(location);
@@ -336,6 +336,10 @@ async function saveChatbotSession(chatbot) {
     }
 }
 
+async function startChatbotSessionState(session) {
+  await pool.query("UPDATE sessions SET chatbot_state = $1 WHERE sessionid = $2", ['Started', session.sessionid]);
+}
+
 
 // Export functions to be able to access them on index.js
 
@@ -357,5 +361,6 @@ module.exports = {
   updateSessionStillCounter,
   closeSession,
   saveChatbotSession,
+  startChatbotSessionState,
   getMostRecentSessionPhone
 }

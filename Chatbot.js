@@ -46,13 +46,13 @@ class Chatbot {
                     //Send an alert and something
                     this.state = STATE.WAITING_FOR_CATEGORY;
                     //this.od_flag = 1;
-                    returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2:Other";
+                    returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
                     break;
                 }
             case STATE.WAITING_FOR_RESPONSE:
                 {
                     this.state = STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2:Other";
+                    returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
                     break;
                 }
             case STATE.WAITING_FOR_CATEGORY:

@@ -162,10 +162,18 @@ async function sendTwilioMessage(fromPhone, toPhone, msg) {
   }
 }
 
+async function sendInitialChatbotMessage(session) {
+  console.log("Intial message sent");
+  await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `An overdose is suspected at ${session.locationid}. Please respond with 'ok' once you have checked up on it.`);
+  await db.startChatbotSessionState(session);
+  //setTimeout(reminderMessage, unrespondedTimer, session.phonenumber);
+}
+
+// Handler for incoming Twilio messages
 app.post('/sms', async function (req, res) {
   const twiml = new MessagingResponse();
 
-  var to = req.body.To;
+  // Parses out information from incoming message
   var from = req.body.From;
   var body = req.body.Body;
 
@@ -179,7 +187,7 @@ app.post('/sms', async function (req, res) {
       if(await db.closeSession(chatbot.locationid)){ // Adds the end_time to the latest open session from the LocationID
           console.log(`Session at ${chatbot.locationid} was closed successfully.`);
           io.sockets.emit('sessiondata', {data: session}); // Sends currentSession data with end_time which will close the session in the frontend
-          start_times[i] = null;
+          start_times[locations.indexOf(chatbot.locationid)] = null; // Stops the session timer for this location
       }
       else{
           console.log(`Attempted to close session but no open session was found for ${chatbot.locationid}`);
@@ -193,13 +201,6 @@ app.post('/sms', async function (req, res) {
   res.writeHead(200, {'Content-Type': 'text/xml'});
   res.end(twiml.toString());
 });
-
-async function sendInitialChatbotMessage(session) {
-  console.log("Intial message sent");
-  await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, "An overdose is suspected in the bathroom. Please respond with 'ok' once you have checked up on it.");
-  await db.updateChatbotSessionState(session);
-  //setTimeout(reminderMessage, unrespondedTimer, session.phonenumber);
-}
 
 
 // This function will run the state machine for each location once every second
@@ -279,7 +280,7 @@ setInterval(async function () {
         if(await db.closeSession(locations[i])){ // Adds the end_time to the latest open session from the LocationID
           console.log(`Session at ${locations[i]} was closed successfully.`);
           io.sockets.emit('sessiondata', {data: currentSession}); // Sends currentSession data with end_time which will close the session in the frontend
-          start_times[i] = null;
+          start_times[i] = null; // Stops the session timer for this location ID
         }
         else{
           console.log(`Attempted to close session but no open session was found for ${locations[i]}`);
@@ -290,13 +291,10 @@ setInterval(async function () {
           let latestSession = await db.getMostRecentSession(locations[i]);
 
           if(latestSession.od_flag == 1) {
-              console.log("test2");
               if(latestSession.chatbot_state == null) {
-                console.log("test3");
                 sendInitialChatbotMessage(latestSession);
               }
           }
-          console.log("test4");
       }
 
       else{
@@ -308,13 +306,8 @@ setInterval(async function () {
 
       // Checks if session is in the STILL state and, if so, how long it has been in that state for.
       if(currentSession.state == 'Still' || currentSession.state == 'Breathing'){
-        if(currentSession.still_counter >= still_Treshold){
-          console.log(`User has been Still (or Breathing) for more than ${still_Treshold} seconds.`);
-        }
-        else{
-          let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid);
-          io.sockets.emit('sessiondata', {data: updatedSession});
-        }
+        let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid);
+        io.sockets.emit('sessiondata', {data: updatedSession});
       }
       else{
         // If current session is anything else than STILL it returns the counter to 0
