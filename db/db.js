@@ -141,6 +141,7 @@ async function getLatestLocationStatesdata(locationid){
 
 }
 
+// Gets the most recent session data in the table for a specified location
 async function getMostRecentSession(locationid) {
   try{
     const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [locationid]);
@@ -157,6 +158,7 @@ async function getMostRecentSession(locationid) {
   }
 }
 
+// Gets the last session data in the table for a specified phone number
 async function getMostRecentSessionPhone(phone) {
   try {
       const results = await pool.query("SELECT * FROM sessions WHERE phonenumber = $1 ORDER BY sessionid DESC LIMIT 1", [phone]);
@@ -172,6 +174,7 @@ async function getMostRecentSessionPhone(phone) {
   }
 }
 
+// Gets the last session data from an unclosed session for a specified location
 async function getLastUnclosedSession(locationid) {
   try{
     const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time = null ORDER BY sessionid DESC LIMIT 1", [locationid]);
@@ -187,7 +190,7 @@ async function getLastUnclosedSession(locationid) {
   }
 }
 
-
+// Creates a new session for a specific location
 async function createSession(phone, locationid, state) {
 
     const results = await pool.query("INSERT INTO sessions(phonenumber, locationid, state, od_flag) VALUES ($1, $2, $3, $4) RETURNING *", [phone, locationid, state, 0]);
@@ -195,6 +198,7 @@ async function createSession(phone, locationid, state) {
     return results.rows[0]; //getLastUnclosedSession(locationid);
 }
 
+// Closes the session by updating the end time
 async function closeSession(location) {
     const session = await getMostRecentSession(location);
     if (session != undefined){ //Check if session exists for this location
@@ -211,6 +215,7 @@ async function closeSession(location) {
     }
 } 
 
+// Enters the end time of a session when it closes and calculates the duration of the session
 async function updateSessionEndTime(sessionid) {
   try{
     await pool.query("UPDATE sessions SET end_time = CURRENT_TIMESTAMP WHERE sessionid = $1", [sessionid]);
@@ -221,6 +226,7 @@ async function updateSessionEndTime(sessionid) {
   }
 }
 
+// Updates the state value in the sessions database row
 async function updateSessionState(sessionid, state) {
   try{
     const results = await pool.query("UPDATE sessions SET state = $1 WHERE sessionid = $2 RETURNING *", [state, sessionid]);
@@ -236,6 +242,7 @@ async function updateSessionState(sessionid, state) {
   }
 }
 
+// Updates the still_counter in the sessions database row
 async function updateSessionStillCounter(stillcounter, sessionid) {
   try{
     const results = await pool.query("UPDATE sessions SET still_counter = $1 WHERE sessionid = $2 RETURNING *", [stillcounter, sessionid]);
@@ -251,33 +258,20 @@ async function updateSessionStillCounter(stillcounter, sessionid) {
   }
 }
 
-async function isOverdosed(location) {
-    let session = getLastUnclosedSession(location);
-    session.od_flag = true;
-}
+/*
+* Checks various conditions to determine whether an overdose has occurred or not
+* If an overdose is detected, the od_flag is raised and saved in the database
+* Checks:
+*   RPM is a low value
+*   Person hasn't been moving for a long time
+*   Total time in the bathroom exceeds a certain value
+*/
+async function isOverdoseSuspected(xethru, session) {
 
-async function advanceChatbot(location) {
-    //await message received;
-    session = getLastUnclosedSession(location);
-    if(session.od_flag && session.state != COMPLETED) {
-        //start chatbot sequence
-        startChatbot();
-    }
-    else {
-        sessionState.advanceStateMachine();
-    }
-}
-
-async function startChatbot() {
-    //send initial message via twilio
-}
-
-async function isOverdoseSuspected(location) {
-    const rpm_threshold = 10;
-    let xethru = await getLatestXeThruSensordata(location);
+    //let xethru = await getLatestXeThruSensordata(location);
     // let door = getLatestDoorSensordata(location);
     // let motion = getLatestMotionSensordata(location);
-    let session = await getMostRecentSession(location);
+    //let session = await getMostRecentSession(location);
     
     var today = new Date();
     var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
@@ -290,10 +284,15 @@ async function isOverdoseSuspected(location) {
     // Current Session duration so far:
     var sessionDuration = (dateTime - start_time_sesh)/1000;
 
+    // threshold values for the various overdose conditions
+    const rpm_threshold = 10;
+    const still_threshold = 30;
+    const sessionDuration_threshold = 1234;
+
     // number in front represents the weighting
     let condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0);
-    let condition2 = 1 * (session.still_counter > 30); //seconds
-    let condition3 = 1 * (sessionDuration > 1234);
+    let condition2 = 1 * (session.still_counter > still_threshold); //seconds
+    let condition3 = 1 * (sessionDuration > sessionDuration_threshold);
     let condition4 = 1 * (0);
     const conditionThreshold = 1;
 
@@ -326,7 +325,7 @@ async function isOverdoseSuspected(location) {
     return false;
 }
 
-
+// Saves the variables in the chatbot object into the sessions table
 async function saveChatbotSession(chatbot) {
     try {
         await pool.query("UPDATE sessions SET chatbot_state = $1, incidenttype = $2, notes = $3 WHERE sessionid = $4", [chatbot.state, chatbot.incidentType, chatbot.notes, chatbot.id]);
@@ -336,6 +335,7 @@ async function saveChatbotSession(chatbot) {
     }
 }
 
+// Sends the initial twilio message to start the chatbot once an overdose case has been detected
 async function startChatbotSessionState(session) {
   await pool.query("UPDATE sessions SET chatbot_state = $1 WHERE sessionid = $2", ['Started', session.sessionid]);
 }
