@@ -146,7 +146,7 @@ async function getMostRecentSession(locationid) {
   try{
     const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [locationid]);
 
-    if(results == undefined){
+    if(typeof results === 'undefined'){
       return null;
     }
     else{

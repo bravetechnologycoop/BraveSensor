@@ -135,6 +135,7 @@ async function resetSession(locationid){
       let session = await db.getMostRecentSession(locationid);
       console.log(session);
       await db.updateSessionResetDetails(session.sessionid, "Manual reset", "Reset");
+      await db.addStateMachineData("Reset", locationid);
     }
     else{
       console.log("There is no open session to reset!")
@@ -168,6 +169,26 @@ io.on('connection', (socket) => {
     socket.on('resetbutton', async () => {
       console.log("Reset button pressed");
       await resetSession(locations[0]); //Currently hardcoded to only location, iteration implementation is requiered for several locations
+    });
+
+    // Check for Location Submit Button press
+    socket.on('SubmitLocation', async (data) => {
+      console.log(data.LocationID);
+      let LocationData = await db.getLocationData(data.LocationID);
+      console.log(LocationData);
+      io.sockets.emit('LocationData', {data: LocationData});
+    });
+
+    // Check for Location Data Submit Button press, updates the DB table and sends data to XeThru
+    socket.on('SubmitLocationData', async (data) => {
+      console.log(data)
+      await db.updateLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationID.LocationID);
+
+      var XeThruData = (`${data.LocationData.LED},${data.LocationData.NoiseMap},${data.LocationData.Sensitivity},${data.LocationData.DetectionZone_min},${data.LocationData.DetectionZone_max}`);
+
+      console.log(XeThruData);
+
+      particle_config(process.env.PARTICLEID, XeThruData, process.env.PARTICLETOKEN)
     });
 
     console.log("Frontend Connected");

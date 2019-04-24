@@ -122,7 +122,7 @@ class SessionState {
                         else if (xethru.mov_f == 0 && xethru.state != XETHRU_STATES.NO_MOVEMENT) { 
                             state = STATE.STILL;
                         }
-
+                        
 
                         if (session.od_flag == 0 && await db.isOverdoseSuspected(xethru, session)) {
                             console.log(`Overdose Suspected at ${this.location}, starting Chatbot`);

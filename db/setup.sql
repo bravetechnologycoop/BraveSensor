@@ -55,7 +55,7 @@ WITH (
 TABLESPACE pg_default;
 
 
-CREATE TABLE sessions
+CREATE TABLE IF NOT EXISTS sessions
 (
     locationid text COLLATE pg_catalog."default",
     start_time timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
@@ -69,6 +69,23 @@ CREATE TABLE sessions
     duration text,
     still_counter integer DEFAULT 0,
     chatbot_state text,
+)
+WITH (
+    OIDS = FALSE
+)
+TABLESPACE pg_default;
+
+
+CREATE TABLE IF NOT EXISTS locations
+(
+    locationid text COLLATE pg_catalog."default",
+	deviceid text COLLATE pg_catalog."default",
+	phonenumber text COLLATE pg_catalog."default",
+	detectionzone_min text COLLATE pg_catalog."default",
+    detectionzone_max text COLLATE pg_catalog."default",
+	sensitivity text COLLATE pg_catalog."default",
+	led text COLLATE pg_catalog."default",
+	noisemap text COLLATE pg_catalog."default"
 )
 WITH (
     OIDS = FALSE
