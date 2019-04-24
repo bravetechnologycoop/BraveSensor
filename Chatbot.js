@@ -1,17 +1,7 @@
 const db = require("./db/db.js");
 
+// The states in the chatbot sequence
 const STATE = {
-    RESET: 'Reset',
-    NO_PRESENCE_NO_SESSION: 'No Presence, No active session',
-    NO_PRESENCE_CLOSE: "No Presence, Closing active session",
-    DOOR_OPENED_START: "Door Opened: Start Session",
-    DOOR_CLOSED_START: "Door Closed: Start Session",
-    DOOR_OPENED_CLOSE: "Door Opened: Closing active session",
-    MOTION_DETECTED: "Motion has been detected",
-    MOVEMENT: 'Movement',
-    STILL: 'Still',
-    BREATH_TRACKING: 'Breathing',
-    SUSPECTED_OD: 'Suspected Overdose',
     STARTED: 'Started',
     WAITING_FOR_RESPONSE: 'Waiting for Response',
     WAITING_FOR_CATEGORY: 'Waiting for Category',
@@ -19,6 +9,7 @@ const STATE = {
     COMPLETED: 'Completed'
 };
 
+// The options for the responder to choose from regarding the cause of the alert
 const incidentTypes = {
     '0': 'False Alarm',
     '1': 'Overdose',
@@ -43,9 +34,7 @@ class Chatbot {
         switch (this.state) {
             case STATE.STARTED:
                 {
-                    //Send an alert and something
                     this.state = STATE.WAITING_FOR_CATEGORY;
-                    //this.od_flag = 1;
                     returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
                     break;
                 }
@@ -80,8 +69,6 @@ class Chatbot {
                     break;
                 }
         }
-
-        //this.sendDataToDatabase();
 
         return returnMessage;
     }

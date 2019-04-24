@@ -38,6 +38,7 @@ class SessionState {
     async getNextState() {
 
         let state;
+        const residual_mov_f = 10;
 
         let xethru = await db.getLatestXeThruSensordata(this.location);
         let door = await db.getLatestDoorSensordata(this.location);
@@ -56,8 +57,7 @@ class SessionState {
                 case STATE.RESET:
                     {
                         //Waits for the door to close before restarting the state machine
-                        //What if 
-                        if(door.signal == "closed") {// || (xethru.state == XETHRU_STATES.NO_MOVEMENT && motion.signal == "inactive")) { //Once the door has been closed
+                        if(door.signal == "closed") {
                             state = STATE.NO_PRESENCE_NO_SESSION;
                         }
                         break;
@@ -69,20 +69,13 @@ class SessionState {
                             state = STATE.DOOR_OPENED_START;
                         }
                             // Waits for both the XeThru and motion sensor to be active
-                        else if (xethru.mov_f > 10 && xethru.state != XETHRU_STATES.NO_MOVEMENT && motion.signal == "active") {
+                        else if (xethru.mov_f > residual_mov_f && xethru.state != XETHRU_STATES.NO_MOVEMENT && motion.signal == "active") {
                             state = STATE.MOTION_DETECTED;
                         }
                         break;
                     }
                 case STATE.DOOR_OPENED_START:
-                    {
-                        //db.startSession(this.location);
-                        /*
-                        if (xethru.state != XETHRU_STATES.NO_MOVEMENT || motion.signal == "active") {
-                            state = STATE.MOVEMENT;
-                        }
-                        */
-                        
+                    {                        
                         // Waits for the door to close before continuing with state machine
                         if (door.signal == "closed") {
                             state = STATE.DOOR_CLOSED_START;
@@ -91,15 +84,11 @@ class SessionState {
                     }
                 case STATE.DOOR_CLOSED_START:
                     {
-                        // As long as there is movement, the state machine runs?
-                        // Might keep opening a session if it's still in this state though
                         if (xethru.state != XETHRU_STATES.NO_MOVEMENT || motion.signal == "active") {
                             state = STATE.MOVEMENT;
                         }
                         break;
                     }
-                    //This state is for if objects within the bathroom move but there is nobody there, possibly from wind
-                    //Also has somewhere for the state machime to enter before the motion and xethru sensors detect no movement
                 case STATE.MOTION_DETECTED:
                     {
                         state = STATE.MOVEMENT;
@@ -112,7 +101,6 @@ class SessionState {
                     }
                 case STATE.NO_PRESENCE_CLOSE:
                     {
-                        //db.startSession(this.location);
                         state = STATE.NO_PRESENCE_NO_SESSION;
                         break;
                     }
@@ -131,14 +119,12 @@ class SessionState {
                         else if (xethru.state == XETHRU_STATES.BREATHING) {
                             state = STATE.BREATH_TRACKING;
                         }
-                        else if (xethru.mov_f == 0 && xethru.state != XETHRU_STATES.NO_MOVEMENT) { // && motion.signal == "inactive"
+                        else if (xethru.mov_f == 0 && xethru.state != XETHRU_STATES.NO_MOVEMENT) { 
                             state = STATE.STILL;
                         }
 
 
-                        if (session.od_flag == 0 && await db.isOverdoseSuspected(this.location)) {
-                            //Need to update the od_flag here
-                            //Also initiates chatbot somehow
+                        if (session.od_flag == 0 && await db.isOverdoseSuspected(xethru, session)) {
                             console.log(`Overdose Suspected at ${this.location}, starting Chatbot`);
                             state = STATE.SUSPECTED_OD;
                         }
@@ -162,8 +148,7 @@ class SessionState {
                             state = STATE.MOVEMENT;
                         }
 
-                        if (session.od_flag == 0 && await db.isOverdoseSuspected(this.location)) {
-                            //startChatbot(location);
+                        if (session.od_flag == 0 && await db.isOverdoseSuspected(xethru, session)) {
                             state = STATE.SUSPECTED_OD;
                         }
 
@@ -190,9 +175,7 @@ class SessionState {
 
 
                         //If the flag was originally false and the overdose criteria are met, an overdose is ssuspected and the flag is enabled.
-                        if (session.od_flag == 0 && await db.isOverdoseSuspected(this.location)) {
-                            //Somehow start the chatbot sequence and then continue with the state machine
-                            //startChatbot(location);
+                        if (session.od_flag == 0 && await db.isOverdoseSuspected(xethru, session)) {
                             state = STATE.SUSPECTED_OD;
                         }
 
