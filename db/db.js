@@ -356,6 +356,33 @@ async function startChatbotSessionState(session) {
   await pool.query("UPDATE sessions SET chatbot_state = $1 WHERE sessionid = $2", ['Started', session.sessionid]);
 }
 
+// Retrieves the data from the locations table for a given location
+async function getLocationData(location) {
+    try{
+        const results = await pool.query('SELECT * FROM locations WHERE locationid = $1', [location]);
+        if(results == undefined){
+            return null;
+        }
+        else{
+            return results.rows[0]; 
+        }
+    }
+    catch(e){
+        console.log(`Error running the getLocationData query: ${e}`);
+    }
+
+}
+
+// Updates the locations table entry for a specific location with the new data
+async function updateLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location) {
+    try {
+        await pool.query("UPDATE locations SET deviceid = $1, phonenumber = $2, detectionzone_min = $3, detectionzone_max = $4, sensitivity = $5, noisemap = $6, led = $7 WHERE locationid = $8", 
+            [deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location]);
+    }
+    catch(e) {
+        console.log(`Error running the updateLocationData query: ${e}`);
+    }
+}
 
 // Export functions to be able to access them on index.js
 
@@ -379,5 +406,7 @@ module.exports = {
   closeSession,
   saveChatbotSession,
   startChatbotSessionState,
-  getMostRecentSessionPhone
+  getMostRecentSessionPhone,
+  getLocationData,
+  updateLocationData
 }
