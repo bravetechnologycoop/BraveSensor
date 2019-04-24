@@ -236,6 +236,21 @@ async function updateSessionState(sessionid, state) {
   }
 }
 
+async function updateSessionResetDetails(sessionid, notes, state) {
+  try{
+    const results = await pool.query("UPDATE sessions SET state = $1, notes = $2 WHERE sessionid = $3 RETURNING *", [state, notes, sessionid]);
+    if(results == undefined){
+      return null;
+    }
+    else{
+      return results.rows[0]; 
+    }
+  }
+  catch(e){
+    console.log(`Error running the updateSessionResetDetails query: ${e}`);
+  }
+}
+
 async function updateSessionStillCounter(stillcounter, sessionid) {
   try{
     const results = await pool.query("UPDATE sessions SET still_counter = $1 WHERE sessionid = $2 RETURNING *", [stillcounter, sessionid]);
@@ -359,6 +374,7 @@ module.exports = {
   isOverdoseSuspected,
   updateSessionState,
   updateSessionStillCounter,
+  updateSessionResetDetails,
   closeSession,
   saveChatbotSession,
   startChatbotSessionState,

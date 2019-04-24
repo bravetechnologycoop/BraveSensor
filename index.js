@@ -127,6 +127,23 @@ smartapp
         console.log(`Button${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
 
+// Closes any open session and resets state for the given location
+async function resetSession(locationid){
+  try{
+    if(await db.closeSession(locationid)){ 
+      let session = await db.getMostRecentSession(locationid);
+      console.log(session);
+      await db.updateSessionResetDetails(session.sessionid, "Manual reset", "Reset");
+    }
+    else{
+      console.log("There is no open session to reset!")
+    }
+  }
+  catch {
+    console.log("Could not reset open session");
+  }
+}
+
 // Handler for income SmartThings POST requests
 app.post('/api/st', function(req, res, next) {
     smartapp.handleHttpCallback(req, res);
@@ -145,11 +162,19 @@ app.get('/', function(req, res, next) {
 
 // Web Socket connection to Frontend
 io.on('connection', (socket) => {
-    console.log("Frontend Connected")
+
+    // Check for Reset Button press
+    socket.on('resetbutton', async () => {
+      console.log("Reset button pressed");
+      await resetSession(locations[0]); //Currently hardcoded to only location, iteration implementation is requiered for several locations
+    });
+
+    console.log("Frontend Connected");
     socket.emit('Hello', {
         greeting: "Hello ODetect Frontend"
     });
 });
+
 
 // Twilio Functions
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
