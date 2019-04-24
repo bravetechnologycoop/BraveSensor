@@ -6,7 +6,8 @@ const Chatbot = require('./Chatbot.js');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const fs = require('fs');
-let https = require('https')
+let https = require('https');
+const Particle = require('particle-api-js');
 const cors = require('cors');
 const httpSignature = require('http-signature');
 const smartapp   = require('@smartthings/smartapp');
@@ -175,6 +176,24 @@ io.on('connection', (socket) => {
     });
 });
 
+async function particle_config(particleid, config_values, token) {
+    // Particle configuration function call
+    let particle = new Particle();
+
+    var fnPr = particle.callFunction({ 
+        deviceId: particleid, 
+        name: 'config', 
+        argument: config_values, 
+        auth: token 
+    });
+
+    fnPr.then(
+      function(data) {
+          console.log('Function particle_config called succesfully:', data);
+      }, function(err) {
+          console.log('An error occurred:', err);
+      });
+}
 
 // Twilio Functions
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
@@ -188,10 +207,21 @@ async function sendTwilioMessage(fromPhone, toPhone, msg) {
 }
 
 async function sendInitialChatbotMessage(session) {
-  console.log("Intial message sent");
-  await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `An overdose is suspected at ${session.locationid}. Please respond with 'ok' once you have checked up on it.`);
-  await db.startChatbotSessionState(session);
-  //setTimeout(reminderMessage, unrespondedTimer, session.phonenumber);
+    console.log("Intial message sent");
+    await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `An overdose is suspected at ${session.locationid}. Please respond with 'ok' once you have checked up on it.`);
+    await db.startChatbotSessionState(session);
+    setTimeout(reminderMessage, unrespondedTimer, session.locationid); 
+}
+
+async function reminderMessage(location) {
+    session = await db.getMostRecentSession(location); // Gets the updated state for the chatbot
+    if(session.chatbot_state == 'Started') {
+        //send the message
+        await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `An overdose is suspected at ${session.locationid}. Please respond with 'ok' once you have checked up on it.`)
+        session.chatbot_state = 'Waiting for Response';
+        await db.saveChatbotSession(session);
+    }
+    //else do nothing
 }
 
 // Handler for incoming Twilio messages
