@@ -182,13 +182,23 @@ io.on('connection', (socket) => {
     // Check for Location Data Submit Button press, updates the DB table and sends data to XeThru
     socket.on('SubmitLocationData', async (data) => {
       console.log(data)
-      await db.updateLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationID.LocationID);
+      let updatedData = await db.updateLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationID.LocationID);
 
-      var XeThruData = (`${data.LocationData.LED},${data.LocationData.NoiseMap},${data.LocationData.Sensitivity},${data.LocationData.DetectionZone_min},${data.LocationData.DetectionZone_max}`);
+      console.log(typeof updatedData);
 
-      console.log(XeThruData);
+      // Checks if Row exists for the given location, if not, creates it
+      if(typeof updatedData !== 'undefined'){
+        var XeThruData = (`${data.LocationData.LED},${data.LocationData.NoiseMap},${data.LocationData.Sensitivity},${data.LocationData.DetectionZone_min},${data.LocationData.DetectionZone_max}`);
+        particle_config(process.env.PARTICLEID, XeThruData, process.env.PARTICLETOKEN);
+        console.log(XeThruData);
+      }
+      else{
+        await db.addLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationID.LocationID);
+      }
 
-      particle_config(process.env.PARTICLEID, XeThruData, process.env.PARTICLETOKEN)
+      
+
+      
     });
 
     console.log("Frontend Connected");

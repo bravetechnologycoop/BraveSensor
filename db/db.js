@@ -376,12 +376,25 @@ async function getLocationData(location) {
 // Updates the locations table entry for a specific location with the new data
 async function updateLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location) {
     try {
-        await pool.query("UPDATE locations SET deviceid = $1, phonenumber = $2, detectionzone_min = $3, detectionzone_max = $4, sensitivity = $5, noisemap = $6, led = $7 WHERE locationid = $8", 
+        let results = await pool.query("UPDATE locations SET deviceid = $1, phonenumber = $2, detectionzone_min = $3, detectionzone_max = $4, sensitivity = $5, noisemap = $6, led = $7 WHERE locationid = $8 returning *", 
             [deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location]);
+        return results.rows[0]; 
     }
     catch(e) {
         console.log(`Error running the updateLocationData query: ${e}`);
     }
+}
+
+// Adds a location table entry
+async function addLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location) {
+  try {
+      let results = await pool.query("INSERT INTO locations(deviceid, phonenumber, detectionzone_min, detectionzone_max, sensitivity, noisemap, led, locationid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", 
+          [deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location]);
+      return results.rows[0]; 
+  }
+  catch(e) {
+      console.log(`Error running the addLocationData query: ${e}`);
+  }
 }
 
 // Export functions to be able to access them on index.js
@@ -408,5 +421,6 @@ module.exports = {
   startChatbotSessionState,
   getMostRecentSessionPhone,
   getLocationData,
-  updateLocationData
+  updateLocationData,
+  addLocationData
 }
