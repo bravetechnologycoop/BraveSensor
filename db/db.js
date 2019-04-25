@@ -388,9 +388,9 @@ async function updateLocationData(deviceid, phonenumber, detection_min, detectio
 // Adds a location table entry
 async function addLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location) {
   try {
-      let results = await pool.query("INSERT INTO locations(deviceid, phonenumber, detectionzone_min, detectionzone_max, sensitivity, noisemap, led, locationid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", 
+      await pool.query("INSERT INTO locations(deviceid, phonenumber, detectionzone_min, detectionzone_max, sensitivity, noisemap, led, locationid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", 
           [deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location]);
-      return results.rows[0]; 
+      console.log("New location inserted to Database");
   }
   catch(e) {
       console.log(`Error running the addLocationData query: ${e}`);
