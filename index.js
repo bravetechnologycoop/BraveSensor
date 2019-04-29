@@ -194,6 +194,11 @@ io.on('connection', (socket) => {
       
     });
 
+    socket.on('getHistory', async (location) => {
+        let sessionHistory = await db.getHistoryOfSessions(location, 1);
+        io.sockets.emit('sendHistory', {data: sessionHistory});
+    });
+
     console.log("Websocket connection");
     socket.emit('Hello', {
         greeting: "Hello ODetect Frontend"

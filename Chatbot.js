@@ -48,7 +48,7 @@ class Chatbot {
                 {
                     let isValid = this.setIncidentType(messageText.trim());
                     this.state = isValid ? STATE.WAITING_FOR_DETAILS : STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = isValid ? "Please provide any additional details to the incident" : "Invalid category, try again";
+                    returnMessage = isValid ? "Please provide any additional details to the incident" : "Invalid category, please try again\n\nPlease respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
                     break;
                 }
             case STATE.WAITING_FOR_DETAILS:
@@ -65,7 +65,7 @@ class Chatbot {
                 }
             default:
                 {
-                    returnMessage = "Error";
+                    returnMessage = "Error: No active chatbot found";
                     break;
                 }
         }
