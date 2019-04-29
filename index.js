@@ -3,13 +3,11 @@ const bodyParser = require('body-parser');
 const db = require('./db/db.js');
 const SessionState = require('./SessionState.js');
 const Chatbot = require('./Chatbot.js');
-const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const fs = require('fs');
 let https = require('https');
 const Particle = require('particle-api-js');
 const cors = require('cors');
-const httpSignature = require('http-signature');
 const smartapp   = require('@smartthings/smartapp');
 require('dotenv').config();
 
@@ -18,10 +16,10 @@ const port = 443
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
-const still_Treshold = 30;
+const unrespondedTimer = 30;
 
 // An array with the different possible locations
-var locations = ["BraveOffice"];
+var locations = ["BraveOffice", "BraveOffice2"];
 
 // Session start_times array. This array takes the size of the locations array as there will be one session slot per location.
 start_times = new Array(locations.length);
@@ -193,9 +191,6 @@ io.on('connection', (socket) => {
         await db.addLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationID.LocationID);
         console.log("New Location data added to the database");
       }
-
-      
-
       
     });
 
@@ -300,7 +295,7 @@ setInterval(async function () {
     let MotionData = await db.getLatestMotionSensordata(locations[i]);
     let DoorData = await db.getLatestDoorSensordata(locations[i]);
 
-    console.log(currentState);
+    console.log(`${locations[i]}: ${currentState}`);
 
     // Get current time to compare to the session's start time
     if(start_times[i] != null){
@@ -325,7 +320,7 @@ setInterval(async function () {
       if(VOIDSTATES.includes(currentState)){
         let latestSession = await db.getMostRecentSession(locations[i]);
         
-        if(latestSession != undefined){ // Checks if no session exists for this location yet.
+        if(typeof latestSession !== 'undefined'){ // Checks if no session exists for this location yet.
           if(latestSession.end_time == null){ // Checks if session is open. 
             let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
             io.sockets.emit('sessiondata', {data: currentSession});
@@ -337,7 +332,7 @@ setInterval(async function () {
       else if(TRIGGERSTATES.includes(currentState)){
         let latestSession = await db.getMostRecentSession(locations[i]);
 
-        if(latestSession != undefined){ //Checks if session exists
+        if(typeof latestSession !== 'undefined'){ //Checks if session exists
           if(latestSession.end_time == null){  // Checks if session is open for this location
             let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
             io.sockets.emit('sessiondata', {data: currentSession});
@@ -389,14 +384,22 @@ setInterval(async function () {
       let currentSession = await db.getMostRecentSession(locations[i])
 
       // Checks if session is in the STILL state and, if so, how long it has been in that state for.
-      if(currentSession.state == 'Still' || currentSession.state == 'Breathing'){
-        let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid);
-        io.sockets.emit('sessiondata', {data: updatedSession});
-      }
-      else{
-        // If current session is anything else than STILL it returns the counter to 0
-        let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid);
-        io.sockets.emit('sessiondata', {data: updatedSession});
+      if(typeof currentSession !== 'undefined'){
+        if(currentSession.state == 'Still' || currentSession.state == 'Breathing'){
+          if(currentSession.end_time == null){ // Only increases counter if session is open
+            let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid);
+            io.sockets.emit('sessiondata', {data: updatedSession});
+          }
+          else{ // If session is closed still emit its data as it is
+            io.sockets.emit('sessiondata', {data: currentSession});
+          }
+
+        }
+        else{
+          // If current session is anything else than STILL it returns the counter to 0
+          let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid);
+          io.sockets.emit('sessiondata', {data: updatedSession});
+        }
       }
     }
 
