@@ -174,6 +174,22 @@ async function getMostRecentSessionPhone(phone) {
   }
 }
 
+async function getHistoryOfSessions(location, numEntries) {
+    try {
+        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
+
+        if(typeof results === 'undefined') {
+            return null;
+        }
+        else{
+            return results.rows[0];
+        }
+    }
+    catch(e) {
+        console.log(`Error running the getHistoryOfSessions query: ${e}`);
+    }
+}
+
 // Gets the last session data from an unclosed session for a specified location
 async function getLastUnclosedSession(locationid) {
   try{
@@ -411,6 +427,7 @@ module.exports = {
   getLatestLocationStatesdata,
   getLastUnclosedSession,
   getMostRecentSession,
+  getHistoryOfSessions,
   createSession,
   isOverdoseSuspected,
   updateSessionState,

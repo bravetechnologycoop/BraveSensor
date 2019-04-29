@@ -193,11 +193,12 @@ io.on('connection', (socket) => {
         await db.addLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationID.LocationID);
         console.log("New Location data added to the database");
       }
-
-      
-
-      
     });
+
+    socket.on('getHistory', async (location) => {
+        let sessionHistory = await db.getHistoryOfSessions(location, 1);
+        io.sockets.emit('sendHistory', {data: sessionHistory});
+    }
 
     console.log("Websocket connection");
     socket.emit('Hello', {
