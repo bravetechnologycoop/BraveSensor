@@ -85,7 +85,11 @@ CREATE TABLE IF NOT EXISTS locations
     detectionzone_max text COLLATE pg_catalog."default",
 	sensitivity text COLLATE pg_catalog."default",
 	led text COLLATE pg_catalog."default",
-	noisemap text COLLATE pg_catalog."default"
+	noisemap text COLLATE pg_catalog."default",
+    mov_threshold text COLLATE pg_catalog."default",
+    duration_threshold text COLLATE pg_catalog."default",
+    still_threshold text COLLATE pg_catalog."default",
+    rpm_threshold text COLLATE pg_catalog."default"
 )
 WITH (
     OIDS = FALSE

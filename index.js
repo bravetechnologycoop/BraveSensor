@@ -164,9 +164,9 @@ app.get('/', function(req, res, next) {
 io.on('connection', (socket) => {
 
     // Check for Reset Button press
-    socket.on('resetbutton', async () => {
-      console.log("Reset button pressed");
-      await resetSession(locations[0]); //Currently hardcoded to only location, iteration implementation is requiered for several locations
+    socket.on('resetbutton', async (location) => {
+      console.log(`Reset button pressed for ${location}`);
+      await resetSession(location);
     });
 
     // Check for Location Submit Button press
@@ -194,8 +194,8 @@ io.on('connection', (socket) => {
       
     });
 
-    socket.on('getHistory', async (location) => {
-        let sessionHistory = await db.getHistoryOfSessions(location, 2);
+    socket.on('getHistory', async (location, entries) => {
+        let sessionHistory = await db.getHistoryOfSessions(location, entries);
         io.sockets.emit('sendHistory', {data: sessionHistory});
     });
 
