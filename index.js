@@ -9,6 +9,8 @@ let https = require('https');
 const Particle = require('particle-api-js');
 const cors = require('cors');
 const smartapp   = require('@smartthings/smartapp');
+const path = require('path');
+const routes = require('express').Router();
 require('dotenv').config();
 
 const app = express();
@@ -60,6 +62,9 @@ let CHATBOTSTARTSTATES = [
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
 app.use(bodyParser.json()); 
 app.use(express.json()); // Used for smartThings wrapper
+
+// Used for hosting the Frontend
+app.use(express.static(__dirname + '/Public/ODetect')); 
 
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors());
@@ -154,9 +159,9 @@ app.post('/api/xethru', async (req, res) => {
     await db.addXeThruSensordata(req, res); 
 });
 
-// Used for Domain testing
-app.get('/', function(req, res, next) {
-  res.send("The site is up and running")
+// Handler for redirecting to the Frontend
+app.get('/*', function (req, res) {
+  res.sendFile(path.join(__dirname));
 });
 
 
@@ -433,6 +438,7 @@ console.log('ODetect brave server listening on port 443')
 // Socket.io server connection start
 io.listen(server);
 
-module.exports.server = server
-module.exports.db = db
+module.exports.server = server;
+module.exports.db = db;
+module.exports.routes = routes;
 
