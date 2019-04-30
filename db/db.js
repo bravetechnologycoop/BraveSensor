@@ -176,7 +176,7 @@ async function getMostRecentSessionPhone(phone) {
 
 async function getHistoryOfSessions(location, numEntries) {
   try {
-      const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time NOT EQUAL NULL ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
+      const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time IS NOT NULL ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
 
       if(typeof results === 'undefined') {
           return null;

@@ -179,7 +179,7 @@ io.on('connection', (socket) => {
 
     // Check for Location Data Submit Button press, updates the DB table and sends data to XeThru
     socket.on('SubmitLocationData', async (data) => {
-      let updatedData = await db.updateLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationID.LocationID);
+      let updatedData = await db.updateLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationData.RPM_Threshold, data.LocationData.Still_Threshold, data.LocationData.Duration_Threshold, data.LocationData.Mov_Threshold, data.LocationID.LocationID);
 
       // Checks if Row exists for the given location, if not, creates it
       if(typeof updatedData !== 'undefined'){
