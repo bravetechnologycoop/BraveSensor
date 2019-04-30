@@ -197,6 +197,7 @@ io.on('connection', (socket) => {
     socket.on('getHistory', async (location) => {
         let sessionHistory = await db.getHistoryOfSessions(location, 2);
         io.sockets.emit('sendHistory', {data: sessionHistory});
+        console.log('test');
     });
 
     console.log("Websocket connection");

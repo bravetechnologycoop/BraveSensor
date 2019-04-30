@@ -176,13 +176,13 @@ async function getMostRecentSessionPhone(phone) {
 
 async function getHistoryOfSessions(location, numEntries) {
     try {
-        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time != null ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
+        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time NOT EQUAL NULL ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
 
         if(typeof results === 'undefined') {
             return null;
         }
         else{
-            return results;
+            return results.rows;
         }
     }
     catch(e) {
@@ -298,7 +298,7 @@ async function updateSessionStillCounter(stillcounter, sessionid) {
 *   Person hasn't been moving for a long time
 *   Total time in the bathroom exceeds a certain value
 */
-async function isOverdoseSuspected(xethru, session) {
+async function isOverdoseSuspected(xethru, session, location) {
 
     //let xethru = await getLatestXeThruSensordata(location);
     // let door = getLatestDoorSensordata(location);
@@ -317,9 +317,9 @@ async function isOverdoseSuspected(xethru, session) {
     var sessionDuration = (dateTime - start_time_sesh)/1000;
 
     // threshold values for the various overdose conditions
-    const rpm_threshold = 10;
-    const still_threshold = 30;
-    const sessionDuration_threshold = 1234;
+    const rpm_threshold = location.rpm_threshold;
+    const still_threshold = location.still_threshold;
+    const sessionDuration_threshold = location.duration_threshold;
 
     // number in front represents the weighting
     let condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0);
@@ -390,10 +390,10 @@ async function getLocationData(location) {
 }
 
 // Updates the locations table entry for a specific location with the new data
-async function updateLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location) {
+async function updateLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led,  rpm_threshold, still_threshold, duration_threshold, mov_threshold, location) {
     try {
-        let results = await pool.query("UPDATE locations SET deviceid = $1, phonenumber = $2, detectionzone_min = $3, detectionzone_max = $4, sensitivity = $5, noisemap = $6, led = $7 WHERE locationid = $8 returning *", 
-            [deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location]);
+        let results = await pool.query("UPDATE locations SET deviceid = $1, phonenumber = $2, detectionzone_min = $3, detectionzone_max = $4, sensitivity = $5, noisemap = $6, led = $7, rpm_threshold = $8, still_threshold = $9, duration_threshold = $10, mov_threshold = $11 WHERE locationid = $12 returning *", 
+            [deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, rpm_threshold, still_threshold, duration_threshold, mov_threshold, location]);
         return results.rows[0]; 
     }
     catch(e) {
@@ -402,9 +402,9 @@ async function updateLocationData(deviceid, phonenumber, detection_min, detectio
 }
 
 // Adds a location table entry
-async function addLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location) {
+async function addLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, rpm_threshold, still_threshold, duration_threshold, mov_threshold, location) {
   try {
-      await pool.query("INSERT INTO locations(deviceid, phonenumber, detectionzone_min, detectionzone_max, sensitivity, noisemap, led, locationid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", 
+      await pool.query("INSERT INTO locations(deviceid, phonenumber, detectionzone_min, detectionzone_max, sensitivity, noisemap, led, rpm_threshold, still_threshold, duration_threshold, mov_threshold, locationid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", 
           [deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location]);
       console.log("New location inserted to Database");
   }
