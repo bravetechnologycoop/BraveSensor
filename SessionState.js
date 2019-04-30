@@ -38,12 +38,14 @@ class SessionState {
     async getNextState() {
 
         let state;
-        const residual_mov_f = 10;
 
         let xethru = await db.getLatestXeThruSensordata(this.location);
         let door = await db.getLatestDoorSensordata(this.location);
         let motion = await db.getLatestMotionSensordata(this.location);
         let states = await db.getLatestLocationStatesdata(this.location);
+        let location_data = await db.getLocationData(this.location);
+
+        let residual_mov_f = location_data.mov_threshold;
         
         if(states == undefined){ // In case the DB states table is empty create a RESET entry
             await db.addStateMachineData(STATE.RESET, this.location);
@@ -124,7 +126,7 @@ class SessionState {
                         }
                         
 
-                        if (session.od_flag == 0 && await db.isOverdoseSuspected(xethru, session)) {
+                        if (session.od_flag == 0 && await db.isOverdoseSuspected(xethru, session, location_data)) {
                             console.log(`Overdose Suspected at ${this.location}, starting Chatbot`);
                             state = STATE.SUSPECTED_OD;
                         }
@@ -148,7 +150,7 @@ class SessionState {
                             state = STATE.MOVEMENT;
                         }
 
-                        if (session.od_flag == 0 && await db.isOverdoseSuspected(xethru, session)) {
+                        if (session.od_flag == 0 && await db.isOverdoseSuspected(xethru, session, location_data)) {
                             state = STATE.SUSPECTED_OD;
                         }
 
@@ -175,7 +177,7 @@ class SessionState {
 
 
                         //If the flag was originally false and the overdose criteria are met, an overdose is ssuspected and the flag is enabled.
-                        if (session.od_flag == 0 && await db.isOverdoseSuspected(xethru, session)) {
+                        if (session.od_flag == 0 && await db.isOverdoseSuspected(xethru, session, location_data)) {
                             state = STATE.SUSPECTED_OD;
                         }
 
