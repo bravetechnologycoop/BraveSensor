@@ -1,5 +1,3 @@
-const db = require("./db/db.js");
-
 const STATE = {
     RESET: 'Reset',
     NO_PRESENCE_NO_SESSION: 'No Presence, No active session',
@@ -35,7 +33,7 @@ class SessionState {
         this.location = location;
     }
 
-    async getNextState() {
+    async getNextState(db) {
 
         let state;
 
@@ -198,23 +196,6 @@ class SessionState {
         }
         return state;
     }
-
-    /*
-    async checkDoorSession() {
-        
-        let door = await db.getLatestDoorSensordata(this.location);
-        let session = await db.getMostRecentSession(this.location);
-
-        if(session != undefined) {
-            if(door.signal == "open") {
-                return STATE.DOOR_OPENED_CLOSE;
-            }
-        }
-        else {
-            return null;
-        }
-    }
-    */
 }
 
 module.exports = SessionState;
