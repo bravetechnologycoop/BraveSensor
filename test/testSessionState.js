@@ -65,7 +65,7 @@ describe('test getNextState', () => {
 			expect(actualState).to.equal(initialState);
 		});
 
-		it(', the motion sensor is active, the xethru detects movement, and the xethru movement is more than the movement threshold, should return the MOTION_DETECTED state', async () => {
+		it('and the motion sensor is active and the xethru detects movement and the xethru movement is more than the movement threshold, should return the MOTION_DETECTED state', async () => {
 			let db = setupDB(
 				states = {state: STATE.NO_PRESENCE_NO_SESSION},
 				door = {},
