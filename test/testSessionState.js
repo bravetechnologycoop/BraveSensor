@@ -3,9 +3,11 @@ const expect = chai.expect;
 const STATE = require('./../SessionStateEnum.js');
 const XETHRU_STATE = require('./../SessionStateXethruEnum.js');
 const MOTION_STATE = require('./../SessionStateMotionEnum.js');
+const OD_FLAG_STATE = require('./../SessionStateODFlagEnum.js');
+const DOOR_STATE = require('./../SessionStateDoorEnum.js');
 const SessionState = require('./../SessionState.js');
 
-function setupDB(states = {}, door = {}, motion = {}, xethru = {}, location_data = {}) {
+function setupDB(states = {}, door = {}, motion = {}, xethru = {}, location_data = {}, session = {}, is_overdose_suspected = false) {
 	return {
 		getLatestLocationStatesdata: function(location) {
 			// initial state
@@ -24,6 +26,12 @@ function setupDB(states = {}, door = {}, motion = {}, xethru = {}, location_data
 			return location_data;
 		},
 		addStateMachineData: function(state, location) {
+		},
+		getMostRecentSession: function(location) {
+			return session;
+		},
+		isOverdoseSuspected: function(xethru, session, location_data) {
+			return is_overdose_suspected;
 		}
 	}
 }
@@ -44,7 +52,7 @@ describe('test getNextState', () => {
 		it('and the door opens, should return the DOOR_OPENED_START state', async () => {
 			let db = setupDB(
 				states = {state: STATE.NO_PRESENCE_NO_SESSION},
-				door = {signal:"open"}
+				door = {signal:DOOR_STATE.OPEN}
 			);
 			let statemachine = new SessionState('TestLocation');
 
@@ -57,7 +65,7 @@ describe('test getNextState', () => {
 			let initialState = STATE.NO_PRESENCE_NO_SESSION;
 			let db = setupDB(
 				states = {state: initialState},
-				door = {signal: "closed"}
+				door = {signal: DOOR_STATE.CLOSED}
 			);
 			let statemachine = new SessionState('TestLocation');
 
@@ -170,7 +178,7 @@ describe('test getNextState', () => {
 		it('and the door closes, should return the DOOR_CLOSED_START state', async () => {
 			let db = setupDB(
 				states = {state: STATE.DOOR_OPENED_START},
-				door = {signal: "closed"}
+				door = {signal: DOOR_STATE.CLOSED}
 			);
 			let statemachine = new SessionState('TestLocation');
 
@@ -183,7 +191,7 @@ describe('test getNextState', () => {
 			let initialState = STATE.DOOR_OPENED_START;
 			let db = setupDB(
 				states = {state: initialState},
-				door = {signal: "open"}
+				door = {signal: DOOR_STATE.OPEN}
 			);
 			let statemachine = new SessionState('TestLocation');
 
@@ -328,6 +336,40 @@ describe('test getNextState', () => {
 			let actualState = await statemachine.getNextState(db);
 
 			expect(actualState).to.equal(STATE.MOVEMENT);
+		});
+	});
+
+	describe('when initial state is MOTION_DETECTED', () => {
+		it('should return the MOVEMENT state', async () => {
+			let initialState = STATE.MOTION_DETECTED;
+			let db = setupDB(
+				states = {state: initialState}
+			);
+			let statemachine = new SessionState('TestLocation');
+
+			let actualState = await statemachine.getNextState(db);
+
+			expect(actualState).to.equal(STATE.MOVEMENT);
+		});
+	});
+
+	describe('when initial state is MOVEMENT', () => {
+		it('and the session did not already suspect an overdose and an overdose is suspected, should return the SUSPECTED_OD state', async () => {
+			let initialState = STATE.MOVEMENT;
+			let db = setupDB(
+				states = {state: initialState},
+				door = {},
+				motion = {},
+				zethru = {},
+				location_data = {},
+				session = {od_flag: OD_FLAG_STATE.NO_OVERDOSE},
+				is_overdose_suspected = true
+			);
+			let statemachine = new SessionState('TestLocation');
+
+			let actualState = await statemachine.getNextState(db);
+
+			expect(actualState).to.equal(STATE.SUSPECTED_OD);
 		});
 	});
 });

@@ -2,6 +2,7 @@ const STATE = require('./SessionStateEnum.js');
 const XETHRU_STATE = require('./SessionStateXethruEnum.js');
 const MOTION_STATE = require('./SessionStateMotionEnum.js');
 const OD_FLAG_STATE = require('./SessionStateODFlagEnum');
+const DOOR_STATE = require('./SessionStateDoorEnum.js');
 
 class SessionState {
 
@@ -33,7 +34,7 @@ class SessionState {
                 case STATE.RESET:
                     {
                         //Waits for the door to close before restarting the state machine
-                        if(door.signal == "closed") {
+                        if(door.signal == DOOR_STATE.CLOSED) {
                             state = STATE.NO_PRESENCE_NO_SESSION;
                         }
                         break;
@@ -41,7 +42,7 @@ class SessionState {
                 case STATE.NO_PRESENCE_NO_SESSION:
                     {
                         // Door opens
-                        if (door.signal == "open") {
+                        if (door.signal == DOOR_STATE.OPEN) {
                             state = STATE.DOOR_OPENED_START;
                         }
                             // Waits for both the XeThru and motion sensor to be active
@@ -53,7 +54,7 @@ class SessionState {
                 case STATE.DOOR_OPENED_START:
                     {                        
                         // Waits for the door to close before continuing with state machine
-                        if (door.signal == "closed") {
+                        if (door.signal == DOOR_STATE.CLOSED) {
                             state = STATE.DOOR_CLOSED_START;
                         }
                         break;
@@ -88,7 +89,7 @@ class SessionState {
                         if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.NO_MOVEMENT && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
-                        else if (door.signal == "open" && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+                        else if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                             //if in breathing state, change to that state
@@ -114,7 +115,7 @@ class SessionState {
                         if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.NO_MOVEMENT && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
-                        else if (door.signal == "open" && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+                        else if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                         else if (xethru.state == XETHRU_STATE.BREATHING) {
@@ -138,7 +139,7 @@ class SessionState {
                         if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.NO_MOVEMENT && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
-                        else if (door.signal == "open" && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+                        else if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                         else if(xethru.state != XETHRU_STATE.BREATHING && xethru.mov_f == 0) {
