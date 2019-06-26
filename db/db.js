@@ -1,4 +1,5 @@
 const pg = require('pg')
+const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const pool = new pg.Pool({
     user: 'brave',
     host: 'Localhost',
@@ -209,7 +210,7 @@ async function getLastUnclosedSession(locationid) {
 // Creates a new session for a specific location
 async function createSession(phone, locationid, state) {
 
-    const results = await pool.query("INSERT INTO sessions(phonenumber, locationid, state, od_flag) VALUES ($1, $2, $3, $4) RETURNING *", [phone, locationid, state, 0]);
+    const results = await pool.query("INSERT INTO sessions(phonenumber, locationid, state, od_flag) VALUES ($1, $2, $3, $4) RETURNING *", [phone, locationid, state, OD_FLAG_STATE.NO_OVERDOSE]);
 
     return results.rows[0]; //getLastUnclosedSession(locationid);
 }
@@ -346,7 +347,7 @@ async function isOverdoseSuspected(xethru, session, location) {
     if(condition1 + condition2 + condition3 + condition4 >= conditionThreshold) {
         // update the table entry so od_flag is 1
         try {
-            await pool.query("UPDATE sessions SET od_flag = 1 WHERE sessionid = $1", [session.sessionid]);
+            await pool.query("UPDATE sessions SET od_flag = $1 WHERE sessionid = $2", [OD_FLAG_STATE.OVERDOSE, session.sessionid]);
         }
         catch(e) {
             console.log(`Error running the update od_flag query: ${e}`);
