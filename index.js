@@ -297,7 +297,7 @@ app.post('/sms', async function (req, res) {
 setInterval(async function () {
   for(let i = 0; i < locations.length; i++){
     let statemachine = new SessionState(locations[i]);
-    let currentState = await statemachine.getNextState();
+    let currentState = await statemachine.getNextState(db);
     let prevState = await db.getLatestLocationStatesdata(locations[i]);
     
 
