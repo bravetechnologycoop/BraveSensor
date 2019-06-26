@@ -1,5 +1,6 @@
 const STATE = require('./SessionStateEnum.js');
 const XETHRU_STATE = require('./SessionStateXethruEnum.js');
+const MOTION_STATE = require('./SessionStateMotionEnum.js');
 
 class SessionState {
 
@@ -43,7 +44,7 @@ class SessionState {
                             state = STATE.DOOR_OPENED_START;
                         }
                             // Waits for both the XeThru and motion sensor to be active
-                        else if (xethru.mov_f > residual_mov_f && xethru.state != XETHRU_STATE.NO_MOVEMENT && motion.signal == "active") {
+                        else if (xethru.mov_f > residual_mov_f && xethru.state != XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.MOVEMENT) {
                             state = STATE.MOTION_DETECTED;
                         }
                         break;
@@ -58,7 +59,7 @@ class SessionState {
                     }
                 case STATE.DOOR_CLOSED_START:
                     {
-                        if (xethru.state != XETHRU_STATE.NO_MOVEMENT || motion.signal == "active") {
+                        if (xethru.state != XETHRU_STATE.NO_MOVEMENT || motion.signal == MOTION_STATE.MOVEMENT) {
                             state = STATE.MOVEMENT;
                         }
                         break;
@@ -83,7 +84,7 @@ class SessionState {
                         let session = await db.getMostRecentSession(this.location);
 
                         //if state is no movement, chenge to STATE_NO_PRESENCE
-                        if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == "inactive" && !session.od_flag) {
+                        if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.NO_MOVEMENT && !session.od_flag) {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
                         else if (door.signal == "open" && !session.od_flag) {
@@ -109,7 +110,7 @@ class SessionState {
                     {
                         let session = await db.getMostRecentSession(this.location);
 
-                        if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == "inactive" && !session.od_flag) {
+                        if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.NO_MOVEMENT && !session.od_flag) {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
                         else if (door.signal == "open" && !session.od_flag) {
@@ -133,7 +134,7 @@ class SessionState {
                         let session = await db.getMostRecentSession(this.location);
 
 
-                        if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == "inactive" && !session.od_flag) {
+                        if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.NO_MOVEMENT && !session.od_flag) {
                             state = STATE.NO_PRESENCE_CLOSE;
                         }
                         else if (door.signal == "open" && !session.od_flag) {

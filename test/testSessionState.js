@@ -2,6 +2,7 @@ let chai = require('chai');
 const expect = chai.expect;
 const STATE = require('./../SessionStateEnum.js');
 const XETHRU_STATE = require('./../SessionStateXethruEnum.js');
+const MOTION_STATE = require('./../SessionStateMotionEnum.js');
 const SessionState = require('./../SessionState.js');
 
 function setupDB(states = {}, door = {}, motion = {}, xethru = {}, location_data = {}) {
@@ -70,7 +71,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: STATE.NO_PRESENCE_NO_SESSION},
 				door = {},
-				motion = {signal: "active"},
+				motion = {signal: MOTION_STATE.MOVEMENT},
 				xethru = {
 					state: XETHRU_STATE.MOVEMENT,
 					mov_f: movementThreshold + 1
@@ -90,7 +91,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: initialState},
 				door = {},
-				motion = {signal: "active"},
+				motion = {signal: MOTION_STATE.MOVEMENT},
 				xethru = {
 					state: XETHRU_STATE.NO_MOVEMENT,
 					mov_f: movementThreshold + 1
@@ -110,7 +111,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: initialState},
 				door = {},
-				motion = {signal: "inactive"},
+				motion = {signal: MOTION_STATE.NO_MOVEMENT},
 				xethru = {
 					state: XETHRU_STATE.MOVEMENT,
 					mov_f: movementThreshold + 1
@@ -130,7 +131,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: initialState},
 				door = {},
-				motion = {signal: "active"},
+				motion = {signal: MOTION_STATE.MOVEMENT},
 				xethru = {
 					state: XETHRU_STATE.MOVEMENT,
 					mov_f: movementThreshold
@@ -150,7 +151,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: initialState},
 				door = {},
-				motion = {signal: "active"},
+				motion = {signal: MOTION_STATE.MOVEMENT},
 				xethru = {
 					state: XETHRU_STATE.MOVEMENT,
 					mov_f: movementThreshold - 1
@@ -198,7 +199,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: initialState},
 				door = {},
-				motion = {signal: "active"},
+				motion = {signal: MOTION_STATE.MOVEMENT},
 				xethru = {state: XETHRU_STATE.NO_MOVEMENT}
 			);
 			let statemachine = new SessionState('TestLocation');
@@ -213,7 +214,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: initialState},
 				door = {},
-				motion = {signal: "active"}
+				motion = {signal: MOTION_STATE.MOVEMENT}
 			);
 			let statemachine = new SessionState('TestLocation');
 
@@ -227,7 +228,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: initialState},
 				door = {},
-				motion = {signal: "inactive"},
+				motion = {signal: MOTION_STATE.NO_MOVEMENT},
 				xethru = {state: XETHRU_STATE.UNKNOWN}
 			);
 			let statemachine = new SessionState('TestLocation');
@@ -257,7 +258,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: initialState},
 				door = {},
-				motion = {signal: "inactive"},
+				motion = {signal: MOTION_STATE.NO_MOVEMENT},
 				xethru = {state: XETHRU_STATE.NO_MOVEMENT}
 			);
 			let statemachine = new SessionState('TestLocation');
@@ -287,7 +288,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: initialState},
 				door = {},
-				motion = {signal: "active"},
+				motion = {signal: MOTION_STATE.MOVEMENT},
 				xethru = {state: XETHRU_STATE.BREATHING}
 			);
 			let statemachine = new SessionState('TestLocation');
@@ -303,7 +304,7 @@ describe('test getNextState', () => {
 			let db = setupDB(
 				states = {state: initialState},
 				door = {},
-				motion = {signal: "inactive"},
+				motion = {signal: MOTION_STATE.NO_MOVEMENT},
 				xethru = {}
 			);
 			let statemachine = new SessionState('TestLocation');
