@@ -21,7 +21,7 @@ const io = require('socket.io')(http);
 const unrespondedTimer = 30;
 
 // An array with the different possible locations
-var locations = ["BraveOffice", "BraveOffice2"];
+var locations = ["SampathBedroom"];
 
 // Session start_times array. This array takes the size of the locations array as there will be one session slot per location.
 start_times = new Array(locations.length);
