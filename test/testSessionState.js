@@ -199,6 +199,124 @@ describe('test getNextState', () => {
 
 			expect(actualState).to.equal(initialState);
 		});
+
+		it('and the motion sensor detects motions and the xethru detects movement and the xethru movement is more than the movement threshold, should return the MOTION_DETECTED state', async () => {
+			let movementThreshold = 5;
+			let db = setupDB(
+				states = {state: STATE.DOOR_OPENED_START},
+				door = {},
+				motion = {signal: MOTION_STATE.MOVEMENT},
+				xethru = {
+					state: XETHRU_STATE.MOVEMENT,
+					mov_f: movementThreshold + 1
+				},
+				location_data = {mov_threshold: movementThreshold}
+			);
+			let statemachine = new SessionState('TestLocation');
+
+			let actualState = await statemachine.getNextState(db);
+
+			expect(actualState).to.equal(STATE.MOTION_DETECTED);
+		});
+
+		it('and the motion sensor detects motions and the xethru detects movement and the xethru movement is more than the movement threshold and the door is open, should return the MOTION_DETECTED state', async () => {
+			let movementThreshold = 5;
+			let db = setupDB(
+				states = {state: STATE.DOOR_OPENED_START},
+				door = {signal: DOOR_STATE.OPEN},
+				motion = {signal: MOTION_STATE.MOVEMENT},
+				xethru = {
+					state: XETHRU_STATE.MOVEMENT,
+					mov_f: movementThreshold + 1
+				},
+				location_data = {mov_threshold: movementThreshold}
+			);
+			let statemachine = new SessionState('TestLocation');
+
+			let actualState = await statemachine.getNextState(db);
+
+			expect(actualState).to.equal(STATE.MOTION_DETECTED);
+		});
+
+		it('and the motion sensor detects motion and the xethru does not detect movement and the xethru movement is more than the movement threshold, should not change state', async () => {
+			let initialState = STATE.DOOR_OPENED_START;
+			let movementThreshold = 5;
+			let db = setupDB(
+				states = {state: initialState},
+				door = {},
+				motion = {signal: MOTION_STATE.MOVEMENT},
+				xethru = {
+					state: XETHRU_STATE.NO_MOVEMENT,
+					mov_f: movementThreshold + 1
+				},
+				location_data = {mov_threshold: movementThreshold}
+			);
+			let statemachine = new SessionState('TestLocation');
+
+			let actualState = await statemachine.getNextState(db);
+
+			expect(actualState).to.equal(initialState);
+		});
+
+		it('and the motion sensor does not detect motion and the xethru detects movement and the xethru movement is more than the movement threshold, should not change state', async () => {
+			let initialState = STATE.DOOR_OPENED_START;
+			let movementThreshold = 5;
+			let db = setupDB(
+				states = {state: initialState},
+				door = {},
+				motion = {signal: MOTION_STATE.NO_MOVEMENT},
+				xethru = {
+					state: XETHRU_STATE.MOVEMENT,
+					mov_f: movementThreshold + 1
+				},
+				location_data = {mov_threshold: movementThreshold}
+			);
+			let statemachine = new SessionState('TestLocation');
+
+			let actualState = await statemachine.getNextState(db);
+
+			expect(actualState).to.equal(initialState);
+		});
+
+		it('and the motion sensor detects motion and the xethru detects movement and the xethru movement is equal to the movement threshold, should not change state', async () => {
+			let initialState = STATE.DOOR_OPENED_START;
+			let movementThreshold = 5;
+			let db = setupDB(
+				states = {state: initialState},
+				door = {},
+				motion = {signal: MOTION_STATE.MOVEMENT},
+				xethru = {
+					state: XETHRU_STATE.MOVEMENT,
+					mov_f: movementThreshold
+				},
+				location_data = {mov_threshold: movementThreshold}
+			);
+			let statemachine = new SessionState('TestLocation');
+
+			let actualState = await statemachine.getNextState(db);
+
+			expect(actualState).to.equal(initialState);
+		});
+
+		it('and the motion sensor detects motion and the xethru detects movement and the xethru movement is less than the movement threshold, should not change state', async () => {
+			let initialState = STATE.DOOR_OPENED_START;
+			let movementThreshold = 5;
+			let db = setupDB(
+				states = {state: initialState},
+				door = {},
+				motion = {signal: MOTION_STATE.MOVEMENT},
+				xethru = {
+					state: XETHRU_STATE.MOVEMENT,
+					mov_f: movementThreshold - 1
+				},
+				location_data = {mov_threshold: movementThreshold}
+			);
+			let statemachine = new SessionState('TestLocation');
+
+			let actualState = await statemachine.getNextState(db);
+
+			expect(actualState).to.equal(initialState);
+		});
 	});
 
 	describe('when initial state is DOOR_CLOSED_START', () => {
