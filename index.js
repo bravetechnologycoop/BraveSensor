@@ -1,4 +1,5 @@
 const express = require('express');
+let moment = require('moment')
 const bodyParser = require('body-parser');
 const db = require('./db/db.js');
 const SessionState = require('./SessionState.js');
@@ -305,6 +306,21 @@ setInterval(async function () {
     let XeThruData = await db.getLatestXeThruSensordata(locations[i]);
     let MotionData = await db.getLatestMotionSensordata(locations[i]);
     let DoorData = await db.getLatestDoorSensordata(locations[i]);
+
+    // Check the XeThru Heartbeat
+    let currentTime = moment();
+    let latestXethru = XeThruData.published_at;
+    let XeThruDelayMillis = currentTime.diff(latestXethru);
+    // For debugging
+    console.log(currentTime);
+    console.log(latestXethru);
+    console.log(XeThruDelayMillis)
+
+    if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS)
+
+
+
+
 
     console.log(`${locations[i]}: ${currentState}`);
 
