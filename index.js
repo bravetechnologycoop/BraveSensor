@@ -1,5 +1,5 @@
 const express = require('express');
-let moment = require('moment')
+let moment = require('moment');
 const bodyParser = require('body-parser');
 const db = require('./db/db.js');
 const SessionState = require('./SessionState.js');
@@ -19,6 +19,7 @@ const port = 443
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
+const XETHRU_THRESHOLD_MILLIS = 10*1000;
 const unrespondedTimer = 30;
 
 // An array with the different possible locations
@@ -260,6 +261,29 @@ async function reminderMessage(location) {
     //else do nothing
 }
 
+//Heartbeat Helper Functions
+function sendAlerts(location) {
+  locationData = db.getLocationData(location);
+  twilioClient.messages.create({
+      body: `The XeThru connection for ${location} has been lost.`,
+      from: locationData.phonenumber,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => log(message.sid))
+  .done()
+}
+
+function sendReconnectionMessage(location) {
+  locationData = db.getLocationData(location);
+  twilioClient.messages.create({
+      body: `The XeThru at ${location} has been reconnected.`,
+      from: locationData.phonenumber,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => log(message.sid))
+  .done()
+}
+
 // Handler for incoming Twilio messages
 app.post('/sms', async function (req, res) {
   const twiml = new MessagingResponse();
@@ -300,7 +324,7 @@ setInterval(async function () {
     let statemachine = new SessionState(locations[i]);
     let currentState = await statemachine.getNextState(db);
     let prevState = await db.getLatestLocationStatesdata(locations[i]);
-    
+    let location = await db.getLocationData(locations[i]);
 
     // Query raw sensor data to transmit to the FrontEnd  
     let XeThruData = await db.getLatestXeThruSensordata(locations[i]);
@@ -314,13 +338,18 @@ setInterval(async function () {
     // For debugging
     console.log(currentTime);
     console.log(latestXethru);
-    console.log(XeThruDelayMillis)
+    console.log(XeThruDelayMillis);
 
-    if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS)
-
-
-
-
+    if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !XeThruData.xethru_sent_alerts) {
+      console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+      db.updateSentAlerts(location.locationid, true)
+      sendAlerts(location.locationid)
+    }
+    else if((flicDelayMillis < XETHRU_THRESHOLD_MILLIS) && XeThruData.xethru_sent_alerts) { 
+      console.log(`XeThru at ${location.locationid} reconnected`)
+      db.updateSentAlerts(location.locationid, false)
+      sendReconnectionMessage(location.locationid)
+    }
 
     console.log(`${locations[i]}: ${currentState}`);
 

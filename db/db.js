@@ -259,6 +259,22 @@ async function updateSessionState(sessionid, state) {
   }
 }
 
+// Updates the value of the alert flag in the location database
+async function updateSentAlerts(location, sentalerts) {
+  try{
+    const results = await pool.query("UPDATE locations SET xehtru_sent_alerts = $1 WHERE locationid = $2 RETURNING *", [sentAlerts, locationid]); 
+    if (results == undefined){
+      return null;
+    }
+    else{
+      return results.rows[0];
+    }
+  }
+  catch(e){
+    console.log(`Error running the updateSentAlerts query ${e}`);
+  }
+}
+
 async function updateSessionResetDetails(sessionid, notes, state) {
   try{
     const results = await pool.query("UPDATE sessions SET state = $1, notes = $2 WHERE sessionid = $3 RETURNING *", [state, notes, sessionid]);

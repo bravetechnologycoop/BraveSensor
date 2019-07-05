@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS locations
     duration_threshold text COLLATE pg_catalog."default",
     still_threshold text COLLATE pg_catalog."default",
     rpm_threshold text COLLATE pg_catalog."default",
-    xethru_alert_sent boolean,
+    xethru_sent_alerts boolean DEFAULT FALSE,
     xethru_heartbeat_number text COLLATE pg_catalog."default"
 )
 WITH (
