@@ -456,5 +456,6 @@ module.exports = {
   getMostRecentSessionPhone,
   getLocationData,
   updateLocationData,
-  addLocationData
+  addLocationData,
+  updateSentAlerts
 }
