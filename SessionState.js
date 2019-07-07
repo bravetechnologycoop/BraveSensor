@@ -57,6 +57,9 @@ class SessionState {
                         if (door.signal == DOOR_STATE.CLOSED) {
                             state = STATE.DOOR_CLOSED_START;
                         }
+                        else if (xethru.mov_f > residual_mov_f && xethru.state != XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.MOVEMENT) {
+                            state = STATE.MOTION_DETECTED;
+                        }
                         break;
                     }
                 case STATE.DOOR_CLOSED_START:
