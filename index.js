@@ -364,6 +364,7 @@ setInterval(async function () {
       var sessionDuration = (dateTime - start_time_sesh)/1000;
       io.sockets.emit('timerdata', {data: sessionDuration});
     }
+    console.log(`${sessionDuration}`);
 
      // To avoid filling the DB with repeated states in a row.
     if(currentState != prevState.state){
@@ -380,6 +381,7 @@ setInterval(async function () {
           }
         }
       }
+      
 
       // Checks if current state belongs to the session triggerStates
       else if(TRIGGERSTATES.includes(currentState)){
