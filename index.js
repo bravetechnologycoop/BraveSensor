@@ -339,12 +339,12 @@ setInterval(async function () {
 
     if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
       console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
-      db.updateSentAlerts(location.locationid, true)
+      await db.updateSentAlerts(location.locationid, true)
       sendAlerts(location.locationid)
     }
     else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) { 
       console.log(`XeThru at ${location.locationid} reconnected`)
-      db.updateSentAlerts(location.locationid, false)
+      await db.updateSentAlerts(location.locationid, false)
       sendReconnectionMessage(location.locationid)
     }
 
