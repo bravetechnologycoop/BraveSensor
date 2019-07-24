@@ -1,4 +1,5 @@
 const express = require('express');
+let moment = require('moment');
 const bodyParser = require('body-parser');
 const db = require('./db/db.js');
 const SessionState = require('./SessionState.js');
@@ -18,10 +19,11 @@ const port = 443
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
+const XETHRU_THRESHOLD_MILLIS = 10*1000;
 const unrespondedTimer = 30;
 
 // An array with the different possible locations
-var locations = ["BraveOffice", "BraveOffice2"];
+var locations = ["SampathBedroom"];
 
 // Session start_times array. This array takes the size of the locations array as there will be one session slot per location.
 start_times = new Array(locations.length);
@@ -73,7 +75,7 @@ app.use(cors());
 const accountSid = process.env.TWILIO_SID;
 const authToken = process.env.TWILIO_TOKEN;
 
-const client = require('twilio')(accountSid, authToken);
+const twilioClient = require('twilio')(accountSid, authToken);
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
 
 // SmartThings Smart App Implementations
@@ -233,7 +235,7 @@ async function particle_config(particleid, config_values, token) {
 // Twilio Functions
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
   try {
-      await client.messages.create({from: fromPhone, to: toPhone, body: msg})
+      await twilioClient.messages.create({from: fromPhone, to: toPhone, body: msg})
                            .then(message => console.log(message.sid));
   }
   catch(err) {
@@ -257,6 +259,30 @@ async function reminderMessage(location) {
         await db.saveChatbotSession(session);
     }
     //else do nothing
+}
+
+//Heartbeat Helper Functions
+async function sendAlerts(location) {
+  locationData = await db.getLocationData(location);
+  twilioClient.messages.create({
+      body: `The XeThru connection for ${location} has been lost.`,
+      from: process.env.TWILIO_PHONENUMBER,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
+}
+
+async function sendReconnectionMessage(location) {
+  locationData = await db.getLocationData(location);
+  
+  twilioClient.messages.create({
+      body: `The XeThru at ${location} has been reconnected.`,
+      from: process.env.TWILIO_PHONENUMBER,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
 }
 
 // Handler for incoming Twilio messages
@@ -299,12 +325,28 @@ setInterval(async function () {
     let statemachine = new SessionState(locations[i]);
     let currentState = await statemachine.getNextState(db);
     let prevState = await db.getLatestLocationStatesdata(locations[i]);
-    
+    let location = await db.getLocationData(locations[i]);
 
     // Query raw sensor data to transmit to the FrontEnd  
     let XeThruData = await db.getLatestXeThruSensordata(locations[i]);
     let MotionData = await db.getLatestMotionSensordata(locations[i]);
     let DoorData = await db.getLatestDoorSensordata(locations[i]);
+
+    // Check the XeThru Heartbeat
+    let currentTime = moment();
+    let latestXethru = XeThruData.published_at;
+    let XeThruDelayMillis = currentTime.diff(latestXethru);
+
+    if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
+      console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+      await db.updateSentAlerts(location.locationid, true)
+      sendAlerts(location.locationid)
+    }
+    else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) { 
+      console.log(`XeThru at ${location.locationid} reconnected`)
+      await db.updateSentAlerts(location.locationid, false)
+      sendReconnectionMessage(location.locationid)
+    }
 
     console.log(`${locations[i]}: ${currentState}`);
 
@@ -322,6 +364,7 @@ setInterval(async function () {
       var sessionDuration = (dateTime - start_time_sesh)/1000;
       io.sockets.emit('timerdata', {data: sessionDuration});
     }
+    console.log(`${sessionDuration}`);
 
      // To avoid filling the DB with repeated states in a row.
     if(currentState != prevState.state){
@@ -338,6 +381,7 @@ setInterval(async function () {
           }
         }
       }
+      
 
       // Checks if current state belongs to the session triggerStates
       else if(TRIGGERSTATES.includes(currentState)){
