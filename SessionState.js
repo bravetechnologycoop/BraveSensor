@@ -76,20 +76,11 @@ class SessionState {
                         state = STATE.RESET;
                         break;
                     }
-                case STATE.NO_PRESENCE_CLOSE:
-                    {
-                        state = STATE.NO_PRESENCE_NO_SESSION;
-                        break;
-                    }
                 case STATE.MOVEMENT:
                     {
                         let session = await db.getMostRecentSession(this.location);
 
-                        //if state is no movement, chenge to STATE_NO_PRESENCE
-                        if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.NO_MOVEMENT && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
-                            state = STATE.NO_PRESENCE_CLOSE;
-                        }
-                        else if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+                        if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                             //if in breathing state, change to that state
@@ -112,10 +103,7 @@ class SessionState {
                     {
                         let session = await db.getMostRecentSession(this.location);
 
-                        if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.NO_MOVEMENT && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
-                            state = STATE.NO_PRESENCE_CLOSE;
-                        }
-                        else if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+                        if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                         else if (xethru.state == XETHRU_STATE.BREATHING) {
@@ -135,11 +123,7 @@ class SessionState {
                     {
                         let session = await db.getMostRecentSession(this.location);
 
-
-                        if (xethru.state == XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.NO_MOVEMENT && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
-                            state = STATE.NO_PRESENCE_CLOSE;
-                        }
-                        else if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+                        if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.DOOR_OPENED_CLOSE;
                         }
                         else if(xethru.state != XETHRU_STATE.BREATHING && xethru.mov_f == 0) {
