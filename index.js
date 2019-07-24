@@ -12,6 +12,7 @@ const cors = require('cors');
 const smartapp   = require('@smartthings/smartapp');
 const path = require('path');
 const routes = require('express').Router();
+const STATE = require('./SessionStateEnum.js');
 require('dotenv').config();
 
 const app = express();
@@ -30,34 +31,33 @@ start_times = new Array(locations.length);
 
 // These states do not start nor close a session
 let VOIDSTATES = [
-  'Reset',
-  'No Presence, No active session', 
-  "Door Opened: Start Session",
-  'Movement',
-  'Still',
-  'Breathing',
-  'Started',
-  'Waiting for Response',
-  'Waiting for Category',
-  'Waiting for Details'
+  STATE.RESET,
+  STATE.NO_PRESENCE_NO_SESSION,
+  STATE.DOOR_OPENED_START,
+  STATE.MOVEMENT,
+  STATE.STILL,
+  STATE.BREATH_TRACKING,
+  STATE.STARTED,
+  STATE.WAITING_FOR_RESPONSE,
+  STATE.WAITING_FOR_CATEGORY,
+  STATE.WAITING_FOR_DETAILS
 ];
 
 // These stats will start a new session for a certain location
 let TRIGGERSTATES = [
-  "Door Closed: Start Session",
-  "Motion has been detected"
+  STATE.DOOR_CLOSED_START,
+  STATE.MOTION_DETECTED
 ];
 
 // These states will close an ongoing session for a certain location
 let CLOSINGSTATES = [
-  "No Presence, Closing active session",
-  "Door Opened: Closing active session",
-  'Completed'
+  STATE.DOOR_OPENED_CLOSE,
+  STATE.COMPLETED
 ];
 
 // These states will start a chatbot session for a location
 let CHATBOTSTARTSTATES = [
-  "Suspected Overdose"
+  STATE.SUSPECTED_OD
 ];
 
 // Body Parser Middleware
