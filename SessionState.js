@@ -3,6 +3,8 @@ const XETHRU_STATE = require('./SessionStateXethruEnum.js');
 const MOTION_STATE = require('./SessionStateMotionEnum.js');
 const OD_FLAG_STATE = require('./SessionStateODFlagEnum');
 const DOOR_STATE = require('./SessionStateDoorEnum.js');
+const DOOR_THRESHOLD_MILLIS = 30 * 1000;
+
 
 class SessionState {
 
@@ -21,6 +23,12 @@ class SessionState {
         let location_data = await db.getLocationData(this.location);
 
         let residual_mov_f = location_data.mov_threshold;
+        let currentTime = moment();
+        let latestDoor = door.published_at;
+        let doorDelay = currentTime.diff(latestDoor);
+        
+
+
         
         if(states == undefined){ // In case the DB states table is empty create a RESET entry
             await db.addStateMachineData(STATE.RESET, this.location);
@@ -45,8 +53,8 @@ class SessionState {
                         if (door.signal == DOOR_STATE.OPEN) {
                             state = STATE.DOOR_OPENED_START;
                         }
-                            // Waits for both the XeThru and motion sensor to be active
-                        else if (xethru.mov_f > residual_mov_f && xethru.state != XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.MOVEMENT) {
+                        // Waits for both the XeThru and motion sensor to be active
+                        else if (xethru.mov_f > residual_mov_f && xethru.state != XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.MOVEMENT && doorDelay > DOOR_THRESHOLD_MILLIS) {
                             state = STATE.MOTION_DETECTED;
                         }
                         break;
