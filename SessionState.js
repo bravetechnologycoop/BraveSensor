@@ -3,6 +3,7 @@ const XETHRU_STATE = require('./SessionStateXethruEnum.js');
 const MOTION_STATE = require('./SessionStateMotionEnum.js');
 const OD_FLAG_STATE = require('./SessionStateODFlagEnum');
 const DOOR_STATE = require('./SessionStateDoorEnum.js');
+let moment = require('moment');
 const DOOR_THRESHOLD_MILLIS = 30 * 1000;
 
 
