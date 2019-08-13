@@ -1,4 +1,5 @@
 let chai = require('chai');
+let moment = require('moment');
 const expect = chai.expect;
 const STATE = require('./../SessionStateEnum.js');
 const XETHRU_STATE = require('./../SessionStateXethruEnum.js');
@@ -74,11 +75,11 @@ describe('test getNextState', () => {
 			expect(actualState).to.equal(initialState);
 		});
 
-		it('and the motion sensor detects motions and the xethru detects movement and the xethru movement is more than the movement threshold, should return the MOTION_DETECTED state', async () => {
+		it('and the motion sensor detects motions and the xethru detects movement and the xethru movement is more than the movement threshold, and more than 30 seconds have passed since the door status changed, should return the MOTION_DETECTED state', async () => {
 			let movementThreshold = 5;
 			let db = setupDB(
 				states = {state: STATE.NO_PRESENCE_NO_SESSION},
-				door = {},
+				door = {published_at: moment().subtract(31, 'seconds')},
 				motion = {signal: MOTION_STATE.MOVEMENT},
 				xethru = {
 					state: XETHRU_STATE.MOVEMENT,
@@ -91,6 +92,26 @@ describe('test getNextState', () => {
 			let actualState = await statemachine.getNextState(db);
 
 			expect(actualState).to.equal(STATE.MOTION_DETECTED);
+		});
+
+		it('and the motion sensor detects motions and the xethru detects movement and the xethru movement is more than the movement threshold, and less than 30 seconds have passed since the door status changed, should return the MOTION_DETECTED state', async () => {
+			let initialState = STATE.NO_PRESENCE_NO_SESSION;
+			let movementThreshold = 5;
+			let db = setupDB(
+				states = {state: STATE.NO_PRESENCE_NO_SESSION},
+				door = {published_at: moment().subtract(25, 'seconds')},
+				motion = {signal: MOTION_STATE.MOVEMENT},
+				xethru = {
+					state: XETHRU_STATE.MOVEMENT,
+					mov_f: movementThreshold + 1
+				},
+				location_data = {mov_threshold: movementThreshold}
+			);
+			let statemachine = new SessionState('TestLocation');
+
+			let actualState = await statemachine.getNextState(db);
+
+			expect(actualState).to.equal(initialState);
 		});
 
 		it('and the motion sensor detects motion and the xethru does not detect movement and the xethru movement is more than the movement threshold, should not change state', async () => {
