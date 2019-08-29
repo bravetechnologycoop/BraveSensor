@@ -5,6 +5,7 @@ const db = require('./db/db.js');
 const SessionState = require('./SessionState.js');
 const Chatbot = require('./Chatbot.js');
 const session = require('express-session');
+var cookieParser = require('cookie-parser');
 const fs = require('fs');
 let https = require('https');
 const Particle = require('particle-api-js');
@@ -62,14 +63,99 @@ let CHATBOTSTARTSTATES = [
 
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
-app.use(bodyParser.json()); 
+app.use(bodyParser.json());
 app.use(express.json()); // Used for smartThings wrapper
 
 // Used for hosting the Frontend
-app.use(express.static(__dirname + '/Public/ODetect')); 
-
+app.use(express.static(__dirname + '/Public/ODetect'));
+//
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors());
+
+app.use(cookieParser());
+
+function getEnvVar(name) {
+	return process.env.NODE_ENV === 'test' ? process.env[name + '_TEST'] : process.env[name];
+}
+
+// initialize express-session to allow us track the logged-in user across sessions.
+app.use(session({
+    key: 'user_sid',
+    secret: getEnvVar('SECRET'),
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        expires: 24*60*60*1000
+    }
+}));
+
+// This middleware will check if user's cookie is still saved in browser and user is not set, then automatically log the user out.
+// This usually happens when you stop your express server after login, your cookie still remains saved in the browser.
+app.use((req, res, next) => {
+    if (req.cookies.user_sid && !req.session.user) {
+        res.clearCookie('user_sid');
+    }
+    next();
+});
+
+
+// middleware function to check for logged-in users
+var sessionChecker = (req, res, next) => {
+    if (req.session.user && req.cookies.user_sid) {
+        res.redirect('/');
+    } else {
+        next();
+    }
+};
+
+
+app.get('/', sessionChecker, (req, res) => {
+    res.redirect('/login');
+});
+
+
+app.route('/login')
+    .get(sessionChecker, (req, res) => {
+        res.sendFile(__dirname + '/login.html');
+    })
+    .post((req, res) => {
+        var username = req.body.username,
+            password = req.body.password;
+
+        if ((username === getEnvVar('WEB_USERNAME')) && (password === getEnvVar('PASSWORD'))) {
+        	req.session.user = username;
+        	res.redirect('/');
+        }
+        else {
+        	res.redirect('/login');
+        }
+    });
+
+app.get('/*', async (req, res) => {
+
+    if (!req.session.user || !req.cookies.user_sid) {
+        res.redirect('/login')
+        return
+    }
+    else {
+        res.redirect('/')
+        return
+    }
+});
+
+app.get('/logout', (req, res) => {
+    if (req.session.user && req.cookies.user_sid) {
+        res.clearCookie('user_sid');
+        res.redirect('/');
+    }
+    else {
+        res.redirect('/login');
+    }
+});
+
+
+
+
 
 // Set up Twilio
 const accountSid = process.env.TWILIO_SID;
@@ -136,7 +222,7 @@ smartapp
 // Closes any open session and resets state for the given location
 async function resetSession(locationid){
   try{
-    if(await db.closeSession(locationid)){ 
+    if(await db.closeSession(locationid)){
       let session = await db.getMostRecentSession(locationid);
       console.log(session);
       await db.updateSessionResetDetails(session.sessionid, "Manual reset", "Reset");
@@ -158,7 +244,7 @@ app.post('/api/st', function(req, res, next) {
 
 // Handler for income XeThru POST requests
 app.post('/api/xethru', async (req, res) => {
-    await db.addXeThruSensordata(req, res); 
+    await db.addXeThruSensordata(req, res);
 });
 
 // Handler for redirecting to the Frontend
@@ -198,7 +284,7 @@ io.on('connection', (socket) => {
         await db.addLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationID.LocationID);
         console.log("New Location data added to the database");
       }
-      
+
     });
 
     socket.on('getHistory', async (location, entries) => {
@@ -217,11 +303,11 @@ async function particle_config(particleid, config_values, token) {
     // Particle configuration function call
     let particle = new Particle();
 
-    var fnPr = particle.callFunction({ 
-        deviceId: particleid, 
-        name: 'config', 
-        argument: config_values, 
-        auth: token 
+    var fnPr = particle.callFunction({
+        deviceId: particleid,
+        name: 'config',
+        argument: config_values,
+        auth: token
     });
 
     fnPr.then(
@@ -247,7 +333,7 @@ async function sendInitialChatbotMessage(session) {
     console.log("Intial message sent");
     await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `An overdose is suspected at ${session.locationid}. Please respond with 'ok' once you have checked up on it.`);
     await db.startChatbotSessionState(session);
-    setTimeout(reminderMessage, unrespondedTimer, session.locationid); 
+    setTimeout(reminderMessage, unrespondedTimer, session.locationid);
 }
 
 async function reminderMessage(location) {
@@ -275,7 +361,7 @@ async function sendAlerts(location) {
 
 async function sendReconnectionMessage(location) {
   locationData = await db.getLocationData(location);
-  
+
   twilioClient.messages.create({
       body: `The XeThru at ${location} has been reconnected.`,
       from: process.env.TWILIO_PHONENUMBER,
@@ -327,7 +413,7 @@ setInterval(async function () {
     let prevState = await db.getLatestLocationStatesdata(locations[i]);
     let location = await db.getLocationData(locations[i]);
 
-    // Query raw sensor data to transmit to the FrontEnd  
+    // Query raw sensor data to transmit to the FrontEnd
     let XeThruData = await db.getLatestXeThruSensordata(locations[i]);
     let MotionData = await db.getLatestMotionSensordata(locations[i]);
     let DoorData = await db.getLatestDoorSensordata(locations[i]);
@@ -342,7 +428,7 @@ setInterval(async function () {
       await db.updateSentAlerts(location.locationid, true)
       sendAlerts(location.locationid)
     }
-    else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) { 
+    else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
       console.log(`XeThru at ${location.locationid} reconnected`)
       await db.updateSentAlerts(location.locationid, false)
       sendReconnectionMessage(location.locationid)
@@ -373,15 +459,15 @@ setInterval(async function () {
       //Checks if current state belongs to voidStates
       if(VOIDSTATES.includes(currentState)){
         let latestSession = await db.getMostRecentSession(locations[i]);
-        
+
         if(typeof latestSession !== 'undefined'){ // Checks if no session exists for this location yet.
-          if(latestSession.end_time == null){ // Checks if session is open. 
+          if(latestSession.end_time == null){ // Checks if session is open.
             let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
             io.sockets.emit('sessiondata', {data: currentSession});
           }
         }
       }
-      
+
 
       // Checks if current state belongs to the session triggerStates
       else if(TRIGGERSTATES.includes(currentState)){
@@ -404,13 +490,13 @@ setInterval(async function () {
           io.sockets.emit('sessiondata', {data: currentSession});
           start_times[i] = currentSession.start_time;
         }
-      } 
+      }
 
       // Checks if current state belongs to the session closingStates
       else if(CLOSINGSTATES.includes(currentState)){
         let latestSession = await db.getMostRecentSession(locations[i]);
         let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]); //Adds the closing state to session
-        
+
         if(await db.closeSession(locations[i])){ // Adds the end_time to the latest open session from the LocationID
           console.log(`Session at ${locations[i]} was closed successfully.`);
           io.sockets.emit('sessiondata', {data: currentSession}); // Sends currentSession data with end_time which will close the session in the frontend
@@ -465,7 +551,7 @@ setInterval(async function () {
 
   }
 }, 1000); // Set to transmit data every 1000 ms.
- 
+
 
 // local http server for testing
 /* const server = app.listen(port, () => {
@@ -485,4 +571,3 @@ io.listen(server);
 module.exports.server = server;
 module.exports.db = db;
 module.exports.routes = routes;
-
