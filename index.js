@@ -131,18 +131,6 @@ app.route('/login')
         }
     });
 
-app.get('/*', async (req, res) => {
-
-    if (!req.session.user || !req.cookies.user_sid) {
-        res.redirect('/login')
-        return
-    }
-    else {
-        res.redirect('/')
-        return
-    }
-});
-
 app.get('/logout', (req, res) => {
     if (req.session.user && req.cookies.user_sid) {
         res.clearCookie('user_sid');
@@ -245,6 +233,16 @@ app.post('/api/st', function(req, res, next) {
 // Handler for income XeThru POST requests
 app.post('/api/xethru', async (req, res) => {
     await db.addXeThruSensordata(req, res);
+});
+
+// Handler for redirecting to the Frontend
+app.get('/*', async function (req, res) {
+  if (req.session.user && req.cookies.user_sid) {
+  res.sendFile(path.join(__dirname));
+  }
+  else {
+    res.redirect('/login');
+  }
 });
 
 
