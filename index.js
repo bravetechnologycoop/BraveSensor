@@ -247,11 +247,6 @@ app.post('/api/xethru', async (req, res) => {
     await db.addXeThruSensordata(req, res);
 });
 
-// Handler for redirecting to the Frontend
-app.get('/*', function (req, res) {
-  res.sendFile(path.join(__dirname));
-});
-
 
 // Web Socket connection to Frontend
 io.on('connection', (socket) => {
