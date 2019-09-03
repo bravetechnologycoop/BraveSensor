@@ -85,7 +85,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        expires: 24*60*60*1000
+        expires: 10*60*1000
     }
 }));
 
@@ -102,7 +102,7 @@ app.use((req, res, next) => {
 // middleware function to check for logged-in users
 var sessionChecker = (req, res, next) => {
     if (req.session.user && req.cookies.user_sid) {
-        res.redirect('/');
+      res.sendFile(path.join(__dirname));
     } else {
         next();
     }
