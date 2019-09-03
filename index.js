@@ -66,8 +66,6 @@ app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the bo
 app.use(bodyParser.json());
 app.use(express.json()); // Used for smartThings wrapper
 
-// Used for hosting the Frontend
-app.use(express.static(__dirname + '/Public/ODetect'));
 //
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors());
@@ -112,6 +110,10 @@ var sessionChecker = (req, res, next) => {
 app.get('/', sessionChecker, (req, res) => {
     res.redirect('/login');
 });
+
+// Used for hosting the Frontend
+app.use(express.static(__dirname + '/Public/ODetect'));
+
 
 
 app.route('/login')
