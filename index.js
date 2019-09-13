@@ -61,11 +61,14 @@ let CHATBOTSTARTSTATES = [
   STATE.SUSPECTED_OD
 ];
 
+function getEnvVar(name) {
+	return process.env.NODE_ENV === 'test' ? process.env[name + '_TEST'] : process.env[name];
+}
+
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
 app.use(bodyParser.json());
 app.use(express.json()); // Used for smartThings wrapper
-
 //
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors());
@@ -115,7 +118,6 @@ app.get('/', sessionChecker, (req, res) => {
 app.use(express.static(__dirname + '/Public/ODetect'));
 
 
-
 app.route('/login')
     .get(sessionChecker, (req, res) => {
         res.sendFile(__dirname + '/login.html');
@@ -142,10 +144,6 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     }
 });
-
-
-
-
 
 // Set up Twilio
 const accountSid = process.env.TWILIO_SID;
@@ -553,12 +551,15 @@ setInterval(async function () {
   console.log(`App running on port ${port}.`)
 }) */
 
-let httpsOptions = {
-  key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
-  cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/fullchain.pem`)
-}
-server = https.createServer(httpsOptions, app).listen(port)
-console.log('ODetect brave server listening on port 443')
+// let httpsOptions = {
+//   key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
+//   cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/fullchain.pem`)
+// }
+
+// start the server in the port 3000 !
+server = app.listen(3000, function () {
+  console.log('Example app listening on port 3000.');
+});
 
 // Socket.io server connection start
 io.listen(server);

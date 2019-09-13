@@ -55,7 +55,8 @@ class SessionState {
                             state = STATE.DOOR_OPENED_START;
                         }
                         // Waits for both the XeThru and motion sensor to be active
-                        else if (xethru.mov_f > residual_mov_f && xethru.state != XETHRU_STATE.NO_MOVEMENT && motion.signal == MOTION_STATE.MOVEMENT && doorDelay > DOOR_THRESHOLD_MILLIS) {
+                        // Removing the condition for motion sensor to be active to go into this loop since we don't have a motion sensor in this space 
+                        else if (xethru.mov_f > residual_mov_f && xethru.state != XETHRU_STATE.NO_MOVEMENT && doorDelay > DOOR_THRESHOLD_MILLIS) {
                             state = STATE.MOTION_DETECTED;
                         }
                         break;
@@ -70,7 +71,7 @@ class SessionState {
                     }
                 case STATE.DOOR_CLOSED_START:
                     {
-                        if (xethru.state == XETHRU_STATE.MOVEMENT || xethru.state == XETHRU_STATE.BREATHING || xethru.state == XETHRU_STATE.MOVEMENT_TRACKING || motion.signal == MOTION_STATE.MOVEMENT) {
+                        if (xethru.state == XETHRU_STATE.MOVEMENT || xethru.state == XETHRU_STATE.BREATHING || xethru.state == XETHRU_STATE.MOVEMENT_TRACKING) {
                             state = STATE.MOVEMENT;
                         }
                         break;
