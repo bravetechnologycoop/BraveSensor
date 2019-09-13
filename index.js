@@ -5,6 +5,7 @@ const db = require('./db/db.js');
 const SessionState = require('./SessionState.js');
 const Chatbot = require('./Chatbot.js');
 const session = require('express-session');
+var cookieParser = require('cookie-parser');
 const fs = require('fs');
 let https = require('https');
 const Particle = require('particle-api-js');
@@ -24,7 +25,7 @@ const XETHRU_THRESHOLD_MILLIS = 10*1000;
 const unrespondedTimer = 30;
 
 // An array with the different possible locations
-var locations = ["SampathBedroom"];
+var locations = ["BraveOffice"];
 
 // Session start_times array. This array takes the size of the locations array as there will be one session slot per location.
 start_times = new Array(locations.length);
@@ -60,16 +61,101 @@ let CHATBOTSTARTSTATES = [
   STATE.SUSPECTED_OD
 ];
 
+function getEnvVar(name) {
+	return process.env.NODE_ENV === 'test' ? process.env[name + '_TEST'] : process.env[name];
+}
+
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
 app.use(bodyParser.json()); 
 app.use(express.json()); // Used for smartThings wrapper
 
-// Used for hosting the Frontend
-app.use(express.static(__dirname + '/Public/ODetect')); 
+// // Used for hosting the Frontend
+// app.use('/dashboard', express.static(__dirname + '/Public/ODetect')); 
 
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors());
+
+
+// Login Function
+
+app.use(cookieParser());
+
+// app.use(express.static(__dirname + '/Public/ODetect'));
+// Used for hosting the Frontend
+
+
+
+
+// initialize express-session to allow us track the logged-in user across sessions.
+app.use(session({
+  key: 'user_sid',
+  secret: getEnvVar('SECRET'),
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+      expires: 600000
+  }
+}));
+
+
+// This middleware will check if user's cookie is still saved in browser and user is not set, then automatically log the user out.
+// This usually happens when you stop your express server after login, your cookie still remains saved in the browser.
+app.use((req, res, next) => {
+  if (req.cookies.user_sid && !req.session.user) {
+      res.clearCookie('user_sid');
+  }
+  next();
+});
+// middleware function to check for logged-in users
+var sessionChecker = (req, res, next) => {
+  if (req.session.user && req.cookies.user_sid) {
+    res.sendFile(path.join(__dirname));;
+  } else {
+      next();
+  }
+};
+
+app.get('/', sessionChecker, (req, res) => {
+  res.redirect('/login');
+});
+
+
+// Used for hosting the Frontend
+app.use(express.static(__dirname + '/Public/ODetect')); 
+
+
+app.route('/login')
+    .get(sessionChecker, (req, res) => {
+        res.sendFile(__dirname + '/login.html');
+    })
+    .post((req, res) => {
+        var username = req.body.username,
+            password = req.body.password;
+
+        if ((username === getEnvVar('WEB_USERNAME')) && (password === getEnvVar('PASSWORD'))) {
+        	req.session.user = username;
+          res.redirect('/');
+          // res.sendFile(path.join(__dirname));
+
+        } 
+        else {
+        	res.redirect('/login');
+        }
+    });
+
+app.get('/logout', (req, res) => {
+    if (req.session.user && req.cookies.user_sid) {
+        res.clearCookie('user_sid');
+        res.redirect('/');
+    } 
+    else {
+        res.redirect('/login');
+    }
+});
+
+
+
 
 // Set up Twilio
 const accountSid = process.env.TWILIO_SID;
@@ -162,8 +248,13 @@ app.post('/api/xethru', async (req, res) => {
 });
 
 // Handler for redirecting to the Frontend
-app.get('/*', function (req, res) {
+app.get('/*', async function (req, res) {
+  if (req.session.user && req.cookies.user_sid) {
   res.sendFile(path.join(__dirname));
+  }
+  else {
+    res.redirect('/login');
+  }
 });
 
 
@@ -472,12 +563,15 @@ setInterval(async function () {
   console.log(`App running on port ${port}.`)
 }) */
 
-let httpsOptions = {
-  key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
-  cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/fullchain.pem`)
-}
-server = https.createServer(httpsOptions, app).listen(port)
-console.log('ODetect brave server listening on port 443')
+// let httpsOptions = {
+//   key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
+//   cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/fullchain.pem`)
+// }
+
+// start the server in the port 3000 !
+server = app.listen(3000, function () {
+  console.log('Example app listening on port 3000.');
+});
 
 // Socket.io server connection start
 io.listen(server);
