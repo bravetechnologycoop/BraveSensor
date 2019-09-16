@@ -25,7 +25,7 @@ const XETHRU_THRESHOLD_MILLIS = 10*1000;
 const unrespondedTimer = 30;
 
 // An array with the different possible locations
-var locations = ["BraveOffice"];
+var locations = ["Bathroom"];
 
 // Session start_times array. This array takes the size of the locations array as there will be one session slot per location.
 start_times = new Array(locations.length);
@@ -324,7 +324,7 @@ async function sendTwilioMessage(fromPhone, toPhone, msg) {
 
 async function sendInitialChatbotMessage(session) {
     console.log("Intial message sent");
-    await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `An overdose is suspected at ${session.locationid}. Please respond with 'ok' once you have checked up on it.`);
+    await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
     await db.startChatbotSessionState(session);
     setTimeout(reminderMessage, unrespondedTimer, session.locationid);
 }
@@ -333,7 +333,7 @@ async function reminderMessage(location) {
     session = await db.getMostRecentSession(location); // Gets the updated state for the chatbot
     if(session.chatbot_state == 'Started') {
         //send the message
-        await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `An overdose is suspected at ${session.locationid}. Please respond with 'ok' once you have checked up on it.`)
+        await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `This is a reminder to check on the bathroom`)
         session.chatbot_state = 'Waiting for Response';
         await db.saveChatbotSession(session);
     }
