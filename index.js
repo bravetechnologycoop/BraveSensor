@@ -546,20 +546,12 @@ setInterval(async function () {
 }, 1000); // Set to transmit data every 1000 ms.
 
 
-// local http server for testing
-/* const server = app.listen(port, () => {
-  console.log(`App running on port ${port}.`)
-}) */
-
-// let httpsOptions = {
-//   key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
-//   cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/fullchain.pem`)
-// }
-
-// start the server in the port 3000 !
-server = app.listen(3000, function () {
-  console.log('Example app listening on port 3000.');
-});
+let httpsOptions = {
+  key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
+  cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/fullchain.pem`)
+}
+server = https.createServer(httpsOptions, app).listen(port)
+console.log('ODetect brave server listening on port 443')
 
 // Socket.io server connection start
 io.listen(server);
