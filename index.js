@@ -22,7 +22,7 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
 const XETHRU_THRESHOLD_MILLIS = 10*1000;
-const unrespondedTimer = 30;
+const unrespondedTimer = 30 *1000;
 
 // An array with the different possible locations
 var locations = ["BraveOffice"];
@@ -330,7 +330,7 @@ async function sendInitialChatbotMessage(session) {
 }
 
 async function reminderMessage(location) {
-    session = await db.getMostRecentSession(location); // Gets the updated state for the chatbot
+    let session = await db.getMostRecentSession(location); // Gets the updated state for the chatbot
     if(session.chatbot_state == 'Started') {
         //send the message
         await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `This is a reminder to check on the bathroom`)
