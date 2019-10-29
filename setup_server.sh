@@ -21,13 +21,6 @@ else
         fi
     done < $1
 
-    # echo "please enter two IP addresses to whitelist for SSH (separated by a space):"
-    # read firstIP secondIP
-
-    # ufw default deny incoming
-    # ufw default allow outgoing
-    # ufw allow from $firstIP to any port 22
-    # ufw allow from $secondIP to any port 22
     ufw allow 22
     ufw allow http
     ufw allow https
@@ -42,10 +35,10 @@ else
     n stable
     npm install
 
-    sudo -u postgres psql -c "CREATE ROLE $PG_USER WITH PASSWORD $PG_PASSWORD LOGIN"
-    sudo -u postgres createdb --owner=$PG_USER $PG_USER
+    sudo -u postgres psql -f ./db/createUser.sql -v username="'$PG_USER'" -v password="'$PG_PASSWROD'"
+    sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = '$PG_USER'" | grep -q 1 || psql -U postgres -c "CREATE DATABASE $PG_USER OWNER $PG_USER"
     sudo -u postgres psql -d $PG_USER -c 'CREATE EXTENSION IF NOT EXISTS "pgcrypto"'
-    sudo -u $PG_USER PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -d $PG_USER -f ./db/setup.sql
+    sudo -u $PG_USER PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -d $PG_USER -f ./db/001-setup.sql
 
     certbot certonly --standalone 
 
