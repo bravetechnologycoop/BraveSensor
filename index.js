@@ -25,7 +25,7 @@ const XETHRU_THRESHOLD_MILLIS = 10*1000;
 const unrespondedTimer = 30 *1000;
 
 // An array with the different possible locations
-var locations = ["BraveOffice"];
+var locations = ["MarioBathroom"];
 
 // Session start_times array. This array takes the size of the locations array as there will be one session slot per location.
 start_times = new Array(locations.length);
