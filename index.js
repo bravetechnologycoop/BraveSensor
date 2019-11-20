@@ -24,8 +24,16 @@ const io = require('socket.io')(http);
 const XETHRU_THRESHOLD_MILLIS = 10*1000;
 const unrespondedTimer = 30 *1000;
 
+async function getLocationArray(){
+  let locationTable = await db.getLocations()
+  let locations = []
+  for(let i = 0; i < locationTable.length; i++){
+    locations.push(locationTable[i].locationid)
+  }
+  return locations;
+}
 // An array with the different possible locations
-var locations = ["MarioBathroom"];
+var locations = getLocationArray();
 
 // Session start_times array. This array takes the size of the locations array as there will be one session slot per location.
 start_times = new Array(locations.length);
@@ -44,7 +52,7 @@ let VOIDSTATES = [
   STATE.WAITING_FOR_DETAILS
 ];
 
-// These stats will start a new session for a certain location
+// These states will start a new session for a certain location
 let TRIGGERSTATES = [
   STATE.DOOR_CLOSED_START,
   STATE.MOTION_DETECTED
@@ -66,7 +74,7 @@ function getEnvVar(name) {
 }
 
 // Body Parser Middleware
-app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
+app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of value
 app.use(bodyParser.json());
 app.use(express.json()); // Used for smartThings wrapper
 //

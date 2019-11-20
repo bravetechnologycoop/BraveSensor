@@ -406,6 +406,24 @@ async function getLocationData(location) {
 
 }
 
+// Retrieves the locations table
+
+async function getLocations() {
+  try {
+      const results = await pool.query("SELECT * FROM locations");
+
+      if(typeof results === 'undefined') {
+          return null;
+      }
+      else{
+          return results.rows;
+      }
+  }
+  catch(e) {
+      console.log(`Error running the getLocations query: ${e}`);
+  }
+}
+
 // Updates the locations table entry for a specific location with the new data
 async function updateLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led,  rpm_threshold, still_threshold, duration_threshold, mov_threshold, location) {
     try {
@@ -455,7 +473,8 @@ module.exports = {
   startChatbotSessionState,
   getMostRecentSessionPhone,
   getLocationData,
+  getLocations,
   updateLocationData,
   addLocationData,
-  updateSentAlerts
+  updateSentAlerts,
 }
