@@ -88,10 +88,6 @@ app.use(cors());
 
 app.use(cookieParser());
 
-function getEnvVar(name) {
-	return process.env.NODE_ENV === 'test' ? process.env[name + '_TEST'] : process.env[name];
-}
-
 // initialize express-session to allow us track the logged-in user across sessions.
 app.use(session({
     key: 'user_sid',
