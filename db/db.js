@@ -1,12 +1,11 @@
 const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
+require('dotenv').config();
+pgconnectionString = process.env.PG_CONECTION_STRING
+
 const pool = new pg.Pool({
-    user: 'brave',
-    host: 'Localhost',
-    database: 'brave',
-    password: 'cowardlyarchaiccorp', // env variables are not working, hardcoding details for now. 
-    port: 5432
-}) 
+  connectionString: pgconnectionString
+})
 
 // 1114 is OID for timestamp in Postgres
 // return string as is

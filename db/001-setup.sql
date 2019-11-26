@@ -17,6 +17,8 @@ BEGIN
 
     -- Only execute this script if its migration ID is next after the last successful migration ID
     IF lastSuccessfulMigrationId IS NULL THEN
+        CREATE EXTENSION IF NOT EXISTS pgcrypto;
+        
         CREATE TABLE IF NOT EXISTS door_sensordata (
             published_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
             deviceid text COLLATE pg_catalog."default",
