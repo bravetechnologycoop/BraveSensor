@@ -223,35 +223,6 @@ describe('test getNextState', () => {
 	});
 
 	describe('when initial state is DOOR_CLOSED_START', () => {
-		it('and the motion sensor detects motion and the xethru detects NO_MOVEMENT, should return the MOVEMENT state', async () => {
-			let initialState = STATE.DOOR_CLOSED_START;
-			let db = setupDB(
-				states = {state: initialState},
-				door = {},
-				motion = {signal: MOTION_STATE.MOVEMENT},
-				xethru = {state: XETHRU_STATE.NO_MOVEMENT}
-			);
-			let statemachine = new SessionState('TestLocation');
-
-			let actualState = await statemachine.getNextState(db);
-
-			expect(actualState).to.equal(STATE.MOVEMENT);
-		});
-
-		it('and the motion sensor detects motion and the xethru has no state, should return the MOVEMENT state', async () => {
-			let initialState = STATE.DOOR_CLOSED_START;
-			let db = setupDB(
-				states = {state: initialState},
-				door = {},
-				motion = {signal: MOTION_STATE.MOVEMENT}
-			);
-			let statemachine = new SessionState('TestLocation');
-
-			let actualState = await statemachine.getNextState(db);
-
-			expect(actualState).to.equal(STATE.MOVEMENT);
-		});
-
 		it('and the motion sensor does not detect motion and the xethru detects MOVEMENT, should return the MOVEMENT state', async () => {
 			let initialState = STATE.DOOR_CLOSED_START;
 			let db = setupDB(
@@ -499,51 +470,6 @@ describe('test getNextState', () => {
 				door = {},
 				motion = {signal: MOTION_STATE.MOVEMENT},
 				xethru = {state: XETHRU_STATE.MOVEMENT_TRACKING}
-			);
-			let statemachine = new SessionState('TestLocation');
-
-			let actualState = await statemachine.getNextState(db);
-
-			expect(actualState).to.equal(STATE.MOVEMENT);
-		});
-
-		it('and the motion sensor detects motion and the xethru detects INITIALIZING, should return the MOVEMENT state', async () => {
-			let initialState = STATE.DOOR_CLOSED_START;
-			let db = setupDB(
-				states = {state: initialState},
-				door = {},
-				motion = {signal: MOTION_STATE.MOVEMENT},
-				xethru = {state: XETHRU_STATE.INITIALIZING}
-			);
-			let statemachine = new SessionState('TestLocation');
-
-			let actualState = await statemachine.getNextState(db);
-
-			expect(actualState).to.equal(STATE.MOVEMENT);
-		});
-
-		it('and the motion sensor detects motion and the xethru detects ERROR, should return the MOVEMENT state', async () => {
-			let initialState = STATE.DOOR_CLOSED_START;
-			let db = setupDB(
-				states = {state: initialState},
-				door = {},
-				motion = {signal: MOTION_STATE.MOVEMENT},
-				xethru = {state: XETHRU_STATE.ERROR}
-			);
-			let statemachine = new SessionState('TestLocation');
-
-			let actualState = await statemachine.getNextState(db);
-
-			expect(actualState).to.equal(STATE.MOVEMENT);
-		});
-
-		it('and the motion sensor detects motion and the xethru detects UNKNOWN, should return the MOVEMENT state', async () => {
-			let initialState = STATE.DOOR_CLOSED_START;
-			let db = setupDB(
-				states = {state: initialState},
-				door = {},
-				motion = {signal: MOTION_STATE.MOVEMENT},
-				xethru = {state: XETHRU_STATE.UNKNOWN}
 			);
 			let statemachine = new SessionState('TestLocation');
 

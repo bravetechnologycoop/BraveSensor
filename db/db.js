@@ -21,7 +21,7 @@ pool.on('error', (err, client) => {
 // GET all XeThru data
 
 const getXethruSensordata = (request, response) => {
-  pool.query('SELECT * FROM xethru_sensordata ORDER BY published_at', (error, results) => {
+  pool.query('SELECT * FROM xethru ORDER BY published_at', (error, results) => {
     if (error) {
       throw error
     }
@@ -34,7 +34,7 @@ const getXethruSensordata = (request, response) => {
 const addXeThruSensordata = (request, response) => {
   const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = request.body;
 
-  pool.query('INSERT INTO xethru_sensordata (deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s], (error, results) => {
+  pool.query('INSERT INTO xethru (deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s], (error, results) => {
     if (error) {
       throw error
     }
@@ -77,7 +77,7 @@ async function addStateMachineData(state, locationid){
 // SELECT latest XeThru sensordata entry
 async function getLatestXeThruSensordata(locationid){
   try{
-    const results = await pool.query('SELECT * FROM xethru_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
+    const results = await pool.query('SELECT * FROM xethru WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
     if(results == undefined){
       return null;
     }
@@ -406,6 +406,24 @@ async function getLocationData(location) {
 
 }
 
+// Retrieves the locations table
+
+async function getLocations() {
+  try {
+      const results = await pool.query("SELECT * FROM locations");
+
+      if(typeof results === 'undefined') {
+          return null;
+      }
+      else{
+          return results.rows;
+      }
+  }
+  catch(e) {
+      console.log(`Error running the getLocations query: ${e}`);
+  }
+}
+
 // Updates the locations table entry for a specific location with the new data
 async function updateLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led,  rpm_threshold, still_threshold, duration_threshold, mov_threshold, location) {
     try {
@@ -455,7 +473,8 @@ module.exports = {
   startChatbotSessionState,
   getMostRecentSessionPhone,
   getLocationData,
+  getLocations,
   updateLocationData,
   addLocationData,
-  updateSentAlerts
+  updateSentAlerts,
 }

@@ -22,13 +22,26 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
 const XETHRU_THRESHOLD_MILLIS = 10*1000;
-const unrespondedTimer = 30;
+const unrespondedTimer = 30 *1000;
+const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
 
-// An array with the different possible locations
-var locations = ["BraveOffice"];
+// List of locations that the main loop will iterate over
+var locations = [];
 
-// Session start_times array. This array takes the size of the locations array as there will be one session slot per location.
-start_times = new Array(locations.length);
+// Session start_times dictionary.
+var start_times = {};
+
+// Update the list of locations every minute
+setInterval(async function (){
+  let locationTable = await db.getLocations()
+  let locationsArray = []
+  for(let i = 0; i < locationTable.length; i++){
+    locationsArray.push(locationTable[i].locationid)
+  }
+  locations = locationsArray;
+  console.log(`Current locations: ${locations}`)
+}, LOCATION_UPDATE_FREQUENCY)
+
 
 // These states do not start nor close a session
 let VOIDSTATES = [
@@ -44,7 +57,7 @@ let VOIDSTATES = [
   STATE.WAITING_FOR_DETAILS
 ];
 
-// These stats will start a new session for a certain location
+// These states will start a new session for a certain location
 let TRIGGERSTATES = [
   STATE.DOOR_CLOSED_START,
   STATE.MOTION_DETECTED
@@ -61,11 +74,14 @@ let CHATBOTSTARTSTATES = [
   STATE.SUSPECTED_OD
 ];
 
+function getEnvVar(name) {
+	return process.env.NODE_ENV === 'test' ? process.env[name + '_TEST'] : process.env[name];
+}
+
 // Body Parser Middleware
-app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of vlue
+app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of value
 app.use(bodyParser.json());
 app.use(express.json()); // Used for smartThings wrapper
-
 //
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors());
@@ -115,7 +131,6 @@ app.get('/', sessionChecker, (req, res) => {
 app.use(express.static(__dirname + '/Public/ODetect'));
 
 
-
 app.route('/login')
     .get(sessionChecker, (req, res) => {
         res.sendFile(__dirname + '/login.html');
@@ -142,10 +157,6 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     }
 });
-
-
-
-
 
 // Set up Twilio
 const accountSid = process.env.TWILIO_SID;
@@ -326,16 +337,16 @@ async function sendTwilioMessage(fromPhone, toPhone, msg) {
 
 async function sendInitialChatbotMessage(session) {
     console.log("Intial message sent");
-    await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `An overdose is suspected at ${session.locationid}. Please respond with 'ok' once you have checked up on it.`);
+    await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
     await db.startChatbotSessionState(session);
     setTimeout(reminderMessage, unrespondedTimer, session.locationid);
 }
 
 async function reminderMessage(location) {
-    session = await db.getMostRecentSession(location); // Gets the updated state for the chatbot
+    let session = await db.getMostRecentSession(location); // Gets the updated state for the chatbot
     if(session.chatbot_state == 'Started') {
         //send the message
-        await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `An overdose is suspected at ${session.locationid}. Please respond with 'ok' once you have checked up on it.`)
+        await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `This is a reminder to check on the bathroom`)
         session.chatbot_state = 'Waiting for Response';
         await db.saveChatbotSession(session);
     }
@@ -384,7 +395,7 @@ app.post('/sms', async function (req, res) {
       if(await db.closeSession(chatbot.locationid)){ // Adds the end_time to the latest open session from the LocationID
           console.log(`Session at ${chatbot.locationid} was closed successfully.`);
           io.sockets.emit('sessiondata', {data: session}); // Sends currentSession data with end_time which will close the session in the frontend
-          start_times[locations.indexOf(chatbot.locationid)] = null; // Stops the session timer for this location
+          start_times[chatbot.locationid] = null; // Stops the session timer for this location
       }
       else{
           console.log(`Attempted to close session but no open session was found for ${chatbot.locationid}`);
@@ -403,15 +414,16 @@ app.post('/sms', async function (req, res) {
 // This function will run the state machine for each location once every second
 setInterval(async function () {
   for(let i = 0; i < locations.length; i++){
-    let statemachine = new SessionState(locations[i]);
+    let currentLocationId = locations[i];
+    let statemachine = new SessionState(currentLocationId);
     let currentState = await statemachine.getNextState(db);
-    let prevState = await db.getLatestLocationStatesdata(locations[i]);
-    let location = await db.getLocationData(locations[i]);
+    let prevState = await db.getLatestLocationStatesdata(currentLocationId);
+    let location = await db.getLocationData(currentLocationId);
 
     // Query raw sensor data to transmit to the FrontEnd
-    let XeThruData = await db.getLatestXeThruSensordata(locations[i]);
-    let MotionData = await db.getLatestMotionSensordata(locations[i]);
-    let DoorData = await db.getLatestDoorSensordata(locations[i]);
+    let XeThruData = await db.getLatestXeThruSensordata(currentLocationId);
+    let MotionData = await db.getLatestMotionSensordata(currentLocationId);
+    let DoorData = await db.getLatestDoorSensordata(currentLocationId);
 
     // Check the XeThru Heartbeat
     let currentTime = moment();
@@ -429,17 +441,19 @@ setInterval(async function () {
       sendReconnectionMessage(location.locationid)
     }
 
-    console.log(`${locations[i]}: ${currentState}`);
+    console.log(`${currentLocationId}: ${currentState}`);
 
     // Get current time to compare to the session's start time
-    if(start_times[i] != null){
+
+    var location_start_time = start_times[currentLocationId]
+    if(location_start_time != null && location_start_time != undefined){
       var today = new Date();
       var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
       var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
       var dateTime_string = date+' '+time;
 
       var dateTime = new Date(dateTime_string);
-      var start_time_sesh = new Date(start_times[i]);
+      var start_time_sesh = new Date(location_start_time);
 
       // Current Session duration so far:
       var sessionDuration = (dateTime - start_time_sesh)/1000;
@@ -449,15 +463,15 @@ setInterval(async function () {
 
      // To avoid filling the DB with repeated states in a row.
     if(currentState != prevState.state){
-      await db.addStateMachineData(currentState, locations[i]);
+      await db.addStateMachineData(currentState, currentLocationId);
 
       //Checks if current state belongs to voidStates
       if(VOIDSTATES.includes(currentState)){
-        let latestSession = await db.getMostRecentSession(locations[i]);
+        let latestSession = await db.getMostRecentSession(currentLocationId);
 
         if(typeof latestSession !== 'undefined'){ // Checks if no session exists for this location yet.
           if(latestSession.end_time == null){ // Checks if session is open.
-            let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
+            let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
             io.sockets.emit('sessiondata', {data: currentSession});
           }
         }
@@ -466,44 +480,44 @@ setInterval(async function () {
 
       // Checks if current state belongs to the session triggerStates
       else if(TRIGGERSTATES.includes(currentState)){
-        let latestSession = await db.getMostRecentSession(locations[i]);
+        let latestSession = await db.getMostRecentSession(currentLocationId);
 
         if(typeof latestSession !== 'undefined'){ //Checks if session exists
           if(latestSession.end_time == null){  // Checks if session is open for this location
-            let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]);
+            let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
             io.sockets.emit('sessiondata', {data: currentSession});
-            start_times[i] = currentSession.start_time;
+            start_times[currentLocationId] = currentSession.start_time;
           }
           else{
-            let currentSession = await db.createSession(process.env.PHONENUMBER, locations[i], currentState); // Creates a new session
+            let currentSession = await db.createSession(process.env.PHONENUMBER, currentLocationId, currentState); // Creates a new session
             io.sockets.emit('sessiondata', {data: currentSession});
-            start_times[i] = currentSession.start_time;
+            start_times[currentLocationId] = currentSession.start_time;
           }
         }
         else{
-          let currentSession = await db.createSession(process.env.PHONENUMBER, locations[i], currentState); // Creates a new session
+          let currentSession = await db.createSession(process.env.PHONENUMBER, currentLocationId, currentState); // Creates a new session
           io.sockets.emit('sessiondata', {data: currentSession});
-          start_times[i] = currentSession.start_time;
+          start_times[currentLocationId] = currentSession.start_time;
         }
       }
 
       // Checks if current state belongs to the session closingStates
       else if(CLOSINGSTATES.includes(currentState)){
-        let latestSession = await db.getMostRecentSession(locations[i]);
-        let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, locations[i]); //Adds the closing state to session
+        let latestSession = await db.getMostRecentSession(currentLocationId);
+        let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId); //Adds the closing state to session
 
-        if(await db.closeSession(locations[i])){ // Adds the end_time to the latest open session from the LocationID
-          console.log(`Session at ${locations[i]} was closed successfully.`);
+        if(await db.closeSession(currentLocationId)){ // Adds the end_time to the latest open session from the LocationID
+          console.log(`Session at ${currentLocationId} was closed successfully.`);
           io.sockets.emit('sessiondata', {data: currentSession}); // Sends currentSession data with end_time which will close the session in the frontend
-          start_times[i] = null; // Stops the session timer for this location ID
+          start_times[currentLocationId] = null; // Stops the session timer for this location ID
         }
         else{
-          console.log(`Attempted to close session but no open session was found for ${locations[i]}`);
+          console.log(`Attempted to close session but no open session was found for ${currentLocationId}`);
         }
       }
 
       else if(CHATBOTSTARTSTATES.includes(currentState)) {
-          let latestSession = await db.getMostRecentSession(locations[i]);
+          let latestSession = await db.getMostRecentSession(currentLocationId);
 
           if(latestSession.od_flag == 1) {
               if(latestSession.chatbot_state == null) {
@@ -517,7 +531,7 @@ setInterval(async function () {
       }
     }
     else{ // If statemachine doesn't run, emits latest session data to Frontend
-      let currentSession = await db.getMostRecentSession(locations[i])
+      let currentSession = await db.getMostRecentSession(currentLocationId)
 
       // Checks if session is in the STILL state and, if so, how long it has been in that state for.
       if(typeof currentSession !== 'undefined'){
@@ -547,11 +561,6 @@ setInterval(async function () {
   }
 }, 1000); // Set to transmit data every 1000 ms.
 
-
-// local http server for testing
-/* const server = app.listen(port, () => {
-  console.log(`App running on port ${port}.`)
-}) */
 
 let httpsOptions = {
   key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
