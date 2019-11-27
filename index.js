@@ -33,7 +33,7 @@ var locations = [];
 var start_times = {};
 
 // last data packet from each Photon 
-var latestXeThru = [];
+var latestXeThru = {};
 
 //Set up Door and xeThru state buffers as dicts
 var door_dict = {};
@@ -45,6 +45,7 @@ setInterval(async function (){
   let locationsArray = []
   for(let i = 0; i < locationTable.length; i++){
     locationsArray.push(locationTable[i].locationid)
+    //If there are any new locations that are in Locations Table but not Locations, initialize buffs for them
     if(!locations.includes(locationsTable[i])){
       door_dict[locationsTable[i]] = new CircularBuffer(10);
       xethru_state_dict[locationsTable[i]] = new CircularBuffer(10);
@@ -54,10 +55,6 @@ setInterval(async function (){
   console.log(`Current locations: ${locations}`)
 }, LOCATION_UPDATE_FREQUENCY)
 
-
-
-var door_buf = new CircularBuffer(10);
-var xeThru_State_buf = new CircularBuffer(10);
 
 
 // These states do not start nor close a session
@@ -258,13 +255,17 @@ app.post('/api/st', function(req, res, next) {
 
 // Handler for income XeThru POST requests
 app.post('/api/xethru', async (req, res) => {
-
     const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s, door} = request.body;
+    //update last seen for this locationid
+    latestXeThru[locationid] = moment();
+    //update buffers for this locationid
     door_dict[locationid].enq(door);
     xethru_state_dict[locationid].enq(state);
-    if(xethru_state_dict[locationid].get(0)!=xethru_state_dict[locationid].get(1)){
+    //only insert into the databse if the xethru state is not 3 or if 3, it wasn't 3 in the previous epoch
+    if(xethru_state_dict[locationid].get(0)!= "3" || xethru_state_dict[locationid].get(0)!=xethru_state_dict[locationid].get(1)){
       await db.addXeThruSensordata(req, res);
     }
+    //only record changes
     if(door_dict[locationid].get(0)!=door_dict[locationid].get(1)){
       addDoorSensordata(deviceid, locationid, "Door", door);
     }
@@ -449,7 +450,7 @@ setInterval(async function () {
 
     // Check the XeThru Heartbeat
     let currentTime = moment();
-    let XeThruDelayMillis = currentTime.diff(latestXethru);
+    let XeThruDelayMillis = currentTime.diff(latestXethru[currentLocationId]);
 
     if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
       console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
