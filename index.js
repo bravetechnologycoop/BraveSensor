@@ -14,7 +14,6 @@ const smartapp   = require('@smartthings/smartapp');
 const path = require('path');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
-var CircularBuffer = require("circular-buffer");
 require('dotenv').config();
 
 const app = express();
@@ -25,6 +24,7 @@ const io = require('socket.io')(http);
 const XETHRU_THRESHOLD_MILLIS = 10*1000;
 const unrespondedTimer = 30 *1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
+const sessionResetThreshold = 20*60*1000;
 
 // List of locations that the main loop will iterate over
 var locations = [];
@@ -32,28 +32,28 @@ var locations = [];
 // Session start_times dictionary.
 var start_times = {};
 
-// last data packet from each Photon 
-var latestXeThru = {};
-
-//Set up Door and xeThru state buffers as dicts
-var door_dict = {};
-var xethru_state_dict = {};
-
 // Update the list of locations every minute
 setInterval(async function (){
+  let numLocations = locations.length;
   let locationTable = await db.getLocations()
   let locationsArray = []
   for(let i = 0; i < locationTable.length; i++){
     locationsArray.push(locationTable[i].locationid)
-    //If there are any new locations that are in Locations Table but not Locations, initialize buffs for them
-    if(!locations.includes(locationsTable[i])){
-      door_dict[locationsTable[i]] = new CircularBuffer(10);
-      xethru_state_dict[locationsTable[i]] = new CircularBuffer(10);
-    }
   }
   locations = locationsArray;
+  let updatedNumLocations = locations.length;
+  if(numLocations!=updatedNumLocations){
+    console.log(`Added ${updatedNumLocations-numLocations} new locations`)
+  }
+  locations.forEach(element => {
+    element.locationid.radar = [];
+    element.locationid.door = [];
+  });
   console.log(`Current locations: ${locations}`)
 }, LOCATION_UPDATE_FREQUENCY)
+
+//Set up a data queue for each location
+
 
 
 
@@ -255,20 +255,9 @@ app.post('/api/st', function(req, res, next) {
 
 // Handler for income XeThru POST requests
 app.post('/api/xethru', async (req, res) => {
-    const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s, door} = request.body;
-    //update last seen for this locationid
-    latestXeThru[locationid] = moment();
-    //update buffers for this locationid
-    door_dict[locationid].enq(door);
-    xethru_state_dict[locationid].enq(state);
-    //only insert into the databse if the xethru state is not 3 or if 3, it wasn't 3 in the previous epoch
-    if(xethru_state_dict[locationid].get(0)!= "3" || xethru_state_dict[locationid].get(0)!=xethru_state_dict[locationid].get(1)){
-      await db.addXeThruSensordata(req, res);
-    }
-    //only record changes
-    if(door_dict[locationid].get(0)!=door_dict[locationid].get(1)){
-      addDoorSensordata(deviceid, locationid, "Door", door);
-    }
+  const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s, door} = req.body;
+
+  await db.addXeThruSensordata(req, res);
 });
 
 // Handler for redirecting to the Frontend
@@ -377,7 +366,7 @@ async function reminderMessage(location) {
 }
 
 //Heartbeat Helper Functions
-async function sendAlerts(location) {
+async function sendDisconnectAlerts(location) {
   locationData = await db.getLocationData(location);
   twilioClient.messages.create({
       body: `The XeThru connection for ${location} has been lost.`,
@@ -388,11 +377,25 @@ async function sendAlerts(location) {
   .done()
 }
 
-async function sendReconnectionMessage(location) {
+async function sendReconnectAlert(location) {
   locationData = await db.getLocationData(location);
 
   twilioClient.messages.create({
       body: `The XeThru at ${location} has been reconnected.`,
+      from: process.env.TWILIO_PHONENUMBER,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
+}
+
+//Autoreset twilio function
+
+async function sendResetAlert(location) {
+  locationData = await db.getLocationData(location);
+
+  twilioClient.messages.create({
+      body: `An unresponded session at ${location} has been automatically reset.`,
       from: process.env.TWILIO_PHONENUMBER,
       to: locationData.xethru_heartbeat_number
   })
@@ -450,17 +453,18 @@ setInterval(async function () {
 
     // Check the XeThru Heartbeat
     let currentTime = moment();
-    let XeThruDelayMillis = currentTime.diff(latestXethru[currentLocationId]);
+    let latestXethru = XeThruData.published_at;
+    let XeThruDelayMillis = currentTime.diff(latestXethru);
 
     if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
       console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
       await db.updateSentAlerts(location.locationid, true)
-      sendAlerts(location.locationid)
+      sendDisconnectAlerts(location.locationid)
     }
     else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
       console.log(`XeThru at ${location.locationid} reconnected`)
       await db.updateSentAlerts(location.locationid, false)
-      sendReconnectionMessage(location.locationid)
+      sendReconnectAlert(location.locationid)
     }
 
     console.log(`${currentLocationId}: ${currentState}`);
@@ -468,6 +472,8 @@ setInterval(async function () {
     // Get current time to compare to the session's start time
 
     var location_start_time = start_times[currentLocationId]
+
+    //If there is an ongoing session
     if(location_start_time != null && location_start_time != undefined){
       var today = new Date();
       var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
@@ -480,8 +486,16 @@ setInterval(async function () {
       // Current Session duration so far:
       var sessionDuration = (dateTime - start_time_sesh)/1000;
       io.sockets.emit('timerdata', {data: sessionDuration});
+
+      //If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
+
+      if (sessionDuration*1000>sessionResetThreshold){
+        resetSession(currentLocationId);
+        sendResetAlert(currentLocationId);
+      }
     }
-    console.log(`${sessionDuration}`);
+
+
 
      // To avoid filling the DB with repeated states in a row.
     if(currentState != prevState.state){
