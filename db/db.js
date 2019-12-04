@@ -1,7 +1,7 @@
 const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 require('dotenv').config();
-pgconnectionString = process.env.PG_CONECTION_STRING
+pgconnectionString = process.env.PG_CONNECTION_STRING
 
 const pool = new pg.Pool({
   connectionString: pgconnectionString
