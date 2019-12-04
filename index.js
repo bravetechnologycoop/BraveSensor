@@ -254,10 +254,11 @@ app.post('/api/st', function(req, res, next) {
 });
 
 // Handler for income XeThru POST requests
-app.post('/api/xethru', async (req, res) => {
+app.post('/api/particle', async (req, res) => {
   const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s, door} = req.body;
 
   await db.addXeThruSensordata(req, res);
+  await db.addDoorSensordata(deviceid, locationid, "Door", door);
 });
 
 // Handler for redirecting to the Frontend
