@@ -14,6 +14,7 @@ const smartapp   = require('@smartthings/smartapp');
 const path = require('path');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
+var CircularBuffer = require("circular-buffer");
 require('dotenv').config();
 
 const app = express();
@@ -32,23 +33,27 @@ var locations = [];
 // Session start_times dictionary.
 var start_times = {};
 
+// last data packet from each Photon 
+var latestXeThru = {};
+
+//Set up Door and xeThru state buffers as dicts
+var door_dict = {};
+var xethru_state_dict = {};
+
 // Update the list of locations every minute
 setInterval(async function (){
   let numLocations = locations.length;
   let locationTable = await db.getLocations()
   let locationsArray = []
   for(let i = 0; i < locationTable.length; i++){
-    locationsArray.push(locationTable[i].locationid)
+    locationsArray.push(locationTable[i].locationid);
+    //If there are any new locations that are in Locations Table but not Locations, initialize bufferss for them
+    if(!locations.includes(locationsTable[i])){
+      door_dict[locationsTable[i]] = new CircularBuffer(10);
+      xethru_state_dict[locationsTable[i]] = new CircularBuffer(10);
+    }
   }
   locations = locationsArray;
-  let updatedNumLocations = locations.length;
-  if(numLocations!=updatedNumLocations){
-    console.log(`Added ${updatedNumLocations-numLocations} new locations`)
-  }
-  locations.forEach(element => {
-    element.locationid.radar = [];
-    element.locationid.door = [];
-  });
   console.log(`Current locations: ${locations}`)
 }, LOCATION_UPDATE_FREQUENCY)
 
@@ -175,61 +180,6 @@ const authToken = process.env.TWILIO_TOKEN;
 const twilioClient = require('twilio')(accountSid, authToken);
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
 
-// SmartThings Smart App Implementations
-
-// @smartthings_rsa.pub is your on-disk public key
-// If you do not have it yet, omit publicKey()
-smartapp
-    .publicKey('@smartthings_rsa.pub') // optional until app verified
-    .configureI18n()
-    .page('mainPage', (context, page, configData) => {
-        page.name('ODetect Configuration App');
-        page.section('Location and Devices information', section => {
-            section.textSetting('LocationID');
-            section.textSetting('DeviceID');
-        });
-        page.section('Select sensors', section => {
-            section.deviceSetting('contactSensor').capabilities(['contactSensor']).required(false);
-            section.deviceSetting('motionSensor').capabilities(['motionSensor']).required(false);
-            section.deviceSetting('button').capabilities(['button']).required(false);
-        });
-    })
-    .installed((context, installData) => {
-        console.log('installed', JSON.stringify(installData));
-    })
-    .uninstalled((context, uninstallData) => {
-        console.log('uninstalled', JSON.stringify(uninstallData));
-    })
-    .updated((context, updateData) => {
-        console.log('updated', JSON.stringify(updateData));
-        context.api.subscriptions.unsubscribeAll().then(() => {
-              console.log('unsubscribeAll() executed');
-              context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'contactSensor', 'contact', 'myContactEventHandler');
-              context.api.subscriptions.subscribeToDevices(context.config.motionSensor, 'motionSensor', 'motion', 'myMotionEventHandler');
-              context.api.subscriptions.subscribeToDevices(context.config.button, 'button', 'button', 'myButtonEventHandler');
-        });
-    })
-    .subscribedEventHandler('myContactEventHandler', (context, deviceEvent) => {
-        const signal = deviceEvent.value;
-        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
-        db.addDoorSensordata(DeviceID, LocationID, "Door", signal);
-        console.log(`Motion${DeviceID} Sensor: ${signal} @${LocationID}`);
-    })
-    .subscribedEventHandler('myMotionEventHandler', (context, deviceEvent) => {
-        const signal = deviceEvent.value;
-        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
-        db.addMotionSensordata(DeviceID, LocationID, "Motion", signal);
-        console.log(`Motion${DeviceID} Sensor: ${signal} @${LocationID}`);
-    })
-    .subscribedEventHandler('myButtonEventHandler', (context, deviceEvent) => {
-        const signal = deviceEvent.value;
-        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
-        console.log(`Button${DeviceID} Sensor: ${signal} @${LocationID}`);
-    })
-
 // Closes any open session and resets state for the given location
 async function resetSession(locationid){
   try{
@@ -256,9 +206,19 @@ app.post('/api/st', function(req, res, next) {
 // Handler for income XeThru POST requests
 app.post('/api/particle', async (req, res) => {
   const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s, door} = req.body;
-
-  await db.addXeThruSensordata(req, res);
-  await db.addDoorSensordata(deviceid, locationid, "Door", door);
+  //update last seen for this locationid
+  latestXeThru[locationid] = moment();
+  //update buffers for this locationid
+  door_dict[locationid].enq(door);
+  xethru_state_dict[locationid].enq(state);
+  //only insert into the databse if the xethru state is not 3 or else if it was indeed 3, it wasn't 3 in the previous epoch
+  if(xethru_state_dict[locationid].get(0)!= "3" || xethru_state_dict[locationid].get(0)!=xethru_state_dict[locationid].get(1)){
+    await db.addXeThruSensordata(req, res);
+  }
+  //only record changes
+  if(door_dict[locationid].get(0)!=door_dict[locationid].get(1)){
+    await db.addDoorSensordata(deviceid, locationid, "Door", door);
+  }
 });
 
 // Handler for redirecting to the Frontend
@@ -270,8 +230,6 @@ app.get('/*', async function (req, res) {
     res.redirect('/login');
   }
 });
-
-
 // Web Socket connection to Frontend
 io.on('connection', (socket) => {
 
@@ -454,8 +412,7 @@ setInterval(async function () {
 
     // Check the XeThru Heartbeat
     let currentTime = moment();
-    let latestXethru = XeThruData.published_at;
-    let XeThruDelayMillis = currentTime.diff(latestXethru);
+    let XeThruDelayMillis = currentTime.diff(latestXethru[currentLocationId]);
 
     if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
       console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
