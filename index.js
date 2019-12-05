@@ -24,6 +24,7 @@ const io = require('socket.io')(http);
 const XETHRU_THRESHOLD_MILLIS = 10*1000;
 const unrespondedTimer = 30 *1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
+const sessionResetThreshold = 5*60*1000;
 
 // List of locations that the main loop will iterate over
 var locations = [];
@@ -373,6 +374,21 @@ async function sendReconnectionMessage(location) {
   .done()
 }
 
+//Autoreset twilio function
+
+async function sendResetAlert(location) {
+  locationData = await db.getLocationData(location);
+
+  twilioClient.messages.create({
+      body: `An unresponded session at ${location} has been automatically reset.`,
+      from: process.env.TWILIO_PHONENUMBER,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
+}
+
+
 // Handler for incoming Twilio messages
 app.post('/sms', async function (req, res) {
   const twiml = new MessagingResponse();
@@ -455,6 +471,17 @@ setInterval(async function () {
       var sessionDuration = (dateTime - start_time_sesh)/1000;
       io.sockets.emit('timerdata', {data: sessionDuration});
     }
+
+    //If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
+
+    if (sessionDuration*1000>sessionResetThreshold){
+      resetSession(location.locationid);
+      start_times[currentLocationId] = null;
+      console.log('resetSession has been called');
+      sendResetAlert(location.locationid);
+    }
+
+
     console.log(`${sessionDuration}`);
 
      // To avoid filling the DB with repeated states in a row.
@@ -485,15 +512,10 @@ setInterval(async function () {
             start_times[currentLocationId] = currentSession.start_time;
           }
           else{
-            let currentSession = await db.createSession(process.env.PHONENUMBER, currentLocationId, currentState); // Creates a new session
+            let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState); // Creates a new session
             io.sockets.emit('sessiondata', {data: currentSession});
             start_times[currentLocationId] = currentSession.start_time;
           }
-        }
-        else{
-          let currentSession = await db.createSession(process.env.PHONENUMBER, currentLocationId, currentState); // Creates a new session
-          io.sockets.emit('sessiondata', {data: currentSession});
-          start_times[currentLocationId] = currentSession.start_time;
         }
       }
 

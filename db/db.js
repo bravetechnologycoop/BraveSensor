@@ -216,10 +216,12 @@ async function createSession(phone, locationid, state) {
 
 // Closes the session by updating the end time
 async function closeSession(location) {
+    console.log("db.closeSession is being called");
     const session = await getMostRecentSession(location);
     if (session != undefined){ //Check if session exists for this location
       if(session.end_time == null){ // Check if latest session is open
         await updateSessionEndTime(session.sessionid); //
+        console.log("session has been closed by db.closeSession");
         return true;
       }
       else{
