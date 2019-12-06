@@ -40,6 +40,13 @@ var latestXeThru = {};
 var door_dict = {};
 var xethru_state_dict = {};
 
+
+door_dict["MarioBathroom"] = new CircularBuffer(10);
+xethru_state_dict["MarioBathroom"] = new CircularBuffer(10);
+
+door_dict["SampathBathroom"] = new CircularBuffer(10);
+xethru_state_dict["SampathBathroom"] = new CircularBuffer(10);
+
 // Update the list of locations every minute
 setInterval(async function (){
   let numLocations = locations.length;
