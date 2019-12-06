@@ -214,6 +214,7 @@ app.post('/api/st', function(req, res, next) {
 
 // Handler for income XeThru POST requests
 app.post('/api/particle', async (req, res) => {
+  console.log(req);
   console.log(req.body.locationid);
   const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s, door} = req.body;
   //update last seen for this locationid
