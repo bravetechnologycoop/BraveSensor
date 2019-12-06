@@ -214,7 +214,6 @@ app.post('/api/st', function(req, res, next) {
 
 // Handler for income XeThru POST requests
 app.post('/api/particle', async (req, res) => {
-  console.log(req);
   console.log(req.body.locationid);
   const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s, door} = req.body;
   //update last seen for this locationid
@@ -225,10 +224,12 @@ app.post('/api/particle', async (req, res) => {
   //only insert into the databse if the xethru state is not 3 or else if it was indeed 3, it wasn't 3 in the previous epoch
   if(xethru_state_dict[locationid].get(0)!= "3" || xethru_state_dict[locationid].get(0)!=xethru_state_dict[locationid].get(1)){
     await db.addXeThruSensordata(req, res);
+    console.log(xethru_state_dict[locationid].get(0));
   }
   //only record changes
   if(door_dict[locationid].get(0)!=door_dict[locationid].get(1)){
     await db.addDoorSensordata(deviceid, locationid, "Door", door);
+    console.log(door_dict[locationid].get(0));
   }
 });
 
