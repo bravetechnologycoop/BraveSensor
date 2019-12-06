@@ -48,9 +48,9 @@ setInterval(async function (){
   for(let i = 0; i < locationTable.length; i++){
     locationsArray.push(locationTable[i].locationid);
     //If there are any new locations that are in Locations Table but not Locations, initialize bufferss for them
-    if(!locations.includes(locationsTable[i])){
-      door_dict[locationsTable[i]] = new CircularBuffer(10);
-      xethru_state_dict[locationsTable[i]] = new CircularBuffer(10);
+    if(!locations.includes(locationTable[i])){
+      door_dict[locationTable[i]] = new CircularBuffer(10);
+      xethru_state_dict[locationTable[i]] = new CircularBuffer(10);
     }
   }
   locations = locationsArray;
