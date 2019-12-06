@@ -51,6 +51,8 @@ setInterval(async function (){
     if(!locations.includes(locationTable[i].locationid)){
       door_dict[locationTable[i].locationid] = new CircularBuffer(10);
       xethru_state_dict[locationTable[i].locationid] = new CircularBuffer(10);
+      // To ensure that latestXeThru remains defined 
+      latestXeThru[locationTable[i].locationid] = moment();
     }
   }
   locations = locationsArray;
@@ -205,6 +207,7 @@ app.post('/api/st', function(req, res, next) {
 
 // Handler for income XeThru POST requests
 app.post('/api/particle', async (req, res) => {
+  console.log(req.body.locationid);
   const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s, door} = req.body;
   //update last seen for this locationid
   latestXeThru[locationid] = moment();
@@ -412,7 +415,7 @@ setInterval(async function () {
 
     // Check the XeThru Heartbeat
     let currentTime = moment();
-    let XeThruDelayMillis = currentTime.diff(latestXethru[currentLocationId]);
+    let XeThruDelayMillis = currentTime.diff(latestXeThru[currentLocationId]);
 
     if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
       console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
