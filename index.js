@@ -298,6 +298,9 @@ io.on('connection', (socket) => {
     });
 
     console.log("Websocket connection");
+    socket.emit('getLocations', {
+      data: locations
+    })
     socket.emit('Hello', {
         greeting: "Hello ODetect Frontend"
     });
