@@ -35,6 +35,7 @@ var start_times = {};
 // Update the list of locations every minute
 setInterval(async function (){
   let locationTable = await db.getLocations()
+  io.sockets.emit('getLocations', data: locationTable);
   let locationsArray = []
   for(let i = 0; i < locationTable.length; i++){
     locationsArray.push(locationTable[i].locationid)
