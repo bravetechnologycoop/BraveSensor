@@ -35,12 +35,12 @@ var start_times = {};
 // Update the list of locations every minute
 setInterval(async function (){
   let locationTable = await db.getLocations()
-  io.sockets.emit('getLocations', {data: locationTable});
   let locationsArray = []
   for(let i = 0; i < locationTable.length; i++){
     locationsArray.push(locationTable[i].locationid)
   }
   locations = locationsArray;
+  io.sockets.emit('getLocations', {data: locationsArray});
   console.log(`Current locations: ${locations}`)
 }, LOCATION_UPDATE_FREQUENCY)
 
@@ -297,13 +297,10 @@ io.on('connection', (socket) => {
         console.log('test');
     });
 
-    socket.on('getLocations', async () => {
-      let locations = await db.getLocations();
-      io.sockets.emit('getLocations', {data: locations});
-      console.log('test');
-  });
-
     console.log("Websocket connection");
+    socket.emit('getLocations', {
+      data: locations
+    })
     socket.emit('Hello', {
         greeting: "Hello ODetect Frontend"
     });
