@@ -503,6 +503,7 @@ setInterval(async function () {
           if(latestSession.end_time == null){ // Checks if session is open.
             let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
             io.sockets.emit('sessiondata', {data: currentSession});
+            console.log('sessiondata socket event sending' + currentSession)
           }
         }
       }
