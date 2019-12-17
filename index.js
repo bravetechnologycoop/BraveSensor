@@ -560,7 +560,7 @@ setInterval(async function () {
       if(typeof currentSession !== 'undefined'){
         if(currentSession.state == 'Still' || currentSession.state == 'Breathing'){
           if(currentSession.end_time == null){ // Only increases counter if session is open
-            let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid);
+            let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid, currentSession.locationid);
             io.sockets.emit('sessiondata', {data: updatedSession});
           }
           else{ // If session is closed still emit its data as it is
@@ -571,7 +571,7 @@ setInterval(async function () {
         }
         else{
           // If current session is anything else than STILL it returns the counter to 0
-          let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid);
+          let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid, currentSession.locationid);
           console.log('sending sessiondata event line 575')
           io.sockets.emit('sessiondata', {data: updatedSession});
         }

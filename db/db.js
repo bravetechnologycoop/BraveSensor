@@ -293,9 +293,9 @@ async function updateSessionResetDetails(sessionid, notes, state) {
 
 // Updates the still_counter in the sessions database row
 
-async function updateSessionStillCounter(stillcounter, sessionid) {
+async function updateSessionStillCounter(stillcounter, sessionid,locationid) {
   try{
-    const results = await pool.query("UPDATE sessions SET still_counter = $1 WHERE sessionid = $2 RETURNING *", [stillcounter, sessionid]);
+    const results = await pool.query("UPDATE sessions SET still_counter = $1 WHERE sessionid = $2 AND locationid = $3 RETURNING *", [stillcounter, sessionid,locationid]);
     if(results == undefined){
       return null;
     }
