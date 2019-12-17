@@ -564,6 +564,7 @@ setInterval(async function () {
             io.sockets.emit('sessiondata', {data: updatedSession});
           }
           else{ // If session is closed still emit its data as it is
+            console.log('sending sessiondata event line 568')
             io.sockets.emit('sessiondata', {data: currentSession});
           }
 
@@ -571,6 +572,7 @@ setInterval(async function () {
         else{
           // If current session is anything else than STILL it returns the counter to 0
           let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid);
+          console.log('sending sessiondata event line 575')
           io.sockets.emit('sessiondata', {data: updatedSession});
         }
       }
