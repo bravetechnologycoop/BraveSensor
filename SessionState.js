@@ -4,7 +4,7 @@ const MOTION_STATE = require('./SessionStateMotionEnum.js');
 const OD_FLAG_STATE = require('./SessionStateODFlagEnum');
 const DOOR_STATE = require('./SessionStateDoorEnum.js');
 let moment = require('moment');
-const DOOR_THRESHOLD_MILLIS = 30 * 1000;
+const DOOR_THRESHOLD_MILLIS = 15 * 1000;
 
 
 class SessionState {
@@ -62,10 +62,18 @@ class SessionState {
                         break;
                     }
                 case STATE.DOOR_OPENED_START:
-                    {                        
+                    {
                         // Waits for the door to close before continuing with state machine
-                        if (door.signal == DOOR_STATE.CLOSED) {
-                            state = STATE.DOOR_CLOSED_START;
+                        if (door.signal == DOOR_STATE.CLOSED){
+                            if(doorDelay < DOOR_THRESHOLD_MILLIS){
+                                state = STATE.DOOR_OPENED_START;
+                            }
+                            if(doorDelay >= DOOR_THRESHOLD_MILLIS && xethru.mov_f > residual_mov_f && xethru.state != XETHRU_STATE.NO_MOVEMENT){
+                                state = STATE.DOOR_CLOSED_START;
+                            }
+                            else{
+                                state = STATE.NO_PRESENCE_NO_SESSION;
+                            }
                         }
                         break;
                     }
