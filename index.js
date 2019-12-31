@@ -236,6 +236,24 @@ async function resetSession(locationid){
   }
 }
 
+// Closes any open session and resets state for the given location
+async function autoResetSession(locationid){
+  try{
+    if(await db.closeSession(locationid)){
+      let session = await db.getMostRecentSession(locationid);
+      console.log(session);
+      await db.updateSessionResetDetails(session.sessionid, "Auto reset", "Reset");
+      await db.addStateMachineData("Reset", locationid);
+    }
+    else{
+      console.log("There is no open session to reset!")
+    }
+  }
+  catch {
+    console.log("Could not reset open session");
+  }
+}
+
 // Handler for income SmartThings POST requests
 app.post('/api/st', function(req, res, next) {
     smartapp.handleHttpCallback(req, res);
@@ -479,9 +497,9 @@ setInterval(async function () {
     //If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
 
     if (sessionDuration*1000>sessionResetThreshold){
-      resetSession(location.locationid);
+      autoResetSession(location.locationid);
       start_times[currentLocationId] = null;
-      console.log('resetSession has been called');
+      console.log('autoResetSession has been called');
       sendResetAlert(location.locationid);
     }
 
