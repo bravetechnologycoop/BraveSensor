@@ -141,6 +141,22 @@ async function getLatestLocationStatesdata(locationid){
 
 }
 
+//Returns last 60 data points of state history 
+async function getRecentStateHistory(locationid){
+  try{
+    const results = await pool.query('SELECT * FROM states WHERE locationid = $1 ORDER BY published_at DESC LIMIT 60', [locationid]);
+    if(results == undefined){
+      return null;
+    }
+    else{
+      return results.rows; 
+    }
+  }
+  catch(e){
+    console.log(`Error running the getRecentStateHistory query: ${e}`);
+  }
+}
+
 // Gets the most recent session data in the table for a specified location
 async function getMostRecentSession(locationid) {
   try{
@@ -157,6 +173,7 @@ async function getMostRecentSession(locationid) {
     console.log(`Error running the getMostRecentSession query: ${e}`);
   }
 }
+
 
 // Gets the last session data in the table for a specified phone number
 async function getMostRecentSessionPhone(phone) {
@@ -463,6 +480,7 @@ module.exports = {
   getLatestLocationStatesdata,
   getLastUnclosedSession,
   getMostRecentSession,
+  getRecentStateHistory,
   getHistoryOfSessions,
   createSession,
   isOverdoseSuspected,
