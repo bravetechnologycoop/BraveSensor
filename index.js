@@ -278,6 +278,8 @@ setInterval(async function (){
         resetDiscrepancies.push(stateHistoryQuery[i].published_at);
         console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
         await db.addStateMachineData(STATE.RESET, currentLocationId);
+        //Once a reset state has been added, additionally reset any ongoing sessions
+        autoResetSession(currentLocationId);
       }
     }
   }
