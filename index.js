@@ -25,7 +25,7 @@ const XETHRU_THRESHOLD_MILLIS = 10*1000;
 const unrespondedTimer = 30 *1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
-const sessionResetThreshold = 5*60*1000;
+const sessionResetThreshold = 22*60*1000;
 
 // List of locations that the main loop will iterate over
 var locations = [];
@@ -273,7 +273,7 @@ setInterval(async function (){
     }
     // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
     for(let i=0; i<(stateHistoryQuery.length-1); i++){
-      if ( (stateHistoryQuery[i].state == STATE.RESET) && (stateHistoryQuery[i+1].state == STATE.NO_PRESENCE_NO_SESSION) && (resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
+      if ( (stateHistoryQuery[i].state == STATE.RESET) && (stateHistoryQuery[i+1].state == STATE.NO_PRESENCE_NO_SESSION) && !(resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
         console.log(`The Reset state logged at ${stateHistoryQuery[i].published_at} has a discrepancy`);
         resetDiscrepancies.push(stateHistoryQuery[i].published_at);
         console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
