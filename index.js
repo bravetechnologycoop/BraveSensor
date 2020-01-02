@@ -268,7 +268,7 @@ setInterval(async function (){
     let stateHistoryQuery = await db.getRecentStateHistory(currentLocationId);
     let stateMemory = [];
     //Store this in a local array
-    for(let i = 0; i < locationTable.length; i++){
+    for(let i = 0; i < stateHistoryQuery.length; i++){
       stateMemory.push(stateHistoryQuery[i].state)
     }
     // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
