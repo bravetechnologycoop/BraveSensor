@@ -272,8 +272,8 @@ setInterval(async function (){
       stateMemory.push(stateHistoryQuery[i].state)
     }
     // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
-    for(let i=0; i<(stateHistoryQuery.length-1); i++){
-      if ( (stateHistoryQuery[i].state == STATE.RESET) && !(stateHistoryQuery[i+1].state == STATE.NO_PRESENCE_NO_SESSION) && !(resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
+    for(let i=1; i<(stateHistoryQuery.length); i++){
+      if ( (stateHistoryQuery[i].state == STATE.RESET) && !(stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) && !(resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
         console.log(`The Reset state logged at ${stateHistoryQuery[i].published_at} has a discrepancy`);
         resetDiscrepancies.push(stateHistoryQuery[i].published_at);
         console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
