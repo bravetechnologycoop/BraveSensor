@@ -275,7 +275,7 @@ setInterval(async function (){
     for(let i=1; i<(stateHistoryQuery.length); i++){
       if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
         console.log(`The Reset state logged at ${stateHistoryQuery[i].published_at} has a discrepancy`);
-        resetDiscrepancies.push(stateHistoryQuery[i].published_at);git
+        resetDiscrepancies.push(stateHistoryQuery[i].published_at);
         console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
         console.log(resetDiscrepancies);
         await db.addStateMachineData(STATE.RESET, currentLocationId);
