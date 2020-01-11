@@ -17,7 +17,7 @@ const STATE = require('./SessionStateEnum.js');
 require('dotenv').config();
 
 const app = express();
-const port = 443
+const port = 8080
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
