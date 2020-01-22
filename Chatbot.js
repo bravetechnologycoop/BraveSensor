@@ -5,15 +5,15 @@ const STATE = {
     STARTED: 'Started',
     WAITING_FOR_RESPONSE: 'Waiting for Response',
     WAITING_FOR_CATEGORY: 'Waiting for Category',
-    WAITING_FOR_DETAILS: 'Waiting for Details',
     COMPLETED: 'Completed'
 };
 
 // The options for the responder to choose from regarding the cause of the alert
 const incidentTypes = {
-    '0': 'False Alarm',
-    '1': 'Overdose',
-    '2': 'Other'
+    '1': 'No One Inside',
+    '2': 'Person responded',
+    '3': 'Overdose',
+    '4': 'None of the above'
 };
 
 class Chatbot {
@@ -35,27 +35,20 @@ class Chatbot {
             case STATE.STARTED:
                 {
                     this.state = STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
+                    returnMessage = "Please respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above";
                     break;
                 }
             case STATE.WAITING_FOR_RESPONSE:
                 {
                     this.state = STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
+                    returnMessage = "Please respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above";
                     break;
                 }
             case STATE.WAITING_FOR_CATEGORY:
                 {
                     let isValid = this.setIncidentType(messageText.trim());
-                    this.state = isValid ? STATE.WAITING_FOR_DETAILS : STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = isValid ? "Please provide any additional details to the incident" : "Invalid category, please try again\n\nPlease respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
-                    break;
-                }
-            case STATE.WAITING_FOR_DETAILS:
-                {
-                    this.notes = messageText.trim();
-                    this.state = STATE.COMPLETED;
-                    returnMessage = "Thank you";
+                    this.state = isValid ? STATE.COMPLETED : STATE.WAITING_FOR_CATEGORY;
+                    returnMessage = isValid ? "Thank you!" : "Invalid category, please try again\n\nPlease respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above";
                     break;
                 }
             case STATE.COMPLETED:
