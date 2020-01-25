@@ -22,10 +22,8 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
 const XETHRU_THRESHOLD_MILLIS = 10*1000;
-const unrespondedTimer = 30 *1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
-const sessionResetThreshold = 22*60*1000;
 
 // List of locations that the main loop will iterate over
 var locations = [];
@@ -388,16 +386,20 @@ async function sendTwilioMessage(fromPhone, toPhone, msg) {
 
 async function sendInitialChatbotMessage(session) {
     console.log("Intial message sent");
-    await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
+    var location = session.locationid;
+    locationData = await db.getLocationData(location)
+    await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
     await db.startChatbotSessionState(session);
-    setTimeout(reminderMessage, unrespondedTimer, session.locationid);
+    setTimeout(reminderMessage, locationData.unrespondedTimer, session.locationid);
 }
 
 async function reminderMessage(location) {
+    console.log("Reminder message being sent");
     let session = await db.getMostRecentSession(location); // Gets the updated state for the chatbot
+    locationData = await db.getLocationData(location)
     if(session.chatbot_state == 'Started') {
         //send the message
-        await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `This is a reminder to check on the bathroom`)
+        await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
         session.chatbot_state = 'Waiting for Response';
         await db.saveChatbotSession(session);
     }
@@ -408,8 +410,8 @@ async function reminderMessage(location) {
 async function sendAlerts(location) {
   locationData = await db.getLocationData(location);
   twilioClient.messages.create({
-      body: `The XeThru connection for ${location} has been lost.`,
-      from: process.env.TWILIO_PHONENUMBER,
+      body: `The XeThru connection for ${location} has been lost. Message from ODetect-Dev2`,
+      from: locationData.twilio_number,
       to: locationData.xethru_heartbeat_number
   })
   .then(message => console.log(message.sid))
@@ -420,8 +422,8 @@ async function sendReconnectionMessage(location) {
   locationData = await db.getLocationData(location);
 
   twilioClient.messages.create({
-      body: `The XeThru at ${location} has been reconnected.`,
-      from: process.env.TWILIO_PHONENUMBER,
+      body: `The XeThru at ${location} has been reconnected. Message from ODetect-Dev2`,
+      from: locationData.twilio_number,
       to: locationData.xethru_heartbeat_number
   })
   .then(message => console.log(message.sid))
@@ -432,10 +434,9 @@ async function sendReconnectionMessage(location) {
 
 async function sendResetAlert(location) {
   locationData = await db.getLocationData(location);
-
   twilioClient.messages.create({
-      body: `An unresponded session at ${location} has been automatically reset.`,
-      from: process.env.TWILIO_PHONENUMBER,
+      body: `An unresponded session at ${location} has been automatically reset. Message from ODetect-Dev2`,
+      from: locationData.twilio_number,
       to: locationData.xethru_heartbeat_number
   })
   .then(message => console.log(message.sid))
@@ -528,7 +529,7 @@ setInterval(async function () {
 
     //If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
 
-    if (sessionDuration*1000>sessionResetThreshold){
+    if (sessionDuration*1000>location.auto_reset_threshold){
       autoResetSession(location.locationid);
       start_times[currentLocationId] = null;
       console.log('autoResetSession has been called');
