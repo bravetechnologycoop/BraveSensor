@@ -1,5 +1,3 @@
-const db = require("./db/db.js");
-
 // The states in the chatbot sequence
 const STATE = {
     STARTED: 'Started',
@@ -33,41 +31,41 @@ class Chatbot {
 
         switch (this.state) {
             case STATE.STARTED:
-                {
-                    this.state = STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
-                    break;
-                }
+            {
+                this.state = STATE.WAITING_FOR_CATEGORY;
+                returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
+                break;
+            }
             case STATE.WAITING_FOR_RESPONSE:
-                {
-                    this.state = STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
-                    break;
-                }
+            {
+                this.state = STATE.WAITING_FOR_CATEGORY;
+                returnMessage = "Please respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
+                break;
+            }
             case STATE.WAITING_FOR_CATEGORY:
-                {
-                    let isValid = this.setIncidentType(messageText.trim());
-                    this.state = isValid ? STATE.WAITING_FOR_DETAILS : STATE.WAITING_FOR_CATEGORY;
-                    returnMessage = isValid ? "Please provide any additional details to the incident" : "Invalid category, please try again\n\nPlease respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
-                    break;
-                }
+            {
+                let isValid = this.setIncidentType(messageText.trim());
+                this.state = isValid ? STATE.WAITING_FOR_DETAILS : STATE.WAITING_FOR_CATEGORY;
+                returnMessage = isValid ? "Please provide any additional details to the incident" : "Invalid category, please try again\n\nPlease respond with the number corresponding to the incident. \n0: False Alarm\n1: Overdose\n2: Other";
+                break;
+            }
             case STATE.WAITING_FOR_DETAILS:
-                {
-                    this.notes = messageText.trim();
-                    this.state = STATE.COMPLETED;
-                    returnMessage = "Thank you";
-                    break;
-                }
+            {
+                this.notes = messageText.trim();
+                this.state = STATE.COMPLETED;
+                returnMessage = "Thank you";
+                break;
+            }
             case STATE.COMPLETED:
-                {
-                    returnMessage = "Thank you";
-                    break;
-                }
+            {
+                returnMessage = "Thank you";
+                break;
+            }
             default:
-                {
-                    returnMessage = "Error: No active chatbot found";
-                    break;
-                }
+            {
+                returnMessage = "Error: No active chatbot found";
+                break;
+            }
         }
 
         return returnMessage;
