@@ -9,10 +9,10 @@ services:
     container_name: nodejs
     restart: unless-stopped
     networks:
-     - app-network
+      - app-network
 
-webserver:
-  image: nginx:mainline-alpine
+  webserver:
+    image: nginx:mainline-alpine
     container_name: webserver
     restart: unless-stopped
     ports:
@@ -26,6 +26,7 @@ webserver:
       - nodejs
     networks:
       - app-network
+
   certbot:
     image: certbot/certbot
     container_name: certbot
@@ -36,6 +37,7 @@ webserver:
     depends_on:
       - webserver
     command: certonly --webroot --webroot-path=/var/www/html --email mario@brave.coop --agree-tos --no-eff-email --staging -d odetect-dev.brave.coop  -d www.odetect-dev.brave.coop 
+
 volumes:
   certbot-etc:
   certbot-var:
@@ -49,5 +51,3 @@ volumes:
 networks:
   app-network:
     driver: bridge
-
-
