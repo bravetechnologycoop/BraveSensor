@@ -36,7 +36,7 @@ services:
       - web-root:/var/www/html
     depends_on:
       - webserver
-    command: certonly --webroot --webroot-path=/var/www/html --email mario@brave.coop --agree-tos --no-eff-email --staging -d odetect-dev.brave.coop  -d www.odetect-dev.brave.coop 
+    command: certonly --webroot --webroot-path=/var/www/html --email mario@brave.coop --agree-tos --no-eff-email -d odetect-dev.brave.coop 
 
 volumes:
   certbot-etc:
