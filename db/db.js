@@ -90,6 +90,22 @@ async function getLatestXeThruSensordata(locationid){
 
 }
 
+async function getRecentXeThruSensordata(locationid){
+  try{
+    const results = await pool.query('SELECT * FROM xethru WHERE locationid = $1 ORDER BY published_at DESC LIMIT 15', [locationid]);
+    if(results == undefined){
+      return null;
+    }
+    else{
+      return results.rows; 
+    }
+  }
+  catch(e){
+    console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
+  }
+
+}
+
 // SELECT latest Motion sensordata entry
 async function getLatestMotionSensordata(locationid){
   try{
@@ -475,6 +491,7 @@ module.exports = {
   addDoorSensordata,
   addStateMachineData,
   getLatestXeThruSensordata,
+  getRecentXeThruSensordata,
   getLatestMotionSensordata,
   getLatestDoorSensordata,
   getLatestLocationStatesdata,

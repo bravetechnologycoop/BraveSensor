@@ -4,7 +4,6 @@ const MOTION_STATE = require('./SessionStateMotionEnum.js');
 const OD_FLAG_STATE = require('./SessionStateODFlagEnum');
 const DOOR_STATE = require('./SessionStateDoorEnum.js');
 let moment = require('moment');
-const DOOR_THRESHOLD_MILLIS = 15 * 1000;
 
 
 class SessionState {
@@ -18,11 +17,12 @@ class SessionState {
         let state;
 
         let xethru = await db.getLatestXeThruSensordata(this.location);
+        let xethru_history = await db.getRecentXeThruSensordata(this.location);
         let door = await db.getLatestDoorSensordata(this.location);
         let motion = await db.getLatestMotionSensordata(this.location);
         let states = await db.getLatestLocationStatesdata(this.location);
         let location_data = await db.getLocationData(this.location);
-
+        let DOOR_THRESHOLD_MILLIS = location_data.door_stickiness_delay;
         let residual_mov_f = location_data.mov_threshold;
         let currentTime = moment();
         let latestDoor = door.published_at;
@@ -50,13 +50,24 @@ class SessionState {
                     }
                 case STATE.NO_PRESENCE_NO_SESSION:
                     {
+                        //Checks the average XeThru Value over the last 15 seconds
+                        var mov_f_sum = 0;
+                        var mov_s_sum = 0;
+                        for(let i = 0; i < xethru_history.length; i++){
+                            mov_f_sum = mov_f_sum + xethru_history[i].mov_f;
+                            mov_s_sum = mov_s_sum + xethru_history[i].mov_s;
+                        }
+                        let mov_f_avg = mov_f_sum/(xethru_history.length+1);
+                        let mov_s_avg = mov_s_sum/(xethru_history.length+1);
+
                         // Door opens
                         if (door.signal == DOOR_STATE.OPEN) {
                             state = STATE.DOOR_OPENED_START;
                         }
+                
                         // Waits for both the XeThru and motion sensor to be active
                         // Removing the condition for motion sensor to be active to go into this loop since we don't have a motion sensor in this space 
-                        else if ((xethru.mov_f > residual_mov_f || xethru.mov_s > 55) && xethru.state != XETHRU_STATE.NO_MOVEMENT && doorDelay > DOOR_THRESHOLD_MILLIS) {
+                        else if ((mov_f_avg > residual_mov_f || mov_s_avg > 55) && xethru.state != XETHRU_STATE.NO_MOVEMENT && doorDelay > DOOR_THRESHOLD_MILLIS) {
                             state = STATE.MOTION_DETECTED;
                         }
                         break;
