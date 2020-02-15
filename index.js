@@ -14,6 +14,9 @@ const smartapp   = require('@smartthings/smartapp');
 const path = require('path');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
+const Sentry = require('@sentry/node');
+Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' });
+
 require('dotenv').config();
 
 const app = express();

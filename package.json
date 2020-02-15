@@ -7,6 +7,7 @@
     "test": "NODE_ENV=test mocha --timeout 10000 \"test/**/*.js\""
   },
   "dependencies": {
+    "@sentry/node": "^5.12.2",
     "@smartthings/smartapp": "^1.0.3",
     "body-parser": "*",
     "chai": "^4.2.0",

@@ -3,6 +3,8 @@ const XETHRU_STATE = require('./SessionStateXethruEnum.js');
 const MOTION_STATE = require('./SessionStateMotionEnum.js');
 const OD_FLAG_STATE = require('./SessionStateODFlagEnum');
 const DOOR_STATE = require('./SessionStateDoorEnum.js');
+const Sentry = require('@sentry/node');
+Sentry.init({ dsn: 'https://a95c3fc9c5fd49b29dbe5672228184a0@sentry.io/2556408' });
 let moment = require('moment');
 
 
