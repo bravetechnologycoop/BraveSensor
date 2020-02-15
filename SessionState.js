@@ -75,6 +75,7 @@ class SessionState {
                         break;
                     }
                 case STATE.DOOR_OPENED_START:
+                {
                     {
                         // Waits in this state for a while before proceeding. 
                         if (door.signal == DOOR_STATE.CLOSED){
