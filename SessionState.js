@@ -43,13 +43,13 @@ class SessionState {
             switch (states.state) {
 
                 case STATE.RESET:
-                {
-                    //Waits for the door to close before restarting the state machine
-                    if(door.signal == DOOR_STATE.CLOSED) {
-                        state = STATE.NO_PRESENCE_NO_SESSION;
+                    {
+                        //Waits for the door to close before restarting the state machine
+                        if(door.signal == DOOR_STATE.CLOSED) {
+                            state = STATE.NO_PRESENCE_NO_SESSION;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case STATE.NO_PRESENCE_NO_SESSION:
                     {
                         //Checks the average XeThru Value over the last 15 seconds
@@ -89,103 +89,102 @@ class SessionState {
                                 state = STATE.NO_PRESENCE_NO_SESSION;
                             }
                         }
+                        break;
                     }
-                    break;
-                }
                 case STATE.DOOR_CLOSED_START:
-                {
-                    if (xethru.state == XETHRU_STATE.MOVEMENT || xethru.state == XETHRU_STATE.BREATHING || xethru.state == XETHRU_STATE.MOVEMENT_TRACKING) {
-                        state = STATE.MOVEMENT;
+                    {
+                        if (xethru.state == XETHRU_STATE.MOVEMENT || xethru.state == XETHRU_STATE.BREATHING || xethru.state == XETHRU_STATE.MOVEMENT_TRACKING) {
+                            state = STATE.MOVEMENT;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case STATE.MOTION_DETECTED:
-                {
-                    state = STATE.MOVEMENT;
-                    break;
-                }
+                    {
+                        state = STATE.MOVEMENT;
+                        break;
+                    }
                 case STATE.DOOR_OPENED_CLOSE: 
-                {
-                    state = STATE.RESET;
-                    break;
-                }
+                    {
+                        state = STATE.RESET;
+                        break;
+                    }
                 case STATE.MOVEMENT:
-                {
-                    let session = await db.getMostRecentSession(this.location);
+                    {
+                        let session = await db.getMostRecentSession(this.location);
 
-                    if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
-                        state = STATE.DOOR_OPENED_CLOSE;
-                    }
-                    //if in breathing state, change to that state
-                    else if (xethru.state == XETHRU_STATE.BREATHING) {
-                        state = STATE.BREATH_TRACKING;
-                    }
-                    else if (xethru.mov_f == 0 && xethru.state != XETHRU_STATE.NO_MOVEMENT) { 
-                        state = STATE.STILL;
-                    }
+                        if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+                            state = STATE.DOOR_OPENED_CLOSE;
+                        }
+                            //if in breathing state, change to that state
+                        else if (xethru.state == XETHRU_STATE.BREATHING) {
+                            state = STATE.BREATH_TRACKING;
+                        }
+                        else if (xethru.mov_f == 0 && xethru.state != XETHRU_STATE.NO_MOVEMENT) { 
+                            state = STATE.STILL;
+                        }
                         
 
-                    if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && await db.isOverdoseSuspected(xethru, session, location_data)) {
-                        console.log(`Overdose Suspected at ${this.location}, starting Chatbot`);
-                        state = STATE.SUSPECTED_OD;
-                    }
+                        if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && await db.isOverdoseSuspected(xethru, session, location_data)) {
+                            console.log(`Overdose Suspected at ${this.location}, starting Chatbot`);
+                            state = STATE.SUSPECTED_OD;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 case STATE.STILL:
-                {
-                    let session = await db.getMostRecentSession(this.location);
+                    {
+                        let session = await db.getMostRecentSession(this.location);
 
-                    if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
-                        state = STATE.DOOR_OPENED_CLOSE;
-                    }
-                    else if (xethru.state == XETHRU_STATE.BREATHING) {
-                        state = STATE.BREATH_TRACKING;
-                    }
-                    else if (xethru.mov_f > 0) {
-                        state = STATE.MOVEMENT;
-                    }
+                        if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+                            state = STATE.DOOR_OPENED_CLOSE;
+                        }
+                        else if (xethru.state == XETHRU_STATE.BREATHING) {
+                            state = STATE.BREATH_TRACKING;
+                        }
+                        else if (xethru.mov_f > 0) {
+                            state = STATE.MOVEMENT;
+                        }
 
-                    if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && await db.isOverdoseSuspected(xethru, session, location_data)) {
-                        state = STATE.SUSPECTED_OD;
-                    }
+                        if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && await db.isOverdoseSuspected(xethru, session, location_data)) {
+                            state = STATE.SUSPECTED_OD;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 case STATE.BREATH_TRACKING:
-                {
-                    let session = await db.getMostRecentSession(this.location);
+                    {
+                        let session = await db.getMostRecentSession(this.location);
 
-                    if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
-                        state = STATE.DOOR_OPENED_CLOSE;
-                    }
-                    else if(xethru.state != XETHRU_STATE.BREATHING && xethru.mov_f == 0) {
-                        state = STATE.STILL;
-                    }
-                    //returns to movement if not in breathing state
-                    else if (xethru.state != XETHRU_STATE.BREATHING) {
-                        state = STATE.MOVEMENT;
-                    }
+                        if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+                            state = STATE.DOOR_OPENED_CLOSE;
+                        }
+                        else if(xethru.state != XETHRU_STATE.BREATHING && xethru.mov_f == 0) {
+                            state = STATE.STILL;
+                        }
+                            //returns to movement if not in breathing state
+                        else if (xethru.state != XETHRU_STATE.BREATHING) {
+                            state = STATE.MOVEMENT;
+                        }
 
 
-                    //If the flag was originally false and the overdose criteria are met, an overdose is ssuspected and the flag is enabled.
-                    if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && await db.isOverdoseSuspected(xethru, session, location_data)) {
-                        state = STATE.SUSPECTED_OD;
-                    }
+                        //If the flag was originally false and the overdose criteria are met, an overdose is ssuspected and the flag is enabled.
+                        if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && await db.isOverdoseSuspected(xethru, session, location_data)) {
+                            state = STATE.SUSPECTED_OD;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 case STATE.SUSPECTED_OD:
-                {
-                    state = STATE.STILL;
-                    break;
-                }
+                    {
+                        state = STATE.STILL;
+                        break;
+                    }
                 default:
-                {
-                    await db.addStateMachineData(STATE.RESET, this.location);
-                    state = STATE.RESET;
-                    break;
-                }
+                    {
+                        await db.addStateMachineData(STATE.RESET, this.location);
+                        state = STATE.RESET;
+                        break;
+                    }
             }
         }
         return state;
