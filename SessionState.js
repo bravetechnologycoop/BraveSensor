@@ -91,6 +91,7 @@ class SessionState {
                         }
                         break;
                     }
+                }
                 case STATE.DOOR_CLOSED_START:
                     {
                         if (xethru.state == XETHRU_STATE.MOVEMENT || xethru.state == XETHRU_STATE.BREATHING || xethru.state == XETHRU_STATE.MOVEMENT_TRACKING) {
