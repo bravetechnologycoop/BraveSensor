@@ -317,6 +317,7 @@ setInterval(async function (){
 
 // Handler for income SmartThings POST requests
 app.post('/api/st', function(req, res, next) {
+    console.log(req.body);
     smartapp.handleHttpCallback(req, res);
 });
 
