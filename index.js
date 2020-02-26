@@ -205,6 +205,7 @@ smartapp
     })
     .subscribedEventHandler('myContactEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
+        console.log(deviceEvent.value);
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         db.addDoorSensordata(DeviceID, LocationID, "Door", signal);
@@ -298,6 +299,7 @@ setInterval(async function (){
 
 // Handler for income SmartThings POST requests
 app.post('/api/st', function(req, res, next) {
+    console.log(req.body);
     smartapp.handleHttpCallback(req, res);
 });
 
