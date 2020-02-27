@@ -182,7 +182,7 @@ smartapp
             section.textSetting('DeviceID');
         });
         page.section('Select sensors', section => {
-            section.deviceSetting('contactSensor').capabilities(['contactSensor']).required(false);
+            section.deviceSetting('contactSensor').capabilities(['contactSensor', 'battery']).required(false);
             section.deviceSetting('motionSensor').capabilities(['motionSensor']).required(false);
             section.deviceSetting('button').capabilities(['button']).required(false);
         });
@@ -198,6 +198,7 @@ smartapp
         context.api.subscriptions.unsubscribeAll().then(() => {
               console.log('unsubscribeAll() executed');
               context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'contactSensor', 'contact', 'myContactEventHandler');
+              context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'battery', 'battery', 'myBatteryEventHandler');
               context.api.subscriptions.subscribeToDevices(context.config.motionSensor, 'motionSensor', 'motion', 'myMotionEventHandler');
               context.api.subscriptions.subscribeToDevices(context.config.button, 'button', 'button', 'myButtonEventHandler');
         });
@@ -207,7 +208,15 @@ smartapp
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         db.addDoorSensordata(DeviceID, LocationID, "Door", signal);
-        console.log(`Motion${DeviceID} Sensor: ${signal} @${LocationID}`);
+        console.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
+    })
+     .subscribedEventHandler('myBatteryEventHandler', (context, deviceEvent) => {
+        const signal = deviceEvent.value;
+        console.log(deviceEvent.value);
+        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
+        sendBatteryAlert(LocationID, signal);
+        console.log(`Door${DeviceID} Battery: ${signal} @${LocationID}`);
     })
     .subscribedEventHandler('myMotionEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
@@ -445,6 +454,31 @@ async function sendResetAlert(location) {
   .then(message => console.log(message.sid))
   .done()
 }
+
+async function sendBatteryAlert(location, value){
+  locationData = await db.getLocationData(location);
+  twilioClient.messages.create({
+      body: `Battery at ${location} is ${value}`,
+      from: locationData.twilio_number,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
+
+}
+
+async function sendTemperatureAlert(location, value){
+  locationData = await db.getLocationData(location);
+  twilioClient.messages.create({
+      body: `Temperature at ${location} is ${value}`,
+      from: locationData.twilio_number,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
+
+}
+
 
 
 // Handler for incoming Twilio messages
