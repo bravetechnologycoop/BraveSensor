@@ -182,7 +182,7 @@ smartapp
             section.textSetting('DeviceID');
         });
         page.section('Select sensors', section => {
-            section.deviceSetting('contactSensor').capabilities(['contactSensor', 'battery']).required(false);
+            section.deviceSetting('contactSensor').capabilities(['contactSensor', 'battery', 'temperatureMeasurement']).required(false);
             section.deviceSetting('motionSensor').capabilities(['motionSensor']).required(false);
             section.deviceSetting('button').capabilities(['button']).required(false);
         });
@@ -199,6 +199,7 @@ smartapp
               console.log('unsubscribeAll() executed');
               context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'contactSensor', 'contact', 'myContactEventHandler');
               context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'battery', 'battery', 'myBatteryEventHandler');
+              context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'temperatureMeasurement', 'temperature', 'myTemperatureEventHandler');
               context.api.subscriptions.subscribeToDevices(context.config.motionSensor, 'motionSensor', 'motion', 'myMotionEventHandler');
               context.api.subscriptions.subscribeToDevices(context.config.button, 'button', 'button', 'myButtonEventHandler');
         });
@@ -219,6 +220,14 @@ smartapp
         sendBatteryAlert(LocationID, signal);
         console.log(`Door${DeviceID} Battery: ${signal} @${LocationID}`);
     })
+    .subscribedEventHandler('myTemperatureEventHandler', (context, deviceEvent) => {
+      const signal = deviceEvent.value;
+      console.log(deviceEvent.value);
+      const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
+      const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
+      sendTemperatureAlert(LocationID, signal);
+      console.log(`Door${DeviceID} Temperature: ${signal} @${LocationID}`);
+  })
     .subscribedEventHandler('myMotionEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
