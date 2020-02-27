@@ -15,7 +15,7 @@ const path = require('path');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
 const Sentry = require('@sentry/node');
-Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' });
+Sentry.init({ dsn: 'https://1e7d418731ec4bf99cb2405ea3e9b9fc@sentry.io/3009454' });
 
 require('dotenv').config();
 
