@@ -1,3 +1,4 @@
+const perf = require('execution-time')();
 const express = require('express');
 let moment = require('moment');
 const bodyParser = require('body-parser');
@@ -437,39 +438,42 @@ async function reminderMessage(location) {
 
 //Heartbeat Helper Functions
 async function sendAlerts(location) {
-  locationData = await db.getLocationData(location);
-  twilioClient.messages.create({
-      body: `The XeThru connection for ${location} has been lost. Message from ODetect-Dev2`,
-      from: locationData.twilio_number,
-      to: locationData.xethru_heartbeat_number
-  })
-  .then(message => console.log(message.sid))
-  .done()
+  // locationData = await db.getLocationData(location);
+  // twilioClient.messages.create({
+  //     body: `The XeThru connection for ${location} has been lost. Message from ODetect-Dev2`,
+  //     from: locationData.twilio_number,
+  //     to: locationData.xethru_heartbeat_number
+  // })
+  // .then(message => console.log(message.sid))
+  // .done()
+  console.log('heartbeat trigger')
 }
 
 async function sendReconnectionMessage(location) {
-  locationData = await db.getLocationData(location);
+  // locationData = await db.getLocationData(location);
 
-  twilioClient.messages.create({
-      body: `The XeThru at ${location} has been reconnected. Message from ODetect-Dev2`,
-      from: locationData.twilio_number,
-      to: locationData.xethru_heartbeat_number
-  })
-  .then(message => console.log(message.sid))
-  .done()
+  // twilioClient.messages.create({
+  //     body: `The XeThru at ${location} has been reconnected. Message from ODetect-Dev2`,
+  //     from: locationData.twilio_number,
+  //     to: locationData.xethru_heartbeat_number
+  // })
+  // .then(message => console.log(message.sid))
+  // .done()
+  console.log("reconnection message trigger")
 }
 
 //Autoreset twilio function
 
 async function sendResetAlert(location) {
-  locationData = await db.getLocationData(location);
-  twilioClient.messages.create({
-      body: `An unresponded session at ${location} has been automatically reset. Message from ODetect-Dev2`,
-      from: locationData.twilio_number,
-      to: locationData.xethru_heartbeat_number
-  })
-  .then(message => console.log(message.sid))
-  .done()
+  // locationData = await db.getLocationData(location);
+  // twilioClient.messages.create({
+  //     body: `An unresponded session at ${location} has been automatically reset. Message from ODetect-Dev2`,
+  //     from: locationData.twilio_number,
+  //     to: locationData.xethru_heartbeat_number
+  // })
+  // .then(message => console.log(message.sid))
+  // .done()
+  console.log('reset alert trigger')
 }
 
 async function sendBatteryAlert(location, value){
@@ -534,6 +538,7 @@ app.post('/sms', async function (req, res) {
 
 // This function will run the state machine for each location once every second
 setInterval(async function () {
+  perf.start();
   for(let i = 0; i < locations.length; i++){
     let currentLocationId = locations[i];
     let statemachine = new SessionState(currentLocationId);
@@ -604,7 +609,6 @@ setInterval(async function () {
           if(latestSession.end_time == null){ // Checks if session is open.
             let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
             io.sockets.emit('sessiondata', {data: currentSession});
-            console.log('sessiondata socket event sending' + currentSession)
           }
         }
       }
@@ -668,7 +672,6 @@ setInterval(async function () {
             io.sockets.emit('sessiondata', {data: updatedSession});
           }
           else{ // If session is closed still emit its data as it is
-            console.log('sending sessiondata event line 568')
             io.sockets.emit('sessiondata', {data: currentSession});
           }
 
@@ -676,7 +679,6 @@ setInterval(async function () {
         else{
           // If current session is anything else than STILL it returns the counter to 0
           let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid, currentSession.locationid);
-          console.log('sending sessiondata event line 575')
           io.sockets.emit('sessiondata', {data: updatedSession});
         }
       }
@@ -686,6 +688,8 @@ setInterval(async function () {
     io.sockets.emit('doorstatedata', {data: DoorData});
     io.sockets.emit('statedata', {data: prevState});
 
+    const results = perf.stop();
+    console.log( "time to execute:" + results.time);
   }
 }, 1000); // Set to transmit data every 1000 ms.
 
