@@ -319,6 +319,7 @@ setInterval(async function (){
 app.post('/api/st', function(req, res, next) {
     console.log(req.body);
     smartapp.handleHttpCallback(req, res);
+
 });
 
 // Handler for income XeThru POST requests
