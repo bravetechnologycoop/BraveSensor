@@ -211,6 +211,8 @@ smartapp
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         db.addDoorSensordata(DeviceID, LocationID, "Door", signal);
+        handleSensorRequest(LocationID);
+        
         console.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
      .subscribedEventHandler('myBatteryEventHandler', (context, deviceEvent) => {
@@ -311,11 +313,14 @@ setInterval(async function (){
 app.post('/api/st', function(req, res, next) {
     console.log(req.body);
     smartapp.handleHttpCallback(req, res);
+
 });
 
 // Handler for income XeThru POST requests
 app.post('/api/xethru', async (req, res) => {
+  const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = req.body;
     await db.addXeThruSensordata(req, res);
+    handleSensorRequest(locationid);
 });
 
 // Handler for income SmartThings POST requests
@@ -334,6 +339,158 @@ app.get('/*', async function (req, res) {
   }
 });
 
+async function handleSensorRequest(currentLocationId){
+  perf.start()
+  let statemachine = new SessionState(currentLocationId);
+  let currentState = await statemachine.getNextState(db);
+  let prevState = await db.getLatestLocationStatesdata(currentLocationId);
+  let location = await db.getLocationData(currentLocationId);
+
+  // Query raw sensor data to transmit to the FrontEnd
+  let XeThruData = await db.getLatestXeThruSensordata(currentLocationId);
+  let DoorData = await db.getLatestDoorSensordata(currentLocationId);
+
+  // Check the XeThru Heartbeat
+  let currentTime = moment();
+  let latestXethru = XeThruData.published_at;
+  let XeThruDelayMillis = currentTime.diff(latestXethru);
+
+  if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
+    console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+    await db.updateSentAlerts(location.locationid, true)
+    sendAlerts(location.locationid)
+  }
+  else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
+    console.log(`XeThru at ${location.locationid} reconnected`)
+    await db.updateSentAlerts(location.locationid, false)
+    sendReconnectionMessage(location.locationid)
+  }
+
+  console.log(`${currentLocationId}: ${currentState}`);
+
+  // Get current time to compare to the session's start time
+
+  var location_start_time = start_times[currentLocationId]
+  if(location_start_time != null && location_start_time != undefined){
+    var today = new Date();
+    var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    var dateTime_string = date+' '+time;
+
+    var dateTime = new Date(dateTime_string);
+    var start_time_sesh = new Date(location_start_time);
+
+    // Current Session duration so far:
+    var sessionDuration = (dateTime - start_time_sesh)/1000;
+    io.sockets.emit('timerdata', {data: sessionDuration});
+  }
+
+  //If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
+
+  if (sessionDuration*1000>location.auto_reset_threshold){
+    autoResetSession(location.locationid);
+    start_times[currentLocationId] = null;
+    console.log('autoResetSession has been called');
+    sendResetAlert(location.locationid);
+  }
+
+
+  console.log(`${sessionDuration}`);
+
+   // To avoid filling the DB with repeated states in a row.
+  if(currentState != prevState.state){
+    await db.addStateMachineData(currentState, currentLocationId);
+
+    //Checks if current state belongs to voidStates
+    if(VOIDSTATES.includes(currentState)){
+      let latestSession = await db.getMostRecentSession(currentLocationId);
+
+      if(typeof latestSession !== 'undefined'){ // Checks if no session exists for this location yet.
+        if(latestSession.end_time == null){ // Checks if session is open.
+          let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
+          io.sockets.emit('sessiondata', {data: currentSession});
+        }
+      }
+    }
+
+
+    // Checks if current state belongs to the session triggerStates
+    else if(TRIGGERSTATES.includes(currentState)){
+      let latestSession = await db.getMostRecentSession(currentLocationId);
+
+      if(typeof latestSession !== 'undefined'){ //Checks if session exists
+        if(latestSession.end_time == null){  // Checks if session is open for this location
+          let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
+          io.sockets.emit('sessiondata', {data: currentSession});
+          start_times[currentLocationId] = currentSession.start_time;
+        }
+        else{
+          let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState); // Creates a new session
+          io.sockets.emit('sessiondata', {data: currentSession});
+          start_times[currentLocationId] = currentSession.start_time;
+        }
+      }
+    }
+
+    // Checks if current state belongs to the session closingStates
+    else if(CLOSINGSTATES.includes(currentState)){
+      let latestSession = await db.getMostRecentSession(currentLocationId);
+      let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId); //Adds the closing state to session
+
+      if(await db.closeSession(currentLocationId)){ // Adds the end_time to the latest open session from the LocationID
+        console.log(`Session at ${currentLocationId} was closed successfully.`);
+        io.sockets.emit('sessiondata', {data: currentSession}); // Sends currentSession data with end_time which will close the session in the frontend
+        start_times[currentLocationId] = null; // Stops the session timer for this location ID
+      }
+      else{
+        console.log(`Attempted to close session but no open session was found for ${currentLocationId}`);
+      }
+    }
+
+    else if(CHATBOTSTARTSTATES.includes(currentState)) {
+        let latestSession = await db.getMostRecentSession(currentLocationId);
+
+        if(latestSession.od_flag == 1) {
+            if(latestSession.chatbot_state == null) {
+              sendInitialChatbotMessage(latestSession);
+            }
+        }
+    }
+
+    else{
+      console.log("Current State does not belong to any of the States groups");
+    }
+  }
+  else{ // If statemachine doesn't run, emits latest session data to Frontend
+    let currentSession = await db.getMostRecentSession(currentLocationId)
+
+    // Checks if session is in the STILL state and, if so, how long it has been in that state for.
+    if(typeof currentSession !== 'undefined'){
+      if(currentSession.state == 'Still' || currentSession.state == 'Breathing'){
+        if(currentSession.end_time == null){ // Only increases counter if session is open
+          let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid, currentSession.locationid);
+          io.sockets.emit('sessiondata', {data: updatedSession});
+        }
+        else{ // If session is closed still emit its data as it is
+          io.sockets.emit('sessiondata', {data: currentSession});
+        }
+
+      }
+      else{
+        // If current session is anything else than STILL it returns the counter to 0
+        let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid, currentSession.locationid);
+        io.sockets.emit('sessiondata', {data: updatedSession});
+      }
+    }
+  }
+
+  io.sockets.emit('xethrustatedata', {data: XeThruData});
+  io.sockets.emit('doorstatedata', {data: DoorData});
+  io.sockets.emit('statedata', {data: prevState});
+
+  const results = perf.stop();
+  console.log( "time to execute:" + results.time);
+}
 
 // Web Socket connection to Frontend
 io.on('connection', (socket) => {
@@ -414,6 +571,8 @@ async function sendTwilioMessage(fromPhone, toPhone, msg) {
   }
 }
 
+
+// TODO: replace these many almost identical functions with something more elegant
 async function sendInitialChatbotMessage(session) {
     console.log("Intial message sent");
     var location = session.locationid;
@@ -535,171 +694,11 @@ app.post('/sms', async function (req, res) {
   res.end(twiml.toString());
 });
 
+let server;
 
-// This function will run the state machine for each location once every second
-setInterval(async function () {
-  perf.start();
-  for(let i = 0; i < locations.length; i++){
-    let currentLocationId = locations[i];
-    let statemachine = new SessionState(currentLocationId);
-    let currentState = await statemachine.getNextState(db);
-    let prevState = await db.getLatestLocationStatesdata(currentLocationId);
-    let location = await db.getLocationData(currentLocationId);
+server = app.listen(8080);
+console.log('brave server listening on port 8080')
 
-    // Query raw sensor data to transmit to the FrontEnd
-    let XeThruData = await db.getLatestXeThruSensordata(currentLocationId);
-    let DoorData = await db.getLatestDoorSensordata(currentLocationId);
-
-    // Check the XeThru Heartbeat
-    let currentTime = moment();
-    let latestXethru = XeThruData.published_at;
-    let XeThruDelayMillis = currentTime.diff(latestXethru);
-
-    if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
-      console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
-      await db.updateSentAlerts(location.locationid, true)
-      sendAlerts(location.locationid)
-    }
-    else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
-      console.log(`XeThru at ${location.locationid} reconnected`)
-      await db.updateSentAlerts(location.locationid, false)
-      sendReconnectionMessage(location.locationid)
-    }
-
-    console.log(`${currentLocationId}: ${currentState}`);
-
-    // Get current time to compare to the session's start time
-
-    var location_start_time = start_times[currentLocationId]
-    if(location_start_time != null && location_start_time != undefined){
-      var today = new Date();
-      var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-      var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-      var dateTime_string = date+' '+time;
-
-      var dateTime = new Date(dateTime_string);
-      var start_time_sesh = new Date(location_start_time);
-
-      // Current Session duration so far:
-      var sessionDuration = (dateTime - start_time_sesh)/1000;
-      io.sockets.emit('timerdata', {data: sessionDuration});
-    }
-
-    //If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
-
-    if (sessionDuration*1000>location.auto_reset_threshold){
-      autoResetSession(location.locationid);
-      start_times[currentLocationId] = null;
-      console.log('autoResetSession has been called');
-      sendResetAlert(location.locationid);
-    }
-
-
-    console.log(`${sessionDuration}`);
-
-     // To avoid filling the DB with repeated states in a row.
-    if(currentState != prevState.state){
-      await db.addStateMachineData(currentState, currentLocationId);
-
-      //Checks if current state belongs to voidStates
-      if(VOIDSTATES.includes(currentState)){
-        let latestSession = await db.getMostRecentSession(currentLocationId);
-
-        if(typeof latestSession !== 'undefined'){ // Checks if no session exists for this location yet.
-          if(latestSession.end_time == null){ // Checks if session is open.
-            let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
-            io.sockets.emit('sessiondata', {data: currentSession});
-          }
-        }
-      }
-
-
-      // Checks if current state belongs to the session triggerStates
-      else if(TRIGGERSTATES.includes(currentState)){
-        let latestSession = await db.getMostRecentSession(currentLocationId);
-
-        if(typeof latestSession !== 'undefined'){ //Checks if session exists
-          if(latestSession.end_time == null){  // Checks if session is open for this location
-            let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
-            io.sockets.emit('sessiondata', {data: currentSession});
-            start_times[currentLocationId] = currentSession.start_time;
-          }
-          else{
-            let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState); // Creates a new session
-            io.sockets.emit('sessiondata', {data: currentSession});
-            start_times[currentLocationId] = currentSession.start_time;
-          }
-        }
-      }
-
-      // Checks if current state belongs to the session closingStates
-      else if(CLOSINGSTATES.includes(currentState)){
-        let latestSession = await db.getMostRecentSession(currentLocationId);
-        let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId); //Adds the closing state to session
-
-        if(await db.closeSession(currentLocationId)){ // Adds the end_time to the latest open session from the LocationID
-          console.log(`Session at ${currentLocationId} was closed successfully.`);
-          io.sockets.emit('sessiondata', {data: currentSession}); // Sends currentSession data with end_time which will close the session in the frontend
-          start_times[currentLocationId] = null; // Stops the session timer for this location ID
-        }
-        else{
-          console.log(`Attempted to close session but no open session was found for ${currentLocationId}`);
-        }
-      }
-
-      else if(CHATBOTSTARTSTATES.includes(currentState)) {
-          let latestSession = await db.getMostRecentSession(currentLocationId);
-
-          if(latestSession.od_flag == 1) {
-              if(latestSession.chatbot_state == null) {
-                sendInitialChatbotMessage(latestSession);
-              }
-          }
-      }
-
-      else{
-        console.log("Current State does not belong to any of the States groups");
-      }
-    }
-    else{ // If statemachine doesn't run, emits latest session data to Frontend
-      let currentSession = await db.getMostRecentSession(currentLocationId)
-
-      // Checks if session is in the STILL state and, if so, how long it has been in that state for.
-      if(typeof currentSession !== 'undefined'){
-        if(currentSession.state == 'Still' || currentSession.state == 'Breathing'){
-          if(currentSession.end_time == null){ // Only increases counter if session is open
-            let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid, currentSession.locationid);
-            io.sockets.emit('sessiondata', {data: updatedSession});
-          }
-          else{ // If session is closed still emit its data as it is
-            io.sockets.emit('sessiondata', {data: currentSession});
-          }
-
-        }
-        else{
-          // If current session is anything else than STILL it returns the counter to 0
-          let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid, currentSession.locationid);
-          io.sockets.emit('sessiondata', {data: updatedSession});
-        }
-      }
-    }
-
-    io.sockets.emit('xethrustatedata', {data: XeThruData});
-    io.sockets.emit('doorstatedata', {data: DoorData});
-    io.sockets.emit('statedata', {data: prevState});
-
-    const results = perf.stop();
-    console.log( "time to execute:" + results.time);
-  }
-}, 1000); // Set to transmit data every 1000 ms.
-
-
-let httpsOptions = {
-  key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
-  cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/fullchain.pem`)
-}
-server = https.createServer(httpsOptions, app).listen(port)
-console.log('ODetect brave server listening on port 443')
 
 // Socket.io server connection start
 io.listen(server);
