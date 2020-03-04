@@ -8,6 +8,7 @@ Sentry.init({ dsn: 'https://a95c3fc9c5fd49b29dbe5672228184a0@sentry.io/2556408' 
 let moment = require('moment');
 
 
+
 class SessionState {
 
     constructor(location) {
@@ -18,11 +19,24 @@ class SessionState {
 
         let state;
 
-        let xethru = await db.getLatestXeThruSensordata(this.location);
-        let xethru_history = await db.getRecentXeThruSensordata(this.location);
-        let door = await db.getLatestDoorSensordata(this.location);
-        let states = await db.getLatestLocationStatesdata(this.location);
-        let location_data = await db.getLocationData(this.location);
+        let promises = 
+        [db.getLatestXeThruSensordata(this.location), 
+         db.getRecentXeThruSensordata(this.location),
+         db.getLatestDoorSensordata(this.location),
+         db.getLatestLocationStatesdata(this.location),
+         db.getLocationData(this.location),
+         db.getMostRecentSession(this.location)];
+
+         const data = await Promise.all(promises);
+        
+        let xethru = data[0];
+        let xethru_history = data[1];
+        let door = data[2];
+        let states = data[3];
+        let location_data = data[4];
+        let session = data[5];
+
+
         let DOOR_THRESHOLD_MILLIS = location_data.door_stickiness_delay;
         let residual_mov_f = location_data.mov_threshold;
         let currentTime = moment();
@@ -109,8 +123,7 @@ class SessionState {
                         break;
                     }
                 case STATE.MOVEMENT:
-                    {
-                        let session = await db.getMostRecentSession(this.location);
+                {
 
                         if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.DOOR_OPENED_CLOSE;
@@ -132,8 +145,7 @@ class SessionState {
                         break;
                     }
                 case STATE.STILL:
-                    {
-                        let session = await db.getMostRecentSession(this.location);
+                {
 
                         if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.DOOR_OPENED_CLOSE;
@@ -152,8 +164,7 @@ class SessionState {
                         break;
                     }
                 case STATE.BREATH_TRACKING:
-                    {
-                        let session = await db.getMostRecentSession(this.location);
+                {
 
                         if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
                             state = STATE.DOOR_OPENED_CLOSE;
