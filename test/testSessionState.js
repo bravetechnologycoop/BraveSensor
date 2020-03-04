@@ -33,9 +33,12 @@ function setupDB(states = {}, door = {}, xethru_history = [], xethru = {}, locat
 		},
 		isOverdoseSuspected: function(xethru, session, location_data) {
 			return is_overdose_suspected;
-		}
-	}
-}
+		},
+		getRecentXeThruSensordata: function(){
+			return xethru_history;
+		},
+}	}
+
 
 describe('test getNextState', () => {
 	describe('when no inital state', () => {
