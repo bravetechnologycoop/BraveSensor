@@ -14,19 +14,21 @@ const smartapp   = require('@smartthings/smartapp');
 const path = require('path');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
-const Sentry = require('@sentry/node');
-Sentry.init({ dsn: 'https://1e7d418731ec4bf99cb2405ea3e9b9fc@sentry.io/3009454' });
-
 require('dotenv').config();
+
+const Sentry = require('@sentry/node');
+Sentry.init({ dsn: process.env.SENTRY_INDEX_DSN });
 
 const app = express();
 const port = 443
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
+
 const XETHRU_THRESHOLD_MILLIS = 10*1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
+const sessionResetThreshold = 5*60*1000;
 
 // List of locations that the main loop will iterate over
 var locations = [];
@@ -269,19 +271,16 @@ setInterval(async function (){
     let stateHistoryQuery = await db.getRecentStateHistory(currentLocationId);
     let stateMemory = [];
     //Store this in a local array
-    for(let i = 0; i < stateHistoryQuery.length; i++){
+    for(let i = 0; i < locationTable.length; i++){
       stateMemory.push(stateHistoryQuery[i].state)
     }
     // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
-    for(let i=1; i<(stateHistoryQuery.length); i++){
-      if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
+    for(let i=0; i<(stateHistoryQuery.length-1); i++){
+      if ( (stateHistoryQuery[i].state == STATE.RESET) && (stateHistoryQuery[i+1].state == STATE.NO_PRESENCE_NO_SESSION) && (resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
         console.log(`The Reset state logged at ${stateHistoryQuery[i].published_at} has a discrepancy`);
         resetDiscrepancies.push(stateHistoryQuery[i].published_at);
         console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
-        console.log(resetDiscrepancies);
         await db.addStateMachineData(STATE.RESET, currentLocationId);
-        //Once a reset state has been added, additionally reset any ongoing sessions
-        autoResetSession(currentLocationId);
       }
     }
   }

@@ -1,4 +1,7 @@
 const db = require("./db/db.js");
+require('dotenv').config();
+const Sentry = require('@sentry/node');
+Sentry.init({ dsn: process.env.SENTRY_CHATBOT_DSN });
 
 // The states in the chatbot sequence
 const STATE = {
