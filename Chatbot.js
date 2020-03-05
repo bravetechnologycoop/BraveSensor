@@ -51,16 +51,17 @@ class Chatbot {
                     returnMessage = isValid ? "Thank you!" : "Invalid category, please try again\n\nPlease respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above";
                     break;
                 }
+
             case STATE.COMPLETED:
-                {
-                    returnMessage = "Thank you";
-                    break;
-                }
+            {
+                returnMessage = "Thank you";
+                break;
+            }
             default:
-                {
-                    returnMessage = "Error: No active chatbot found";
-                    break;
-                }
+            {
+                returnMessage = "Error: No active chatbot found";
+                break;
+            }
         }
 
         return returnMessage;

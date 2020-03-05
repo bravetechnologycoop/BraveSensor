@@ -20,7 +20,6 @@ Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' 
 require('dotenv').config();
 
 const app = express();
-const port = 443
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
@@ -641,12 +640,11 @@ setInterval(async function () {
 }, 1000); // Set to transmit data every 1000 ms.
 
 
-let httpsOptions = {
-  key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/privkey.pem`),
-  cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.DOMAIN}/fullchain.pem`)
-}
-server = https.createServer(httpsOptions, app).listen(port)
-console.log('ODetect brave server listening on port 443')
+let server;
+
+server = app.listen(8080);
+console.log('brave server listening on port 8080')
+
 
 // Socket.io server connection start
 io.listen(server);
