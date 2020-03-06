@@ -16,7 +16,7 @@ class SessionState {
     }
 
     async getNextState(db) {
-        console.log('running getNextState for ' + location)
+        console.log('running getNextState for ' + this.location)
 
         let state;
 
