@@ -4,7 +4,8 @@ const MOTION_STATE = require('./SessionStateMotionEnum.js');
 const OD_FLAG_STATE = require('./SessionStateODFlagEnum');
 const DOOR_STATE = require('./SessionStateDoorEnum.js');
 const Sentry = require('@sentry/node');
-Sentry.init({ dsn: 'https://a95c3fc9c5fd49b29dbe5672228184a0@sentry.io/2556408' });
+require('dotenv').config();
+Sentry.init({ dsn: process.env.SENTRY_SESSIONSTATE_DSN });
 let moment = require('moment');
 
 
