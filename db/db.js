@@ -1,7 +1,7 @@
 const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
-const Sentry = require('@sentry/node');
-Sentry.init({ dsn: process.env.SENTRY_DB_DSN });
+// const Sentry = require('@sentry/node');
+// Sentry.init({ dsn: process.env.SENTRY_DB_DSN });
 require('dotenv').config();
 pgconnectionString = process.env.PG_CONNECTION_STRING
 

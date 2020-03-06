@@ -25,6 +25,8 @@ class SessionState {
         let door = await db.getLatestDoorSensordata(this.location);
         let motion = await db.getLatestMotionSensordata(this.location);
         let states = await db.getLatestLocationStatesdata(this.location);
+        console.log(states)
+
         let location_data = await db.getLocationData(this.location);
         let DOOR_THRESHOLD_MILLIS = location_data.door_stickiness_delay;
         let residual_mov_f = location_data.mov_threshold;
