@@ -5,7 +5,7 @@ const OD_FLAG_STATE = require('./SessionStateODFlagEnum');
 const DOOR_STATE = require('./SessionStateDoorEnum.js');
 const Sentry = require('@sentry/node');
 require('dotenv').config();
-Sentry.init({ dsn: process.env.SENTRY_SESSIONSTATE_DSN });
+// Sentry.init({ dsn: process.env.SENTRY_SESSIONSTATE_DSN });
 let moment = require('moment');
 
 
@@ -16,6 +16,7 @@ class SessionState {
     }
 
     async getNextState(db) {
+        console.log('running getNextState for ' + location)
 
         let state;
 

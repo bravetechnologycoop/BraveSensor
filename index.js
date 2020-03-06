@@ -15,7 +15,7 @@ const path = require('path');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
 const Sentry = require('@sentry/node');
-Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' });
+// Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' });
 
 require('dotenv').config();
 
@@ -258,33 +258,33 @@ async function autoResetSession(locationid){
   }
 }
 
-//This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
+// //This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
 
-setInterval(async function (){
-  // Iterating through multiple locations
-  for(let i = 0; i < locations.length; i++){
-    //Get recent state history
-    let currentLocationId = locations[i];
-    let stateHistoryQuery = await db.getRecentStateHistory(currentLocationId);
-    let stateMemory = [];
-    //Store this in a local array
-    for(let i = 0; i < stateHistoryQuery.length; i++){
-      stateMemory.push(stateHistoryQuery[i].state)
-    }
-    // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
-    for(let i=1; i<(stateHistoryQuery.length); i++){
-      if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
-        console.log(`The Reset state logged at ${stateHistoryQuery[i].published_at} has a discrepancy`);
-        resetDiscrepancies.push(stateHistoryQuery[i].published_at);
-        console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
-        console.log(resetDiscrepancies);
-        await db.addStateMachineData(STATE.RESET, currentLocationId);
-        //Once a reset state has been added, additionally reset any ongoing sessions
-        autoResetSession(currentLocationId);
-      }
-    }
-  }
-}, WATCHDOG_TIMER_FREQUENCY)
+// setInterval(async function (){
+//   // Iterating through multiple locations
+//   for(let i = 0; i < locations.length; i++){
+//     //Get recent state history
+//     let currentLocationId = locations[i];
+//     let stateHistoryQuery = await db.getRecentStateHistory(currentLocationId);
+//     let stateMemory = [];
+//     //Store this in a local array
+//     for(let i = 0; i < stateHistoryQuery.length; i++){
+//       stateMemory.push(stateHistoryQuery[i].state)
+//     }
+//     // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
+//     for(let i=1; i<(stateHistoryQuery.length); i++){
+//       if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
+//         console.log(`The Reset state logged at ${stateHistoryQuery[i].published_at} has a discrepancy`);
+//         resetDiscrepancies.push(stateHistoryQuery[i].published_at);
+//         console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
+//         console.log(resetDiscrepancies);
+//         await db.addStateMachineData(STATE.RESET, currentLocationId);
+//         //Once a reset state has been added, additionally reset any ongoing sessions
+//         autoResetSession(currentLocationId);
+//       }
+//     }
+//   }
+// }, WATCHDOG_TIMER_FREQUENCY)
 
 // Handler for income SmartThings POST requests
 app.post('/api/st', function(req, res, next) {
