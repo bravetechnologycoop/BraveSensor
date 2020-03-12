@@ -78,8 +78,9 @@ async function addStateMachineData(state, locationid){
 // SELECT latest XeThru sensordata entry
 async function getLatestXeThruSensordata(locationid){
   try{
-    const results = await pool.query('SELECT * FROM xethru WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
+    const results = await pool.query("SELECT * FROM xethru WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '6 hours') ORDER BY published_at DESC LIMIT 1", [locationid]);
     if(results == undefined){
+      console.log('Error: Missing Xethru Data')
       return null;
     }
     else{

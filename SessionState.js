@@ -21,7 +21,6 @@ class SessionState {
         let xethru = await db.getLatestXeThruSensordata(this.location);
         let xethru_history = await db.getRecentXeThruSensordata(this.location);
         let door = await db.getLatestDoorSensordata(this.location);
-        let motion = await db.getLatestMotionSensordata(this.location);
         let states = await db.getLatestLocationStatesdata(this.location);
         let location_data = await db.getLocationData(this.location);
         let DOOR_THRESHOLD_MILLIS = location_data.door_stickiness_delay;
