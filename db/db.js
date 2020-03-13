@@ -45,15 +45,6 @@ const addXeThruSensordata = (request, response) => {
 
 // The following function handle different database queries:
 
-// INSERT motion sensor data
-const addMotionSensordata = (deviceid, locationid, devicetype, signal) => {
-
-  pool.query('INSERT INTO motion_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
-    if (error) {
-      throw error
-    }
-  })
-}
 
 // INSERT door sensor data
 const addDoorSensordata = (deviceid, locationid, devicetype, signal) => {
@@ -95,7 +86,7 @@ async function getLatestXeThruSensordata(locationid){
 
 async function getRecentXeThruSensordata(locationid){
   try{
-    const results = await pool.query('SELECT * FROM xethru WHERE locationid = $1 ORDER BY published_at DESC LIMIT 15', [locationid]);
+    const results = await pool.query("SELECT * FROM xethru WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '6 hours') ORDER BY published_at DESC LIMIT 15", [locationid]);
     if(results == undefined){
       return null;
     }
@@ -105,23 +96,6 @@ async function getRecentXeThruSensordata(locationid){
   }
   catch(e){
     console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
-  }
-
-}
-
-// SELECT latest Motion sensordata entry
-async function getLatestMotionSensordata(locationid){
-  try{
-    const results = await pool.query('SELECT * FROM motion_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
-    if(results == undefined){
-      return null;
-    }
-    else{
-      return results.rows[0]; 
-    }
-  }
-  catch(e){
-    console.log(`Error running the getLatestMotionSensordata query: ${e}`);
   }
 
 }
@@ -140,13 +114,12 @@ async function getLatestDoorSensordata(locationid){
   catch(e){
     console.log(`Error running the getLatestDoorSensordata query: ${e}`);
   }
-
 }
 
 // SELECT latest state entry for a certain locationid
 async function getLatestLocationStatesdata(locationid){
   try{
-    const results = await pool.query('SELECT * FROM states WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
+    const results = await pool.query("SELECT * FROM states WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY published_at DESC LIMIT 1", [locationid]);
     if(results == undefined){
       return null;
     }
@@ -163,7 +136,7 @@ async function getLatestLocationStatesdata(locationid){
 //Returns last 60 data points of state history 
 async function getRecentStateHistory(locationid){
   try{
-    const results = await pool.query('SELECT * FROM states WHERE locationid = $1 ORDER BY published_at DESC LIMIT 60', [locationid]);
+    const results = await pool.query("SELECT * FROM states WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY published_at DESC LIMIT 60", [locationid]);
     if(results == undefined){
       return null;
     }
@@ -179,7 +152,7 @@ async function getRecentStateHistory(locationid){
 // Gets the most recent session data in the table for a specified location
 async function getMostRecentSession(locationid) {
   try{
-    const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [locationid]);
+    const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY sessionid DESC LIMIT 1", [locationid]);
 
     if(typeof results === 'undefined'){
       return null;
@@ -197,7 +170,7 @@ async function getMostRecentSession(locationid) {
 // Gets the last session data in the table for a specified phone number
 async function getMostRecentSessionPhone(phone) {
   try {
-      const results = await pool.query("SELECT * FROM sessions WHERE phonenumber = $1 ORDER BY start_time DESC LIMIT 1", [phone]);
+      const results = await pool.query("SELECT * FROM sessions WHERE phonenumber = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY start_time DESC LIMIT 1", [phone]);
       if(results == undefined){
           return null;
       }
@@ -212,7 +185,7 @@ async function getMostRecentSessionPhone(phone) {
 
 async function getHistoryOfSessions(location, numEntries) {
   try {
-      const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time IS NOT NULL ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
+      const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND start_time > (CURRENT_TIMESTAMP - interval '7 days') AND end_time IS NOT NULL ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
 
       if(typeof results === 'undefined') {
           return null;
@@ -229,7 +202,7 @@ async function getHistoryOfSessions(location, numEntries) {
 // Gets the last session data from an unclosed session for a specified location
 async function getLastUnclosedSession(locationid) {
   try{
-    const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time = null ORDER BY sessionid DESC LIMIT 1", [locationid]);
+    const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') AND end_time = null ORDER BY sessionid DESC LIMIT 1", [locationid]);
     if(results == undefined){
       return null;
     }
@@ -490,12 +463,10 @@ async function addLocationData(deviceid, phonenumber, detection_min, detection_m
 module.exports = {
   getXethruSensordata,
   addXeThruSensordata,
-  addMotionSensordata,
   addDoorSensordata,
   addStateMachineData,
   getLatestXeThruSensordata,
   getRecentXeThruSensordata,
-  getLatestMotionSensordata,
   getLatestDoorSensordata,
   getLatestLocationStatesdata,
   getLastUnclosedSession,
