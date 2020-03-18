@@ -24,7 +24,7 @@ const port = 443
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
-const XETHRU_THRESHOLD_MILLIS = 10*1000;
+const XETHRU_THRESHOLD_MILLIS = 60*10*1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
 
@@ -526,7 +526,6 @@ setInterval(async function () {
 
     // Query raw sensor data to transmit to the FrontEnd
     let XeThruData = await db.getLatestXeThruSensordata(currentLocationId);
-    let MotionData = await db.getLatestMotionSensordata(currentLocationId);
     let DoorData = await db.getLatestDoorSensordata(currentLocationId);
 
     // Check the XeThru Heartbeat
@@ -667,7 +666,6 @@ setInterval(async function () {
     }
 
     io.sockets.emit('xethrustatedata', {data: XeThruData});
-    io.sockets.emit('motionstatedata', {data: MotionData});
     io.sockets.emit('doorstatedata', {data: DoorData});
     io.sockets.emit('statedata', {data: prevState});
 
