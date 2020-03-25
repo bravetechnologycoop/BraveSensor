@@ -307,7 +307,7 @@ app.post('/api/xethru', async (req, res) => {
 });
 
 // Handler for income SmartThings POST requests
-app.post('/api/doorTest', function(req, res, next) {
+app.post('/api/doorTest', async(req, res) => {
   await db.addDoorTestSensordata(req, res);
 });
 
