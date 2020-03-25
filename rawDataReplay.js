@@ -22,7 +22,7 @@ pool.on('error', (err, client) => {
 })
 
 
-async function replaySession(){
+module.exports.replaySession = async function replaySession(){
     let events = await getRawDataForInterval();
     start_time = events[0].published_at;
 
