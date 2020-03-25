@@ -22,7 +22,7 @@ pool.on('error', (err, client) => {
 })
 
 
-module.exports.replayData = function replayData(){
+module.exports.replayData = async function replayData(){
     let events = await getRawDataForInterval();
     for(let i = 0; i>events.length; i++){
       console.log(events[i]);
