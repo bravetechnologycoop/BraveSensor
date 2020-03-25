@@ -43,6 +43,18 @@ const addXeThruSensordata = (request, response) => {
   })
 }
 
+// POST new door Test data
+const addDoorTestSensordata = (request, response) => {
+  const {deviceid, locationid, devicetype, signal} = request.body;
+
+  pool.query('INSERT INTO door_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.status(200).json(results.rows)
+  })
+}
+
 // The following function handle different database queries:
 
 

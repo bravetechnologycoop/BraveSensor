@@ -306,6 +306,12 @@ app.post('/api/xethru', async (req, res) => {
     await db.addXeThruSensordata(req, res);
 });
 
+// Handler for income SmartThings POST requests
+app.post('/api/doorTest', function(req, res, next) {
+  await db.addDoorTestSensordata(req, res);
+});
+
+
 // Handler for redirecting to the Frontend
 app.get('/*', async function (req, res) {
   if (req.session.user && req.cookies.user_sid) {
