@@ -27,8 +27,8 @@ async function replaySession(){
     start_time = events[0].published_at;
 
     for(let i = 0; i>events.length; i++){
-      e = events[i] 
-      sendRequestForRow(e)
+     await sleep (1000);
+     sendRequestForRow(events[i])
     }
 }
 
@@ -60,5 +60,16 @@ function sendRequestForRow(e){
       .catch(function (error) {
         console.log(error);
       });
+    }else if(e.devicetype == 'Door'){
+      axios.post('/api/doorTest', {
+        locationid: 'TestLocation',
+        signal: e.signal
+      }).then(function (response) {
+        console.log(response);
+      })
+      .catch(function (error) {
+        console.log(error);
+      })
+
     }
   }
