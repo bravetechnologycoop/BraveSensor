@@ -499,4 +499,5 @@ module.exports = {
   updateLocationData,
   addLocationData,
   updateSentAlerts,
+  addDoorTestSensordata
 }
