@@ -22,24 +22,32 @@ pool.on('error', (err, client) => {
 })
 
 
-module.exports.replaySession = async function replaySession(){
+module.exports.replayData = function replayData(){
     let events = await getRawDataForInterval();
-    start_time = events[0].published_at;
-
     for(let i = 0; i>events.length; i++){
-     await sleep (1000);
+      console.log(events[i]);
+     await sleep(1000);
      sendRequestForRow(events[i])
     }
 }
 
 //Select a specific twenty minute interval
-const getRawDataForInterval = (request, response) => {
-    pool.query("Select * from rawdata where published_at < (CURRENT_TIMESTAMP - interval '3 days') and published_at > ((CURRENT_TIMESTAMP - interval '3 days') - interval '20 minutes') order by published_at asc", (error, results) => {
-      if (error) {
-        throw error
+
+
+  async function getRawDataForInterval(){
+    try{
+      const results = await pool.query("Select * from rawdata where published_at < (CURRENT_TIMESTAMP - interval '3 days') and published_at > ((CURRENT_TIMESTAMP - interval '3 days') - interval '20 minutes') order by published_at asc");
+      if(results == undefined){
+        return null;
       }
-      response.status(200).json(results.rows);
-    })
+      else{
+        return results.rows; 
+      }
+    }
+    catch(e){
+      console.log(`Error running the getRawData query: ${e}`);
+    }
+  
   }
 
 //Turn an individual database row into an http request
