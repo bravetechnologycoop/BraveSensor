@@ -4,7 +4,7 @@ const Sentry = require('@sentry/node');
 require('dotenv').config();
 pgconnectionString = process.env.PG_TEST_CONNECTION_STRING
 const axios = require('axios').default;
-
+const sleep = (millis) => new Promise(resolve => setTimeout(resolve, millis))
 axios.defaults.baseURL = 'https://odetect-dev.brave.coop';
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
@@ -24,9 +24,9 @@ pool.on('error', (err, client) => {
 
 module.exports.replayData = async function replayData(){
     let events = await getRawDataForInterval();
-    for(let i = 0; i>events.length; i++){
-      console.log(events[i]);
-     await sleep(1000);
+    for(let i = 0; i<events.length; i++){
+    await sleep(1000);
+    console.log(events[i]);
      sendRequestForRow(events[i])
     }
 }
@@ -41,6 +41,7 @@ module.exports.replayData = async function replayData(){
         return null;
       }
       else{
+        console.log(JSON.stringify(results.rows[0]))
         return results.rows; 
       }
     }
