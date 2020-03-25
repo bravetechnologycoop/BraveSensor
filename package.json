@@ -10,6 +10,7 @@
   "dependencies": {
     "@sentry/node": "^5.12.2",
     "@smartthings/smartapp": "^1.0.3",
+    "axios": "^0.19.2",
     "body-parser": "*",
     "chai": "^4.2.0",
     "chai-http": "^4.2.0",
