@@ -46,6 +46,7 @@ const getRawDataForInterval = (request, response) => {
 function sendRequestForRow(e){
   if(e.devicetype == 'XeThru'){
       axios.post('/api/xethru', {
+        deviceid: e.deviceid,
         locationid: 'TestLocation',
         devicetype: 'XeThru',
         mov_f: e.mov_f,
@@ -62,6 +63,7 @@ function sendRequestForRow(e){
       });
     }else if(e.devicetype == 'Door'){
       axios.post('/api/doorTest', {
+        deviceid: e.deviceid,
         locationid: 'TestLocation',
         signal: e.signal
       }).then(function (response) {
