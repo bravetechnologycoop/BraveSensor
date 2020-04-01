@@ -8,7 +8,7 @@ const OD_FLAG_STATE = require('./../SessionStateODFlagEnum.js');
 const DOOR_STATE = require('./../SessionStateDoorEnum.js');
 const SessionState = require('./../SessionState.js');
 
-function setupDB(states = {}, door = {}, motion = {}, xethru = {}, location_data = {}, session = {}, is_overdose_suspected = false) {
+function setupDB(states = {}, door = {}, xethru_history = [], xethru = {}, location_data = {}, session = {}, is_overdose_suspected = false) {
 	return {
 		getLatestLocationStatesdata: function(location) {
 			// initial state
@@ -20,8 +20,8 @@ function setupDB(states = {}, door = {}, motion = {}, xethru = {}, location_data
 		getLatestDoorSensordata: function(location) {
 			return door;
 		},
-		getLatestMotionSensordata: function(location) {
-			return motion;
+		getRecentXeThruSensordata: function (location) {
+			return xethru_history; 
 		},
 		getLocationData: function(location) {
 			return location_data;
@@ -33,9 +33,6 @@ function setupDB(states = {}, door = {}, motion = {}, xethru = {}, location_data
 		},
 		isOverdoseSuspected: function(xethru, session, location_data) {
 			return is_overdose_suspected;
-		},
-		getRecentXeThruSensordata: function (location) {
-			return []
 		}
 	}
 }
@@ -79,19 +76,24 @@ describe('test getNextState', () => {
 		});
 
 		it('and the motion sensor detects motions and the xethru detects movement and the xethru movement is more than the movement threshold, and more than 30 seconds have passed since the door status changed, should return the MOTION_DETECTED state', async () => {
+			
 			let movementThreshold = 5;
+			let doorDelay = 10;
+
 			let db = setupDB(
 				states = {state: STATE.NO_PRESENCE_NO_SESSION},
-				door = {published_at: moment().subtract(31, 'seconds')},
-				motion = {signal: MOTION_STATE.MOVEMENT},
+				door = {published_at: moment().subtract(25, 'seconds')},
+				xethru_history = [{mov_f: 56, mov_s: 56}, {mov_f: 56, mov_s: 56}, {mov_f: 56, mov_s: 56}, {mov_f: 56, mov_s: 56},{mov_f: 56, mov_s: 56}, {mov_f: 56, mov_s: 56}],
 				xethru = {
 					state: XETHRU_STATE.MOVEMENT,
 					mov_f: movementThreshold + 1
 				},
-				location_data = {mov_threshold: movementThreshold}
+				location_data = {mov_threshold: movementThreshold,
+					door_stickiness_delay: 10},
+				
 			);
-			let statemachine = new SessionState('TestLocation');
 
+			let statemachine = new SessionState('TestLocation');
 			let actualState = await statemachine.getNextState(db);
 
 			expect(actualState).to.equal(STATE.MOTION_DETECTED);
@@ -199,17 +201,6 @@ describe('test getNextState', () => {
 	});
 
 	describe('when inital state is DOOR_OPENED_START', () => {
-		it('and the door closes, should return the DOOR_CLOSED_START state', async () => {
-			let db = setupDB(
-				states = {state: STATE.DOOR_OPENED_START},
-				door = {signal: DOOR_STATE.CLOSED}
-			);
-			let statemachine = new SessionState('TestLocation');
-
-			let actualState = await statemachine.getNextState(db);
-
-			expect(actualState).to.equal(STATE.DOOR_CLOSED_START);
-		});
 
 		it('and the door opens again, should not change state', async () => {
 			let initialState = STATE.DOOR_OPENED_START;
