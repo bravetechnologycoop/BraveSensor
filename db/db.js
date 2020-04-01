@@ -1,5 +1,7 @@
 const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
+const Sentry = require('@sentry/node');
+Sentry.init({ dsn: 'https://d7e58c8e8fc44fdb9cf84bc82bf3c0a5@sentry.io/2556390' });
 require('dotenv').config();
 pgconnectionString = process.env.PG_CONNECTION_STRING
 
@@ -43,15 +45,6 @@ const addXeThruSensordata = (request, response) => {
 
 // The following function handle different database queries:
 
-// INSERT motion sensor data
-const addMotionSensordata = (deviceid, locationid, devicetype, signal) => {
-
-  pool.query('INSERT INTO motion_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
-    if (error) {
-      throw error
-    }
-  })
-}
 
 // INSERT door sensor data
 const addDoorSensordata = (deviceid, locationid, devicetype, signal) => {
@@ -76,8 +69,9 @@ async function addStateMachineData(state, locationid){
 // SELECT latest XeThru sensordata entry
 async function getLatestXeThruSensordata(locationid){
   try{
-    const results = await pool.query('SELECT * FROM xethru WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
+    const results = await pool.query("SELECT * FROM xethru WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '6 hours') ORDER BY published_at DESC LIMIT 1", [locationid]);
     if(results == undefined){
+      console.log('Error: Missing Xethru Data')
       return null;
     }
     else{
@@ -90,19 +84,18 @@ async function getLatestXeThruSensordata(locationid){
 
 }
 
-// SELECT latest Motion sensordata entry
-async function getLatestMotionSensordata(locationid){
+async function getRecentXeThruSensordata(locationid){
   try{
-    const results = await pool.query('SELECT * FROM motion_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
+    const results = await pool.query("SELECT * FROM xethru WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '6 hours') ORDER BY published_at DESC LIMIT 15", [locationid]);
     if(results == undefined){
       return null;
     }
     else{
-      return results.rows[0]; 
+      return results.rows; 
     }
   }
   catch(e){
-    console.log(`Error running the getLatestMotionSensordata query: ${e}`);
+    console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
   }
 
 }
@@ -121,13 +114,12 @@ async function getLatestDoorSensordata(locationid){
   catch(e){
     console.log(`Error running the getLatestDoorSensordata query: ${e}`);
   }
-
 }
 
 // SELECT latest state entry for a certain locationid
 async function getLatestLocationStatesdata(locationid){
   try{
-    const results = await pool.query('SELECT * FROM states WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
+    const results = await pool.query("SELECT * FROM states WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY published_at DESC LIMIT 1", [locationid]);
     if(results == undefined){
       return null;
     }
@@ -141,10 +133,26 @@ async function getLatestLocationStatesdata(locationid){
 
 }
 
+//Returns last 60 data points of state history 
+async function getRecentStateHistory(locationid){
+  try{
+    const results = await pool.query("SELECT * FROM states WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY published_at DESC LIMIT 60", [locationid]);
+    if(results == undefined){
+      return null;
+    }
+    else{
+      return results.rows; 
+    }
+  }
+  catch(e){
+    console.log(`Error running the getRecentStateHistory query: ${e}`);
+  }
+}
+
 // Gets the most recent session data in the table for a specified location
 async function getMostRecentSession(locationid) {
   try{
-    const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [locationid]);
+    const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY sessionid DESC LIMIT 1", [locationid]);
 
     if(typeof results === 'undefined'){
       return null;
@@ -158,10 +166,11 @@ async function getMostRecentSession(locationid) {
   }
 }
 
+
 // Gets the last session data in the table for a specified phone number
 async function getMostRecentSessionPhone(phone) {
   try {
-      const results = await pool.query("SELECT * FROM sessions WHERE phonenumber = $1 ORDER BY sessionid DESC LIMIT 1", [phone]);
+      const results = await pool.query("SELECT * FROM sessions WHERE phonenumber = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY start_time DESC LIMIT 1", [phone]);
       if(results == undefined){
           return null;
       }
@@ -176,7 +185,7 @@ async function getMostRecentSessionPhone(phone) {
 
 async function getHistoryOfSessions(location, numEntries) {
   try {
-      const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time IS NOT NULL ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
+      const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND start_time > (CURRENT_TIMESTAMP - interval '7 days') AND end_time IS NOT NULL ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
 
       if(typeof results === 'undefined') {
           return null;
@@ -193,7 +202,7 @@ async function getHistoryOfSessions(location, numEntries) {
 // Gets the last session data from an unclosed session for a specified location
 async function getLastUnclosedSession(locationid) {
   try{
-    const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 AND end_time = null ORDER BY sessionid DESC LIMIT 1", [locationid]);
+    const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') AND end_time = null ORDER BY sessionid DESC LIMIT 1", [locationid]);
     if(results == undefined){
       return null;
     }
@@ -216,10 +225,12 @@ async function createSession(phone, locationid, state) {
 
 // Closes the session by updating the end time
 async function closeSession(location) {
+    console.log("db.closeSession is being called");
     const session = await getMostRecentSession(location);
     if (session != undefined){ //Check if session exists for this location
       if(session.end_time == null){ // Check if latest session is open
         await updateSessionEndTime(session.sessionid); //
+        console.log("session has been closed by db.closeSession");
         return true;
       }
       else{
@@ -291,9 +302,9 @@ async function updateSessionResetDetails(sessionid, notes, state) {
 
 // Updates the still_counter in the sessions database row
 
-async function updateSessionStillCounter(stillcounter, sessionid) {
+async function updateSessionStillCounter(stillcounter, sessionid,locationid) {
   try{
-    const results = await pool.query("UPDATE sessions SET still_counter = $1 WHERE sessionid = $2 RETURNING *", [stillcounter, sessionid]);
+    const results = await pool.query("UPDATE sessions SET still_counter = $1 WHERE sessionid = $2 AND locationid = $3 RETURNING *", [stillcounter, sessionid,locationid]);
     if(results == undefined){
       return null;
     }
@@ -452,15 +463,15 @@ async function addLocationData(deviceid, phonenumber, detection_min, detection_m
 module.exports = {
   getXethruSensordata,
   addXeThruSensordata,
-  addMotionSensordata,
   addDoorSensordata,
   addStateMachineData,
   getLatestXeThruSensordata,
-  getLatestMotionSensordata,
+  getRecentXeThruSensordata,
   getLatestDoorSensordata,
   getLatestLocationStatesdata,
   getLastUnclosedSession,
   getMostRecentSession,
+  getRecentStateHistory,
   getHistoryOfSessions,
   createSession,
   isOverdoseSuspected,

@@ -14,6 +14,9 @@ const smartapp   = require('@smartthings/smartapp');
 const path = require('path');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
+const Sentry = require('@sentry/node');
+Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' });
+
 require('dotenv').config();
 
 const app = express();
@@ -21,13 +24,15 @@ const port = 443
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
-const XETHRU_THRESHOLD_MILLIS = 10*1000;
-const unrespondedTimer = 30 *1000;
+const XETHRU_THRESHOLD_MILLIS = 60*10*1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
-const sessionResetThreshold = 20*60*1000;
+const WATCHDOG_TIMER_FREQUENCY = 60*1000;
 
 // List of locations that the main loop will iterate over
 var locations = [];
+
+// RESET IDs that had discrepancies
+var resetDiscrepancies = [];
 
 // Session start_times dictionary.
 var start_times = {};
@@ -40,6 +45,7 @@ setInterval(async function (){
     locationsArray.push(locationTable[i].locationid)
   }
   locations = locationsArray;
+  io.sockets.emit('getLocations', {data: locationsArray});
   console.log(`Current locations: ${locations}`)
 }, LOCATION_UPDATE_FREQUENCY)
 
@@ -176,7 +182,7 @@ smartapp
             section.textSetting('DeviceID');
         });
         page.section('Select sensors', section => {
-            section.deviceSetting('contactSensor').capabilities(['contactSensor']).required(false);
+            section.deviceSetting('contactSensor').capabilities(['contactSensor', 'battery']).required(false);
             section.deviceSetting('motionSensor').capabilities(['motionSensor']).required(false);
             section.deviceSetting('button').capabilities(['button']).required(false);
         });
@@ -192,6 +198,7 @@ smartapp
         context.api.subscriptions.unsubscribeAll().then(() => {
               console.log('unsubscribeAll() executed');
               context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'contactSensor', 'contact', 'myContactEventHandler');
+              context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'battery', 'battery', 'myBatteryEventHandler');
               context.api.subscriptions.subscribeToDevices(context.config.motionSensor, 'motionSensor', 'motion', 'myMotionEventHandler');
               context.api.subscriptions.subscribeToDevices(context.config.button, 'button', 'button', 'myButtonEventHandler');
         });
@@ -201,7 +208,15 @@ smartapp
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         db.addDoorSensordata(DeviceID, LocationID, "Door", signal);
-        console.log(`Motion${DeviceID} Sensor: ${signal} @${LocationID}`);
+        console.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
+    })
+     .subscribedEventHandler('myBatteryEventHandler', (context, deviceEvent) => {
+        const signal = deviceEvent.value;
+        console.log(deviceEvent.value);
+        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
+        sendBatteryAlert(LocationID, signal);
+        console.log(`Door${DeviceID} Battery: ${signal} @${LocationID}`);
     })
     .subscribedEventHandler('myMotionEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
@@ -234,6 +249,52 @@ async function resetSession(locationid){
     console.log("Could not reset open session");
   }
 }
+
+// Closes any open session and resets state for the given location
+async function autoResetSession(locationid){
+  try{
+    if(await db.closeSession(locationid)){
+      let session = await db.getMostRecentSession(locationid);
+      console.log(session);
+      await db.updateSessionResetDetails(session.sessionid, "Auto reset", "Reset");
+      await db.addStateMachineData("Reset", locationid);
+    }
+    else{
+      console.log("There is no open session to reset!")
+    }
+  }
+  catch {
+    console.log("Could not reset open session");
+  }
+}
+
+//This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
+
+setInterval(async function (){
+  // Iterating through multiple locations
+  for(let i = 0; i < locations.length; i++){
+    //Get recent state history
+    let currentLocationId = locations[i];
+    let stateHistoryQuery = await db.getRecentStateHistory(currentLocationId);
+    let stateMemory = [];
+    //Store this in a local array
+    for(let i = 0; i < stateHistoryQuery.length; i++){
+      stateMemory.push(stateHistoryQuery[i].state)
+    }
+    // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
+    for(let i=1; i<(stateHistoryQuery.length); i++){
+      if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
+        console.log(`The Reset state logged at ${stateHistoryQuery[i].published_at} has a discrepancy`);
+        resetDiscrepancies.push(stateHistoryQuery[i].published_at);
+        console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
+        console.log(resetDiscrepancies);
+        await db.addStateMachineData(STATE.RESET, currentLocationId);
+        //Once a reset state has been added, additionally reset any ongoing sessions
+        autoResetSession(currentLocationId);
+      }
+    }
+  }
+}, WATCHDOG_TIMER_FREQUENCY)
 
 // Handler for income SmartThings POST requests
 app.post('/api/st', function(req, res, next) {
@@ -297,6 +358,9 @@ io.on('connection', (socket) => {
     });
 
     console.log("Websocket connection");
+    socket.emit('getLocations', {
+      data: locations
+    })
     socket.emit('Hello', {
         greeting: "Hello ODetect Frontend"
     });
@@ -334,16 +398,20 @@ async function sendTwilioMessage(fromPhone, toPhone, msg) {
 
 async function sendInitialChatbotMessage(session) {
     console.log("Intial message sent");
-    await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
+    var location = session.locationid;
+    locationData = await db.getLocationData(location)
+    await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
     await db.startChatbotSessionState(session);
-    setTimeout(reminderMessage, unrespondedTimer, session.locationid);
+    setTimeout(reminderMessage, locationData.unrespondedTimer, session.locationid);
 }
 
 async function reminderMessage(location) {
+    console.log("Reminder message being sent");
     let session = await db.getMostRecentSession(location); // Gets the updated state for the chatbot
+    locationData = await db.getLocationData(location)
     if(session.chatbot_state == 'Started') {
         //send the message
-        await sendTwilioMessage(process.env.TWILIO_PHONENUMBER, session.phonenumber, `This is a reminder to check on the bathroom`)
+        await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
         session.chatbot_state = 'Waiting for Response';
         await db.saveChatbotSession(session);
     }
@@ -354,8 +422,8 @@ async function reminderMessage(location) {
 async function sendAlerts(location) {
   locationData = await db.getLocationData(location);
   twilioClient.messages.create({
-      body: `The XeThru connection for ${location} has been lost.`,
-      from: process.env.TWILIO_PHONENUMBER,
+      body: `The XeThru connection for ${location} has been lost. Message from ODetect-Dev2`,
+      from: locationData.twilio_number,
       to: locationData.xethru_heartbeat_number
   })
   .then(message => console.log(message.sid))
@@ -366,8 +434,8 @@ async function sendReconnectionMessage(location) {
   locationData = await db.getLocationData(location);
 
   twilioClient.messages.create({
-      body: `The XeThru at ${location} has been reconnected.`,
-      from: process.env.TWILIO_PHONENUMBER,
+      body: `The XeThru at ${location} has been reconnected. Message from ODetect-Dev2`,
+      from: locationData.twilio_number,
       to: locationData.xethru_heartbeat_number
   })
   .then(message => console.log(message.sid))
@@ -378,15 +446,39 @@ async function sendReconnectionMessage(location) {
 
 async function sendResetAlert(location) {
   locationData = await db.getLocationData(location);
-
   twilioClient.messages.create({
-      body: `An unresponded session at ${location} has been automatically reset.`,
-      from: process.env.TWILIO_PHONENUMBER,
+      body: `An unresponded session at ${location} has been automatically reset. Message from ODetect-Dev2`,
+      from: locationData.twilio_number,
       to: locationData.xethru_heartbeat_number
   })
   .then(message => console.log(message.sid))
   .done()
 }
+
+async function sendBatteryAlert(location, value){
+  locationData = await db.getLocationData(location);
+  twilioClient.messages.create({
+      body: `Battery at ${location} is ${value}`,
+      from: locationData.twilio_number,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
+
+}
+
+async function sendTemperatureAlert(location, value){
+  locationData = await db.getLocationData(location);
+  twilioClient.messages.create({
+      body: `Temperature at ${location} is ${value}`,
+      from: locationData.twilio_number,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
+
+}
+
 
 
 // Handler for incoming Twilio messages
@@ -434,7 +526,6 @@ setInterval(async function () {
 
     // Query raw sensor data to transmit to the FrontEnd
     let XeThruData = await db.getLatestXeThruSensordata(currentLocationId);
-    let MotionData = await db.getLatestMotionSensordata(currentLocationId);
     let DoorData = await db.getLatestDoorSensordata(currentLocationId);
 
     // Check the XeThru Heartbeat
@@ -474,9 +565,11 @@ setInterval(async function () {
 
     //If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
 
-    if (sessionDuration*1000>sessionResetThreshold){
-      resetSession(currentLocationId);
-      sendResetAlert(currentLocationId);
+    if (sessionDuration*1000>location.auto_reset_threshold){
+      autoResetSession(location.locationid);
+      start_times[currentLocationId] = null;
+      console.log('autoResetSession has been called');
+      sendResetAlert(location.locationid);
     }
 
 
@@ -494,6 +587,7 @@ setInterval(async function () {
           if(latestSession.end_time == null){ // Checks if session is open.
             let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
             io.sockets.emit('sessiondata', {data: currentSession});
+            console.log('sessiondata socket event sending' + currentSession)
           }
         }
       }
@@ -510,15 +604,10 @@ setInterval(async function () {
             start_times[currentLocationId] = currentSession.start_time;
           }
           else{
-            let currentSession = await db.createSession(process.env.PHONENUMBER, currentLocationId, currentState); // Creates a new session
+            let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState); // Creates a new session
             io.sockets.emit('sessiondata', {data: currentSession});
             start_times[currentLocationId] = currentSession.start_time;
           }
-        }
-        else{
-          let currentSession = await db.createSession(process.env.PHONENUMBER, currentLocationId, currentState); // Creates a new session
-          io.sockets.emit('sessiondata', {data: currentSession});
-          start_times[currentLocationId] = currentSession.start_time;
         }
       }
 
@@ -558,24 +647,25 @@ setInterval(async function () {
       if(typeof currentSession !== 'undefined'){
         if(currentSession.state == 'Still' || currentSession.state == 'Breathing'){
           if(currentSession.end_time == null){ // Only increases counter if session is open
-            let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid);
+            let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid, currentSession.locationid);
             io.sockets.emit('sessiondata', {data: updatedSession});
           }
           else{ // If session is closed still emit its data as it is
+            console.log('sending sessiondata event line 568')
             io.sockets.emit('sessiondata', {data: currentSession});
           }
 
         }
         else{
           // If current session is anything else than STILL it returns the counter to 0
-          let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid);
+          let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid, currentSession.locationid);
+          console.log('sending sessiondata event line 575')
           io.sockets.emit('sessiondata', {data: updatedSession});
         }
       }
     }
 
     io.sockets.emit('xethrustatedata', {data: XeThruData});
-    io.sockets.emit('motionstatedata', {data: MotionData});
     io.sockets.emit('doorstatedata', {data: DoorData});
     io.sockets.emit('statedata', {data: prevState});
 

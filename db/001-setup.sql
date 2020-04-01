@@ -117,5 +117,9 @@ BEGIN
             OIDS = FALSE
         )
         TABLESPACE pg_default;
+
+        -- Update the migration ID of the last file to be successfully run to the migration ID of this file
+        INSERT INTO migrations (id)
+        VALUES (migrationId);
     END IF;
 END $migration$;
