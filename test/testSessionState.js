@@ -33,6 +33,9 @@ function setupDB(states = {}, door = {}, motion = {}, xethru = {}, location_data
 		},
 		isOverdoseSuspected: function(xethru, session, location_data) {
 			return is_overdose_suspected;
+		},
+		getRecentXeThruSensordata: function (location) {
+			return []
 		}
 	}
 }
