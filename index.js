@@ -208,7 +208,7 @@ smartapp
         console.log(deviceEvent.value);
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
-        await db.addDoorSensordata(DeviceID, LocationID, "Door", signal);
+        db.addDoorSensordata(DeviceID, LocationID, "Door", signal);
         handleSensorRequest(LocationID);
         
         console.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
