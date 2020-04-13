@@ -6,7 +6,7 @@ require('dotenv').config();
 pgconnectionString = process.env.PG_TEST_CONNECTION_STRING
 const axios = require('axios').default;
 const sleep = (millis) => new Promise(resolve => setTimeout(resolve, millis))
-axios.defaults.baseURL = 'https://odetect-dev.brave.coop';
+axios.defaults.baseURL = 'https://4b178e11.ngrok.io';
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
 
@@ -77,7 +77,7 @@ async function getServerTime(){
 
 async function getRawDataForInterval(){
   try{
-    const results = await pool.query("Select * from rawdata where published_at < (CURRENT_TIMESTAMP - interval '3 days') and published_at > ((CURRENT_TIMESTAMP - interval '3 days') - interval '2 minutes') order by published_at asc");
+    const results = await pool.query("Select * from rawdata where published_at < (CURRENT_TIMESTAMP - interval '25 days') and published_at > ((CURRENT_TIMESTAMP - interval '25 days') - interval '2 minutes') order by published_at asc");
     if(results == undefined){
       return null;
     }
