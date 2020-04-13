@@ -18,13 +18,13 @@ const STATE = require('./SessionStateEnum.js');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' });
 
-require('dotenv').config();
-let
-  redis     = require('redis'),
-  redisClient    = redis.createClient({
-    port      : 6379,               // 
-    host      : '120.0.0.1',        // replace with your hostanme or IP address
-  })
+// require('dotenv').config();
+// let
+//   redis     = require('redis'),
+//   redisClient    = redis.createClient({
+//     port      : 6379,               // 
+//     host      : '120.0.0.1',        // replace with your hostanme or IP address
+//   })
 
 const app = express();
 const port = 443
@@ -216,7 +216,7 @@ smartapp
         console.log(deviceEvent.value);
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
-        await db.addDoorSensordata(DeviceID, LocationID, "Door", signal);
+        db.addDoorSensordata(DeviceID, LocationID, "Door", signal);
         handleSensorRequest(LocationID);
         
         console.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
