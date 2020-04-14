@@ -164,7 +164,7 @@ async function getRecentStateHistory(locationid){
 // Gets the most recent session data in the table for a specified location
 async function getMostRecentSession(locationid) {
   try{
-    const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY sessionid DESC LIMIT 1", [locationid]);
+    const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [locationid]);
 
     if(typeof results === 'undefined'){
       return null;
