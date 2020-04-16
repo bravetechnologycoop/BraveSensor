@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "NODE_ENV=test mocha --timeout 10000 \"test/**/*.js\"",
-    "dataReplay": "node -e 'require(\"./rawDataReplay.js\").replayData()'"
+    "replayData": "node -e 'require(\"./replayData.js\").replayData()'"
   },
   "dependencies": {
     "@sentry/node": "^5.12.2",
