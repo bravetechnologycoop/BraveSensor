@@ -27,8 +27,9 @@ module.exports.replayData = async function replayData(){
   let numLocations = process.env.npm_config_numLocations;
   let startTime = process.env.npm_config_startTime;
   let endTime = process.env.npm_config_endTime;
+  let locationID = process.env.npm_config_locationID;
   console.log(numLocations);
-  let events = await getRawDataForInterval(startTime, endTime);
+  let events = await getRawDataForInterval(startTime, endTime, locationID);
   let replayRunTime = await getServerTime();
 
     for(let i = 0; i<events.length; i++){
@@ -82,9 +83,9 @@ async function getServerTime(){
 //Select a specific twenty minute interval
 
 
-async function getRawDataForInterval(startTime, endTime){
+async function getRawDataForInterval(startTime, endTime, locationID){
   try{
-    const results = await pool.query("Select * from rawdata where published_at < $1 and published_at > $2 order by published_at asc", [endTime, startTime]);
+    const results = await pool.query("Select * from rawdata where published_at > $1 and published_at < $2 and locationid = $3 order by published_at asc", [startTime, endTime, locationID]);
     if(results == undefined){
       return null;
     }
