@@ -32,16 +32,18 @@ module.exports.replayData = async function replayData(){
   let events = await getRawDataForInterval(startTime, endTime, locationID);
   let replayRunTime = await getServerTime();
 
-    for(let i = 0; i<events.length; i++){
-      await sleep(1000);
-      console.log(events[i]);
-      for(let j = 0; j<numLocations; j++){
-        let location = 'TestLocation'+j;
-        sendRequestForRow(events[i], location);
-      }
+  //Prime the application server to recieve new data
+
+  //Replay Data
+  for(let i = 0; i<events.length; i++){
+    await sleep(1000);
+    console.log(events[i]);
+    for(let j = 1; j<numLocations+1; j++){
+      let location = 'TestLocation'+j;
+      sendRequestForRow(events[i], location);
     }
-    
-    getMetrics(replayRunTime);
+  }
+  getMetrics(replayRunTime);
     
 }
 
