@@ -1,14 +1,25 @@
+process.argv.forEach((val, index) => {
+  console.log(`${index}: ${val}`);
+});
+
 const db = require('./db/db.js');
 const pg = require('pg')
 let moment = require('moment');
 const Sentry = require('@sentry/node');
 require('dotenv').config();
 pgconnectionString = process.env.PG_TEST_CONNECTION_STRING
-const axios = require('axios').default;
-const sleep = (millis) => new Promise(resolve => setTimeout(resolve, millis))
-axios.defaults.baseURL = 'https://odetect-dev.brave.coop';
-axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
+
+let numLocations = process.argv[2];
+let startTime = process.argv[3];
+let endTime = process.argv[4];
+let locationID = process.argv[5];
+let destinationURL = process.argv[6];
+
+const axios = require('axios').default;
+const sleep = (millis) => new Promise(resolve => setTimeout(resolve, millis));
+axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
+axios.defaults.baseURL = destinationURL;
 
 const pool = new pg.Pool({
   connectionString: pgconnectionString
@@ -23,14 +34,15 @@ pool.on('error', (err, client) => {
 })
 
 
-module.exports.replayData = async function replayData(){
-  let numLocations = process.env.npm_config_numLocations;
-  let startTime = process.env.npm_config_startTime;
-  let endTime = process.env.npm_config_endTime;
-  let locationID = process.env.npm_config_locationID;
+replayData(numLocations, startTime, endTime, locationID);
+
+async function replayData(numLocations, startTime, endTime, locationID){
+
   console.log(numLocations);
   let events = await getRawDataForInterval(startTime, endTime, locationID);
   let replayRunTime = await getServerTime();
+
+  //Point to the application logic server
 
   //Prime the application server to recieve new data
 
@@ -103,7 +115,7 @@ async function getRawDataForInterval(startTime, endTime, locationID){
 }
 
 //Turn an individual database row into an http request
-function sendRequestForRow(event, location){
+function sendRequestForRow(event, location){  
   if(event.devicetype == 'XeThru'){
       axios.post('/api/xethru', {
         deviceid: event.deviceid,
@@ -116,10 +128,10 @@ function sendRequestForRow(event, location){
         distance: event.distance
       })
       .then(function (response) {
-        console.log(response);
+        //console.log(response);
       })
       .catch(function (error) {
-        console.log(error);
+        //console.log(error);
       });
     }else if(event.devicetype == 'Door'){
       axios.post('/api/doorTest', {
@@ -127,10 +139,10 @@ function sendRequestForRow(event, location){
         locationid: location,
         signal: event.signal
       }).then(function (response) {
-        console.log(response);
+        //console.log(response);
       })
       .catch(function (error) {
-        console.log(error);
+        //console.log(error);
       })
 
     }
