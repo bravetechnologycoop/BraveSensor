@@ -5,8 +5,5 @@ COPY package*.json ./
 USER node
 RUN npm install
 COPY --chown=node:node . .
-EXPOSE 8081
+EXPOSE 8080
 CMD ["node", "index.js"]
-
-
-sudo docker run -it --entrypoint=/bin/bash mariocimet/odetect-load-sim
