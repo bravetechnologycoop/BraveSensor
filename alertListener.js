@@ -19,7 +19,7 @@ app.post('/alert', async (req, res) => {
   axios.post('/sms', {
     To: installationPhone,
     From: responderPhone,
-    Body: 'Auto-response'
+    Body: '4'
   })
   .then(function (response) {
     console.log(response);
@@ -31,5 +31,5 @@ app.get('/*', async function (req, res) {
 });
 
 
-server = app.listen(8080)
-console.log('ODetect brave server listening on port 8080')
+server = app.listen(8081)
+console.log('ODetect brave server listening on port 8081')

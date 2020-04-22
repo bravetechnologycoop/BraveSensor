@@ -160,13 +160,6 @@ app.get('/logout', (req, res) => {
     }
 });
 
-// Set up Twilio
-const accountSid = process.env.TWILIO_SID;
-const authToken = process.env.TWILIO_TOKEN;
-
-const twilioClient = require('twilio')(accountSid, authToken);
-const MessagingResponse = require('twilio').twiml.MessagingResponse;
-
 // SmartThings Smart App Implementations
 
 // @smartthings_rsa.pub is your on-disk public key
@@ -556,11 +549,17 @@ async function particle_config(particleid, config_values, token) {
       });
 }
 
-// Twilio Functions
+// Twilio Function except it just sends a post request to the alert listener, which replies immediatley
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
   try {
-      await twilioClient.messages.create({from: fromPhone, to: toPhone, body: msg})
-                           .then(message => console.log(message.sid));
+    axios.post('/alert', {
+      To: toPhone,
+      From: fromPhone,
+      Body: msg
+    })
+    .then(function (response) {
+      console.log(response);
+    })
   }
   catch(err) {
       console.log(err);
@@ -601,7 +600,7 @@ async function sendAlerts(location) {
   // })
   // .then(message => console.log(message.sid))
   // .done()
-  console.log('heartbeat trigger')
+  console.log('heartbeat disconnection trigger')
 }
 
 async function sendReconnectionMessage(location) {
@@ -614,7 +613,7 @@ async function sendReconnectionMessage(location) {
   // })
   // .then(message => console.log(message.sid))
   // .done()
-  console.log("reconnection message trigger")
+  console.log("heartbeat reconnection message trigger")
 }
 
 //Autoreset twilio function
@@ -631,35 +630,8 @@ async function sendResetAlert(location) {
   console.log('reset alert trigger')
 }
 
-async function sendBatteryAlert(location, value){
-  locationData = await db.getLocationData(location);
-  twilioClient.messages.create({
-      body: `Battery at ${location} is ${value}`,
-      from: locationData.twilio_number,
-      to: locationData.xethru_heartbeat_number
-  })
-  .then(message => console.log(message.sid))
-  .done()
-
-}
-
-async function sendTemperatureAlert(location, value){
-  locationData = await db.getLocationData(location);
-  twilioClient.messages.create({
-      body: `Temperature at ${location} is ${value}`,
-      from: locationData.twilio_number,
-      to: locationData.xethru_heartbeat_number
-  })
-  .then(message => console.log(message.sid))
-  .done()
-
-}
-
-
-
 // Handler for incoming Twilio messages
 app.post('/sms', async function (req, res) {
-  const twiml = new MessagingResponse();
 
   // Parses out information from incoming message
   var from = req.body.From;
@@ -684,10 +656,17 @@ app.post('/sms', async function (req, res) {
 
   }
 
-  twiml.message(message);
+  axios.post('/alert', {
+    To: installationPhone,
+    From: responderPhone,
+    Body: message
+  })
+  .then(function (response) {
+    console.log(response);
+  })
 
-  res.writeHead(200, {'Content-Type': 'text/xml'});
-  res.end(twiml.toString());
+
+  res.send('sent post request to alertListener');
 });
 
 let server;
