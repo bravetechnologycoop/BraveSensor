@@ -49,7 +49,6 @@ async function replayData(numLocations, startTime, endTime, locationID){
   seedLocations(numLocations)
   console.log(numLocations);
   let events = await getRawDataForInterval(startTime, endTime, locationID);
-  let replayRunTime = await getServerTime();
   let delay = 1000/numLocations;
 
 
