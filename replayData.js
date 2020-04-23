@@ -53,9 +53,9 @@ async function replayData(numLocations, startTime, endTime, locationID){
 
   //Replay Data
   for(let i = 0; i<events.length; i++){
-    await sleep(delay);
     console.log(events[i]);
     for(let j = 1; j<numLocations; j++){
+      await sleep(delay);
       console.log(j);
       let location = 'TestLocation'+j;
       sendRequestForRow(events[i], location);
