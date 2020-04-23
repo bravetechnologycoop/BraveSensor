@@ -181,6 +181,13 @@ async function seedLocation(locationid){
 
 //Clear application database for next run
 async function teardownDB(){
+
+  appPool.query("DELETE FROM locations", (error, results) => {
+    if (error) {
+      throw error
+    }
+    console.log(results.rows)
+  })
   appPool.query("DELETE FROM states", (error, results) => {
     if (error) {
       throw error
