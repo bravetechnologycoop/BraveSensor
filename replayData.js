@@ -160,7 +160,7 @@ function sendRequestForRow(event, location){
   }
 
 async function seedLocation(locationid){
-  appPool.query("INSERT INTO locations (deviceid, locationid, phonenumber) VALUES (0, $1, 'XeThru', '+4206666969')", [locationid], (error, results) => {
+  appPool.query("INSERT INTO locations (deviceid, locationid, phonenumber) VALUES (0, $1, '+4206666969')", [locationid], (error, results) => {
     if (error) {
       throw error
     }
