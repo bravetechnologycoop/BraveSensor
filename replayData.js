@@ -39,6 +39,8 @@ appPool.on('error', (err, client) => {
   console.error('unexpected database error:', err)
 })
 
+teardownDB();
+
 replayData(numLocations, startTime, endTime, locationID);
 
 async function replayData(numLocations, startTime, endTime, locationID){
@@ -54,16 +56,16 @@ async function replayData(numLocations, startTime, endTime, locationID){
   //Replay Data
   for(let i = 0; i<events.length; i++){
     console.log(events[i]);
-    for(let j = 1; j<numLocations; j++){
+    for(let j = 1; j<=numLocations; j++){
       await sleep(delay);
-      console.log(j);
       let location = 'TestLocation'+j;
+      console.log(location);
       sendRequestForRow(events[i], location);
     }
   }
-  getMetrics(replayRunTime);
+  getMetrics();
 
-  teardownDB()  
+  teardownDB();  
 }
 
 //Prepare database for test
@@ -75,9 +77,9 @@ async function seedLocations(numLocations){
 }
 
 // Replay metrics
-async function getMetrics(replayRunTime){
+async function getMetrics(){
   try{
-    const results = await pool.query('Select count (*) from sessions where start_time > $1', [replayRunTime]);
+    const results = await pool.query('Select count (*) from sessions');
     if(results == undefined){
       return null;
     }
@@ -91,22 +93,6 @@ async function getMetrics(replayRunTime){
   }
 }
 
-// Get current time on the server
-async function getServerTime(){
-  try{
-    const results = await pool.query('Select NOW()');
-    if(results == undefined){
-      return null;
-    }
-    else{
-      return results.rows[0].now; 
-    }
-  }
-  catch(e){
-    console.log(`Error getting time on database: ${e}`);
-  }
-}
-
 //Select a specific twenty minute interval
 async function getRawDataForInterval(startTime, endTime, locationID){
   try{
@@ -115,7 +101,8 @@ async function getRawDataForInterval(startTime, endTime, locationID){
       return null;
     }
     else{
-      console.log(JSON.stringify(results.rows[0]))
+      //console.log(JSON.stringify(results.rows[0]))
+      console.log('Obtained Data Packet')
       return results.rows; 
     }
   }
