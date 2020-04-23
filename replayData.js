@@ -164,31 +164,31 @@ async function seedLocation(locationid){
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    console.log(results.rows)
   })
   appPool.query("INSERT INTO door_sensordata (deviceid, locationid, devicetype, signal) VALUES (0, $1, 'Door', 'closed')", [locationid], (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    console.log(results.rows)
   })
   appPool.query("INSERT INTO xethru (deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s) VALUES (0, $1, 'XeThru', 3, 0, 0, 0, 0)", [locationid], (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    console.log(results.rows)
   })
   appPool.query("INSERT INTO states (locationid, state) VALUES ($1, 'Reset')", [locationid], (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    console.log(results.rows)
   })
   appPool.query("INSERT INTO sessions (locationid, end_time, od_flag, state) VALUES ($1, CURRENT_TIMESTAMP, 0, 'Reset')", [locationid], (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    console.log(results.rows)
   })
 }
 
@@ -198,31 +198,31 @@ async function teardownDB(){
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    console.log(results.rows)
   })
   appPool.query("DELETE FROM xethru", (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    console.log(results.rows)
   })
   appPool.query("DELETE FROM door_sensordata", (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    console.log(results.rows)
   })
   appPool.query("DELETE FROM sessions", (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    console.log(results.rows)
   })
   appPool.query("ALTER SEQUENCE sessions_sessionid_seq restart with 1", (error, results) => {
     if (error) {
       throw error
     }
-    response.status(200).json(results.rows)
+    console.log(results.rows)
   })
 }
 
