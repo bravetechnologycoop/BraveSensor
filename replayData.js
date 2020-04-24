@@ -69,7 +69,7 @@ async function replayData(numLocations, startTime, endTime, locationID){
 
 //Prepare database for test
 async function seedLocations(numLocations){
-  for(let i=1; i<numLocations + 1; i++){
+  for(let i=1; i<=numLocations; i++){
     let location = 'TestLocation'+i
     seedLocation(location)
   }
