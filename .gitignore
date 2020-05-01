@@ -4,4 +4,6 @@ node_modules
 *.pub
 Public
 Dockerfile
+appServerLite.js
+devReplay1.js
 
