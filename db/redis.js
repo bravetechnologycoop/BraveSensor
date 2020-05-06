@@ -1,15 +1,15 @@
-const redis = require("redis");
-const client = redis.createClient();
+const Redis = require("ioredis");
+const client = new Redis(); // uses defaults unless given configuration objectlet moment = require('moment');
 
 client.on("error", function(error) {
   console.error(error);
 });
-
-client.set("key", "value", redis.print);
-client.get("key", redis.print);
-
-
-client.xadd("xethru", "*", "locationid", "TestLocation1", "mov_s", "100", redis.print);
+ 
+async function getXethruWindow(locationID, startTime, endTime, windowLength){
+   let rows = await client.xrevrange('xethru:'+locationID,startTime, endTime, 'count', windowLength);
+   console.log(rows)
+   return rows
+}
 
 // POST new door Test data
 const addDoorSensorData = (request, response) => {
@@ -47,14 +47,51 @@ const addXeThruSensorData = (request, response) => {
     //response.status(200).json(results.rows)
 }
 
-getLatestXeThruSensorData(currentLocationId){
-    client.xrange(`locationid:${currentLocationId}`, function(err, stream){
-        if (err){
-            return console.error(err);
-        }
-        return stream;
-    });
+// async function getLatestXeThruSensorData(currentLocationId, startTime, endTime){
+
+//     let results;
+// client.xrevrange('xethru:'+ currentLocationId,startTime, endTime, 'count', '1', function(err, stream){
+//         if (err){
+//             return console.error(err);
+//         }
+//         console.log(stream)
+//         results = stream;
+//     });
+
+//     return results;
+// }
+
+
+async function getLatestXeThruSensorData(locationid, startTime, endTime){
+    try{
+      const results = await client.xrevrange('xethru:'+ locationid,startTime, endTime, 'count', '1');
+      if(results == undefined){
+        console.log('Error: Missing Xethru Data')
+        return null;
+      }
+      else{
+        return results; 
+      }
+    }
+    catch(e){
+      console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
+    }
+  }
+  
+
+
+
+async function xeThruAverage(){
+    let dataStream =  await getXethruWindow("TestLocation1", "+", "-", 10)
+    console.log(dataStream[0][1][1])
+    console.log(dataStream.length)
+
+
 }
+
+
+xeThruAverage()
+
 
 module.exports = {
 addDoorSensorData,
