@@ -19,15 +19,6 @@ const STATE = require('./SessionStateEnum.js');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' });
 
-
-const redis = require("redis");
-const client = redis.createClient();
-
-client.on("error", function(error) {
-  console.error(error);
-});
-
-
 const app = express();
 const port = 443
 const http = require('http').Server(app);
@@ -252,7 +243,7 @@ async function resetSession(locationid){
       let session = await db.getMostRecentSession(locationid);
       console.log(session);
       await db.updateSessionResetDetails(session.sessionid, "Manual reset", "Reset");
-      await db.addStateMachineData("Reset", locationid);
+      await redis.addStateMachineData("Reset", locationid);
     }
     else{
       console.log("There is no open session to reset!")
@@ -270,7 +261,7 @@ async function autoResetSession(locationid){
       let session = await db.getMostRecentSession(locationid);
       console.log(session);
       await db.updateSessionResetDetails(session.sessionid, "Auto reset", "Reset");
-      await db.addStateMachineData("Reset", locationid);
+      await redis.addStateMachineData("Reset", locationid);
     }
     else{
       console.log("There is no open session to reset!")
@@ -281,14 +272,14 @@ async function autoResetSession(locationid){
   }
 }
 
-//This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
+// //This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
 
 setInterval(async function (){
   // Iterating through multiple locations
   for(let i = 0; i < locations.length; i++){
     //Get recent state history
     let currentLocationId = locations[i];
-    let stateHistoryQuery = await db.getRecentStateHistory(currentLocationId);
+    let stateHistoryQuery = await redis.getStatesWindow(currentLocationId, '+', '-', 60);
     let stateMemory = [];
     //Store this in a local array
     for(let i = 0; i < stateHistoryQuery.length; i++){
@@ -296,9 +287,9 @@ setInterval(async function (){
     }
     // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
     for(let i=1; i<(stateHistoryQuery.length); i++){
-      if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].published_at))){
-        console.log(`The Reset state logged at ${stateHistoryQuery[i].published_at} has a discrepancy`);
-        resetDiscrepancies.push(stateHistoryQuery[i].published_at);
+      if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].timestamp))){
+        console.log(`The Reset state logged at ${stateHistoryQuery[i].timestamp} has a discrepancy`);
+        resetDiscrepancies.push(stateHistoryQuery[i].timestamp);
         console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
         console.log(resetDiscrepancies);
         await db.addStateMachineData(STATE.RESET, currentLocationId);
@@ -317,15 +308,15 @@ app.post('/api/st', function(req, res, next) {
 // Handler for income XeThru POST requests
 app.post('/api/xethru', async (req, res) => {
   const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = req.body;
-    await db.addXeThruSensordata(req, res);
+
+    redis.addXeThruSensorData(req, res);
     handleSensorRequest(locationid);
 });
 
 // Handler for income SmartThings POST requests
 app.post('/api/doorTest', async(req, res) => {
-  await db.addDoorTestSensordata(req, res);
-});
-
+   redis.addDoorTestSensorData(req, res);
+  });
 
 // Handler for redirecting to the Frontend
 app.get('/*', async function (req, res) {
@@ -340,17 +331,16 @@ app.get('/*', async function (req, res) {
 async function handleSensorRequest(currentLocationId){
   perf.start()
   let statemachine = new SessionState(currentLocationId);
-  let currentState = await statemachine.getNextState(db);
-  let prevState = await db.getLatestLocationStatesdata(currentLocationId);
+  let currentState = await statemachine.getNextState(db, redis);
+  let prevState = await redis.getLatestLocationStatesData(currentLocationId).state;
   let location = await db.getLocationData(currentLocationId);
 
   // Query raw sensor data to transmit to the FrontEnd
-  let XeThruData = await db.getLatestXeThruSensordata(currentLocationId);
-  let DoorData = await db.getLatestDoorSensordata(currentLocationId);
+  let XeThruData = await redis.getLatestXeThruSensorData(currentLocationId);
 
   // Check the XeThru Heartbeat
   let currentTime = moment();
-  let latestXethru = XeThruData.published_at;
+  let latestXethru = moment(XeThruData.timestamp);
   let XeThruDelayMillis = currentTime.diff(latestXethru);
 
   if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
@@ -396,8 +386,11 @@ async function handleSensorRequest(currentLocationId){
   console.log(`${sessionDuration}`);
 
    // To avoid filling the DB with repeated states in a row.
-  if(currentState != prevState.state){
-    await db.addStateMachineData(currentState, currentLocationId);
+  console.log(currentState)
+  console.log(prevState)
+  console.log(currentState!= prevState)
+  if(currentState != prevState){
+    await redis.addStateMachineData(currentState, currentLocationId);
 
     //Checks if current state belongs to voidStates
     if(VOIDSTATES.includes(currentState)){
@@ -467,24 +460,17 @@ async function handleSensorRequest(currentLocationId){
       if(currentSession.state == 'Still' || currentSession.state == 'Breathing'){
         if(currentSession.end_time == null){ // Only increases counter if session is open
           let updatedSession = await db.updateSessionStillCounter(currentSession.still_counter+1, currentSession.sessionid, currentSession.locationid);
-          io.sockets.emit('sessiondata', {data: updatedSession});
         }
         else{ // If session is closed still emit its data as it is
-          io.sockets.emit('sessiondata', {data: currentSession});
         }
 
       }
       else{
         // If current session is anything else than STILL it returns the counter to 0
         let updatedSession = await db.updateSessionStillCounter(0, currentSession.sessionid, currentSession.locationid);
-        io.sockets.emit('sessiondata', {data: updatedSession});
       }
     }
   }
-
-  io.sockets.emit('xethrustatedata', {data: XeThruData});
-  io.sockets.emit('doorstatedata', {data: DoorData});
-  io.sockets.emit('statedata', {data: prevState});
 
   const results = perf.stop();
   console.log( "time to execute:" + results.time);
