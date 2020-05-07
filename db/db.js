@@ -367,18 +367,6 @@ async function isOverdoseSuspected(xethru, session, location) {
     let condition4 = 1 * (0);
     const conditionThreshold = 1;
 
-    /*
-    //This method counts the conditions met and can distinguish which conditions were met and which were not
-    let conditions = (xethru.rpm <= rpm_threshold && xethru.rpm != 0) + 2*(1) + 4*(1) + 8*(1); //add more criteria
-    let count;
-    for(count = 0; conditions; count++)
-        conditions &= (conditions-1);
-    //If there are a majority of criteria met, trigger the overdose response
-    if(count >= 4) {
-        session.od_flag = true;
-        return true;
-    }
-    */
 
     //This method just looks for a majority of conditions to be met
     //This method can apply different weights for different criteria

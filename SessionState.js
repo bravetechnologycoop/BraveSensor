@@ -1,53 +1,49 @@
 const STATE = require('./SessionStateEnum.js');
 const XETHRU_STATE = require('./SessionStateXethruEnum.js');
-const MOTION_STATE = require('./SessionStateMotionEnum.js');
 const OD_FLAG_STATE = require('./SessionStateODFlagEnum');
 const DOOR_STATE = require('./SessionStateDoorEnum.js');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://a95c3fc9c5fd49b29dbe5672228184a0@sentry.io/2556408' });
 let moment = require('moment');
-
-
-
 class SessionState {
 
     constructor(location) {
         this.location = location;
     }
 
-    async getNextState(db) {
+    async getNextState(db, redis) {
 
         let state;
 
         let promises = 
-        [db.getLatestXeThruSensordata(this.location), 
-         db.getRecentXeThruSensordata(this.location),
-         db.getLatestDoorSensordata(this.location),
-         db.getLatestLocationStatesdata(this.location),
-         db.getLocationData(this.location),
+        [db.getLocationData(this.location),
          db.getMostRecentSession(this.location)];
 
          const data = await Promise.all(promises);
         
-        let xethru = data[0];
-        let xethru_history = data[1];
-        let door = data[2];
-        let states = data[3];
-        let location_data = data[4];
-        let session = data[5];
+        let xethru_history = await redis.getXethruWindow(this.location, "+", "-", 15); //Array of last 15 readings from this location
+        let xethru = await xethru_history[0];
+        let door = await redis.getLatestDoorSensorData(this.location);
+        let states = await redis.getLatestLocationStatesData(this.location);
+        let location_data = data[0];
+        let session = data[1];
 
+        console.log(xethru_history)
+        console.log(xethru)
+        console.log(door)
+        console.log(states)
 
         let DOOR_THRESHOLD_MILLIS = location_data.door_stickiness_delay;
         let residual_mov_f = location_data.mov_threshold;
         let currentTime = moment();
-        let latestDoor = door.published_at;
+        let latestDoor = moment(door.timestamp);
         let doorDelay = currentTime.diff(latestDoor);
         
 
 
         
         if(states == undefined){ // In case the DB states table is empty create a RESET entry
-            await db.addStateMachineData(STATE.RESET, this.location);
+            await redis.addStateMachineData(STATE.RESET, this.location);
             state = STATE.RESET;
         }
         else{
@@ -66,15 +62,10 @@ class SessionState {
                 case STATE.NO_PRESENCE_NO_SESSION:
                     {
                         //Checks the average XeThru Value over the last 15 seconds
-                        var mov_f_sum = 0;
-                        var mov_s_sum = 0;
-                        for(let i = 0; i < xethru_history.length; i++){
-                            mov_f_sum = mov_f_sum + xethru_history[i].mov_f;
-                            mov_s_sum = mov_s_sum + xethru_history[i].mov_s;
-                        }
-                        let mov_f_avg = mov_f_sum/(xethru_history.length+1);
-                        let mov_s_avg = mov_s_sum/(xethru_history.length+1);
-
+                        var mov_f_avg = xethru_history.map(entry => {return entry.mov_f}).reduce((a,b) => ((a+b)))/xethru_history.length
+                        var mov_s_avg = xethru_history.map(entry => {return entry.mov_s}).reduce((a,b) => ((a+b)))/xethru_history.length
+                      
+                    
                         // Door opens
                         if (door.signal == DOOR_STATE.OPEN) {
                             state = STATE.DOOR_OPENED_START;
@@ -192,7 +183,7 @@ class SessionState {
                     }
                 default:
                     {
-                        await db.addStateMachineData(STATE.RESET, this.location);
+                        await redis.addStateMachineData(STATE.RESET, this.location);
                         state = STATE.RESET;
                         break;
                     }
