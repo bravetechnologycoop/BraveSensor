@@ -10,6 +10,7 @@ spec:
   ports:
   - port: 6379
     targetPort: 6379
+    nodePort: 32256
   selector:
     app: redis
     role: master
