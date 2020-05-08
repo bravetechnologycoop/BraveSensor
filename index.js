@@ -274,31 +274,31 @@ async function autoResetSession(locationid){
 
 // //This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
 
-setInterval(async function (){
-  // Iterating through multiple locations
-  for(let i = 0; i < locations.length; i++){
-    //Get recent state history
-    let currentLocationId = locations[i];
-    let stateHistoryQuery = await redis.getStatesWindow(currentLocationId, '+', '-', 60);
-    let stateMemory = [];
-    //Store this in a local array
-    for(let i = 0; i < stateHistoryQuery.length; i++){
-      stateMemory.push(stateHistoryQuery[i].state)
-    }
-    // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
-    for(let i=1; i<(stateHistoryQuery.length); i++){
-      if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].timestamp))){
-        console.log(`The Reset state logged at ${stateHistoryQuery[i].timestamp} has a discrepancy`);
-        resetDiscrepancies.push(stateHistoryQuery[i].timestamp);
-        console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
-        console.log(resetDiscrepancies);
-        await db.addStateMachineData(STATE.RESET, currentLocationId);
-        //Once a reset state has been added, additionally reset any ongoing sessions
-        autoResetSession(currentLocationId);
-      }
-    }
-  }
-}, WATCHDOG_TIMER_FREQUENCY)
+// setInterval(async function (){
+//   // Iterating through multiple locations
+//   for(let i = 0; i < locations.length; i++){
+//     //Get recent state history
+//     let currentLocationId = locations[i];
+//     let stateHistoryQuery = await redis.getStatesWindow(currentLocationId, '+', '-', 60);
+//     let stateMemory = [];
+//     //Store this in a local array
+//     for(let i = 0; i < stateHistoryQuery.length; i++){
+//       stateMemory.push(stateHistoryQuery[i].state)
+//     }
+//     // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
+//     for(let i=1; i<(stateHistoryQuery.length); i++){
+//       if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].timestamp))){
+//         console.log(`The Reset state logged at ${stateHistoryQuery[i].timestamp} has a discrepancy`);
+//         resetDiscrepancies.push(stateHistoryQuery[i].timestamp);
+//         console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
+//         console.log(resetDiscrepancies);
+//         await db.addStateMachineData(STATE.RESET, currentLocationId);
+//         //Once a reset state has been added, additionally reset any ongoing sessions
+//         // autoResetSession(currentLocationId);
+//       }
+//     }
+//   }
+// }, WATCHDOG_TIMER_FREQUENCY)
 
 // Handler for income SmartThings POST requests
 app.post('/api/st', function(req, res, next) {
@@ -332,7 +332,8 @@ async function handleSensorRequest(currentLocationId){
   perf.start()
   let statemachine = new SessionState(currentLocationId);
   let currentState = await statemachine.getNextState(db, redis);
-  let prevState = await redis.getLatestLocationStatesData(currentLocationId).state;
+  let stateobject = await redis.getLatestLocationStatesData(currentLocationId)
+  let prevState = stateobject.state;
   let location = await db.getLocationData(currentLocationId);
 
   // Query raw sensor data to transmit to the FrontEnd
@@ -373,7 +374,7 @@ async function handleSensorRequest(currentLocationId){
     io.sockets.emit('timerdata', {data: sessionDuration});
   }
 
-  //If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
+  // If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
 
   if (sessionDuration*1000>location.auto_reset_threshold){
     autoResetSession(location.locationid);
@@ -386,9 +387,9 @@ async function handleSensorRequest(currentLocationId){
   console.log(`${sessionDuration}`);
 
    // To avoid filling the DB with repeated states in a row.
-  console.log(currentState)
-  console.log(prevState)
-  console.log(currentState!= prevState)
+  console.log("currentState" + currentState)
+  console.log("Prevstate" + prevState)
+  console.log("same?" +currentState!= prevState)
   if(currentState != prevState){
     await redis.addStateMachineData(currentState, currentLocationId);
 
@@ -587,42 +588,39 @@ async function reminderMessage(location) {
 
 //Heartbeat Helper Functions
 async function sendAlerts(location) {
-  // locationData = await db.getLocationData(location);
-  // twilioClient.messages.create({
-  //     body: `The XeThru connection for ${location} has been lost. Message from ODetect-Dev2`,
-  //     from: locationData.twilio_number,
-  //     to: locationData.xethru_heartbeat_number
-  // })
-  // .then(message => console.log(message.sid))
-  // .done()
-  console.log('heartbeat disconnection trigger')
+  locationData = await db.getLocationData(location);
+  twilioClient.messages.create({
+      body: `The XeThru connection for ${location} has been lost. Message from ODetect-Dev2`,
+      from: locationData.twilio_number,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
 }
 
 async function sendReconnectionMessage(location) {
-  // locationData = await db.getLocationData(location);
+  locationData = await db.getLocationData(location);
 
-  // twilioClient.messages.create({
-  //     body: `The XeThru at ${location} has been reconnected. Message from ODetect-Dev2`,
-  //     from: locationData.twilio_number,
-  //     to: locationData.xethru_heartbeat_number
-  // })
-  // .then(message => console.log(message.sid))
-  // .done()
-  console.log("heartbeat reconnection message trigger")
+  twilioClient.messages.create({
+      body: `The XeThru at ${location} has been reconnected. Message from ODetect-Dev2`,
+      from: locationData.twilio_number,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
 }
 
 //Autoreset twilio function
 
 async function sendResetAlert(location) {
-  // locationData = await db.getLocationData(location);
-  // twilioClient.messages.create({
-  //     body: `An unresponded session at ${location} has been automatically reset. Message from ODetect-Dev2`,
-  //     from: locationData.twilio_number,
-  //     to: locationData.xethru_heartbeat_number
-  // })
-  // .then(message => console.log(message.sid))
-  // .done()
-  console.log('reset alert trigger')
+  locationData = await db.getLocationData(location);
+  twilioClient.messages.create({
+      body: `An unresponded session at ${location} has been automatically reset. Message from ODetect-Dev2`,
+      from: locationData.twilio_number,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
 }
 
 // Handler for incoming Twilio messages
