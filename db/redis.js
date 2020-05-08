@@ -21,7 +21,7 @@ async function getDoorWindow(locationID, startTime, endTime, windowLength){
 }
 
 async function getStatesWindow(locationID, startTime, endTime, windowLength){
-  let rows = await client.xrevrange('state:'+locationID,startTime, endTime, 'count', windowLength);
+  let rows = await client.xrevrange('state:'+ locationID,startTime, endTime, 'count', windowLength);
    var stateStream = rows.map(entry =>  new stateData(entry))
    return stateStream
 }
@@ -59,15 +59,19 @@ const addStateMachineData = (state, locationid) => {
 }
 
 async function  getLatestDoorSensorData(locationid){
-  return await getDoorWindow(locationid, "+", "-", 1);
+  singleitem= await getDoorWindow(locationid, "+", "-", 1);
+  return singleitem[0];
 }
 
 async function getLatestXeThruSensorData(locationid){
-  return await getXethruWindow(locationid, "+", "-", 1);
+  singleitem= await getXethruWindow(locationid, "+", "-", 1);
+  return singleitem[0]
+
 }
 
 async function getLatestLocationStatesData(locationid){
-  return await getStatesWindow(locationid, "+", "-", 1);
+  singleitem= await getStatesWindow(locationid, "+", "-", 1);
+  return singleitem[0]
 }
 
 module.exports = {

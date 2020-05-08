@@ -28,10 +28,7 @@ class SessionState {
         let location_data = data[0];
         let session = data[1];
 
-        console.log(xethru_history)
-        console.log(xethru)
-        console.log(door)
-        console.log(states)
+        console.log(xethru.mov_f)
 
         let DOOR_THRESHOLD_MILLIS = location_data.door_stickiness_delay;
         let residual_mov_f = location_data.mov_threshold;
@@ -48,6 +45,9 @@ class SessionState {
         }
         else{
             state = states.state; // Takes current state in case that non of the state conditions get meet for a state transition.
+            console.log(states)
+            console.log("states.state:" + states.state)
+            console.log("return value at start of SessionState.js: " + state)
 
             switch (states.state) {
 
@@ -189,6 +189,7 @@ class SessionState {
                     }
             }
         }
+        console.log("return value at end of SessionState.js: " + state)
         return state;
     }
 }
