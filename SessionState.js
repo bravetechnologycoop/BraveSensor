@@ -18,24 +18,23 @@ class SessionState {
         let promises = 
         [db.getLocationData(this.location),
          db.getMostRecentSession(this.location)];
-
          const data = await Promise.all(promises);
-        
         let xethru_history = await redis.getXethruWindow(this.location, "+", "-", 15); //Array of last 15 readings from this location
-        let xethru = await xethru_history[0];
+        let xethru = xethru_history[0];
         let door = await redis.getLatestDoorSensorData(this.location);
         let states = await redis.getLatestLocationStatesData(this.location);
         let location_data = data[0];
         let session = data[1];
-
-        console.log(xethru.mov_f)
-
         let DOOR_THRESHOLD_MILLIS = location_data.door_stickiness_delay;
         let residual_mov_f = location_data.mov_threshold;
         let currentTime = moment();
-        let latestDoor = moment(door.timestamp);
+        let latestDoor = moment(door.timestamp, "x");
+        console.log('door.timestamp ' + door.timestamp)
+        console.log('currentTime' + currentTime)
+        console.log('latestDoor' + latestDoor)
         let doorDelay = currentTime.diff(latestDoor);
-        
+        console.log('doorDelay ' + doorDelay)
+
 
 
         
@@ -45,9 +44,6 @@ class SessionState {
         }
         else{
             state = states.state; // Takes current state in case that non of the state conditions get meet for a state transition.
-            console.log(states)
-            console.log("states.state:" + states.state)
-            console.log("return value at start of SessionState.js: " + state)
 
             switch (states.state) {
 
@@ -63,8 +59,7 @@ class SessionState {
                     {
                         //Checks the average XeThru Value over the last 15 seconds
                         var mov_f_avg = xethru_history.map(entry => {return entry.mov_f}).reduce((a,b) => ((a+b)))/xethru_history.length
-                        var mov_s_avg = xethru_history.map(entry => {return entry.mov_s}).reduce((a,b) => ((a+b)))/xethru_history.length
-                      
+                        var mov_s_avg = xethru_history.map(entry => {return entry.mov_s}).reduce((a,b) => ((a+b)))/xethru_history.length                      
                     
                         // Door opens
                         if (door.signal == DOOR_STATE.OPEN) {
@@ -129,7 +124,6 @@ class SessionState {
                         
 
                         if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && await db.isOverdoseSuspected(xethru, session, location_data)) {
-                            console.log(`Overdose Suspected at ${this.location}, starting Chatbot`);
                             state = STATE.SUSPECTED_OD;
                         }
 
@@ -189,7 +183,6 @@ class SessionState {
                     }
             }
         }
-        console.log("return value at end of SessionState.js: " + state)
         return state;
     }
 }

@@ -65,13 +65,13 @@ async function  getLatestDoorSensorData(locationid){
 
 async function getLatestXeThruSensorData(locationid){
   singleitem= await getXethruWindow(locationid, "+", "-", 1);
-  return singleitem[0]
+  return singleitem[0];
 
 }
 
 async function getLatestLocationStatesData(locationid){
   singleitem= await getStatesWindow(locationid, "+", "-", 1);
-  return singleitem[0]
+  return singleitem[0];
 }
 
 module.exports = {
@@ -80,6 +80,7 @@ addDoorTestSensorData,
 addStateMachineData,
 addXeThruSensorData,
 getXethruWindow,
+getStatesWindow,
 getLatestDoorSensorData,
 getLatestXeThruSensorData,
 getLatestLocationStatesData
