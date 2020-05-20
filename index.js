@@ -124,6 +124,7 @@ var sessionChecker = (req, res, next) => {
 
 
 app.get('/', sessionChecker, (req, res) => {
+  res.send('ODetect!')
     res.redirect('/login');
 });
 
@@ -157,6 +158,13 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     }
 });
+
+// Set up Twilio
+const accountSid = process.env.TWILIO_SID;
+const authToken = process.env.TWILIO_TOKEN;
+
+const twilioClient = require('twilio')(accountSid, authToken);
+const MessagingResponse = require('twilio').twiml.MessagingResponse;
 
 // SmartThings Smart App Implementations
 
@@ -199,7 +207,7 @@ smartapp
         console.log(deviceEvent.value);
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
-        redis.addDoorSensordata(DeviceID, LocationID, "Door", signal);
+        redis.addDoorSensordata(LocationID, signal);
         handleSensorRequest(LocationID);
         console.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
@@ -208,17 +216,9 @@ smartapp
         console.log(deviceEvent.value);
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
-        sendBatteryAlert(LocationID, signal);
+        sendBatteryAlert(LocationID, signal)
         console.log(`Door${DeviceID} Battery: ${signal} @${LocationID}`);
     })
-    .subscribedEventHandler('myTemperatureEventHandler', (context, deviceEvent) => {
-      const signal = deviceEvent.value;
-      console.log(deviceEvent.value);
-      const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
-      const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
-      sendTemperatureAlert(LocationID, signal);
-      console.log(`Door${DeviceID} Temperature: ${signal} @${LocationID}`);
-  })
     .subscribedEventHandler('myMotionEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
@@ -291,7 +291,7 @@ setInterval(async function (){
         console.log(resetDiscrepancies);
         await db.addStateMachineData(STATE.RESET, currentLocationId);
         //Once a reset state has been added, additionally reset any ongoing sessions
-        // autoResetSession(currentLocationId);
+        autoResetSession(currentLocationId);
       }
     }
   }
@@ -326,7 +326,6 @@ app.get('/*', async function (req, res) {
 });
 
 async function handleSensorRequest(currentLocationId){
-  perf.start()
   let statemachine = new SessionState(currentLocationId);
   let currentState = await statemachine.getNextState(db, redis);
   let stateobject = await redis.getLatestLocationStatesData(currentLocationId)
@@ -384,9 +383,6 @@ async function handleSensorRequest(currentLocationId){
   console.log(`${sessionDuration}`);
 
    // To avoid filling the DB with repeated states in a row.
-  console.log("currentState" + currentState)
-  console.log("Prevstate" + prevState)
-  console.log("same?" +currentState!= prevState)
   if(currentState != prevState){
     await redis.addStateMachineData(currentState, currentLocationId);
 
@@ -469,9 +465,6 @@ async function handleSensorRequest(currentLocationId){
       }
     }
   }
-
-  const results = perf.stop();
-  console.log( "time to execute:" + results.time);
 }
 
 // Web Socket connection to Frontend
@@ -545,18 +538,12 @@ async function particle_config(particleid, config_values, token) {
 // Twilio Function except it just sends a post request to the alert listener, which replies immediatley
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
   try {
-    axios.post('/alert', {
-      To: toPhone,
-      From: fromPhone,
-      Body: msg
-    })
-    .then(function (response) {
-      console.log(response);
-    })
-  }
-  catch(err) {
-      console.log(err);
-  }
+    await twilioClient.messages.create({from: fromPhone, to: toPhone, body: msg})
+                         .then(message => console.log(message.sid));
+}
+catch(err) {
+    console.log(err);
+}
 }
 
 
@@ -587,7 +574,7 @@ async function reminderMessage(location) {
 async function sendAlerts(location) {
   locationData = await db.getLocationData(location);
   twilioClient.messages.create({
-      body: `The XeThru connection for ${location} has been lost. Message from ODetect-Dev2`,
+      body: `The XeThru connection for ${location} has been lost.`,
       from: locationData.twilio_number,
       to: locationData.xethru_heartbeat_number
   })
@@ -599,7 +586,7 @@ async function sendReconnectionMessage(location) {
   locationData = await db.getLocationData(location);
 
   twilioClient.messages.create({
-      body: `The XeThru at ${location} has been reconnected. Message from ODetect-Dev2`,
+      body: `The XeThru at ${location} has been reconnected.`,
       from: locationData.twilio_number,
       to: locationData.xethru_heartbeat_number
   })
@@ -612,13 +599,25 @@ async function sendReconnectionMessage(location) {
 async function sendResetAlert(location) {
   locationData = await db.getLocationData(location);
   twilioClient.messages.create({
-      body: `An unresponded session at ${location} has been automatically reset. Message from ODetect-Dev2`,
+      body: `An unresponded session at ${location} has been automatically reset.`,
       from: locationData.twilio_number,
       to: locationData.xethru_heartbeat_number
   })
   .then(message => console.log(message.sid))
   .done()
 }
+
+async function sendBatteryAlert(location,signal) {
+  locationData = await db.getLocationData(location);
+  twilioClient.messages.create({
+      body: `Battery level at ${location} is ${signal}.`,
+      from: locationData.twilio_number,
+      to: locationData.xethru_heartbeat_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
+}
+
 
 // Handler for incoming Twilio messages
 app.post('/sms', async function (req, res) {
@@ -646,18 +645,12 @@ app.post('/sms', async function (req, res) {
 
   }
 
-  axios.post('/alert', {
-    To: installationPhone,
-    From: responderPhone,
-    Body: message
-  })
-  .then(function (response) {
-    console.log(response);
-  })
+  twiml.message(message);
 
+  res.writeHead(200, {'Content-Type': 'text/xml'});
+  res.end(twiml.toString());
 
-  res.send('sent post request to alertListener');
-});
+})
 
 let server;
 
