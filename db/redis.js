@@ -1,5 +1,5 @@
 const Redis = require("ioredis");
-const client = new Redis(6379, '192.168.124.212'); // uses defaults unless given configuration object
+const client = new Redis(6379, '10.245.30.53'); // uses defaults unless given configuration object
 const radarData = require('./radarData.js');
 const doorData = require('./doorData.js');
 const stateData = require('./stateData.js');
