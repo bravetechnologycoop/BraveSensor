@@ -46,12 +46,14 @@ spec:
         app: odetect
     spec:
       containers:
-      - image: docker.io/mariocimet/odetect-backend:latest
+      - image: docker.io/mariocimet/odetect:latest
         imagePullPolicy: Always
-        name: odetect-backend
+        name: odetect
         resources: {}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+      imagePullSecrets:
+      - name: regcred
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
