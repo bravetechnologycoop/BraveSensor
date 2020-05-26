@@ -1,4 +1,3 @@
-const perf = require('execution-time')();
 const express = require('express');
 let moment = require('moment');
 const bodyParser = require('body-parser');
@@ -8,7 +7,6 @@ const SessionState = require('./SessionState.js');
 const Chatbot = require('./Chatbot.js');
 const session = require('express-session');
 var cookieParser = require('cookie-parser');
-const Particle = require('particle-api-js');
 const cors = require('cors');
 const smartapp   = require('@smartthings/smartapp');
 const path = require('path');
@@ -16,7 +14,7 @@ const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' });
-
+require('dotenv').config();
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
@@ -25,7 +23,6 @@ const XETHRU_THRESHOLD_MILLIS = 60*10*1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
 
-// List of locations that the main loop will iterate over
 var locations = [];
 
 // RESET IDs that had discrepancies
@@ -43,7 +40,6 @@ setInterval(async function (){
   }
   locations = locationsArray;
   io.sockets.emit('getLocations', {data: locationsArray});
-  console.log(`Current locations: ${locations}`)
 }, LOCATION_UPDATE_FREQUENCY)
 
 
@@ -124,7 +120,6 @@ var sessionChecker = (req, res, next) => {
 
 
 app.get('/', sessionChecker, (req, res) => {
-  res.send('ODetect!')
     res.redirect('/login');
 });
 
@@ -207,7 +202,7 @@ smartapp
         console.log(deviceEvent.value);
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
-        redis.addDoorSensordata(LocationID, signal);
+        redis.addDoorSensorData(LocationID, signal);
         handleSensorRequest(LocationID);
         console.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
@@ -367,7 +362,6 @@ async function handleSensorRequest(currentLocationId){
 
     // Current Session duration so far:
     var sessionDuration = (dateTime - start_time_sesh)/1000;
-    io.sockets.emit('timerdata', {data: sessionDuration});
   }
 
   // If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
@@ -393,7 +387,6 @@ async function handleSensorRequest(currentLocationId){
       if(typeof latestSession !== 'undefined'){ // Checks if no session exists for this location yet.
         if(latestSession.end_time == null){ // Checks if session is open.
           let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
-          io.sockets.emit('sessiondata', {data: currentSession});
         }
       }
     }
@@ -406,12 +399,10 @@ async function handleSensorRequest(currentLocationId){
       if(typeof latestSession !== 'undefined'){ //Checks if session exists
         if(latestSession.end_time == null){  // Checks if session is open for this location
           let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
-          io.sockets.emit('sessiondata', {data: currentSession});
           start_times[currentLocationId] = currentSession.start_time;
         }
         else{
           let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState); // Creates a new session
-          io.sockets.emit('sessiondata', {data: currentSession});
           start_times[currentLocationId] = currentSession.start_time;
         }
       }
@@ -424,7 +415,6 @@ async function handleSensorRequest(currentLocationId){
 
       if(await db.closeSession(currentLocationId)){ // Adds the end_time to the latest open session from the LocationID
         console.log(`Session at ${currentLocationId} was closed successfully.`);
-        io.sockets.emit('sessiondata', {data: currentSession}); // Sends currentSession data with end_time which will close the session in the frontend
         start_times[currentLocationId] = null; // Stops the session timer for this location ID
       }
       else{
@@ -470,44 +460,11 @@ async function handleSensorRequest(currentLocationId){
 // Web Socket connection to Frontend
 io.on('connection', (socket) => {
 
-    // Check for Reset Button press
-    socket.on('resetbutton', async (location) => {
-      console.log(`Reset button pressed for ${location}`);
-      await resetSession(location);
-    });
-
-    // Check for Location Submit Button press
-    socket.on('SubmitLocation', async (data) => {
-      console.log(data.LocationID);
-      let LocationData = await db.getLocationData(data.LocationID);
-      console.log("Location Data sent to the Frontend");
-      io.sockets.emit('LocationData', {data: LocationData});
-    });
-
-    // Check for Location Data Submit Button press, updates the DB table and sends data to XeThru
-    socket.on('SubmitLocationData', async (data) => {
-      let updatedData = await db.updateLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationData.RPM_Threshold, data.LocationData.Still_Threshold, data.LocationData.Duration_Threshold, data.LocationData.Mov_Threshold, data.LocationID.LocationID);
-
-      // Checks if Row exists for the given location, if not, creates it
-      if(typeof updatedData !== 'undefined'){
-        var XeThruData = (`${data.LocationData.LED},${data.LocationData.NoiseMap},${data.LocationData.Sensitivity},${data.LocationData.DetectionZone_min},${data.LocationData.DetectionZone_max}`);
-        particle_config(process.env.PARTICLEID, XeThruData, process.env.PARTICLETOKEN);
-        console.log("Database updated and settings sent to XeThru");
-      }
-      else{
-        await db.addLocationData(data.LocationData.DeviceID, data.LocationData.PhoneNumber, data.LocationData.DetectionZone_min, data.LocationData.DetectionZone_max, data.LocationData.Sensitivity, data.LocationData.NoiseMap, data.LocationData.LED, data.LocationID.LocationID);
-        console.log("New Location data added to the database");
-      }
-
-    });
-
     socket.on('getHistory', async (location, entries) => {
         let sessionHistory = await db.getHistoryOfSessions(location, entries);
         io.sockets.emit('sendHistory', {data: sessionHistory});
-        console.log('test');
     });
-
-    console.log("Websocket connection");
+    
     socket.emit('getLocations', {
       data: locations
     })
@@ -516,26 +473,7 @@ io.on('connection', (socket) => {
     });
 });
 
-async function particle_config(particleid, config_values, token) {
-    // Particle configuration function call
-    let particle = new Particle();
-
-    var fnPr = particle.callFunction({
-        deviceId: particleid,
-        name: 'config',
-        argument: config_values,
-        auth: token
-    });
-
-    fnPr.then(
-      function(data) {
-          console.log('Function particle_config called succesfully:', data);
-      }, function(err) {
-          console.log('An error occurred:', err);
-      });
-}
-
-// Twilio Function except it just sends a post request to the alert listener, which replies immediatley
+// Twilio Functions
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
   try {
     await twilioClient.messages.create({from: fromPhone, to: toPhone, body: msg})
@@ -621,7 +559,7 @@ async function sendBatteryAlert(location,signal) {
 
 // Handler for incoming Twilio messages
 app.post('/sms', async function (req, res) {
-
+const twiml = new MessagingResponse()
   // Parses out information from incoming message
   var from = req.body.From;
   var body = req.body.Body;

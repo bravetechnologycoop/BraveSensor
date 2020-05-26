@@ -29,14 +29,7 @@ class SessionState {
         let residual_mov_f = location_data.mov_threshold;
         let currentTime = moment();
         let latestDoor = moment(door.timestamp, "x");
-        console.log('door.timestamp ' + door.timestamp)
-        console.log('currentTime' + currentTime)
-        console.log('latestDoor' + latestDoor)
         let doorDelay = currentTime.diff(latestDoor);
-        console.log('doorDelay ' + doorDelay)
-
-
-
         
         if(states == undefined){ // In case the DB states table is empty create a RESET entry
             await redis.addStateMachineData(STATE.RESET, this.location);
