@@ -1,8 +1,10 @@
 const Redis = require("ioredis");
-const client = new Redis(6379, '10.245.30.53'); // uses defaults unless given configuration object
 const radarData = require('./radarData.js');
 const doorData = require('./doorData.js');
 const stateData = require('./stateData.js');
+redisConnectionString = process.env.REDIS_CONNECTION_STRING
+const client = new Redis(6379,"10.245.30.53"); // uses defaults unless given configuration object
+
 
 client.on("error", function(error) {
   console.error(error);
@@ -27,17 +29,13 @@ async function getStatesWindow(locationID, startTime, endTime, windowLength){
 }
 
 // POST new door Test data
-const addDoorSensorData = (request, response) => {
-    const {locationid, signal} = request.body;
+const addDoorSensorData = (locationid, signal) => {
     client.xadd("door:" + locationid,  "*", "signal", signal);
-    // How is this Response used? Do I need to give one?
-    response.status(200).json("OK")
 }
 
 const addDoorTestSensorData = (request, response) => {
     const {locationid, signal} = request.body;
     client.xadd("door:"+locationid,  "*","signal", signal);
-    // How is this Response used? Do I need to give one?
     response.status(200).json("OK")
 }
 
@@ -50,7 +48,6 @@ const addXeThruSensorData = (request, response) => {
                 "mov_f", mov_f,
                 "mov_s", mov_s, 
                 );
-    // How is this Response used? Do I need to give one?
     response.status(200).json("OK")
 }
 
