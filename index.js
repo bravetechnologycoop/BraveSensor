@@ -284,7 +284,7 @@ setInterval(async function (){
         resetDiscrepancies.push(stateHistoryQuery[i].timestamp);
         console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
         console.log(resetDiscrepancies);
-        await db.addStateMachineData(STATE.RESET, currentLocationId);
+        await redis.addStateMachineData(STATE.RESET, currentLocationId);
         //Once a reset state has been added, additionally reset any ongoing sessions
         autoResetSession(currentLocationId);
       }
@@ -579,7 +579,7 @@ const twiml = new MessagingResponse()
       else{
           console.log(`Attempted to close session but no open session was found for ${chatbot.locationid}`);
      }
-    await db.addStateMachineData('Reset', chatbot.locationid);
+    await redis.addStateMachineData('Reset', chatbot.locationid);
 
   }
 
