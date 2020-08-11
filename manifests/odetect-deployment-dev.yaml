@@ -4,7 +4,7 @@ metadata:
   labels:
     environment: dev
     app: odetect-dev
-  name: odetect
+  name: odetect-dev
   selfLink: /api/v1/namespaces/default/services/odetect
 spec:
   externalTrafficPolicy: Cluster
@@ -26,7 +26,7 @@ metadata:
     environment: dev
     app: odetect-dev
   name: odetect-dev
-  selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/odetect
+  selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/odetect-dev
 spec:
   progressDeadlineSeconds: 600
   replicas: 1

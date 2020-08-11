@@ -19,7 +19,7 @@ spec:
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
-  name: redis-master
+  name: redis-dev
   labels:
     environment: dev
     app: redis-dev
@@ -38,7 +38,7 @@ spec:
         tier: backend
     spec:
       containers:
-      - name: master-dev
+      - name: master
         image: redis
         resources:
           requests:
