@@ -44,5 +44,8 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
         ports:
         - containerPort: 6379
