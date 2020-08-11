@@ -1,8 +1,8 @@
+require('dotenv').config();
 const Redis = require("ioredis");
 const radarData = require('./radarData.js');
 const doorData = require('./doorData.js');
 const stateData = require('./stateData.js');
-require('dotenv').config();
 const client = new Redis(6379, process.env.REDIS_CLUSTER_IP); // uses defaults unless given configuration object
 
 
