@@ -489,6 +489,7 @@ module.exports = {
   getLatestLocationStatesdata,
   getLastUnclosedSession,
   getMostRecentSession,
+  getSessionWithSessionId,
   getRecentStateHistory,
   getHistoryOfSessions,
   createSession,
