@@ -178,6 +178,24 @@ async function getMostRecentSession(locationid) {
   }
 }
 
+// Gets session with a specific SessionID
+
+async function getSessionWithSessionId(sessionid) {
+  try{
+    const results = await pool.query("SELECT * FROM sessions WHERE sessionid = $1", [sessionid]);
+
+    if(typeof results === 'undefined'){
+      return null;
+    }
+    else{
+      return results.rows[0]; 
+    }
+  }
+  catch(e){
+    console.log(`Error running the getSessionWithSessionId query: ${e}`);
+  }
+}
+
 
 // Gets the last session data in the table for a specified phone number
 async function getMostRecentSessionPhone(phone) {

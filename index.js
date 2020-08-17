@@ -488,21 +488,42 @@ async function sendInitialChatbotMessage(session) {
     locationData = await db.getLocationData(location)
     await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
     await db.startChatbotSessionState(session);
-    setTimeout(reminderMessage, locationData.unrespondedTimer, session.locationid);
+    setTimeout(reminderMessage, locationData.unrespondedTimer, session.sessionid);
+    setTimeout(fallbackMessage, locationData.unresponded_Session_Timer, session.sessionid)
 }
 
-async function reminderMessage(location) {
-    console.log("Reminder message being sent");
-    let session = await db.getMostRecentSession(location); // Gets the updated state for the chatbot
-    locationData = await db.getLocationData(location)
-    if(session.chatbot_state == 'Started') {
-        //send the message
-        await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
-        session.chatbot_state = 'Waiting for Response';
-        await db.saveChatbotSession(session);
-    }
-    //else do nothing
+async function reminderMessage(sessionid) {
+  console.log("Reminder message being sent");
+  let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
+  var location = session.locationid;
+  locationData = await db.getLocationData(location)
+  if(session.chatbot_state == 'Started') {
+      //send the message
+      await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
+      session.chatbot_state = 'Waiting for Response';
+      await db.saveChatbotSession(session);
+  }
+  //else do nothing
 }
+
+async function fallbackMessage(sessionid) {
+console.log("Fallback message being sent");
+let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
+var location = session.locationid;
+locationData = await db.getLocationData(location)
+if(session.chatbot_state == 'Waiting for Response') {
+    //send the message
+    twilioClient.messages.create({
+      body: `An alert to check on the washroom at ${locationData.location_Human} was not responded to. Please check on it`,
+      from: locationData.twilio_number,
+      to: locationData.fallback_number
+  })
+  .then(message => console.log(message.sid))
+  .done()
+}
+//else do nothing
+} 
+
 
 //Heartbeat Helper Functions
 
