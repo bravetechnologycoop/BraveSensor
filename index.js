@@ -514,7 +514,7 @@ locationData = await db.getLocationData(location)
 if(session.chatbot_state == 'Waiting for Response') {
     //send the message
     twilioClient.messages.create({
-      body: `An alert to check on the washroom at ${locationData.location_Human} was not responded to. Please check on it`,
+      body: `An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`,
       from: locationData.twilio_number,
       to: locationData.fallback_number
   })

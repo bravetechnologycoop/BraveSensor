@@ -3,7 +3,7 @@ DO $migration$
     DECLARE lastSuccessfulMigrationId INT;
 BEGIN
     -- The migration ID of this file
-    migrationId := 4;
+    migrationId := 5;
 
     -- Get the migration ID of the last file to be successfully run
     SELECT MAX(id) INTO lastSuccessfulMigrationId
@@ -12,8 +12,7 @@ BEGIN
     -- Only execute this script if its migration ID is next after the last successful migration ID
     IF migrationId - lastSuccessfulMigrationId = 1 THEN
         -- ADD SCRIPT HERE
-        ALTER TABLE locations ADD COLUMN fallback_number text default '+17786810411'; 
-        ALTER TABLE locations ADD COLUMN unresponded_session_timer integer default 90000;
+        ALTER TABLE locations ADD COLUMN location_human text default 'Bermuda';   
 
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file
         INSERT INTO migrations (id)
