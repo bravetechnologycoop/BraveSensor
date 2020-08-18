@@ -180,7 +180,7 @@ async function getMostRecentSession(locationid) {
 
 // Gets session with a specific SessionID
 
-async function getSessionWithSessionId(sessionid) {
+async function getSessionWithSessionId(sessionid){
   try{
     const results = await pool.query("SELECT * FROM sessions WHERE sessionid = $1", [sessionid]);
 
@@ -198,7 +198,7 @@ async function getSessionWithSessionId(sessionid) {
 
 
 // Gets the last session data in the table for a specified phone number
-async function getMostRecentSessionPhone(phone) {
+async function getMostRecentSessionPhone(phone){
   try {
       const results = await pool.query("SELECT * FROM sessions WHERE phonenumber = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY start_time DESC LIMIT 1", [phone]);
       if(results == undefined){

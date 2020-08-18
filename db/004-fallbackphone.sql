@@ -12,7 +12,7 @@ BEGIN
     -- Only execute this script if its migration ID is next after the last successful migration ID
     IF migrationId - lastSuccessfulMigrationId = 1 THEN
         -- ADD SCRIPT HERE
-        ALTER TABLE locations ADD COLUMN fallback_number text default '+17786810411'; 
+        ALTER TABLE locations ADD COLUMN fallback_phonenumber text default '+17786810411'; 
         ALTER TABLE locations ADD COLUMN unresponded_session_timer integer default 90000;
 
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file

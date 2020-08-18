@@ -472,55 +472,61 @@ io.on('connection', (socket) => {
 // Twilio Functions
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
   try {
-    await twilioClient.messages.create({from: fromPhone, to: toPhone, body: msg})
-                         .then(message => console.log(message.sid));
-}
-catch(err) {
+    await twilioClient.messages.create({
+      from: fromPhone, 
+      to: toPhone, 
+      body: msg
+    })
+    .then(message => console.log(message.sid));
+  }
+  catch(err) {
     console.log(err);
-}
+  }
 }
 
 
 // TODO: replace these many almost identical functions with something more elegant
 async function sendInitialChatbotMessage(session) {
-    console.log("Intial message sent");
-    var location = session.locationid;
-    locationData = await db.getLocationData(location)
-    await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
-    await db.startChatbotSessionState(session);
-    setTimeout(reminderMessage, locationData.unrespondedTimer, session.sessionid);
-    setTimeout(fallbackMessage, locationData.unresponded_Session_Timer, session.sessionid)
+  console.log("Intial message sent");
+  var location = session.locationid;
+  locationData = await db.getLocationData(location)
+  await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
+  await db.startChatbotSessionState(session);
+  setTimeout(reminderMessage, locationData.unrespondedTimer, session.sessionid);
+  setTimeout(fallbackMessage, locationData.unresponded_Session_Timer, session.sessionid)
 }
 
 async function reminderMessage(sessionid) {
   console.log("Reminder message being sent");
   let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
-  var location = session.locationid;
-  locationData = await db.getLocationData(location)
-  if(session.chatbot_state == 'Started') {
-      //send the message
-      await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
-      session.chatbot_state = 'Waiting for Response';
-      await db.saveChatbotSession(session);
+  if(session.chatbot_state == STATE.STARTED) {
+    //Get location data
+    var location = session.locationid;
+    locationData = await db.getLocationData(location)
+    //send the message
+    await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
+    session.chatbot_state = 'Waiting for Response';
+    await db.saveChatbotSession(session);
   }
   //else do nothing
 }
 
 async function fallbackMessage(sessionid) {
-console.log("Fallback message being sent");
-let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
-var location = session.locationid;
-locationData = await db.getLocationData(location)
-if(session.chatbot_state == 'Waiting for Response') {
+  console.log("Fallback message being sent");
+  let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
+  if(session.chatbot_state == STATE.WAITING_FOR_RESPONSE) {
+    //get location data
+    var location = session.locationid;
+    locationData = await db.getLocationData(location)
     //send the message
     twilioClient.messages.create({
       body: `An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`,
       from: locationData.twilio_number,
       to: locationData.fallback_number
-  })
-  .then(message => console.log(message.sid))
-  .done()
-}
+    })
+    .then(message => console.log(message.sid))
+    .done()
+  }
 //else do nothing
 } 
 
@@ -567,9 +573,9 @@ async function sendReconnectionMessage(location) {
   locationData = await db.getLocationData(location);
 
   twilioClient.messages.create({
-      body: `The XeThru at ${location} has been reconnected.`,
-      from: locationData.twilio_number,
-      to: locationData.xethru_heartbeat_number
+    body: `The XeThru at ${location} has been reconnected.`,
+    from: locationData.twilio_number,
+    to: locationData.xethru_heartbeat_number
   })
   .then(message => console.log(message.sid))
   .done()

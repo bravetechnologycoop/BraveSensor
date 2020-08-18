@@ -18,8 +18,3 @@ is created
 ### To run the tests locally
 
 1. Run `npm test`
-
-#### Goal
-
-1. Aiming to provide information as to why alert was generated in the text message
-2. Develop fallback phone functionality
