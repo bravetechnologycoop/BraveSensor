@@ -522,7 +522,7 @@ async function fallbackMessage(sessionid) {
     twilioClient.messages.create({
       body: `An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`,
       from: locationData.twilio_number,
-      to: locationData.fallback_number
+      to: locationData.fallback_phonenumber
     })
     .then(message => console.log(message.sid))
     .done()
