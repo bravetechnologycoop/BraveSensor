@@ -383,6 +383,15 @@ async function isOverdoseSuspected(xethru, session, location) {
     let condition2 = 1 * (session.still_counter > still_threshold); //seconds
     let condition3 = 1 * (sessionDuration > sessionDuration_threshold);
     let condition4 = 1 * (0);
+
+    if(condition2 == 1){
+      let alertReason = 'Duration';
+    }
+
+    if( (condition1==1) || (condition3==1) ){
+      let alertReason = 'Stillness';
+    }
+
     const conditionThreshold = 1;
 
 
@@ -391,7 +400,7 @@ async function isOverdoseSuspected(xethru, session, location) {
     if(condition1 + condition2 + condition3 + condition4 >= conditionThreshold) {
         // update the table entry so od_flag is 1
         try {
-            await pool.query("UPDATE sessions SET od_flag = $1 WHERE sessionid = $2", [OD_FLAG_STATE.OVERDOSE, session.sessionid]);
+            await pool.query("UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3", [OD_FLAG_STATE.OVERDOSE, alertReason, session.sessionid]);
         }
         catch(e) {
             console.log(`Error running the update od_flag query: ${e}`);

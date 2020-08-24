@@ -489,8 +489,9 @@ async function sendTwilioMessage(fromPhone, toPhone, msg) {
 async function sendInitialChatbotMessage(session) {
   console.log("Intial message sent");
   var location = session.locationid;
-  locationData = await db.getLocationData(location)
-  await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
+  var alertReason = session.alert_reason;
+  locationData = await db.getLocationData(location);
+  await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a ${alertReason} alert. Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
   await db.startChatbotSessionState(session);
   setTimeout(reminderMessage, locationData.unrespondedTimer, session.sessionid);
   setTimeout(fallbackMessage, locationData.unresponded_Session_Timer, session.sessionid)
