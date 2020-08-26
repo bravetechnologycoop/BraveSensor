@@ -507,7 +507,8 @@ async function reminderMessage(sessionid) {
     //send the message
     await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
     session.chatbot_state = 'Waiting for Response';
-    await db.saveChatbotSession(session);
+    let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
+    await db.saveChatbotSession(chatbot);
   }
   //else do nothing
 }

@@ -384,12 +384,14 @@ async function isOverdoseSuspected(xethru, session, location) {
     let condition3 = 1 * (sessionDuration > sessionDuration_threshold);
     let condition4 = 1 * (0);
 
+    let alertReason='NotSet'
+
     if(condition2 == 1){
-      let alertReason = 'Duration';
+      alertReason = 'Duration';
     }
 
     if( (condition1==1) || (condition3==1) ){
-      let alertReason = 'Stillness';
+      alertReason = 'Stillness';
     }
 
     const conditionThreshold = 1;
