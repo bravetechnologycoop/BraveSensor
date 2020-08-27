@@ -493,8 +493,8 @@ async function sendInitialChatbotMessage(session) {
   locationData = await db.getLocationData(location);
   await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a ${alertReason} alert. Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
   await db.startChatbotSessionState(session);
-  setTimeout(reminderMessage, locationData.unrespondedTimer, session.sessionid);
-  setTimeout(fallbackMessage, locationData.unresponded_Session_Timer, session.sessionid)
+  setTimeout(reminderMessage, locationData.unresponded_timer, session.sessionid);
+  setTimeout(fallbackMessage, locationData.unresponded_session_timer, session.sessionid)
 }
 
 async function reminderMessage(sessionid) {
@@ -506,7 +506,7 @@ async function reminderMessage(sessionid) {
     locationData = await db.getLocationData(location)
     //send the message
     await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
-    session.chatbot_state = 'Waiting for Response';
+    session.chatbot_state = STATE.WAITING_FOR_RESPONSE;
     let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
     await db.saveChatbotSession(chatbot);
   }
@@ -517,11 +517,9 @@ async function fallbackMessage(sessionid) {
   console.log("Fallback message being sent");
   let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
   if(session.chatbot_state == STATE.WAITING_FOR_RESPONSE) {
-    //get location data
-    var location = session.locationid;
-    locationData = await db.getLocationData(location)
-    //send the message
-    twilioClient.messages.create({
+    console.log("Fallback if block");
+    let locationData = await db.getLocationData(session.locationid)
+    await twilioClient.messages.create({
       body: `An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`,
       from: locationData.twilio_number,
       to: locationData.fallback_phonenumber
