@@ -19,7 +19,7 @@ const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
-const XETHRU_THRESHOLD_MILLIS = 60*10*1000;
+const XETHRU_THRESHOLD_MILLIS = 60*1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
 
