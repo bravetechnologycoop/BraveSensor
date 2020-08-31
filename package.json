@@ -12,6 +12,7 @@
     "@smartthings/smartapp": "^1.0.3",
     "axios": "^0.19.2",
     "body-parser": "*",
+    "brave-alert-lib": "https://github.com/bravetechnologycoop/brave-alert-lib#v0.1.0",
     "chai": "^4.2.0",
     "chai-http": "^4.2.0",
     "cookie-parser": "^1.4.4",

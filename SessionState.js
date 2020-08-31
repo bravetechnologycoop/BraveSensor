@@ -5,10 +5,15 @@ const DOOR_STATE = require('./SessionStateDoorEnum.js');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://a95c3fc9c5fd49b29dbe5672228184a0@sentry.io/2556408' });
 let moment = require('moment');
+const BraveAlerter = require('brave-alert-lib');
+
 class SessionState {
 
     constructor(location) {
         this.location = location;
+
+        var braveAlerter = new BraveAlerter();
+        braveAlerter.output();
     }
 
     async getNextState(db, redis) {
