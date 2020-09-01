@@ -509,10 +509,9 @@ async function reminderMessage(location) {
 async function checkHeartbeat() {
 
  for(let i = 0; i < locations.length; i++){
-  let location = locations[i];
-  locationData = await db.getLocationData(location);
+  let location = await db.getLocationData(locations[i]);
   // Query raw sensor data to transmit to the FrontEnd
-  let XeThruData = await redis.getLatestXeThruSensorData(locations[i]);
+  let XeThruData = await redis.getLatestXeThruSensorData(location.locationid);
 
   // Check the XeThru Heartbeat
   let currentTime = moment();
