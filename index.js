@@ -519,7 +519,9 @@ async function fallbackMessage(sessionid) {
   if(session.chatbot_state == STATE.WAITING_FOR_RESPONSE) {
     console.log("Fallback if block");
     let locationData = await db.getLocationData(session.locationid)
-    await sendTwilioMessage(locationData.twilio_number, locationData.fallback_phonenumber,`An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`)
+    console.log(`fallback number is:  ${locationData.fallback_phonenumber}`)
+    console.log(`twilio number is:  ${locationData.twilio}`)
+    await sendTwilioMessage(locationData.twilio_number, locationData.fallback_number,`An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`)
   }
 //else do nothing
 } 
