@@ -9,7 +9,6 @@ spec:
   tls:
   - hosts:
     - sensors.odetect.brave.coop
-    - dev.odetect.brave.coop
     secretName: odetect-tls
   rules:
   - host: sensors.odetect.brave.coop
@@ -18,9 +17,3 @@ spec:
       - backend:
           serviceName: odetect
           servicePort: 8080
-  - host: dev.odetect.brave.coop
-    http:
-      paths:
-        - backend:
-            serviceName: odetect-dev
-            servicePort: 8080
