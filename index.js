@@ -40,7 +40,9 @@ setInterval(async function (){
   }
   locations = locationsArray;
   io.sockets.emit('getLocations', {data: locationsArray});
-  await checkHeartbeat()
+  for(let i = 0; i < locationsArray.length; i++){
+    await checkHeartbeat(location)
+  }
 }, LOCATION_UPDATE_FREQUENCY)
 
 
@@ -328,19 +330,8 @@ async function handleSensorRequest(currentLocationId){
   let prevState = stateobject.state;
   let location = await db.getLocationData(currentLocationId);
 
-  // Query raw sensor data to transmit to the FrontEnd
-  let XeThruData = await redis.getLatestXeThruSensorData(currentLocationId);
-
   // Check the XeThru Heartbeat
-  let currentTime = moment();
-  let latestXethru = moment(XeThruData.timestamp, "x");
-  let XeThruDelayMillis = currentTime.diff(latestXethru);
-
-  if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
-    console.log(`XeThru at ${location.locationid} reconnected`)
-    await db.updateSentAlerts(location.locationid, false)
-    sendReconnectionMessage(location.locationid)
-  }
+  await checkHeartbeat(currentLocationId);
 
   console.log(`${currentLocationId}: ${currentState}`);
 
@@ -529,29 +520,25 @@ async function fallbackMessage(sessionid) {
 
 //Heartbeat Helper Functions
 
-async function checkHeartbeat() {
+async function checkHeartbeat(locationid) {
+    let location = await db.getLocationData(locationid);
+    // Query raw sensor data to transmit to the FrontEnd
+    let XeThruData = await redis.getLatestXeThruSensorData(location.locationid);
+    // Check the XeThru Heartbeat
+    let currentTime = moment();
+    let latestXethru = moment(XeThruData.timestamp, "x");
+    let XeThruDelayMillis = currentTime.diff(latestXethru);
 
- for(let i = 0; i < locations.length; i++){
-  let location = await db.getLocationData(locations[i]);
-  // Query raw sensor data to transmit to the FrontEnd
-  let XeThruData = await redis.getLatestXeThruSensorData(location.locationid);
-
-  // Check the XeThru Heartbeat
-  let currentTime = moment();
-  let latestXethru = moment(XeThruData.timestamp, "x");
-  let XeThruDelayMillis = currentTime.diff(latestXethru);
-
-  if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
-    console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
-    await db.updateSentAlerts(location.locationid, true)
-    sendAlerts(location.locationid)
+    if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
+      console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+      await db.updateSentAlerts(location.locationid, true)
+      sendAlerts(location.locationid)
+    }
+    else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
+      console.log(`XeThru at ${location.locationid} reconnected`)
+      await db.updateSentAlerts(location.locationid, false)
+      sendReconnectionMessage(location.locationid)
   }
-  else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
-    console.log(`XeThru at ${location.locationid} reconnected`)
-    await db.updateSentAlerts(location.locationid, false)
-    sendReconnectionMessage(location.locationid)
-  }
- }
 }
 
 async function sendAlerts(location) {
