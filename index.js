@@ -13,7 +13,7 @@ const path = require('path');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
 const Sentry = require('@sentry/node');
-// Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' });
+Sentry.init({ dsn: 'https://ccd68776edee499d81380a654dbaa0d2@sentry.io/2556088' });
 require('dotenv').config();
 const app = express();
 const http = require('http').Server(app);
@@ -40,9 +40,7 @@ setInterval(async function (){
   }
   locations = locationsArray;
   io.sockets.emit('getLocations', {data: locationsArray});
-  for(let i = 0; i < locationsArray.length; i++){
-    await checkHeartbeat(location)
-  }
+  await checkHeartbeat()
 }, LOCATION_UPDATE_FREQUENCY)
 
 
@@ -330,8 +328,19 @@ async function handleSensorRequest(currentLocationId){
   let prevState = stateobject.state;
   let location = await db.getLocationData(currentLocationId);
 
+  // Query raw sensor data to transmit to the FrontEnd
+  let XeThruData = await redis.getLatestXeThruSensorData(currentLocationId);
+
   // Check the XeThru Heartbeat
-  await checkHeartbeat(currentLocationId);
+  let currentTime = moment();
+  let latestXethru = moment(XeThruData.timestamp, "x");
+  let XeThruDelayMillis = currentTime.diff(latestXethru);
+
+  if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
+    console.log(`XeThru at ${location.locationid} reconnected`)
+    await db.updateSentAlerts(location.locationid, false)
+    sendReconnectionMessage(location.locationid)
+  }
 
   console.log(`${currentLocationId}: ${currentState}`);
 
@@ -463,82 +472,63 @@ io.on('connection', (socket) => {
 // Twilio Functions
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
   try {
-    await twilioClient.messages.create({
-      from: fromPhone, 
-      to: toPhone, 
-      body: msg
-    })
-    .then(message => console.log(message.sid));
-  }
-  catch(err) {
+    await twilioClient.messages.create({from: fromPhone, to: toPhone, body: msg})
+                         .then(message => console.log(message.sid));
+}
+catch(err) {
     console.log(err);
-  }
+}
 }
 
 
 // TODO: replace these many almost identical functions with something more elegant
 async function sendInitialChatbotMessage(session) {
-  console.log("Intial message sent");
-  var location = session.locationid;
-  var alertReason = session.alert_reason;
-  locationData = await db.getLocationData(location);
-  await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a ${alertReason} alert. Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
-  await db.startChatbotSessionState(session);
-  setTimeout(reminderMessage, locationData.unresponded_timer, session.sessionid);
-  setTimeout(fallbackMessage, locationData.unresponded_session_timer, session.sessionid)
-}
-
-async function reminderMessage(sessionid) {
-  console.log("Reminder message being sent");
-  let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
-  if(session.chatbot_state == STATE.STARTED) {
-    //Get location data
+    console.log("Intial message sent");
     var location = session.locationid;
     locationData = await db.getLocationData(location)
-    //send the message
-    await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
-    session.chatbot_state = STATE.WAITING_FOR_RESPONSE;
-    let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
-    await db.saveChatbotSession(chatbot);
-  }
-  //else do nothing
+    await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
+    await db.startChatbotSessionState(session);
+    setTimeout(reminderMessage, locationData.unrespondedTimer, session.locationid);
 }
 
-async function fallbackMessage(sessionid) {
-  console.log("Fallback message being sent");
-  let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
-  if(session.chatbot_state == STATE.WAITING_FOR_RESPONSE) {
-    console.log("Fallback if block");
-    let locationData = await db.getLocationData(session.locationid)
-    console.log(`fallback number is:  ${locationData.fallback_phonenumber}`)
-    console.log(`twilio number is:  ${locationData.twilio}`)
-    await sendTwilioMessage(locationData.twilio_number, locationData.fallback_number,`An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`)
-  }
-//else do nothing
-} 
-
+async function reminderMessage(location) {
+    console.log("Reminder message being sent");
+    let session = await db.getMostRecentSession(location); // Gets the updated state for the chatbot
+    locationData = await db.getLocationData(location)
+    if(session.chatbot_state == 'Started') {
+        //send the message
+        await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
+        session.chatbot_state = 'Waiting for Response';
+        await db.saveChatbotSession(session);
+    }
+    //else do nothing
+}
 
 //Heartbeat Helper Functions
 
-async function checkHeartbeat(locationid) {
-    let location = await db.getLocationData(locationid);
-    // Query raw sensor data to transmit to the FrontEnd
-    let XeThruData = await redis.getLatestXeThruSensorData(location.locationid);
-    // Check the XeThru Heartbeat
-    let currentTime = moment();
-    let latestXethru = moment(XeThruData.timestamp, "x");
-    let XeThruDelayMillis = currentTime.diff(latestXethru);
+async function checkHeartbeat() {
 
-    if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
-      console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
-      await db.updateSentAlerts(location.locationid, true)
-      sendAlerts(location.locationid)
-    }
-    else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
-      console.log(`XeThru at ${location.locationid} reconnected`)
-      await db.updateSentAlerts(location.locationid, false)
-      sendReconnectionMessage(location.locationid)
+ for(let i = 0; i < locations.length; i++){
+  let location = await db.getLocationData(locations[i]);
+  // Query raw sensor data to transmit to the FrontEnd
+  let XeThruData = await redis.getLatestXeThruSensorData(location.locationid);
+
+  // Check the XeThru Heartbeat
+  let currentTime = moment();
+  let latestXethru = moment(XeThruData.timestamp, "x");
+  let XeThruDelayMillis = currentTime.diff(latestXethru);
+
+  if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
+    console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+    await db.updateSentAlerts(location.locationid, true)
+    sendAlerts(location.locationid)
   }
+  else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
+    console.log(`XeThru at ${location.locationid} reconnected`)
+    await db.updateSentAlerts(location.locationid, false)
+    sendReconnectionMessage(location.locationid)
+  }
+ }
 }
 
 async function sendAlerts(location) {
@@ -556,9 +546,9 @@ async function sendReconnectionMessage(location) {
   locationData = await db.getLocationData(location);
 
   twilioClient.messages.create({
-    body: `The XeThru at ${location} has been reconnected.`,
-    from: locationData.twilio_number,
-    to: locationData.xethru_heartbeat_number
+      body: `The XeThru at ${location} has been reconnected.`,
+      from: locationData.twilio_number,
+      to: locationData.xethru_heartbeat_number
   })
   .then(message => console.log(message.sid))
   .done()

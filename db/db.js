@@ -1,7 +1,7 @@
 const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Sentry = require('@sentry/node');
-// Sentry.init({ dsn: 'https://d7e58c8e8fc44fdb9cf84bc82bf3c0a5@sentry.io/2556390' });
+Sentry.init({ dsn: 'https://d7e58c8e8fc44fdb9cf84bc82bf3c0a5@sentry.io/2556390' });
 require('dotenv').config();
 pgconnectionString = process.env.PG_CONNECTION_STRING
 
@@ -178,27 +178,9 @@ async function getMostRecentSession(locationid) {
   }
 }
 
-// Gets session with a specific SessionID
-
-async function getSessionWithSessionId(sessionid){
-  try{
-    const results = await pool.query("SELECT * FROM sessions WHERE sessionid = $1", [sessionid]);
-
-    if(typeof results === 'undefined'){
-      return null;
-    }
-    else{
-      return results.rows[0]; 
-    }
-  }
-  catch(e){
-    console.log(`Error running the getSessionWithSessionId query: ${e}`);
-  }
-}
-
 
 // Gets the last session data in the table for a specified phone number
-async function getMostRecentSessionPhone(phone){
+async function getMostRecentSessionPhone(phone) {
   try {
       const results = await pool.query("SELECT * FROM sessions WHERE phonenumber = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY start_time DESC LIMIT 1", [phone]);
       if(results == undefined){
@@ -383,17 +365,6 @@ async function isOverdoseSuspected(xethru, session, location) {
     let condition2 = 1 * (session.still_counter > still_threshold); //seconds
     let condition3 = 1 * (sessionDuration > sessionDuration_threshold);
     let condition4 = 1 * (0);
-
-    let alertReason='NotSet'
-
-    if(condition2 == 1){
-      alertReason = 'Duration';
-    }
-
-    if( (condition1==1) || (condition3==1) ){
-      alertReason = 'Stillness';
-    }
-
     const conditionThreshold = 1;
 
 
@@ -402,7 +373,7 @@ async function isOverdoseSuspected(xethru, session, location) {
     if(condition1 + condition2 + condition3 + condition4 >= conditionThreshold) {
         // update the table entry so od_flag is 1
         try {
-            await pool.query("UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3", [OD_FLAG_STATE.OVERDOSE, alertReason, session.sessionid]);
+            await pool.query("UPDATE sessions SET od_flag = $1 WHERE sessionid = $2", [OD_FLAG_STATE.OVERDOSE, session.sessionid]);
         }
         catch(e) {
             console.log(`Error running the update od_flag query: ${e}`);
@@ -500,7 +471,6 @@ module.exports = {
   getLatestLocationStatesdata,
   getLastUnclosedSession,
   getMostRecentSession,
-  getSessionWithSessionId,
   getRecentStateHistory,
   getHistoryOfSessions,
   createSession,
