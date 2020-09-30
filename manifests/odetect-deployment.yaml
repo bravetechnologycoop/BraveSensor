@@ -46,7 +46,7 @@ spec:
         app: odetect
     spec:
       containers:
-      - image: docker.io/mariocimet/odetect:latest
+      - image: registry.digitalocean.com/odetect/odetect-prod
         imagePullPolicy: Always
         name: odetect
         resources: {}
