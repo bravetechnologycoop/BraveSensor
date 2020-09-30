@@ -52,8 +52,6 @@ spec:
         resources: {}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
-      imagePullSecrets:
-      - name: regcred
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
