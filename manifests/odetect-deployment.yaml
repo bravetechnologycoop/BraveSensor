@@ -46,7 +46,7 @@ spec:
         app: odetect
     spec:
       containers:
-      - image: registry.digitalocean.com/odetect/odetect-prod:latest
+      - image: registry.digitalocean.com/odetect/odetect-prod
         imagePullPolicy: Always
         name: odetect
         resources: {}
