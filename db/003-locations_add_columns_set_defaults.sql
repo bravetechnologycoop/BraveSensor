@@ -28,7 +28,8 @@ BEGIN
         ALTER TABLE locations ADD COLUMN unresponded_timer integer default 30000; 
         ALTER TABLE locations ADD COLUMN auto_reset_threshold integer default 1320000; 
         ALTER TABLE locations ADD COLUMN twilio_number text default '+17787653445'; 
-        ALTER TABLE locations ADD COLUMN door_stickiness_delay text default '15000'; 
+        ALTER TABLE locations ADD COLUMN door_stickiness_delay text default '15000';
+        ALTER TABLE locations ADD COLUMN unresponded_session_timer integer default 90000; 
 
 
 
