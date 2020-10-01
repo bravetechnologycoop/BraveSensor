@@ -198,9 +198,9 @@ async function getSessionWithSessionId(sessionid){
 
 
 // Gets the last session data in the table for a specified phone number
-async function getMostRecentSessionPhone(phone){
+async function getMostRecentSessionPhone(twilioPhone){
   try {
-      const results = await pool.query("SELECT * FROM sessions WHERE phonenumber = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY start_time DESC LIMIT 1", [phone]);
+      const results = await pool.query("SELECT s.* FROM sessions AS s LEFT JOIN locations AS l ON s.locationid = l.locationid WHERE l.twilio_number = $1  AND s.start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY s.start_time DESC LIMIT 1", [twilioPhone]);
       if(results == undefined){
           return null;
       }
