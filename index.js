@@ -18,6 +18,7 @@ require('dotenv').config();
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
+const helpers = require('brave-alert-lib').helpers
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
@@ -77,10 +78,6 @@ let CHATBOTSTARTSTATES = [
   STATE.SUSPECTED_OD
 ];
 
-function getEnvVar(name) {
-	return process.env.NODE_ENV === 'test' ? process.env[name + '_TEST'] : process.env[name];
-}
-
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of value
 app.use(bodyParser.json());
@@ -94,7 +91,7 @@ app.use(cookieParser());
 // initialize express-session to allow us track the logged-in user across sessions.
 app.use(session({
     key: 'user_sid',
-    secret: getEnvVar('SECRET'),
+    secret: helpers.getEnvVar('SECRET'),
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -138,7 +135,7 @@ app.route('/login')
         var username = req.body.username,
             password = req.body.password;
 
-        if ((username === getEnvVar('WEB_USERNAME')) && (password === getEnvVar('PASSWORD'))) {
+        if ((username === helpers.getEnvVar('WEB_USERNAME')) && (password === helpers.getEnvVar('PASSWORD'))) {
         	req.session.user = username;
         	res.redirect('/');
         }
