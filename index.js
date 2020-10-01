@@ -593,10 +593,10 @@ async function sendBatteryAlert(location,signal) {
 app.post('/sms', async function (req, res) {
 const twiml = new MessagingResponse()
   // Parses out information from incoming message
-  var from = req.body.From;
+  var to = req.body.To;
   var body = req.body.Body;
 
-  let session = await db.getMostRecentSessionPhone(from);
+  let session = await db.getMostRecentSessionPhone(to);
   let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
   let message = chatbot.advanceChatbot(body);
   await db.saveChatbotSession(chatbot);
