@@ -4,7 +4,6 @@ const bodyParser = require('body-parser');
 const redis = require('./db/redis.js');
 const db = require('./db/db.js');
 const SessionState = require('./SessionState.js');
-const Chatbot = require('./Chatbot.js');
 const session = require('express-session');
 var cookieParser = require('cookie-parser');
 const cors = require('cors');
@@ -18,7 +17,7 @@ require('dotenv').config();
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
-const helpers = require('brave-alert-lib').helpers
+const { BraveAlerter, AlertSession, ALERT_STATE, helpers } = require('brave-alert-lib')
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
@@ -55,10 +54,6 @@ let VOIDSTATES = [
   STATE.MOVEMENT,
   STATE.STILL,
   STATE.BREATH_TRACKING,
-  STATE.STARTED,
-  STATE.WAITING_FOR_RESPONSE,
-  STATE.WAITING_FOR_CATEGORY,
-  STATE.WAITING_FOR_DETAILS
 ];
 
 // These states will start a new session for a certain location
@@ -70,13 +65,109 @@ let TRIGGERSTATES = [
 // These states will close an ongoing session for a certain location
 let CLOSINGSTATES = [
   STATE.DOOR_OPENED_CLOSE,
-  STATE.COMPLETED
 ];
 
 // These states will start a chatbot session for a location
 let CHATBOTSTARTSTATES = [
   STATE.SUSPECTED_OD
 ];
+
+const incidentTypes = [
+    'No One Inside',
+    'Person responded',
+    'Overdose',
+    'None of the above'
+]
+
+const incidentTypeKeys = ['1', '2', '3', '4']
+
+async function buildAlertSession(session) {
+    let locationData = await db.getLocationData(session.locationid)
+
+    let alertSession = new AlertSession(
+        session.sessionid,
+        session.chatbot_state,
+        session.incidenttype,
+        undefined,
+        `An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`,
+        locationData.phonenumber,
+        incidentTypeKeys,
+        incidentTypes,
+    )
+
+    return alertSession
+}
+
+async function getAlertSession(sessionId) {
+    let session = await db.getSessionWithSessionId(sessionId)
+    
+    return await buildAlertSession(session)
+}
+
+async function getAlertSessionByPhoneNumber(phoneNumber) {
+    let session = await db.getMostRecentSessionPhone(phoneNumber)
+    
+    return await buildAlertSession(session)
+}
+
+async function alertSessionChangedCallback(alertSession) {
+    const incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
+    await db.saveChatbotSession(alertSession.alertState, incidentType, alertSession.sessionId)
+
+    const session = await db.getSessionWithSessionId(alertSession.sessionId)
+    const locationId = session.locationid
+
+    if (alertSession.alertState === ALERT_STATE.COMPLETED) {
+        // Closes the session, sets the session state to RESET
+        if (await db.closeSession(locationId)) { // Adds the end_time to the latest open session from the LocationID
+            console.log(`Session at ${locationId} was closed successfully.`)
+            io.sockets.emit('sessiondata', {data: session}) // Sends currentSession data with end_time which will close the session in the frontend
+            start_times[locationId] = null // Stops the session timer for this location
+        } else {
+            console.log(`Attempted to close session but no open session was found for ${locationId}`)
+        }
+
+        redis.addStateMachineData('Reset', locationId)
+    }
+}
+
+function getReturnMessage(fromAlertState, toAlertState) {
+    let returnMessage
+
+    switch(fromAlertState) {
+        case ALERT_STATE.STARTED:
+        case ALERT_STATE.WAITING_FOR_REPLY:
+            returnMessage = 'Please respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above'
+            break
+        
+        case ALERT_STATE.WAITING_FOR_CATEGORY:
+            if (toAlertState === ALERT_STATE.WAITING_FOR_CATEGORY) {
+                returnMessage = 'Invalid category, please try again\n\nPlease respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above'
+            } else if (toAlertState === ALERT_STATE.COMPLETED) {
+                returnMessage = 'Thank you!'
+            }
+            break
+
+        case ALERT_STATE.COMPLETED:
+            returnMessage = 'Thank you'
+            break
+
+        default:
+            returnMessage = 'Error: No active chatbot found'
+            break
+    }
+
+    return returnMessage
+}
+
+// Configure BraveAlerter
+const braveAlerter = new BraveAlerter(
+    getAlertSession,
+    getAlertSessionByPhoneNumber,
+    alertSessionChangedCallback,
+    false,
+    getReturnMessage,
+)
 
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of value
@@ -154,12 +245,8 @@ app.get('/logout', (req, res) => {
     }
 });
 
-// Set up Twilio
-const accountSid = process.env.TWILIO_SID;
-const authToken = process.env.TWILIO_TOKEN;
-
-const twilioClient = require('twilio')(accountSid, authToken);
-const MessagingResponse = require('twilio').twiml.MessagingResponse;
+// Add BraveAlerter's routes
+app.use(braveAlerter.getRouter())
 
 // SmartThings Smart App Implementations
 
@@ -335,7 +422,7 @@ async function handleSensorRequest(currentLocationId){
   // Get current time to compare to the session's start time
 
   var location_start_time = start_times[currentLocationId]
-  if(location_start_time != null && location_start_time != undefined){
+  if(location_start_time !== null && location_start_time !== undefined){
     var today = new Date();
     var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
     var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
@@ -406,12 +493,24 @@ async function handleSensorRequest(currentLocationId){
       }
     }
 
-    else if(CHATBOTSTARTSTATES.includes(currentState)) {
+    else if (CHATBOTSTARTSTATES.includes(currentState)) {
         let latestSession = await db.getMostRecentSession(currentLocationId);
 
-        if(latestSession.od_flag == 1) {
-            if(latestSession.chatbot_state == null) {
-              sendInitialChatbotMessage(latestSession);
+        if (latestSession.od_flag === 1) {
+            if (latestSession.chatbot_state === null) {
+                const alertInfo = {
+                    sessionId: latestSession.sessionid,
+                    toPhoneNumber: location.phonenumber,
+                    fromPhoneNumber: location.twilio_number,
+                    message: `This is a ${latestSession.alert_reason} alert. Please check on the bathroom. Please respond with 'ok' once you have checked on it.`,
+                    reminderTimeoutMillis: location.unresponded_timer,
+                    fallbackTimeoutMillis: location.unresponded_session_timer,
+                    reminderMessage: `This is a reminder to check on the bathroom`,
+                    fallbackMessage: `An alert to check on the washroom at ${location.location_human} was not responded to. Please check on it`,
+                    fallbackToPhoneNumber: location.fallback_phonenumber,
+                    fallbackFromPhoneNumber: location.twilio_number,
+                }
+                braveAlerter.startAlertSession(alertInfo)
             }
         }
     }
@@ -457,50 +556,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// Twilio Functions
-async function sendTwilioMessage(fromPhone, toPhone, msg) {
-  try {
-    await twilioClient.messages.create({
-      from: fromPhone, 
-      to: toPhone, 
-      body: msg
-    })
-    .then(message => console.log(message.sid));
-  }
-  catch(err) {
-    console.log(err);
-  }
-}
-
-
-// TODO: replace these many almost identical functions with something more elegant
-async function sendInitialChatbotMessage(session) {
-  console.log("Intial message sent");
-  var location = session.locationid;
-  var alertReason = session.alert_reason;
-  locationData = await db.getLocationData(location);
-  await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a ${alertReason} alert. Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
-  await db.startChatbotSessionState(session);
-  setTimeout(reminderMessage, locationData.unresponded_timer, session.sessionid);
-  setTimeout(fallbackMessage, locationData.unresponded_session_timer, session.sessionid)
-}
-
-async function reminderMessage(sessionid) {
-  console.log("Reminder message being sent");
-  let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
-  if(session.chatbot_state == STATE.STARTED) {
-    //Get location data
-    var location = session.locationid;
-    locationData = await db.getLocationData(location)
-    //send the message
-    await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
-    session.chatbot_state = STATE.WAITING_FOR_RESPONSE;
-    let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
-    await db.saveChatbotSession(chatbot);
-  }
-  //else do nothing
-}
-
 async function fallbackMessage(sessionid) {
   console.log("Fallback message being sent");
   let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
@@ -511,9 +566,8 @@ async function fallbackMessage(sessionid) {
     console.log(`twilio number is:  ${locationData.twilio_number}`)
     await sendTwilioMessage(locationData.twilio_number, locationData.fallback_phonenumber,`An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`)
   }
-//else do nothing
+  //else do nothing
 } 
-
 
 //Heartbeat Helper Functions
 
@@ -538,86 +592,34 @@ async function checkHeartbeat(locationid) {
   }
 }
 
-async function sendAlerts(location) {
-  locationData = await db.getLocationData(location);
-  twilioClient.messages.create({
-      body: `The XeThru connection for ${location} has been lost.`,
-      from: locationData.twilio_number,
-      to: locationData.xethru_heartbeat_number
-  })
-  .then(message => console.log(message.sid))
-  .done()
+async function sendSingleAlert(locationid, message) {
+    const location = await db.getLocationData(locationid)
+
+    await braveAlerter.sendSingleAlert(
+        location.xethru_heartbeat_number,
+        location.twilio_number,
+        message,
+    )
 }
 
-async function sendReconnectionMessage(location) {
-  locationData = await db.getLocationData(location);
+async function sendAlerts(locationid) {
+    await sendSingleAlert(locationid, `The XeThru connection for ${locationid} has been lost.`)
+}
 
-  twilioClient.messages.create({
-    body: `The XeThru at ${location} has been reconnected.`,
-    from: locationData.twilio_number,
-    to: locationData.xethru_heartbeat_number
-  })
-  .then(message => console.log(message.sid))
-  .done()
+async function sendReconnectionMessage(locationid) {
+    await sendSingleAlert(locationid, `The XeThru at ${locationid} has been reconnected.`)
 }
 
 //Autoreset twilio function
 
-async function sendResetAlert(location) {
-  locationData = await db.getLocationData(location);
-  twilioClient.messages.create({
-      body: `An unresponded session at ${location} has been automatically reset.`,
-      from: locationData.twilio_number,
-      to: locationData.xethru_heartbeat_number
-  })
-  .then(message => console.log(message.sid))
-  .done()
+async function sendResetAlert(locationid) {
+    await sendSingleAlert(locationid, `An unresponded session at ${locationid} has been automatically reset.`)
 }
 
-async function sendBatteryAlert(location,signal) {
-  locationData = await db.getLocationData(location);
-  twilioClient.messages.create({
-      body: `Battery level at ${location} is ${signal}.`,
-      from: locationData.twilio_number,
-      to: locationData.xethru_heartbeat_number
-  })
-  .then(message => console.log(message.sid))
-  .done()
+async function sendBatteryAlert(locationid, signal) {
+    await sendSingleAlert(locationid, `Battery level at ${locationid} is ${signal}.`)
 }
 
-
-// Handler for incoming Twilio messages
-app.post('/sms', async function (req, res) {
-const twiml = new MessagingResponse()
-  // Parses out information from incoming message
-  var to = req.body.To;
-  var body = req.body.Body;
-
-  let session = await db.getMostRecentSessionPhone(to);
-  let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
-  let message = chatbot.advanceChatbot(body);
-  await db.saveChatbotSession(chatbot);
-
-  if(chatbot.state == 'Completed') {
-      //closes the session, sets the session state to RESET
-      if(await db.closeSession(chatbot.locationid)){ // Adds the end_time to the latest open session from the LocationID
-          console.log(`Session at ${chatbot.locationid} was closed successfully.`);
-          io.sockets.emit('sessiondata', {data: session}); // Sends currentSession data with end_time which will close the session in the frontend
-          start_times[chatbot.locationid] = null; // Stops the session timer for this location
-      }
-      else{
-          console.log(`Attempted to close session but no open session was found for ${chatbot.locationid}`);
-     }
-    await redis.addStateMachineData('Reset', chatbot.locationid);
-
-  }
-
-  twiml.message(message);
-
-  res.writeHead(200, {'Content-Type': 'text/xml'});
-  res.end(twiml.toString());
-
-})
 
 let server;
 

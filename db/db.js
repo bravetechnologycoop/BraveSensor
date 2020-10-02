@@ -198,18 +198,17 @@ async function getSessionWithSessionId(sessionid){
 
 
 // Gets the last session data in the table for a specified phone number
-async function getMostRecentSessionPhone(twilioPhone){
+async function getMostRecentSessionPhone(twilioPhone) {
   try {
-      const results = await pool.query("SELECT s.* FROM sessions AS s LEFT JOIN locations AS l ON s.locationid = l.locationid WHERE l.twilio_number = $1  AND s.start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY s.start_time DESC LIMIT 1", [twilioPhone]);
-      if(results == undefined){
-          return null;
+      const results = await pool.query("SELECT s.* FROM sessions AS s LEFT JOIN locations AS l ON s.locationid = l.locationid WHERE l.twilio_number = $1  AND s.start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY s.start_time DESC LIMIT 1", [twilioPhone])
+
+      if (results === undefined) {
+          return null
+      } else {
+          return results.rows[0]
       }
-      else{
-          return results.rows[0];
-      }
-  }
-  catch(e){
-      console.log(`Error running the getMostRecentSessionPhone query: ${e}`);
+  } catch(e) {
+      console.log(`Error running the getMostRecentSessionPhone query: ${e}`)
   }
 }
 
@@ -414,18 +413,17 @@ async function isOverdoseSuspected(xethru, session, location) {
 }
 
 // Saves the variables in the chatbot object into the sessions table
-async function saveChatbotSession(chatbot) {
+async function saveChatbotSession(chatbotState, incidentType, sessionid) {
     try {
-        await pool.query("UPDATE sessions SET chatbot_state = $1, incidenttype = $2, notes = $3 WHERE sessionid = $4", [chatbot.state, chatbot.incidentType, chatbot.notes, chatbot.id]);
+        if (chatbotState) {
+            pool.query("UPDATE sessions SET chatbot_state = $1 WHERE sessionid = $2", [chatbotState, sessionid])
+        }
+        if (incidentType) {
+            pool.query("UPDATE sessions SET incidenttype = $1 WHERE sessionid = $2", [incidentType, sessionid])
+        }
+    } catch(e) {
+        console.log(`Error running the saveChatbotSession query: ${e}`)
     }
-    catch(e) {
-        console.log(`Error running the saveChatbotSession query: ${e}`);
-    }
-}
-
-// Sends the initial twilio message to start the chatbot once an overdose case has been detected
-async function startChatbotSessionState(session) {
-  await pool.query("UPDATE sessions SET chatbot_state = $1 WHERE sessionid = $2", ['Started', session.sessionid]);
 }
 
 // Retrieves the data from the locations table for a given location
@@ -510,7 +508,6 @@ module.exports = {
   updateSessionResetDetails,
   closeSession,
   saveChatbotSession,
-  startChatbotSessionState,
   getMostRecentSessionPhone,
   getLocationData,
   getLocations,

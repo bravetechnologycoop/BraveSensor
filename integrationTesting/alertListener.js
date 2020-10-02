@@ -15,8 +15,9 @@ app.use(express.json()); // Used for smartThings wrapper
 app.post('/alert', async (req, res) => {
   var responderPhone = req.body.To
   var installationPhone = req.body.From;
+
   //Complete the Chatbot
-  axios.post('/sms', {
+  axios.post('/alert/sms', {
     To: installationPhone,
     From: responderPhone,
     Body: '4'

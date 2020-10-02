@@ -11,11 +11,6 @@ const STATE = {
     STILL: 'Still',
     BREATH_TRACKING: 'Breathing',
     SUSPECTED_OD: 'Suspected Overdose',
-    STARTED: 'Started',
-    WAITING_FOR_RESPONSE: 'Waiting for Response',
-    WAITING_FOR_CATEGORY: 'Waiting for Category',
-    WAITING_FOR_DETAILS: 'Waiting for Details',
-    COMPLETED: 'Completed'
 };
 
 module.exports = Object.freeze(STATE);
