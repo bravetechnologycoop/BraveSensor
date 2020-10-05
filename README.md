@@ -18,3 +18,91 @@ is created
 ### To run the tests locally
 
 1. Run `npm test`
+
+## Before building a docker image
+
+Before deployment of a new Docker container to the kubernetes cluster, check that the following are in place
+
+### Frontend artifacts
+
+The ODetect front end is built using Angular JS. Once built locally, the front end artifacts are stored in the `/Public/ODetect` folder.
+
+In case you are not building the front end locally, you may download a zip file of the front end artifacts from the shared ODetect vault on 1password and unzip to the above folder.
+
+### Smartthings Public Key
+
+The Samsung Smartthings Smartapp requires a public key to work, the public keys for the dev and prod environments are stored on the shared vault on 1password. Copy the contents of the public key into a file called `smartthings_rsa.pub`
+
+### Env files
+
+The env files contain important secrets such as Twilio credentials, Postgres credentials as well as the IP address of the Env files for the production and development deployments are stored on the 1password ODetect vault.
+
+### Redis cluster IP
+
+The local cluster IP of the redis deployment is a required parameter for the node application to open a connection to the database. To obtain this cluster IP, first confirm that the necessary deployment is running on the kubernetes cluster.
+
+`kubectl get pods`
+
+If there is no redis deployment, create a new deployment from a manifest by
+
+1. Checkout the desired git branch (main/dev) to `odetect-admin`
+
+1. Navigate to `\manifests` and apply the desired manifest to the kubernetes cluster using `kubectl apply -f desired_manifest.yaml`
+
+If there is a redis deployment (redis-dev or redis-master), note the cluster IP from the result of kubectl get pods and copy that value to the `.env` file
+
+## Docker Containers
+
+Docker commands are run locally. Please install Docker to be able to run these commands on your local machine. To be able to push images to the DO container registry, you will need to be authenticated as a member of our DO ODetect project.  
+
+1. tag the built docker image according to `docker build . registry.digitalocean.com/odetect/<desired-tag-name>`. Currently, odetect-prod is used for the production deployment and odetect-dev for the development deployment (as specified in `/mainfests/odetect-deployment.yaml` and `/manifests/odetect-deployment-dev.yaml`)
+
+1. Push the new image to the registry `docker push registry.digitalocean.com/odetect/<desired-tag-name>`
+
+## Deployment
+
+Kubernetes commands are run on the ODetect Admin Server.
+
+- Restarting a deployment once a docker image has been updated. Our cluster is not setup to automatically pull the new image and restart. Rather, we do it manually.
+
+`kubectl rollout restart deployment/<desired-deployment>`
+
+- Entering a pod's shell
+
+`kubectl exec -i -t <my-pod>  -- /bin/bash`
+
+- Getting logs from a pod
+
+`kubectl logs my-pod -f` (to follow)
+
+## Database migration
+
+### Adding a new Database migration script
+
+This strategy assumes that each migration script in the db directory has a unique positive integer migration ID, and that each script's migration ID is exactly one greater than the previous script's migration ID. Otherwise, the scripts will not run.
+
+1. Copy `db/000-template.sql` and name it with the desired migration ID (padded with zeros) followed by a short description of what it does eg. `005-newColumn.sql`
+
+2. Update the file with its migration ID and the new migration scripts
+
+### Deploying the migration scripts
+
+1. Pull the branch with the migration script to be applied onto the remote ODetect-Admin server (which is permitted to access the database)
+
+2. Run the postgres connection string command and pass the `db/00x-migration-script.sql` file to it with the `-f` flag
+
+The connection string looks like
+
+``` postgres
+PGPASSWORD=password psql -U user -h databaseAddress -p 25060 -d databaseName --set=sslmode=require
+```
+
+Credentials should be on 1 password/digitalocean.
+
+To view which migration scripts have been run and when
+
+``` postgres
+SELECT *
+FROM migrations
+ORDER BY id;
+```
