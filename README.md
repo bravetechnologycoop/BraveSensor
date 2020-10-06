@@ -5,7 +5,8 @@
 ## Setup
 
 1. Run `npm install` to download all the required node modules
-2. TODO
+1. To build the front end `npx @angular/cli build --prod`
+1. Move the build files to the expected location usinv `mv dist/ODetect ../ODetect-Backend-Local/Public/ODetect`
 
 ## Tests
 
@@ -25,29 +26,31 @@ Before deployment of a new Docker container to the kubernetes cluster, check tha
 
 ### Frontend artifacts
 
-The ODetect front end is built using Angular JS. Once built locally, the front end artifacts are stored in the `/Public/ODetect` folder.
+The ODetect front end is built using Angular JS. Once built locally, the front end artifacts are stored in the `/Public/ODetect` folder. Instructions on locally building the front end are in the Setup section. 
 
 In case you are not building the front end locally, you may download a zip file of the front end artifacts from the shared ODetect vault on 1password and unzip to the above folder.
 
 ### Smartthings Public Key
 
-The Samsung Smartthings Smartapp requires a public key to work, the public keys for the dev and prod environments are stored on the shared vault on 1password. Copy the contents of the public key into a file called `smartthings_rsa.pub`
+The Samsung Smartthings Smartapp requires a public key to work, the public keys for the dev and prod environments are stored on the ODetect vault on 1password. Copy the contents of the public key into a file called `smartthings_rsa.pub`
 
 ### Env files
 
 The env files contain important secrets such as Twilio credentials, Postgres credentials as well as the IP address of the Env files for the production and development deployments are stored on the 1password ODetect vault.
 
+Copy *only* one of the prod/dev env files from 1password to the `/ODetect-Backend-Local` folder on your local machine.
+
 ### Redis cluster IP
 
-The local cluster IP of the redis deployment is a required parameter for the node application to open a connection to the database. To obtain this cluster IP, first confirm that the necessary deployment is running on the kubernetes cluster.
+The local cluster IP of the redis deployment is a required parameter for the node application to open a connection to the database. To obtain this cluster IP, first confirm that the necessary deployment is running on the kubernetes cluster. From the ODetect-admin server, run - Access details are [here](#access-odetect-admin-server)
 
 `kubectl get pods`
 
 If there is no redis deployment, create a new deployment from a manifest by
 
-1. Checkout the desired git branch (main/dev) to `odetect-admin`
+1. Checkout the desired git branch (main/dev) to the admin server
 
-1. Navigate to `\manifests` and apply the desired manifest to the kubernetes cluster using `kubectl apply -f desired_manifest.yaml`
+1. Within the admin server, navigate to `/manifests` and apply the desired manifest to the kubernetes cluster using `kubectl apply -f desired_manifest.yaml`
 
 If there is a redis deployment (redis-dev or redis-master), note the cluster IP from the result of kubectl get pods and copy that value to the `.env` file
 
@@ -63,17 +66,21 @@ Docker commands are run locally. Please install Docker to be able to run these c
 
 Kubernetes commands are run on the ODetect Admin Server.
 
+### Access ODetect Admin Server
+
+Run `ssh brave@odetect-admin.brave.coop` to ssh into the admin server. Access is restricted to machines whose public key has been added to the server's allowlist
+
+#### Adding public keys to the admin server
+
+Paste the public key onto a new line on the `~/.ssh/authorized_keys` file on the ODetect admin server from a machine that is capable of accessing the server already.
+
+Password access to the server is also available (credentials on 1password)
+
+### Restart deployment
+
 - Restarting a deployment once a docker image has been updated. Our cluster is not setup to automatically pull the new image and restart. Rather, we do it manually.
 
 `kubectl rollout restart deployment/<desired-deployment>`
-
-- Entering a pod's shell
-
-`kubectl exec -i -t <my-pod>  -- /bin/bash`
-
-- Getting logs from a pod
-
-`kubectl logs my-pod -f` (to follow)
 
 ## Database migration
 
@@ -97,7 +104,7 @@ The connection string looks like
 PGPASSWORD=password psql -U user -h databaseAddress -p 25060 -d databaseName --set=sslmode=require
 ```
 
-Credentials should be on 1 password/digitalocean.
+This connection string may be copied from digital ocean.
 
 To view which migration scripts have been run and when
 
@@ -106,3 +113,22 @@ SELECT *
 FROM migrations
 ORDER BY id;
 ```
+
+## Databases currently used
+
+| Deployment        | Name            | User    | Database            |
+|-------------------|-----------------|---------|---------------------|
+| Production (prod) | odetect-db      | doadmin | backend-replacement |
+| Development (dev) | odetect-db-fork | doadmin | defaultdb           |
+
+## Useful commands
+
+### Kubernetes
+
+- Entering a pod's shell
+
+`kubectl exec -i -t <my-pod>  -- /bin/bash`
+
+- Getting logs from a pod
+
+`kubectl logs my-pod -f` (to follow)
