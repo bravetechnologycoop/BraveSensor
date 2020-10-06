@@ -38,10 +38,10 @@ setInterval(async function (){
   for(let i = 0; i < locationTable.length; i++){
     locationsArray.push(locationTable[i].locationid)
   }
-  locations = locationsArray;
+  locationsArray;
   io.sockets.emit('getLocations', {data: locationsArray});
   for(let i = 0; i < locationsArray.length; i++){
-    await checkHeartbeat(location)
+    await checkHeartbeat(locationsArray[i])
   }
 }, LOCATION_UPDATE_FREQUENCY)
 
