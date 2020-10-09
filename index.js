@@ -232,24 +232,6 @@ smartapp
     })
 
 // Closes any open session and resets state for the given location
-async function resetSession(locationid){
-  try{
-    if(await db.closeSession(locationid)){
-      let session = await db.getMostRecentSession(locationid);
-      console.log(session);
-      await db.updateSessionResetDetails(session.sessionid, "Manual reset", "Reset");
-      await redis.addStateMachineData("Reset", locationid);
-    }
-    else{
-      console.log("There is no open session to reset!")
-    }
-  }
-  catch {
-    console.log("Could not reset open session");
-  }
-}
-
-// Closes any open session and resets state for the given location
 async function autoResetSession(locationid){
   try{
     if(await db.closeSession(locationid)){
