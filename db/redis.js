@@ -7,25 +7,25 @@ const client = new Redis(6379, process.env.REDIS_CLUSTER_IP); // uses defaults u
 
 
 client.on("error", function(error) {
-  console.error(error);
+    console.error(error);
 });
  
 async function getXethruWindow(locationID, startTime, endTime, windowLength){
-   let rows = await client.xrevrange('xethru:'+locationID,startTime, endTime, 'count', windowLength);
-   var radarStream = rows.map(entry =>  new radarData(entry))
-   return radarStream
+    let rows = await client.xrevrange('xethru:'+locationID,startTime, endTime, 'count', windowLength);
+    var radarStream = rows.map(entry =>  new radarData(entry))
+    return radarStream
 }
 
 async function getDoorWindow(locationID, startTime, endTime, windowLength){
-  let rows = await client.xrevrange('door:'+locationID,startTime, endTime, 'count', windowLength);
-   var doorStream = rows.map(entry =>  new doorData(entry))
-   return doorStream
+    let rows = await client.xrevrange('door:'+locationID,startTime, endTime, 'count', windowLength);
+    var doorStream = rows.map(entry =>  new doorData(entry))
+    return doorStream
 }
 
 async function getStatesWindow(locationID, startTime, endTime, windowLength){
-  let rows = await client.xrevrange('state:'+ locationID,startTime, endTime, 'count', windowLength);
-   var stateStream = rows.map(entry =>  new stateData(entry))
-   return stateStream
+    let rows = await client.xrevrange('state:'+ locationID,startTime, endTime, 'count', windowLength);
+    var stateStream = rows.map(entry =>  new stateData(entry))
+    return stateStream
 }
 
 // POST new door Test data
@@ -42,43 +42,42 @@ const addDoorTestSensorData = (request, response) => {
 const addXeThruSensorData = (request, response) => {
     const {locationid, state, rpm, distance, mov_f, mov_s} = request.body;
     client.xadd("xethru:" + locationid,  "*", 
-                "state", state,
-                "distance", distance,
-                "rpm", rpm, 
-                "mov_f", mov_f,
-                "mov_s", mov_s, 
-                );
+        "state", state,
+        "distance", distance,
+        "rpm", rpm, 
+        "mov_f", mov_f,
+        "mov_s", mov_s, 
+    );
     response.status(200).json("OK")
 }
 
 const addStateMachineData = (state, locationid) => {
-  client.xadd("state:"+locationid,  "*", "state", state);
+    client.xadd("state:"+locationid,  "*", "state", state);
 }
 
 async function  getLatestDoorSensorData(locationid){
-  singleitem= await getDoorWindow(locationid, "+", "-", 1);
-  return singleitem[0];
+    let singleitem = await getDoorWindow(locationid, "+", "-", 1);
+    return singleitem[0];
 }
 
 async function getLatestXeThruSensorData(locationid){
-  singleitem= await getXethruWindow(locationid, "+", "-", 1);
-  return singleitem[0];
-
+    let singleitem = await getXethruWindow(locationid, "+", "-", 1);
+    return singleitem[0];
 }
 
 async function getLatestLocationStatesData(locationid){
-  singleitem= await getStatesWindow(locationid, "+", "-", 1);
-  return singleitem[0];
+    let singleitem = await getStatesWindow(locationid, "+", "-", 1);
+    return singleitem[0];
 }
 
 module.exports = {
-addDoorSensorData,
-addDoorTestSensorData,
-addStateMachineData,
-addXeThruSensorData,
-getXethruWindow,
-getStatesWindow,
-getLatestDoorSensorData,
-getLatestXeThruSensorData,
-getLatestLocationStatesData
+    addDoorSensorData,
+    addDoorTestSensorData,
+    addStateMachineData,
+    addXeThruSensorData,
+    getXethruWindow,
+    getStatesWindow,
+    getLatestDoorSensorData,
+    getLatestXeThruSensorData,
+    getLatestLocationStatesData
 }

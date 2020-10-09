@@ -4,9 +4,14 @@
   "description": "Backend for the ODetect project.",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint .",
     "test": "NODE_ENV=test mocha --timeout 10000 \"test/**/*.js\"",
     "replayData": "node -e 'require(\"./replayData.js\").replayData()'"
   },
+  "eslintIgnore": [
+    "Public/*",
+    "lib/*"
+  ],
   "dependencies": {
     "@sentry/node": "^5.12.2",
     "@smartthings/smartapp": "^1.0.3",
@@ -30,6 +35,9 @@
     "socket.io": "^2.2.0",
     "twilio": "^3.30.1",
     "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "eslint": "^7.11.0"
   },
   "author": "Sajan Rajdev",
   "license": "ISC"
