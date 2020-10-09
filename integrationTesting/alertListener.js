@@ -12,18 +12,17 @@ app.use(bodyParser.json());
 app.use(express.json()); // Used for smartThings wrapper
 
 // Handler for income XeThru POST requests
-app.post('/alert', async (req, res) => {
-  var responderPhone = req.body.To
-  var installationPhone = req.body.From;
-  //Complete the Chatbot
-  axios.post('/sms', {
-    To: installationPhone,
-    From: responderPhone,
-    Body: '4'
-  })
-  .then(function (response) {
-    console.log(response);
-  })
+app.post('/alert', async (req) => {
+    var responderPhone = req.body.To
+    var installationPhone = req.body.From;
+    //Complete the Chatbot
+    axios.post('/sms', {
+        To: installationPhone,
+        From: responderPhone,
+        Body: '4'
+    }).then(function (response) {
+        console.log(response);
+    })
 });
 
 app.get('/*', async function (req, res) {
@@ -31,5 +30,5 @@ app.get('/*', async function (req, res) {
 });
 
 
-server = app.listen(8081)
+app.listen(8081)
 console.log('ODetect brave server listening on port 8081')
