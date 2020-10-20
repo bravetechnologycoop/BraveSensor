@@ -2,133 +2,255 @@
 
 [![Build Status](https://travis-ci.com/bravetechnologycoop/ODetect-Backend-Local.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/ODetect-Backend-Local)
 
-## Setup
 
-1. Run `npm install` to download all the required node modules
-1. To build the front end `npx @angular/cli build --prod`
-1. Move the build files to the expected location usinv `mv dist/ODetect ../ODetect-Backend-Local/Public/ODetect`
+# Local Development
 
 ## Tests
 
 Unit tests are written using the [Mocha](https://mochajs.org/) JS test framework
 and the [Chai](https://www.chaijs.com/) assertion library.
 
-Tests run automatically on Travis on every checkin and every time a pull request
-is created
+To run the tests locally:
+```
+npm install
+npm run test
+```
 
-### To run the tests locally
+The ests run automatically on Travis on every push to GitHub and every time a pull request is created.
 
-1. Run `npm test`
 
-## Before building a docker image
+# Dev or Prod Deployment
 
-Before deployment of a new Docker container to the kubernetes cluster, check that the following are in place
+## Before building a Docker image
+
+Before deployment of a new Docker container to the Kubernetes cluster, check that all the following are in place:
 
 ### Frontend artifacts
 
-The ODetect front end is built using Angular JS. Once built locally, the front end artifacts are stored in the `/Public/ODetect` folder. Instructions on locally building the front end are in the Setup section. 
+The ODetect front end is built using Angular JS. 
 
-In case you are not building the front end locally, you may download a zip file of the front end artifacts from the shared ODetect vault on 1password and unzip to the above folder.
+These steps need to be re-run everytime there is a change in `ODetect-Frontend-Local`.
+
+1. Clone `ODetect-Frontend-Local` on your local machine
+
+1. In the `ODetect-Frontend-Local` folder, run
+    ```
+    npm install
+    npx -p @angular/cli ng build --prod
+    ```
+
+    Note that the `--prod` flag is used for both **dev** and **prod** deployments
+
+1. If it doesn't exist yet, create the expected location by running
+    ```
+    mkdir ../ODetect-Backend-Local/Public
+    ```
+
+1. Move the resulting files to the expected location by running 
+    ```
+    mv dist/ODetect ../ODetect-Backend-Local/Public/ODetect
+    ```
 
 ### Smartthings Public Key
 
-The Samsung Smartthings Smartapp requires a public key to work, the public keys for the dev and prod environments are stored on the ODetect vault on 1password. Copy the contents of the public key into a file called `smartthings_rsa.pub`
+The Samsung Smartthings Smartapp requires a public key to work. 
 
-### Env files
+These steps need to be re-run anytime you change target deployment environment.
 
-The env files contain important secrets such as Twilio credentials, Postgres credentials as well as the IP address of the Env files for the production and development deployments are stored on the 1password ODetect vault.
+1. Copy public key from the "ODetect Credentials" vault in 1Password into your local
+`ODetect-Backend-Local/smartthings_rsa.pub` file
 
-Copy *only* one of the prod/dev env files from 1password to the `/ODetect-Backend-Local` folder on your local machine.
+   - If you are deploying to **dev**, copy the value of `Dev - ODetect SmartThings Automation Public Key`
+
+   - If you are deploying to **prod**, copy the value of `Prod - ODetect2 SmartThings Automation Public Key`
+
+
+### .env files
+
+The .env file contain important secrets such as Twilio credentials, Postgres credentials as well as the IP address of the Env files for the production and development deployments. 
+
+These steps need to be re-run anytime the `.env` file changes.
+
+1. Copy from the "ODetect Credentials" vault in 1Password into your local 
+`ODetect-Backend-Local/.env` file
+
+   - If you are deploying to **dev**, copy the value of "Dev - env file"
+
+   - If you are deploying to **prod**, copy the value of "Prod - env file"
+
 
 ### Redis cluster IP
 
-The local cluster IP of the redis deployment is a required parameter for the node application to open a connection to the database. To obtain this cluster IP, first confirm that the necessary deployment is running on the kubernetes cluster. From the ODetect-admin server, run - Access details are [here](#access-odetect-admin-server)
+The cluster IP of the redis deployment is a required parameter for the node application to open a connection to the database. 
 
-`kubectl get pods`
+These steps need to be re-run anytime the Redis deployment changes.
 
-If there is no redis deployment, create a new deployment from a manifest by
+1. To obtain this cluster IP, first confirm that the necessary deployment is running on the kubernetes cluster.
 
-1. Checkout the desired git branch (main/dev) to the admin server
+    1. SSH into the `odetect-admin` server (see [here](#access-odetect-admin-server))
 
-1. Within the admin server, navigate to `/manifests` and apply the desired manifest to the kubernetes cluster using `kubectl apply -f desired_manifest.yaml`
+    1. Run
+    ```
+    kubectl get pods -o wide
+    ```
 
-If there is a redis deployment (redis-dev or redis-master), note the cluster IP from the result of kubectl get pods and copy that value to the `.env` file
+1. If there is no redis deployment for the environment you are trying to deploy to, 
+create a new deployment from a manifest by
 
-## Docker Containers
+    1. Checkout the desired git branch (`devenv` for **dev**, `master` for **prod**) to the
+    `odetect-admin` server
 
-Docker commands are run locally. Please install Docker to be able to run these commands on your local machine. To be able to push images to the DO container registry, you will need to be authenticated as a member of our DO ODetect project.  
+    1. Within the `odetect-admin` server, navigate to `~/ODetect-BackendLocal/manifests`
 
-1. tag the built docker image according to `docker build . registry.digitalocean.com/odetect/<desired-tag-name>`. Currently, odetect-prod is used for the production deployment and odetect-dev for the development deployment (as specified in `/mainfests/odetect-deployment.yaml` and `/manifests/odetect-deployment-dev.yaml`)
+        - If you are deploying to **dev**, run 
+            ```
+            kubectl apply -f redis-deployment-dev.yaml
+            ```
 
-1. Push the new image to the registry `docker push registry.digitalocean.com/odetect/<desired-tag-name>`
+        - If you are deploying to **prod**, run 
+            ```
+            kubectl apply -f redis-deployment.yaml
+            ```
 
-## Deployment
+1. If there already is a redis deployment for the environment you are trying to deploy to(`redis-dev` for **dev** or `redis-master` for **prod**), copy the value in its `IP` colmnn 
+into the `REDIS_CLUSTER_IP` field in your local `ODetect-Backend-Local/.env` file
 
-Kubernetes commands are run on the ODetect Admin Server.
+### DB connection string
 
-### Access ODetect Admin Server
+The PostgreSQL DB connection string is required for the application to open a connection to
+the database.
 
-Run `ssh brave@odetect-admin.brave.coop` to ssh into the admin server. Access is restricted to machines whose public key has been added to the server's allowlist
+| Environment           | User    | Database Name       |
+|-----------------------|---------|---------------------|
+| Production (**prod**) | doadmin | backend-replacement |
+| Development (**dev**) | doadmin | development         |
 
-#### Adding public keys to the admin server
+These steps need to be re-run anything the database changes.
 
-Paste the public key onto a new line on the `~/.ssh/authorized_keys` file on the ODetect admin server from a machine that is capable of accessing the server already.
+1. Log in to Digital Ocean
 
-Password access to the server is also available (credentials on 1password)
+1. Navigate to Databases --> odetect-db
 
-### Restart deployment
+1. In the Connection Details box:
 
-- Restarting a deployment once a docker image has been updated. Our cluster is not setup to automatically pull the new image and restart. Rather, we do it manually.
+    1. In the "Connection parameters" dropdown, select "Connection string"
 
-`kubectl rollout restart deployment/<desired-deployment>`
+    1. In the "User" dropdown, select the user for your desired deployment environment
 
-## Database migration
+    1. In the "Database/Pool" dropdown, select the database name for your desired deployment
+    environment
 
-### Adding a new Database migration script
+    1. Click "Copy" to copy the connection string to your clipboard
 
-This strategy assumes that each migration script in the db directory has a unique positive integer migration ID, and that each script's migration ID is exactly one greater than the previous script's migration ID. Otherwise, the scripts will not run.
+    1. Paste the connection string into the `PG_CONNECTION_STRING` field in your local `ODetect-Backend-Local/.env` file
 
-1. Copy `db/000-template.sql` and name it with the desired migration ID (padded with zeros) followed by a short description of what it does eg. `005-newColumn.sql`
+
+## Building a Docker image and pushing to the registry
+
+To be able to push images to the DO container registry, you will need to be authenticated as a member of our DO ODetect project. 
+
+Docker commands are run locally.
+
+1. Install Docker locally (https://docs.docker.com/get-docker/ and, if you are running Linux,
+https://docs.docker.com/engine/install/linux-postinstall/)
+
+1. Install and configure `doctl` with your API token (https://www.digitalocean.com/docs/apis-clis/doctl/how-to/install/)
+
+1. Build the Docker image, tag it, and push it to the registry
+
+    - If you are deploying to **dev**, run
+        ```
+        ./build_dev.sh
+        ```
+
+    - If you are deploying to **prod**, run
+        ```
+        ./build_prod.sh
+        ```
+
+
+## Deploying a Docker image
+
+Our cluster is not setup to automatically pull the new image and restart. Rather, we do it manually.
+
+1. SSH onto the ODetect Admin Server
+
+1. Restart the deployment
+
+    - If you are deploying to **dev**, run
+        ```
+        kubectl rollout restart deployment/odetect-dev
+        ```
+
+    - If you are deploying to **prod**, run
+        ```
+        kubectl rollout restart deployment/odetect
+        ```
+
+# ODetect Admin Server
+
+The ODetect Admin server is used for both **dev** and **prod**.
+
+To ssh onto the `odetect-admin` server
+```
+ssh brave@odetect-admin.brave.coop
+```
+
+The `sudo` password is on 1Password --> ODetect Credentials --> Login - odetect-admin 
+(cluster management) server.
+
+## Adding public keys to the admin server
+
+Access is restricted to machines whose public key has been added to the server's allowlist.
+
+1. Using an account that can, SSH onto the `odetect-admin` server
+
+1. Paste the user's public key onto a new line on the `~/.ssh/authorized_keys` file from a machine that is already capable of accessing the server
+
+
+# Database Migration
+
+## Adding a new Database migration script
+
+This strategy assumes that each migration script in the `db` directory has a unique positive integer migration ID, and that each script's migration ID is exactly one greater than the previous script's migration ID. Otherwise, the scripts will not run.
+
+1. Copy `db/000-template.sql` and name it with the desired migration ID (padded with zeros) followed by a short description of what it does e.g. `005-newColumn.sql`
 
 2. Update the file with its migration ID and the new migration scripts
 
-### Deploying the migration scripts
+## Deploying the migration scripts
 
-1. Pull the branch with the migration script to be applied onto the remote ODetect-Admin server (which is permitted to access the database)
+1. Copy the "Flag" connection details from Digital Ocean for the DB you want to migrate
 
-2. Run the postgres connection string command and pass the `db/00x-migration-script.sql` file to it with the `-f` flag
+1. Run
+    ```
+    <connection details from DO> -f <migration script file to deploy>
+    ```
 
-The connection string looks like
+## Viewing which migration scripts have been run and when
 
-``` postgres
-PGPASSWORD=password psql -U user -h databaseAddress -p 25060 -d databaseName --set=sslmode=require
-```
+1. Copy the "Flag" connection details from Digital Ocean for the DB you want to check
 
-This connection string may be copied from digital ocean.
+1. Run
+    ``` postgres
+    SELECT *
+    FROM migrations
+    ORDER BY id;
+    ```
 
-To view which migration scripts have been run and when
-
-``` postgres
-SELECT *
-FROM migrations
-ORDER BY id;
-```
-
-## Databases currently used
-
-| Deployment        | Name            | User    | Database            |
-|-------------------|-----------------|---------|---------------------|
-| Production (prod) | odetect-db      | doadmin | backend-replacement |
-| Development (dev) | odetect-db-fork | doadmin | defaultdb           |
 
 ## Useful commands
 
 ### Kubernetes
 
-- Entering a pod's shell
+Kubernetes commands are run on the ODetect Admin server.
 
-`kubectl exec -i -t <my-pod>  -- /bin/bash`
+- Enter a pod's shell
+    ```
+    kubectl exec -i -t <my-pod>  -- /bin/bash
+    ```
 
-- Getting logs from a pod
-
-`kubectl logs my-pod -f` (to follow)
+- Get and follow logs from a pod
+    ```
+    kubectl logs <my-pod> -f
+    ```
