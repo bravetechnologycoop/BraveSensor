@@ -16,7 +16,7 @@ npm install
 npm run test
 ```
 
-The ests run automatically on Travis on every push to GitHub and every time a pull request is created.
+The tests run automatically on Travis on every push to GitHub and every time a pull request is created.
 
 
 # Dev or Prod Deployment
