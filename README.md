@@ -252,5 +252,10 @@ Kubernetes commands are run on the ODetect Admin server.
 
 - Get and follow logs from a pod
     ```
-    kubectl logs <my-pod> -f
+    kubectl logs -f <my-pod>
+    ```
+
+- Get the SHA of the deployed container
+    ```
+    kubectl get pods -o jsonpath="{..imageID}" <my-pod>
     ```
