@@ -13,11 +13,10 @@ const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://1e7d418731ec4bf99cb2405ea3e9b9fc@o248765.ingest.sentry.io/3009454' });
-require('dotenv').config();
 const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
-const { BraveAlerter, AlertSession, ALERT_STATE, helpers } = require('brave-alert-lib')
+const BraveAlerterConfigurator = require('./BraveAlerterConfigurator.js');
+const ioSocket = require('./ioSocket.js')
+const helpers = require('brave-alert-lib').helpers
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
@@ -39,7 +38,7 @@ setInterval(async function (){
     locationsArray.push(locationTable[i].locationid)
   }
   locationsArray;
-  io.sockets.emit('getLocations', {data: locationsArray});
+  ioSocket.emitGetLocations(locationsArray)
   for(let i = 0; i < locationsArray.length; i++){
     await checkHeartbeat(locationsArray[i])
   }
@@ -72,102 +71,8 @@ let CHATBOTSTARTSTATES = [
   STATE.SUSPECTED_OD
 ];
 
-const incidentTypes = [
-    'No One Inside',
-    'Person responded',
-    'Overdose',
-    'None of the above'
-]
-
-const incidentTypeKeys = ['1', '2', '3', '4']
-
-async function buildAlertSession(session) {
-    let locationData = await db.getLocationData(session.locationid)
-
-    let alertSession = new AlertSession(
-        session.sessionid,
-        session.chatbot_state,
-        session.incidenttype,
-        undefined,
-        `An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`,
-        locationData.phonenumber,
-        incidentTypeKeys,
-        incidentTypes,
-    )
-
-    return alertSession
-}
-
-async function getAlertSession(sessionId) {
-    let session = await db.getSessionWithSessionId(sessionId)
-    
-    return await buildAlertSession(session)
-}
-
-async function getAlertSessionByPhoneNumber(phoneNumber) {
-    let session = await db.getMostRecentSessionPhone(phoneNumber)
-    
-    return await buildAlertSession(session)
-}
-
-async function alertSessionChangedCallback(alertSession) {
-    const incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
-    await db.saveChatbotSession(alertSession.alertState, incidentType, alertSession.sessionId)
-
-    const session = await db.getSessionWithSessionId(alertSession.sessionId)
-    const locationId = session.locationid
-
-    if (alertSession.alertState === ALERT_STATE.COMPLETED) {
-        // Closes the session, sets the session state to RESET
-        if (await db.closeSession(locationId)) { // Adds the end_time to the latest open session from the LocationID
-            helpers.log(`Session at ${locationId} was closed successfully.`)
-            io.sockets.emit('sessiondata', {data: session}) // Sends currentSession data with end_time which will close the session in the frontend
-            start_times[locationId] = null // Stops the session timer for this location
-        } else {
-            helpers.log(`Attempted to close session but no open session was found for ${locationId}`)
-        }
-
-        redis.addStateMachineData('Reset', locationId)
-    }
-}
-
-function getReturnMessage(fromAlertState, toAlertState) {
-    let returnMessage
-
-    switch(fromAlertState) {
-        case ALERT_STATE.STARTED:
-        case ALERT_STATE.WAITING_FOR_REPLY:
-            returnMessage = 'Please respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above'
-            break
-        
-        case ALERT_STATE.WAITING_FOR_CATEGORY:
-            if (toAlertState === ALERT_STATE.WAITING_FOR_CATEGORY) {
-                returnMessage = 'Invalid category, please try again\n\nPlease respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above'
-            } else if (toAlertState === ALERT_STATE.COMPLETED) {
-                returnMessage = 'Thank you!'
-            }
-            break
-
-        case ALERT_STATE.COMPLETED:
-            returnMessage = 'Thank you'
-            break
-
-        default:
-            returnMessage = 'Error: No active chatbot found'
-            break
-    }
-
-    return returnMessage
-}
-
 // Configure BraveAlerter
-const braveAlerter = new BraveAlerter(
-    getAlertSession,
-    getAlertSessionByPhoneNumber,
-    alertSessionChangedCallback,
-    false,
-    getReturnMessage,
-)
+const braveAlerter = (new BraveAlerterConfigurator(start_times)).createBraveAlerter()
 
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of value
@@ -540,22 +445,6 @@ async function handleSensorRequest(currentLocationId){
   }
 }
 
-// Web Socket connection to Frontend
-io.on('connection', (socket) => {
-
-    socket.on('getHistory', async (location, entries) => {
-        let sessionHistory = await db.getHistoryOfSessions(location, entries);
-        io.sockets.emit('sendHistory', {data: sessionHistory});
-    });
-    
-    socket.emit('getLocations', {
-      data: locations
-    })
-    socket.emit('Hello', {
-        greeting: "Hello ODetect Frontend"
-    });
-});
-
 async function fallbackMessage(sessionid) {
   helpers.log("Fallback message being sent");
   let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
@@ -628,7 +517,7 @@ helpers.log('brave server listening on port 8080')
 
 
 // Socket.io server connection start
-io.listen(server);
+ioSocket.listen(server)
 
 module.exports.server = server;
 module.exports.db = db;

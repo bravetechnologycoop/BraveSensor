@@ -1,14 +1,22 @@
-require('dotenv').config();
+// Third-party dependencies
 const Redis = require("ioredis");
+
+// In-house dependencies
+const helpers = require('brave-alert-lib').helpers
 const radarData = require('./radarData.js');
 const doorData = require('./doorData.js');
 const stateData = require('./stateData.js');
-const client = new Redis(6379, process.env.REDIS_CLUSTER_IP); // uses defaults unless given configuration object
 
+// Set up Redis client
+let client
+if (!helpers.isTestEnvironment()) {
+    client = new Redis(6379, helpers.getEnvVar('REDIS_CLUSTER_IP')) // uses defaults unless given configuration object
 
-client.on("error", function(error) {
-  console.error(error);
-});
+    client.on("error", function(error) {
+      console.error(error);
+    });
+}
+
  
 async function getXethruWindow(locationID, startTime, endTime, windowLength){
    let rows = await client.xrevrange('xethru:'+locationID,startTime, endTime, 'count', windowLength);

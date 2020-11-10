@@ -1,11 +1,16 @@
+// Third-party dependencies
 const pg = require('pg')
-const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Sentry = require('@sentry/node');
-Sentry.init({ dsn: 'https://45324fe512564e858dcb6fe994761e93@o248765.ingest.sentry.io/3011388' });
-require('dotenv').config();
-const helpers = require('brave-alert-lib').helpers
 
-pgconnectionString = process.env.PG_CONNECTION_STRING
+// In-house dependencies
+const helpers = require('brave-alert-lib').helpers
+const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
+
+// Setup Sentry
+Sentry.init({ dsn: 'https://45324fe512564e858dcb6fe994761e93@o248765.ingest.sentry.io/3011388' });
+
+// Setup Postgres
+pgconnectionString = helpers.getEnvVar('PG_CONNECTION_STRING')
 
 const pool = new pg.Pool({
   connectionString: pgconnectionString
