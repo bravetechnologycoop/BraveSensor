@@ -83,7 +83,7 @@ async function getLatestXeThruSensordata(locationid){
     try{
         const results = await pool.query("SELECT * FROM xethru WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '6 hours') ORDER BY published_at DESC LIMIT 1", [locationid]);
         if(results == undefined){
-            console.log('Error: Missing Xethru Data')
+            helpers.log('Error: Missing Xethru Data')
             return null;
         }
         else{
@@ -91,7 +91,7 @@ async function getLatestXeThruSensordata(locationid){
         }
     }
     catch(e){
-        console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
+        helpers.log(`Error running the getLatestXeThruSensordata query: ${e}`);
     }
 }
 
@@ -106,7 +106,7 @@ async function getRecentXeThruSensordata(locationid){
         }
     }
     catch(e){
-        console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
+        helpers.log(`Error running the getLatestXeThruSensordata query: ${e}`);
     }
 }
 
@@ -122,7 +122,7 @@ async function getLatestDoorSensordata(locationid){
         }
     }
     catch(e){
-        console.log(`Error running the getLatestDoorSensordata query: ${e}`);
+        helpers.log(`Error running the getLatestDoorSensordata query: ${e}`);
     }
 }
 
@@ -138,7 +138,7 @@ async function getLatestLocationStatesdata(locationid){
         }
     }
     catch(e){
-        console.log(`Error running the getLatestLocationStatesdata query: ${e}`);
+        helpers.log(`Error running the getLatestLocationStatesdata query: ${e}`);
     }
 }
 
@@ -154,7 +154,7 @@ async function getRecentStateHistory(locationid){
         }
     }
     catch(e){
-        console.log(`Error running the getRecentStateHistory query: ${e}`);
+        helpers.log(`Error running the getRecentStateHistory query: ${e}`);
     }
 }
 
@@ -171,7 +171,7 @@ async function getMostRecentSession(locationid) {
         }
     }
     catch(e){
-        console.log(`Error running the getMostRecentSession query: ${e}`);
+        helpers.log(`Error running the getMostRecentSession query: ${e}`);
     }
 }
 
@@ -189,7 +189,7 @@ async function getSessionWithSessionId(sessionid){
         }
     }
     catch(e){
-        console.log(`Error running the getSessionWithSessionId query: ${e}`);
+        helpers.log(`Error running the getSessionWithSessionId query: ${e}`);
     }
 }
 
@@ -206,7 +206,7 @@ async function getMostRecentSessionPhone(twilioPhone){
         }
     }
     catch(e){
-        console.log(`Error running the getMostRecentSessionPhone query: ${e}`);
+        helpers.log(`Error running the getMostRecentSessionPhone query: ${e}`);
     }
 }
 
@@ -222,7 +222,7 @@ async function getHistoryOfSessions(location, numEntries) {
         }
     }
     catch(e) {
-        console.log(`Error running the getHistoryOfSessions query: ${e}`);
+        helpers.log(`Error running the getHistoryOfSessions query: ${e}`);
     }
 }
 
@@ -238,7 +238,7 @@ async function getLastUnclosedSession(locationid) {
         }
     }
     catch(e){
-        console.log(`Error running the getLastUnclosedSession query: ${e}`);
+        helpers.log(`Error running the getLastUnclosedSession query: ${e}`);
     }
 }
 
@@ -251,12 +251,12 @@ async function createSession(phone, locationid, state) {
 
 // Closes the session by updating the end time
 async function closeSession(location) {
-    console.log("db.closeSession is being called");
+    helpers.log("db.closeSession is being called");
     const session = await getMostRecentSession(location);
     if (session != undefined){ //Check if session exists for this location
         if(session.end_time == null){ // Check if latest session is open
             await updateSessionEndTime(session.sessionid); //
-            console.log("session has been closed by db.closeSession");
+            helpers.log("session has been closed by db.closeSession");
             return true;
         }
         else{
@@ -275,7 +275,7 @@ async function updateSessionEndTime(sessionid) {
         await pool.query("UPDATE sessions SET duration = TO_CHAR(age(end_time, start_time),'HH24:MI:SS') WHERE sessionid = $1", [sessionid]); // Sets the duration to the difference between the end and start time
     }
     catch(e){
-        console.log(`Error running the updateSessionEndTime query: ${e}`);
+        helpers.log(`Error running the updateSessionEndTime query: ${e}`);
     }
 }
 
@@ -291,7 +291,7 @@ async function updateSessionState(sessionid, state) {
         }
     }
     catch(e){
-        console.log(`Error running the updateSessionState query: ${e}`);
+        helpers.log(`Error running the updateSessionState query: ${e}`);
     }
 }
 
@@ -307,7 +307,7 @@ async function updateSentAlerts(location, sentalerts) {
         }
     }
     catch(e){
-        console.log(`Error running the updateSentAlerts query ${e}`);
+        helpers.log(`Error running the updateSentAlerts query ${e}`);
     }
 }
 
@@ -322,7 +322,7 @@ async function updateSessionResetDetails(sessionid, notes, state) {
         }
     }
     catch(e){
-        console.log(`Error running the updateSessionResetDetails query: ${e}`);
+        helpers.log(`Error running the updateSessionResetDetails query: ${e}`);
     }
 }
 
@@ -339,7 +339,7 @@ async function updateSessionStillCounter(stillcounter, sessionid,locationid) {
         }
     }
     catch(e){
-        console.log(`Error running the updateSessionStillCounter query: ${e}`);
+        helpers.log(`Error running the updateSessionStillCounter query: ${e}`);
     }
 }
 
@@ -401,7 +401,7 @@ async function isOverdoseSuspected(xethru, session, location) {
             await pool.query("UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3", [OD_FLAG_STATE.OVERDOSE, alertReason, session.sessionid]);
         }
         catch(e) {
-            console.log(`Error running the update od_flag query: ${e}`);
+            helpers.log(`Error running the update od_flag query: ${e}`);
         }
         return true;
     }
@@ -415,7 +415,7 @@ async function saveChatbotSession(chatbot) {
         await pool.query("UPDATE sessions SET chatbot_state = $1, incidenttype = $2, notes = $3 WHERE sessionid = $4", [chatbot.state, chatbot.incidentType, chatbot.notes, chatbot.id]);
     }
     catch(e) {
-        console.log(`Error running the saveChatbotSession query: ${e}`);
+        helpers.log(`Error running the saveChatbotSession query: ${e}`);
     }
 }
 
@@ -436,7 +436,7 @@ async function getLocationData(location) {
         }
     }
     catch(e){
-        console.log(`Error running the getLocationData query: ${e}`);
+        helpers.log(`Error running the getLocationData query: ${e}`);
     }
 
 }
@@ -455,7 +455,7 @@ async function getLocations() {
         }
     }
     catch(e) {
-        console.log(`Error running the getLocations query: ${e}`);
+        helpers.log(`Error running the getLocations query: ${e}`);
     }
 }
 
@@ -467,7 +467,7 @@ async function updateLocationData(deviceid, phonenumber, detection_min, detectio
         return results.rows[0]; 
     }
     catch(e) {
-        console.log(`Error running the updateLocationData query: ${e}`);
+        helpers.log(`Error running the updateLocationData query: ${e}`);
     }
 }
 
@@ -476,10 +476,10 @@ async function addLocationData(deviceid, phonenumber, detection_min, detection_m
     try {
         await pool.query("INSERT INTO locations(deviceid, phonenumber, detectionzone_min, detectionzone_max, sensitivity, noisemap, led, rpm_threshold, still_threshold, duration_threshold, mov_threshold, locationid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", 
             [deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location]);
-        console.log("New location inserted to Database");
+        helpers.log("New location inserted to Database");
     }
     catch(e) {
-        console.log(`Error running the addLocationData query: ${e}`);
+        helpers.log(`Error running the addLocationData query: ${e}`);
     }
 }
 
