@@ -17,6 +17,7 @@
     "@smartthings/smartapp": "^1.0.3",
     "axios": "^0.19.2",
     "body-parser": "*",
+    "brave-alert-lib": "https://github.com/bravetechnologycoop/brave-alert-lib#td-odetect-fixes",
     "cookie-parser": "^1.4.4",
     "cors": "^2.8.5",
     "dotenv": "^7.0.0",
