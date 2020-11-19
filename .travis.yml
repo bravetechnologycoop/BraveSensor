@@ -1,14 +1,26 @@
-language: node_js
-node_js: "node"
-
 # OS
 dist: xenial
 
-# install dependencies
-install:
-  - npm install
+matrix:
+  include:
+    - language: node_js
+      node_js: "node"
 
-# run unit tests
-script:
-  - npm run lint
-  - sudo env "PATH=$PATH" npm run test
+      # install dependencies
+      install:
+        - npm install
+
+      # run linter and tests
+      script:
+        - npm run lint
+        - sudo env "PATH=$PATH" npm run test
+
+      env:
+        - WEB_USERNAME_TEST=TravisDashboardUsername
+        - PASSWORD_TEST=TravisDashboardPassword
+        - SECRET_TEST=TravisCookieSecret
+        # TWILIO_SID_TEST
+        - secure: "lH2O66y+VFgHazVMXjf/7M1eJsXE6Dwha16f52vMLLha5aTyLxTxO0i0AGWk1ny5in07yAAQZzc0kGvEjRhCkOcrK1x2ptTyexqBv2Xebk9jhPXxZd6cOjbZTOQxCA6Q0jJRLwChs5duL98QlNPvSMqpce+byWKNQJjYp6R5kjbXuwuzYaX1Jd6CpYrx6vE+qMLzrMN69+2C/tq1mjlYwmjBpJLZhkDOqlEAGGLGt3fHVQ/E98WAHesq8Gs/+47vx2L74Gnk1aOge7pCOPchudRKY63bS9rfwKXcNLp87huxgFDfWsF3kpCcSk8IKiNFMjOKlXWTGH8sp8/Xyo4EqqOCKIBB+KsIVVLgd1IkWuTBx+JK57dd49xpi9Qy2dEQp5N9yp+vDElKvOqMtInmXDR7OMVLXIy6ji0uva1hI/4f3e6bMvDCFThx/bsZ+WimjU3+od3N7hJzDIDAwAWpzRHWOADHuDLPC6/CB5bEhIb+5aqdsthsO07wwCS1RkSBCTh69/95MHV9tE+9Tsm9dr0g31SA5VoT1seKhkY8tTLjZe+SWUOE8pQIWZx5mTUnqrAXwF98SSwFFUWOQIZlYy2/DhaGShEBVaGc21N0S1932qZq27XpueJIOZAd+PdSlT/KuFCUuJlUzEUjdsPDdCOQ3hKGM0Pi+qKixbQZS+g="
+        # TWILIO_TOKEN_TEST
+        - secure: "a31FfNN+9dDntu04vjEovBk/IVSyDW/hGutpDgljJkvK+cWtvv+VyQXWgj8cdogipVbx4HD2iTLtFjG2xyOX5QVxfT89PxfT/B0Al8jl+ad7diiKedGHqXMMd44Tudx4lJs6ZCh9EZ+yyfpQiceqXeFV9gY3H9Cj9qR2PAPBZ9G5Wv02V0pT5pDr3b5anRkOEERUqSrcENFZs1iUOVAVQhqb6XNLXiXaUQk1NQORbpQmGYBOs+JCn+z8okGdtQ+9MM8F8dc/Lj53P0PGGyTEqjusPE6zd4esEd51Z5CFVves75YVH1+KXtbs2GDGoZHsyXPyjV5uaVnSKtCmdRNZC6efzsqF8miUpQsgWQgr3z6LGIPbrpnS3zz/laH31Ees5swrvMc1R7R6e3n0hoODOb6nL0Yd2qUx3IfD5/ZujpIu6JRIUr0Xbrdgq1gjh3v8RfCH2tC0ZlrcRhBsglTKCqmZCcmv+Q7Ykyo4z1C0tFXPeLJNsobK+OLyQsGOl2Cdr0R1F9CsWJgj6OPs8IVxiWhk1TiMzNWrvEGg1R411UKee6Wq/qRnG6VgfbzdRrA5rl+oam/OHjssPFQJ+79aKcR1huIGpc4FouvzwuAI8+6YLUDMsC2yrQBMCqzBoQyfaizxk1R/167HVwTk0igY1B8SB3v3bjEkiudBKWO1mwE="
+

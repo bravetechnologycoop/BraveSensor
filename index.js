@@ -14,10 +14,10 @@ const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://1e7d418731ec4bf99cb2405ea3e9b9fc@o248765.ingest.sentry.io/3009454' });
-require('dotenv').config();
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
+const helpers = require('brave-alert-lib').helpers
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
@@ -77,10 +77,6 @@ let CHATBOTSTARTSTATES = [
     STATE.SUSPECTED_OD
 ];
 
-function getEnvVar(name) {
-    return process.env.NODE_ENV === 'test' ? process.env[name + '_TEST'] : process.env[name];
-}
-
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of value
 app.use(bodyParser.json());
@@ -94,7 +90,7 @@ app.use(cookieParser());
 // initialize express-session to allow us track the logged-in user across sessions.
 app.use(session({
     key: 'user_sid',
-    secret: getEnvVar('SECRET'),
+    secret: helpers.getEnvVar('SECRET'),
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -138,7 +134,7 @@ app.route('/login')
         var username = req.body.username,
             password = req.body.password;
 
-        if ((username === getEnvVar('WEB_USERNAME')) && (password === getEnvVar('PASSWORD'))) {
+        if ((username === helpers.getEnvVar('WEB_USERNAME')) && (password === helpers.getEnvVar('PASSWORD'))) {
             req.session.user = username;
             res.redirect('/');
         }
@@ -158,8 +154,8 @@ app.get('/logout', (req, res) => {
 });
 
 // Set up Twilio
-const accountSid = process.env.TWILIO_SID;
-const authToken = process.env.TWILIO_TOKEN;
+const accountSid = helpers.getEnvVar('TWILIO_SID')
+const authToken = helpers.getEnvVar('TWILIO_TOKEN')
 
 const twilioClient = require('twilio')(accountSid, authToken);
 const MessagingResponse = require('twilio').twiml.MessagingResponse;

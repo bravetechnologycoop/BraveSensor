@@ -2,8 +2,9 @@ const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://45324fe512564e858dcb6fe994761e93@o248765.ingest.sentry.io/3011388' });
-require('dotenv').config();
-let pgconnectionString = process.env.PG_CONNECTION_STRING
+const helpers = require('brave-alert-lib').helpers
+
+let pgconnectionString = helpers.getEnvVar('PG_CONNECTION_STRING')
 
 const pool = new pg.Pool({
     connectionString: pgconnectionString

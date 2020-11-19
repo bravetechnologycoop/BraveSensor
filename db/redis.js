@@ -3,7 +3,9 @@ const Redis = require("ioredis");
 const radarData = require('./radarData.js');
 const doorData = require('./doorData.js');
 const stateData = require('./stateData.js');
-const client = new Redis(6379, process.env.REDIS_CLUSTER_IP); // uses defaults unless given configuration object
+const helpers = require('brave-alert-lib').helpers
+
+const client = new Redis(6379, helpers.getEnvVar('REDIS_CLUSTER_IP')) // uses defaults unless given configuration object
 
 
 client.on("error", function(error) {

@@ -16,7 +16,7 @@ npm install
 npm run test
 ```
 
-The ests run automatically on Travis on every push to GitHub and every time a pull request is created.
+The tests run automatically on Travis on every push to GitHub and every time a pull request is created.
 
 
 # Dev or Prod Deployment
@@ -237,6 +237,22 @@ This strategy assumes that each migration script in the `db` directory has a u
     FROM migrations
     ORDER BY id;
     ```
+
+
+# How to add or change an encrypted Travis environment variable
+
+Reference: https://docs.travis-ci.com/user/environment-variables/#encrypting-environment-variables
+
+1. Download the Travis CLI `brew install travis` or `gem install travis`
+
+1. cd to anywhere in this repo
+
+1. For a given `VAR_NAME` that you want to have value `secret_value`, run
+   `travis encrypt --pro VAR_NAME=secret_value`
+   which will ask for your GitHub username and password and then
+   output your encrypted variable
+
+1. Copy the encrypted variable into `.travis.yml`
 
 
 ## Useful commands
