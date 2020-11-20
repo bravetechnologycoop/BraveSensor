@@ -10,7 +10,7 @@ const { ALERT_STATE, AlertSession, helpers } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../BraveAlerterConfigurator.js')
 const db = require('../db/db.js')
 const redis = require('../db/redis.js')
-const IoSocketConfigurator = require('./../IoSocketConfigurator.js')
+const ioSockets = require('../ioSockets.js')
 
 // Configure Chai
 chai.use(sinonChai)
@@ -58,8 +58,7 @@ describe('BraveAlerterConfigurator', () => {
             this.closeSessionStub = sinon.stub(db, 'closeSession')
             sinon.stub(redis, 'addStateMachineData')
             sinon.spy(helpers, 'log')
-            this.testIoSocketConfigurator = new IoSocketConfigurator()
-            sinon.stub(this.testIoSocketConfigurator, 'emitSessionData')
+            sinon.stub(ioSockets, 'emitSessionData')
 
             this.testSessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
             this.testLocationId = 'TEST_LOCATION'
@@ -71,7 +70,7 @@ describe('BraveAlerterConfigurator', () => {
         afterEach(() => {
             helpers.log.restore()
             redis.addStateMachineData.restore()
-            this.testIoSocketConfigurator.emitSessionData.restore()
+            ioSockets.emitSessionData.restore()
             db.closeSession.restore()
             db.getSessionWithSessionId.restore()
             db.saveChatbotSession.restore()
@@ -79,7 +78,7 @@ describe('BraveAlerterConfigurator', () => {
 
         describe('if given only a non-COMPLETE chatbotState', async () => {
             beforeEach(async () => {
-                const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes, this.testIoSocketConfigurator)
+                const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
                 const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
                 await braveAlerter.alertSessionChangedCallback(new AlertSession(
                     this.testSessionId,
@@ -96,7 +95,7 @@ describe('BraveAlerterConfigurator', () => {
             })
 
             it('should not emit the session data', () => {
-                expect(this.testIoSocketConfigurator.emitSessionData).not.to.be.called
+                expect(ioSockets.emitSessionData).not.to.be.called
             })
 
             it('should not update the startTimes', () => {
@@ -112,7 +111,7 @@ describe('BraveAlerterConfigurator', () => {
             beforeEach(async () => {
                 this.closeSessionStub.returns(true)
 
-                const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes, this.testIoSocketConfigurator)
+                const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
                 const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
                 await braveAlerter.alertSessionChangedCallback(new AlertSession(
                     this.testSessionId,
@@ -130,7 +129,7 @@ describe('BraveAlerterConfigurator', () => {
             })
 
             it('should emit the session data so that it can be closed', () => {
-                expect(this.testIoSocketConfigurator.emitSessionData).to.be.calledWith({
+                expect(ioSockets.emitSessionData).to.be.calledWith({
                     id: this.testSessionId,
                     locationid: this.testLocationId
                 })
@@ -153,7 +152,7 @@ describe('BraveAlerterConfigurator', () => {
             beforeEach(async () => {
                 this.closeSessionStub.returns(false)
 
-                const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes, this.testIoSocketConfigurator)
+                const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
                 const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
                 await braveAlerter.alertSessionChangedCallback(new AlertSession(
                     this.testSessionId,
@@ -171,7 +170,7 @@ describe('BraveAlerterConfigurator', () => {
             })
 
             it('should not emit the session data', () => {
-                expect(this.testIoSocketConfigurator.emitSessionData).not.to.be.called
+                expect(ioSockets.emitSessionData).not.to.be.called
             })
 
             it('should not update the startTimes', () => {
@@ -191,7 +190,6 @@ describe('BraveAlerterConfigurator', () => {
     describe('getReturnMessage', () => {
         before(() => {
             const braveAlerterConfigurator = new BraveAlerterConfigurator()
-            this.testIoSocketconfigurator = new IoSocketConfigurator()
             const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
             this.alertStateMachine = braveAlerter.alertStateMachine
         })

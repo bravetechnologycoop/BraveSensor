@@ -15,7 +15,7 @@ const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://1e7d418731ec4bf99cb2405ea3e9b9fc@o248765.ingest.sentry.io/3009454' });
 const app = express();
 const BraveAlerterConfigurator = require('./BraveAlerterConfigurator.js');
-const IoSocketConfigurator = require('./IoSocketConfigurator.js')
+const ioSockets = require('./ioSockets.js')
 const helpers = require('brave-alert-lib').helpers
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
@@ -31,10 +31,10 @@ var resetDiscrepancies = [];
 var start_times = {};
 
 // Web Socket connection to Frontend
-const ioSocketConfigurator = new IoSocketConfigurator(locations)
+ioSockets.connect(locations)
 
 // Configure braveAlerter
-const braveAlerter = (new BraveAlerterConfigurator(start_times, ioSocketConfigurator)).createBraveAlerter()
+const braveAlerter = (new BraveAlerterConfigurator(start_times)).createBraveAlerter()
 
 // Update the list of locations every minute
 setInterval(async function (){
@@ -44,7 +44,7 @@ setInterval(async function (){
         locationsArray.push(locationTable[i].locationid)
     }
     locationsArray;
-    ioSocketConfigurator.emitGetLocations(locationsArray)
+    ioSockets.emitGetLocations(locationsArray)
     for(let i = 0; i < locationsArray.length; i++){
         await checkHeartbeat(locationsArray[i])
     }
@@ -487,7 +487,7 @@ helpers.log('brave server listening on port 8080')
 
 
 // Socket.io server connection start
-ioSocketConfigurator.listen(server)
+ioSockets.listen(server)
 
 module.exports.server = server;
 module.exports.db = db;

@@ -2,6 +2,7 @@
 const { BraveAlerter, AlertSession, ALERT_STATE, helpers } = require('brave-alert-lib')
 const db = require('./db/db.js')
 const redis = require('./db/redis.js')
+const ioSockets = require('./ioSockets.js')
 
 const incidentTypes = [
     'No One Inside',
@@ -13,9 +14,8 @@ const incidentTypes = [
 const incidentTypeKeys = ['1', '2', '3', '4']
 
 class BraveAlerterConfigurator {
-    constructor(startTimes, ioSocketConfigurator) {
+    constructor(startTimes) {
         this.startTimes = startTimes
-        this.ioSocketConfigurator = ioSocketConfigurator
     }
 
     createBraveAlerter() {
@@ -68,7 +68,7 @@ class BraveAlerterConfigurator {
             // Closes the session, sets the session state to RESET
             if (await db.closeSession(locationId)) { // Adds the end_time to the latest open session from the LocationID
                 helpers.log(`Session at ${locationId} was closed successfully.`)
-                this.ioSocketConfigurator.emitSessionData(session)
+                ioSockets.emitSessionData(session)
                 this.startTimes[locationId] = null // Stops the session timer for this location
             } else {
                 helpers.log(`Attempted to close session but no open session was found for ${locationId}`)
