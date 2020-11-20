@@ -16,7 +16,7 @@ app.post('/alert', async (req) => {
     var responderPhone = req.body.To
     var installationPhone = req.body.From;
     //Complete the Chatbot
-    axios.post('/sms', {
+    axios.post('/alert/sms', {
         To: installationPhone,
         From: responderPhone,
         Body: '4'

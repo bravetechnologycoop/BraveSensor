@@ -1,9 +1,15 @@
+// Third-party dependencies
 const pg = require('pg')
-const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Sentry = require('@sentry/node');
-Sentry.init({ dsn: 'https://45324fe512564e858dcb6fe994761e93@o248765.ingest.sentry.io/3011388' });
-const helpers = require('brave-alert-lib').helpers
 
+// In-house dependencies
+const helpers = require('brave-alert-lib').helpers
+const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
+
+// Setup Sentry
+Sentry.init({ dsn: 'https://45324fe512564e858dcb6fe994761e93@o248765.ingest.sentry.io/3011388' });
+
+// Setup postgres
 let pgconnectionString = helpers.getEnvVar('PG_CONNECTION_STRING')
 
 const pool = new pg.Pool({
@@ -410,18 +416,19 @@ async function isOverdoseSuspected(xethru, session, location) {
 }
 
 // Saves the variables in the chatbot object into the sessions table
-async function saveChatbotSession(chatbot) {
+async function saveChatbotSession(chatbotState, incidentType, sessionid) {
     try {
-        await pool.query("UPDATE sessions SET chatbot_state = $1, incidenttype = $2, notes = $3 WHERE sessionid = $4", [chatbot.state, chatbot.incidentType, chatbot.notes, chatbot.id]);
+        if (chatbotState) {
+            pool.query("UPDATE sessions SET chatbot_state = $1 WHERE sessionid = $2", [chatbotState, sessionid])
+        }
+
+        if (incidentType) {
+            pool.query("UPDATE sessions SET incidenttype = $1 WHERE sessionid = $2", [incidentType, sessionid])
+        }
     }
     catch(e) {
         helpers.log(`Error running the saveChatbotSession query: ${e}`);
     }
-}
-
-// Sends the initial twilio message to start the chatbot once an overdose case has been detected
-async function startChatbotSessionState(session) {
-    await pool.query("UPDATE sessions SET chatbot_state = $1 WHERE sessionid = $2", ['Started', session.sessionid]);
 }
 
 // Retrieves the data from the locations table for a given location
@@ -506,7 +513,6 @@ module.exports = {
     updateSessionResetDetails,
     closeSession,
     saveChatbotSession,
-    startChatbotSessionState,
     getMostRecentSessionPhone,
     getLocationData,
     getLocations,

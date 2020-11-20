@@ -72,11 +72,16 @@ async function getLatestLocationStatesData(locationid){
     return singleitem[0];
 }
 
+function disconnect() {
+    client.disconnect()
+}
+
 module.exports = {
     addDoorSensorData,
     addDoorTestSensorData,
     addStateMachineData,
     addXeThruSensorData,
+    disconnect,
     getXethruWindow,
     getStatesWindow,
     getLatestDoorSensorData,
