@@ -392,7 +392,7 @@ async function handleSensorRequest(currentLocationId){
                         sessionId: latestSession.sessionid,
                         toPhoneNumber: location.phonenumber,
                         fromPhoneNumber: location.twilio_number,
-                        message: `This is a ${latestSession.alert_reason} alert. Please check on the bathroom. Please respond with 'ok' once you have checked on it.`,
+                        message: `This is a ${latestSession.alert_reason} alert. Please check on the bathroom at ${location.location_human}. Please respond with 'ok' once you have checked on it.`,
                         reminderTimeoutMillis: location.unresponded_timer,
                         fallbackTimeoutMillis: location.unresponded_session_timer,
                         reminderMessage: `This is a reminder to check on the bathroom`,
