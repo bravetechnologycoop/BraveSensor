@@ -33,6 +33,14 @@ These steps need to be re-run everytime there is a change in `ODetect-Frontend-L
 
 1. Clone `ODetect-Frontend-Local` on your local machine
 
+1. Ensure the correct URL is being used in `src/app/history/history.components.ts` in **three** places
+
+   - If you are deploying to **dev**, ensure that the route used in all calls to `io('<route>')` is
+     `https://dev.odetect.brave.coop/`
+
+   - If you are deploying to **prod**, ensure that the route used in all calls to `io('<route>')` is
+     `https://sensors.odetect.brave.coop/`
+
 1. In the `ODetect-Frontend-Local` folder, run
     ```
     npm install
@@ -91,7 +99,7 @@ These steps need to be re-run anytime the Redis deployment changes.
 
     1. Run
     ```
-    kubectl get pods -o wide
+    kubectl get services
     ```
 
 1. If there is no redis deployment for the environment you are trying to deploy to, 
@@ -112,7 +120,7 @@ create a new deployment from a manifest by
             kubectl apply -f redis-deployment.yaml
             ```
 
-1. If there already is a redis deployment for the environment you are trying to deploy to(`redis-dev` for **dev** or `redis-master` for **prod**), copy the value in its `IP` colmnn 
+1. If there already is a redis deployment for the environment you are trying to deploy to(`redis-dev` for **dev** or `redis-master` for **prod**), copy the value in its `CLUSTER-IP` colmnn 
 into the `REDIS_CLUSTER_IP` field in your local `ODetect-Backend-Local/.env` file
 
 ### DB connection string
