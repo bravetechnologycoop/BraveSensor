@@ -1,12 +1,15 @@
 const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
-const Sentry = require('@sentry/node');
-Sentry.init({ dsn: 'https://45324fe512564e858dcb6fe994761e93@o248765.ingest.sentry.io/3011388' });
 require('dotenv').config();
-let pgconnectionString = process.env.PG_CONNECTION_STRING
+const {helpers} = require('brave-alert-lib')
 
 const pool = new pg.Pool({
-    connectionString: pgconnectionString
+    host: helpers.getEnvVar('PG_HOST'),
+    port: helpers.getEnvVar('PG_PORT'),
+    user: helpers.getEnvVar('PG_USER'),
+    database: helpers.getEnvVar('PG_USER'),
+    password: helpers.getEnvVar('PG_PASSWORD'),
+    ssl: true
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -21,147 +24,29 @@ pool.on('error', (err) => {
 
 // GET all XeThru data
 
-const getXethruSensordata = (request, response) => {
-    pool.query('SELECT * FROM xethru ORDER BY published_at', (error, results) => {
-        if (error) {
-            throw error
-        }
-        response.status(200).json(results.rows);
-    })
+async function beginTransaction() {
+    let client = await pool.connect()
+    await client.query("BEGIN")
+    await client.query("LOCK TABLE sessions, locations, migrations")
+    return client
 }
 
-
-// POST new XeThru data
-const addXeThruSensordata = (request, response) => {
-    const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = request.body;
-
-    pool.query('INSERT INTO xethru (deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s], (error, results) => {
-        if (error) {
-            throw error
-        }
-        response.status(200).json(results.rows)
-    })
-}
-
-// POST new door Test data
-const addDoorTestSensordata = (request, response) => {
-    const {deviceid, locationid, devicetype, signal} = request.body;
-
-    pool.query('INSERT INTO door_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error, results) => {
-        if (error) {
-            throw error
-        }
-        response.status(200).json(results.rows)
-    })
-}
-
-// The following function handle different database queries:
-
-
-// INSERT door sensor data
-const addDoorSensordata = (deviceid, locationid, devicetype, signal) => {
-    pool.query('INSERT INTO door_sensordata (deviceid, locationid, devicetype, signal) VALUES ($1, $2, $3, $4)', [deviceid, locationid, devicetype, signal], (error) => {
-        if (error) {
-            throw error
-        }
-    })
-}
-
-// INSERT new state data
-async function addStateMachineData(state, locationid){
-    await pool.query('INSERT INTO states (state, locationid) VALUES ($1, $2)', [state, locationid], (error) => {
-        if (error) {
-            throw error;
-        }
-    });
-}
-
-
-// SELECT latest XeThru sensordata entry
-async function getLatestXeThruSensordata(locationid){
-    try{
-        const results = await pool.query("SELECT * FROM xethru WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '6 hours') ORDER BY published_at DESC LIMIT 1", [locationid]);
-        if(results == undefined){
-            console.log('Error: Missing Xethru Data')
-            return null;
-        }
-        else{
-            return results.rows[0]; 
-        }
-    }
-    catch(e){
-        console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
-    }
-}
-
-async function getRecentXeThruSensordata(locationid){
-    try{
-        const results = await pool.query("SELECT * FROM xethru WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '6 hours') ORDER BY published_at DESC LIMIT 15", [locationid]);
-        if(results == undefined){
-            return null;
-        }
-        else{
-            return results.rows; 
-        }
-    }
-    catch(e){
-        console.log(`Error running the getLatestXeThruSensordata query: ${e}`);
-    }
-}
-
-// SELECT latest Door sensordata entry
-async function getLatestDoorSensordata(locationid){
-    try{
-        const results = await pool.query('SELECT * FROM door_sensordata WHERE locationid = $1 ORDER BY published_at DESC LIMIT 1', [locationid]);
-        if(results == undefined){
-            return null;
-        }
-        else{
-            return results.rows[0]; 
-        }
-    }
-    catch(e){
-        console.log(`Error running the getLatestDoorSensordata query: ${e}`);
-    }
-}
-
-// SELECT latest state entry for a certain locationid
-async function getLatestLocationStatesdata(locationid){
-    try{
-        const results = await pool.query("SELECT * FROM states WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY published_at DESC LIMIT 1", [locationid]);
-        if(results == undefined){
-            return null;
-        }
-        else{
-            return results.rows[0]; 
-        }
-    }
-    catch(e){
-        console.log(`Error running the getLatestLocationStatesdata query: ${e}`);
-    }
-}
-
-//Returns last 60 data points of state history 
-async function getRecentStateHistory(locationid){
-    try{
-        const results = await pool.query("SELECT * FROM states WHERE locationid = $1 AND published_at > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY published_at DESC LIMIT 60", [locationid]);
-        if(results == undefined){
-            return null;
-        }
-        else{
-            return results.rows; 
-        }
-    }
-    catch(e){
-        console.log(`Error running the getRecentStateHistory query: ${e}`);
-    }
+async function commitTransaction(client) {
+    await client.query("COMMIT")
+    client.release()
 }
 
 // Gets the most recent session data in the table for a specified location
-async function getMostRecentSession(locationid) {
+async function getMostRecentSession(locationid, client) {
     try{
-        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [locationid]);
-
+        let transactionMode = (typeof client !== 'undefined')
+        if(!transactionMode) {
+            client = await pool.connect()
+        }
+        const results = await client.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1", [locationid]);
+        if(!transactionMode) {
+            client.release()
+        }
         if(typeof results === 'undefined'){
             return null;
         }
@@ -225,6 +110,22 @@ async function getHistoryOfSessions(location, numEntries) {
     }
 }
 
+async function getAllSessionsFromLocation(location) {
+    try {
+        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1", [location]);
+
+        if(!results) {
+            return null;
+        }
+        else{
+            return results.rows;
+        }
+    }
+    catch(e) {
+        console.log(`Error running the getAllSessionsFromLocation query: ${e}`);
+    }
+}
+
 // Gets the last session data from an unclosed session for a specified location
 async function getLastUnclosedSession(locationid) {
     try{
@@ -242,36 +143,34 @@ async function getLastUnclosedSession(locationid) {
 }
 
 // Creates a new session for a specific location
-async function createSession(phone, locationid, state) {
-    const results = await pool.query("INSERT INTO sessions(phonenumber, locationid, state, od_flag) VALUES ($1, $2, $3, $4) RETURNING *", [phone, locationid, state, OD_FLAG_STATE.NO_OVERDOSE]);
-
-    return results.rows[0]; //getLastUnclosedSession(locationid);
+async function createSession(phone, locationid, state, client) {
+    try{
+        let transactionMode = (typeof client !== 'undefined')
+        if(!transactionMode) {
+            client = await pool.connect()
+        }    
+        const results = await client.query("INSERT INTO sessions(phonenumber, locationid, state, od_flag) VALUES ($1, $2, $3, $4) RETURNING *", [phone, locationid, state, OD_FLAG_STATE.NO_OVERDOSE]);
+        if(!transactionMode) {
+            client.release()
+        }    
+        return results.rows[0];    
+    }
+    catch(e){
+        console.log(`Error running the createSession query: ${e}`)
+    }
 }
 
 // Closes the session by updating the end time
-async function closeSession(location) {
-    console.log("db.closeSession is being called");
-    const session = await getMostRecentSession(location);
-    if (session != undefined){ //Check if session exists for this location
-        if(session.end_time == null){ // Check if latest session is open
-            await updateSessionEndTime(session.sessionid); //
-            console.log("session has been closed by db.closeSession");
+async function closeSession(sessionid) {
+            await updateSessionEndTime(sessionid); //
             return true;
-        }
-        else{
-            return false;
-        }
-    }
-    else{
-        return false;
-    }
 } 
 
 // Enters the end time of a session when it closes and calculates the duration of the session
 async function updateSessionEndTime(sessionid) {
     try{
         await pool.query("UPDATE sessions SET end_time = CURRENT_TIMESTAMP WHERE sessionid = $1", [sessionid]);
-        await pool.query("UPDATE sessions SET duration = TO_CHAR(age(end_time, start_time),'HH24:MI:SS') WHERE sessionid = $1", [sessionid]); // Sets the duration to the difference between the end and start time
+        pool.query("UPDATE sessions SET duration = TO_CHAR(age(end_time, start_time),'HH24:MI:SS') WHERE sessionid = $1", [sessionid]); // Sets the duration to the difference between the end and start time
     }
     catch(e){
         console.log(`Error running the updateSessionEndTime query: ${e}`);
@@ -279,9 +178,16 @@ async function updateSessionEndTime(sessionid) {
 }
 
 // Updates the state value in the sessions database row
-async function updateSessionState(sessionid, state) {
+async function updateSessionState(sessionid, state, client) {
     try{
-        const results = await pool.query("UPDATE sessions SET state = $1 WHERE sessionid = $2 RETURNING *", [state, sessionid]);
+        let transactionMode = (typeof client !== 'undefined')
+        if(!transactionMode) {
+            client = await pool.connect()
+        }
+        const results = await client.query("UPDATE sessions SET state = $1 WHERE sessionid = $2 RETURNING *", [state, sessionid]);
+        if(!transactionMode) {
+            client.release()
+        }
         if(results == undefined){
             return null;
         }
@@ -351,22 +257,12 @@ async function updateSessionStillCounter(stillcounter, sessionid,locationid) {
 *   Total time in the bathroom exceeds a certain value
 */
 async function isOverdoseSuspected(xethru, session, location) {
-
-    //let xethru = await getLatestXeThruSensordata(location);
-    // let door = getLatestDoorSensordata(location);
-    // let motion = getLatestMotionSensordata(location);
-    //let session = await getMostRecentSession(location);
     
-    var today = new Date();
-    var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    var dateTime_string = date+' '+time;
-
-    var dateTime = new Date(dateTime_string);
+    var now = new Date();
     var start_time_sesh = new Date(session.start_time);
 
     // Current Session duration so far:
-    var sessionDuration = (dateTime - start_time_sesh)/1000;
+    var sessionDuration = (now - start_time_sesh)/1000;
 
     // threshold values for the various overdose conditions
     const rpm_threshold = location.rpm_threshold;
@@ -377,15 +273,14 @@ async function isOverdoseSuspected(xethru, session, location) {
     let condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0);
     let condition2 = 1 * (session.still_counter > still_threshold); //seconds
     let condition3 = 1 * (sessionDuration > sessionDuration_threshold);
-    let condition4 = 1 * (0);
 
     let alertReason='NotSet'
 
-    if(condition2 == 1){
+    if(condition3 == 1){
         alertReason = 'Duration';
     }
 
-    if( (condition1==1) || (condition3==1) ){
+    if( (condition2==1) || (condition1==1) ){
         alertReason = 'Stillness';
     }
 
@@ -394,7 +289,7 @@ async function isOverdoseSuspected(xethru, session, location) {
 
     //This method just looks for a majority of conditions to be met
     //This method can apply different weights for different criteria
-    if(condition1 + condition2 + condition3 + condition4 >= conditionThreshold) {
+    if(condition1 + condition2 + condition3 >= conditionThreshold) {
         // update the table entry so od_flag is 1
         try {
             await pool.query("UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3", [OD_FLAG_STATE.OVERDOSE, alertReason, session.sessionid]);
@@ -471,10 +366,10 @@ async function updateLocationData(deviceid, phonenumber, detection_min, detectio
 }
 
 // Adds a location table entry
-async function addLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, rpm_threshold, still_threshold, duration_threshold, mov_threshold, location) {
+async function createLocation(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer) {
     try {
-        await pool.query("INSERT INTO locations(deviceid, phonenumber, detectionzone_min, detectionzone_max, sensitivity, noisemap, led, rpm_threshold, still_threshold, duration_threshold, mov_threshold, locationid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", 
-            [deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, location]);
+        await pool.query("INSERT INTO locations(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)", 
+            [locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer]);
         console.log("New location inserted to Database");
     }
     catch(e) {
@@ -482,21 +377,30 @@ async function addLocationData(deviceid, phonenumber, detection_min, detection_m
     }
 }
 
-// Export functions to be able to access them on index.js
+async function clearSessions() {
+    if(process.env.NODE_ENV !== "test") {
+        console.log("warning - tried to clear sessions database outside of a test environment!")
+        return
+    }
+    await pool.query("DELETE FROM sessions")
+}
+
+async function clearLocations() {
+    if(process.env.NODE_ENV !== "test") {
+        console.log("warning - tried to clear locations table outside of a test environment!")
+        return
+    }    
+    await pool.query("DELETE FROM locations")
+}
+
+async function close() {
+    await pool.end()
+}
 
 module.exports = {
-    getXethruSensordata,
-    addXeThruSensordata,
-    addDoorSensordata,
-    addStateMachineData,
-    getLatestXeThruSensordata,
-    getRecentXeThruSensordata,
-    getLatestDoorSensordata,
-    getLatestLocationStatesdata,
     getLastUnclosedSession,
     getMostRecentSession,
     getSessionWithSessionId,
-    getRecentStateHistory,
     getHistoryOfSessions,
     createSession,
     isOverdoseSuspected,
@@ -510,7 +414,12 @@ module.exports = {
     getLocationData,
     getLocations,
     updateLocationData,
-    addLocationData,
+    createLocation,
     updateSentAlerts,
-    addDoorTestSensordata
+    clearSessions,
+    clearLocations,
+    close,
+    getAllSessionsFromLocation,
+    beginTransaction,
+    commitTransaction
 }
