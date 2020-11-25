@@ -183,6 +183,17 @@ Our cluster is not setup to automatically pull the new image and restart. Rather
 
 1. SSH onto the ODetect Admin Server
 
+1. Alter the kubernetes manifest to reflect the tag you have just pushed to your container registry
+    - If you are deploying to **dev**, edit the image field in the odetect-deployment-dev.yaml and run
+        ```
+        kubectl apply -f odetect-deployment-dev.yaml
+        ```
+
+    - If you are deploying to **dev**, edit the image field in the odetect-deployment.yaml and run
+        ```
+        kubectl apply -f odetect-deployment.yaml
+        ```
+
 1. Restart the deployment
 
     - If you are deploying to **dev**, run
