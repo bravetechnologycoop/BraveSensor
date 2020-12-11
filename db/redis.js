@@ -85,7 +85,7 @@ async function getLatestLocationStatesData(locationid){
     if(!singleitem){
         return null
     }else{
-    return singleitem[0];
+        return singleitem[0];
     }
 }
 

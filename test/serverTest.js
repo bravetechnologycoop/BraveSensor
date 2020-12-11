@@ -1,3 +1,4 @@
+const sleep = (millis) => new Promise(resolve => setTimeout(resolve, millis))
 const chai = require('chai')
 const chaiHttp = require('chai-http')
 const expect = chai.expect
@@ -26,7 +27,7 @@ function getRandomArbitrary(min, max) {
 
 async function silence(locationid){
     try{
-        response = await chai.request(server).post('/api/xethru').send({
+        await chai.request(server).post('/api/xethru').send({
             deviceid: 0,
             locationid: locationid,
             devicetype: 'XeThru',
@@ -56,7 +57,7 @@ async function movement(locationid, mov_f, mov_s){
 
 async function door(locationid, signal){
     try{
-        response = await chai.request(server).post('/api/doorTest').send({
+        await chai.request(server).post('/api/doorTest').send({
             deviceid: 0,
             locationid: locationid,
             signal: signal
@@ -67,6 +68,7 @@ async function door(locationid, signal){
 describe('ODetect server', () => {
 
     after(async function() {
+        await sleep(3000)
         server.close()
         await redis.quit()
         await db.close()
@@ -75,16 +77,14 @@ describe('ODetect server', () => {
     describe('POST request: radar and door events', () => {
         beforeEach(async function() {
             await redis.clearKeys()
-            console.log('Done clearing redis keys')
-            await db.clearSessions()            
-            console.log('Done clearing sessions from psql')
+            await db.clearSessions()
             await db.clearLocations()
-            console.log('Done clearing locations from psql')
-            await db.createLocation(testLocation1Id, '0', testLocation1PhoneNumber, MOV_THRESHOLD, 15, 0.2, 1000, 1000, `0`, '+15005550006', '+15005550006', '+15005550006', 1000)
+            await db.createLocation(testLocation1Id, '0', testLocation1PhoneNumber, MOV_THRESHOLD, 15, 0.2, 5000, 5000, 0, '+15005550006', '+15005550006', '+15005550006', 1000)
             await door(testLocation1Id, 'closed')
         })
 
         afterEach(async function() {
+            await sleep(1000)
             await redis.clearKeys()
             await db.clearSessions()
             await db.clearLocations()
@@ -108,26 +108,28 @@ describe('ODetect server', () => {
             let radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
             expect(radarRows.length).to.equal(15)
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+            console.log(sessions)
             expect(sessions.length).to.equal(1)
             let session = sessions[0]
             expect(session.end_time).to.be.null
         });
 
         it('radar data showing movement should be saved to redis, trigger a session, a door opening should end the session', async () => {
-            for(let i = 0; i<15; i++){
+            for(let i = 0; i<10; i++){
                 await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD,100), getRandomInt(MOV_THRESHOLD,100))
             }
             await door(testLocation1Id, 'open')
             await door(testLocation1Id, 'closed')
             for(let i = 0; i<5; i++){
-                await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD,100), getRandomInt(MOV_THRESHOLD,100))
+                await movement(testLocation1Id, getRandomInt(0,MOV_THRESHOLD), getRandomInt(0,MOV_THRESHOLD))
             }
+            sleep(100)
             let radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
-            expect(radarRows.length).to.equal(20)
+            expect(radarRows.length).to.equal(15)
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+            console.log(sessions)
             expect(sessions.length).to.equal(1)
             let session = sessions[0]
-            console.log(session)
             expect(session.end_time).to.not.be.null
         });
 
@@ -152,10 +154,8 @@ describe('ODetect server', () => {
             let radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
             expect(radarRows.length).to.equal(200)
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-            console.log(sessions)
             expect(sessions.length).to.equal(1)
             expect(sessions[0].od_flag).to.equal(1)
         });
-
     })
 })

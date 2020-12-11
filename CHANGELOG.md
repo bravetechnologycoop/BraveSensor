@@ -12,17 +12,25 @@ the code was deployed.
 
 ## [1.2.0] - 2020-12-10
 ### Added
-
-### Changed
+- Script which runs all database migrations
+- Integration tests
+- Utility functions for test setup and teardown
+- Helpers for test environment variables
+- Changelog
+- Build scripts for tagging and pushing containers
+- Linting
 
 ### Fixed
-- Bug in calculating session duration which resulted in negative session durations
+- Bug in calculating session duration
 - Session creation concurrency bug
 - Alert reason attribution bug
 - Session creation when there is no previous session for a location
 
 ### Removed
 - Unused PostgreSQL functions
+- Unused PostgreSQL tables
+- Sentry tracking of runtime errors
+- Unused and deprecated load testing scripts
 
 ## [1.1] - 2020-10-07
 ### Added

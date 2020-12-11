@@ -245,13 +245,11 @@ async function autoResetSession(locationid){
 // //This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
 if(!helpers.isTestEnvironment()){
     setInterval(async function (){
-    // Iterating through multiple locations
+        let locations = await db.getLocations()
         for(let i = 0; i < locations.length; i++){
-        //Get recent state history
             let currentLocationId = locations[i];
             let stateHistoryQuery = await redis.getStatesWindow(currentLocationId, '+', '-', 60);
             let stateMemory = [];
-            //Store this in a local array
             for(let i = 0; i < stateHistoryQuery.length; i++){
                 stateMemory.push(stateHistoryQuery[i].state)
             }
@@ -435,9 +433,9 @@ io.on('connection', (socket) => {
         io.sockets.emit('sendHistory', {data: sessionHistory});
     });
     
-    socket.emit('getLocations', {
-        data: locations
-    })
+    // socket.emit('getLocations', {
+    //     data: locations
+    // })
     socket.emit('Hello', {
         greeting: "Hello ODetect Frontend"
     });
@@ -470,30 +468,33 @@ async function sendInitialChatbotMessage(session) {
 }
 
 async function reminderMessage(sessionid) {
-    console.log("Reminder message being sent");
-    let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
-    if(session.chatbot_state == STATE.STARTED) {
-        //Get location data
-        var location = session.locationid;
-        let locationData = await db.getLocationData(location)
-        //send the message
-        await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
-        session.chatbot_state = STATE.WAITING_FOR_RESPONSE;
-        let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
-        await db.saveChatbotSession(chatbot);
+    if(!helpers.isTestEnvironment()){
+        console.log("Reminder message being sent");
+        let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
+        if(session.chatbot_state == STATE.STARTED) {
+            //Get location data
+            var location = session.locationid;
+            let locationData = await db.getLocationData(location)
+            //send the message
+            await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
+            session.chatbot_state = STATE.WAITING_FOR_RESPONSE;
+            let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
+            await db.saveChatbotSession(chatbot);
+        }
     }
-    //else do nothing
 }
 
-async function fallbackMessage(sessionid) {
+async function fallbackMessage(sessionid){
     console.log("Fallback message being sent");
-    let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
-    if(session.chatbot_state == STATE.WAITING_FOR_RESPONSE) {
-        console.log("Fallback if block");
-        let locationData = await db.getLocationData(session.locationid)
-        console.log(`fallback number is:  ${locationData.fallback_phonenumber}`)
-        console.log(`twilio number is:  ${locationData.twilio_number}`)
-        await sendTwilioMessage(locationData.twilio_number, locationData.fallback_phonenumber,`An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`)
+    if(!helpers.isTestEnvironment()){
+        let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
+        if(session.chatbot_state == STATE.WAITING_FOR_RESPONSE) {
+            console.log("Fallback if block");
+            let locationData = await db.getLocationData(session.locationid)
+            console.log(`fallback number is:  ${locationData.fallback_phonenumber}`)
+            console.log(`twilio number is:  ${locationData.twilio_number}`)
+            await sendTwilioMessage(locationData.twilio_number, locationData.fallback_phonenumber,`An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`)
+        }
     }
     //else do nothing
 } 
@@ -605,7 +606,7 @@ server = app.listen(8080);
 console.log('brave server listening on port 8080')
 
 // Socket.io server connection start
-io.listen(server);
+// io.listen(server);
 
 module.exports.server = server;
 module.exports.db = db;

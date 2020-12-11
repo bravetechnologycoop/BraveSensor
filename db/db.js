@@ -9,7 +9,7 @@ const pool = new pg.Pool({
     user: helpers.getEnvVar('PG_USER'),
     database: helpers.getEnvVar('PG_USER'),
     password: helpers.getEnvVar('PG_PASSWORD'),
-    ssl: true
+    ssl: { rejectUnauthorized:false}
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -162,8 +162,8 @@ async function createSession(phone, locationid, state, client) {
 
 // Closes the session by updating the end time
 async function closeSession(sessionid) {
-            await updateSessionEndTime(sessionid); //
-            return true;
+    await updateSessionEndTime(sessionid); //
+    return true;
 } 
 
 // Enters the end time of a session when it closes and calculates the duration of the session
@@ -382,7 +382,12 @@ async function clearSessions() {
         console.log("warning - tried to clear sessions database outside of a test environment!")
         return
     }
-    await pool.query("DELETE FROM sessions")
+    try{
+        await pool.query("DELETE FROM sessions")
+    }
+    catch(e) {
+        console.log(`Error running clearSessions: ${e}`)
+    }
 }
 
 async function clearLocations() {
