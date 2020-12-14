@@ -1,4 +1,5 @@
 const express = require('express');
+let fs = require('fs')
 let moment = require('moment');
 const bodyParser = require('body-parser');
 const redis = require('./db/redis.js');
@@ -16,12 +17,13 @@ const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://1e7d418731ec4bf99cb2405ea3e9b9fc@o248765.ingest.sentry.io/3009454' });
 require('dotenv').config();
 const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
+const Mustache = require('mustache')
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
 const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
+
+const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/locationsDashboard.mst`, 'utf-8')
 
 var locations = [];
 
@@ -32,18 +34,17 @@ var resetDiscrepancies = [];
 var start_times = {};
 
 // Update the list of locations every minute
-setInterval(async function (){
-    let locationTable = await db.getLocations()
-    let locationsArray = []
-    for(let i = 0; i < locationTable.length; i++){
-        locationsArray.push(locationTable[i].locationid)
-    }
-    locationsArray;
-    io.sockets.emit('getLocations', {data: locationsArray});
-    for(let i = 0; i < locationsArray.length; i++){
-        await checkHeartbeat(locationsArray[i])
-    }
-}, LOCATION_UPDATE_FREQUENCY)
+// setInterval(async function (){
+//     let locationTable = await db.getLocations()
+//     let locationsArray = []
+//     for(let i = 0; i < locationTable.length; i++){
+//         locationsArray.push(locationTable[i].locationid)
+//     }
+//     locationsArray;
+//     for(let i = 0; i < locationsArray.length; i++){
+//         await checkHeartbeat(locationsArray[i])
+//     }
+// }, LOCATION_UPDATE_FREQUENCY)
 
 
 // These states do not start nor close a session
@@ -115,20 +116,16 @@ app.use((req, res, next) => {
 // middleware function to check for logged-in users
 var sessionChecker = (req, res, next) => {
     if (req.session.user && req.cookies.user_sid) {
-        res.sendFile(path.join(__dirname));
-    } else {
+        res.redirect('/dashboard');
+    }
+    else {
         next();
     }
 };
 
-
 app.get('/', sessionChecker, (req, res) => {
     res.redirect('/login');
 });
-
-// Used for hosting the Frontend
-app.use(express.static(__dirname + '/Public/ODetect'));
-
 
 app.route('/login')
     .get(sessionChecker, (req, res) => {
@@ -140,8 +137,8 @@ app.route('/login')
 
         if ((username === getEnvVar('WEB_USERNAME')) && (password === getEnvVar('PASSWORD'))) {
             req.session.user = username;
-            res.redirect('/');
-        }
+            res.redirect('/dashboard');
+        } 
         else {
             res.redirect('/login');
         }
@@ -154,6 +151,55 @@ app.get('/logout', (req, res) => {
     }
     else {
         res.redirect('/login');
+    }
+});
+
+app.get('/dashboard', async (req, res) => {
+
+    if (!req.session.user || !req.cookies.user_sid) {
+        res.redirect('/login')
+        return
+    }
+    // else if(typeof req.params.installationId !== "string") {
+    //     let installations = await db.getInstallations()
+    //     res.redirect('/dashboard/' + installations[0].id)
+    //     return
+    // }
+
+    try {
+        // let recentSessions = await db.getRecentSessionsWithInstallationId(req.params.installationId)
+        // let currentInstallation = await db.getInstallationWithInstallationId(req.params.installationId)
+        let allLocations = await db.getLocations()
+        
+        let viewParams = {
+            // recentSessions: [],
+            // currentInstallationName: currentInstallation.name,
+            locations: allLocations
+                .map(location => { 
+                    return { name: location.location_human, id: location.locationid }
+                })
+        }
+
+        // for(const recentSession of recentSessions) {
+        //     let createdAt = moment(recentSession.createdAt, moment.ISO_8601)
+        //     let updatedAt = moment(recentSession.updatedAt, moment.ISO_8601)
+        //     viewParams.recentSessions.push({
+        //         unit: recentSession.unit,
+        //         createdAt: createdAt.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
+        //         updatedAt: updatedAt.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
+        //         state: recentSession.state,
+        //         numPresses: recentSession.numPresses.toString(),
+        //         incidentType: recentSession.incidentType,
+        //         notes: recentSession.notes
+        //     })
+        // }
+        
+        console.log(viewParams)
+        res.send(Mustache.render(locationsDashboardTemplate, viewParams))
+    }
+    catch(err) {
+        console.log(err)
+        res.status(500).send()
     }
 });
 
@@ -296,15 +342,15 @@ app.post('/api/doorTest', async(req, res) => {
     redis.addDoorTestSensorData(req, res);
 });
 
-// Handler for redirecting to the Frontend
-app.get('/*', async function (req, res) {
-    if (req.session.user && req.cookies.user_sid) {
-        res.sendFile(path.join(__dirname));
-    }
-    else {
-        res.redirect('/login');
-    }
-});
+// // Handler for redirecting to the Frontend
+// app.get('/*', async function (req, res) {
+//     if (req.session.user && req.cookies.user_sid) {
+//         res.sendFile(path.join(__dirname));
+//     }
+//     else {
+//         res.redirect('/login');
+//     }
+// });
 
 async function handleSensorRequest(currentLocationId){
     let statemachine = new SessionState(currentLocationId);
@@ -425,21 +471,6 @@ async function handleSensorRequest(currentLocationId){
     }
 }
 
-// Web Socket connection to Frontend
-io.on('connection', (socket) => {
-
-    socket.on('getHistory', async (location, entries) => {
-        let sessionHistory = await db.getHistoryOfSessions(location, entries);
-        io.sockets.emit('sendHistory', {data: sessionHistory});
-    });
-    
-    socket.emit('getLocations', {
-        data: locations
-    })
-    socket.emit('Hello', {
-        greeting: "Hello ODetect Frontend"
-    });
-});
 
 // Twilio Functions
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
@@ -586,7 +617,6 @@ app.post('/sms', async function (req, res) {
         //closes the session, sets the session state to RESET
         if(await db.closeSession(chatbot.locationid)){ // Adds the end_time to the latest open session from the LocationID
             console.log(`Session at ${chatbot.locationid} was closed successfully.`);
-            io.sockets.emit('sessiondata', {data: session}); // Sends currentSession data with end_time which will close the session in the frontend
             start_times[chatbot.locationid] = null; // Stops the session timer for this location
         }
         else{
@@ -607,8 +637,7 @@ server = app.listen(8080);
 console.log('brave server listening on port 8080')
 
 
-// Socket.io server connection start
-io.listen(server);
+
 
 module.exports.server = server;
 module.exports.db = db;

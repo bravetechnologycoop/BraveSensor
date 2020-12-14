@@ -3,7 +3,7 @@ const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://45324fe512564e858dcb6fe994761e93@o248765.ingest.sentry.io/3011388' });
 require('dotenv').config();
-let pgconnectionString = process.env.PG_CONNECTION_STRING
+let pgconnectionString = "postgres://postgres:password@localhost:5432/bravesensor"
 
 const pool = new pg.Pool({
     connectionString: pgconnectionString
@@ -450,7 +450,9 @@ async function getLocations() {
             return null;
         }
         else{
+            console.log(results.rows)
             return results.rows;
+
         }
     }
     catch(e) {
