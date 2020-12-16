@@ -23,7 +23,7 @@ pool.on('error', (err) => {
 // Functions added to facilitate moving to Mustache template from angular front end
 
 function createSessionFromRow(r) {
-    return new SessionState(r.id, r.installation_id, r.button_id, r.unit, r.phone_number, r.state, r.num_presses, r.created_at, r.updated_at, r.incident_type, r.notes, r.fallback_alert_twilio_status)
+    return new Session(r.locationid, r.start_time, r.end_time, r.od_flag, r.state, r.phonenumber, r.notes, r.incidenttype, r.sessionid, r.duration, r.still_counter, r.chatbot_state, r.alert_reasons)
 }
 
 function createLocationFromRow(r) {
