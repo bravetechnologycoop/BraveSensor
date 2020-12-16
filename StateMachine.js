@@ -6,10 +6,10 @@ const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://9a178f83cd78420c960331dbc22e81d6@o248765.ingest.sentry.io/3011310' });
 let moment = require('moment');
 
-class SessionState {
+class StateMachine {
 
-    constructor(location) {
-        this.location = location;
+    constructor(locationid) {
+        this.location = locationid;
     }
 
     async getNextState(db, redis) {
@@ -152,4 +152,4 @@ class SessionState {
     }
 }
 
-module.exports = SessionState;
+module.exports = StateMachine

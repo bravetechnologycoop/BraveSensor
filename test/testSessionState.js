@@ -6,7 +6,7 @@ const STATE = require('./../SessionStateEnum.js');
 const XETHRU_STATE = require('./../SessionStateXethruEnum.js');
 const OD_FLAG_STATE = require('./../SessionStateODFlagEnum.js');
 const DOOR_STATE = require('./../SessionStateDoorEnum.js');
-const SessionState = require('./../SessionState.js');
+const StateMachine = require('./../StateMachine.js');
 
 function setupDB(location_data = {}, session = {}, is_overdose_suspected = false) {
     return {
@@ -47,7 +47,7 @@ describe('test getNextState', () => {
         it('should return the RESET state', async () => {
             let db = setupDB();
             let redis = setupRedis();
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -63,7 +63,7 @@ describe('test getNextState', () => {
                 {signal:DOOR_STATE.OPEN},
                 [{mov_f: 0, mov_s:0}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -78,7 +78,7 @@ describe('test getNextState', () => {
                 {signal: DOOR_STATE.CLOSED},
                 [{mov_f: 0, mov_s:0}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -101,7 +101,7 @@ describe('test getNextState', () => {
                 [{mov_f: 56, mov_s: 56, state: 1}, {mov_f: 56, mov_s: 56, state: 1},{mov_f: 56, mov_s: 56, state: 1}]
             );
 
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
             let actualState = await statemachine.getNextState(db,redis);
 
             expect(actualState).to.equal(STATE.MOTION_DETECTED);
@@ -118,7 +118,7 @@ describe('test getNextState', () => {
                 {timestamp: moment().subtract(25, 'seconds')},
                 [{state: 1, mov_f: movementThreshold + 1,mov_s: 11}, {state: 1,mov_f: movementThreshold + 1,mov_s: 11}, {state: 1,mov_f: movementThreshold + 1,mov_s: 11}],
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -138,7 +138,7 @@ describe('test getNextState', () => {
                 [{state: XETHRU_STATE.MOVEMENT,mov_f: movementThreshold + 1, mov_s: 11}],
             );
 
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -161,7 +161,7 @@ describe('test getNextState', () => {
                 {mov_threshold: movementThreshold}
             );
 
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -179,7 +179,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.MOVEMENT,mov_f: movementThreshold - 1}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -197,7 +197,7 @@ describe('test getNextState', () => {
                 {signal: DOOR_STATE.OPEN}
             );
 
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -215,7 +215,7 @@ describe('test getNextState', () => {
                 [{state: XETHRU_STATE.MOVEMENT}]
             );
 
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -230,7 +230,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.BREATHING}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -245,7 +245,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.MOVEMENT_TRACKING}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -260,7 +260,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.MOVEMENT}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -275,7 +275,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.BREATHING}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -290,7 +290,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.MOVEMENT_TRACKING}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -305,7 +305,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.NO_MOVEMENT}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -320,7 +320,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.INITIALIZING}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -335,7 +335,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.ERROR}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -350,7 +350,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.UNKNOWN}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -365,7 +365,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.NO_MOVEMENT}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -380,7 +380,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.INITIALIZING}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -395,7 +395,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.ERROR}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -410,7 +410,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.UNKNOWN}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -425,7 +425,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.MOVEMENT}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -440,7 +440,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.BREATHING}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -455,7 +455,7 @@ describe('test getNextState', () => {
                 {},
                 [{state: XETHRU_STATE.MOVEMENT_TRACKING}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -470,7 +470,7 @@ describe('test getNextState', () => {
                 {},
                 [{}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -485,7 +485,7 @@ describe('test getNextState', () => {
                 {},
                 [{}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -500,7 +500,7 @@ describe('test getNextState', () => {
             let redis = setupRedis(
                 {state: initialState}
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -521,7 +521,7 @@ describe('test getNextState', () => {
                 {},
                 [{}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -540,7 +540,7 @@ describe('test getNextState', () => {
                 {},
                 [{}]
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -559,7 +559,7 @@ describe('test getNextState', () => {
                 {od_flag: OD_FLAG_STATE.OVERDOSE},
                 false
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -577,7 +577,7 @@ describe('test getNextState', () => {
                 {od_flag: OD_FLAG_STATE.NO_OVERDOSE},
                 false
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -599,7 +599,7 @@ describe('test getNextState', () => {
                 {od_flag: OD_FLAG_STATE.NO_OVERDOSE},
                 false
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -617,7 +617,7 @@ describe('test getNextState', () => {
                 {od_flag: OD_FLAG_STATE.NO_OVERDOSE},
                 false
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -635,7 +635,7 @@ describe('test getNextState', () => {
                 {od_flag: OD_FLAG_STATE.NO_OVERDOSE},
                 false
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -653,7 +653,7 @@ describe('test getNextState', () => {
                 {od_flag: OD_FLAG_STATE.NO_OVERDOSE},
                 false
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -669,7 +669,7 @@ describe('test getNextState', () => {
                 {state: initialState},
                 {signal: DOOR_STATE.CLOSED}
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
@@ -683,7 +683,7 @@ describe('test getNextState', () => {
                 {state: initialState},
                 {signal: DOOR_STATE.OPEN}
             );
-            let statemachine = new SessionState('TestLocation');
+            let statemachine = new StateMachine('TestLocation');
 
             let actualState = await statemachine.getNextState(db,redis);
 
