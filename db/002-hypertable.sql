@@ -11,11 +11,11 @@ BEGIN
 
     -- Only execute this script if its migration ID is next after the last successful migration ID
     IF migrationId - lastSuccessfulMigrationId = 1 THEN
-        -- CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
-        -- CREATE TABLE xethru (LIKE xethru_sensordata INCLUDING DEFAULTS INCLUDING CONSTRAINTS INCLUDING INDEXES);
-        -- SELECT create_hypertable('xethru', 'published_at');
-        -- SELECT set_chunk_time_interval('xethru', interval '1 hour');
-        -- DROP TABLE xethru_sensordata;
+        CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+        CREATE TABLE xethru (LIKE xethru_sensordata INCLUDING DEFAULTS INCLUDING CONSTRAINTS INCLUDING INDEXES);
+        SELECT create_hypertable('xethru', 'published_at');
+        SELECT set_chunk_time_interval('xethru', interval '1 hour');
+        DROP TABLE xethru_sensordata;
 
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file
         INSERT INTO migrations (id)

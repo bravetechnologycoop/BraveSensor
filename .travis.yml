@@ -9,7 +9,6 @@ matrix:
       # install dependencies
       install:
         - npm install
-        - npm install pg@latest
       services:
         - redis-server 
 
@@ -40,12 +39,12 @@ matrix:
         - PGVER=12
         - PGPORT=5433
 
-        # setup database
+        # setup database and create dummy public key for smartthings integration
       before_script:
         - bash setup_postgresql_local.sh
         - touch smartthings_rsa.pub
 
-      # run unit tests
+      # run unit tests, integration tests, and linter
       script:
         - npm run lint
         - sudo env "PATH=$PATH" npm run unittest

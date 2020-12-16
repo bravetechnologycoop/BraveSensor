@@ -266,7 +266,8 @@ if(!helpers.isTestEnvironment()){
                 }
             }
         }
-    }, WATCHDOG_TIMER_FREQUENCY)}
+    }, WATCHDOG_TIMER_FREQUENCY)
+}
 
 // Handler for income SmartThings POST requests
 app.post('/api/st', function(req, res, next) {    // eslint-disable-line no-unused-vars -- next might be used in the future
@@ -318,7 +319,6 @@ async function handleSensorRequest(currentLocationId){
     // Get current time to compare to the session's start time
 
     var location_start_time = start_times[currentLocationId]
-    console.log(`location_start_time: ${location_start_time}`)
     if(location_start_time != null && location_start_time != undefined){
 
         var start_time_sesh = new Date(location_start_time);

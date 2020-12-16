@@ -7,7 +7,7 @@ const imports = require('../index.js')
 const db = imports.db
 const redis = imports.redis
 const server = imports.server
-const XETHRU_STATE = require('../SessionStateXethruEnum.js');
+const XETHRU_STATE = require('../SessionStateXethruEnum.js')
 const MOV_THRESHOLD = 17
 
 chai.use(chaiHttp)
@@ -16,13 +16,13 @@ const testLocation1Id = 'TestLocation1'
 const testLocation1PhoneNumber = '+15005550006'
 
 function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+    min = Math.ceil(min)
+    max = Math.floor(max)
+    return Math.floor(Math.random() * (max - min) + min) //The maximum is exclusive and the minimum is inclusive
 }
 
 function getRandomArbitrary(min, max) {
-    return Math.random() * (max - min) + min;
+    return Math.random() * (max - min) + min
 }
 
 async function silence(locationid){
@@ -99,7 +99,7 @@ describe('ODetect server', () => {
             expect(radarRows.length).to.equal(5)
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
             expect(sessions.length).to.equal(0)
-        });
+        })
 
         it('radar data showing movement should be saved to redis and trigger a session, which should remain open', async () => {
             for(let i = 0; i<15; i++){
@@ -112,7 +112,7 @@ describe('ODetect server', () => {
             expect(sessions.length).to.equal(1)
             let session = sessions[0]
             expect(session.end_time).to.be.null
-        });
+        })
 
         it('radar data showing movement should be saved to redis, trigger a session, a door opening should end the session', async () => {
             for(let i = 0; i<10; i++){
@@ -131,7 +131,7 @@ describe('ODetect server', () => {
             expect(sessions.length).to.equal(1)
             let session = sessions[0]
             expect(session.end_time).to.not.be.null
-        });
+        })
 
         it('radar data showing movement should trigger a session, and cessation of movement without a door event should trigger an alert', async () => {
             for(let i = 0; i<15; i++){
@@ -145,7 +145,7 @@ describe('ODetect server', () => {
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
             expect(sessions.length).to.equal(1)
             expect(sessions[0].od_flag).to.equal(1)
-        });
+        })
 
         it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {        
             for(let i = 0; i<200; i++){
@@ -156,6 +156,6 @@ describe('ODetect server', () => {
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
             expect(sessions.length).to.equal(1)
             expect(sessions[0].od_flag).to.equal(1)
-        });
+        })
     })
 })
