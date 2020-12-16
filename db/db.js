@@ -454,7 +454,6 @@ async function getLocationData(locationid) {
 }
 
 // Retrieves the locations table
-
 async function getLocations() {
     try {
         const results = await pool.query("SELECT * FROM locations");

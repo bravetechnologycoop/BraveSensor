@@ -4,7 +4,7 @@ let moment = require('moment-timezone');
 const bodyParser = require('body-parser');
 const redis = require('./db/redis.js');
 const db = require('./db/db.js');
-const SessionState = require('./SessionState.js');
+const StateMachine = require('./StateMachine.js');
 const Chatbot = require('./Chatbot.js');
 const session = require('express-session');
 var cookieParser = require('cookie-parser');
@@ -34,17 +34,17 @@ var resetDiscrepancies = [];
 var start_times = {};
 
 // Update the list of locations every minute
-// setInterval(async function (){
-//     let locationTable = await db.getLocations()
-//     let locationsArray = []
-//     for(let i = 0; i < locationTable.length; i++){
-//         locationsArray.push(locationTable[i].locationId)
-//     }
-//     locationsArray;
-//     for(let i = 0; i < locationsArray.length; i++){
-//         await checkHeartbeat(locationsArray[i])
-//     }
-// }, LOCATION_UPDATE_FREQUENCY)
+setInterval(async function (){
+    let locationTable = await db.getLocations()
+    let locationsArray = []
+    for(let i = 0; i < locationTable.length; i++){
+        locationsArray.push(locationTable[i].locationId)
+    }
+    locationsArray;
+    for(let i = 0; i < locationsArray.length; i++){
+        await checkHeartbeat(locationsArray[i])
+    }
+}, LOCATION_UPDATE_FREQUENCY)
 
 
 // These states do not start nor close a session
@@ -112,7 +112,6 @@ app.use((req, res, next) => {
     next();
 });
 
-
 // middleware function to check for logged-in users
 var sessionChecker = (req, res, next) => {
     if (req.session.user && req.cookies.user_sid) {
@@ -155,7 +154,6 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/dashboard', async (req, res) => {
-
     if (!req.session.user || !req.cookies.user_sid) {
         res.redirect('/login')
         return
@@ -181,7 +179,6 @@ app.get('/dashboard', async (req, res) => {
 })
 
 app.get('/dashboard/:locationId', async (req, res) => {
-
     if (!req.session.user || !req.cookies.user_sid) {
         res.redirect('/login')
         return
@@ -227,14 +224,13 @@ app.get('/dashboard/:locationId', async (req, res) => {
             })
         }
         
-        console.log(viewParams)
         res.send(Mustache.render(locationsDashboardTemplate, viewParams))
     }
     catch(err) {
         console.log(err)
         res.status(500).send()
     }
-});
+})
 
 // Set up Twilio
 const accountSid = process.env.TWILIO_SID;
@@ -386,7 +382,7 @@ app.post('/api/doorTest', async(req, res) => {
 // });
 
 async function handleSensorRequest(currentLocationId){
-    let statemachine = new SessionState(currentLocationId);
+    let statemachine = new StateMachine(currentLocationId);
     let currentState = await statemachine.getNextState(db, redis);
     let stateobject = await redis.getLatestLocationStatesData(currentLocationId)
     let prevState = stateobject.state;
