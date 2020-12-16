@@ -9,6 +9,7 @@ matrix:
       # install dependencies
       install:
         - npm install
+        - npm install pg@latest
       services:
         - redis-server 
 
