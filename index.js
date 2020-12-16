@@ -38,7 +38,7 @@ var start_times = {};
 //     let locationTable = await db.getLocations()
 //     let locationsArray = []
 //     for(let i = 0; i < locationTable.length; i++){
-//         locationsArray.push(locationTable[i].locationid)
+//         locationsArray.push(locationTable[i].locationId)
 //     }
 //     locationsArray;
 //     for(let i = 0; i < locationsArray.length; i++){
@@ -155,6 +155,55 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/dashboard', async (req, res) => {
+
+    if (!req.session.user || !req.cookies.user_sid) {
+        res.redirect('/login')
+        return
+    }
+    // else if(typeof req.params.installationId !== "string") {
+    //     let installations = await db.getInstallations()
+    //     res.redirect('/dashboard/' + installations[0].id)
+    //     return
+    // }
+
+    try {
+        // let recentSessions = await db.getRecentSessionsWithInstallationId(req.params.installationId)
+        // let currentInstallation = await db.getInstallationWithInstallationId(req.params.installationId)
+        let allLocations = await db.getLocations()
+        
+        let viewParams = {
+            // recentSessions: [],
+            // currentInstallationName: currentInstallation.name,
+            locations: allLocations
+                .map(location => { 
+                    return { name: location.location_human, id: location.locationid }
+                })
+        }
+
+        // for(const recentSession of recentSessions) {
+        //     let createdAt = moment(recentSession.createdAt, moment.ISO_8601)
+        //     let updatedAt = moment(recentSession.updatedAt, moment.ISO_8601)
+        //     viewParams.recentSessions.push({
+        //         unit: recentSession.unit,
+        //         createdAt: createdAt.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
+        //         updatedAt: updatedAt.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
+        //         state: recentSession.state,
+        //         numPresses: recentSession.numPresses.toString(),
+        //         incidentType: recentSession.incidentType,
+        //         notes: recentSession.notes
+        //     })
+        // }
+        
+        console.log(viewParams)
+        res.send(Mustache.render(locationsDashboardTemplate, viewParams))
+    }
+    catch(err) {
+        console.log(err)
+        res.status(500).send()
+    }
+});
+
+app.get('/dashboard/:locationId', async (req, res) => {
 
     if (!req.session.user || !req.cookies.user_sid) {
         res.redirect('/login')

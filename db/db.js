@@ -2,8 +2,11 @@ const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://45324fe512564e858dcb6fe994761e93@o248765.ingest.sentry.io/3011388' });
+const SessionState = require('../SessionState.js')
+const Location = require('../Location.js')
+
 require('dotenv').config();
-let pgconnectionString = "postgres://postgres:password@localhost:5432/bravesensor"
+let pgconnectionString = process.env.PG_CONNECTION_STRING;
 
 const pool = new pg.Pool({
     connectionString: pgconnectionString
@@ -16,6 +19,16 @@ pg.types.setTypeParser(1114, str => str);
 pool.on('error', (err) => {
     console.error('unexpected database error:', err)
 })
+
+// Functions added to facilitate moving to Mustache template from angular front end
+
+function createSessionFromRow(r) {
+    return new SessionState(r.id, r.installation_id, r.button_id, r.unit, r.phone_number, r.state, r.num_presses, r.created_at, r.updated_at, r.incident_type, r.notes, r.fallback_alert_twilio_status)
+}
+
+function createLocationFromRow(r) {
+    return new Location(r.locationid, r.displayName, r.deviceid, r.phonenumber, r.detectionzoneMin, r.detectionzoneMax, r.sensitivity, r.led, r.noisemap, r.movThreshold, r.durationThreshold, r.stillThreshold, r.rpmThreshold, r.xethruSentAlerts, r.xethruHeartbeatNumber)
+}
 
 // The following functions will route HTTP requests into database queries
 
@@ -450,9 +463,7 @@ async function getLocations() {
             return null;
         }
         else{
-            console.log(results.rows)
-            return results.rows;
-
+            return results.rows.map(r => createLocationFromRow(r));
         }
     }
     catch(e) {
