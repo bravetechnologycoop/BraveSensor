@@ -1,6 +1,6 @@
 const express = require('express');
 let fs = require('fs')
-let moment = require('moment');
+let moment = require('moment-timezone');
 const bodyParser = require('body-parser');
 const redis = require('./db/redis.js');
 const db = require('./db/db.js');
@@ -160,48 +160,25 @@ app.get('/dashboard', async (req, res) => {
         res.redirect('/login')
         return
     }
-    // else if(typeof req.params.installationId !== "string") {
-    //     let installations = await db.getInstallations()
-    //     res.redirect('/dashboard/' + installations[0].id)
-    //     return
-    // }
 
     try {
-        // let recentSessions = await db.getRecentSessionsWithInstallationId(req.params.installationId)
-        // let currentInstallation = await db.getInstallationWithInstallationId(req.params.installationId)
         let allLocations = await db.getLocations()
         
         let viewParams = {
-            // recentSessions: [],
-            // currentInstallationName: currentInstallation.name,
             locations: allLocations
                 .map(location => { 
-                    return { name: location.location_human, id: location.locationid }
+                    return { name: location.displayName, id: location.locationid }
                 })
         }
+        viewParams.viewMessage = allLocations.length >= 1 ? 'Please select a location' : 'No locations to display'
 
-        // for(const recentSession of recentSessions) {
-        //     let createdAt = moment(recentSession.createdAt, moment.ISO_8601)
-        //     let updatedAt = moment(recentSession.updatedAt, moment.ISO_8601)
-        //     viewParams.recentSessions.push({
-        //         unit: recentSession.unit,
-        //         createdAt: createdAt.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
-        //         updatedAt: updatedAt.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
-        //         state: recentSession.state,
-        //         numPresses: recentSession.numPresses.toString(),
-        //         incidentType: recentSession.incidentType,
-        //         notes: recentSession.notes
-        //     })
-        // }
-        
-        console.log(viewParams)
         res.send(Mustache.render(locationsDashboardTemplate, viewParams))
     }
     catch(err) {
         console.log(err)
         res.status(500).send()
     }
-});
+})
 
 app.get('/dashboard/:locationId', async (req, res) => {
 
@@ -209,39 +186,46 @@ app.get('/dashboard/:locationId', async (req, res) => {
         res.redirect('/login')
         return
     }
-    // else if(typeof req.params.installationId !== "string") {
-    //     let installations = await db.getInstallations()
-    //     res.redirect('/dashboard/' + installations[0].id)
-    //     return
-    // }
+    else if(typeof req.params.locationId !== "string") {
+        let locations = await db.getlocations()
+        res.redirect('/dashboard/' + locations[0].id)
+        return
+    }
 
     try {
-        // let recentSessions = await db.getRecentSessionsWithInstallationId(req.params.installationId)
-        // let currentInstallation = await db.getInstallationWithInstallationId(req.params.installationId)
+        let recentSessions = await db.getHistoryOfSessions(req.params.locationId)
+        let currentLocation = await db.getLocationData(req.params.locationId)
         let allLocations = await db.getLocations()
         
         let viewParams = {
-            // recentSessions: [],
-            // currentInstallationName: currentInstallation.name,
+            recentSessions: [],
+            currentLocationName: currentLocation.display_name,
             locations: allLocations
                 .map(location => { 
-                    return { name: location.location_human, id: location.locationid }
+                    return { name: location.displayName, id: location.locationid }
                 })
         }
 
-        // for(const recentSession of recentSessions) {
-        //     let createdAt = moment(recentSession.createdAt, moment.ISO_8601)
-        //     let updatedAt = moment(recentSession.updatedAt, moment.ISO_8601)
-        //     viewParams.recentSessions.push({
-        //         unit: recentSession.unit,
-        //         createdAt: createdAt.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
-        //         updatedAt: updatedAt.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
-        //         state: recentSession.state,
-        //         numPresses: recentSession.numPresses.toString(),
-        //         incidentType: recentSession.incidentType,
-        //         notes: recentSession.notes
-        //     })
-        // }
+        // commented out keys were not shown on the old frontend but have been included in case that changes
+        for(const recentSession of recentSessions) {
+            let startTime = moment(recentSession.startTime, moment.ISO_8601)
+            let endTime = moment(recentSession.endTime, moment.ISO_8601)
+            viewParams.recentSessions.push({
+                // locationid: recentSession.locationid, // this one was deemed redundant, remove entirely?
+                startTime: startTime.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
+                endTime: endTime.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
+                // odFlag: recentSession.odFlag,
+                state: recentSession.state,
+                // phonenumber: recentSession.phonenumber,
+                notes: recentSession.notes,
+                incidentType: recentSession.incidentType,
+                sessionid: recentSession.sessionid,
+                duration: recentSession.duration,
+                // stillCounter: recentSession.stillCounter,
+                chatbotState: recentSession.chatbotState,
+                // alertReason: recentSession.alertReason,
+            })
+        }
         
         console.log(viewParams)
         res.send(Mustache.render(locationsDashboardTemplate, viewParams))
@@ -298,8 +282,8 @@ smartapp
     .subscribedEventHandler('myContactEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
         console.log(deviceEvent.value);
-        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
+        const LocationID = context.event.eventData.locedApp.config.LocationID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.locedApp.config.DeviceID[0].stringConfig.value;
         redis.addDoorSensorData(LocationID, signal);
         handleSensorRequest(LocationID);
         console.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
@@ -307,22 +291,22 @@ smartapp
     .subscribedEventHandler('myBatteryEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
         console.log(deviceEvent.value);
-        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
+        const LocationID = context.event.eventData.locedApp.config.LocationID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.locedApp.config.DeviceID[0].stringConfig.value;
         sendBatteryAlert(LocationID, signal)
         console.log(`Door${DeviceID} Battery: ${signal} @${LocationID}`);
     })
     .subscribedEventHandler('myMotionEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
-        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
+        const LocationID = context.event.eventData.locedApp.config.LocationID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.locedApp.config.DeviceID[0].stringConfig.value;
         redis.addMotionSensordata(DeviceID, LocationID, "Motion", signal);
         console.log(`Motion${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
     .subscribedEventHandler('myButtonEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
-        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
+        const LocationID = context.event.eventData.locedApp.config.LocationID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.locedApp.config.DeviceID[0].stringConfig.value;
         console.log(`Button${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
 

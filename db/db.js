@@ -2,7 +2,7 @@ const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://45324fe512564e858dcb6fe994761e93@o248765.ingest.sentry.io/3011388' });
-const SessionState = require('../SessionState.js')
+const Session = require('../Session.js')
 const Location = require('../Location.js')
 
 require('dotenv').config();
@@ -27,7 +27,7 @@ function createSessionFromRow(r) {
 }
 
 function createLocationFromRow(r) {
-    return new Location(r.locationid, r.displayName, r.deviceid, r.phonenumber, r.detectionzoneMin, r.detectionzoneMax, r.sensitivity, r.led, r.noisemap, r.movThreshold, r.durationThreshold, r.stillThreshold, r.rpmThreshold, r.xethruSentAlerts, r.xethruHeartbeatNumber)
+    return new Location(r.locationid, r.display_name, r.deviceid, r.phonenumber, r.detectionzone_min, r.detectionzone_max, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.xethru_sent_alerts, r.xethru_heartbeat_number)
 }
 
 // The following functions will route HTTP requests into database queries
@@ -222,19 +222,19 @@ async function getMostRecentSessionPhone(twilioPhone){
     }
 }
 
-async function getHistoryOfSessions(location, numEntries) {
+async function getHistoryOfSessions(locationid) {
     try {
-        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
+        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC", [locationid])
 
         if(typeof results === 'undefined') {
-            return null;
+            return null
         }
         else{
-            return results.rows;
+            return results.rows.map(r => createSessionFromRow(r))
         }
     }
     catch(e) {
-        console.log(`Error running the getHistoryOfSessions query: ${e}`);
+        console.log(`Error running the getHistoryOfSessions query: ${e}`)
     }
 }
 
@@ -437,9 +437,9 @@ async function startChatbotSessionState(session) {
 }
 
 // Retrieves the data from the locations table for a given location
-async function getLocationData(location) {
+async function getLocationData(locationid) {
     try{
-        const results = await pool.query('SELECT * FROM locations WHERE locationid = $1', [location]);
+        const results = await pool.query('SELECT * FROM locations WHERE locationid = $1', [locationid]);
         if(results == undefined){
             return null;
         }
