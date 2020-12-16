@@ -10,7 +10,6 @@ const session = require('express-session');
 var cookieParser = require('cookie-parser');
 const cors = require('cors');
 const smartapp   = require('@smartthings/smartapp');
-const path = require('path');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
 const Sentry = require('@sentry/node');
