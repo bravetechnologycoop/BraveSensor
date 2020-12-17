@@ -103,7 +103,7 @@ describe('ODetect server', () => {
 
         it('radar data showing movement should be saved to redis and trigger a session, which should remain open', async () => {
             for(let i = 0; i<15; i++){
-                await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD,100), getRandomInt(MOV_THRESHOLD,100))
+                await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1,100), getRandomInt(MOV_THRESHOLD + 1,100))
             }
             let radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
             expect(radarRows.length).to.equal(15)
@@ -115,27 +115,28 @@ describe('ODetect server', () => {
         })
 
         it('radar data showing movement should be saved to redis, trigger a session, a door opening should end the session', async () => {
-            for(let i = 0; i<10; i++){
-                await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD,100), getRandomInt(MOV_THRESHOLD,100))
+            for(let i = 0; i<15; i++){
+                await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1,100), getRandomInt(MOV_THRESHOLD + 1,100))
             }
             await door(testLocation1Id, 'open')
-            await door(testLocation1Id, 'closed')
-            for(let i = 0; i<5; i++){
+            for(let i = 0; i<15; i++){
                 await movement(testLocation1Id, getRandomInt(0,MOV_THRESHOLD), getRandomInt(0,MOV_THRESHOLD))
             }
-            sleep(100)
+            await door(testLocation1Id, 'closed')
+            for(let i = 0; i<15; i++){
+                await movement(testLocation1Id, getRandomInt(0,MOV_THRESHOLD), getRandomInt(0,MOV_THRESHOLD))
+            }
             let radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
-            expect(radarRows.length).to.equal(15)
+            expect(radarRows.length).to.equal(45)
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
             console.log(sessions)
-            expect(sessions.length).to.equal(1)
             let session = sessions[0]
             expect(session.end_time).to.not.be.null
         })
 
         it('radar data showing movement should trigger a session, and cessation of movement without a door event should trigger an alert', async () => {
             for(let i = 0; i<15; i++){
-                await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD,100), getRandomInt(MOV_THRESHOLD,100))
+                await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1,100), getRandomInt(MOV_THRESHOLD + 1,100))
             }
             for(let i = 0; i<85; i++){
                 await silence(testLocation1Id)
@@ -149,7 +150,7 @@ describe('ODetect server', () => {
 
         it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {        
             for(let i = 0; i<200; i++){
-                await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD,100), getRandomInt(MOV_THRESHOLD,100))
+                await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1,100), getRandomInt(MOV_THRESHOLD + 1,100))
             }
             let radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
             expect(radarRows.length).to.equal(200)

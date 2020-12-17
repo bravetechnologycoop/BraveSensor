@@ -79,9 +79,16 @@ async function getSessionWithSessionId(sessionid){
 
 
 // Gets the last session data in the table for a specified phone number
-async function getMostRecentSessionPhone(twilioPhone){
+async function getMostRecentSessionPhone(twilioNumber, client){
     try {
-        const results = await pool.query("SELECT s.* FROM sessions AS s LEFT JOIN locations AS l ON s.locationid = l.locationid WHERE l.twilio_number = $1  AND s.start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY s.start_time DESC LIMIT 1", [twilioPhone]);
+        let transactionMode = (typeof client !== 'undefined')
+        if(!transactionMode) {
+            client = await pool.connect()
+        }
+        const results = await client.query("SELECT s.* FROM sessions AS s LEFT JOIN locations AS l ON s.locationid = l.locationid WHERE l.twilio_number = $1  AND s.start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY s.start_time DESC LIMIT 1", [twilioNumber]);
+        if(!transactionMode) {
+            client.release()
+        }
         if(results == undefined){
             return null;
         }
@@ -112,7 +119,7 @@ async function getHistoryOfSessions(location, numEntries) {
 
 async function getAllSessionsFromLocation(location) {
     try {
-        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1", [location]);
+        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 order by start_time desc", [location]);
 
         if(!results) {
             return null;
@@ -161,16 +168,24 @@ async function createSession(phone, locationid, state, client) {
 }
 
 // Closes the session by updating the end time
-async function closeSession(sessionid) {
-    await updateSessionEndTime(sessionid); //
-    return true;
+async function closeSession(sessionid, client) {
+    await updateSessionEndTime(sessionid, client);
 } 
 
 // Enters the end time of a session when it closes and calculates the duration of the session
-async function updateSessionEndTime(sessionid) {
+async function updateSessionEndTime(sessionid, client) {
     try{
-        await pool.query("UPDATE sessions SET end_time = CURRENT_TIMESTAMP WHERE sessionid = $1", [sessionid]);
-        pool.query("UPDATE sessions SET duration = TO_CHAR(age(end_time, start_time),'HH24:MI:SS') WHERE sessionid = $1", [sessionid]); // Sets the duration to the difference between the end and start time
+        let transactionMode = (typeof client !== 'undefined')
+        if(!transactionMode) {
+            client = await pool.connect()
+        }
+
+        await client.query("UPDATE sessions SET end_time = CURRENT_TIMESTAMP WHERE sessionid = $1", [sessionid]);
+        client.query("UPDATE sessions SET duration = TO_CHAR(age(end_time, start_time),'HH24:MI:SS') WHERE sessionid = $1", [sessionid]); // Sets the duration to the difference between the end and start time
+        if(!transactionMode) {
+            client.release()
+        }
+
     }
     catch(e){
         console.log(`Error running the updateSessionEndTime query: ${e}`);
@@ -216,9 +231,18 @@ async function updateSentAlerts(location, sentalerts) {
     }
 }
 
-async function updateSessionResetDetails(sessionid, notes, state) {
+async function updateSessionResetDetails(sessionid, notes, state, client) {
     try{
-        const results = await pool.query("UPDATE sessions SET state = $1, notes = $2 WHERE sessionid = $3 RETURNING *", [state, notes, sessionid]);
+        let transactionMode = (typeof client !== 'undefined')
+        if(!transactionMode) {
+            client = await pool.connect()
+        }
+
+        const results = await client.query("UPDATE sessions SET state = $1, notes = $2 WHERE sessionid = $3 RETURNING *", [state, notes, sessionid]);
+        if(!transactionMode) {
+            client.release()
+        }
+
         if(results == undefined){
             return null;
         }
@@ -304,9 +328,16 @@ async function isOverdoseSuspected(xethru, session, location) {
 }
 
 // Saves the variables in the chatbot object into the sessions table
-async function saveChatbotSession(chatbot) {
+async function saveChatbotSession(chatbot, client) {
     try {
-        await pool.query("UPDATE sessions SET chatbot_state = $1, incidenttype = $2, notes = $3 WHERE sessionid = $4", [chatbot.state, chatbot.incidentType, chatbot.notes, chatbot.id]);
+        let transactionMode = (typeof client !== 'undefined')
+        if(!transactionMode) {
+            client = await pool.connect()
+        }
+        await client.query("UPDATE sessions SET chatbot_state = $1, incidenttype = $2, notes = $3 WHERE sessionid = $4", [chatbot.state, chatbot.incidentType, chatbot.notes, chatbot.id]);
+        if(!transactionMode){
+            client.release()
+        }
     }
     catch(e) {
         console.log(`Error running the saveChatbotSession query: ${e}`);

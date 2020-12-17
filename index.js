@@ -227,15 +227,12 @@ smartapp
 // Closes any open session and resets state for the given location
 async function autoResetSession(locationid){
     try{
-        if(await db.closeSession(locationid)){
-            let session = await db.getMostRecentSession(locationid);
-            console.log(session);
-            await db.updateSessionResetDetails(session.sessionid, "Auto reset", "Reset");
-            await redis.addStateMachineData("Reset", locationid);
-        }
-        else{
-            console.log("There is no open session to reset!")
-        }
+        let client = await db.beginTransaction()
+        let session = await db.getMostRecentSession(locationid, client);
+        await db.closeSession(session.sessionid, client);
+        await db.updateSessionResetDetails(session.sessionid, "Auto reset", "Reset", client);
+        await redis.addStateMachineData("Reset", locationid);
+        await db.commitTransaction(client)
     }
     catch (e) {
         console.log("Could not reset open session");
@@ -283,9 +280,10 @@ app.post('/api/xethru', async (req, res) => {
     handleSensorRequest(locationid);
 });
 
-// Handler for income SmartThings POST requests
 app.post('/api/doorTest', async(req, res) => {
+    const {locationid} = req.body;
     await redis.addDoorTestSensorData(req, res);
+    await handleSensorRequest(locationid)
 });
 
 // Handler for redirecting to the Frontend
@@ -367,11 +365,11 @@ async function handleSensorRequest(currentLocationId){
                     start_times[currentLocationId] = currentSession.start_time;
                 }
                 else{
-                    let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client); // Creates a new session
+                    let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client); 
                     start_times[currentLocationId] = currentSession.start_time;
                 }
             }else{
-                let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client); // Creates a new session
+                let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client); 
                 start_times[currentLocationId] = currentSession.start_time;
             }
             await db.commitTransaction(client)
@@ -379,16 +377,16 @@ async function handleSensorRequest(currentLocationId){
 
         // Checks if current state belongs to the session closingStates
         else if(CLOSINGSTATES.includes(currentState)){
-            let latestSession = await db.getMostRecentSession(currentLocationId);
-            await db.updateSessionState(latestSession.sessionid, currentState); //Adds the closing state to session
+            let client = await db.beginTransaction()
 
-            if(await db.closeSession(latestSession.sessionid)){ // Adds the end_time to the latest open session from the LocationID
-                console.log(`Session at ${currentLocationId} was closed successfully.`);
-                start_times[currentLocationId] = null; // Stops the session timer for this location ID
-            }
-            else{
-                console.log(`Attempted to close session but no open session was found for ${currentLocationId}`);
-            }
+            let latestSession = await db.getMostRecentSession(currentLocationId, client);
+            await db.updateSessionState(latestSession.sessionid, currentState, client); 
+
+            await db.closeSession(latestSession.sessionid, client)
+            console.log(`Session at ${currentLocationId} was closed successfully.`);
+            start_times[currentLocationId] = null; 
+            await db.commitTransaction(client)
+
         }
 
         else if(CHATBOTSTARTSTATES.includes(currentState)) {
@@ -575,24 +573,22 @@ app.post('/sms', async function (req, res) {
     // Parses out information from incoming message
     var to = req.body.To;
     var body = req.body.Body;
+    let client = await db.beginTransaction()
 
-    let session = await db.getMostRecentSessionPhone(to);
+    let session = await db.getMostRecentSessionPhone(to, client);
     let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
     let message = chatbot.advanceChatbot(body);
-    await db.saveChatbotSession(chatbot);
+    await db.saveChatbotSession(chatbot, client);
 
     if(chatbot.state == 'Completed') {
         //closes the session, sets the session state to RESET
-        if(await db.closeSession(chatbot.locationid)){ // Adds the end_time to the latest open session from the LocationID
-            console.log(`Session at ${chatbot.locationid} was closed successfully.`);
-            io.sockets.emit('sessiondata', {data: session}); // Sends currentSession data with end_time which will close the session in the frontend
-            start_times[chatbot.locationid] = null; // Stops the session timer for this location
-        }
-        else{
-            console.log(`Attempted to close session but no open session was found for ${chatbot.locationid}`);
-        }
+        await db.closeSession(session.sessionid, client) // Adds the end_time to the latest open session from the LocationID
+        console.log(`Session at ${chatbot.locationid} was closed successfully.`);
+        io.sockets.emit('sessiondata', {data: session}); // Sends currentSession data with end_time which will close the session in the frontend
+        start_times[chatbot.locationid] = null; // Stops the session timer for this location
         await redis.addStateMachineData('Reset', chatbot.locationid);
     }
+    await db.commitTransaction(client)
 
     twiml.message(message);
 
