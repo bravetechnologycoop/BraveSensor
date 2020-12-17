@@ -205,11 +205,18 @@ app.get('/dashboard/:locationId', async (req, res) => {
         // commented out keys were not shown on the old frontend but have been included in case that changes
         for(const recentSession of recentSessions) {
             let startTime = moment(recentSession.startTime, moment.ISO_8601)
-            let endTime = moment(recentSession.endTime, moment.ISO_8601)
+                .tz('America/Vancouver')
+                .format('DD MMM Y, hh:mm:ss A')
+            let endTime = recentSession.endTime 
+                ? moment(recentSession.endTime, moment.ISO_8601)
+                    .tz('America/Vancouver')
+                    .format('DD MMM Y, hh:mm:ss A')
+                : 'Ongoing'
+
             viewParams.recentSessions.push({
                 // locationid: recentSession.locationid, // this one was deemed redundant, remove entirely?
-                startTime: startTime.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
-                endTime: endTime.tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A'),
+                startTime: startTime,
+                endTime: endTime,
                 // odFlag: recentSession.odFlag,
                 state: recentSession.state,
                 // phonenumber: recentSession.phonenumber,
@@ -369,16 +376,6 @@ app.post('/api/xethru', async (req, res) => {
 app.post('/api/doorTest', async(req, res) => {
     redis.addDoorTestSensorData(req, res);
 });
-
-// // Handler for redirecting to the Frontend
-// app.get('/*', async function (req, res) {
-//     if (req.session.user && req.cookies.user_sid) {
-//         res.sendFile(path.join(__dirname));
-//     }
-//     else {
-//         res.redirect('/login');
-//     }
-// });
 
 async function handleSensorRequest(currentLocationId){
     let statemachine = new StateMachine(currentLocationId);

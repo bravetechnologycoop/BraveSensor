@@ -8,3 +8,4 @@ appServerLite.js
 devReplay1.js
 db/seeds.sql
 dump.rdb
+.env.local
