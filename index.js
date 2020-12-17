@@ -284,8 +284,8 @@ smartapp
     .subscribedEventHandler('myContactEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
         console.log(deviceEvent.value);
-        const LocationID = context.event.eventData.locedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.locedApp.config.DeviceID[0].stringConfig.value;
+        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         redis.addDoorSensorData(LocationID, signal);
         handleSensorRequest(LocationID);
         console.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
@@ -293,22 +293,22 @@ smartapp
     .subscribedEventHandler('myBatteryEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
         console.log(deviceEvent.value);
-        const LocationID = context.event.eventData.locedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.locedApp.config.DeviceID[0].stringConfig.value;
+        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.installededApp.config.DeviceID[0].stringConfig.value;
         sendBatteryAlert(LocationID, signal)
         console.log(`Door${DeviceID} Battery: ${signal} @${LocationID}`);
     })
     .subscribedEventHandler('myMotionEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
-        const LocationID = context.event.eventData.locedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.locedApp.config.DeviceID[0].stringConfig.value;
+        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         redis.addMotionSensordata(DeviceID, LocationID, "Motion", signal);
         console.log(`Motion${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
     .subscribedEventHandler('myButtonEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
-        const LocationID = context.event.eventData.locedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.locedApp.config.DeviceID[0].stringConfig.value;
+        const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         console.log(`Button${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
 

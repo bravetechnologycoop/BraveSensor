@@ -8,7 +8,7 @@ class Session {
         this.state = state,
         this.phonenumber = phonenumber,
         this.notes = notes,
-        this.incidentType = incidentType
+        this.incidentType = incidentType,
         this.sessionid = sessionid,
         this.duration = duration,
         this.stillCounter = stillCounter,
