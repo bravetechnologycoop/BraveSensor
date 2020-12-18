@@ -182,11 +182,6 @@ app.get('/dashboard/:locationId', async (req, res) => {
         res.redirect('/login')
         return
     }
-    else if(typeof req.params.locationId !== 'string') {
-        let locations = await db.getLocations()
-        res.redirect('/dashboard/' + locations[0].id)
-        return
-    }
 
     try {
         let recentSessions = await db.getHistoryOfSessions(req.params.locationId)
@@ -214,17 +209,13 @@ app.get('/dashboard/:locationId', async (req, res) => {
                 : 'Ongoing'
 
             viewParams.recentSessions.push({
-                // locationid: recentSession.locationid, // this one was deemed redundant, remove entirely?
                 startTime: startTime,
                 endTime: endTime,
-                // odFlag: recentSession.odFlag,
                 state: recentSession.state,
-                // phonenumber: recentSession.phonenumber,
                 notes: recentSession.notes,
                 incidentType: recentSession.incidentType,
                 sessionid: recentSession.sessionid,
                 duration: recentSession.duration,
-                // stillCounter: recentSession.stillCounter,
                 chatbotState: recentSession.chatbotState,
                 // alertReason: recentSession.alertReason,
             })
