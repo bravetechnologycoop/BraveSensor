@@ -294,7 +294,7 @@ smartapp
         const signal = deviceEvent.value;
         console.log(deviceEvent.value);
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
-        const DeviceID = context.event.eventData.installededApp.config.DeviceID[0].stringConfig.value;
+        const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         sendBatteryAlert(LocationID, signal)
         console.log(`Door${DeviceID} Battery: ${signal} @${LocationID}`);
     })
