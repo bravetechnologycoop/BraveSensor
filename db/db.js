@@ -6,7 +6,7 @@ const Session = require('../Session.js')
 const Location = require('../Location.js')
 
 require('dotenv').config();
-let pgconnectionString = process.env.PG_CONNECTION_STRING;
+let pgconnectionString = process.env.PG_CONNECTION_STRING
 
 const pool = new pg.Pool({
     connectionString: pgconnectionString
@@ -23,7 +23,7 @@ pool.on('error', (err) => {
 // Functions added to facilitate moving to Mustache template from angular front end
 
 function createSessionFromRow(r) {
-    return new Session(r.locationid, r.start_time, r.end_time, r.od_flag, r.state, r.phonenumber, r.notes, r.incidenttype, r.sessionid, r.duration, r.still_counter, r.chatbot_state, r.alert_reasons)
+    return new Session(r.locationid, r.start_time, r.end_time, r.od_flag, r.state, r.phonenumber, r.notes, r.incidenttype, r.sessionid, r.duration, r.still_counter, r.chatbot_state, r.alert_reason)
 }
 
 function createLocationFromRow(r) {

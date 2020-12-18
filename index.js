@@ -37,7 +37,7 @@ setInterval(async function (){
     let locationTable = await db.getLocations()
     let locationsArray = []
     for(let i = 0; i < locationTable.length; i++){
-        locationsArray.push(locationTable[i].locationId)
+        locationsArray.push(locationTable[i].locationid)
     }
     locationsArray;
     for(let i = 0; i < locationsArray.length; i++){
@@ -182,8 +182,8 @@ app.get('/dashboard/:locationId', async (req, res) => {
         res.redirect('/login')
         return
     }
-    else if(typeof req.params.locationId !== "string") {
-        let locations = await db.getlocations()
+    else if(typeof req.params.locationId !== 'string') {
+        let locations = await db.getLocations()
         res.redirect('/dashboard/' + locations[0].id)
         return
     }
