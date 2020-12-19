@@ -224,7 +224,7 @@ async function getMostRecentSessionPhone(twilioPhone){
 
 async function getHistoryOfSessions(locationid) {
     try {
-        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC", [locationid])
+        const results = await pool.query('SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 40', [locationid])
 
         if(typeof results === 'undefined') {
             return null
