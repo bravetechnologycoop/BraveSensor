@@ -25,40 +25,6 @@ The ests run automatically on Travis on every push to GitHub and every time a pu
 
 Before deployment of a new Docker container to the Kubernetes cluster, check that all the following are in place:
 
-### Frontend artifacts
-
-The ODetect front end is built using Angular JS. 
-
-These steps need to be re-run everytime there is a change in `ODetect-Frontend-Local`.
-
-1. Clone `ODetect-Frontend-Local` on your local machine
-
-1. Ensure the correct URL is being used in `src/app/history/history.components.ts` in **three** places
-
-   - If you are deploying to **dev**, ensure that the route used in all calls to `io('<route>')` is
-     `https://dev.odetect.brave.coop/`
-
-   - If you are deploying to **prod**, ensure that the route used in all calls to `io('<route>')` is
-     `https://sensors.odetect.brave.coop/`
-
-1. In the `ODetect-Frontend-Local` folder, run
-    ```
-    npm install
-    npx -p @angular/cli ng build --prod
-    ```
-
-    Note that the `--prod` flag is used for both **dev** and **prod** deployments
-
-1. If it doesn't exist yet, create the expected location by running
-    ```
-    mkdir ../ODetect-Backend-Local/Public
-    ```
-
-1. Move the resulting files to the expected location by running 
-    ```
-    mv dist/ODetect ../ODetect-Backend-Local/Public/ODetect
-    ```
-
 ### Smartthings Public Key
 
 The Samsung Smartthings Smartapp requires a public key to work. 

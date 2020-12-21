@@ -4,10 +4,10 @@ const OD_FLAG_STATE = require('./SessionStateODFlagEnum');
 const DOOR_STATE = require('./SessionStateDoorEnum.js');
 let moment = require('moment');
 
-class SessionState {
+class StateMachine {
 
-    constructor(location) {
-        this.location = location;
+    constructor(locationid) {
+        this.location = locationid;
     }
 
     async getNextState(db, redis) {
@@ -150,4 +150,4 @@ class SessionState {
     }
 }
 
-module.exports = SessionState;
+module.exports = StateMachine

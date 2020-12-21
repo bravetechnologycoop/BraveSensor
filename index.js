@@ -1,49 +1,32 @@
 const express = require('express');
-let moment = require('moment');
+let fs = require('fs')
+let moment = require('moment-timezone');
 const bodyParser = require('body-parser');
 const redis = require('./db/redis.js');
 const db = require('./db/db.js');
-const SessionState = require('./SessionState.js');
+const StateMachine = require('./StateMachine.js');
 const Chatbot = require('./Chatbot.js');
 const session = require('express-session');
 var cookieParser = require('cookie-parser');
 const cors = require('cors');
 const smartapp   = require('@smartthings/smartapp');
-const path = require('path');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
 require('dotenv').config();
 const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
-const helpers = require('brave-alert-lib').helpers
+const Mustache = require('mustache')
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
-const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
+
+const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/locationsDashboard.mst`, 'utf-8')
+
 
 // RESET IDs that had discrepancies
 var resetDiscrepancies = [];
 
 // Session start_times dictionary.
 var start_times = {};
-
-// Update the list of locations every minute
-if(!helpers.isTestEnvironment()){
-    setInterval(async function (){
-
-        let locationTable = await db.getLocations()
-        let locationsArray = []
-        for(let i = 0; i < locationTable.length; i++){
-            locationsArray.push(locationTable[i].locationid)
-        }
-        locationsArray;
-        io.sockets.emit('getLocations', {data: locationsArray});
-        for(let i = 0; i < locationsArray.length; i++){
-            await checkHeartbeat(locationsArray[i])
-        }
-    }, LOCATION_UPDATE_FREQUENCY)
-}
 
 // These states do not start nor close a session
 let VOIDSTATES = [
@@ -106,12 +89,12 @@ app.use((req, res, next) => {
     next();
 });
 
-
 // middleware function to check for logged-in users
 var sessionChecker = (req, res, next) => {
     if (req.session.user && req.cookies.user_sid) {
-        res.sendFile(path.join(__dirname));
-    } else {
+        res.redirect('/dashboard');
+    }
+    else {
         next();
     }
 };
@@ -119,9 +102,6 @@ var sessionChecker = (req, res, next) => {
 app.get('/', sessionChecker, (req, res) => {
     res.redirect('/login');
 });
-
-// Used for hosting the Frontend
-app.use(express.static(__dirname + '/Public/ODetect'));
 
 app.route('/login')
     .get(sessionChecker, (req, res) => {
@@ -133,8 +113,8 @@ app.route('/login')
 
         if ((username === helpers.getEnvVar('WEB_USERNAME')) && (password === helpers.getEnvVar('PASSWORD'))) {
             req.session.user = username;
-            res.redirect('/');
-        }
+            res.redirect('/dashboard');
+        } 
         else {
             res.redirect('/login');
         }
@@ -149,6 +129,83 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     }
 });
+
+app.get('/dashboard', async (req, res) => {
+    if (!req.session.user || !req.cookies.user_sid) {
+        res.redirect('/login')
+        return
+    }
+
+    try {
+        let allLocations = await db.getLocations()
+        
+        let viewParams = {
+            locations: allLocations
+                .map(location => { 
+                    return { name: location.displayName, id: location.locationid }
+                })
+        }
+        viewParams.viewMessage = allLocations.length >= 1 ? 'Please select a location' : 'No locations to display'
+
+        res.send(Mustache.render(locationsDashboardTemplate, viewParams))
+    }
+    catch(err) {
+        console.log(err)
+        res.status(500).send()
+    }
+})
+
+app.get('/dashboard/:locationId', async (req, res) => {
+    if (!req.session.user || !req.cookies.user_sid) {
+        res.redirect('/login')
+        return
+    }
+
+    try {
+        let recentSessions = await db.getHistoryOfSessions(req.params.locationId)
+        let currentLocation = await db.getLocationData(req.params.locationId)
+        let allLocations = await db.getLocations()
+        
+        let viewParams = {
+            recentSessions: [],
+            currentLocationName: currentLocation.display_name,
+            locations: allLocations
+                .map(location => { 
+                    return { name: location.displayName, id: location.locationid }
+                })
+        }
+
+        // commented out keys were not shown on the old frontend but have been included in case that changes
+        for(const recentSession of recentSessions) {
+            let startTime = moment(recentSession.startTime, moment.ISO_8601)
+                .tz('America/Vancouver')
+                .format('DD MMM Y, hh:mm:ss A')
+            let endTime = recentSession.endTime 
+                ? moment(recentSession.endTime, moment.ISO_8601)
+                    .tz('America/Vancouver')
+                    .format('DD MMM Y, hh:mm:ss A')
+                : 'Ongoing'
+
+            viewParams.recentSessions.push({
+                startTime: startTime,
+                endTime: endTime,
+                state: recentSession.state,
+                notes: recentSession.notes,
+                incidentType: recentSession.incidentType,
+                sessionid: recentSession.sessionid,
+                duration: recentSession.duration,
+                chatbotState: recentSession.chatbotState,
+                // alertReason: recentSession.alertReason,
+            })
+        }
+        
+        res.send(Mustache.render(locationsDashboardTemplate, viewParams))
+    }
+    catch(err) {
+        console.log(err)
+        res.status(500).send()
+    }
+})
 
 // Set up Twilio
 const accountSid = helpers.getEnvVar('TWILIO_SID');
@@ -286,18 +343,8 @@ app.post('/api/doorTest', async(req, res) => {
     await handleSensorRequest(locationid)
 });
 
-// Handler for redirecting to the Frontend
-app.get('/*', async function (req, res) {
-    if (req.session.user && req.cookies.user_sid) {
-        res.sendFile(path.join(__dirname));
-    }
-    else {
-        res.redirect('/login');
-    }
-});
-
 async function handleSensorRequest(currentLocationId){
-    let statemachine = new SessionState(currentLocationId);
+    let statemachine = new StateMachine(currentLocationId);
     let currentState = await statemachine.getNextState(db, redis);
     let stateobject = await redis.getLatestLocationStatesData(currentLocationId)
     let prevState
@@ -423,21 +470,6 @@ async function handleSensorRequest(currentLocationId){
     }
 }
 
-// Web Socket connection to Frontend
-io.on('connection', (socket) => {
-
-    socket.on('getHistory', async (location, entries) => {
-        let sessionHistory = await db.getHistoryOfSessions(location, entries);
-        io.sockets.emit('sendHistory', {data: sessionHistory});
-    });
-    
-    // socket.emit('getLocations', {
-    //     data: locations
-    // })
-    socket.emit('Hello', {
-        greeting: "Hello ODetect Frontend"
-    });
-});
 
 // Twilio Functions
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
@@ -601,8 +633,8 @@ let server;
 server = app.listen(8080);
 console.log('brave server listening on port 8080')
 
-// Socket.io server connection start
-// io.listen(server);
+
+
 
 module.exports.server = server;
 module.exports.db = db;
