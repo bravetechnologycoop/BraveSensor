@@ -3,7 +3,8 @@ const Redis = require("ioredis");
 const radarData = require('./radarData.js');
 const doorData = require('./doorData.js');
 const stateData = require('./stateData.js');
-const client = new Redis(6379, process.env.REDIS_CLUSTER_IP); // uses defaults unless given configuration object
+const {helpers} = require('brave-alert-lib')
+const client = new Redis(6379, helpers.getEnvVar('REDIS_CLUSTER_IP')); // uses defaults unless given configuration object
 
 
 client.on("error", function(error) {
@@ -12,6 +13,12 @@ client.on("error", function(error) {
  
 async function getXethruWindow(locationID, startTime, endTime, windowLength){
     let rows = await client.xrevrange('xethru:'+locationID,startTime, endTime, 'count', windowLength);
+    var radarStream = rows.map(entry =>  new radarData(entry))
+    return radarStream
+}
+
+async function getXethruStream(locationID, startTime, endTime){
+    let rows = await client.xrevrange('xethru:'+locationID,startTime, endTime);
     var radarStream = rows.map(entry =>  new radarData(entry))
     return radarStream
 }
@@ -28,14 +35,21 @@ async function getStatesWindow(locationID, startTime, endTime, windowLength){
     return stateStream
 }
 
+async function clearKeys(){
+    await client.flushall()
+}
+
+async function quit(){
+    await client.quit()
+}
 // POST new door Test data
 const addDoorSensorData = (locationid, signal) => {
     client.xadd("door:" + locationid,  "*", "signal", signal);
 }
 
-const addDoorTestSensorData = (request, response) => {
+async function addDoorTestSensorData(request, response){
     const {locationid, signal} = request.body;
-    client.xadd("door:"+locationid,  "*","signal", signal);
+    await client.xadd("door:"+locationid,  "*","signal", signal);
     response.status(200).json("OK")
 }
 
@@ -67,7 +81,12 @@ async function getLatestXeThruSensorData(locationid){
 
 async function getLatestLocationStatesData(locationid){
     let singleitem = await getStatesWindow(locationid, "+", "-", 1);
-    return singleitem[0];
+
+    if(!singleitem){
+        return null
+    }else{
+        return singleitem[0];
+    }
 }
 
 module.exports = {
@@ -76,8 +95,11 @@ module.exports = {
     addStateMachineData,
     addXeThruSensorData,
     getXethruWindow,
+    getXethruStream,
     getStatesWindow,
     getLatestDoorSensorData,
     getLatestXeThruSensorData,
-    getLatestLocationStatesData
+    getLatestLocationStatesData,
+    clearKeys,
+    quit
 }

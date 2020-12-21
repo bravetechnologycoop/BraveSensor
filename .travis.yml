@@ -1,14 +1,53 @@
-language: node_js
-node_js: "node"
-
-# OS
 dist: xenial
 
-# install dependencies
-install:
-  - npm install
+matrix:
+  include:
+    - name: Server
+      language: node_js
+      node_js: "node"
 
-# run unit tests
-script:
-  - npm run lint
-  - sudo env "PATH=$PATH" npm run test
+      # install dependencies
+      install:
+        - npm install
+        - npm install pg@latest
+      services:
+        - redis-server 
+
+      addons:
+        postgresql: "12"
+        apt:
+          packages:
+          - postgresql-12
+          - postgresql-client-12
+
+      env:
+        - WEB_USERNAME_TEST=TravisDashboardUsername
+        - PASSWORD_TEST=TravisDashboardPassword
+        - SECRET_TEST=TravisCookieSecret
+        - PG_USER_TEST=brave
+        - PG_PASSWORD_TEST=travispassword
+        - PG_PORT_TEST=5433
+        - PG_HOST_TEST=localhost
+        - PG_USER=brave
+        - PG_PASSWORD=travispassword
+        - PG_PORT=5433
+        - PG_HOST=localhost
+        - REDIS_CLUSTER_IP_TEST=localhost
+        # TWILIO_SID_TEST (from https://www.twilio.com/console/voice/project/test-credentials)
+        - secure: "T4IjkoXVMFLcbq7livJ6HxATgk/q2znD4+BdFPn8cuNRc6QzBiNR7AZWoyhRrXqvBv3H3Mq5MIGPmYUW2HRXrihq3VLcp1ZRejXjv3CKqg518yi4JHax7hYesRUE9RoU8SXpOvEQknV9LnNbL030cL7kef1MLd+LepRMvo6B/+3/HuhjZHAmGOj93n8r7Ee1u/OzQDajXKbK0NhsE5HSMsKhwDQe+yyWZKerK1FDx35U4kjmj4kaafNYoLUNwr5S64avBI7kaA45TQ4h4BgPfHVLNwpI+9kVQpCc+wHnEVDd6FzAb3fp8PtYrT1W1hIe9A/+emX2QuMFtHHB6+PNUdPY4q+Wu6RJePcKVw9bWbsMFoAOJ8ZOyL7n/WxfP06FtLx9g8X/FyCNnbtKJlgd+NiIvV45s8QW6tG7/df7m2/FbmENl6++2JsV7HnVyuEITOe8wx/Evnr9Hzlh8zvDfQ3qY8Gb/BusQ7eSeaq/08yE+pZyTDCCh1lyfxaGBC1C6QV5QMwEHPq3U70MdhiXoSKV8Za2GhW96d5dA75yPPqqhc1/MDXZvOUAk/nNs/mzYhlQg2XbR8VML7aSTtP+zwX57kt/5DpXibIPl3wAnXMNhVNPYT3xPnzPRSEzUNAJI/f9qwOTK9eEzspumdqUAxkss5YoE5VWDMHPC4f3Hhk="
+        # TWILIO_TOKEN_TEST (from https://www.twilio.com/console/voice/project/test-credentials)
+        - secure: "YXELSMATbhbhG7UhAq0hCfnrHFC0BPtHTE3yv/7NWe/fsw2uPz8QtSLYUhQ2+hMrCSqP1Z8e4l4J8w3tIZA7vpT6W3kHIT19HGjATs0GQEjVynQfPbNitb5WJu1AZmEuoGlbPx85hC8pHNtW0Q15qM3OWh4M9i0sk3XdQ5QRZwlAsdicbgvXRLds3W71Pi/FiTuVCbWtW7la3UMo0YwZTYXECLr4OYkmBsDTKvCpxRRLmgNE+nj/cIYAVDo+/K5sCdi+1sHLtFrqBogKQyiT0oQe1rjNQ03aA4+gSs1sFNJGPoff7jyqSRqAA/IamDUPbqqcOFhUEhskxNa0VBG7CVasVAIsIIZg0wnbR+nMhQm0ZeZBInXZKprtBV0aag10uN+p/lZDwwQHu0RmPv+6vzdJ8Q5AQAPOL6c272YOXYxcA2ft7jRM3S+i48w8qfFWuP4pCcUW4BrTI7snJe2MQcNCT9S2GeNv2EVFr1Or3gFN+xTMQSKXApaWvV4IE2ETc9AtJ3VjSUltqAGyeaBqDoisO6w4t0o1iyRJUkhmCt+TbYQ1R4ks6eDYstSmDQVa2UNh4DLvQhmv5u+78s9B0+SN5fEIx3d9Pl7XsYZQR/eKXzaAEFqfL/M9wUs2XX3oKwzcnsfzQUZDqgzxp3DccNUGSlo4MNTJ5hTgPRBH5Zs="
+        - PGVER=12
+        - PGPORT=5433
+
+        # setup database and create dummy public key for smartthings integration
+      before_script:
+        - bash setup_postgresql_local.sh
+        - touch smartthings_rsa.pub
+
+      # run unit tests, integration tests, and linter
+      script:
+        - npm run lint
+        - sudo env "PATH=$PATH" npm run unittest
+        - sudo env "PATH=$PATH" npm run integrationtest
+

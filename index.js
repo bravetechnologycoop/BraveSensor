@@ -12,39 +12,22 @@ const cors = require('cors');
 const smartapp   = require('@smartthings/smartapp');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
-const Sentry = require('@sentry/node');
-Sentry.init({ dsn: 'https://1e7d418731ec4bf99cb2405ea3e9b9fc@o248765.ingest.sentry.io/3009454' });
 require('dotenv').config();
 const app = express();
 const Mustache = require('mustache')
+const {helpers} = require('brave-alert-lib')
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
-const LOCATION_UPDATE_FREQUENCY = 60 * 1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
 
 const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/locationsDashboard.mst`, 'utf-8')
 
-var locations = [];
 
 // RESET IDs that had discrepancies
 var resetDiscrepancies = [];
 
 // Session start_times dictionary.
 var start_times = {};
-
-// Update the list of locations every minute
-setInterval(async function (){
-    let locationTable = await db.getLocations()
-    let locationsArray = []
-    for(let i = 0; i < locationTable.length; i++){
-        locationsArray.push(locationTable[i].locationid)
-    }
-    locationsArray;
-    for(let i = 0; i < locationsArray.length; i++){
-        await checkHeartbeat(locationsArray[i])
-    }
-}, LOCATION_UPDATE_FREQUENCY)
-
 
 // These states do not start nor close a session
 let VOIDSTATES = [
@@ -77,10 +60,6 @@ let CHATBOTSTARTSTATES = [
     STATE.SUSPECTED_OD
 ];
 
-function getEnvVar(name) {
-    return process.env.NODE_ENV === 'test' ? process.env[name + '_TEST'] : process.env[name];
-}
-
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({extended: true})); // Set to true to allow the body to contain any type of value
 app.use(bodyParser.json());
@@ -94,7 +73,7 @@ app.use(cookieParser());
 // initialize express-session to allow us track the logged-in user across sessions.
 app.use(session({
     key: 'user_sid',
-    secret: getEnvVar('SECRET'),
+    secret: helpers.getEnvVar('SECRET'),
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -133,7 +112,7 @@ app.route('/login')
         var username = req.body.username,
             password = req.body.password;
 
-        if ((username === getEnvVar('WEB_USERNAME')) && (password === getEnvVar('PASSWORD'))) {
+        if ((username === helpers.getEnvVar('WEB_USERNAME')) && (password === helpers.getEnvVar('PASSWORD'))) {
             req.session.user = username;
             res.redirect('/dashboard');
         } 
@@ -230,8 +209,8 @@ app.get('/dashboard/:locationId', async (req, res) => {
 })
 
 // Set up Twilio
-const accountSid = process.env.TWILIO_SID;
-const authToken = process.env.TWILIO_TOKEN;
+const accountSid = helpers.getEnvVar('TWILIO_SID');
+const authToken = helpers.getEnvVar('TWILIO_TOKEN');
 
 const twilioClient = require('twilio')(accountSid, authToken);
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
@@ -306,15 +285,12 @@ smartapp
 // Closes any open session and resets state for the given location
 async function autoResetSession(locationid){
     try{
-        if(await db.closeSession(locationid)){
-            let session = await db.getMostRecentSession(locationid);
-            console.log(session);
-            await db.updateSessionResetDetails(session.sessionid, "Auto reset", "Reset");
-            await redis.addStateMachineData("Reset", locationid);
-        }
-        else{
-            console.log("There is no open session to reset!")
-        }
+        let client = await db.beginTransaction()
+        let session = await db.getMostRecentSession(locationid, client);
+        await db.closeSession(session.sessionid, client);
+        await db.updateSessionResetDetails(session.sessionid, "Auto reset", "Reset", client);
+        await redis.addStateMachineData("Reset", locationid);
+        await db.commitTransaction(client)
     }
     catch (e) {
         console.log("Could not reset open session");
@@ -322,32 +298,31 @@ async function autoResetSession(locationid){
 }
 
 // //This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
-
-setInterval(async function (){
-    // Iterating through multiple locations
-    for(let i = 0; i < locations.length; i++){
-        //Get recent state history
-        let currentLocationId = locations[i];
-        let stateHistoryQuery = await redis.getStatesWindow(currentLocationId, '+', '-', 60);
-        let stateMemory = [];
-        //Store this in a local array
-        for(let i = 0; i < stateHistoryQuery.length; i++){
-            stateMemory.push(stateHistoryQuery[i].state)
-        }
-        // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
-        for(let i=1; i<(stateHistoryQuery.length); i++){
-            if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].timestamp))){
-                console.log(`The Reset state logged at ${stateHistoryQuery[i].timestamp} has a discrepancy`);
-                resetDiscrepancies.push(stateHistoryQuery[i].timestamp);
-                console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
-                console.log(resetDiscrepancies);
-                await redis.addStateMachineData(STATE.RESET, currentLocationId);
-                //Once a reset state has been added, additionally reset any ongoing sessions
-                autoResetSession(currentLocationId);
+if(!helpers.isTestEnvironment()){
+    setInterval(async function (){
+        let locations = await db.getLocations()
+        for(let i = 0; i < locations.length; i++){
+            let currentLocationId = locations[i];
+            let stateHistoryQuery = await redis.getStatesWindow(currentLocationId, '+', '-', 60);
+            let stateMemory = [];
+            for(let i = 0; i < stateHistoryQuery.length; i++){
+                stateMemory.push(stateHistoryQuery[i].state)
+            }
+            // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
+            for(let i=1; i<(stateHistoryQuery.length); i++){
+                if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].timestamp))){
+                    console.log(`The Reset state logged at ${stateHistoryQuery[i].timestamp} has a discrepancy`);
+                    resetDiscrepancies.push(stateHistoryQuery[i].timestamp);
+                    console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
+                    console.log(resetDiscrepancies);
+                    await redis.addStateMachineData(STATE.RESET, currentLocationId);
+                    //Once a reset state has been added, additionally reset any ongoing sessions
+                    autoResetSession(currentLocationId);
+                }
             }
         }
-    }
-}, WATCHDOG_TIMER_FREQUENCY)
+    }, WATCHDOG_TIMER_FREQUENCY)
+}
 
 // Handler for income SmartThings POST requests
 app.post('/api/st', function(req, res, next) {    // eslint-disable-line no-unused-vars -- next might be used in the future
@@ -363,37 +338,40 @@ app.post('/api/xethru', async (req, res) => {
     handleSensorRequest(locationid);
 });
 
-// Handler for income SmartThings POST requests
 app.post('/api/doorTest', async(req, res) => {
-    redis.addDoorTestSensorData(req, res);
+    const {locationid} = req.body;
+    await redis.addDoorTestSensorData(req, res);
+    await handleSensorRequest(locationid)
 });
 
 async function handleSensorRequest(currentLocationId){
     let statemachine = new StateMachine(currentLocationId);
     let currentState = await statemachine.getNextState(db, redis);
     let stateobject = await redis.getLatestLocationStatesData(currentLocationId)
-    let prevState = stateobject.state;
+    let prevState
+    if(!stateobject){
+        prevState=STATE.RESET
+    }else{
+        prevState = stateobject.state;
+    }
     let location = await db.getLocationData(currentLocationId);
 
     // Check the XeThru Heartbeat
-    await checkHeartbeat(currentLocationId);
-
+    if(!helpers.isTestEnvironment()){
+        await checkHeartbeat(currentLocationId);
+    }
     console.log(`${currentLocationId}: ${currentState}`);
 
     // Get current time to compare to the session's start time
 
     var location_start_time = start_times[currentLocationId]
     if(location_start_time != null && location_start_time != undefined){
-        var today = new Date();
-        var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-        var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-        var dateTime_string = date+' '+time;
 
-        var dateTime = new Date(dateTime_string);
         var start_time_sesh = new Date(location_start_time);
+        var now = new Date()
 
         // Current Session duration so far:
-        var sessionDuration = (dateTime - start_time_sesh)/1000;
+        var sessionDuration = (now - start_time_sesh)/1000;
     }
 
     // If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well. 
@@ -417,7 +395,7 @@ async function handleSensorRequest(currentLocationId){
 
             if(typeof latestSession !== 'undefined'){ // Checks if no session exists for this location yet.
                 if(latestSession.end_time == null){ // Checks if session is open.
-                    await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
+                    await db.updateSessionState(latestSession.sessionid, currentState);
                 }
             }
         }
@@ -425,32 +403,38 @@ async function handleSensorRequest(currentLocationId){
 
         // Checks if current state belongs to the session triggerStates
         else if(TRIGGERSTATES.includes(currentState)){
-            let latestSession = await db.getMostRecentSession(currentLocationId);
+
+            let client = await db.beginTransaction()
+            let latestSession = await db.getMostRecentSession(currentLocationId, client);
 
             if(typeof latestSession !== 'undefined'){ //Checks if session exists
                 if(latestSession.end_time == null){  // Checks if session is open for this location
-                    let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId);
+                    let currentSession = await db.updateSessionState(latestSession.sessionid, currentState, client);
                     start_times[currentLocationId] = currentSession.start_time;
                 }
                 else{
-                    let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState); // Creates a new session
+                    let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client); 
                     start_times[currentLocationId] = currentSession.start_time;
                 }
+            }else{
+                let currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client); 
+                start_times[currentLocationId] = currentSession.start_time;
             }
+            await db.commitTransaction(client)
         }
 
         // Checks if current state belongs to the session closingStates
         else if(CLOSINGSTATES.includes(currentState)){
-            let latestSession = await db.getMostRecentSession(currentLocationId);
-            await db.updateSessionState(latestSession.sessionid, currentState, currentLocationId); //Adds the closing state to session
+            let client = await db.beginTransaction()
 
-            if(await db.closeSession(currentLocationId)){ // Adds the end_time to the latest open session from the LocationID
-                console.log(`Session at ${currentLocationId} was closed successfully.`);
-                start_times[currentLocationId] = null; // Stops the session timer for this location ID
-            }
-            else{
-                console.log(`Attempted to close session but no open session was found for ${currentLocationId}`);
-            }
+            let latestSession = await db.getMostRecentSession(currentLocationId, client);
+            await db.updateSessionState(latestSession.sessionid, currentState, client); 
+
+            await db.closeSession(latestSession.sessionid, client)
+            console.log(`Session at ${currentLocationId} was closed successfully.`);
+            start_times[currentLocationId] = null; 
+            await db.commitTransaction(client)
+
         }
 
         else if(CHATBOTSTARTSTATES.includes(currentState)) {
@@ -502,51 +486,51 @@ async function sendTwilioMessage(fromPhone, toPhone, msg) {
     }
 }
 
-
 // TODO: replace these many almost identical functions with something more elegant
 async function sendInitialChatbotMessage(session) {
     console.log("Intial message sent");
     var location = session.locationid;
     var alertReason = session.alert_reason;
     let locationData = await db.getLocationData(location);
-    await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a ${alertReason} alert. Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
     await db.startChatbotSessionState(session);
+    await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a ${alertReason} alert. Please check on the bathroom. Please respond with 'ok' once you have checked on it.`);
     setTimeout(reminderMessage, locationData.unresponded_timer, session.sessionid);
     setTimeout(fallbackMessage, locationData.unresponded_session_timer, session.sessionid)
 }
 
 async function reminderMessage(sessionid) {
-    console.log("Reminder message being sent");
-    let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
-    if(session.chatbot_state == STATE.STARTED) {
-        //Get location data
-        var location = session.locationid;
-        let locationData = await db.getLocationData(location)
-        //send the message
-        await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
-        session.chatbot_state = STATE.WAITING_FOR_RESPONSE;
-        let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
-        await db.saveChatbotSession(chatbot);
+    if(!helpers.isTestEnvironment()){
+        console.log("Reminder message being sent");
+        let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
+        if(session.chatbot_state == STATE.STARTED) {
+            //Get location data
+            var location = session.locationid;
+            let locationData = await db.getLocationData(location)
+            //send the message
+            await sendTwilioMessage(locationData.twilio_number, session.phonenumber, `This is a reminder to check on the bathroom`)
+            session.chatbot_state = STATE.WAITING_FOR_RESPONSE;
+            let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
+            await db.saveChatbotSession(chatbot);
+        }
     }
-    //else do nothing
 }
 
-async function fallbackMessage(sessionid) {
+async function fallbackMessage(sessionid){
     console.log("Fallback message being sent");
-    let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
-    if(session.chatbot_state == STATE.WAITING_FOR_RESPONSE) {
-        console.log("Fallback if block");
-        let locationData = await db.getLocationData(session.locationid)
-        console.log(`fallback number is:  ${locationData.fallback_phonenumber}`)
-        console.log(`twilio number is:  ${locationData.twilio_number}`)
-        await sendTwilioMessage(locationData.twilio_number, locationData.fallback_phonenumber,`An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`)
+    if(!helpers.isTestEnvironment()){
+        let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
+        if(session.chatbot_state == STATE.WAITING_FOR_RESPONSE) {
+            console.log("Fallback if block");
+            let locationData = await db.getLocationData(session.locationid)
+            console.log(`fallback number is:  ${locationData.fallback_phonenumber}`)
+            console.log(`twilio number is:  ${locationData.twilio_number}`)
+            await sendTwilioMessage(locationData.twilio_number, locationData.fallback_phonenumber,`An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`)
+        }
     }
     //else do nothing
 } 
 
-
 //Heartbeat Helper Functions
-
 async function checkHeartbeat(locationid) {
     let location = await db.getLocationData(locationid);
     // Query raw sensor data to transmit to the FrontEnd
@@ -615,7 +599,6 @@ async function sendBatteryAlert(location,signal) {
     ).done()
 }
 
-
 // Handler for incoming Twilio messages
 app.post('/sms', async function (req, res) {
     const twiml = new MessagingResponse()
@@ -623,23 +606,21 @@ app.post('/sms', async function (req, res) {
     // Parses out information from incoming message
     var to = req.body.To;
     var body = req.body.Body;
+    let client = await db.beginTransaction()
 
-    let session = await db.getMostRecentSessionPhone(to);
+    let session = await db.getMostRecentSessionPhone(to, client);
     let chatbot = new Chatbot(session.sessionid, session.locationid, session.chatbot_state, session.phonenumber, session.incidenttype, session.notes);
     let message = chatbot.advanceChatbot(body);
-    await db.saveChatbotSession(chatbot);
+    await db.saveChatbotSession(chatbot, client);
 
     if(chatbot.state == 'Completed') {
         //closes the session, sets the session state to RESET
-        if(await db.closeSession(chatbot.locationid)){ // Adds the end_time to the latest open session from the LocationID
-            console.log(`Session at ${chatbot.locationid} was closed successfully.`);
-            start_times[chatbot.locationid] = null; // Stops the session timer for this location
-        }
-        else{
-            console.log(`Attempted to close session but no open session was found for ${chatbot.locationid}`);
-        }
+        await db.closeSession(session.sessionid, client) // Adds the end_time to the latest open session from the LocationID
+        console.log(`Session at ${chatbot.locationid} was closed successfully.`);
+        start_times[chatbot.locationid] = null; // Stops the session timer for this location
         await redis.addStateMachineData('Reset', chatbot.locationid);
     }
+    await db.commitTransaction(client)
 
     twiml.message(message);
 
@@ -658,3 +639,4 @@ console.log('brave server listening on port 8080')
 module.exports.server = server;
 module.exports.db = db;
 module.exports.routes = routes;
+module.exports.redis = redis;

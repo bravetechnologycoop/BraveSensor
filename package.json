@@ -6,6 +6,8 @@
   "scripts": {
     "lint": "eslint .",
     "test": "NODE_ENV=test mocha --timeout 10000 \"test/**/*.js\"",
+    "integrationtest": "NODE_ENV=test mocha --timeout 10000 \"test/serverTest.js\"",
+    "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/testStateMachine.js\"",
     "replayData": "node -e 'require(\"./replayData.js\").replayData()'"
   },
   "eslintIgnore": [
@@ -13,12 +15,10 @@
     "lib/*"
   ],
   "dependencies": {
-    "@sentry/node": "^5.12.2",
     "@smartthings/smartapp": "^1.0.3",
     "axios": "^0.19.2",
     "body-parser": "*",
-    "chai": "^4.2.0",
-    "chai-http": "^4.2.0",
+    "brave-alert-lib": "https://github.com/bravetechnologycoop/brave-alert-lib#v2.0.0",
     "cookie-parser": "^1.4.4",
     "cors": "^2.8.5",
     "dotenv": "^7.0.0",
@@ -39,7 +39,12 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
-    "eslint": "^7.11.0"
+    "eslint": "^7.11.0",
+    "chai": "^4.2.0",
+    "chai-http": "^4.3.0",
+    "mocha": "^8.1.3",
+    "sinon": "^9.0.3",
+    "sinon-chai": "^3.5.0"
   },
   "author": "Sajan Rajdev",
   "license": "ISC"
