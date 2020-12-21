@@ -7,7 +7,7 @@
     "lint": "eslint .",
     "test": "NODE_ENV=test mocha --timeout 10000 \"test/**/*.js\"",
     "integrationtest": "NODE_ENV=test mocha --timeout 10000 \"test/serverTest.js\"",
-    "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/SessionStateTest.js\"",
+    "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/testStateMachine.js\"",
     "replayData": "node -e 'require(\"./replayData.js\").replayData()'"
   },
   "eslintIgnore": [
