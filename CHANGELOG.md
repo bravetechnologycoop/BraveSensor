@@ -12,21 +12,23 @@ the code was deployed.
 
 ## [1.2.0] - 2020-12-10
 ### Added
-- Script which runs all database migrations
-- Integration tests
-- Utility functions for test setup and teardown
-- Helpers for test environment variables
-- Changelog
-- Build scripts for tagging and pushing containers
+- New mustache frontend (CU-dwr2xb)
+- Script which runs all database migrations 
+- Integration tests (CU-gcuxtz)
+- Utility functions for test setup and teardown (CU-gcuxtz)
+- Helpers for test environment variables (CU-gcuxtz)
+- Changelog 
+- Build scripts for tagging and pushing containers 
 - Linting
 
 ### Fixed
-- Bug in calculating session duration
-- Session creation concurrency bug
-- Alert reason attribution bug
-- Session creation when there is no previous session for a location
+- Bug in calculating session duration (CU-gcuxtz)
+- Session creation concurrency bug (CU-gcuxtz)
+- Alert reason attribution bug  (CU-gcuxtz)
+- Session creation when there is no previous session for a location (CU-gcuxtz)
 
 ### Removed
+- Old angular frontend (CU-dwr2xb)
 - Unused PostgreSQL functions
 - Unused PostgreSQL tables
 - Sentry tracking of runtime errors
