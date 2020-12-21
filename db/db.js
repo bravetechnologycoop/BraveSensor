@@ -1,6 +1,5 @@
 const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
-const Sentry = require('@sentry/node');
 const Session = require('../Session.js')
 const Location = require('../Location.js')
 

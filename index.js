@@ -15,6 +15,7 @@ const STATE = require('./SessionStateEnum.js');
 require('dotenv').config();
 const app = express();
 const Mustache = require('mustache')
+const helpers = require('brave-alert-lib')
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
@@ -616,7 +617,6 @@ app.post('/sms', async function (req, res) {
         //closes the session, sets the session state to RESET
         await db.closeSession(session.sessionid, client) // Adds the end_time to the latest open session from the LocationID
         console.log(`Session at ${chatbot.locationid} was closed successfully.`);
-        io.sockets.emit('sessiondata', {data: session}); // Sends currentSession data with end_time which will close the session in the frontend
         start_times[chatbot.locationid] = null; // Stops the session timer for this location
         await redis.addStateMachineData('Reset', chatbot.locationid);
     }
