@@ -15,7 +15,7 @@ const STATE = require('./SessionStateEnum.js');
 require('dotenv').config();
 const app = express();
 const Mustache = require('mustache')
-const helpers = require('brave-alert-lib')
+const {helpers} = require('brave-alert-lib')
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
