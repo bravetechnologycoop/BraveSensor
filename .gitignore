@@ -4,12 +4,8 @@ node_modules
 *.pub
 Public
 Dockerfile
-<<<<<<< HEAD
-dump.rdb
-=======
 appServerLite.js
 devReplay1.js
 db/seeds.sql
 dump.rdb
 .env.local
->>>>>>> devenv
