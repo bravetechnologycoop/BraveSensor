@@ -2,6 +2,9 @@ const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Sentry = require('@sentry/node');
 Sentry.init({ dsn: 'https://45324fe512564e858dcb6fe994761e93@o248765.ingest.sentry.io/3011388' });
+const Session = require('../Session.js')
+const Location = require('../Location.js')
+
 require('dotenv').config();
 let pgconnectionString = process.env.PG_CONNECTION_STRING
 
@@ -16,6 +19,16 @@ pg.types.setTypeParser(1114, str => str);
 pool.on('error', (err) => {
     console.error('unexpected database error:', err)
 })
+
+// Functions added to facilitate moving to Mustache template from angular front end
+
+function createSessionFromRow(r) {
+    return new Session(r.locationid, r.start_time, r.end_time, r.od_flag, r.state, r.phonenumber, r.notes, r.incidenttype, r.sessionid, r.duration, r.still_counter, r.chatbot_state, r.alert_reason)
+}
+
+function createLocationFromRow(r) {
+    return new Location(r.locationid, r.display_name, r.deviceid, r.phonenumber, r.detectionzone_min, r.detectionzone_max, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.xethru_sent_alerts, r.xethru_heartbeat_number)
+}
 
 // The following functions will route HTTP requests into database queries
 
@@ -209,19 +222,19 @@ async function getMostRecentSessionPhone(twilioPhone){
     }
 }
 
-async function getHistoryOfSessions(location, numEntries) {
+async function getHistoryOfSessions(locationid) {
     try {
-        const results = await pool.query("SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT $2", [location, numEntries]);
+        const results = await pool.query('SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 200', [locationid])
 
         if(typeof results === 'undefined') {
-            return null;
+            return null
         }
         else{
-            return results.rows;
+            return results.rows.map(r => createSessionFromRow(r))
         }
     }
     catch(e) {
-        console.log(`Error running the getHistoryOfSessions query: ${e}`);
+        console.log(`Error running the getHistoryOfSessions query: ${e}`)
     }
 }
 
@@ -424,9 +437,9 @@ async function startChatbotSessionState(session) {
 }
 
 // Retrieves the data from the locations table for a given location
-async function getLocationData(location) {
+async function getLocationData(locationid) {
     try{
-        const results = await pool.query('SELECT * FROM locations WHERE locationid = $1', [location]);
+        const results = await pool.query('SELECT * FROM locations WHERE locationid = $1', [locationid]);
         if(results == undefined){
             return null;
         }
@@ -441,7 +454,6 @@ async function getLocationData(location) {
 }
 
 // Retrieves the locations table
-
 async function getLocations() {
     try {
         const results = await pool.query("SELECT * FROM locations");
@@ -450,7 +462,7 @@ async function getLocations() {
             return null;
         }
         else{
-            return results.rows;
+            return results.rows.map(r => createLocationFromRow(r));
         }
     }
     catch(e) {
