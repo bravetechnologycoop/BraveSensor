@@ -12,6 +12,8 @@ const cors = require('cors');
 const smartapp   = require('@smartthings/smartapp');
 const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
+const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum');
+const SESSIONSTATE_DOOR = require('./SessionStateDoorEnum')
 require('dotenv').config();
 const app = express();
 const Mustache = require('mustache')
@@ -342,7 +344,57 @@ app.post('/api/doorTest', async(req, res) => {
     const {locationid} = req.body;
     await redis.addDoorTestSensorData(req, res);
     await handleSensorRequest(locationid)
-});
+})
+
+app.post('/api/door', async(request, response) => {
+    const coreId = request.body.coreid
+    const locationid = await db.getLocationIDFromParticleCoreID(coreId)
+
+    if(!locationid){
+        helpers.log(`Error - no location matches the coreID ${coreId}`)
+        response.status(400).json('No location for CoreID')
+    }
+    else{
+        const message = JSON.parse(request.body.data)
+        const signal = message.data
+        helpers.log(`in post handler, signal from ${locationid} is ${signal}`)
+        var doorSignal
+        if (signal==IM21_DOOR_STATUS.OPEN){
+            doorSignal = SESSIONSTATE_DOOR.OPEN
+        }
+        else if (signal==IM21_DOOR_STATUS.CLOSED){
+            doorSignal = SESSIONSTATE_DOOR.CLOSED
+        }
+        else if (signal==IM21_DOOR_STATUS.LOW_BATT){
+            doorSignal = "LowBatt"
+        }
+        else if (signal==IM21_DOOR_STATUS.HEARTBEAT_OPEN || signal==IM21_DOOR_STATUS.HEARTBEAT_CLOSED){
+            doorSignal = "HeartBeat"
+        }
+      
+        await redis.addIM21DoorSensorData(locationid, doorSignal)
+        await handleSensorRequest(locationid)
+        response.status(200).json("OK")
+    }
+})
+
+// Handler for device vitals such as wifi strength
+app.post('/api/devicevitals', async(request, response) => {
+    const coreId = request.body.coreid
+    const locationid = await db.getLocationIDFromParticleCoreID(coreId)
+    if(!locationid){
+        helpers.log(`Error - no location matches the coreID ${coreId}`)
+        response.status(400).json('No location for CoreID')
+    }else {
+        const data = JSON.parse(request.body.data)
+        const signalStrength = data.device.network.signal.strength
+        const cloudDisconnects = data.device.cloud.disconnects
+
+        redis.addVitals(locationid, signalStrength, cloudDisconnects)
+        response.status(200).json("OK")
+
+    }
+})
 
 async function handleSensorRequest(currentLocationId){
     let statemachine = new StateMachine(currentLocationId);

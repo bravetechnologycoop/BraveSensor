@@ -10,15 +10,19 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+- Device health endpoint (CU-h2y2nt)
+- IM21 door sensor endpoint (CU-h2y2nt)
+
 ## [1.2.0] - 2020-12-10
 ### Added
 - New mustache frontend (CU-dwr2xb)
-- Script which runs all database migrations 
+- Script which runs all database migrations
 - Integration tests (CU-gcuxtz)
 - Utility functions for test setup and teardown (CU-gcuxtz)
 - Helpers for test environment variables (CU-gcuxtz)
-- Changelog 
-- Build scripts for tagging and pushing containers 
+- Changelog
+- Build scripts for tagging and pushing containers
 - Linting
 
 ### Fixed

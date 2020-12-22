@@ -1,5 +1,5 @@
 class Location {
-    constructor(locationid, displayName, deviceid, phonenumber, detectionzoneMin, detectionzoneMax, sensitivity, led, noisemap, movThreshold, durationThreshold, stillThreshold, rpmThreshold, xethruSentAlerts, xethruHeartbeatNumber) {
+    constructor(locationid, displayName, deviceid, phonenumber, detectionzoneMin, detectionzoneMax, sensitivity, led, noisemap, movThreshold, durationThreshold, stillThreshold, rpmThreshold, xethruSentAlerts, xethruHeartbeatNumber, doorCoreId, radarCoreId) {
         this.locationid = locationid,
         this.displayName = displayName,
         this.deviceid = deviceid,
@@ -14,7 +14,9 @@ class Location {
         this.stillThreshold = stillThreshold,
         this.rpmThreshold = rpmThreshold,
         this.xethruSentAlerts = xethruSentAlerts,
-        this.xethruHeartbeatNumber = xethruHeartbeatNumber
+        this.xethruHeartbeatNumber = xethruHeartbeatNumber,
+        this.doorCoreId = doorCoreId,
+        this.radarCoreId = radarCoreId
     }
 }
 
