@@ -2,9 +2,7 @@ const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Session = require('../Session.js')
 const Location = require('../Location.js')
-
-require('dotenv').config();
-const {helpers} = require('brave-alert-lib')
+const { helpers } = require('brave-alert-lib')
 
 const pool = new pg.Pool({
     host: helpers.getEnvVar('PG_HOST'),
@@ -438,7 +436,7 @@ async function createLocation(locationid, deviceid, phonenumber, mov_threshold, 
 }
 
 async function clearSessions() {
-    if(process.env.NODE_ENV !== "test") {
+    if (!helpers.isTestEnvironment()) {
         helpers.log("warning - tried to clear sessions database outside of a test environment!")
         return
     }
@@ -451,7 +449,7 @@ async function clearSessions() {
 }
 
 async function clearLocations() {
-    if(process.env.NODE_ENV !== "test") {
+    if (!helpers.isTestEnvironment()) {
         helpers.log("warning - tried to clear locations table outside of a test environment!")
         return
     }    

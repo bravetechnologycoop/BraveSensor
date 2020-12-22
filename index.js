@@ -14,10 +14,9 @@ const routes = require('express').Router();
 const STATE = require('./SessionStateEnum.js');
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum');
 const SESSIONSTATE_DOOR = require('./SessionStateDoorEnum')
-require('dotenv').config();
 const app = express();
 const Mustache = require('mustache')
-const {helpers} = require('brave-alert-lib')
+const { helpers } = require('brave-alert-lib')
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
