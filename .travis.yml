@@ -4,11 +4,11 @@ matrix:
   include:
     - name: Server
       language: node_js
-      node_js: "node"
+      node_js: "node"         # node version specified in .nvmrc
 
       # install dependencies
       install:
-        - npm install
+        - npm ci
         - npm install pg@latest
       services:
         - redis-server 
