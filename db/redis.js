@@ -1,4 +1,3 @@
-require('dotenv').config();
 const Redis = require("ioredis");
 const radarData = require('./radarData.js');
 const doorData = require('./doorData.js');

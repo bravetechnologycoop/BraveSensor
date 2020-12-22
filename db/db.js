@@ -2,9 +2,7 @@ const pg = require('pg')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Session = require('../Session.js')
 const Location = require('../Location.js')
-
-require('dotenv').config();
-const {helpers} = require('brave-alert-lib')
+const { helpers } = require('brave-alert-lib')
 
 const pool = new pg.Pool({
     host: helpers.getEnvVar('PG_HOST'),
@@ -68,7 +66,7 @@ async function getMostRecentSession(locationid, client) {
         }
     }
     catch(e){
-        console.log(`Error running the getMostRecentSession query: ${e}`);
+        helpers.log(`Error running the getMostRecentSession query: ${e}`);
     }
 }
 
@@ -86,7 +84,7 @@ async function getSessionWithSessionId(sessionid){
         }
     }
     catch(e){
-        console.log(`Error running the getSessionWithSessionId query: ${e}`);
+        helpers.log(`Error running the getSessionWithSessionId query: ${e}`);
     }
 }
 
@@ -110,7 +108,7 @@ async function getMostRecentSessionPhone(twilioNumber, client){
         }
     }
     catch(e){
-        console.log(`Error running the getMostRecentSessionPhone query: ${e}`);
+        helpers.log(`Error running the getMostRecentSessionPhone query: ${e}`);
     }
 }
 
@@ -126,7 +124,7 @@ async function getHistoryOfSessions(locationid) {
         }
     }
     catch(e) {
-        console.log(`Error running the getHistoryOfSessions query: ${e}`)
+        helpers.log(`Error running the getHistoryOfSessions query: ${e}`)
     }
 }
 
@@ -142,7 +140,7 @@ async function getAllSessionsFromLocation(location) {
         }
     }
     catch(e) {
-        console.log(`Error running the getAllSessionsFromLocation query: ${e}`);
+        helpers.log(`Error running the getAllSessionsFromLocation query: ${e}`);
     }
 }
 
@@ -158,7 +156,7 @@ async function getLastUnclosedSession(locationid) {
         }
     }
     catch(e){
-        console.log(`Error running the getLastUnclosedSession query: ${e}`);
+        helpers.log(`Error running the getLastUnclosedSession query: ${e}`);
     }
 }
 
@@ -176,7 +174,7 @@ async function createSession(phone, locationid, state, client) {
         return results.rows[0];    
     }
     catch(e){
-        console.log(`Error running the createSession query: ${e}`)
+        helpers.log(`Error running the createSession query: ${e}`)
     }
 }
 
@@ -201,7 +199,7 @@ async function updateSessionEndTime(sessionid, client) {
 
     }
     catch(e){
-        console.log(`Error running the updateSessionEndTime query: ${e}`);
+        helpers.log(`Error running the updateSessionEndTime query: ${e}`);
     }
 }
 
@@ -224,7 +222,7 @@ async function updateSessionState(sessionid, state, client) {
         }
     }
     catch(e){
-        console.log(`Error running the updateSessionState query: ${e}`);
+        helpers.log(`Error running the updateSessionState query: ${e}`);
     }
 }
 
@@ -240,7 +238,7 @@ async function updateSentAlerts(location, sentalerts) {
         }
     }
     catch(e){
-        console.log(`Error running the updateSentAlerts query ${e}`);
+        helpers.log(`Error running the updateSentAlerts query ${e}`);
     }
 }
 
@@ -264,7 +262,7 @@ async function updateSessionResetDetails(sessionid, notes, state, client) {
         }
     }
     catch(e){
-        console.log(`Error running the updateSessionResetDetails query: ${e}`);
+        helpers.log(`Error running the updateSessionResetDetails query: ${e}`);
     }
 }
 
@@ -281,7 +279,7 @@ async function updateSessionStillCounter(stillcounter, sessionid,locationid) {
         }
     }
     catch(e){
-        console.log(`Error running the updateSessionStillCounter query: ${e}`);
+        helpers.log(`Error running the updateSessionStillCounter query: ${e}`);
     }
 }
 
@@ -332,7 +330,7 @@ async function isOverdoseSuspected(xethru, session, location) {
             await pool.query("UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3", [OD_FLAG_STATE.OVERDOSE, alertReason, session.sessionid]);
         }
         catch(e) {
-            console.log(`Error running the update od_flag query: ${e}`);
+            helpers.log(`Error running the update od_flag query: ${e}`);
         }
         return true;
     }
@@ -353,7 +351,7 @@ async function saveChatbotSession(chatbot, client) {
         }
     }
     catch(e) {
-        console.log(`Error running the saveChatbotSession query: ${e}`);
+        helpers.log(`Error running the saveChatbotSession query: ${e}`);
     }
 }
 
@@ -374,7 +372,7 @@ async function getLocationData(locationid) {
         }
     }
     catch(e){
-        console.log(`Error running the getLocationData query: ${e}`);
+        helpers.log(`Error running the getLocationData query: ${e}`);
     }
 
 }
@@ -392,7 +390,7 @@ async function getLocations() {
         }
     }
     catch(e) {
-        console.log(`Error running the getLocations query: ${e}`);
+        helpers.log(`Error running the getLocations query: ${e}`);
     }
 }
 
@@ -404,7 +402,7 @@ async function updateLocationData(deviceid, phonenumber, detection_min, detectio
         return results.rows[0]; 
     }
     catch(e) {
-        console.log(`Error running the updateLocationData query: ${e}`);
+        helpers.log(`Error running the updateLocationData query: ${e}`);
     }
 }
 
@@ -413,29 +411,29 @@ async function createLocation(locationid, deviceid, phonenumber, mov_threshold, 
     try {
         await pool.query("INSERT INTO locations(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)", 
             [locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer]);
-        console.log("New location inserted to Database");
+        helpers.log("New location inserted to Database");
     }
     catch(e) {
-        console.log(`Error running the addLocationData query: ${e}`);
+        helpers.log(`Error running the addLocationData query: ${e}`);
     }
 }
 
 async function clearSessions() {
-    if(process.env.NODE_ENV !== "test") {
-        console.log("warning - tried to clear sessions database outside of a test environment!")
+    if (!helpers.isTestEnvironment()) {
+        helpers.log("warning - tried to clear sessions database outside of a test environment!")
         return
     }
     try{
         await pool.query("DELETE FROM sessions")
     }
     catch(e) {
-        console.log(`Error running clearSessions: ${e}`)
+        helpers.log(`Error running clearSessions: ${e}`)
     }
 }
 
 async function clearLocations() {
-    if(process.env.NODE_ENV !== "test") {
-        console.log("warning - tried to clear locations table outside of a test environment!")
+    if (!helpers.isTestEnvironment()) {
+        helpers.log("warning - tried to clear locations table outside of a test environment!")
         return
     }    
     await pool.query("DELETE FROM locations")
