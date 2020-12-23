@@ -2,7 +2,7 @@ const sleep = (millis) => new Promise(resolve => setTimeout(resolve, millis))
 const chai = require('chai')
 const chaiHttp = require('chai-http')
 const expect = chai.expect
-const { after, afterEach, beforeEach, describe, it } = require('mocha')
+const { after, afterEach, before, beforeEach, describe, it } = require('mocha')
 const imports = require('../index.js')
 const {helpers } = require('brave-alert-lib')
 const db = imports.db
@@ -79,14 +79,15 @@ async function im21Door(door_coreID, signal){
     }catch(e){helpers.log(e)}
 }
 
-
 describe('Brave Sensor server', () => {
+    before(() => {
+        redis.connect()
+    })
 
-    after(async function() {
+    after(async () => {
         await sleep(3000)
         server.close()
-        await redis.quit()
-        await db.close()
+        await redis.disconnect()
     })
 
     describe('POST request: radar and door events with mock SmartThings door sensor', () => {
@@ -177,7 +178,7 @@ describe('Brave Sensor server', () => {
             await redis.clearKeys()
             await db.clearSessions()
             await db.clearLocations()
-            await db.createLocation(testLocation1Id, '0', testLocation1PhoneNumber, MOV_THRESHOLD, 15, 0.2, 5000, 5000, 0, '+15005550006', '+15005550006', '+15005550006', 1000, door_coreID, 'radar_particlecoreid')
+            await db.createLocation(testLocation1Id, '0', testLocation1PhoneNumber, MOV_THRESHOLD, 15, 0.2, 5000, 5000, 0, '+15005550006', '+15005550006', '+15005550006', 1000, 'locationName', door_coreID, 'radar_particlecoreid')
             await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
         })
     
