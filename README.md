@@ -5,6 +5,13 @@
 
 # Local Development
 
+## Local Redis Server
+
+In order to run the tests, you will need to start a local Redis server.
+
+1. Follow the instructions here: https://redis.io/topics/quickstart
+
+
 ## Tests
 
 Unit tests are written using the [Mocha](https://mochajs.org/) JS test framework

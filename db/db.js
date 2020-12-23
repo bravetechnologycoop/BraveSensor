@@ -1,4 +1,7 @@
+// Third-party dependencies
 const pg = require('pg')
+
+// In-house dependencies
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum');
 const Session = require('../Session.js')
 const Location = require('../Location.js')
@@ -71,11 +74,19 @@ async function getMostRecentSession(locationid, client) {
 }
 
 // Gets session with a specific SessionID
-
-async function getSessionWithSessionId(sessionid){
+async function getSessionWithSessionId(sessionid, client) {
     try{
-        const results = await pool.query("SELECT * FROM sessions WHERE sessionid = $1", [sessionid]);
+        let transactionMode = (typeof client !== 'undefined')
+        if(!transactionMode) {
+            client = await pool.connect()
+        }
 
+        const results = await client.query("SELECT * FROM sessions WHERE sessionid = $1", [sessionid]);
+
+        if(!transactionMode) {
+            client.release()
+        }
+        
         if(typeof results === 'undefined'){
             return null;
         }
@@ -338,26 +349,23 @@ async function isOverdoseSuspected(xethru, session, location) {
     return false;
 }
 
-// Saves the variables in the chatbot object into the sessions table
-async function saveChatbotSession(chatbot, client) {
+// Saves the state and incident type into the sessions table
+async function saveAlertSession(chatbotState, incidentType, sessionid, client) {
     try {
         let transactionMode = (typeof client !== 'undefined')
         if(!transactionMode) {
             client = await pool.connect()
         }
-        await client.query("UPDATE sessions SET chatbot_state = $1, incidenttype = $2, notes = $3 WHERE sessionid = $4", [chatbot.state, chatbot.incidentType, chatbot.notes, chatbot.id]);
+
+        await client.query('UPDATE sessions SET chatbot_state = $1, incidenttype = $2 WHERE sessionid = $3', [chatbotState, incidentType, sessionid])
+        
         if(!transactionMode){
             client.release()
         }
     }
     catch(e) {
-        helpers.log(`Error running the saveChatbotSession query: ${e}`);
+        helpers.log(`Error running the saveAlertSession query: ${e}`)
     }
-}
-
-// Sends the initial twilio message to start the chatbot once an overdose case has been detected
-async function startChatbotSessionState(session) {
-    await pool.query("UPDATE sessions SET chatbot_state = $1 WHERE sessionid = $2", ['Started', session.sessionid]);
 }
 
 // Retrieves the data from the locations table for a given location
@@ -407,10 +415,10 @@ async function updateLocationData(deviceid, phonenumber, detection_min, detectio
 }
 
 // Adds a location table entry
-async function createLocation(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer) {
+async function createLocation(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer, display_name) {
     try {
-        await pool.query("INSERT INTO locations(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)", 
-            [locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer]);
+        await pool.query("INSERT INTO locations(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer, display_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)", 
+            [locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer, display_name])
         helpers.log("New location inserted to Database");
     }
     catch(e) {
@@ -454,8 +462,7 @@ module.exports = {
     updateSessionStillCounter,
     updateSessionResetDetails,
     closeSession,
-    saveChatbotSession,
-    startChatbotSessionState,
+    saveAlertSession,
     getMostRecentSessionPhone,
     getLocationData,
     getLocations,

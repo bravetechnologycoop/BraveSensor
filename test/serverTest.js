@@ -2,7 +2,7 @@ const sleep = (millis) => new Promise(resolve => setTimeout(resolve, millis))
 const chai = require('chai')
 const chaiHttp = require('chai-http')
 const expect = chai.expect
-const { after, afterEach, beforeEach, describe, it } = require('mocha')
+const { after, afterEach, before, beforeEach, describe, it } = require('mocha')
 const imports = require('../index.js')
 const db = imports.db
 const redis = imports.redis
@@ -66,12 +66,14 @@ async function door(locationid, signal){
 }
 
 describe('ODetect server', () => {
+    before(() => {
+        redis.connect()
+    })
 
-    after(async function() {
+    after(async () => {
         await sleep(3000)
         server.close()
-        await redis.quit()
-        await db.close()
+        await redis.disconnect()
     })
 
     describe('POST request: radar and door events', () => {
