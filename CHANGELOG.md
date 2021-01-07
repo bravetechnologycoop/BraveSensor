@@ -12,6 +12,9 @@ the code was deployed.
 ### Changed
 - Use Brave Alert Lib for Twilio communication with the Responder (CU-bar1zy)
 
+### Security
+- Update dependencies in order to use the latest version of axios (CU-j6yuzk)
+
 
 ## [1.2.0] - 2020-12-10
 ### Added
