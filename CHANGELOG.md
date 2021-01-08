@@ -9,6 +9,8 @@ was committed to the `master` branch. This is not necessarily the date that
 the code was deployed.
 
 ## [Unreleased]
+### Security
+- Removed all references to axios < v0.21.1 (CU-j6yuzk)
 
 ## [1.2.0] - 2020-12-10
 ### Added
