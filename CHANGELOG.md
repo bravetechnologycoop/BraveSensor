@@ -9,6 +9,9 @@ was committed to the `master` branch. This is not necessarily the date that
 the code was deployed.
 
 ## [Unreleased]
+### Added
+- Express validator for post requests (CU-hx0jjc)
+- PG_DATABASE instead of PG_USER from environment variables as these may not always be the same
 
 ## [1.2.0] - 2020-12-10
 ### Added
