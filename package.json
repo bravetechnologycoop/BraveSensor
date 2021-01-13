@@ -25,6 +25,7 @@
     "execution-time": "^1.4.1",
     "express": "*",
     "express-session": "^1.15.6",
+    "express-validator": "^6.6.1",
     "fs": "0.0.1-security",
     "http-signature": "^1.2.0",
     "ioredis": "^4.16.3",

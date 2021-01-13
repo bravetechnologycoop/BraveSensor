@@ -15,6 +15,7 @@ const STATE = require('./SessionStateEnum.js');
 require('dotenv').config();
 const app = express();
 const Mustache = require('mustache')
+const Validator = require('express-validator')
 const {helpers} = require('brave-alert-lib')
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
@@ -325,24 +326,63 @@ if(!helpers.isTestEnvironment()){
 }
 
 // Handler for income SmartThings POST requests
-app.post('/api/st', function(req, res, next) {    // eslint-disable-line no-unused-vars -- next might be used in the future
-    smartapp.handleHttpCallback(req, res);
-});
+app.post('/api/st', Validator.body(['lifecycle']).exists(), function(req, res, next) {    // eslint-disable-line no-unused-vars -- next might be used in the future
+    try {
+        const validationErrors = Validator.validationResult(req)
+  
+        if(validationErrors.isEmpty()){
+            smartapp.handleHttpCallback(req, res)
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            res.status(400).send()
+        }
+    }
+    catch(err) {
+        helpers.log(err)
+        res.status(500).send()
+    }
+})
 
 // Handler for income XeThru POST requests
-app.post('/api/xethru', async (req, res) => {
-    // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
-    const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = req.body;
+app.post('/api/xethru', Validator.body(['locationid']).exists(), async (req, res) => {
+    try {
+        const validationErrors = Validator.validationResult(req)
+  
+        if(validationErrors.isEmpty()){
+            // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
+            const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = req.body;
 
-    redis.addXeThruSensorData(req, res);
-    handleSensorRequest(locationid);
-});
+            redis.addXeThruSensorData(req, res);
+            handleSensorRequest(locationid);
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            res.status(400).send()
+        }
+    }
+    catch(err) {
+        helpers.log(err)
+        res.status(500).send()
+    }
+})
 
-app.post('/api/doorTest', async(req, res) => {
-    const {locationid} = req.body;
-    await redis.addDoorTestSensorData(req, res);
-    await handleSensorRequest(locationid)
-});
+app.post('/api/doorTest', Validator.body(['locationid']).exists(), async(req, res) => {
+    try {
+        const validationErrors = Validator.validationResult(req)
+  
+        if(validationErrors.isEmpty()){
+            const {locationid} = req.body
+            await redis.addDoorTestSensorData(req, res)
+            await handleSensorRequest(locationid)
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            res.status(400).send()
+        }
+    }
+    catch(err) {
+        helpers.log(err)
+        res.status(500).send()
+    }
+})
 
 async function handleSensorRequest(currentLocationId){
     let statemachine = new StateMachine(currentLocationId);
@@ -471,7 +511,6 @@ async function handleSensorRequest(currentLocationId){
     }
 }
 
-
 // Twilio Functions
 async function sendTwilioMessage(fromPhone, toPhone, msg) {
     try {
@@ -576,7 +615,6 @@ async function sendReconnectionMessage(location) {
 }
 
 //Autoreset twilio function
-
 async function sendResetAlert(location) {
     let locationData = await db.getLocationData(location);
     twilioClient.messages.create({
@@ -632,9 +670,6 @@ let server;
 
 server = app.listen(8080);
 console.log('brave server listening on port 8080')
-
-
-
 
 module.exports.server = server;
 module.exports.db = db;
