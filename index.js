@@ -153,7 +153,7 @@ app.get('/dashboard', async (req, res) => {
         res.send(Mustache.render(locationsDashboardTemplate, viewParams))
     }
     catch(err) {
-        console.log(err)
+        helpers.log(err)
         res.status(500).send()
     }
 })
@@ -205,7 +205,7 @@ app.get('/dashboard/:locationId', async (req, res) => {
         res.send(Mustache.render(locationsDashboardTemplate, viewParams))
     }
     catch(err) {
-        console.log(err)
+        helpers.log(err)
         res.status(500).send()
     }
 })
@@ -237,15 +237,15 @@ smartapp
         });
     })
     .installed((context, installData) => {
-        console.log('installed', JSON.stringify(installData));
+        helpers.log('installed', JSON.stringify(installData));
     })
     .uninstalled((context, uninstallData) => {
-        console.log('uninstalled', JSON.stringify(uninstallData));
+        helpers.log('uninstalled', JSON.stringify(uninstallData));
     })
     .updated((context, updateData) => {
-        console.log('updated', JSON.stringify(updateData));
+        helpers.log('updated', JSON.stringify(updateData));
         context.api.subscriptions.unsubscribeAll().then(() => {
-            console.log('unsubscribeAll() executed');
+            helpers.log('unsubscribeAll() executed');
             context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'contactSensor', 'contact', 'myContactEventHandler');
             context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'battery', 'battery', 'myBatteryEventHandler');
             context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'temperatureMeasurement', 'temperature', 'myTemperatureEventHandler');
@@ -255,33 +255,33 @@ smartapp
     })
     .subscribedEventHandler('myContactEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
-        console.log(deviceEvent.value);
+        helpers.log(deviceEvent.value);
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         redis.addDoorSensorData(LocationID, signal);
         handleSensorRequest(LocationID);
-        console.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
+        helpers.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
     .subscribedEventHandler('myBatteryEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
-        console.log(deviceEvent.value);
+        helpers.log(deviceEvent.value);
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         sendBatteryAlert(LocationID, signal)
-        console.log(`Door${DeviceID} Battery: ${signal} @${LocationID}`);
+        helpers.log(`Door${DeviceID} Battery: ${signal} @${LocationID}`);
     })
     .subscribedEventHandler('myMotionEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
         redis.addMotionSensordata(DeviceID, LocationID, "Motion", signal);
-        console.log(`Motion${DeviceID} Sensor: ${signal} @${LocationID}`);
+        helpers.log(`Motion${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
     .subscribedEventHandler('myButtonEventHandler', (context, deviceEvent) => {
         const signal = deviceEvent.value;
         const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value;
         const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value;
-        console.log(`Button${DeviceID} Sensor: ${signal} @${LocationID}`);
+        helpers.log(`Button${DeviceID} Sensor: ${signal} @${LocationID}`);
     })
 
 // Closes any open session and resets state for the given location
@@ -295,7 +295,7 @@ async function autoResetSession(locationid){
         await db.commitTransaction(client)
     }
     catch (e) {
-        console.log("Could not reset open session");
+        helpers.log("Could not reset open session");
     }
 }
 
@@ -313,10 +313,10 @@ if(!helpers.isTestEnvironment()){
             // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
             for(let i=1; i<(stateHistoryQuery.length); i++){
                 if ( (stateHistoryQuery[i].state == STATE.RESET) && !( (stateHistoryQuery[i-1].state == STATE.NO_PRESENCE_NO_SESSION) || (stateHistoryQuery[i-1].state == STATE.RESET)) && !(resetDiscrepancies.includes(stateHistoryQuery[i].timestamp))){
-                    console.log(`The Reset state logged at ${stateHistoryQuery[i].timestamp} has a discrepancy`);
+                    helpers.log(`The Reset state logged at ${stateHistoryQuery[i].timestamp} has a discrepancy`);
                     resetDiscrepancies.push(stateHistoryQuery[i].timestamp);
-                    console.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
-                    console.log(resetDiscrepancies);
+                    helpers.log('Adding a reset state to the sessions table since there seems to be a discrepancy');
+                    helpers.log(resetDiscrepancies);
                     await redis.addStateMachineData(STATE.RESET, currentLocationId);
                     //Once a reset state has been added, additionally reset any ongoing sessions
                     autoResetSession(currentLocationId);
@@ -357,7 +357,6 @@ app.post('/api/door', async(request, response) => {
     else{
         const message = JSON.parse(request.body.data)
         const signal = message.data
-        helpers.log(`in post handler, signal from ${locationid} is ${signal}`)
         var doorSignal
         if (signal==IM21_DOOR_STATUS.OPEN){
             doorSignal = SESSIONSTATE_DOOR.OPEN
@@ -412,7 +411,7 @@ async function handleSensorRequest(currentLocationId){
     if(!helpers.isTestEnvironment()){
         await checkHeartbeat(currentLocationId);
     }
-    console.log(`${currentLocationId}: ${currentState}`);
+    helpers.log(`${currentLocationId}: ${currentState}`);
 
     // Get current time to compare to the session's start time
 
@@ -431,11 +430,11 @@ async function handleSensorRequest(currentLocationId){
     if (sessionDuration*1000>location.auto_reset_threshold){
         autoResetSession(location.locationid);
         start_times[currentLocationId] = null;
-        console.log('autoResetSession has been called');
+        helpers.log('autoResetSession has been called');
         sendResetAlert(location.locationid);
     }
 
-    console.log(`${sessionDuration}`);
+    helpers.log(`${sessionDuration}`);
 
     // To avoid filling the DB with repeated states in a row.
     if(currentState != prevState){
@@ -483,7 +482,7 @@ async function handleSensorRequest(currentLocationId){
             await db.updateSessionState(latestSession.sessionid, currentState, client); 
 
             await db.closeSession(latestSession.sessionid, client)
-            console.log(`Session at ${currentLocationId} was closed successfully.`);
+            helpers.log(`Session at ${currentLocationId} was closed successfully.`);
             start_times[currentLocationId] = null; 
             await db.commitTransaction(client)
 
@@ -500,7 +499,7 @@ async function handleSensorRequest(currentLocationId){
         }
 
         else{
-            console.log("Current State does not belong to any of the States groups");
+            helpers.log("Current State does not belong to any of the States groups");
         }
     }
     else{ // If statemachine doesn't run, emits latest session data to Frontend
@@ -531,16 +530,16 @@ async function sendTwilioMessage(fromPhone, toPhone, msg) {
             from: fromPhone, 
             to: toPhone, 
             body: msg
-        }).then(message => console.log(message.sid));
+        }).then(message => helpers.log(message.sid));
     }
     catch(err) {
-        console.log(err);
+        helpers.log(err);
     }
 }
 
 // TODO: replace these many almost identical functions with something more elegant
 async function sendInitialChatbotMessage(session) {
-    console.log("Intial message sent");
+    helpers.log("Intial message sent");
     var location = session.locationid;
     var alertReason = session.alert_reason;
     let locationData = await db.getLocationData(location);
@@ -552,7 +551,7 @@ async function sendInitialChatbotMessage(session) {
 
 async function reminderMessage(sessionid) {
     if(!helpers.isTestEnvironment()){
-        console.log("Reminder message being sent");
+        helpers.log("Reminder message being sent");
         let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
         if(session.chatbot_state == STATE.STARTED) {
             //Get location data
@@ -568,14 +567,14 @@ async function reminderMessage(sessionid) {
 }
 
 async function fallbackMessage(sessionid){
-    console.log("Fallback message being sent");
+    helpers.log("Fallback message being sent");
     if(!helpers.isTestEnvironment()){
         let session = await db.getSessionWithSessionId(sessionid); // Gets the updated state for the chatbot
         if(session.chatbot_state == STATE.WAITING_FOR_RESPONSE) {
-            console.log("Fallback if block");
+            helpers.log("Fallback if block");
             let locationData = await db.getLocationData(session.locationid)
-            console.log(`fallback number is:  ${locationData.fallback_phonenumber}`)
-            console.log(`twilio number is:  ${locationData.twilio_number}`)
+            helpers.log(`fallback number is:  ${locationData.fallback_phonenumber}`)
+            helpers.log(`twilio number is:  ${locationData.twilio_number}`)
             await sendTwilioMessage(locationData.twilio_number, locationData.fallback_phonenumber,`An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`)
         }
     }
@@ -593,12 +592,12 @@ async function checkHeartbeat(locationid) {
     let XeThruDelayMillis = currentTime.diff(latestXethru);
 
     if(XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
-        console.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+        helpers.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
         await db.updateSentAlerts(location.locationid, true)
         sendAlerts(location.locationid)
     }
     else if((XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS) && location.xethru_sent_alerts) {
-        console.log(`XeThru at ${location.locationid} reconnected`)
+        helpers.log(`XeThru at ${location.locationid} reconnected`)
         await db.updateSentAlerts(location.locationid, false)
         sendReconnectionMessage(location.locationid)
     }
@@ -611,7 +610,7 @@ async function sendAlerts(location) {
         from: locationData.twilio_number,
         to: locationData.xethru_heartbeat_number
     }).then(
-        message => console.log(message.sid)
+        message => helpers.log(message.sid)
     ).done()
 }
 
@@ -623,7 +622,7 @@ async function sendReconnectionMessage(location) {
         from: locationData.twilio_number,
         to: locationData.xethru_heartbeat_number
     }).then(
-        message => console.log(message.sid)
+        message => helpers.log(message.sid)
     ).done()
 }
 
@@ -636,7 +635,7 @@ async function sendResetAlert(location) {
         from: locationData.twilio_number,
         to: locationData.xethru_heartbeat_number
     }).then(
-        message => console.log(message.sid)
+        message => helpers.log(message.sid)
     ).done()
 }
 
@@ -647,7 +646,7 @@ async function sendBatteryAlert(location,signal) {
         from: locationData.twilio_number,
         to: locationData.xethru_heartbeat_number
     }).then(
-        message => console.log(message.sid)
+        message => helpers.log(message.sid)
     ).done()
 }
 
@@ -668,7 +667,7 @@ app.post('/sms', async function (req, res) {
     if(chatbot.state == 'Completed') {
         //closes the session, sets the session state to RESET
         await db.closeSession(session.sessionid, client) // Adds the end_time to the latest open session from the LocationID
-        console.log(`Session at ${chatbot.locationid} was closed successfully.`);
+        helpers.log(`Session at ${chatbot.locationid} was closed successfully.`);
         start_times[chatbot.locationid] = null; // Stops the session timer for this location
         await redis.addStateMachineData('Reset', chatbot.locationid);
     }
@@ -683,7 +682,7 @@ app.post('/sms', async function (req, res) {
 let server;
 
 server = app.listen(8080);
-console.log('brave server listening on port 8080')
+helpers.log('brave server listening on port 8080')
 
 
 

@@ -4,6 +4,7 @@ const chaiHttp = require('chai-http')
 const expect = chai.expect
 const { after, afterEach, beforeEach, describe, it } = require('mocha')
 const imports = require('../index.js')
+const {helpers } = require('brave-alert-lib')
 const db = imports.db
 const redis = imports.redis
 const server = imports.server
@@ -40,7 +41,7 @@ async function silence(locationid){
             state: XETHRU_STATE.MOVEMENT,
             distance: 0
         })
-    }catch(e){console.log(e)}
+    }catch(e){helpers.log(e)}
 }
 
 async function movement(locationid, mov_f, mov_s){
@@ -55,7 +56,7 @@ async function movement(locationid, mov_f, mov_s){
             state: XETHRU_STATE.MOVEMENT,
             distance: getRandomArbitrary(0,3)
         })
-    }catch(e){console.log(e)}
+    }catch(e){helpers.log(e)}
 }
 
 async function door(locationid, signal){
@@ -65,17 +66,17 @@ async function door(locationid, signal){
             locationid: locationid,
             signal: signal
         })
-    }catch(e){console.log(e)}
+    }catch(e){helpers.log(e)}
 }
 
 async function im21Door(door_coreID, signal){
     try{
         await chai.request(server).post('/api/door').send(
             {
-            coreid: door_coreID,
-            data: `{ \"deviceid\": \"FA:E6:51\", \"data\": \"${signal}\", \"control\": \"86\"}`
-        })
-    }catch(e){console.log(e)}
+                coreid: door_coreID,
+                data: `{ "deviceid": "FA:E6:51", "data": "${signal}", "control": "86"}`
+            })
+    }catch(e){helpers.log(e)}
 }
 
 
@@ -102,7 +103,7 @@ describe('ODetect server', () => {
             await redis.clearKeys()
             await db.clearSessions()
             await db.clearLocations()
-            console.log('\n')
+            helpers.log('\n')
         })
 
         it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
@@ -122,7 +123,6 @@ describe('ODetect server', () => {
             let radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
             expect(radarRows.length).to.equal(15)
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-            console.log(sessions)
             expect(sessions.length).to.equal(1)
             let session = sessions[0]
             expect(session.end_time).to.be.null
@@ -143,7 +143,6 @@ describe('ODetect server', () => {
             let radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
             expect(radarRows.length).to.equal(45)
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-            console.log(sessions)
             let session = sessions[0]
             expect(session.end_time).to.not.be.null
         })
@@ -188,7 +187,7 @@ describe('ODetect server', () => {
             await redis.clearKeys()
             await db.clearSessions()
             await db.clearLocations()
-            console.log('\n')
+            helpers.log('\n')
         })
 
         it('should return 400 to a im21 door signal with an unregistered coreID', async () => {
@@ -218,7 +217,6 @@ describe('ODetect server', () => {
             let radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
             expect(radarRows.length).to.equal(15)
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-            console.log(sessions)
             expect(sessions.length).to.equal(1)
             let session = sessions[0]
             expect(session.end_time).to.be.null
@@ -239,7 +237,6 @@ describe('ODetect server', () => {
             let radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
             expect(radarRows.length).to.equal(45)
             let sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-            console.log(sessions)
             let session = sessions[0]
             expect(session.end_time).to.not.be.null
         })
