@@ -56,7 +56,6 @@ async function addDoorTestSensorData(request, response){
 
 async function addIM21DoorSensorData(locationid, doorSignal){
     if(doorSignal==SESSIONSTATE_DOOR.CLOSED||doorSignal==SESSIONSTATE_DOOR.OPEN){
-        helpers.log('Executing client.xadd inside addIM21DoorSensorData Function')
         await client.xadd("door:"+locationid,  "*","signal", doorSignal)
     }
 }
