@@ -99,7 +99,6 @@ describe('ODetect server', () => {
         })
 
         afterEach(async function() {
-            await sleep(1000)
             await redis.clearKeys()
             await db.clearSessions()
             await db.clearLocations()
@@ -183,7 +182,6 @@ describe('ODetect server', () => {
         })
     
         afterEach(async function() {
-            await sleep(1000)
             await redis.clearKeys()
             await db.clearSessions()
             await db.clearLocations()
