@@ -18,4 +18,4 @@ class Session {
     
 }
 
-module.exports = Session;
+module.exports = Session
