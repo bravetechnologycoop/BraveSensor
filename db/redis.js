@@ -4,6 +4,7 @@ const radarData = require('./radarData.js');
 const doorData = require('./doorData.js');
 const stateData = require('./stateData.js');
 const {helpers} = require('brave-alert-lib')
+const SESSIONSTATE_DOOR = require('../SessionStateDoorEnum.js')
 const client = new Redis(6379, helpers.getEnvVar('REDIS_CLUSTER_IP')); // uses defaults unless given configuration object
 
 
@@ -53,6 +54,16 @@ async function addDoorTestSensorData(request, response){
     response.status(200).json("OK")
 }
 
+async function addIM21DoorSensorData(locationid, doorSignal){
+    if(doorSignal==SESSIONSTATE_DOOR.CLOSED||doorSignal==SESSIONSTATE_DOOR.OPEN){
+        await client.xadd("door:"+locationid,  "*","signal", doorSignal)
+    }
+}
+
+async function addVitals(locationid, signalStrength, cloudDisconnects){
+    client.xadd("vitals:"+locationid, "*", "strength", signalStrength, "cloudDisc", cloudDisconnects)
+}
+
 const addXeThruSensorData = (request, response) => {
     const {locationid, state, rpm, distance, mov_f, mov_s} = request.body;
     client.xadd("xethru:" + locationid,  "*", 
@@ -92,6 +103,8 @@ async function getLatestLocationStatesData(locationid){
 module.exports = {
     addDoorSensorData,
     addDoorTestSensorData,
+    addIM21DoorSensorData,
+    addVitals,
     addStateMachineData,
     addXeThruSensorData,
     getXethruWindow,
