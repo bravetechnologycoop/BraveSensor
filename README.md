@@ -1,6 +1,6 @@
-# ODetect-Backend-Local
+# BraveSensor-Server
 
-[![Build Status](https://travis-ci.com/bravetechnologycoop/ODetect-Backend-Local.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/ODetect-Backend-Local)
+[![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor-Server.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/BraveSensor-Server)
 
 
 # Local Development
@@ -16,7 +16,7 @@ npm install
 npm run test
 ```
 
-The ests run automatically on Travis on every push to GitHub and every time a pull request is created.
+The tests run automatically on Travis on every push to GitHub and every time a pull request is created.
 
 
 # Dev or Prod Deployment
@@ -32,11 +32,11 @@ The Samsung Smartthings Smartapp requires a public key to work.
 These steps need to be re-run anytime you change target deployment environment.
 
 1. Copy public key from the "ODetect Credentials" vault in 1Password into your local
-`ODetect-Backend-Local/smartthings_rsa.pub` file
+`BraveSensor-Server/smartthings_rsa.pub` file
 
-   - If you are deploying to **dev**, copy the value of `Dev - ODetect SmartThings Automation Public Key`
+   - If you are deploying to **dev**, copy the value of `Dev - BraveSensor SmartThings Automation Public Key`
 
-   - If you are deploying to **prod**, copy the value of `Prod - ODetect2 SmartThings Automation Public Key`
+   - If you are deploying to **prod**, copy the value of `Prod - BraveSensor2 SmartThings Automation Public Key`
 
 
 ### .env files
@@ -46,7 +46,7 @@ The .env file contain important secrets such as Twilio credentials, Postgres cre
 These steps need to be re-run anytime the `.env` file changes.
 
 1. Copy from the "ODetect Credentials" vault in 1Password into your local 
-`ODetect-Backend-Local/.env` file
+`BraveSensor-Server/.env` file
 
    - If you are deploying to **dev**, copy the value of "Dev - env file"
 
@@ -87,7 +87,7 @@ create a new deployment from a manifest by
             ```
 
 1. If there already is a redis deployment for the environment you are trying to deploy to(`redis-dev` for **dev** or `redis-master` for **prod**), copy the value in its `CLUSTER-IP` colmnn 
-into the `REDIS_CLUSTER_IP` field in your local `ODetect-Backend-Local/.env` file
+into the `REDIS_CLUSTER_IP` field in your local `BraveSensor-Server/.env` file
 
 ### DB connection string
 
@@ -116,7 +116,7 @@ These steps need to be re-run anything the database changes.
 
     1. Click "Copy" to copy the connection string to your clipboard
 
-    1. Paste the connection string into the `PG_CONNECTION_STRING` field in your local `ODetect-Backend-Local/.env` file
+    1. Paste the connection string into the `PG_CONNECTION_STRING` field in your local `BraveSensor-Server/.env` file
 
 
 ## Building a Docker image and pushing to the registry
