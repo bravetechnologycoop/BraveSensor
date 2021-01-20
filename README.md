@@ -1,9 +1,16 @@
-# ODetect-Backend-Local
-
-[![Build Status](https://travis-ci.com/bravetechnologycoop/ODetect-Backend-Local.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/ODetect-Backend-Local)
+# BraveSensor-Server
+[![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor-Server.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/BraveSensor-Server)
 
 
 # Local Development
+
+## Dependencies
+1. Dowload and install [redis version 6](https://redis.io/download)
+1. Download and install [PostgreSQL version 12](https://www.postgresql.org/download/)
+
+Alternately, you have the option of installing these dependencies as docker containers
+1. Redis: https://hub.docker.com/_/redis
+1. PostgreSQL: https://hub.docker.com/_/postgres
 
 ## Tests
 
@@ -32,7 +39,7 @@ The Samsung Smartthings Smartapp requires a public key to work.
 These steps need to be re-run anytime you change target deployment environment.
 
 1. Copy public key from the "ODetect Credentials" vault in 1Password into your local
-`ODetect-Backend-Local/smartthings_rsa.pub` file
+`BraveSensor-Server/smartthings_rsa.pub` file
 
    - If you are deploying to **dev**, copy the value of `Dev - ODetect SmartThings Automation Public Key`
 
@@ -46,7 +53,7 @@ The .env file contain important secrets such as Twilio credentials, Postgres cre
 These steps need to be re-run anytime the `.env` file changes.
 
 1. Copy from the "ODetect Credentials" vault in 1Password into your local 
-`ODetect-Backend-Local/.env` file
+`BraveSensor-Server/.env` file
 
    - If you are deploying to **dev**, copy the value of "Dev - env file"
 
@@ -87,11 +94,11 @@ create a new deployment from a manifest by
             ```
 
 1. If there already is a redis deployment for the environment you are trying to deploy to(`redis-dev` for **dev** or `redis-master` for **prod**), copy the value in its `CLUSTER-IP` colmnn 
-into the `REDIS_CLUSTER_IP` field in your local `ODetect-Backend-Local/.env` file
+into the `REDIS_CLUSTER_IP` field in your local `BraveSensor-Server/.env` file
 
-### DB connection string
+### DB connection parameters
 
-The PostgreSQL DB connection string is required for the application to open a connection to
+The PostgreSQL DB connection parameters are required for the application to open a connection to
 the database.
 
 | Environment           | User    | Database Name       |
@@ -99,7 +106,7 @@ the database.
 | Production (**prod**) | doadmin | backend-replacement |
 | Development (**dev**) | doadmin | development         |
 
-These steps need to be re-run anything the database changes.
+These steps need to be re-run anyttime the database changes.
 
 1. Log in to Digital Ocean
 
@@ -107,16 +114,16 @@ These steps need to be re-run anything the database changes.
 
 1. In the Connection Details box:
 
-    1. In the "Connection parameters" dropdown, select "Connection string"
+    1. In the "Connection parameters" dropdown, select "Connection parameters"
 
     1. In the "User" dropdown, select the user for your desired deployment environment
 
     1. In the "Database/Pool" dropdown, select the database name for your desired deployment
     environment
 
-    1. Click "Copy" to copy the connection string to your clipboard
+    1. Click "Copy" to copy the connection parameters to your clipboard
 
-    1. Paste the connection string into the `PG_CONNECTION_STRING` field in your local `ODetect-Backend-Local/.env` file
+    1. Paste the connection string into the appropriate environment variable field in your local `BraveSensor-Server/.env` file
 
 
 ## Building a Docker image and pushing to the registry
