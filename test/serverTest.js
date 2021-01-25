@@ -1,5 +1,8 @@
+// eslint-disable-next-line func-style
 const sleep = millis => new Promise(resolve => setTimeout(resolve, millis))
+// eslint-disable-next-line import/no-extraneous-dependencies
 const chai = require('chai')
+// eslint-disable-next-line import/no-extraneous-dependencies
 const chaiHttp = require('chai-http')
 
 const expect = chai.expect
@@ -22,9 +25,9 @@ const testLocation1Id = 'TestLocation1'
 const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid'
 
-function getRandomInt(min, max) {
-  min = Math.ceil(min)
-  max = Math.floor(max)
+function getRandomInt(_min, _max) {
+  const min = Math.ceil(_min)
+  const max = Math.floor(_max)
   return Math.floor(Math.random() * (max - min) + min) // The maximum is exclusive and the minimum is inclusive
 }
 
@@ -81,13 +84,13 @@ async function door(locationid, signal) {
   }
 }
 
-async function im21Door(door_coreID, signal) {
+async function im21Door(doorCoreID, signal) {
   try {
     await chai
       .request(server)
       .post('/api/door')
       .send({
-        coreid: door_coreID,
+        coreid: doorCoreID,
         data: `{ "deviceid": "FA:E6:51", "data": "${signal}", "control": "86"}`,
       })
   } catch (e) {
@@ -134,7 +137,7 @@ describe('ODetect server', () => {
     })
 
     it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 5; i += 1) {
         await silence(testLocation1Id)
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
@@ -144,7 +147,7 @@ describe('ODetect server', () => {
     })
 
     it('radar data showing movement should be saved to redis and trigger a session, which should remain open', async () => {
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
@@ -152,33 +155,35 @@ describe('ODetect server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
+      // eslint-disable-next-line no-unused-expressions
       expect(session.end_time).to.be.null
     })
 
     it('radar data showing movement should be saved to redis, trigger a session, a door opening should end the session', async () => {
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
       }
       await door(testLocation1Id, ST_DOOR_STATUS.OPEN)
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         await movement(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
       }
       await door(testLocation1Id, ST_DOOR_STATUS.CLOSED)
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         await movement(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(45)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const session = sessions[0]
+      // eslint-disable-next-line no-unused-expressions
       expect(session.end_time).to.not.be.null
     })
 
     it('radar data showing movement should trigger a session, and cessation of movement without a door event should trigger an alert', async () => {
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
       }
-      for (let i = 0; i < 85; i++) {
+      for (let i = 0; i < 85; i += 1) {
         await silence(testLocation1Id)
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
@@ -189,7 +194,7 @@ describe('ODetect server', () => {
     })
 
     it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
-      for (let i = 0; i < 200; i++) {
+      for (let i = 0; i < 200; i += 1) {
         await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
@@ -249,7 +254,7 @@ describe('ODetect server', () => {
     })
 
     it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 5; i += 1) {
         await silence(testLocation1Id)
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
@@ -259,7 +264,7 @@ describe('ODetect server', () => {
     })
 
     it('radar data showing movement should be saved to redis and trigger a session, which should remain open', async () => {
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
@@ -267,33 +272,35 @@ describe('ODetect server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
+      // eslint-disable-next-line no-unused-expressions
       expect(session.end_time).to.be.null
     })
 
     it('radar data showing movement should be saved to redis, trigger a session, a door opening should end the session', async () => {
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
       }
       await im21Door(door_coreID, IM21_DOOR_STATUS.OPEN)
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         await movement(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
       }
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         await movement(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(45)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const session = sessions[0]
+      // eslint-disable-next-line no-unused-expressions
       expect(session.end_time).to.not.be.null
     })
 
     it('radar data showing movement should trigger a session, and cessation of movement without a door event should trigger an alert', async () => {
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < 15; i += 1) {
         await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
       }
-      for (let i = 0; i < 85; i++) {
+      for (let i = 0; i < 85; i += 1) {
         await silence(testLocation1Id)
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
@@ -304,7 +311,7 @@ describe('ODetect server', () => {
     })
 
     it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
-      for (let i = 0; i < 200; i++) {
+      for (let i = 0; i < 200; i += 1) {
         await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
