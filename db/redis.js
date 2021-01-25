@@ -1,9 +1,9 @@
 require('dotenv').config()
 const Redis = require('ioredis')
 const { helpers } = require('brave-alert-lib')
-const RadarData = require('./RadarData.js')
-const DoorData = require('./DoorData.js')
-const StateData = require('./StateData.js')
+const RadarData = require('./radarData.js')
+const DoorData = require('./doorData.js')
+const StateData = require('./stateData.js')
 const SESSIONSTATE_DOOR = require('../SessionStateDoorEnum.js')
 
 const client = new Redis(6379, helpers.getEnvVar('REDIS_CLUSTER_IP')) // uses defaults unless given configuration object
