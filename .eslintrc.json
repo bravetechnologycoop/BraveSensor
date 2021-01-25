@@ -27,6 +27,18 @@
             {
                 "enforceForRenamedProperties": false
             }
+        ],
+        "no-restricted-syntax": [
+            "error",
+            "ForInStatement",
+            "LabeledStatement",
+            "WithStatement"
+        ],
+        "no-await-in-loop": [
+            0
+        ],
+        "camelcase": [
+            0
         ]
     }
 }

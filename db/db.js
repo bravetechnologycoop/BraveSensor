@@ -1,16 +1,17 @@
 const pg = require('pg')
-const OD_FLAG_STATE = require('../SessionStateODFlagEnum')
+
 const Session = require('../Session.js')
 const Location = require('../Location.js')
 
 require('dotenv').config()
 const { helpers } = require('brave-alert-lib')
+const OD_FLAG_STATE = require('../SessionStateODFlagEnum')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
   port: helpers.getEnvVar('PG_PORT'),
   user: helpers.getEnvVar('PG_USER'),
-  database: helpers.getEnvVar('PG_USER'),
+  database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
   ssl: { rejectUnauthorized: false },
 })
@@ -20,7 +21,7 @@ const pool = new pg.Pool({
 pg.types.setTypeParser(1114, str => str)
 
 pool.on('error', err => {
-  console.error('unexpected database error:', err)
+  helpers.log('unexpected database error:', err)
 })
 
 // Functions added to facilitate moving to Mustache template from angular front end
