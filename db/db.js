@@ -1,11 +1,11 @@
 const pg = require('pg')
 
+const { helpers } = require('brave-alert-lib')
 const Session = require('../Session.js')
 const Location = require('../Location.js')
+const OD_FLAG_STATE = require('../SessionStateODFlagEnum')
 
 require('dotenv').config()
-const { helpers } = require('brave-alert-lib')
-const OD_FLAG_STATE = require('../SessionStateODFlagEnum')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -27,43 +27,13 @@ pool.on('error', err => {
 // Functions added to facilitate moving to Mustache template from angular front end
 
 function createSessionFromRow(r) {
-  return new Session(
-    r.locationid,
-    r.start_time,
-    r.end_time,
-    r.od_flag,
-    r.state,
-    r.phonenumber,
-    r.notes,
-    r.incidenttype,
-    r.sessionid,
-    r.duration,
-    r.still_counter,
-    r.chatbot_state,
-    r.alert_reason,
-  )
+  // prettier-ignore
+  return new Session(r.locationid, r.start_time, r.end_time, r.od_flag, r.state, r.phonenumber, r.notes, r.incidenttype, r.sessionid, r.duration, r.still_counter, r.chatbot_state, r.alert_reason)
 }
 
 function createLocationFromRow(r) {
-  return new Location(
-    r.locationid,
-    r.display_name,
-    r.deviceid,
-    r.phonenumber,
-    r.detectionzone_min,
-    r.detectionzone_max,
-    r.sensitivity,
-    r.led,
-    r.noisemap,
-    r.mov_threshold,
-    r.duration_threshold,
-    r.still_threshold,
-    r.rpm_threshold,
-    r.xethru_sent_alerts,
-    r.xethru_heartbeat_number,
-    r.door_particlecoreid,
-    r.radar_particlecoreid,
-  )
+  // prettier-ignore
+  return new Location(r.locationid, r.display_name, r.deviceid, r.phonenumber, r.detectionzone_min, r.detectionzone_max, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.xethru_sent_alerts, r.xethru_heartbeat_number, r.door_particlecoreid, r.radar_particlecoreid)
 }
 
 // The following functions will route HTTP requests into database queries
@@ -83,7 +53,8 @@ async function commitTransaction(client) {
 }
 
 // Gets the most recent session data in the table for a specified location
-async function getMostRecentSession(locationid, client) {
+async function getMostRecentSession(locationid, clientParam) {
+  let client = clientParam
   try {
     const transactionMode = typeof client !== 'undefined'
     if (!transactionMode) {
@@ -96,7 +67,6 @@ async function getMostRecentSession(locationid, client) {
     if (typeof results === 'undefined') {
       return null
     }
-
     return results.rows[0]
   } catch (e) {
     helpers.log(`Error running the getMostRecentSession query: ${e}`)
@@ -120,7 +90,8 @@ async function getSessionWithSessionId(sessionid) {
 }
 
 // Gets the last session data in the table for a specified phone number
-async function getMostRecentSessionPhone(twilioNumber, client) {
+async function getMostRecentSessionPhone(twilioNumber, clientParam) {
+  let client = clientParam
   try {
     const transactionMode = typeof client !== 'undefined'
     if (!transactionMode) {
@@ -133,7 +104,7 @@ async function getMostRecentSessionPhone(twilioNumber, client) {
     if (!transactionMode) {
       client.release()
     }
-    if (results == undefined) {
+    if (results === undefined) {
       return null
     }
 
@@ -178,7 +149,7 @@ async function getLastUnclosedSession(locationid) {
       "SELECT * FROM sessions WHERE locationid = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') AND end_time = null ORDER BY sessionid DESC LIMIT 1",
       [locationid],
     )
-    if (results == undefined) {
+    if (results === undefined) {
       return null
     }
 
@@ -189,7 +160,8 @@ async function getLastUnclosedSession(locationid) {
 }
 
 // Creates a new session for a specific location
-async function createSession(phone, locationid, state, client) {
+async function createSession(phone, locationid, state, clientParam) {
+  let client = clientParam
   try {
     const transactionMode = typeof client !== 'undefined'
     if (!transactionMode) {
@@ -210,13 +182,9 @@ async function createSession(phone, locationid, state, client) {
   }
 }
 
-// Closes the session by updating the end time
-async function closeSession(sessionid, client) {
-  await updateSessionEndTime(sessionid, client)
-}
-
 // Enters the end time of a session when it closes and calculates the duration of the session
-async function updateSessionEndTime(sessionid, client) {
+async function updateSessionEndTime(sessionid, clientParam) {
+  let client = clientParam
   try {
     const transactionMode = typeof client !== 'undefined'
     if (!transactionMode) {
@@ -233,8 +201,14 @@ async function updateSessionEndTime(sessionid, client) {
   }
 }
 
+// Closes the session by updating the end time
+async function closeSession(sessionid, client) {
+  await updateSessionEndTime(sessionid, client)
+}
+
 // Updates the state value in the sessions database row
-async function updateSessionState(sessionid, state, client) {
+async function updateSessionState(sessionid, state, clientParam) {
+  let client = clientParam
   try {
     const transactionMode = typeof client !== 'undefined'
     if (!transactionMode) {
@@ -244,7 +218,7 @@ async function updateSessionState(sessionid, state, client) {
     if (!transactionMode) {
       client.release()
     }
-    if (results == undefined) {
+    if (results === undefined) {
       return null
     }
 
@@ -258,7 +232,7 @@ async function updateSessionState(sessionid, state, client) {
 async function updateSentAlerts(location, sentalerts) {
   try {
     const results = await pool.query('UPDATE locations SET xethru_sent_alerts = $1 WHERE locationid = $2 RETURNING *', [sentalerts, location])
-    if (results == undefined) {
+    if (results === undefined) {
       return null
     }
 
@@ -268,7 +242,8 @@ async function updateSentAlerts(location, sentalerts) {
   }
 }
 
-async function updateSessionResetDetails(sessionid, notes, state, client) {
+async function updateSessionResetDetails(sessionid, notes, state, clientParam) {
+  let client = clientParam
   try {
     const transactionMode = typeof client !== 'undefined'
     if (!transactionMode) {
@@ -280,7 +255,7 @@ async function updateSessionResetDetails(sessionid, notes, state, client) {
       client.release()
     }
 
-    if (results == undefined) {
+    if (results === undefined) {
       return null
     }
 
@@ -299,7 +274,7 @@ async function updateSessionStillCounter(stillcounter, sessionid, locationid) {
       sessionid,
       locationid,
     ])
-    if (results == undefined) {
+    if (results === undefined) {
       return null
     }
 
@@ -330,17 +305,17 @@ async function isOverdoseSuspected(xethru, session, location) {
   const sessionDuration_threshold = location.duration_threshold
 
   // number in front represents the weighting
-  const condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0)
+  const condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm !== 0)
   const condition2 = 1 * (session.still_counter > still_threshold) // seconds
   const condition3 = 1 * (sessionDuration > sessionDuration_threshold)
 
   let alertReason = 'NotSet'
 
-  if (condition3 == 1) {
+  if (condition3 === 1) {
     alertReason = 'Duration'
   }
 
-  if (condition2 == 1 || condition1 == 1) {
+  if (condition2 === 1 || condition1 === 1) {
     alertReason = 'Stillness'
   }
 
@@ -366,7 +341,8 @@ async function isOverdoseSuspected(xethru, session, location) {
 }
 
 // Saves the variables in the chatbot object into the sessions table
-async function saveChatbotSession(chatbot, client) {
+async function saveChatbotSession(chatbot, clientParam) {
+  let client = clientParam
   try {
     const transactionMode = typeof client !== 'undefined'
     if (!transactionMode) {
@@ -395,7 +371,7 @@ async function startChatbotSessionState(session) {
 async function getLocationData(locationid) {
   try {
     const results = await pool.query('SELECT * FROM locations WHERE locationid = $1', [locationid])
-    if (results == undefined) {
+    if (results === undefined) {
       return null
     }
 
@@ -409,7 +385,7 @@ async function getLocationData(locationid) {
 async function getLocationIDFromParticleCoreID(coreID) {
   try {
     const results = await pool.query('SELECT (locationid) FROM locations WHERE door_particlecoreid = $1 OR radar_particlecoreid = $1', [coreID])
-    if (results == undefined) {
+    if (results === undefined) {
       helpers.log('Error: No location with associated coreID exists')
       return null
     }
