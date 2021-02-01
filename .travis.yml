@@ -33,6 +33,8 @@ matrix:
         - PG_PORT=5433
         - PG_HOST=localhost
         - REDIS_CLUSTER_IP_TEST=localhost
+        - PG_DATABASE=brave
+        - PG_DATABASE_TEST=brave
         # TWILIO_SID_TEST (from https://www.twilio.com/console/voice/project/test-credentials)
         - secure: "T4IjkoXVMFLcbq7livJ6HxATgk/q2znD4+BdFPn8cuNRc6QzBiNR7AZWoyhRrXqvBv3H3Mq5MIGPmYUW2HRXrihq3VLcp1ZRejXjv3CKqg518yi4JHax7hYesRUE9RoU8SXpOvEQknV9LnNbL030cL7kef1MLd+LepRMvo6B/+3/HuhjZHAmGOj93n8r7Ee1u/OzQDajXKbK0NhsE5HSMsKhwDQe+yyWZKerK1FDx35U4kjmj4kaafNYoLUNwr5S64avBI7kaA45TQ4h4BgPfHVLNwpI+9kVQpCc+wHnEVDd6FzAb3fp8PtYrT1W1hIe9A/+emX2QuMFtHHB6+PNUdPY4q+Wu6RJePcKVw9bWbsMFoAOJ8ZOyL7n/WxfP06FtLx9g8X/FyCNnbtKJlgd+NiIvV45s8QW6tG7/df7m2/FbmENl6++2JsV7HnVyuEITOe8wx/Evnr9Hzlh8zvDfQ3qY8Gb/BusQ7eSeaq/08yE+pZyTDCCh1lyfxaGBC1C6QV5QMwEHPq3U70MdhiXoSKV8Za2GhW96d5dA75yPPqqhc1/MDXZvOUAk/nNs/mzYhlQg2XbR8VML7aSTtP+zwX57kt/5DpXibIPl3wAnXMNhVNPYT3xPnzPRSEzUNAJI/f9qwOTK9eEzspumdqUAxkss5YoE5VWDMHPC4f3Hhk="
         # TWILIO_TOKEN_TEST (from https://www.twilio.com/console/voice/project/test-credentials)
