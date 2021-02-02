@@ -4,7 +4,7 @@ const Session = require('../Session.js')
 const Location = require('../Location.js')
 
 require('dotenv').config();
-const {helpers} = require('brave-alert-lib')
+const { helpers } = require('brave-alert-lib')
 
 const pool = new pg.Pool({
     host: helpers.getEnvVar('PG_HOST'),

@@ -17,7 +17,8 @@ const SESSIONSTATE_DOOR = require('./SessionStateDoorEnum')
 require('dotenv').config();
 const app = express();
 const Mustache = require('mustache')
-const {helpers} = require('brave-alert-lib')
+const { helpers } = require('brave-alert-lib')
+const Validator = require('express-validator')
 
 const XETHRU_THRESHOLD_MILLIS = 60*1000;
 const WATCHDOG_TIMER_FREQUENCY = 60*1000;
@@ -327,23 +328,58 @@ if(!helpers.isTestEnvironment()){
 }
 
 // Handler for income SmartThings POST requests
-app.post('/api/st', function(req, res, next) {    // eslint-disable-line no-unused-vars -- next might be used in the future
-    smartapp.handleHttpCallback(req, res);
+app.post('/api/st', Validator.body(['lifecycle']).exists(), function(req, res, next) {    // eslint-disable-line no-unused-vars -- next might be used in the future
+    try{
+        const validationErrors = Validator.validationResult(req)
+        if(validationErrors.isEmpty()){
+            smartapp.handleHttpCallback(req, res);
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            res.status(400).send()
+        }
+    } catch (err) {
+        helpers.log(err)
+        res.status(500).send()
+    }
 });
 
 // Handler for income XeThru POST requests
-app.post('/api/xethru', async (req, res) => {
-    // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
-    const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = req.body;
+app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'distance', 'mov_f', 'mov_s']).exists(), async (req, res) => {
+    try{
+        const validationErrors = Validator.validationResult(req)
+        if(validationErrors.isEmpty()){
+            // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
+            const { deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s } = req.body;
 
-    redis.addXeThruSensorData(req, res);
-    handleSensorRequest(locationid);
-});
+            redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s);
+            handleSensorRequest(locationid);
+            res.status(200).send()
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            res.status(400).send()
+        }
+    } catch (err) {
+        helpers.log(err)
+        res.status(500).send()
+    }
+})
 
-app.post('/api/doorTest', async(req, res) => {
-    const {locationid} = req.body;
-    await redis.addDoorTestSensorData(req, res);
-    await handleSensorRequest(locationid)
+app.post('/api/doorTest', Validator.body(['locationid, signal']).exists(), async(req, res) => {
+    try{
+        const validationErrors = Validator.validationResult(req)
+        if(validationErrors.isEmpty()){
+            const { locationid, signal } = req.body;
+            await redis.addDoorTestSensorData(locationid, signal);
+            await handleSensorRequest(locationid)
+            res.status(200).send()
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            res.status(400).send()
+        }
+    } catch (err) {
+        helpers.log(err)
+        res.status(500).send()
+    }
 })
 
 app.post('/api/door', async(request, response) => {
@@ -650,7 +686,7 @@ async function sendBatteryAlert(location,signal) {
     ).done()
 }
 
-// Handler for incoming Twilio messages
+// Handler for incoming Twilio messages - not updating with Validator as brave-alert-lib will handle this
 app.post('/sms', async function (req, res) {
     const twiml = new MessagingResponse()
 
@@ -679,13 +715,8 @@ app.post('/sms', async function (req, res) {
     res.end(twiml.toString());
 })
 
-let server;
-
-server = app.listen(8080);
+const server = app.listen(8080);
 helpers.log('brave server listening on port 8080')
-
-
-
 
 module.exports.server = server;
 module.exports.db = db;

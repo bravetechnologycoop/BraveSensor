@@ -48,10 +48,8 @@ const addDoorSensorData = (locationid, signal) => {
     client.xadd("door:" + locationid,  "*", "signal", signal);
 }
 
-async function addDoorTestSensorData(request, response){
-    const {locationid, signal} = request.body;
-    await client.xadd("door:"+locationid,  "*","signal", signal);
-    response.status(200).json("OK")
+async function addDoorTestSensorData(locationid, signal){
+    await client.xadd("door:" + locationid, "*", "signal", signal)
 }
 
 async function addIM21DoorSensorData(locationid, doorSignal){
@@ -64,8 +62,7 @@ async function addVitals(locationid, signalStrength, cloudDisconnects){
     client.xadd("vitals:"+locationid, "*", "strength", signalStrength, "cloudDisc", cloudDisconnects)
 }
 
-const addXeThruSensorData = (request, response) => {
-    const {locationid, state, rpm, distance, mov_f, mov_s} = request.body;
+const addXeThruSensorData = (locationid, state, rpm, distance, mov_f, mov_s) => {
     client.xadd("xethru:" + locationid,  "*", 
         "state", state,
         "distance", distance,
@@ -73,7 +70,6 @@ const addXeThruSensorData = (request, response) => {
         "mov_f", mov_f,
         "mov_s", mov_s, 
     );
-    response.status(200).json("OK")
 }
 
 const addStateMachineData = (state, locationid) => {
