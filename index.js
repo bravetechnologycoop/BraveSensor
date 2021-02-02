@@ -329,7 +329,7 @@ if(!helpers.isTestEnvironment()){
 
 // Handler for income SmartThings POST requests
 app.post('/api/st', Validator.body(['lifecycle']).exists(), function(req, res, next) {    // eslint-disable-line no-unused-vars -- next might be used in the future
-    try{
+    try {
         const validationErrors = Validator.validationResult(req)
         if(validationErrors.isEmpty()){
             smartapp.handleHttpCallback(req, res);
@@ -385,52 +385,74 @@ app.post('/api/doorTest', Validator.body(['locationid', 'signal']).exists(), asy
     }
 })
 
-app.post('/api/door', async(request, response) => {
-    const coreId = request.body.coreid
-    const locationid = await db.getLocationIDFromParticleCoreID(coreId)
+app.post('/api/door', Validator.body(['coreid']).exists(), async(request, response) => {
+    try {
+        const validationErrors = Validator.validationResult(request)
+        if(validationErrors.isEmpty()){
+            const coreId = request.body.coreid
+            const locationid = await db.getLocationIDFromParticleCoreID(coreId)
 
-    if(!locationid){
-        helpers.log(`Error - no location matches the coreID ${coreId}`)
-        response.status(400).json('No location for CoreID')
-    }
-    else{
-        const message = JSON.parse(request.body.data)
-        const signal = message.data
-        var doorSignal
-        if (signal==IM21_DOOR_STATUS.OPEN){
-            doorSignal = SESSIONSTATE_DOOR.OPEN
-        }
-        else if (signal==IM21_DOOR_STATUS.CLOSED){
-            doorSignal = SESSIONSTATE_DOOR.CLOSED
-        }
-        else if (signal==IM21_DOOR_STATUS.LOW_BATT){
-            doorSignal = "LowBatt"
-        }
-        else if (signal==IM21_DOOR_STATUS.HEARTBEAT_OPEN || signal==IM21_DOOR_STATUS.HEARTBEAT_CLOSED){
-            doorSignal = "HeartBeat"
-        }
+            if(!locationid){
+                helpers.log(`Error - no location matches the coreID ${coreId}`)
+                response.status(400).json('No location for CoreID')
+            }
+            else{
+                const message = JSON.parse(request.body.data)
+                const signal = message.data
+                var doorSignal
+                if (signal==IM21_DOOR_STATUS.OPEN){
+                    doorSignal = SESSIONSTATE_DOOR.OPEN
+                }
+                else if (signal==IM21_DOOR_STATUS.CLOSED){
+                    doorSignal = SESSIONSTATE_DOOR.CLOSED
+                }
+                else if (signal==IM21_DOOR_STATUS.LOW_BATT){
+                    doorSignal = "LowBatt"
+                }
+                else if (signal==IM21_DOOR_STATUS.HEARTBEAT_OPEN || signal==IM21_DOOR_STATUS.HEARTBEAT_CLOSED){
+                    doorSignal = "HeartBeat"
+                }
       
-        await redis.addIM21DoorSensorData(locationid, doorSignal)
-        await handleSensorRequest(locationid)
-        response.status(200).json("OK")
+                await redis.addIM21DoorSensorData(locationid, doorSignal)
+                await handleSensorRequest(locationid)
+                response.status(200).json("OK")
+            }
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            response.status(400).send()
+        }
+    } catch (err) {
+        helpers.log(err)
+        response.status(500).send()
     }
 })
 
 // Handler for device vitals such as wifi strength
-app.post('/api/devicevitals', async(request, response) => {
-    const coreId = request.body.coreid
-    const locationid = await db.getLocationIDFromParticleCoreID(coreId)
-    if(!locationid){
-        helpers.log(`Error - no location matches the coreID ${coreId}`)
-        response.status(400).json('No location for CoreID')
-    }else {
-        const data = JSON.parse(request.body.data)
-        const signalStrength = data.device.network.signal.strength
-        const cloudDisconnects = data.device.cloud.disconnects
+app.post('/api/devicevitals', Validator.body(['coreid']).exists(), async(request, response) => {
+    try {
+        const validationErrors = Validator.validationResult(request)
+        if(validationErrors.isEmpty()){
+            const coreId = request.body.coreid
+            const locationid = await db.getLocationIDFromParticleCoreID(coreId)
+            if(!locationid){
+                helpers.log(`Error - no location matches the coreID ${coreId}`)
+                response.status(400).json('No location for CoreID')
+            } else {
+                const data = JSON.parse(request.body.data)
+                const signalStrength = data.device.network.signal.strength
+                const cloudDisconnects = data.device.cloud.disconnects
 
-        redis.addVitals(locationid, signalStrength, cloudDisconnects)
-        response.status(200).json("OK")
+                redis.addVitals(locationid, signalStrength, cloudDisconnects)
+                response.status(200).json("OK")
 
+            }        
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            response.status(400).send()
+        }
+    } catch (err) {
+        helpers.log(err)
+        response.status(500).send()
     }
 })
 
