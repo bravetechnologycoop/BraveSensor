@@ -345,8 +345,9 @@ app.post('/api/st', Validator.body(['lifecycle']).exists(), function(req, res, n
 
 // Handler for income XeThru POST requests
 app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'distance', 'mov_f', 'mov_s']).exists(), async (req, res) => {
-    try{
+    try {
         const validationErrors = Validator.validationResult(req)
+
         if(validationErrors.isEmpty()){
             // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
             const { deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s } = req.body;
@@ -364,12 +365,14 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'distance'
     }
 })
 
-app.post('/api/doorTest', Validator.body(['locationid, signal']).exists(), async(req, res) => {
-    try{
+app.post('/api/doorTest', Validator.body(['locationid', 'signal']).exists(), async(req, res) => {
+    try {
         const validationErrors = Validator.validationResult(req)
+
         if(validationErrors.isEmpty()){
-            const { locationid, signal } = req.body;
-            await redis.addDoorTestSensorData(locationid, signal);
+            const { locationid, signal } = req.body
+
+            await redis.addDoorTestSensorData(locationid, signal)
             await handleSensorRequest(locationid)
             res.status(200).send()
         } else {

@@ -49,7 +49,7 @@ const addDoorSensorData = (locationid, signal) => {
 }
 
 async function addDoorTestSensorData(locationid, signal){
-    await client.xadd("door:" + locationid, "*", "signal", signal)
+    await client.xadd("door:" + locationid,  "*", "signal", signal);
 }
 
 async function addIM21DoorSensorData(locationid, doorSignal){
