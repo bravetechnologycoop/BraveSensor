@@ -95,20 +95,20 @@ app.use((req, res, next) => {
 
 // middleware function to check for logged-in users
 var sessionChecker = (req, res, next) => {
-    if (req.session.user && req.cookies.user_sid) {
-        res.redirect('/dashboard');
+    if (!req.session.user && !req.cookies.user_sid) {
+        res.redirect('/login')
     }
     else {
-        next();
+        next()
     }
 };
 
 app.get('/', sessionChecker, (req, res) => {
-    res.redirect('/login');
+    res.redirect('/dashboard');
 });
 
 app.route('/login')
-    .get(sessionChecker, (req, res) => {
+    .get((req, res) => {
         res.sendFile(__dirname + '/login.html');
     })
     .post((req, res) => {
@@ -134,12 +134,7 @@ app.get('/logout', (req, res) => {
     }
 });
 
-app.get('/dashboard', async (req, res) => {
-    if (!req.session.user || !req.cookies.user_sid) {
-        res.redirect('/login')
-        return
-    }
-
+app.get('/dashboard', sessionChecker, async (req, res) => {
     try {
         let allLocations = await db.getLocations()
         
@@ -159,12 +154,7 @@ app.get('/dashboard', async (req, res) => {
     }
 })
 
-app.get('/dashboard/:locationId', async (req, res) => {
-    if (!req.session.user || !req.cookies.user_sid) {
-        res.redirect('/login')
-        return
-    }
-
+app.get('/dashboard/:locationId', sessionChecker, async (req, res) => {
     try {
         let recentSessions = await db.getHistoryOfSessions(req.params.locationId)
         let currentLocation = await db.getLocationData(req.params.locationId)
