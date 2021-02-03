@@ -352,8 +352,8 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'distance'
             // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
             const { deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s } = req.body;
 
-            redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s);
-            handleSensorRequest(locationid);
+            await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s);
+            await handleSensorRequest(locationid);
             res.status(200).send()
         } else {
             helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
