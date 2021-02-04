@@ -292,7 +292,7 @@ describe('Brave Sensor server', () => {
             expect(response).to.have.status(400)
         })
         
-        it('should return 401 for a request that contains lifecycle (passes express validator) but which is not valid for Smart Things\' purposes', async () => {
+        it(`should return 401 for a request that contains lifecycle (passes express validator) but which is not valid for Smart Things' purposes`, async () => {
             const badSmartThingsRequest = {
                 lifecycle: "thisisnotvalid",
                 executionId: "b328f242-c602-4204-8d73-33c48ae180af",
