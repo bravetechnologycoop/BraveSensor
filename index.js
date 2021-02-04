@@ -322,7 +322,7 @@ app.post('/api/st', Validator.body(['lifecycle']).exists(), function(req, res, n
     try {
         const validationErrors = Validator.validationResult(req)
         if(validationErrors.isEmpty()){
-            smartapp.handleHttpCallback(req, res);
+            smartapp.handleHttpCallback(req, res)
         } else {
             helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
             res.status(400).send()
@@ -737,3 +737,4 @@ module.exports.server = server;
 module.exports.db = db;
 module.exports.routes = routes;
 module.exports.redis = redis;
+module.exports.smartapp = smartapp

@@ -80,7 +80,7 @@ async function im21Door(door_coreID, signal){
 }
 
 
-describe('ODetect server', () => {
+describe('Brave Sensor server', () => {
 
     after(async function() {
         await sleep(3000)
@@ -264,6 +264,48 @@ describe('ODetect server', () => {
             expect(sessions[0].od_flag).to.equal(1)
         })
 
+    })
+
+    describe('Smart Things API endpoint', () => {
+        it('should return 200 for a valid request', async ()=> {
+            // example valid request obtained from Smart Things documentation
+            const goodRequest = {
+                lifecycle: "PING",
+                executionId: "b328f242-c602-4204-8d73-33c48ae180af",
+                locale: "en",
+                version: "1.0.0",
+                pingData: {
+                    challenge: "1a904d57-4fab-4b15-a11e-1c4bfe7cb502"
+                }
+            }
+            
+            const response = await chai.request(server).post('/api/st').send(goodRequest)
+            expect(response).to.have.status(200)
+        })
+
+        it('should return 400 for a request that does not contain lifecycle, ie. which does not pass express validator', async () => {
+            const badExpressRequest = {
+                uselessField: "useless"
+            }
+            
+            const response = await chai.request(server).post('/api/st').send(badExpressRequest)
+            expect(response).to.have.status(400)
+        })
+        
+        it('should return 401 for a request that contains lifecycle (passes express validator) but which is not valid for Smart Things\' purposes', async () => {
+            const badSmartThingsRequest = {
+                lifecycle: "thisisnotvalid",
+                executionId: "b328f242-c602-4204-8d73-33c48ae180af",
+                locale: "en",
+                version: "1.0.0",
+                pingData: {
+                    challenge: "1a904d57-4fab-4b15-a11e-1c4bfe7cb502"
+                }
+            }
+            
+            const response = await chai.request(server).post('/api/st').send(badSmartThingsRequest)
+            expect(response).to.have.status(401)
+        })
     })
 
 })
