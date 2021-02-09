@@ -375,7 +375,7 @@ app.post('/api/doorTest', Validator.body(['locationid', 'signal']).exists(), asy
     }
 })
 
-app.post('/api/door', Validator.body(['coreid']).exists(), async(request, response) => {
+app.post('/api/door', Validator.body(['coreid', 'data.*.deviceid', 'data.*.data', 'data.*.control']).exists(), async(request, response) => {
     try {
         const validationErrors = Validator.validationResult(request)
         if(validationErrors.isEmpty()){
