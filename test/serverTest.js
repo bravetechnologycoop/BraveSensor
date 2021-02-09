@@ -80,7 +80,7 @@ async function im21Door(door_coreID, signal){
 }
 
 
-describe('ODetect server', () => {
+describe('Brave Sensor server', () => {
 
     after(async function() {
         await sleep(3000)

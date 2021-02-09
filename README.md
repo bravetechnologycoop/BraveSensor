@@ -23,7 +23,7 @@ npm install
 npm run test
 ```
 
-The ests run automatically on Travis on every push to GitHub and every time a pull request is created.
+The tests run automatically on Travis on every push to GitHub and every time a pull request is created.
 
 
 # Dev or Prod Deployment
@@ -41,9 +41,9 @@ These steps need to be re-run anytime you change target deployment environment.
 1. Copy public key from the "ODetect Credentials" vault in 1Password into your local
 `BraveSensor-Server/smartthings_rsa.pub` file
 
-   - If you are deploying to **dev**, copy the value of `Dev - ODetect SmartThings Automation Public Key`
+   - If you are deploying to **dev**, copy the value of `Dev - BraveSensor SmartThings Automation Public Key`
 
-   - If you are deploying to **prod**, copy the value of `Prod - ODetect2 SmartThings Automation Public Key`
+   - If you are deploying to **prod**, copy the value of `Prod - BraveSensor2 SmartThings Automation Public Key`
 
 
 ### .env files
