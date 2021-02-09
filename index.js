@@ -575,7 +575,7 @@ async function fallbackMessage(sessionid){
             let locationData = await db.getLocationData(session.locationid)
             helpers.log(`fallback number is:  ${locationData.fallback_phonenumber}`)
             helpers.log(`twilio number is:  ${locationData.twilio_number}`)
-            await sendTwilioMessage(locationData.twilio_number, locationData.fallback_phonenumber,`An alert to check on the washroom at ${locationData.location_human} was not responded to. Please check on it`)
+            await sendTwilioMessage(locationData.twilio_number, locationData.fallback_phonenumber,`An alert to check on the washroom at ${locationData.display_name} was not responded to. Please check on it`)
         }
     }
     //else do nothing
