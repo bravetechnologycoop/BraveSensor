@@ -22,6 +22,7 @@ the code was deployed.
 - Linting
 - Device health endpoint (CU-h2y2nt)
 - IM21 door sensor endpoint (CU-h2y2nt)
+- Helm chart (CU-kcxn8q)
 
 ### Fixed
 - Bug in calculating session duration (CU-gcuxtz)
