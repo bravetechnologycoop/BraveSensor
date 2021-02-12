@@ -10,7 +10,7 @@ the code was deployed.
 
 ## [Unreleased]
 
-## [1.2.0] - 2021-02-11
+## [1.2.0] - 2021-02-12
 ### Added
 - New mustache frontend (CU-dwr2xb)
 - Script which runs all database migrations
@@ -71,8 +71,8 @@ the code was deployed.
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
 
-[Unreleased]: https://github.com/bravetechnologycoop/ODetect-Backend-Local/compare/v1.2.0...HEAD
-[1.2.0]: https://github.com/bravetechnologycoop/ODetect-Backend-Local/compare/v1.1...v1.2.0
-[1.1]: https://github.com/bravetechnologycoop/ODetect-Backend-Local/compare/v1.1-alpha...v1.1
-[1.1-alpha]: https://github.com/bravetechnologycoop/ODetect-Backend-Local/compare/v1.0...v1.1-alpha
-[1.0]: https://github.com/bravetechnologycoop/ODetect-Backend-Local/releases/tag/v1.0
+[Unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1...v1.2.0
+[1.1]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1-alpha...v1.1
+[1.1-alpha]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.0...v1.1-alpha
+[1.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/releases/tag/v1.0
