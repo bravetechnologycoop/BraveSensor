@@ -1,136 +1,94 @@
 # BraveSensor-Server
 [![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor-Server.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/BraveSensor-Server)
 
+# How to release a new version of BraveSensor-Server
 
-# Local Development
+## 1. Update git to reflect the new release
 
-## Dependencies
-1. Dowload and install [redis version 6](https://redis.io/download)
-1. Download and install [PostgreSQL version 12](https://www.postgresql.org/download/)
+1. on your local machine, in the `BraveSensor-Server` repository:
 
-Alternately, you have the option of installing these dependencies as docker containers
-1. Redis: https://hub.docker.com/_/redis
-1. PostgreSQL: https://hub.docker.com/_/postgres
+    1. pull the latest code ready for release: `git checkout devenv && git pull origin devenv`
+    
+    1. run `npm ci`
 
-## Tests
+    1. decide on an appropriate version number for the new version
 
-Unit tests are written using the [Mocha](https://mochajs.org/) JS test framework
-and the [Chai](https://www.chaijs.com/) assertion library.
+    1. update CHANGELOG.md by moving everything in `Unreleased` to a section for the new version
+    
+    1. Run the `./build_prod.sh` script. Note the tag of the new image. See the section on [building and pushing a new container](#build-and-push-a-new-container) for more details about this step.
 
-To run the tests locally:
-```
-npm install
-npm run test
-```
+    1. `cd` into the `~/BraveSensor-Server/sensor-helm-chart` directory
 
-The tests run automatically on Travis on every push to GitHub and every time a pull request is created.
+        1. Update Chart.yaml with a new `version` and new `appVersion`, if applicable
 
+        1. Update values.yaml by putting the tag of your new container image in the `tag` field of `image`
 
-# Dev or Prod Deployment
+    1. make a new commit directly on `devenv` which updates the changelog and helm chart
+    
+    1. tag the new commit - for example, if the version number is v1.0.0, use `git tag v1.0.0`
 
-## Before building a Docker image
+    1. push the new version to GitHub: `git push origin devenv --tags`
 
-Before deployment of a new Docker container to the Kubernetes cluster, check that all the following are in place:
+    1. update the `master` branch: `git checkout master && git merge devenv && git push origin master`
 
-### Smartthings Public Key
+## 2. Database changes
 
-The Samsung Smartthings Smartapp requires a public key to work. 
+If your changes involve changes to the database schema, you'll need to run your database migration script on the appropriate database for your environment. See the [Database Migration section](#database-migration).
 
-These steps need to be re-run anytime you change target deployment environment.
+**If the database changes are breaking, think carefully about how to do this. It may be preferable to briefly shut down the server rather than risk undefined behavior from changing the database schema before changing the code that's running**
 
-1. Copy public key from the "ODetect Credentials" vault in 1Password into your local
-`BraveSensor-Server/smartthings_rsa.pub` file
+## 3. Environment Variable changes
+We deploy BraveSensor-Server onto a [Kubernetes](https://kubernetes.io/docs/home/) cluster as our production environment. On the cluster, environment variables are handled within `secret` resources. You can access the list of secrets on the cluster by running the command:
+`kubectl get secrets`
 
-   - If you are deploying to **dev**, copy the value of `Dev - BraveSensor SmartThings Automation Public Key`
+### Creating a secret from a .env file
+To create a secret from a .env file, run the following command:
 
-   - If you are deploying to **prod**, copy the value of `Prod - BraveSensor2 SmartThings Automation Public Key`
+`kubectl create secret generic <your-secret-name> --from-env-file=<path-to-env-file>`
 
+### Altering a secret after it's been created
+If there are any changes to environment variables, the corresponding Kubernetes secret objects must be changed too.
 
-### .env files
+To update a Kubernetes secret use the command:
+`kubectl edit secret <name-of-your-secret>`
 
-The .env file contain important secrets such as Twilio credentials, Postgres credentials as well as the IP address of the Env files for the production and development deployments. 
+The values displayed will be encoded in base64, and new or altered values must also be entered in this encoding. To encode a string, use a command like the following one:
 
-These steps need to be re-run anytime the `.env` file changes.
+`echo 'mySecretValue' | encode base64`
 
-1. Copy from the "ODetect Credentials" vault in 1Password into your local 
-`BraveSensor-Server/.env` file
+A potentially easier option is to create a new secret from scratch using the method described above for [creating a sensor from an env file](#creating-a-secret-from-a-.env-file).
 
-   - If you are deploying to **dev**, copy the value of "Dev - env file"
-
-   - If you are deploying to **prod**, copy the value of "Prod - env file"
-
-
-### Redis cluster IP
-
-The cluster IP of the redis deployment is a required parameter for the node application to open a connection to the database. 
-
-These steps need to be re-run anytime the Redis deployment changes.
-
-1. To obtain this cluster IP, first confirm that the necessary deployment is running on the kubernetes cluster.
-
-    1. SSH into the `odetect-admin` server (see [here](#access-odetect-admin-server))
-
-    1. Run
-    ```
-    kubectl get services
-    ```
-
-1. If there is no redis deployment for the environment you are trying to deploy to, 
-create a new deployment from a manifest by
-
-    1. Checkout the desired git branch (`devenv` for **dev**, `master` for **prod**) to the
-    `odetect-admin` server
-
-    1. Within the `odetect-admin` server, navigate to `~/ODetect-BackendLocal/manifests`
-
-        - If you are deploying to **dev**, run 
-            ```
-            kubectl apply -f redis-deployment-dev.yaml
-            ```
-
-        - If you are deploying to **prod**, run 
-            ```
-            kubectl apply -f redis-deployment.yaml
-            ```
-
-1. If there already is a redis deployment for the environment you are trying to deploy to(`redis-dev` for **dev** or `redis-master` for **prod**), copy the value in its `CLUSTER-IP` colmnn 
-into the `REDIS_CLUSTER_IP` field in your local `BraveSensor-Server/.env` file
-
-### DB connection parameters
-
-The PostgreSQL DB connection parameters are required for the application to open a connection to
-the database.
-
-| Environment           | User    | Database Name       |
-|-----------------------|---------|---------------------|
-| Production (**prod**) | doadmin | backend-replacement |
-| Development (**dev**) | doadmin | development         |
-
-These steps need to be re-run anyttime the database changes.
-
-1. Log in to Digital Ocean
-
-1. Navigate to Databases --> odetect-db
-
-1. In the Connection Details box:
-
-    1. In the "Connection parameters" dropdown, select "Connection parameters"
-
-    1. In the "User" dropdown, select the user for your desired deployment environment
-
-    1. In the "Database/Pool" dropdown, select the database name for your desired deployment
-    environment
-
-    1. Click "Copy" to copy the connection parameters to your clipboard
-
-    1. Paste the connection string into the appropriate environment variable field in your local `BraveSensor-Server/.env` file
+**On a similar note to the issue with database changes noted above, if environment variable changes are breaking, take care with this step and consider temporarily shutting down the server**
 
 
-## Building a Docker image and pushing to the registry
+## 4. Deploy changes to the Kubernetes Cluster
 
-To be able to push images to the DO container registry, you will need to be authenticated as a member of our DO ODetect project. 
+We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us to deploy different instances of the application corresponding to dev, staging, and production environments as different 'releases'.
 
-Docker commands are run locally.
+### Updating production
+
+1. Run `ssh brave@odetect-admin.brave.coop`
+
+1. cd into the ~/BraveSensor-Server/sensor-helm-chart/ directory and run `git pull origin master` to get the latest version of the helm chart
+
+1. Run the command `helm upgrade production .`
+
+
+# Deploying to the staging or development environment
+
+1. Run `ssh brave@odetect-admin.brave.coop`
+
+1. cd into the ~/BraveSensor-Server/sensor-helm-chart/ directory
+
+#### To deploy to staging
+
+1. Run the command `helm upgrade staging --set secretName=sensor-staging --set image.tag=<image tag you want to deploy> .`
+
+#### To deploy to development
+
+1. Run the command `helm upgrade dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> .`
+
+# Build and push a new container
 
 1. Install Docker locally (https://docs.docker.com/get-docker/ and, if you are running Linux,
 https://docs.docker.com/engine/install/linux-postinstall/)
@@ -149,35 +107,42 @@ https://docs.docker.com/engine/install/linux-postinstall/)
         ./build_prod.sh
         ```
 
+# Local Development
 
-## Deploying a Docker image
+## Dependencies
+1. Dowload and install [redis version 6](https://redis.io/download)
+1. Download and install [PostgreSQL version 12](https://www.postgresql.org/download/)
 
-Our cluster is not setup to automatically pull the new image and restart. Rather, we do it manually.
+Alternately, you have the option of installing these dependencies as docker containers
+1. Redis: https://hub.docker.com/_/redis
+1. PostgreSQL: https://hub.docker.com/_/postgres
 
-1. SSH onto the ODetect Admin Server
+## Environment Variables
 
-1. Alter the kubernetes manifest to reflect the tag you have just pushed to your container registry
-    - If you are deploying to **dev**, edit the image field in the odetect-deployment-dev.yaml and run
-        ```
-        kubectl apply -f odetect-deployment-dev.yaml
-        ```
+For local development, we use .env files to set environment variables. To set one of these up, fill in the values in the .env.example and change it's name to `.env`.
 
-    - If you are deploying to **dev**, edit the image field in the odetect-deployment.yaml and run
-        ```
-        kubectl apply -f odetect-deployment.yaml
-        ```
+## Database Setup
 
-1. Restart the deployment
+You will need to populate the .env file with connection parameters for both redis and Postgresql. If you are using a local database you will also need to setup the database schema.
 
-    - If you are deploying to **dev**, run
-        ```
-        kubectl rollout restart deployment/odetect-dev
-        ```
+To do this, cd into the BraveSensor-Server directory and run the following command
 
-    - If you are deploying to **prod**, run
-        ```
-        kubectl rollout restart deployment/odetect
-        ```
+```
+sudo PG_PORT=<your db's port> PG_HOST=<your db's host> PG_PASSWORD=<your db's password> PG_USER=<your db's user> PG_DATABASE=<your db name> setup_postgresql_local.sh
+```
+## Tests
+
+Unit tests are written using the [Mocha](https://mochajs.org/) JS test framework
+and the [Chai](https://www.chaijs.com/) assertion library.
+
+To run the tests locally:
+```
+npm install
+npm run test
+```
+
+The tests run automatically on Travis on every push to GitHub and every time a pull request is created.
+
 
 # ODetect Admin Server
 
@@ -199,8 +164,32 @@ Access is restricted to machines whose public key has been added to the server's
 
 1. Paste the user's public key onto a new line on the `~/.ssh/authorized_keys` file from a machine that is already capable of accessing the server
 
+# Interacting with the Managed Database
 
-# Database Migration
+## Connecting to a database
+
+The PostgreSQL DB connection parameters are required for the application to open a connection to the database. We primarily use the following databases, although you are free to create new ones for development purposes
+
+| Environment           | User    | Database Name       |
+|-----------------------|---------|---------------------|
+| Production | doadmin | backend-replacement |
+| Development | bravetest | bravetest        |
+
+
+To access a database shell
+
+1. Log in to Digital Ocean
+
+1. Navigate to Databases --> odetect-db
+
+1. In the Connection Details box:
+
+    1. In the "Connection parameters" dropdown, select "Flags"
+
+    1. In the "User" dropdown, select the user for your desired deployment environment
+
+    1. In the "Database/Pool" dropdown, select the database name for your desired deployment
+    environment, click the 'Copy' button below, and paste the result into your terminal to access the shell
 
 ## Adding a new Database migration script
 
@@ -212,11 +201,10 @@ This strategy assumes that each migration script in the `db` directory has a u
 
 ## Deploying the migration scripts
 
-1. Copy the "Flag" connection details from Digital Ocean for the DB you want to migrate
-
-1. Run
+1. In the BraveSensor-Server directory, run the following command
     ```
-    <connection details from DO> -f <migration script file to deploy>
+    
+    PG_PORT=<your db's port> PG_HOST=<your db's host> PG_PASSWORD=<your db's password> PG_USER=<your db's user> PG_DATABASE=<your db name> setup_postgresql.sh
     ```
 
 ## Viewing which migration scripts have been run and when
@@ -228,21 +216,4 @@ This strategy assumes that each migration script in the `db` directory has a u
     SELECT *
     FROM migrations
     ORDER BY id;
-    ```
-
-
-## Useful commands
-
-### Kubernetes
-
-Kubernetes commands are run on the ODetect Admin server.
-
-- Enter a pod's shell
-    ```
-    kubectl exec -i -t <my-pod>  -- /bin/bash
-    ```
-
-- Get and follow logs from a pod
-    ```
-    kubectl logs <my-pod> -f
     ```

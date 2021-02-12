@@ -9,14 +9,8 @@ was committed to the `master` branch. This is not necessarily the date that
 the code was deployed.
 
 ## [Unreleased]
-### Security
-- Removed all references to axios < v0.21.1 (CU-j6yuzk)
 
-### Added
-- Device health endpoint (CU-h2y2nt)
-- IM21 door sensor endpoint (CU-h2y2nt)
-
-## [1.2.0] - 2020-12-10
+## [1.2.0] - 2021-02-12
 ### Added
 - New mustache frontend (CU-dwr2xb)
 - Script which runs all database migrations
@@ -26,12 +20,19 @@ the code was deployed.
 - Changelog
 - Build scripts for tagging and pushing containers
 - Linting
+- Device health endpoint (CU-h2y2nt)
+- IM21 door sensor endpoint (CU-h2y2nt)
+- Helm chart (CU-kcxn8q)
 
 ### Fixed
 - Bug in calculating session duration (CU-gcuxtz)
 - Session creation concurrency bug (CU-gcuxtz)
 - Alert reason attribution bug  (CU-gcuxtz)
 - Session creation when there is no previous session for a location (CU-gcuxtz)
+- Update location_human in fallback message to display_name to fix display issue (CU-mgz8vq)
+
+### Security
+- Removed all references to axios < v0.21.1 (CU-j6yuzk)
 
 ### Removed
 - Old angular frontend (CU-dwr2xb)
@@ -70,8 +71,8 @@ the code was deployed.
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
 
-[Unreleased]: https://github.com/bravetechnologycoop/ODetect-Backend-Local/compare/v1.2.0...HEAD
-[1.2.0]: https://github.com/bravetechnologycoop/ODetect-Backend-Local/compare/v1.1...v1.2.0
-[1.1]: https://github.com/bravetechnologycoop/ODetect-Backend-Local/compare/v1.1-alpha...v1.1
-[1.1-alpha]: https://github.com/bravetechnologycoop/ODetect-Backend-Local/compare/v1.0...v1.1-alpha
-[1.0]: https://github.com/bravetechnologycoop/ODetect-Backend-Local/releases/tag/v1.0
+[Unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1...v1.2.0
+[1.1]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1-alpha...v1.1
+[1.1-alpha]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.0...v1.1-alpha
+[1.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/releases/tag/v1.0
