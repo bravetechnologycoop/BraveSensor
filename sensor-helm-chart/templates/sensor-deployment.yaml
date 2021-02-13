@@ -60,6 +60,11 @@ spec:
               secretKeyRef:
                 name: {{.Values.secretName}}
                 key: PG_USER
+          - name: PG_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: PG_DATABASE
           - name: PG_PORT
             valueFrom:
               secretKeyRef:
