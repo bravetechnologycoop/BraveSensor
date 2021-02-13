@@ -95,17 +95,11 @@ https://docs.docker.com/engine/install/linux-postinstall/)
 
 1. Install and configure `doctl` with your API token (https://www.digitalocean.com/docs/apis-clis/doctl/how-to/install/)
 
-1. Build the Docker image, tag it, and push it to the registry
+1. Build the Docker image, tag it, and push it to the registry by running
 
-    - If you are deploying to **dev**, run
-        ```
-        ./build_dev.sh
-        ```
-
-    - If you are deploying to **prod**, run
-        ```
-        ./build_prod.sh
-        ```
+    ```
+    ./build.sh
+    ```
 
 # Local Development
 
