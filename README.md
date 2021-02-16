@@ -46,8 +46,8 @@ To create a secret from a .env file, run the following command:
 
 `kubectl create secret generic <your-secret-name> --from-env-file=<path-to-env-file>`
 
-### Altering a secret after it's been created
-If there are any changes to environment variables, the corresponding Kubernetes secret objects must be changed too.
+### Altering a secret values after it's been created
+If there are any changes to environment variables values, the corresponding Kubernetes secret objects must be changed too.
 
 To update a Kubernetes secret use the command:
 `kubectl edit secret <name-of-your-secret>`
@@ -56,10 +56,10 @@ The values displayed will be encoded in base64, and new or altered values must a
 
 `echo 'mySecretValue' | encode base64`
 
-A potentially easier option is to create a new secret from scratch using the method described above for [creating a sensor from an env file](#creating-a-secret-from-a-.env-file).
+A easier option is to delete the secret and re-create a new secret from scratch using the method described above for [creating a sensor from an env file](#creating-a-secret-from-a-.env-file). This is safe to do and will not affect running pods.
 
-**On a similar note to the issue with database changes noted above, if environment variable changes are breaking, take care with this step and consider temporarily shutting down the server**
-
+### Altering a secret's schema
+If there are changes to the schema of the environment variables (like the addition or deletion of a key) this change must be reflected in the env variables section of `BraveSensor-Server/sensor-helm-chart/templates/sensor-deployment.yaml`, in addition to changing the Kubernetes secret as described above.
 
 ## 4. Deploy changes to the Kubernetes Cluster
 
