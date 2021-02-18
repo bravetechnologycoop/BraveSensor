@@ -84,13 +84,7 @@ describe('Brave Sensor server', () => {
         redis.connect()
     })
 
-<<<<<<< HEAD
-describe('Brave Sensor server', () => {
-
-    after(async function() {
-=======
     after(async () => {
->>>>>>> devenv
         await sleep(3000)
         server.close()
         await redis.disconnect()
