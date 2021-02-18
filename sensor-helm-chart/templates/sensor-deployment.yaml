@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sensor.fullname" . }}
+  labels:
+    {{- include "sensor.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "sensor.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "sensor.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        name: {{ .Chart.Name }}
+        imagePullPolicy: Always
+        env:
+          - name: TWILIO_SID
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: TWILIO_SID
+          - name: TWILIO_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: TWILIO_TOKEN
+          - name: WEB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: WEB_USERNAME
+          - name: PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: PASSWORD
+          - name: REDIS_CLUSTER_IP
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: REDIS_CLUSTER_IP
+          - name: SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: SECRET
+          - name: PG_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: PG_USER
+          - name: PG_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: PG_DATABASE
+          - name: PG_PORT
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: PG_PORT
+          - name: PG_HOST
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: PG_HOST
+          - name: PG_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{.Values.secretName}}
+                key: PG_PASSWORD
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30

@@ -1,16 +1,24 @@
-require('dotenv').config();
+// Third-party dependencies
 const Redis = require("ioredis");
+
+// In-house dependencies
 const radarData = require('./radarData.js');
 const doorData = require('./doorData.js');
 const stateData = require('./stateData.js');
-const {helpers} = require('brave-alert-lib')
+const { helpers } = require('brave-alert-lib')
 const SESSIONSTATE_DOOR = require('../SessionStateDoorEnum.js')
-const client = new Redis(6379, helpers.getEnvVar('REDIS_CLUSTER_IP')); // uses defaults unless given configuration object
 
+let client
 
-client.on("error", function(error) {
-    console.error(error);
-});
+function connect() {
+    if (!client) {
+        client = new Redis(6379, helpers.getEnvVar('REDIS_CLUSTER_IP')) // uses defaults unless given configuration object
+
+        client.on('error', function(error) {
+            console.error(error)
+        })
+    }
+}
  
 async function getXethruWindow(locationID, startTime, endTime, windowLength){
     let rows = await client.xrevrange('xethru:'+locationID,startTime, endTime, 'count', windowLength);
@@ -40,8 +48,8 @@ async function clearKeys(){
     await client.flushall()
 }
 
-async function quit(){
-    await client.quit()
+async function disconnect(){
+    await client.disconnect()
 }
 // POST new door Test data
 const addDoorSensorData = (locationid, signal) => {
@@ -103,12 +111,13 @@ module.exports = {
     addVitals,
     addStateMachineData,
     addXeThruSensorData,
+    clearKeys,
+    connect,
+    disconnect,
     getXethruWindow,
     getXethruStream,
     getStatesWindow,
     getLatestDoorSensorData,
     getLatestXeThruSensorData,
     getLatestLocationStatesData,
-    clearKeys,
-    quit
 }

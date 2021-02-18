@@ -4,22 +4,26 @@ matrix:
   include:
     - name: Server
       language: node_js
-      node_js: "node"
+      node_js: "node"         # node version specified in .nvmrc
 
       # install dependencies
       install:
-        - npm install
+        - npm ci
         - npm install pg@latest
+
+      # install Redis
       services:
         - redis-server 
 
       addons:
+        # install PostgreSQL
         postgresql: "12"
         apt:
           packages:
           - postgresql-12
           - postgresql-client-12
 
+      # setup environment variables because Travis doesn't have a .env file
       env:
         - WEB_USERNAME_TEST=TravisDashboardUsername
         - PASSWORD_TEST=TravisDashboardPassword
@@ -29,6 +33,7 @@ matrix:
         - PG_PORT_TEST=5433
         - PG_HOST_TEST=localhost
         - PG_USER=brave
+        - PG_DATABASE=brave
         - PG_PASSWORD=travispassword
         - PG_PORT=5433
         - PG_HOST=localhost
@@ -42,7 +47,7 @@ matrix:
         - PGVER=12
         - PGPORT=5433
 
-        # setup database and create dummy public key for smartthings integration
+      # setup database and create dummy public key for smartthings integration
       before_script:
         - bash setup_postgresql_local.sh
         - touch smartthings_rsa.pub
@@ -50,6 +55,4 @@ matrix:
       # run unit tests, integration tests, and linter
       script:
         - npm run lint
-        - sudo env "PATH=$PATH" npm run unittest
-        - sudo env "PATH=$PATH" npm run integrationtest
-
+        - sudo env "PATH=$PATH" npm test
