@@ -286,7 +286,7 @@ describe('Brave Sensor server', () => {
 
         it('should return 400 for a request that does not contain lifecycle, ie. which does not pass express validator', async () => {
             const badExpressRequest = {
-                uselessField: "useless"
+                uselessField: 'useless'
             }
             
             const response = await chai.request(server).post('/api/st').send(badExpressRequest)
@@ -306,6 +306,119 @@ describe('Brave Sensor server', () => {
             
             const response = await chai.request(server).post('/api/st').send(badSmartThingsRequest)
             expect(response).to.have.status(401)
+        })
+    })
+
+    describe('Express validation of API endpoints', () => {
+        describe('api/doorTest endpoint', () => {
+            beforeEach(async function() {
+                await redis.clearKeys()
+                await db.clearSessions()
+                await db.clearLocations()
+                await db.createLocation(testLocation1Id, '0', testLocation1PhoneNumber, MOV_THRESHOLD, 15, 0.2, 5000, 5000, 0, '+15005550006', '+15005550006', '+15005550006', 1000)
+                await door(testLocation1Id, ST_DOOR_STATUS.CLOSED)
+            })
+    
+            afterEach(async function() {
+                await redis.clearKeys()
+                await db.clearSessions()
+                await db.clearLocations()
+                helpers.log('\n')
+            })
+
+            it('should return 200 for a valid request', async ()=> {
+                const goodRequest = {
+                    locationid: testLocation1Id,
+                    signal: ST_DOOR_STATUS.CLOSED
+                }
+            
+                const response = await chai.request(server).post('/api/doorTest').send(goodRequest)
+                expect(response).to.have.status(200)
+            })
+
+            it('should return 400 for a request that does not contain locationid or signal', async () => {
+                const badRequest = {
+                    uselessField: 'useless'
+                }
+            
+                const response = await chai.request(server).post('/api/doorTest').send(badRequest)
+                expect(response).to.have.status(400)
+            })
+        })
+
+        describe('api/door endpoint', () => {
+            beforeEach(async function() {
+                await redis.clearKeys()
+                await db.clearSessions()
+                await db.clearLocations()
+                await db.createLocation(testLocation1Id, '0', testLocation1PhoneNumber, MOV_THRESHOLD, 15, 0.2, 5000, 5000, 0, '+15005550006', '+15005550006', '+15005550006', 1000, 'locationName', door_coreID, 'radar_particlecoreid')
+                await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+            })
+        
+            afterEach(async function() {
+                await redis.clearKeys()
+                await db.clearSessions()
+                await db.clearLocations()
+                helpers.log('\n')
+            })
+            
+            it('should return 200 for a valid request', async ()=> {
+                const goodRequest = {
+                    coreid: door_coreID,
+                    data: `{ "deviceid": "FA:E6:51", "data": "${IM21_DOOR_STATUS.CLOSED}", "control": "86"}`
+                }
+            
+                const response = await chai.request(server).post('/api/door').send(goodRequest)
+                expect(response).to.have.status(200)
+            })
+
+            it('should return 400 for a request that does not contain coreid or data', async () => {
+                const badRequest = {
+                    uselessField: 'useless'
+                }
+            
+                const response = await chai.request(server).post('/api/door').send(badRequest)
+                expect(response).to.have.status(400)
+            })
+        })
+
+        describe('api/devicevitals endpoint', () => {
+            beforeEach(async function() {
+                await redis.clearKeys()
+                await db.clearSessions()
+                await db.clearLocations()
+                await db.createLocation(testLocation1Id, '0', testLocation1PhoneNumber, MOV_THRESHOLD, 15, 0.2, 5000, 5000, 0, '+15005550006', '+15005550006', '+15005550006', 1000, 'locationName', door_coreID, 'radar_particlecoreid')
+                await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+            })
+        
+            afterEach(async function() {
+                await redis.clearKeys()
+                await db.clearSessions()
+                await db.clearLocations()
+                helpers.log('\n')
+            })
+
+            // not sure how this is supposed to be formatted to be a correct request, have asked in slack
+            // and am commenting this out for now for Travis satisfaction
+
+            // it('should return 200 for a valid request', async ()=> {
+            //     const goodRequest = {
+            //         coreid: door_coreID,
+            //         data: `{ "deviceid": "FA:E6:51", "data": "${IM21_DOOR_STATUS.CLOSED}", "control": "86"}`
+            //     }
+            
+            //     const response = await chai.request(server).post('/api/devicevitals').send(goodRequest)
+            //     expect(response).to.have.status(200)
+            // })
+
+            it('should return 400 for a request that does not contain coreid or data', async () => {
+                const badRequest = {
+                    uselessField: 'useless'
+                }
+            
+                const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
+                expect(response).to.have.status(400)
+            })
         })
     })
 

@@ -99,7 +99,7 @@ app.use((req, res, next) => {
 
 // middleware function to check for logged-in users
 var sessionChecker = (req, res, next) => {
-    if (!req.session.user && !req.cookies.user_sid) {
+    if (!req.session.user || !req.cookies.user_sid) {
         res.redirect('/login')
     }
     else {
@@ -317,7 +317,7 @@ if(!helpers.isTestEnvironment()){
     }, WATCHDOG_TIMER_FREQUENCY)
 }
 
-// Handler for income SmartThings POST requests
+// Handler for incoming SmartThings POST requests
 app.post('/api/st', Validator.body(['lifecycle']).exists(), function(req, res, next) {    // eslint-disable-line no-unused-vars -- next might be used in the future
     try {
         const validationErrors = Validator.validationResult(req)
@@ -333,7 +333,7 @@ app.post('/api/st', Validator.body(['lifecycle']).exists(), function(req, res, n
     }
 });
 
-// Handler for income XeThru POST requests
+// Handler for incoming XeThru POST requests
 app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'distance', 'mov_f', 'mov_s']).exists(), async (req, res) => {
     try {
         const validationErrors = Validator.validationResult(req)
@@ -344,7 +344,7 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'distance'
 
             await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s);
             await handleSensorRequest(locationid);
-            res.status(200).send()
+            res.status(200).json("OK")
         } else {
             helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
             res.status(400).send()
@@ -364,7 +364,7 @@ app.post('/api/doorTest', Validator.body(['locationid', 'signal']).exists(), asy
 
             await redis.addDoorTestSensorData(locationid, signal)
             await handleSensorRequest(locationid)
-            res.status(200).send()
+            res.status(200).json("OK")
         } else {
             helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
             res.status(400).send()
@@ -375,7 +375,8 @@ app.post('/api/doorTest', Validator.body(['locationid', 'signal']).exists(), asy
     }
 })
 
-app.post('/api/door', Validator.body(['coreid', 'data.*.deviceid', 'data.*.data', 'data.*.control']).exists(), async(request, response) => {
+app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async(request, response) => {
+
     try {
         const validationErrors = Validator.validationResult(request)
         if(validationErrors.isEmpty()){
@@ -418,7 +419,7 @@ app.post('/api/door', Validator.body(['coreid', 'data.*.deviceid', 'data.*.data'
 })
 
 // Handler for device vitals such as wifi strength
-app.post('/api/devicevitals', Validator.body(['coreid']).exists(), async(request, response) => {
+app.post('/api/devicevitals', Validator.body(['coreid', 'data']).exists(), async(request, response) => {
     try {
         const validationErrors = Validator.validationResult(request)
         if(validationErrors.isEmpty()){
