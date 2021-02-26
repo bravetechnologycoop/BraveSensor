@@ -336,9 +336,18 @@ describe('Brave Sensor server', () => {
                 expect(response).to.have.status(200)
             })
 
-            it('should return 400 for a request that does not contain locationid or signal', async () => {
+            it('should return 400 for a request that does not contain locationid', async () => {
                 const badRequest = {
-                    uselessField: 'useless'
+                    signal: ST_DOOR_STATUS.CLOSED
+                }
+            
+                const response = await chai.request(server).post('/api/doorTest').send(badRequest)
+                expect(response).to.have.status(400)
+            })
+
+            it('should return 400 for a request that does not contain signal', async () => {
+                const badRequest = {
+                    locationid: testLocation1Id
                 }
             
                 const response = await chai.request(server).post('/api/doorTest').send(badRequest)
@@ -372,9 +381,18 @@ describe('Brave Sensor server', () => {
                 expect(response).to.have.status(200)
             })
 
-            it('should return 400 for a request that does not contain coreid or data', async () => {
+            it('should return 400 for a request that does not contain coreid', async () => {
                 const badRequest = {
-                    uselessField: 'useless'
+                    data: `{ "deviceid": "FA:E6:51", "data": "${IM21_DOOR_STATUS.CLOSED}", "control": "86"}`
+                }
+            
+                const response = await chai.request(server).post('/api/door').send(badRequest)
+                expect(response).to.have.status(400)
+            })
+
+            it('should return 400 for a request that does not contain data', async () => {
+                const badRequest = {
+                    coreid: door_coreID
                 }
             
                 const response = await chai.request(server).post('/api/door').send(badRequest)
@@ -398,22 +416,39 @@ describe('Brave Sensor server', () => {
                 helpers.log('\n')
             })
 
-            // not sure how this is supposed to be formatted to be a correct request, have asked in slack
-            // and am commenting this out for now for Travis satisfaction
 
-            // it('should return 200 for a valid request', async ()=> {
-            //     const goodRequest = {
-            //         coreid: door_coreID,
-            //         data: `{ "deviceid": "FA:E6:51", "data": "${IM21_DOOR_STATUS.CLOSED}", "control": "86"}`
-            //     }
+            it('should return 200 for a valid request', async ()=> {
+                const goodRequest = {
+                    coreid: door_coreID,
+                    data: `{"device":{"network":{"signal":{"at":"Wi-Fi","strength":100,"strength_units":"%","strengthv":-47,"strengthv_units":"dBm","strengthv_type":"RSSI","quality":100,"quality_units":"%","qualityv":43,"qualityv_units":"dB","qualityv_type":"SNR"}},"cloud":{"connection":{"status":"connected","error":17,"attempts":1,"disconnects":9,"disconnect_reason":"error"},"coap":{"transmit":1305228,"retransmit":1721,"unack":0,"round_trip":1001},"publish":{"rate_limited":0}},"system":{"uptime":1298620,"memory":{"used":95000,"total":160488}}},"service":{"device":{"status":"ok"},"cloud":{"uptime":94305,"publish":{"sent":93201}},"coap":{"round_trip":1327}}}`
+                }
             
-            //     const response = await chai.request(server).post('/api/devicevitals').send(goodRequest)
-            //     expect(response).to.have.status(200)
-            // })
+                const response = await chai.request(server).post('/api/devicevitals').send(goodRequest)
+                expect(response).to.have.status(200)
+            })
 
-            it('should return 400 for a request that does not contain coreid or data', async () => {
+            it('should return 400 for a request that does not contain coreid', async () => {
                 const badRequest = {
-                    uselessField: 'useless'
+                    data: `{"device":{"network":{"signal":{"at":"Wi-Fi","strength":100,"strength_units":"%","strengthv":-47,"strengthv_units":"dBm","strengthv_type":"RSSI","quality":100,"quality_units":"%","qualityv":43,"qualityv_units":"dB","qualityv_type":"SNR"}},"cloud":{"connection":{"status":"connected","error":17,"attempts":1,"disconnects":9,"disconnect_reason":"error"},"coap":{"transmit":1305228,"retransmit":1721,"unack":0,"round_trip":1001},"publish":{"rate_limited":0}},"system":{"uptime":1298620,"memory":{"used":95000,"total":160488}}},"service":{"device":{"status":"ok"},"cloud":{"uptime":94305,"publish":{"sent":93201}},"coap":{"round_trip":1327}}}`
+                }
+            
+                const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
+                expect(response).to.have.status(400)
+            })
+
+            it('should return 400 for a request that does not contain data', async () => {
+                const badRequest = {
+                    coreid: door_coreID
+                }
+            
+                const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
+                expect(response).to.have.status(400)
+            })
+
+            it('should return 400 for a request that contains a coreid and an invalid data field', async () => {
+                const badRequest = {
+                    coreid: door_coreID,
+                    data: `{"device":{"network":{"signal":{"at":"Wi-Fi","strength":100,"strength_units":"%","strengthv":-47,"strengthv_units":"dBm","strengthv_type":"RSSI","quality":100,"quality_units":"%","qualityv":43,"qualityv_units":"dB","qualityv_type":"SNR"}}`
                 }
             
                 const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
