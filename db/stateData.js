@@ -4,4 +4,5 @@ class StateData {
     this.state = streamEntry[1][1]
   }
 }
+
 module.exports = StateData

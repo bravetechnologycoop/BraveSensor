@@ -8,4 +8,5 @@ class RadarData {
     this.mov_s = Number(streamEntry[1][9])
   }
 }
+
 module.exports = RadarData

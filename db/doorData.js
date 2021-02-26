@@ -4,4 +4,5 @@ class DoorData {
     this.signal = streamEntry[1][1]
   }
 }
+
 module.exports = DoorData
