@@ -445,7 +445,7 @@ describe('Brave Sensor server', () => {
                 expect(response).to.have.status(400)
             })
 
-            it('should return 400 for a request that contains a coreid and an invalid data field', async () => {
+            it('should return 400 for a request that contains a valid coreid and an invalid data field', async () => {
                 const badRequest = {
                     coreid: door_coreID,
                     data: `{"device":{"network":{"signal":{"at":"Wi-Fi","strength":100,"strength_units":"%","strengthv":-47,"strengthv_units":"dBm","strengthv_type":"RSSI","quality":100,"quality_units":"%","qualityv":43,"qualityv_units":"dB","qualityv_type":"SNR"}}`
