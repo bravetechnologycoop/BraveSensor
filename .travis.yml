@@ -29,6 +29,7 @@ matrix:
         - PASSWORD_TEST=TravisDashboardPassword
         - SECRET_TEST=TravisCookieSecret
         - PG_USER_TEST=brave
+        - PG_DATABASE_TEST=brave
         - PG_PASSWORD_TEST=travispassword
         - PG_PORT_TEST=5433
         - PG_HOST_TEST=localhost

@@ -9,6 +9,9 @@ was committed to the `master` branch. This is not necessarily the date that
 the code was deployed.
 
 ## [Unreleased]
+### Added
+- Express validations for endpoints (CU-hx0jjc)
+
 ### Changed
 - Use Brave Alert Lib for Twilio communication with the Responder (CU-bar1zy)
 

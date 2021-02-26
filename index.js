@@ -9,6 +9,7 @@ const cors = require('cors')
 const smartapp   = require('@smartthings/smartapp')
 const routes = require('express').Router()
 const Mustache = require('mustache')
+const Validator = require('express-validator')
 
 // In-house dependencies
 const redis = require('./db/redis.js')
@@ -98,20 +99,20 @@ app.use((req, res, next) => {
 
 // middleware function to check for logged-in users
 var sessionChecker = (req, res, next) => {
-    if (req.session.user && req.cookies.user_sid) {
-        res.redirect('/dashboard');
+    if (!req.session.user || !req.cookies.user_sid) {
+        res.redirect('/login')
     }
     else {
-        next();
+        next()
     }
 };
 
 app.get('/', sessionChecker, (req, res) => {
-    res.redirect('/login');
+    res.redirect('/dashboard');
 });
 
 app.route('/login')
-    .get(sessionChecker, (req, res) => {
+    .get((req, res) => {
         res.sendFile(__dirname + '/login.html');
     })
     .post((req, res) => {
@@ -137,12 +138,7 @@ app.get('/logout', (req, res) => {
     }
 });
 
-app.get('/dashboard', async (req, res) => {
-    if (!req.session.user || !req.cookies.user_sid) {
-        res.redirect('/login')
-        return
-    }
-
+app.get('/dashboard', sessionChecker, async (req, res) => {
     try {
         let allLocations = await db.getLocations()
         
@@ -162,12 +158,7 @@ app.get('/dashboard', async (req, res) => {
     }
 })
 
-app.get('/dashboard/:locationId', async (req, res) => {
-    if (!req.session.user || !req.cookies.user_sid) {
-        res.redirect('/login')
-        return
-    }
-
+app.get('/dashboard/:locationId', sessionChecker, async (req, res) => {
     try {
         let recentSessions = await db.getHistoryOfSessions(req.params.locationId)
         let currentLocation = await db.getLocationData(req.params.locationId)
@@ -326,74 +317,150 @@ if(!helpers.isTestEnvironment()){
     }, WATCHDOG_TIMER_FREQUENCY)
 }
 
-// Handler for income SmartThings POST requests
-app.post('/api/st', function(req, res, next) {    // eslint-disable-line no-unused-vars -- next might be used in the future
-    smartapp.handleHttpCallback(req, res);
+// Handler for incoming SmartThings POST requests
+app.post('/api/st', Validator.body(['lifecycle']).exists(), function(req, res, next) {    // eslint-disable-line no-unused-vars -- next might be used in the future
+    try {
+        const validationErrors = Validator.validationResult(req)
+        if(validationErrors.isEmpty()){
+            smartapp.handleHttpCallback(req, res)
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            res.status(400).send()
+        }
+    } catch (err) {
+        helpers.log(err)
+        res.status(500).send()
+    }
 });
 
-// Handler for income XeThru POST requests
-app.post('/api/xethru', async (req, res) => {
-    // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
-    const {deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s} = req.body;
+// Handler for incoming XeThru POST requests
+app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'distance', 'mov_f', 'mov_s']).exists(), async (req, res) => {
+    try {
+        const validationErrors = Validator.validationResult(req)
 
-    redis.addXeThruSensorData(req, res);
-    handleSensorRequest(locationid);
-});
+        if(validationErrors.isEmpty()){
+            // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
+            const { deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s } = req.body;
 
-app.post('/api/doorTest', async(req, res) => {
-    const {locationid} = req.body;
-    await redis.addDoorTestSensorData(req, res);
-    await handleSensorRequest(locationid)
+            await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s);
+            await handleSensorRequest(locationid);
+            res.status(200).json("OK")
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            res.status(400).send()
+        }
+    } catch (err) {
+        helpers.log(err)
+        res.status(500).send()
+    }
 })
 
-app.post('/api/door', async(request, response) => {
-    const coreId = request.body.coreid
-    const locationid = await db.getLocationIDFromParticleCoreID(coreId)
+app.post('/api/doorTest', Validator.body(['locationid', 'signal']).exists(), async(req, res) => {
+    try {
+        const validationErrors = Validator.validationResult(req)
 
-    if(!locationid){
-        helpers.log(`Error - no location matches the coreID ${coreId}`)
-        response.status(400).json('No location for CoreID')
+        if(validationErrors.isEmpty()){
+            const { locationid, signal } = req.body
+
+            await redis.addDoorTestSensorData(locationid, signal)
+            await handleSensorRequest(locationid)
+            res.status(200).json("OK")
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            res.status(400).send()
+        }
+    } catch (err) {
+        helpers.log(err)
+        res.status(500).send()
     }
-    else{
-        const message = JSON.parse(request.body.data)
-        const signal = message.data
-        var doorSignal
-        if (signal==IM21_DOOR_STATUS.OPEN){
-            doorSignal = SESSIONSTATE_DOOR.OPEN
-        }
-        else if (signal==IM21_DOOR_STATUS.CLOSED){
-            doorSignal = SESSIONSTATE_DOOR.CLOSED
-        }
-        else if (signal==IM21_DOOR_STATUS.LOW_BATT){
-            doorSignal = "LowBatt"
-        }
-        else if (signal==IM21_DOOR_STATUS.HEARTBEAT_OPEN || signal==IM21_DOOR_STATUS.HEARTBEAT_CLOSED){
-            doorSignal = "HeartBeat"
-        }
+})
+
+app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async(request, response) => {
+
+    try {
+        const validationErrors = Validator.validationResult(request)
+        if(validationErrors.isEmpty()){
+            const coreId = request.body.coreid
+            const locationid = await db.getLocationIDFromParticleCoreID(coreId)
+
+            if(!locationid){
+                helpers.log(`Error - no location matches the coreID ${coreId}`)
+                response.status(400).json('No location for CoreID')
+            }
+            else{
+                const message = JSON.parse(request.body.data)
+                const signal = message.data
+                var doorSignal
+                if (signal==IM21_DOOR_STATUS.OPEN){
+                    doorSignal = SESSIONSTATE_DOOR.OPEN
+                }
+                else if (signal==IM21_DOOR_STATUS.CLOSED){
+                    doorSignal = SESSIONSTATE_DOOR.CLOSED
+                }
+                else if (signal==IM21_DOOR_STATUS.LOW_BATT){
+                    doorSignal = "LowBatt"
+                }
+                else if (signal==IM21_DOOR_STATUS.HEARTBEAT_OPEN || signal==IM21_DOOR_STATUS.HEARTBEAT_CLOSED){
+                    doorSignal = "HeartBeat"
+                } else {
+                    helpers.log(`Bad request, door status is undefined`)
+                    response.status(400).send()
+                }
       
-        await redis.addIM21DoorSensorData(locationid, doorSignal)
-        await handleSensorRequest(locationid)
-        response.status(200).json("OK")
+                await redis.addIM21DoorSensorData(locationid, doorSignal)
+                await handleSensorRequest(locationid)
+                response.status(200).json("OK")
+            }
+        } else {
+            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+            response.status(400).send()
+        }
+    } catch (err) {
+        helpers.log(err)
+        response.status(500).send()
     }
 })
 
 // Handler for device vitals such as wifi strength
-app.post('/api/devicevitals', async(request, response) => {
-    const coreId = request.body.coreid
-    const locationid = await db.getLocationIDFromParticleCoreID(coreId)
-    if(!locationid){
-        helpers.log(`Error - no location matches the coreID ${coreId}`)
-        response.status(400).json('No location for CoreID')
-    }else {
-        const data = JSON.parse(request.body.data)
-        const signalStrength = data.device.network.signal.strength
-        const cloudDisconnects = data.device.cloud.disconnects
+app.post(
+    '/api/devicevitals', 
+    Validator.body(['coreid', 'data']).exists(), 
+    Validator.check('data').custom((dataString) => {
+        const data = JSON.parse(dataString)
 
-        redis.addVitals(locationid, signalStrength, cloudDisconnects)
-        response.status(200).json("OK")
+        const signalStrength = ((((data || {}).device || {}).network || {}).signal || {}).strength
+        const disconnects = ((((data || {}).device|| {}).cloud || {}).connection || {}).disconnects
 
-    }
-})
+        return signalStrength !== undefined && disconnects !== undefined
+    }).withMessage('error in schema, check for missing field'), 
+    async(request, response) => {
+        try {
+            const validationErrors = Validator.validationResult(request)
+
+            if(validationErrors.isEmpty()){
+                const coreId = request.body.coreid
+                const locationid = await db.getLocationIDFromParticleCoreID(coreId)
+                
+                if(!locationid){
+                    helpers.log(`Error - no location matches the coreID ${coreId}`)
+                    response.status(400).json('No location for CoreID')
+                } else {
+                    const data = JSON.parse(request.body.data)
+                    const signalStrength = data.device.network.signal.strength
+                    const cloudDisconnects = data.device.cloud.connection.disconnects
+
+                    redis.addVitals(locationid, signalStrength, cloudDisconnects)
+                    response.status(200).json("OK")
+                }        
+            } else {
+                helpers.log(`Bad request, invalid parameters ${JSON.stringify(validationErrors)}`)
+                response.status(400).send()
+            }
+        } catch (err) {
+            helpers.log(err)
+            response.status(500).send()
+        }
+    })
 
 async function handleSensorRequest(currentLocationId){
     let statemachine = new StateMachine(currentLocationId);
@@ -584,12 +651,11 @@ async function sendBatteryAlert(locationid, signal) {
     await sendSingleAlert(locationid, `Battery level at ${locationid} is ${signal}.`)
 }
 
-let server;
-
-server = app.listen(8080);
+const server = app.listen(8080);
 helpers.log('brave server listening on port 8080')
 
 module.exports.server = server;
 module.exports.db = db;
 module.exports.routes = routes;
 module.exports.redis = redis;
+module.exports.smartapp = smartapp
