@@ -90,7 +90,7 @@ async function autoResetSession(locationid) {
   }
 }
 
-// //This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
+// This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
 if (!helpers.isTestEnvironment()) {
   setInterval(async () => {
     const locations = await db.getLocations()
@@ -225,10 +225,8 @@ async function handleSensorRequest(currentLocationId) {
           await db.updateSessionState(latestSession.sessionid, currentState)
         }
       }
-    }
-
-    // Checks if current state belongs to the session triggerStates
-    else if (TRIGGERSTATES.includes(currentState)) {
+    } else if (TRIGGERSTATES.includes(currentState)) {
+      // Checks if current state belongs to the session triggerStates
       const client = await db.beginTransaction()
       const latestSession = await db.getMostRecentSession(currentLocationId, client)
 

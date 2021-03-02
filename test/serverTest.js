@@ -1,5 +1,5 @@
 // eslint-disable-next-line func-style
-const sleep = millis => new Promise(resolve => setTimeout(resolve, millis))
+// const sleep = millis => new Promise(resolve => setTimeout(resolve, millis))
 const chai = require('chai')
 const chaiHttp = require('chai-http')
 
@@ -22,6 +22,12 @@ chai.use(chaiHttp)
 const testLocation1Id = 'TestLocation1'
 const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid'
+
+function sleep(millis) {
+  return new Promise(resolve => {
+    setTimeout(resolve, millis)
+  })
+}
 
 function getRandomInt(minValue, maxValue) {
   const min = Math.ceil(minValue)
@@ -82,13 +88,13 @@ async function door(locationid, signal) {
   }
 }
 
-async function im21Door(coreid, signal) {
+async function im21Door(doorCoreId, signal) {
   try {
     await chai
       .request(server)
       .post('/api/door')
       .send({
-        coreid,
+        coreid: doorCoreId,
         data: `{ "deviceid": "FA:E6:51", "data": "${signal}", "control": "86"}`,
       })
   } catch (e) {

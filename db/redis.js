@@ -62,7 +62,8 @@ async function addDoorTestSensorData(locationid, signal) {
 }
 
 async function addIM21DoorSensorData(locationid, doorSignal) {
-  if (doorSignal === SESSIONSTATE_DOOR.CLOSED || doorSignal === SESSIONSTATE_DOOR.OPEN) {
+  // eslint-disable-next-line eqeqeq
+  if (doorSignal == SESSIONSTATE_DOOR.CLOSED || doorSignal == SESSIONSTATE_DOOR.OPEN) {
     await client.xadd(`door:${locationid}`, '*', 'signal', doorSignal)
   }
 }
@@ -71,9 +72,18 @@ async function addVitals(locationid, signalStrength, cloudDisconnects) {
   client.xadd(`vitals:${locationid}`, '*', 'strength', signalStrength, 'cloudDisc', cloudDisconnects)
 }
 
+// prettier-ignore
+/* eslint-disable function-call-argument-newline */
 function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
-  client.xadd(`xethru:${locationid}`, '*', 'state', state, 'distance', distance, 'rpm', rpm, 'mov_f', mov_f, 'mov_s', mov_s)
+  client.xadd(
+    `xethru:${locationid}`, '*', 
+    'state', state, 
+    'distance', distance, 
+    'rpm', rpm, 
+    'mov_f', mov_f, 
+    'mov_s', mov_s)
 }
+/* eslint-enable function-call-argument-newline */
 
 function addStateMachineData(state, locationid) {
   client.xadd(`state:${locationid}`, '*', 'state', state)

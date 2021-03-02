@@ -1,4 +1,3 @@
-/* eslint-disable no-return-await */
 /* eslint-disable class-methods-use-this */
 // In-house dependencies
 const { BraveAlerter, AlertSession, ALERT_STATE, helpers } = require('brave-alert-lib')
@@ -43,14 +42,16 @@ class BraveAlerterConfigurator {
 
   async getAlertSession(sessionId) {
     const session = await db.getSessionWithSessionId(sessionId)
+    const alertSession = await this.buildAlertSession(session)
 
-    return await this.buildAlertSession(session)
+    return alertSession
   }
 
   async getAlertSessionByPhoneNumber(phoneNumber) {
     const session = await db.getMostRecentSessionPhone(phoneNumber)
+    const alertSession = await this.buildAlertSession(session)
 
-    return await this.buildAlertSession(session)
+    return alertSession
   }
 
   async alertSessionChangedCallback(alertSession) {
