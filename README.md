@@ -101,6 +101,24 @@ https://docs.docker.com/engine/install/linux-postinstall/)
     ./build.sh
     ```
 
+## Running Smoke Tests on the Kubernetes Cluster
+
+Once a build is deployed to the cluster, you can test basic aspects of it's functionality by running the smoketest.js script. The scrip takes three parameters, a url for a deployment, a recipient phone number, and a Twilio number:
+
+    `npm run smoketest <server url> <your phone number> <valid Twilio number>`
+
+So, for example, if I wanted to run the smoke test with +1778228537 as the recipient phone number, and I knew +17786083684 was a valid twilio number for the deployment I'm testing, I could run the following command:
+
+    `npm run smoketest 'https://staging.odetect.brave.coop' '+17782285537' '+17786083684'`
+
+The script will take a few minutes to conclude. The expected behavior is for a location to be created, and for two sessions to be started - one which closes without generating an alert, and one which results in a 'Stillness' alert to the phone number provided. These two sessions should also be reflected in the frontend dashboard. If you do not answer the alert on your phone, you should notice a notification about a session being restarted. If you do, you should complete the chatbot flow.
+
+You can get further details about the behavior of the build by watching logs for the application with: 
+`kubectl logs -f deployment/dev-sensor-server`
+and by watching the behavior of redis with: 
+`kubectl exec deploy/redis-dev redis-cli monitor`
+
+
 # Local Development
 
 ## Dependencies

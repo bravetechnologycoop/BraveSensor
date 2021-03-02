@@ -8,7 +8,7 @@
     "test": "NODE_ENV=test mocha --timeout 10000 \"test/**/*.js\"",
     "integrationtest": "NODE_ENV=test mocha --timeout 10000 \"test/serverTest.js\"",
     "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/testStateMachine.js\"",
-    "replayData": "node -e 'require(\"./replayData.js\").replayData()'"
+    "smoketest": "node -e 'require(\"./smokeTest.js\")'"
   },
   "eslintIgnore": [
     "Public/*",
@@ -16,6 +16,7 @@
   ],
   "dependencies": {
     "@smartthings/smartapp": "^1.0.3",
+    "axios": "^0.21.1",
     "body-parser": "*",
     "brave-alert-lib": "https://github.com/bravetechnologycoop/brave-alert-lib#v2.0.0",
     "cookie-parser": "^1.4.4",
@@ -38,7 +39,7 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "chai-http": "^4.3.0",
-    "eslint": "^7.20.0",
+    "eslint": "^7.21.0",
     "eslint-config-airbnb": "^18.2.1",
     "eslint-config-brave": "https://github.com/bravetechnologycoop/eslint-config-brave.git#v1.0.0",
     "eslint-config-prettier": "^7.2.0",

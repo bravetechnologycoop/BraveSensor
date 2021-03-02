@@ -496,6 +496,10 @@ async function clearLocations() {
   await pool.query('DELETE FROM locations')
 }
 
+async function clearTestLocation(locationid) {
+  await pool.query('DELETE FROM locations where locationid=$1', [locationid])
+}
+
 async function close() {
   await pool.end()
 }
@@ -518,6 +522,7 @@ module.exports = {
   getLocations,
   updateLocationData,
   createLocation,
+  clearTestLocation,
   updateSentAlerts,
   clearSessions,
   clearLocations,
