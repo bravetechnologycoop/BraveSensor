@@ -618,6 +618,44 @@ app.post(
   },
 )
 
+app.post('/smokeTest/setup', async (request, response) => {
+  const { locationid, recipientNumber, twilioNumber } = request.body
+  try {
+    await db.createLocation(
+      locationid,
+      '0',
+      recipientNumber,
+      17,
+      15,
+      150,
+      30000,
+      120000,
+      3000,
+      recipientNumber,
+      twilioNumber,
+      recipientNumber,
+      9000,
+      locationid,
+      'door_coreID',
+      'radar_coreID',
+    )
+    await redis.addIM21DoorSensorData(locationid, 'closed')
+    response.status(200).send()
+  } catch (error) {
+    helpers.log(`Smoke test setup error: ${error}`)
+  }
+})
+
+app.post('/smokeTest/teardown', async (request, response) => {
+  try {
+    await db.clearTestLocation(request.body.locationid)
+    await redis.addStateMachineData('Reset', request.body.locationid)
+    response.status(200).send()
+  } catch (error) {
+    helpers.log(`Smoke test setup error: ${error}`)
+  }
+})
+
 const server = app.listen(8080)
 helpers.log('brave server listening on port 8080')
 if (!helpers.isTestEnvironment()) {
