@@ -72,6 +72,7 @@ async function addVitals(locationid, signalStrength, cloudDisconnects) {
   client.xadd(`vitals:${locationid}`, '*', 'strength', signalStrength, 'cloudDisc', cloudDisconnects)
 }
 
+// ignore comments included to allow arguments to be split across lines in pairs
 // prettier-ignore
 /* eslint-disable function-call-argument-newline */
 function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
@@ -81,7 +82,8 @@ function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
     'distance', distance, 
     'rpm', rpm, 
     'mov_f', mov_f, 
-    'mov_s', mov_s)
+    'mov_s', mov_s
+  )
 }
 /* eslint-enable function-call-argument-newline */
 

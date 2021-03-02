@@ -1,5 +1,3 @@
-// eslint-disable-next-line func-style
-// const sleep = millis => new Promise(resolve => setTimeout(resolve, millis))
 const chai = require('chai')
 const chaiHttp = require('chai-http')
 

@@ -214,7 +214,6 @@ async function handleSensorRequest(currentLocationId) {
   if (currentState != prevState) {
     await redis.addStateMachineData(currentState, currentLocationId)
 
-    // Checks if current state belongs to voidStates
     if (VOIDSTATES.includes(currentState)) {
       const latestSession = await db.getMostRecentSession(currentLocationId)
 
@@ -226,7 +225,6 @@ async function handleSensorRequest(currentLocationId) {
         }
       }
     } else if (TRIGGERSTATES.includes(currentState)) {
-      // Checks if current state belongs to the session triggerStates
       const client = await db.beginTransaction()
       const latestSession = await db.getMostRecentSession(currentLocationId, client)
 
@@ -245,10 +243,7 @@ async function handleSensorRequest(currentLocationId) {
         start_times[currentLocationId] = currentSession.start_time
       }
       await db.commitTransaction(client)
-    }
-
-    // Checks if current state belongs to the session closingStates
-    else if (CLOSINGSTATES.includes(currentState)) {
+    } else if (CLOSINGSTATES.includes(currentState)) {
       const client = await db.beginTransaction()
 
       const latestSession = await db.getMostRecentSession(currentLocationId, client)
