@@ -148,23 +148,26 @@ async function sendBatteryAlert(locationid, signal) {
 }
 
 // Heartbeat Helper Functions
-async function checkHeartbeat(locationid) {
-  const location = await db.getLocationData(locationid)
-  // Query raw sensor data to transmit to the FrontEnd
-  const XeThruData = await redis.getLatestXeThruSensorData(location.locationid)
-  // Check the XeThru Heartbeat
-  const currentTime = moment()
-  const latestXethru = moment(XeThruData.timestamp, 'x')
-  const XeThruDelayMillis = currentTime.diff(latestXethru)
+async function checkHeartbeat() {
+  let locations = await db.getLocations()
 
-  if (XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
-    helpers.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
-    await db.updateSentAlerts(location.locationid, true)
-    sendAlerts(location.locationid)
-  } else if (XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS && location.xethru_sent_alerts) {
-    helpers.log(`XeThru at ${location.locationid} reconnected`)
-    await db.updateSentAlerts(location.locationid, false)
-    sendReconnectionMessage(location.locationid)
+  for (const location of locations) {
+    // Query raw sensor data to transmit to the FrontEnd
+    let XeThruData = await redis.getLatestXeThruSensorData(location.locationid)
+    // Check the XeThru Heartbeat
+    let currentTime = moment()
+    let latestXethru = moment(XeThruData.timestamp, 'x')
+    let XeThruDelayMillis = currentTime.diff(latestXethru)
+
+    if (XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethruSentAlerts) {
+      helpers.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+      await db.updateSentAlerts(location.locationid, true)
+      sendAlerts(location.locationid)
+    } else if (XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS && location.xethruSentAlerts) {
+      helpers.log(`XeThru at ${location.locationid} reconnected`)
+      await db.updateSentAlerts(location.locationid, false)
+      sendReconnectionMessage(location.locationid)
+    }
   }
 }
 
@@ -180,10 +183,6 @@ async function handleSensorRequest(currentLocationId) {
   }
   const location = await db.getLocationData(currentLocationId)
 
-  // Check the XeThru Heartbeat
-  if (!helpers.isTestEnvironment()) {
-    await checkHeartbeat(currentLocationId)
-  }
   helpers.log(`${currentLocationId}: ${currentState}`)
 
   // Get current time to compare to the session's start time
@@ -621,6 +620,9 @@ app.post(
 
 const server = app.listen(8080)
 helpers.log('brave server listening on port 8080')
+if (!helpers.isTestEnvironment()) {
+  setInterval(checkHeartbeat, 1000)
+}
 
 module.exports.server = server
 module.exports.db = db
