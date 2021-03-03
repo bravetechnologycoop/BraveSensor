@@ -334,7 +334,7 @@ app.post('/api/st', Validator.body(['lifecycle']).exists(), function(req, res, n
 });
 
 // Handler for incoming XeThru POST requests
-app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'distance', 'mov_f', 'mov_s']).exists(), async (req, res) => {
+app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', 'mov_s']).exists(), async (req, res) => {
     try {
         const validationErrors = Validator.validationResult(req)
 
