@@ -53,10 +53,10 @@ async function disconnect() {
   await client.disconnect()
 }
 
-async function addIM21DoorSensorData(locationid, doorSignal) {
+async function addIM21DoorSensorData(locationid, doorSignal, control) {
   // eslint-disable-next-line eqeqeq
   if (doorSignal == SESSIONSTATE_DOOR.CLOSED || doorSignal == SESSIONSTATE_DOOR.OPEN) {
-    await client.xadd(`door:${locationid}`, 'MAXLEN', '~', '10000', '*', 'signal', doorSignal)
+    await client.xadd(`door:${locationid}`, 'MAXLEN', '~', '10000', '*', 'signal', doorSignal, 'control', control)
   }
 }
 

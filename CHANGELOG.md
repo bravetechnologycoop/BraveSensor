@@ -12,6 +12,7 @@ the code was deployed.
 ### Added
 - Script, endpoints, and instructions for smoke tests (CU-kcxndt)
 - Update to use Brave-wide linting standard (CU-kcxpaw)
+- Saving control field in door sensor requests (CU-n70k94)
 
 ### Changed
 - checkHeartbeat to run every 15 seconds to fix lack of alerts when sensors go down (CU-p34wcw)
