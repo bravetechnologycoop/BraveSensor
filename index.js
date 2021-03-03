@@ -437,6 +437,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
       } else {
         const message = JSON.parse(request.body.data)
         const signal = message.data
+        const control = message.control
         let doorSignal
         if (signal === IM21_DOOR_STATUS.OPEN) {
           doorSignal = SESSIONSTATE_DOOR.OPEN
@@ -446,12 +447,9 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
           doorSignal = 'LowBatt'
         } else if (signal === IM21_DOOR_STATUS.HEARTBEAT_OPEN || signal === IM21_DOOR_STATUS.HEARTBEAT_CLOSED) {
           doorSignal = 'HeartBeat'
-        } else {
-          helpers.log(`Bad request, door status is undefined`)
-          response.status(400).send()
         }
 
-        await redis.addIM21DoorSensorData(locationid, doorSignal)
+        await redis.addIM21DoorSensorData(locationid, doorSignal, control)
         await handleSensorRequest(locationid)
         response.status(200).json('OK')
       }
