@@ -10,7 +10,10 @@ the code was deployed.
 
 ## [Unreleased]
 
-## [2.0.0]
+### Security
+- Updated to latest version of minimist (CU-kry4g7)
+
+## [2.0.0] - 2021-03-08
 ### Added
 - Express validations for endpoints (CU-hx0jjc)
 - Script, endpoints, and instructions for smoke tests (CU-kcxndt)
