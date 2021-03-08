@@ -15,7 +15,7 @@
 
     1. update CHANGELOG.md by moving everything in `Unreleased` to a section for the new version
     
-    1. Run the `./build_prod.sh` script. Note the tag of the new image. See the section on [building and pushing a new container](#build-and-push-a-new-container) for more details about this step.
+    1. Run the `./build.sh` script. Note the tag of the new image. See the section on [building and pushing a new container](#build-and-push-a-new-container) for more details about this step.
 
     1. `cd` into the `~/BraveSensor-Server/sensor-helm-chart` directory
 

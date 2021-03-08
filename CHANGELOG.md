@@ -16,6 +16,7 @@ the code was deployed.
 
 ### Changed
 - Use Brave Alert Lib for Twilio communication with the Responder (CU-bar1zy)
+- Update to use Brave-wide linting standard (CU-kcxpaw)
 
 ## [1.2.0] - 2021-02-12
 ### Added
