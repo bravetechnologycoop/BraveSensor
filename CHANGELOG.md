@@ -9,6 +9,8 @@ was committed to the `master` branch. This is not necessarily the date that
 the code was deployed.
 
 ## [Unreleased]
+
+## [2.0.0]
 ### Added
 - Express validations for endpoints (CU-hx0jjc)
 
@@ -76,7 +78,8 @@ the code was deployed.
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
 
-[Unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1...v1.2.0
 [1.1]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1-alpha...v1.1
 [1.1-alpha]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.0...v1.1-alpha
