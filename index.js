@@ -494,23 +494,19 @@ app.post('/api/st', Validator.body(['lifecycle']).exists(), (req, res) => {
 
 // Handler for incoming XeThru POST requests
 app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', 'mov_s']).exists(), async (req, res) => {
-    try {
-        const validationErrors = Validator.validationResult(req)
+  try {
+    const validationErrors = Validator.validationResult(req)
 
-        if(validationErrors.isEmpty()){
-            // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
-            const { deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s } = req.body;
+    if (validationErrors.isEmpty()) {
+      // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
+      const { deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s } = req.body
 
-            await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s);
-            await handleSensorRequest(locationid);
-            res.status(200).json("OK")
-        } else {
-            helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-            res.status(400).send()
-        }
-    } catch (err) {
-        helpers.log(err)
-        res.status(500).send()
+      await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s)
+      await handleSensorRequest(locationid)
+      res.status(200).json('OK')
+    } else {
+      helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+      res.status(400).send()
     }
   } catch (err) {
     helpers.log(err)
