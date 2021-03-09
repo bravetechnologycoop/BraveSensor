@@ -15,6 +15,7 @@ the code was deployed.
 - Express validations for endpoints (CU-hx0jjc)
 
 ### Changed
+- checkHeartbeat to run every 15 seconds to fix lack of alerts when sensors go down (CU-p34wcw)
 - Use Brave Alert Lib for Twilio communication with the Responder (CU-bar1zy)
 - Update to use Brave-wide linting standard (CU-kcxpaw)
 

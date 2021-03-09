@@ -149,15 +149,15 @@ async function sendBatteryAlert(locationid, signal) {
 
 // Heartbeat Helper Functions
 async function checkHeartbeat() {
-  let locations = await db.getLocations()
+  const locations = await db.getLocations()
 
   for (const location of locations) {
     // Query raw sensor data to transmit to the FrontEnd
-    let XeThruData = await redis.getLatestXeThruSensorData(location.locationid)
+    const XeThruData = await redis.getLatestXeThruSensorData(location.locationid)
     // Check the XeThru Heartbeat
-    let currentTime = moment()
-    let latestXethru = moment(XeThruData.timestamp, 'x')
-    let XeThruDelayMillis = currentTime.diff(latestXethru)
+    const currentTime = moment()
+    const latestXethru = moment(XeThruData.timestamp, 'x')
+    const XeThruDelayMillis = currentTime.diff(latestXethru)
 
     if (XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethruSentAlerts) {
       helpers.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
@@ -621,7 +621,7 @@ app.post(
 const server = app.listen(8080)
 helpers.log('brave server listening on port 8080')
 if (!helpers.isTestEnvironment()) {
-  setInterval(checkHeartbeat, 1000)
+  setInterval(checkHeartbeat, 15000)
 }
 
 module.exports.server = server
