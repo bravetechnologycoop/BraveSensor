@@ -102,25 +102,31 @@ async function im21Door(coreID, signal) {
 }
 
 async function smokeTest(recipientPhoneNumber, twilioPhoneNumber) {
-  await setup(recipientPhoneNumber, twilioPhoneNumber, testLocation1Id, door_coreID, radar_coreID)
-  for (let i = 0; i < 15; i += 1) {
-    await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
+  helpers.log('Smoke testing - please do not terminate this script before it finishes running')
+  try {
+    await setup(recipientPhoneNumber, twilioPhoneNumber, testLocation1Id, door_coreID, radar_coreID)
+    for (let i = 0; i < 15; i += 1) {
+      await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
+    }
+    await im21Door(door_coreID, IM21_DOOR_STATUS.OPEN)
+    for (let i = 0; i < 5; i += 1) {
+      await silence(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
+    }
+    await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+    for (let i = 0; i < 15; i += 1) {
+      await movement(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
+    }
+    for (let i = 0; i < 15; i += 1) {
+      await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
+    }
+    for (let i = 0; i < 85; i += 1) {
+      await silence(testLocation1Id)
+    }
+  } catch (error) {
+    helpers.log(`Error running smoke test: ${error}`)
+  } finally {
+    await teardown()
   }
-  await im21Door(door_coreID, IM21_DOOR_STATUS.OPEN)
-  for (let i = 0; i < 5; i += 1) {
-    await silence(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
-  }
-  await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
-  for (let i = 0; i < 15; i += 1) {
-    await movement(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
-  }
-  for (let i = 0; i < 15; i += 1) {
-    await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
-  }
-  for (let i = 0; i < 85; i += 1) {
-    await silence(testLocation1Id)
-  }
-  await teardown()
 }
 
 smokeTest(recipientNumber, twilioNumber)

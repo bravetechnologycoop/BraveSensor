@@ -13,6 +13,7 @@ the code was deployed.
 ## [2.0.0]
 ### Added
 - Express validations for endpoints (CU-hx0jjc)
+- Script, endpoints, and instructions for smoke tests (CU-kcxndt)
 
 ### Changed
 - checkHeartbeat to run every 15 seconds to fix lack of alerts when sensors go down (CU-p34wcw)
