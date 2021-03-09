@@ -619,10 +619,10 @@ app.post(
 )
 
 app.post('/smokeTest/setup', async (request, response) => {
-  const { locationid, recipientNumber, twilioNumber } = request.body
+  const { recipientNumber, twilioNumber } = request.body
   try {
     await db.createLocation(
-      locationid,
+      'SmokeTestLocation',
       '0',
       recipientNumber,
       17,
@@ -635,11 +635,11 @@ app.post('/smokeTest/setup', async (request, response) => {
       twilioNumber,
       recipientNumber,
       9000,
-      locationid,
+      'SmokeTestLocation',
       'door_coreID',
       'radar_coreID',
     )
-    await redis.addIM21DoorSensorData(locationid, 'closed')
+    await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
     response.status(200).send()
   } catch (error) {
     helpers.log(`Smoke test setup error: ${error}`)
@@ -648,8 +648,9 @@ app.post('/smokeTest/setup', async (request, response) => {
 
 app.post('/smokeTest/teardown', async (request, response) => {
   try {
-    await db.clearTestLocation(request.body.locationid)
-    await redis.addStateMachineData('Reset', request.body.locationid)
+    await db.clearLocation('SmokeTestLocation')
+    await db.clearSessionsFromLocation('SmokeTestLocation')
+    await redis.addStateMachineData('Reset', 'SmokeTestLocation')
     response.status(200).send()
   } catch (error) {
     helpers.log(`Smoke test setup error: ${error}`)

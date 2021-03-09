@@ -488,6 +488,14 @@ async function clearSessions() {
   }
 }
 
+async function clearSessionsFromLocation(locationid) {
+  try {
+    await pool.query('DELETE FROM sessions where locationid=$1', [locationid])
+  } catch (e) {
+    helpers.log(`Error running clearSessionsFromLocation: ${e}`)
+  }
+}
+
 async function clearLocations() {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear locations table outside of a test environment!')
@@ -496,8 +504,12 @@ async function clearLocations() {
   await pool.query('DELETE FROM locations')
 }
 
-async function clearTestLocation(locationid) {
-  await pool.query('DELETE FROM locations where locationid=$1', [locationid])
+async function clearLocation(locationid) {
+  try {
+    await pool.query('DELETE FROM locations where locationid=$1', [locationid])
+  } catch (e) {
+    helpers.log(`Error running clearLocation: ${e}`)
+  }
 }
 
 async function close() {
@@ -522,9 +534,10 @@ module.exports = {
   getLocations,
   updateLocationData,
   createLocation,
-  clearTestLocation,
+  clearLocation,
   updateSentAlerts,
   clearSessions,
+  clearSessionsFromLocation,
   clearLocations,
   close,
   getAllSessionsFromLocation,

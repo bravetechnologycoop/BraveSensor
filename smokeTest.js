@@ -5,7 +5,7 @@ const XETHRU_STATE = require('./SessionStateXethruEnum.js')
 const MOV_THRESHOLD = 17
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
 
-const testLocation1Id = 'TestLocation1'
+const testLocation1Id = 'SmokeTestLocation'
 const door_coreID = 'door_coreID'
 const radar_coreID = 'radar_coreID'
 
@@ -33,9 +33,7 @@ axios.defaults.baseURL = destinationURL
 
 async function teardown() {
   try {
-    await axios.post('/smokeTest/teardown', {
-      locationid: testLocation1Id,
-    })
+    await axios.post('/smokeTest/teardown', {})
   } catch (e) {
     helpers.log(e)
   }
@@ -44,9 +42,8 @@ async function teardown() {
 async function setup(recipientPhoneNumber, twilioPhoneNumber) {
   try {
     await axios.post('/smokeTest/setup', {
-      recipientPhoneNumber,
-      twilioPhoneNumber,
-      locationid: testLocation1Id,
+      recipientNumber: recipientPhoneNumber,
+      twilioNumber: twilioPhoneNumber,
     })
   } catch (e) {
     helpers.log(e)
