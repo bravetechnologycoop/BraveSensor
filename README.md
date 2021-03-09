@@ -79,12 +79,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 ### Updating production
 
-1. Run `ssh brave@odetect-admin.brave.coop`
-
-1. cd into the ~/BraveSensor-Server/sensor-helm-chart/ directory and run `git pull origin master` to get the latest version of the helm chart
-
 1. Run the command `helm upgrade production .`
-
 
 # Deploying to the staging or development environment
 
