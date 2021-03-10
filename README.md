@@ -69,9 +69,9 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. Run `ssh brave@odetect-admin.brave.coop`
 
-1. cd into the ~/BraveSensor-Server/sensor-helm-chart/ directory and run `git pull origin master` to get the latest version of the helm chart
+1. cd into the ~/BraveSensor-Server directory and run `git pull origin master` to get the latest version of the helm chart
 
-1. Run the command `helm upgrade staging --set secretName=sensor-dev --set image.tag=<your new container tag>` to deploy the latest version to staging
+1. Run the command `helm upgrade staging --set secretName=sensor-dev --set image.tag=<your new container tag> sensor-helm-chart` to deploy the latest version to staging
 
 1. Run the smoke test script as described [below](#running-smoke-tests-on-the-kubernetes-cluster)
 
@@ -79,21 +79,21 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 ### Updating production
 
-1. Run the command `helm upgrade production .`
+1. Run the command `helm upgrade production sensor-helm-chart`
 
 # Deploying to the staging or development environment
 
 1. Run `ssh brave@odetect-admin.brave.coop`
 
-1. cd into the ~/BraveSensor-Server/sensor-helm-chart/ directory
+1. cd into the ~/BraveSensor-Server directory
 
 #### To deploy to staging
 
-1. Run the command `helm upgrade staging --set secretName=sensor-staging --set image.tag=<image tag you want to deploy> .`
+1. Run the command `helm upgrade staging --set secretName=sensor-staging --set image.tag=<image tag you want to deploy> sensor-helm-chart`
 
 #### To deploy to development
 
-1. Run the command `helm upgrade dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> .`
+1. Run the command `helm upgrade dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> sensor-helm-chart`
 
 # Build and push a new container
 
