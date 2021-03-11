@@ -77,7 +77,7 @@ async function addVitals(locationid, signalStrength, cloudDisconnects) {
 /* eslint-disable function-call-argument-newline */
 function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
   client.xadd(
-    `xethru:${locationid}`, 'MAXLEN', '604800', '*',
+    `xethru:${locationid}`, 'MAXLEN', '~', '604800', '*',
     'state', state, 
     'distance', distance, 
     'rpm', rpm, 
