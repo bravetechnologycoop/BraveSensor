@@ -64,12 +64,12 @@ async function addDoorTestSensorData(locationid, signal) {
 async function addIM21DoorSensorData(locationid, doorSignal) {
   // eslint-disable-next-line eqeqeq
   if (doorSignal == SESSIONSTATE_DOOR.CLOSED || doorSignal == SESSIONSTATE_DOOR.OPEN) {
-    await client.xadd(`door:${locationid}`, '*', 'signal', doorSignal)
+    await client.xadd(`door:${locationid}`, 'MAXLEN', '~', '10000', '*', 'signal', doorSignal)
   }
 }
 
 async function addVitals(locationid, signalStrength, cloudDisconnects) {
-  client.xadd(`vitals:${locationid}`, '*', 'strength', signalStrength, 'cloudDisc', cloudDisconnects)
+  client.xadd(`vitals:${locationid}`, 'MAXLEN', '~', '10000', '*', 'strength', signalStrength, 'cloudDisc', cloudDisconnects)
 }
 
 // ignore comments included to allow arguments to be split across lines in pairs
@@ -88,7 +88,7 @@ function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
 /* eslint-enable function-call-argument-newline */
 
 function addStateMachineData(state, locationid) {
-  client.xadd(`state:${locationid}`, '*', 'state', state)
+  client.xadd(`state:${locationid}`, 'MAXLEN', '~', '604800', '*', 'state', state)
 }
 
 async function getLatestDoorSensorData(locationid) {
