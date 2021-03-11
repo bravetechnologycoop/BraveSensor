@@ -1,5 +1,6 @@
 const { helpers } = require('brave-alert-lib')
 const axios = require('axios').default
+const { getRandomArbitrary, getRandomInt } = require('./testingHelpers.js')
 const XETHRU_STATE = require('./SessionStateXethruEnum.js')
 
 const MOV_THRESHOLD = 17
@@ -9,25 +10,10 @@ const testLocation1Id = 'SmokeTestLocation'
 const door_coreID = 'door_coreID'
 const radar_coreID = 'radar_coreID'
 
-function getRandomInt(minValue, maxValue) {
-  const min = Math.ceil(minValue)
-  const max = Math.floor(maxValue)
-  return Math.floor(Math.random() * (max - min) + min) // The maximum is exclusive and the minimum is inclusive
-}
-
-function getRandomArbitrary(min, max) {
-  return Math.random() * (max - min) + min
-}
-
 const destinationURL = process.argv[1]
 const recipientNumber = process.argv[2]
 const twilioNumber = process.argv[3]
 
-function sleep(millis) {
-  return new Promise(resolve => {
-    setTimeout(resolve, millis)
-  })
-}
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
 axios.defaults.baseURL = destinationURL
 
@@ -62,7 +48,7 @@ async function silence(locationid) {
       state: XETHRU_STATE.MOVEMENT,
       distance: 0,
     })
-    await sleep(1000)
+    await helpers.sleep(1000)
   } catch (e) {
     helpers.log(e)
   }
@@ -80,7 +66,7 @@ async function movement(locationid, mov_f, mov_s) {
       state: XETHRU_STATE.MOVEMENT,
       distance: getRandomArbitrary(0, 3),
     })
-    await sleep(1000)
+    await helpers.sleep(1000)
   } catch (e) {
     helpers.log(e)
   }
@@ -92,7 +78,7 @@ async function im21Door(coreID, signal) {
       coreid: coreID,
       data: `{ "deviceid": "FA:E6:51", "data": "${signal}", "control": "86"}`,
     })
-    await sleep(1000)
+    await helpers.sleep(1000)
   } catch (e) {
     helpers.log(e)
   }
