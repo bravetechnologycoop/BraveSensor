@@ -25,6 +25,7 @@ const XETHRU_THRESHOLD_MILLIS = 60 * 1000
 const WATCHDOG_TIMER_FREQUENCY = 60 * 1000
 
 const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/locationsDashboard.mst`, 'utf-8')
+const sensorDashboardTemplate = fs.readFileSync(`${__dirname}/sensorDashboard.mst`, 'utf-8')
 
 // Start Express App
 const app = express()
@@ -355,9 +356,9 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
         return { name: location.displayName, id: location.locationid }
       }),
     }
-    viewParams.viewMessage = allLocations.length >= 1 ? 'Please select a location' : 'No locations to display'
+    viewParams.viewMessage = allLocations.length >= 1 ? 'Sensor Locations Session Overview' : 'No locations to display'
 
-    res.send(Mustache.render(locationsDashboardTemplate, viewParams))
+    res.send(Mustache.render(sensorDashboardTemplate, viewParams))
   } catch (err) {
     helpers.log(err)
     res.status(500).send()
