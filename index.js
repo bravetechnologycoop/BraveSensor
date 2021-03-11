@@ -351,12 +351,19 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
   try {
     const allLocations = await db.getLocations()
 
+    for (const location of allLocations) {
+      const recentSession = await db.getMostRecentSession(location.locationid)
+      location.session = recentSession
+    }
+
     const viewParams = {
       locations: allLocations.map(location => {
-        return { name: location.displayName, id: location.locationid }
+        return { name: location.displayName, id: location.locationid, session: location.session }
       }),
     }
     viewParams.viewMessage = allLocations.length >= 1 ? 'Sensor Locations Session Overview' : 'No locations to display'
+
+    console.log(JSON.stringify(viewParams))
 
     res.send(Mustache.render(sensorDashboardTemplate, viewParams))
   } catch (err) {

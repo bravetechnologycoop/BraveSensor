@@ -183,9 +183,10 @@
     </nav>
     <div class="content-area">
         <div class="content-wrapper">
-        {{#currentLocationName}}
-            <h3>{{currentLocationName}}</h3>
+        <h4 class="no-locations">{{viewMessage}}</h4>
+        {{#locations}}
                 <br>
+                <h5>{{name}}</h5>
                 <div class="table-responsive">
                     <table class="table table-striped table-sm">
                         <thead>
@@ -201,25 +202,22 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {{#recentSessions}}
+                            {{#session}}
                                 <tr class="table-data">
                                     <th scope="row">{{sessionid}}</th>
-                                    <td>{{startTime}}</td>
-                                    <td>{{endTime}}</td>
+                                    <td>{{start_time}}</td>
+                                    <td>{{end_time}}</td>
                                     <td>{{state}}</td>
                                     <td>{{duration}}</td>
-                                    <td>{{chatbotState}}</td>
-                                    <td>{{incidentType}}</td>
+                                    <td>{{chatbot_state}}</td>
+                                    <td>{{incident_type}}</td>
                                     <td>{{notes}}</td>
                                 </tr>
-                            {{/recentSessions}}
+                            {{/session}}
                         </tbody>
                     </table>
                 </div>
-            {{/currentLocationName}}
-            {{^currentLocationName}}
-                <h4 class="no-locations">{{viewMessage}}</h4>
-            {{/currentLocationName}}
+            {{/locations}}
         </div>
     </div>
     
