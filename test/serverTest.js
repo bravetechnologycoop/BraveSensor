@@ -14,28 +14,13 @@ const XETHRU_STATE = require('../SessionStateXethruEnum.js')
 const MOV_THRESHOLD = 17
 const IM21_DOOR_STATUS = require('../IM21DoorStatusEnum')
 const ST_DOOR_STATUS = require('../SessionStateDoorEnum')
+const { getRandomArbitrary, getRandomInt } = require('../testingHelpers.js')
 
 chai.use(chaiHttp)
 
 const testLocation1Id = 'TestLocation1'
 const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid'
-
-function sleep(millis) {
-  return new Promise(resolve => {
-    setTimeout(resolve, millis)
-  })
-}
-
-function getRandomInt(minValue, maxValue) {
-  const min = Math.ceil(minValue)
-  const max = Math.floor(maxValue)
-  return Math.floor(Math.random() * (max - min) + min) // The maximum is exclusive and the minimum is inclusive
-}
-
-function getRandomArbitrary(min, max) {
-  return Math.random() * (max - min) + min
-}
 
 async function silence(locationid) {
   try {
@@ -106,7 +91,7 @@ describe('Brave Sensor server', () => {
   })
 
   after(async () => {
-    await sleep(3000)
+    await helpers.sleep(3000)
     server.close()
     await redis.disconnect()
   })
@@ -194,7 +179,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       expect(sessions[0].od_flag).to.equal(1)
-      await sleep(1000)
+      await helpers.sleep(1000)
     })
 
     it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
@@ -311,7 +296,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       expect(sessions[0].od_flag).to.equal(1)
-      await sleep(1000)
+      await helpers.sleep(1000)
     })
 
     it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
