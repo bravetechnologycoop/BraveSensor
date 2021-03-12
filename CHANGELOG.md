@@ -1,4 +1,5 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -9,29 +10,40 @@ was committed to the `master` branch. This is not necessarily the date that
 the code was deployed.
 
 ## [Unreleased]
+
 ### Added
+
 - Script, endpoints, and instructions for smoke tests (CU-kcxndt)
 - Update to use Brave-wide linting standard (CU-kcxpaw)
 - Saving control field in door sensor requests (CU-n70k94)
+- Automatic uploading of Docker containers to Digital Ocean using Travis (CU-mrxren)
 
 ### Changed
+
 - checkHeartbeat to run every 15 seconds to fix lack of alerts when sensors go down (CU-p34wcw)
 
 ### Removed
+
 - Smartapp integration, dependencies, and tests (CU-p980za)
 
 ### Security
+
 - Updated to latest version of minimist (CU-kry4g7)
 
 ## [2.0.0] - 2021-03-08
+
 ### Added
+
 - Express validations for endpoints (CU-hx0jjc)
 
 ### Changed
+
 - Use Brave Alert Lib for Twilio communication with the Responder (CU-bar1zy)
 
 ## [1.2.0] - 2021-02-12
+
 ### Added
+
 - New mustache frontend (CU-dwr2xb)
 - Script which runs all database migrations
 - Integration tests (CU-gcuxtz)
@@ -45,16 +57,19 @@ the code was deployed.
 - Helm chart (CU-kcxn8q)
 
 ### Fixed
+
 - Bug in calculating session duration (CU-gcuxtz)
 - Session creation concurrency bug (CU-gcuxtz)
-- Alert reason attribution bug  (CU-gcuxtz)
+- Alert reason attribution bug (CU-gcuxtz)
 - Session creation when there is no previous session for a location (CU-gcuxtz)
 - Update location_human in fallback message to display_name to fix display issue (CU-mgz8vq)
 
 ### Security
+
 - Removed all references to axios < v0.21.1 (CU-j6yuzk)
 
 ### Removed
+
 - Old angular frontend (CU-dwr2xb)
 - Unused PostgreSQL functions
 - Unused PostgreSQL tables
@@ -62,36 +77,43 @@ the code was deployed.
 - Unused and deprecated load testing scripts
 
 ## [1.1] - 2020-10-07
+
 ### Added
+
 - Sentry tracking of runtime errors
 - Alert reason included in the initial chatbot message (stillness, duration)
 - Fallback alert functionality added
 - Fallback alerts sent with human readable bathroom text
 
 ## Fixed
+
 - Heartbeat alert implementation
-- Chatbot interference when a single responder phone is dealing with simultaneous sessions from multiple bathrooms 
+- Chatbot interference when a single responder phone is dealing with simultaneous sessions from multiple bathrooms
 
 ## [1.1-alpha] - 2020-09-23
+
 ### Added
+
 - Sentry tracking of runtime errors
 - Alert reason included in the initial chatbot message (stillness, duration)
-- Fallback alert functionality added 
-- Fallback alerts sent with human readable bathroom text 
+- Fallback alert functionality added
+- Fallback alerts sent with human readable bathroom text
 
 ### Fixed
+
 - Heartbeat alert implementation
 
 ## [1.0] - 2020-08-28
+
 ### Added
+
 - Dockerized ODetect application w/ Dockerfile
 - Redis used as in-memory database for sensor data
 - Kubernetes deployment of ODetect app, redis server
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-
-[Unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v2.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v2.0.0...HEAD
 [2.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1...v1.2.0
 [1.1]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1-alpha...v1.1
