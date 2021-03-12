@@ -52,14 +52,6 @@ async function clearKeys() {
 async function disconnect() {
   await client.disconnect()
 }
-// POST new door Test data
-function addDoorSensorData(locationid, signal) {
-  client.xadd(`door:${locationid}`, '*', 'signal', signal)
-}
-
-async function addDoorTestSensorData(locationid, signal) {
-  await client.xadd(`door:${locationid}`, '*', 'signal', signal)
-}
 
 async function addIM21DoorSensorData(locationid, doorSignal) {
   // eslint-disable-next-line eqeqeq
@@ -111,8 +103,6 @@ async function getLatestLocationStatesData(locationid) {
 }
 
 module.exports = {
-  addDoorSensorData,
-  addDoorTestSensorData,
   addIM21DoorSensorData,
   addVitals,
   addStateMachineData,

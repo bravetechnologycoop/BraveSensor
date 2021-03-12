@@ -49,7 +49,6 @@ matrix:
       # setup database and create dummy public key for smartthings integration
       before_script:
         - bash setup_postgresql_local.sh
-        - touch smartthings_rsa.pub
 
       # run unit tests, integration tests, and linter
       script:

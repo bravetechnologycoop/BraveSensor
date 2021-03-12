@@ -9,6 +9,15 @@ was committed to the `master` branch. This is not necessarily the date that
 the code was deployed.
 
 ## [Unreleased]
+### Added
+- Script, endpoints, and instructions for smoke tests (CU-kcxndt)
+- Update to use Brave-wide linting standard (CU-kcxpaw)
+
+### Changed
+- checkHeartbeat to run every 15 seconds to fix lack of alerts when sensors go down (CU-p34wcw)
+
+### Removed
+- Smartapp integration, dependencies, and tests (CU-p980za)
 
 ### Security
 - Updated to latest version of minimist (CU-kry4g7)
@@ -16,12 +25,9 @@ the code was deployed.
 ## [2.0.0] - 2021-03-08
 ### Added
 - Express validations for endpoints (CU-hx0jjc)
-- Script, endpoints, and instructions for smoke tests (CU-kcxndt)
 
 ### Changed
-- checkHeartbeat to run every 15 seconds to fix lack of alerts when sensors go down (CU-p34wcw)
 - Use Brave Alert Lib for Twilio communication with the Responder (CU-bar1zy)
-- Update to use Brave-wide linting standard (CU-kcxpaw)
 
 ## [1.2.0] - 2021-02-12
 ### Added
