@@ -15,7 +15,6 @@
     "lib/*"
   ],
   "dependencies": {
-    "@smartthings/smartapp": "^1.0.3",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "brave-alert-lib": "https://github.com/bravetechnologycoop/brave-alert-lib#v2.0.0",
