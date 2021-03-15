@@ -7,7 +7,7 @@ const STATE = require('../SessionStateEnum.js')
 const XETHRU_STATE = require('../SessionStateXethruEnum.js')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum.js')
 const DOOR_STATE = require('../SessionStateDoorEnum.js')
-const StateMachine = require('../StateMachine.js')
+const StateMachine = require('../XeThruStateMachine.js')
 
 function setupDB(location_data = {}, session = {}, is_overdose_suspected = false) {
   return {

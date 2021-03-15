@@ -1,4 +1,4 @@
-class RadarData {
+class XeThruData {
   constructor(streamEntry) {
     this.timestamp = streamEntry[0].split('-')[0] // get timestamp in millis from redis ID
     this.state = streamEntry[1][1]
@@ -9,4 +9,4 @@ class RadarData {
   }
 }
 
-module.exports = RadarData
+module.exports = XeThruData

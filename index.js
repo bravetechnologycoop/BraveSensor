@@ -14,7 +14,8 @@ const Validator = require('express-validator')
 const { helpers } = require('brave-alert-lib')
 const redis = require('./db/redis.js')
 const db = require('./db/db.js')
-const StateMachine = require('./StateMachine.js')
+const XeThruStateMachine = require('./XeThruStateMachine.js')
+const InnosentStateMachine = require('./InnosentStateMachine.js')
 const STATE = require('./SessionStateEnum.js')
 const BraveAlerterConfigurator = require('./BraveAlerterConfigurator.js')
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
@@ -211,8 +212,13 @@ async function checkHeartbeat() {
   }
 }
 
-async function handleSensorRequest(currentLocationId) {
-  const statemachine = new StateMachine(currentLocationId)
+async function handleSensorRequest(currentLocationId, radarType) {
+  let statemachine
+  if (radarType === 'XeThru') {
+    statemachine = new XeThruStateMachine(currentLocationId)
+  } else if (radarType === 'Innosent') {
+    statemachine = new InnosentStateMachine(currentLocationId)
+  }
   const currentState = await statemachine.getNextState(db, redis)
   const stateobject = await redis.getLatestLocationStatesData(currentLocationId)
   let prevState
@@ -465,7 +471,7 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
       const { deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s } = req.body
 
       await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s)
-      await handleSensorRequest(locationid)
+      await handleSensorRequest(locationid, 'XeThru')
       res.status(200).json('OK')
     } else {
       helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
@@ -477,17 +483,36 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
   }
 })
 
+app.post('/api/innosent', async (request, response) => {
+  try {
+    const coreID = JSON.parse(request.body.coreid)
+    const location = await db.getLocationFromParticleCoreID(coreID)
+    const locationid = location.locationid
+    const data = JSON.parse(request.body.data)
+    const inPhase = data.inPhase
+    const quadrature = data.quadrature
+    await redis.addInnosentRadarSensorData(locationid, inPhase, quadrature)
+    await handleSensorRequest(locationid, 'Innosent')
+    response.status(200).json('Ok')
+  } catch (err) {
+    helpers.log(err)
+    response.status(500).send()
+  }
+})
+
 app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request)
     if (validationErrors.isEmpty()) {
       const coreId = request.body.coreid
-      const locationid = await db.getLocationIDFromParticleCoreID(coreId)
+      const location = await db.getLocationFromParticleCoreID(coreId)
 
-      if (!locationid) {
+      if (!location) {
         helpers.log(`Error - no location matches the coreID ${coreId}`)
         response.status(400).json('No location for CoreID')
       } else {
+        const locationid = location.locationid
+        const radarType = location.radar_type
         const message = JSON.parse(request.body.data)
         const signal = message.data
         const control = message.control
@@ -503,7 +528,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         }
 
         await redis.addIM21DoorSensorData(locationid, doorSignal, control)
-        await handleSensorRequest(locationid)
+        await handleSensorRequest(locationid, radarType)
         response.status(200).json('OK')
       }
     } else {
