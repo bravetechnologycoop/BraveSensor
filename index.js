@@ -93,7 +93,7 @@ async function autoResetSession(locationid) {
 if (!helpers.isTestEnvironment()) {
   setInterval(async () => {
     const locations = await db.getLocations()
-    for (let i = 0; i < locations.length; i) {
+    for (let i = 0; i < locations.length; i += 1) {
       const currentLocationId = locations[i]
       const stateHistoryQuery = await redis.getStatesWindow(currentLocationId, '+', '-', 60)
       const stateMemory = []
