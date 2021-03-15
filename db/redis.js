@@ -3,9 +3,11 @@ const Redis = require('ioredis')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
-const RadarData = require('./RadarData.js')
 const DoorData = require('./DoorData.js')
 const StateData = require('./StateData.js')
+const XeThruData = require('./XeThruData.js')
+const InnosentData = require('./InnosentData.js')
+
 const SESSIONSTATE_DOOR = require('../SessionStateDoorEnum.js')
 
 let client
@@ -23,13 +25,19 @@ function connect() {
 
 async function getXethruWindow(locationID, startTime, endTime, windowLength) {
   const rows = await client.xrevrange(`xethru:${locationID}`, startTime, endTime, 'count', windowLength)
-  const radarStream = rows.map(entry => new RadarData(entry))
+  const radarStream = rows.map(entry => new XeThruData(entry))
   return radarStream
 }
 
 async function getXethruStream(locationID, startTime, endTime) {
   const rows = await client.xrevrange(`xethru:${locationID}`, startTime, endTime)
-  const radarStream = rows.map(entry => new RadarData(entry))
+  const radarStream = rows.map(entry => new XeThruData(entry))
+  return radarStream
+}
+
+async function getInnosentStream(locationID, startTime, endTime) {
+  const rows = await client.xrevrange(`innosent:${locationID}`, startTime, endTime)
+  const radarStream = rows.map(entry => new InnosentData(entry))
   return radarStream
 }
 
@@ -79,6 +87,29 @@ function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
 }
 /* eslint-enable function-call-argument-newline */
 
+async function addInnosentRadarSensorData(locationid, inPhase, quadrature) {
+  const inPhaseArray = inPhase.split(',')
+  const quadratureArray = quadrature.split(',')
+  const pipeline = client.pipeline()
+  for (let i = 0; i < inPhaseArray.length; i += 1) {
+    pipeline.xadd(`innosent:${locationid}`, '*', 'inPhase', inPhaseArray[i], 'quadrature', quadratureArray[i])
+  }
+  await pipeline.exec(err => {
+    helpers.log(err)
+  })
+}
+
+async function getInnosentWindow(locationID, startTime, endTime, windowLength) {
+  const rows = await client.xrevrange(`innosent:${locationID}`, startTime, endTime, 'count', windowLength)
+  const radarStream = rows.map(entry => new InnosentData(entry))
+  return radarStream
+}
+
+async function getLatestInnosentSensorData(locationid) {
+  const singleitem = await getInnosentWindow(locationid, '+', '-', 1)
+  return singleitem[0]
+}
+
 function addStateMachineData(state, locationid) {
   client.xadd(`state:${locationid}`, 'MAXLEN', '~', '604800', '*', 'state', state)
 }
@@ -104,16 +135,20 @@ async function getLatestLocationStatesData(locationid) {
 
 module.exports = {
   addIM21DoorSensorData,
+  addInnosentRadarSensorData,
   addVitals,
   addStateMachineData,
   addXeThruSensorData,
   clearKeys,
   connect,
   disconnect,
+  getInnosentWindow,
+  getInnosentStream,
   getXethruWindow,
   getXethruStream,
   getStatesWindow,
   getLatestDoorSensorData,
   getLatestXeThruSensorData,
   getLatestLocationStatesData,
+  getLatestInnosentSensorData,
 }
