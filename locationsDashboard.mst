@@ -217,9 +217,6 @@
                     </table>
                 </div>
             {{/currentLocationName}}
-            {{^currentLocationName}}
-                <h4 class="no-locations">{{viewMessage}}</h4>
-            {{/currentLocationName}}
         </div>
     </div>
     

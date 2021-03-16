@@ -78,25 +78,36 @@
             font-weight: 400;
         }
 
-        table {
+        div.content-wrapper>table {
             table-layout: fixed;
-            width: 100%;
+            max-width: 300px;
             border-collapse: collapse;
             border-spacing: 5px 5px;
+            margin-right: auto;
         }
 
         th, td {
             text-align: left;
             height: auto;
-            width: 100%;
+            width: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
+        }
+
+        th a{
+            text-decoration: none;
+            color: rgb(88, 88, 91);
+        }
+
+        th a:hover {
+            text-decoration: none;
         }
 
         .table>thead>tr>th,
         .table>tbody>tr>th,
         .table>tbody>tr>td {
             border: none;
+            width: auto;
         }
 
         @media screen and (max-width: 770px) {
@@ -183,42 +194,27 @@
     </nav>
     <div class="content-area">
         <div class="content-wrapper">
-        <h4 class="no-locations">{{viewMessage}}</h4>
-        {{#locations}}
-                <br>
-                <h5>{{name}}</h5>
-                <div class="table-responsive">
-                    <table class="table table-striped table-sm">
-                        <thead>
-                            <tr class="table-header" scope="row">
-                                <th scope="col">Session ID</th>
-                                <th scope="col">Start Time</th>
-                                <th scope="col">End Time</th>
-                                <th scope="col">End State</th>
-                                <th scope="col">Duration</th>
-                                <th scope="col">Chatbot State</th>
-                                <th scope="col">Incident Type</th>
-                                <th scope="col">Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{#session}}
-                                <tr class="table-data">
-                                    <th scope="row">{{sessionid}}</th>
-                                    <td>{{start_time}}</td>
-                                    <td>{{end_time}}</td>
-                                    <td>{{state}}</td>
-                                    <td>{{duration}}</td>
-                                    <td>{{chatbot_state}}</td>
-                                    <td>{{incident_type}}</td>
-                                    <td>{{notes}}</td>
-                                </tr>
-                            {{/session}}
-                        </tbody>
-                    </table>
-                </div>
-            {{/locations}}
-        </div>
+            <h4 class="no-locations">Sensor Sessions Overview</h4>
+            <br>
+            <div class="table-responsive">
+                <table class="table table-striped table-sm table-fixed">
+                    <thead>
+                        <tr class="table-header" scope="row">
+                            <th scope="col"><h5>Location</h5></th>
+                            <th scope="col"><h5>Last Session Started</h5></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {{#locations}}
+                        <tr class="table-data">
+                            <th scope="row"><a href="/dashboard/{{id}}">{{name}}</a></th>
+                            <td>{{sessionStart}}</td>
+                        </tr>
+                    {{/locations}}
+                    </tbody>
+                </table>
+            </div>
+      </div>
     </div>
     
     <script>

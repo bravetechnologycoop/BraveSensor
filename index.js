@@ -77,6 +77,37 @@ app.use(
   }),
 )
 
+async function generateFormattedTimestampString(timeToCompare) {
+  const daySecs = 24 * 60 * 60
+  const hourSecs = 60 * 60
+  const minSecs = 60
+  let returnString = ''
+  let numDays = 0
+  let numHours = 0
+  let numMins = 0
+  const currentTime = await db.getCurrentTime()
+
+  let diffSecs = (currentTime - timeToCompare) / 1000
+  if (diffSecs >= daySecs) {
+    numDays = Math.floor(diffSecs / daySecs)
+    diffSecs %= daySecs
+  }
+  returnString += `${numDays} ${numDays === 1 ? 'day, ' : 'days, '}`
+  if (diffSecs >= hourSecs) {
+    numHours = Math.floor(diffSecs / hourSecs)
+    diffSecs %= hourSecs
+  }
+  returnString += `${numHours} ${numHours === 1 ? 'hour, ' : 'hours, '}`
+  if (diffSecs >= minSecs) {
+    numMins = Math.floor(diffSecs / minSecs)
+    diffSecs %= minSecs
+  }
+
+  returnString += `${numMins} ${numMins === 1 ? 'minute' : 'minutes'} ago`
+
+  return returnString
+}
+
 // Closes any open session and resets state for the given location
 async function autoResetSession(locationid) {
   try {
@@ -95,7 +126,7 @@ async function autoResetSession(locationid) {
 if (!helpers.isTestEnvironment()) {
   setInterval(async () => {
     const locations = await db.getLocations()
-    for (let i = 0; i < locations.length; i) {
+    for (let i = 0; i < locations.length; i += 1) {
       const currentLocationId = locations[i]
       const stateHistoryQuery = await redis.getStatesWindow(currentLocationId, '+', '-', 60)
       const stateMemory = []
@@ -353,17 +384,18 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
 
     for (const location of allLocations) {
       const recentSession = await db.getMostRecentSession(location.locationid)
-      location.session = recentSession
+      if (recentSession) {
+        const sessionStartTime = Date.parse(recentSession.start_time)
+        const timeSinceLastSession = await generateFormattedTimestampString(sessionStartTime)
+        location.sessionStart = timeSinceLastSession
+      }
     }
 
     const viewParams = {
       locations: allLocations.map(location => {
-        return { name: location.displayName, id: location.locationid, session: location.session }
+        return { name: location.displayName, id: location.locationid, sessionStart: location.sessionStart }
       }),
     }
-    viewParams.viewMessage = allLocations.length >= 1 ? 'Sensor Locations Session Overview' : 'No locations to display'
-
-    console.log(JSON.stringify(viewParams))
 
     res.send(Mustache.render(sensorDashboardTemplate, viewParams))
   } catch (err) {
