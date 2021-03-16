@@ -9,6 +9,8 @@ was committed to the `master` branch. This is not necessarily the date that
 the code was deployed.
 
 ## [Unreleased]
+### Changed
+- Update landing page to display list of locations with how long ago most recent session was started (CU-mmzgy9)
 
 ## [2.0.0]
 ### Added

@@ -91,20 +91,22 @@ async function generateFormattedTimestampString(timeToCompare) {
   const currentTime = await db.getCurrentTime()
 
   let diffSecs = (currentTime - timeToCompare) / 1000
+
   if (diffSecs >= daySecs) {
     numDays = Math.floor(diffSecs / daySecs)
     diffSecs %= daySecs
   }
   returnString += `${numDays} ${numDays === 1 ? 'day, ' : 'days, '}`
+
   if (diffSecs >= hourSecs) {
     numHours = Math.floor(diffSecs / hourSecs)
     diffSecs %= hourSecs
   }
   returnString += `${numHours} ${numHours === 1 ? 'hour, ' : 'hours, '}`
+
   if (diffSecs >= minSecs) {
     numMins = Math.floor(diffSecs / minSecs)
   }
-
   returnString += `${numMins} ${numMins === 1 ? 'minute' : 'minutes'} ago`
 
   return returnString
