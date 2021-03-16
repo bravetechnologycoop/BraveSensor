@@ -100,7 +100,6 @@ async function generateFormattedTimestampString(timeToCompare) {
   returnString += `${numHours} ${numHours === 1 ? 'hour, ' : 'hours, '}`
   if (diffSecs >= minSecs) {
     numMins = Math.floor(diffSecs / minSecs)
-    diffSecs %= minSecs
   }
 
   returnString += `${numMins} ${numMins === 1 ? 'minute' : 'minutes'} ago`
