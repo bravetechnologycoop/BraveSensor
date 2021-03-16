@@ -26,6 +26,9 @@ const WATCHDOG_TIMER_FREQUENCY = 60 * 1000
 
 const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/locationsDashboard.mst`, 'utf-8')
 const sensorDashboardTemplate = fs.readFileSync(`${__dirname}/sensorDashboard.mst`, 'utf-8')
+const navPartial = fs.readFileSync(`${__dirname}/navPartial.mst`, 'utf-8')
+const landingCSSPartial = fs.readFileSync(`${__dirname}/landingCSSPartial.mst`, 'utf-8')
+const locationCSSPartial = fs.readFileSync(`${__dirname}/locationCSSPartial.mst`, 'utf-8')
 
 // Start Express App
 const app = express()
@@ -396,7 +399,7 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
       }),
     }
 
-    res.send(Mustache.render(sensorDashboardTemplate, viewParams))
+    res.send(Mustache.render(sensorDashboardTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
   } catch (err) {
     helpers.log(err)
     res.status(500).send()
@@ -437,7 +440,7 @@ app.get('/dashboard/:locationId', sessionChecker, async (req, res) => {
       })
     }
 
-    res.send(Mustache.render(locationsDashboardTemplate, viewParams))
+    res.send(Mustache.render(locationsDashboardTemplate, viewParams, { nav: navPartial, css: locationCSSPartial }))
   } catch (err) {
     helpers.log(err)
     res.status(500).send()
