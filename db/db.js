@@ -404,7 +404,7 @@ async function getLocationIDFromParticleCoreID(coreID) {
 // Retrieves the locations table
 async function getLocations() {
   try {
-    const results = await pool.query('SELECT * FROM locations')
+    const results = await pool.query('SELECT * FROM locations ORDER BY display_name')
 
     if (typeof results === 'undefined') {
       return null
