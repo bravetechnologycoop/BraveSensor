@@ -52,24 +52,16 @@ async function clearKeys() {
 async function disconnect() {
   await client.disconnect()
 }
-// POST new door Test data
-function addDoorSensorData(locationid, signal) {
-  client.xadd(`door:${locationid}`, '*', 'signal', signal)
-}
 
-async function addDoorTestSensorData(locationid, signal) {
-  await client.xadd(`door:${locationid}`, '*', 'signal', signal)
-}
-
-async function addIM21DoorSensorData(locationid, doorSignal) {
+async function addIM21DoorSensorData(locationid, doorSignal, control) {
   // eslint-disable-next-line eqeqeq
   if (doorSignal == SESSIONSTATE_DOOR.CLOSED || doorSignal == SESSIONSTATE_DOOR.OPEN) {
-    await client.xadd(`door:${locationid}`, '*', 'signal', doorSignal)
+    await client.xadd(`door:${locationid}`, 'MAXLEN', '~', '10000', '*', 'signal', doorSignal, 'control', control)
   }
 }
 
 async function addVitals(locationid, signalStrength, cloudDisconnects) {
-  client.xadd(`vitals:${locationid}`, '*', 'strength', signalStrength, 'cloudDisc', cloudDisconnects)
+  client.xadd(`vitals:${locationid}`, 'MAXLEN', '~', '10000', '*', 'strength', signalStrength, 'cloudDisc', cloudDisconnects)
 }
 
 // ignore comments included to allow arguments to be split across lines in pairs
@@ -77,7 +69,7 @@ async function addVitals(locationid, signalStrength, cloudDisconnects) {
 /* eslint-disable function-call-argument-newline */
 function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
   client.xadd(
-    `xethru:${locationid}`, '*', 
+    `xethru:${locationid}`, 'MAXLEN', '~', '604800', '*',
     'state', state, 
     'distance', distance, 
     'rpm', rpm, 
@@ -88,7 +80,7 @@ function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
 /* eslint-enable function-call-argument-newline */
 
 function addStateMachineData(state, locationid) {
-  client.xadd(`state:${locationid}`, '*', 'state', state)
+  client.xadd(`state:${locationid}`, 'MAXLEN', '~', '604800', '*', 'state', state)
 }
 
 async function getLatestDoorSensorData(locationid) {
@@ -111,8 +103,6 @@ async function getLatestLocationStatesData(locationid) {
 }
 
 module.exports = {
-  addDoorSensorData,
-  addDoorTestSensorData,
   addIM21DoorSensorData,
   addVitals,
   addStateMachineData,

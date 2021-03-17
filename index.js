@@ -6,7 +6,6 @@ const bodyParser = require('body-parser')
 const session = require('express-session')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
-const smartapp = require('@smartthings/smartapp')
 const routes = require('express').Router()
 const Mustache = require('mustache')
 const Validator = require('express-validator')
@@ -60,7 +59,7 @@ const ALERTSTARTSTATES = [STATE.SUSPECTED_OD]
 // Body Parser Middleware
 app.use(bodyParser.urlencoded({ extended: true })) // Set to true to allow the body to contain any type of value
 app.use(bodyParser.json())
-app.use(express.json()) // Used for smartThings wrapper
+app.use(express.json())
 //
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors())
@@ -179,28 +178,27 @@ async function sendResetAlert(locationid) {
   await sendSingleAlert(locationid, `An unresponded session at ${locationid} has been automatically reset.`)
 }
 
-async function sendBatteryAlert(locationid, signal) {
-  await sendSingleAlert(locationid, `Battery level at ${locationid} is ${signal}.`)
-}
-
 // Heartbeat Helper Functions
-async function checkHeartbeat(locationid) {
-  const location = await db.getLocationData(locationid)
-  // Query raw sensor data to transmit to the FrontEnd
-  const XeThruData = await redis.getLatestXeThruSensorData(location.locationid)
-  // Check the XeThru Heartbeat
-  const currentTime = moment()
-  const latestXethru = moment(XeThruData.timestamp, 'x')
-  const XeThruDelayMillis = currentTime.diff(latestXethru)
+async function checkHeartbeat() {
+  const locations = await db.getLocations()
 
-  if (XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethru_sent_alerts) {
-    helpers.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
-    await db.updateSentAlerts(location.locationid, true)
-    sendAlerts(location.locationid)
-  } else if (XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS && location.xethru_sent_alerts) {
-    helpers.log(`XeThru at ${location.locationid} reconnected`)
-    await db.updateSentAlerts(location.locationid, false)
-    sendReconnectionMessage(location.locationid)
+  for (const location of locations) {
+    // Query raw sensor data to transmit to the FrontEnd
+    const XeThruData = await redis.getLatestXeThruSensorData(location.locationid)
+    // Check the XeThru Heartbeat
+    const currentTime = moment()
+    const latestXethru = moment(XeThruData.timestamp, 'x')
+    const XeThruDelayMillis = currentTime.diff(latestXethru)
+
+    if (XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethruSentAlerts) {
+      helpers.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+      await db.updateSentAlerts(location.locationid, true)
+      sendAlerts(location.locationid)
+    } else if (XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS && location.xethruSentAlerts) {
+      helpers.log(`XeThru at ${location.locationid} reconnected`)
+      await db.updateSentAlerts(location.locationid, false)
+      sendReconnectionMessage(location.locationid)
+    }
   }
 }
 
@@ -216,10 +214,6 @@ async function handleSensorRequest(currentLocationId) {
   }
   const location = await db.getLocationData(currentLocationId)
 
-  // Check the XeThru Heartbeat
-  if (!helpers.isTestEnvironment()) {
-    await checkHeartbeat(currentLocationId)
-  }
   helpers.log(`${currentLocationId}: ${currentState}`)
 
   // Get current time to compare to the session's start time
@@ -452,90 +446,6 @@ app.get('/dashboard/:locationId', sessionChecker, async (req, res) => {
 // Add BraveAlerter's routes ( /alert/* )
 app.use(braveAlerter.getRouter())
 
-// SmartThings Smart App Implementations
-
-// @smartthings_rsa.pub is your on-disk public key
-// If you do not have it yet, omit publicKey()
-smartapp
-  .publicKey('@smartthings_rsa.pub') // optional until app verified
-  .configureI18n()
-  // eslint-disable-next-line no-unused-vars -- configData might be needed in the future
-  .page('mainPage', (context, page, configData) => {
-    page.name('ODetect Configuration App')
-    page.section('Location and Devices information', section => {
-      section.textSetting('LocationID')
-      section.textSetting('DeviceID')
-    })
-    page.section('Select sensors', section => {
-      section.deviceSetting('contactSensor').capabilities(['contactSensor', 'battery', 'temperatureMeasurement']).required(false)
-      section.deviceSetting('motionSensor').capabilities(['motionSensor']).required(false)
-      section.deviceSetting('button').capabilities(['button']).required(false)
-    })
-  })
-  .installed((context, installData) => {
-    helpers.log('installed', JSON.stringify(installData))
-  })
-  .uninstalled((context, uninstallData) => {
-    helpers.log('uninstalled', JSON.stringify(uninstallData))
-  })
-  .updated((context, updateData) => {
-    helpers.log('updated', JSON.stringify(updateData))
-    context.api.subscriptions.unsubscribeAll().then(() => {
-      helpers.log('unsubscribeAll() executed')
-      context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'contactSensor', 'contact', 'myContactEventHandler')
-      context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'battery', 'battery', 'myBatteryEventHandler')
-      context.api.subscriptions.subscribeToDevices(context.config.contactSensor, 'temperatureMeasurement', 'temperature', 'myTemperatureEventHandler')
-      context.api.subscriptions.subscribeToDevices(context.config.motionSensor, 'motionSensor', 'motion', 'myMotionEventHandler')
-      context.api.subscriptions.subscribeToDevices(context.config.button, 'button', 'button', 'myButtonEventHandler')
-    })
-  })
-  .subscribedEventHandler('myContactEventHandler', (context, deviceEvent) => {
-    const signal = deviceEvent.value
-    helpers.log(deviceEvent.value)
-    const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value
-    const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value
-    redis.addDoorSensorData(LocationID, signal)
-    handleSensorRequest(LocationID)
-    helpers.log(`Door${DeviceID} Sensor: ${signal} @${LocationID}`)
-  })
-  .subscribedEventHandler('myBatteryEventHandler', (context, deviceEvent) => {
-    const signal = deviceEvent.value
-    helpers.log(deviceEvent.value)
-    const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value
-    const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value
-    sendBatteryAlert(LocationID, signal)
-    helpers.log(`Door${DeviceID} Battery: ${signal} @${LocationID}`)
-  })
-  .subscribedEventHandler('myMotionEventHandler', (context, deviceEvent) => {
-    const signal = deviceEvent.value
-    const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value
-    const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value
-    redis.addMotionSensordata(DeviceID, LocationID, 'Motion', signal)
-    helpers.log(`Motion${DeviceID} Sensor: ${signal} @${LocationID}`)
-  })
-  .subscribedEventHandler('myButtonEventHandler', (context, deviceEvent) => {
-    const signal = deviceEvent.value
-    const LocationID = context.event.eventData.installedApp.config.LocationID[0].stringConfig.value
-    const DeviceID = context.event.eventData.installedApp.config.DeviceID[0].stringConfig.value
-    helpers.log(`Button${DeviceID} Sensor: ${signal} @${LocationID}`)
-  })
-
-// Handler for incoming SmartThings POST requests
-app.post('/api/st', Validator.body(['lifecycle']).exists(), (req, res) => {
-  try {
-    const validationErrors = Validator.validationResult(req)
-    if (validationErrors.isEmpty()) {
-      smartapp.handleHttpCallback(req, res)
-    } else {
-      helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-      res.status(400).send()
-    }
-  } catch (err) {
-    helpers.log(err)
-    res.status(500).send()
-  }
-})
-
 // Handler for incoming XeThru POST requests
 app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', 'mov_s']).exists(), async (req, res) => {
   try {
@@ -546,26 +456,6 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
       const { deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s } = req.body
 
       await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s)
-      await handleSensorRequest(locationid)
-      res.status(200).json('OK')
-    } else {
-      helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-      res.status(400).send()
-    }
-  } catch (err) {
-    helpers.log(err)
-    res.status(500).send()
-  }
-})
-
-app.post('/api/doorTest', Validator.body(['locationid', 'signal']).exists(), async (req, res) => {
-  try {
-    const validationErrors = Validator.validationResult(req)
-
-    if (validationErrors.isEmpty()) {
-      const { locationid, signal } = req.body
-
-      await redis.addDoorTestSensorData(locationid, signal)
       await handleSensorRequest(locationid)
       res.status(200).json('OK')
     } else {
@@ -591,6 +481,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
       } else {
         const message = JSON.parse(request.body.data)
         const signal = message.data
+        const control = message.control
         let doorSignal
         if (signal === IM21_DOOR_STATUS.OPEN) {
           doorSignal = SESSIONSTATE_DOOR.OPEN
@@ -600,12 +491,9 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
           doorSignal = 'LowBatt'
         } else if (signal === IM21_DOOR_STATUS.HEARTBEAT_OPEN || signal === IM21_DOOR_STATUS.HEARTBEAT_CLOSED) {
           doorSignal = 'HeartBeat'
-        } else {
-          helpers.log(`Bad request, door status is undefined`)
-          response.status(400).send()
         }
 
-        await redis.addIM21DoorSensorData(locationid, doorSignal)
+        await redis.addIM21DoorSensorData(locationid, doorSignal, control)
         await handleSensorRequest(locationid)
         response.status(200).json('OK')
       }
@@ -663,11 +551,52 @@ app.post(
   },
 )
 
+app.post('/smokeTest/setup', async (request, response) => {
+  const { recipientNumber, twilioNumber } = request.body
+  try {
+    await db.createLocation(
+      'SmokeTestLocation',
+      '0',
+      recipientNumber,
+      17,
+      15,
+      150,
+      30000,
+      120000,
+      3000,
+      recipientNumber,
+      twilioNumber,
+      recipientNumber,
+      9000,
+      'SmokeTestLocation',
+      'door_coreID',
+      'radar_coreID',
+    )
+    await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
+    response.status(200).send()
+  } catch (error) {
+    helpers.log(`Smoke test setup error: ${error}`)
+  }
+})
+
+app.post('/smokeTest/teardown', async (request, response) => {
+  try {
+    await db.clearLocation('SmokeTestLocation')
+    await db.clearSessionsFromLocation('SmokeTestLocation')
+    await redis.addStateMachineData('Reset', 'SmokeTestLocation')
+    response.status(200).send()
+  } catch (error) {
+    helpers.log(`Smoke test setup error: ${error}`)
+  }
+})
+
 const server = app.listen(8080)
 helpers.log('brave server listening on port 8080')
+if (!helpers.isTestEnvironment()) {
+  setInterval(checkHeartbeat, 15000)
+}
 
 module.exports.server = server
 module.exports.db = db
 module.exports.routes = routes
 module.exports.redis = redis
-module.exports.smartapp = smartapp

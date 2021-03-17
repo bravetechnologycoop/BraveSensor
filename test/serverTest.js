@@ -13,29 +13,13 @@ const XETHRU_STATE = require('../SessionStateXethruEnum.js')
 
 const MOV_THRESHOLD = 17
 const IM21_DOOR_STATUS = require('../IM21DoorStatusEnum')
-const ST_DOOR_STATUS = require('../SessionStateDoorEnum')
+const { getRandomArbitrary, getRandomInt } = require('../testingHelpers.js')
 
 chai.use(chaiHttp)
 
 const testLocation1Id = 'TestLocation1'
 const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid'
-
-function sleep(millis) {
-  return new Promise(resolve => {
-    setTimeout(resolve, millis)
-  })
-}
-
-function getRandomInt(minValue, maxValue) {
-  const min = Math.ceil(minValue)
-  const max = Math.floor(maxValue)
-  return Math.floor(Math.random() * (max - min) + min) // The maximum is exclusive and the minimum is inclusive
-}
-
-function getRandomArbitrary(min, max) {
-  return Math.random() * (max - min) + min
-}
 
 async function silence(locationid) {
   try {
@@ -74,18 +58,6 @@ async function movement(locationid, mov_f, mov_s) {
   }
 }
 
-async function door(locationid, signal) {
-  try {
-    await chai.request(server).post('/api/doorTest').send({
-      deviceid: 0,
-      locationid,
-      signal,
-    })
-  } catch (e) {
-    helpers.log(e)
-  }
-}
-
 async function im21Door(doorCoreId, signal) {
   try {
     await chai
@@ -106,106 +78,9 @@ describe('Brave Sensor server', () => {
   })
 
   after(async () => {
-    await sleep(3000)
+    await helpers.sleep(3000)
     server.close()
     await redis.disconnect()
-  })
-
-  describe('POST request: radar and door events with mock SmartThings door sensor', () => {
-    beforeEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.createLocation(
-        testLocation1Id,
-        '0',
-        testLocation1PhoneNumber,
-        MOV_THRESHOLD,
-        15,
-        0.2,
-        5000,
-        5000,
-        0,
-        '+15005550006',
-        '+15005550006',
-        '+15005550006',
-        1000,
-      )
-      await door(testLocation1Id, ST_DOOR_STATUS.CLOSED)
-    })
-
-    afterEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      helpers.log('\n')
-    })
-
-    it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
-      for (let i = 0; i < 5; i += 1) {
-        await silence(testLocation1Id)
-      }
-      const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(5)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(0)
-    })
-
-    it('radar data showing movement should be saved to redis and trigger a session, which should remain open', async () => {
-      for (let i = 0; i < 15; i += 1) {
-        await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
-      }
-      const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(15)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(1)
-      const session = sessions[0]
-      expect(session.end_time).to.be.null
-    })
-
-    it('radar data showing movement should be saved to redis, trigger a session, a door opening should end the session', async () => {
-      for (let i = 0; i < 15; i += 1) {
-        await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
-      }
-      await door(testLocation1Id, ST_DOOR_STATUS.OPEN)
-      for (let i = 0; i < 15; i += 1) {
-        await movement(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
-      }
-      await door(testLocation1Id, ST_DOOR_STATUS.CLOSED)
-      for (let i = 0; i < 15; i += 1) {
-        await movement(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
-      }
-      const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(45)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      const session = sessions[0]
-      expect(session.end_time).to.not.be.null
-    })
-
-    it('radar data showing movement should trigger a session, and cessation of movement without a door event should trigger an alert', async () => {
-      for (let i = 0; i < 15; i += 1) {
-        await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
-      }
-      for (let i = 0; i < 85; i += 1) {
-        await silence(testLocation1Id)
-      }
-      const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(100)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(1)
-      expect(sessions[0].od_flag).to.equal(1)
-    })
-
-    it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
-      for (let i = 0; i < 200; i += 1) {
-        await movement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
-      }
-      const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(200)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(1)
-      expect(sessions[0].od_flag).to.equal(1)
-    })
   })
 
   describe('POST request radar and door events with mock im21 door sensor', () => {
@@ -310,6 +185,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       expect(sessions[0].od_flag).to.equal(1)
+      await helpers.sleep(1000)
     })
 
     it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
@@ -324,108 +200,7 @@ describe('Brave Sensor server', () => {
     })
   })
 
-  describe('Smart Things API endpoint', () => {
-    it('should return 200 for a valid request', async () => {
-      // example valid request obtained from Smart Things documentation
-      const goodRequest = {
-        lifecycle: 'PING',
-        executionId: 'b328f242-c602-4204-8d73-33c48ae180af',
-        locale: 'en',
-        version: '1.0.0',
-        pingData: {
-          challenge: '1a904d57-4fab-4b15-a11e-1c4bfe7cb502',
-        },
-      }
-
-      const response = await chai.request(server).post('/api/st').send(goodRequest)
-      expect(response).to.have.status(200)
-    })
-
-    it('should return 400 for a request that does not contain lifecycle, ie. which does not pass express validator', async () => {
-      const badExpressRequest = {
-        uselessField: 'useless',
-      }
-
-      const response = await chai.request(server).post('/api/st').send(badExpressRequest)
-      expect(response).to.have.status(400)
-    })
-
-    it(`should return 401 for a request that contains lifecycle (passes express validator) but which is not valid for Smart Things' purposes`, async () => {
-      const badSmartThingsRequest = {
-        lifecycle: 'thisisnotvalid',
-        executionId: 'b328f242-c602-4204-8d73-33c48ae180af',
-        locale: 'en',
-        version: '1.0.0',
-        pingData: {
-          challenge: '1a904d57-4fab-4b15-a11e-1c4bfe7cb502',
-        },
-      }
-
-      const response = await chai.request(server).post('/api/st').send(badSmartThingsRequest)
-      expect(response).to.have.status(401)
-    })
-  })
-
   describe('Express validation of API endpoints', () => {
-    describe('api/doorTest endpoint', () => {
-      beforeEach(async () => {
-        await redis.clearKeys()
-        await db.clearSessions()
-        await db.clearLocations()
-        await db.createLocation(
-          testLocation1Id,
-          '0',
-          testLocation1PhoneNumber,
-          MOV_THRESHOLD,
-          15,
-          0.2,
-          5000,
-          5000,
-          0,
-          '+15005550006',
-          '+15005550006',
-          '+15005550006',
-          1000,
-        )
-        await door(testLocation1Id, ST_DOOR_STATUS.CLOSED)
-      })
-
-      afterEach(async () => {
-        await redis.clearKeys()
-        await db.clearSessions()
-        await db.clearLocations()
-        helpers.log('\n')
-      })
-
-      it('should return 200 for a valid request', async () => {
-        const goodRequest = {
-          locationid: testLocation1Id,
-          signal: ST_DOOR_STATUS.CLOSED,
-        }
-
-        const response = await chai.request(server).post('/api/doorTest').send(goodRequest)
-        expect(response).to.have.status(200)
-      })
-
-      it('should return 400 for a request that does not contain locationid', async () => {
-        const badRequest = {
-          signal: ST_DOOR_STATUS.CLOSED,
-        }
-
-        const response = await chai.request(server).post('/api/doorTest').send(badRequest)
-        expect(response).to.have.status(400)
-      })
-
-      it('should return 400 for a request that does not contain signal', async () => {
-        const badRequest = {
-          locationid: testLocation1Id,
-        }
-
-        const response = await chai.request(server).post('/api/doorTest').send(badRequest)
-        expect(response).to.have.status(400)
-      })
-    })
-
     describe('api/door endpoint', () => {
       beforeEach(async () => {
         await redis.clearKeys()
