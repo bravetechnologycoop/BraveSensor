@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [3.0.0] - 2021-03-18
+
 ### Added
 
 - Script, endpoints, and instructions for smoke tests (CU-kcxndt)
@@ -113,7 +115,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v2.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1...v1.2.0
 [1.1]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1-alpha...v1.1
