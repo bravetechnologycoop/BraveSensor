@@ -4,6 +4,7 @@ const pg = require('pg')
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum')
+const ALERT_REASON = require('../AlertReasonEnum')
 const Session = require('../Session.js')
 const Location = require('../Location.js')
 
@@ -24,6 +25,32 @@ pool.on('error', err => {
   // eslint-disable-next-line no-console
   console.error('unexpected database error:', err)
 })
+
+async function getCurrentTime(clientParam) {
+  let client = clientParam
+  const transactionMode = typeof client !== 'undefined'
+
+  try {
+    if (!transactionMode) {
+      client = await pool.connect()
+    }
+
+    const { rows } = await client.query('SELECT NOW()')
+    const time = rows[0].now
+
+    return time
+  } catch (e) {
+    helpers.log(`Error running the getCurrentTime query: ${e}`)
+  } finally {
+    if (!transactionMode) {
+      try {
+        client.release()
+      } catch (err) {
+        helpers.log(`getCurrentTime: Error releasing client: ${err}`)
+      }
+    }
+  }
+}
 
 // Functions added to facilitate moving to Mustache template from angular front end
 // prettier-ignore
@@ -294,50 +321,63 @@ async function updateSessionStillCounter(stillcounter, sessionid, locationid) {
   }
 }
 
-async function isOverdoseSuspectedInnosent(session, location) {
-  const now = new Date()
-  const start_time_sesh = new Date(session.start_time)
+async function isOverdoseSuspectedInnosent(session, location, clientParam) {
+  try {
+    const now = new Date(await getCurrentTime())
+    const start_time_sesh = new Date(session.start_time)
 
-  // Current Session duration so far:
-  const sessionDuration = (now - start_time_sesh) / 1000
+    // Current Session duration so far:
+    const sessionDuration = (now - start_time_sesh) / 1000
 
-  // threshold values for the various overdose conditions
-  const still_threshold = location.still_threshold
-  const sessionDuration_threshold = location.duration_threshold
+    // threshold values for the various overdose conditions
+    const still_threshold = location.still_threshold
+    const sessionDuration_threshold = location.duration_threshold
 
-  // number in front represents the weighting
-  const condition2 = 1 * (session.still_counter > still_threshold) // seconds
-  const condition3 = 1 * (sessionDuration > sessionDuration_threshold)
+    // number in front represents the weighting
+    const condition2 = 1 * (session.still_counter > still_threshold) // seconds
+    const condition3 = 1 * (sessionDuration > sessionDuration_threshold)
 
-  let alertReason = 'NotSet'
+    let alertReason = ALERT_REASON.NOTSET
 
-  if (condition3 === 1) {
-    alertReason = 'Duration'
-  }
-
-  if (condition2 === 1) {
-    alertReason = 'Stillness'
-  }
-
-  const conditionThreshold = 1
-
-  // This method just looks for a majority of conditions to be met
-  // This method can apply different weights for different criteria
-  if (condition2 + condition3 >= conditionThreshold) {
-    // update the table entry so od_flag is 1
-    try {
-      await pool.query('UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3', [
-        OD_FLAG_STATE.OVERDOSE,
-        alertReason,
-        session.sessionid,
-      ])
-    } catch (e) {
-      helpers.log(`Error running the update od_flag query: ${e}`)
+    if (condition3 === 1) {
+      alertReason = ALERT_REASON.DURATION
     }
-    return true
-  }
 
-  return false
+    if (condition2 === 1) {
+      alertReason = ALERT_REASON.STILLNESS
+    }
+
+    const conditionThreshold = 1
+
+    // This method just looks for a majority of conditions to be met
+    // This method can apply different weights for different criteria
+    if (condition2 + condition3 >= conditionThreshold) {
+      // update the table entry so od_flag is 1
+      try {
+        let client = clientParam
+        const transactionMode = typeof client !== 'undefined'
+        if (!transactionMode) {
+          client = await pool.connect()
+        }
+        await client.query('UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3', [
+          OD_FLAG_STATE.OVERDOSE,
+          alertReason,
+          session.sessionid,
+        ])
+        if (!transactionMode) {
+          client.release()
+        }
+
+        return true
+      } catch (err) {
+        helpers.log(`Error running od_flag update query`)
+      }
+    }
+
+    return false
+  } catch (e) {
+    helpers.log(`Error running isOverdoseSuspected: ${e}`)
+  }
 }
 
 /*
@@ -348,55 +388,67 @@ async function isOverdoseSuspectedInnosent(session, location) {
  *   Person hasn't been moving for a long time
  *   Total time in the bathroom exceeds a certain value
  */
-async function isOverdoseSuspected(xethru, session, location) {
-  const now = new Date()
-  const start_time_sesh = new Date(session.start_time)
+async function isOverdoseSuspected(xethru, session, location, clientParam) {
+  try {
+    const now = new Date(await getCurrentTime())
+    const start_time_sesh = new Date(session.start_time)
 
-  // Current Session duration so far:
-  const sessionDuration = (now - start_time_sesh) / 1000
+    // Current Session duration so far:
+    const sessionDuration = (now - start_time_sesh) / 1000
 
-  // threshold values for the various overdose conditions
-  const rpm_threshold = location.rpm_threshold
-  const still_threshold = location.still_threshold
-  const sessionDuration_threshold = location.duration_threshold
+    // threshold values for the various overdose conditions
+    const rpm_threshold = location.rpm_threshold
+    const still_threshold = location.still_threshold
+    const sessionDuration_threshold = location.duration_threshold
 
-  // number in front represents the weighting
-  // eslint-disable-next-line eqeqeq
-  const condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0)
-  const condition2 = 1 * (session.still_counter > still_threshold) // seconds
-  const condition3 = 1 * (sessionDuration > sessionDuration_threshold)
+    // number in front represents the weighting
+    // eslint-disable-next-line eqeqeq
+    const condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0)
+    const condition2 = 1 * (session.still_counter > still_threshold) // seconds
+    const condition3 = 1 * (sessionDuration > sessionDuration_threshold)
 
-  let alertReason = 'NotSet'
+    let alertReason = ALERT_REASON.NOTSET
 
-  // eslint-disable-next-line eqeqeq
-  if (condition3 == 1) {
-    alertReason = 'Duration'
-  }
-
-  // eslint-disable-next-line eqeqeq
-  if (condition2 == 1 || condition1 == 1) {
-    alertReason = 'Stillness'
-  }
-
-  const conditionThreshold = 1
-
-  // This method just looks for a majority of conditions to be met
-  // This method can apply different weights for different criteria
-  if (condition1 + condition2 + condition3 >= conditionThreshold) {
-    // update the table entry so od_flag is 1
-    try {
-      await pool.query('UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3', [
-        OD_FLAG_STATE.OVERDOSE,
-        alertReason,
-        session.sessionid,
-      ])
-    } catch (e) {
-      helpers.log(`Error running the update od_flag query: ${e}`)
+    // eslint-disable-next-line eqeqeq
+    if (condition3 == 1) {
+      alertReason = ALERT_REASON.DURATION
     }
-    return true
-  }
 
-  return false
+    // eslint-disable-next-line eqeqeq
+    if (condition2 == 1 || condition1 == 1) {
+      alertReason = ALERT_REASON.STILLNESS
+    }
+
+    const conditionThreshold = 1
+
+    // This method just looks for a majority of conditions to be met
+    // This method can apply different weights for different criteria
+    if (condition1 + condition2 + condition3 >= conditionThreshold) {
+      // update the table entry so od_flag is 1
+      try {
+        let client = clientParam
+        const transactionMode = typeof client !== 'undefined'
+        if (!transactionMode) {
+          client = await pool.connect()
+        }
+
+        await client.query('UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3', [
+          OD_FLAG_STATE.OVERDOSE,
+          alertReason,
+          session.sessionid,
+        ])
+        if (!transactionMode) {
+          client.release()
+        }
+        return true
+      } catch (err) {
+        helpers.log(`Error running od_flag update query`)
+      }
+    }
+    return false
+  } catch (e) {
+    helpers.log(`Error running isOverdoseSuspected: ${e}`)
+  }
 }
 
 // Saves the state and incident type into the sessions table
@@ -447,19 +499,6 @@ async function getLocationIDFromParticleCoreID(coreID) {
   }
 }
 
-async function getRadarTypeFromLocationID(locationid) {
-  try {
-    const results = await pool.query('SELECT (radar_type) FROM locations WHERE locationid = $1', [locationid])
-    if (results === undefined) {
-      return null
-    }
-
-    return results.rows[0].radar_type
-  } catch (e) {
-    helpers.log(`Error running the getLocationData query: ${e}`)
-  }
-}
-
 // Retrieves the locationid corresponding to a particle device coreID
 async function getLocationFromParticleCoreID(coreID) {
   try {
@@ -469,7 +508,7 @@ async function getLocationFromParticleCoreID(coreID) {
       return null
     }
 
-    return results.rows[0]
+    return createLocationFromRow(results.rows[0])
   } catch (e) {
     helpers.log(`Error running the getLocationIDFromParticleCoreID query: ${e}`)
   }
@@ -492,10 +531,10 @@ async function getLocations() {
 
 // Updates the locations table entry for a specific location with the new data
 // prettier-ignore
-async function updateLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, rpm_threshold, still_threshold, duration_threshold, mov_threshold, door_particlecoreid, radar_particlecoreid, location, radar_type) {
+async function updateLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, rpm_threshold, still_threshold, duration_threshold, mov_threshold, door_particlecoreid, radar_particlecoreid, radar_type, location) {
   try {
     const results = await pool.query(
-      'UPDATE locations SET deviceid = $1, phonenumber = $2, detectionzone_min = $3, detectionzone_max = $4, sensitivity = $5, noisemap = $6, led = $7, rpm_threshold = $8, still_threshold = $9, duration_threshold = $10, mov_threshold = $11, door_particlecoreid = $12, radar_particlecoreid = $13, radar_type = $14 WHERE locationid = $14 returning *',
+      'UPDATE locations SET deviceid = $1, phonenumber = $2, detectionzone_min = $3, detectionzone_max = $4, sensitivity = $5, noisemap = $6, led = $7, rpm_threshold = $8, still_threshold = $9, duration_threshold = $10, mov_threshold = $11, door_particlecoreid = $12, radar_particlecoreid = $13, radar_type = $14 WHERE locationid = $15 returning *',
       [
         deviceid,
         phonenumber,
@@ -549,32 +588,6 @@ async function createLocation(locationid, deviceid, phonenumber, mov_threshold, 
     helpers.log('New location inserted to Database')
   } catch (e) {
     helpers.log(`Error running the createLocation query: ${e}`)
-  }
-}
-
-async function getCurrentTime(clientParam) {
-  let client = clientParam
-  const transactionMode = typeof client !== 'undefined'
-
-  try {
-    if (!transactionMode) {
-      client = await pool.connect()
-    }
-
-    const { rows } = await client.query('SELECT NOW()')
-    const time = rows[0].now
-
-    return time
-  } catch (e) {
-    helpers.log(`Error running the getCurrentTime query: ${e}`)
-  } finally {
-    if (!transactionMode) {
-      try {
-        client.release()
-      } catch (err) {
-        helpers.log(`getCurrentTime: Error releasing client: ${err}`)
-      }
-    }
   }
 }
 
@@ -634,7 +647,6 @@ module.exports = {
   getMostRecentSessionPhone,
   getLocationIDFromParticleCoreID,
   getLocationFromParticleCoreID,
-  getRadarTypeFromLocationID,
   getLocationData,
   getLocations,
   updateLocationData,

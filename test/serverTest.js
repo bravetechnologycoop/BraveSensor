@@ -32,7 +32,7 @@ async function innosentMovement(coreID, min, max) {
         data: `{ "deviceid": "HeidiTest", "inPhase": "${printRandomIntArray(min, max, 15)}", "quadrature": "${printRandomIntArray(min, max, 15)}"}`,
         ttl: 60,
         published_at: '2021-03-09T19:37:28.176Z',
-        coreid: `"${coreID}"`,
+        coreid: coreID,
       })
   } catch (e) {
     helpers.log(e)
@@ -49,12 +49,13 @@ async function innosentSilence(coreID) {
         data: `{ "deviceid": "HeidiTest", "inPhase": "${printRandomIntArray(0, 0, 15)}", "quadrature": "${printRandomIntArray(0, 0, 15)}"}`,
         ttl: 60,
         published_at: '2021-03-09T19:37:28.176Z',
-        coreid: `"${coreID}"`,
+        coreid: coreID,
       })
   } catch (e) {
     helpers.log(e)
   }
 }
+
 async function xeThruSilence(locationid) {
   try {
     await chai.request(server).post('/api/xethru').send({
@@ -117,7 +118,7 @@ describe('Brave Sensor server', () => {
     await redis.disconnect()
   })
 
-  describe('POST request radar and door events with mock im21 door sensor', () => {
+  describe('POST request radar and door events with XeThru radar and mock im21 door sensor', () => {
     beforeEach(async () => {
       await redis.clearKeys()
       await db.clearSessions()
@@ -235,7 +236,7 @@ describe('Brave Sensor server', () => {
     })
   })
 
-  describe('POST request radar and door events with mock im21 door sensor', () => {
+  describe('POST request radar and door events with INS radar and mock im21 door sensor', () => {
     beforeEach(async () => {
       await redis.clearKeys()
       await db.clearSessions()

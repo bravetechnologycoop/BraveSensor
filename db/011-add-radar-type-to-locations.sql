@@ -13,6 +13,7 @@ BEGIN
     IF migrationId - lastSuccessfulMigrationId = 1 THEN
         -- ADD SCRIPT HERE
         ALTER TABLE locations ADD COLUMN radar_type text default 'XeThru';
+        UPDATE locations SET radar_type='XeThru' WHERE radar_type=null;
 
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file
         INSERT INTO migrations (id)
