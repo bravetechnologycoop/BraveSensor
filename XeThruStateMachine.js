@@ -12,16 +12,14 @@ class XeThruStateMachine {
   async getNextState(db, redis) {
     let state
 
-    const promises = [db.getLocationData(this.location), db.getMostRecentSession(this.location)]
-    const data = await Promise.all(promises)
+    const locationData = await db.getLocationData(this.location)
+    const session = await db.getMostRecentSession(this.location)
     const xethru_history = await redis.getXethruWindow(this.location, '+', '-', 15) // Array of last 15 readings from this location
     const xethru = xethru_history[0]
     const door = await redis.getLatestDoorSensorData(this.location)
     const states = await redis.getLatestLocationStatesData(this.location)
-    const location_data = data[0]
-    const session = data[1]
-    const DOOR_THRESHOLD_MILLIS = location_data.door_stickiness_delay
-    const residual_mov_f = location_data.mov_threshold
+    const DOOR_THRESHOLD_MILLIS = locationData.door_stickiness_delay
+    const residual_mov_f = locationData.mov_threshold
     const currentTime = moment()
     const latestDoor = moment(door.timestamp, 'x')
     const doorDelay = currentTime.diff(latestDoor)
@@ -117,7 +115,7 @@ class XeThruStateMachine {
           }
 
           // eslint-disable-next-line eqeqeq
-          if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, location_data))) {
+          if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, locationData))) {
             state = STATE.SUSPECTED_OD
           }
 
@@ -134,7 +132,7 @@ class XeThruStateMachine {
           }
 
           // eslint-disable-next-line eqeqeq
-          if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, location_data))) {
+          if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, locationData))) {
             state = STATE.SUSPECTED_OD
           }
 
@@ -155,7 +153,7 @@ class XeThruStateMachine {
 
           // If the flag was originally false and the overdose criteria are met, an overdose is ssuspected and the flag is enabled.
           // eslint-disable-next-line eqeqeq
-          if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, location_data))) {
+          if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, locationData))) {
             state = STATE.SUSPECTED_OD
           }
 
