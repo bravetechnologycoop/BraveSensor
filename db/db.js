@@ -404,7 +404,7 @@ async function getLocationIDFromParticleCoreID(coreID) {
 // Retrieves the locations table
 async function getLocations() {
   try {
-    const results = await pool.query('SELECT * FROM locations')
+    const results = await pool.query('SELECT * FROM locations ORDER BY display_name')
 
     if (typeof results === 'undefined') {
       return null
@@ -476,6 +476,32 @@ async function createLocation(locationid, deviceid, phonenumber, mov_threshold, 
   }
 }
 
+async function getCurrentTime(clientParam) {
+  let client = clientParam
+  const transactionMode = typeof client !== 'undefined'
+
+  try {
+    if (!transactionMode) {
+      client = await pool.connect()
+    }
+
+    const { rows } = await client.query('SELECT NOW()')
+    const time = rows[0].now
+
+    return time
+  } catch (e) {
+    helpers.log(`Error running the getCurrentTime query: ${e}`)
+  } finally {
+    if (!transactionMode) {
+      try {
+        client.release()
+      } catch (err) {
+        helpers.log(`getCurrentTime: Error releasing client: ${err}`)
+      }
+    }
+  }
+}
+
 async function clearSessions() {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear sessions database outside of a test environment!')
@@ -543,4 +569,5 @@ module.exports = {
   getAllSessionsFromLocation,
   beginTransaction,
   commitTransaction,
+  getCurrentTime,
 }

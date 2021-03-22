@@ -23,7 +23,11 @@ const SESSIONSTATE_DOOR = require('./SessionStateDoorEnum')
 const XETHRU_THRESHOLD_MILLIS = 60 * 1000
 const WATCHDOG_TIMER_FREQUENCY = 60 * 1000
 
-const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/locationsDashboard.mst`, 'utf-8')
+const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationsDashboard.mst`, 'utf-8')
+const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/landingPage.mst`, 'utf-8')
+const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')
+const landingCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/landingCSSPartial.mst`, 'utf-8')
+const locationsCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationsCSSPartial.mst`, 'utf-8')
 
 // Start Express App
 const app = express()
@@ -74,6 +78,47 @@ app.use(
     },
   }),
 )
+
+async function generateCalculatedTimeDifferenceString(timeToCompare) {
+  const daySecs = 24 * 60 * 60
+  const hourSecs = 60 * 60
+  const minSecs = 60
+  let returnString = ''
+  let numDays = 0
+  let numHours = 0
+  let numMins = 0
+  const currentTime = await db.getCurrentTime()
+
+  let diffSecs = (currentTime - timeToCompare) / 1000
+
+  if (diffSecs >= daySecs) {
+    numDays = Math.floor(diffSecs / daySecs)
+    diffSecs %= daySecs
+  }
+  returnString += `${numDays} ${numDays === 1 ? 'day, ' : 'days, '}`
+
+  if (diffSecs >= hourSecs) {
+    numHours = Math.floor(diffSecs / hourSecs)
+    diffSecs %= hourSecs
+  }
+  returnString += `${numHours} ${numHours === 1 ? 'hour, ' : 'hours, '}`
+
+  if (diffSecs >= minSecs) {
+    numMins = Math.floor(diffSecs / minSecs)
+  }
+  returnString += `${numMins} ${numMins === 1 ? 'minute' : 'minutes'}`
+
+  if (numDays + numHours === 0) {
+    diffSecs %= minSecs
+    const numSecs = Math.floor(diffSecs)
+
+    returnString += `, ${numSecs} ${numSecs === 1 ? 'second' : 'seconds'}`
+  }
+
+  returnString += ' ago'
+
+  return returnString
+}
 
 // Closes any open session and resets state for the given location
 async function autoResetSession(locationid) {
@@ -344,14 +389,22 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
   try {
     const allLocations = await db.getLocations()
 
+    for (const location of allLocations) {
+      const recentSession = await db.getMostRecentSession(location.locationid)
+      if (recentSession) {
+        const sessionStartTime = Date.parse(recentSession.start_time)
+        const timeSinceLastSession = await generateCalculatedTimeDifferenceString(sessionStartTime)
+        location.sessionStart = timeSinceLastSession
+      }
+    }
+
     const viewParams = {
       locations: allLocations.map(location => {
-        return { name: location.displayName, id: location.locationid }
+        return { name: location.displayName, id: location.locationid, sessionStart: location.sessionStart }
       }),
     }
-    viewParams.viewMessage = allLocations.length >= 1 ? 'Please select a location' : 'No locations to display'
 
-    res.send(Mustache.render(locationsDashboardTemplate, viewParams))
+    res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
   } catch (err) {
     helpers.log(err)
     res.status(500).send()
@@ -392,7 +445,7 @@ app.get('/dashboard/:locationId', sessionChecker, async (req, res) => {
       })
     }
 
-    res.send(Mustache.render(locationsDashboardTemplate, viewParams))
+    res.send(Mustache.render(locationsDashboardTemplate, viewParams, { nav: navPartial, css: locationsCSSPartial }))
   } catch (err) {
     helpers.log(err)
     res.status(500).send()
