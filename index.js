@@ -110,7 +110,9 @@ async function generateCalculatedTimeDifferenceString(timeToCompare) {
 
   if (numDays + numHours === 0) {
     diffSecs %= minSecs
-    returnString += `${diffSecs} ${diffSecs === 1 ? 'second' : 'seconds'}`
+    const numSecs = Math.floor(diffSecs)
+
+    returnString += `, ${numSecs} ${numSecs === 1 ? 'second' : 'seconds'}`
   }
 
   returnString += ' ago'
