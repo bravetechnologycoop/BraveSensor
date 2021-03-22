@@ -23,11 +23,11 @@ const SESSIONSTATE_DOOR = require('./SessionStateDoorEnum')
 const XETHRU_THRESHOLD_MILLIS = 60 * 1000
 const WATCHDOG_TIMER_FREQUENCY = 60 * 1000
 
-const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/locationsDashboard.mst`, 'utf-8')
-const sensorDashboardTemplate = fs.readFileSync(`${__dirname}/sensorDashboard.mst`, 'utf-8')
-const navPartial = fs.readFileSync(`${__dirname}/navPartial.mst`, 'utf-8')
-const landingCSSPartial = fs.readFileSync(`${__dirname}/landingCSSPartial.mst`, 'utf-8')
-const locationCSSPartial = fs.readFileSync(`${__dirname}/locationCSSPartial.mst`, 'utf-8')
+const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationsDashboard.mst`, 'utf-8')
+const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/landingPage.mst`, 'utf-8')
+const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')
+const landingCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/landingCSSPartial.mst`, 'utf-8')
+const locationsCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationsCSSPartial.mst`, 'utf-8')
 
 // Start Express App
 const app = express()
@@ -79,7 +79,7 @@ app.use(
   }),
 )
 
-async function generateFormattedTimestampString(timeToCompare) {
+async function generateCalculatedTimeDifferenceString(timeToCompare) {
   const daySecs = 24 * 60 * 60
   const hourSecs = 60 * 60
   const minSecs = 60
@@ -106,7 +106,14 @@ async function generateFormattedTimestampString(timeToCompare) {
   if (diffSecs >= minSecs) {
     numMins = Math.floor(diffSecs / minSecs)
   }
-  returnString += `${numMins} ${numMins === 1 ? 'minute' : 'minutes'} ago`
+  returnString += `${numMins} ${numMins === 1 ? 'minute' : 'minutes'}`
+
+  if (numDays + numHours === 0) {
+    diffSecs %= minSecs
+    returnString += `${diffSecs} ${diffSecs === 1 ? 'second' : 'seconds'}`
+  }
+
+  returnString += ' ago'
 
   return returnString
 }
@@ -384,7 +391,7 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
       const recentSession = await db.getMostRecentSession(location.locationid)
       if (recentSession) {
         const sessionStartTime = Date.parse(recentSession.start_time)
-        const timeSinceLastSession = await generateFormattedTimestampString(sessionStartTime)
+        const timeSinceLastSession = await generateCalculatedTimeDifferenceString(sessionStartTime)
         location.sessionStart = timeSinceLastSession
       }
     }
@@ -395,7 +402,7 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
       }),
     }
 
-    res.send(Mustache.render(sensorDashboardTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
+    res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
   } catch (err) {
     helpers.log(err)
     res.status(500).send()
@@ -436,7 +443,7 @@ app.get('/dashboard/:locationId', sessionChecker, async (req, res) => {
       })
     }
 
-    res.send(Mustache.render(locationsDashboardTemplate, viewParams, { nav: navPartial, css: locationCSSPartial }))
+    res.send(Mustache.render(locationsDashboardTemplate, viewParams, { nav: navPartial, css: locationsCSSPartial }))
   } catch (err) {
     helpers.log(err)
     res.status(500).send()
