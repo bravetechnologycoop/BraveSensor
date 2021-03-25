@@ -60,7 +60,7 @@ function createSessionFromRow(r) {
 
 // prettier-ignore
 function createLocationFromRow(r) {
-  return new Location(r.locationid, r.display_name, r.deviceid, r.phonenumber, r.detectionzone_min, r.detectionzone_max, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.xethru_sent_alerts, r.xethru_heartbeat_number, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type)
+  return new Location(r.locationid, r.display_name, r.deviceid, r.phonenumber, r.detectionzone_min, r.detectionzone_max, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.heartbeat_sent_alerts, r.xethru_alert_recipient, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type)
 }
 
 // The following functions will route HTTP requests into database queries
@@ -268,7 +268,7 @@ async function updateSessionState(sessionid, state, clientParam) {
 // Updates the value of the alert flag in the location database
 async function updateSentAlerts(location, sentalerts) {
   try {
-    const results = await pool.query('UPDATE locations SET xethru_sent_alerts = $1 WHERE locationid = $2 RETURNING *', [sentalerts, location])
+    const results = await pool.query('UPDATE locations SET heartbeat_sent_alerts = $1 WHERE locationid = $2 RETURNING *', [sentalerts, location])
     if (results === undefined) {
       return null
     }
@@ -370,7 +370,7 @@ async function isOverdoseSuspectedInnosent(session, location, clientParam) {
 
         return true
       } catch (err) {
-        helpers.log(`Error running od_flag update query`)
+        helpers.log(`Error running od_flag update query ${err}`)
       }
     }
 
@@ -410,12 +410,12 @@ async function isOverdoseSuspected(xethru, session, location, clientParam) {
     let alertReason = ALERT_REASON.NOTSET
 
     // eslint-disable-next-line eqeqeq
-    if (condition3 == 1) {
+    if (condition3 === 1) {
       alertReason = ALERT_REASON.DURATION
     }
 
     // eslint-disable-next-line eqeqeq
-    if (condition2 == 1 || condition1 == 1) {
+    if (condition2 === 1 || condition1 == 1) {
       alertReason = ALERT_REASON.STILLNESS
     }
 
@@ -442,12 +442,12 @@ async function isOverdoseSuspected(xethru, session, location, clientParam) {
         }
         return true
       } catch (err) {
-        helpers.log(`Error running od_flag update query`)
+        helpers.log(`Error running od_flag update query: ${err}`)
       }
     }
     return false
   } catch (e) {
-    helpers.log(`Error running isOverdoseSuspected: ${e}`)
+    helpers.log(`Error running isOverdoseSuspectedInnosent: ${e}`)
   }
 }
 
@@ -500,12 +500,22 @@ async function getLocationIDFromParticleCoreID(coreID) {
 }
 
 // Retrieves the locationid corresponding to a particle device coreID
-async function getLocationFromParticleCoreID(coreID) {
+async function getLocationFromParticleCoreID(coreID, clientParam) {
   try {
-    const results = await pool.query('SELECT * FROM locations WHERE door_particlecoreid = $1 OR radar_particlecoreid = $1', [coreID])
+    let client = clientParam
+    const transactionMode = typeof client !== 'undefined'
+    if (!transactionMode) {
+      client = await pool.connect()
+    }
+
+    const results = await client.query('SELECT * FROM locations WHERE door_particlecoreid = $1 OR radar_particlecoreid = $1', [coreID])
     if (results === undefined) {
       helpers.log('Error: No location with associated coreID exists')
       return null
+    }
+
+    if (!transactionMode) {
+      client.release()
     }
 
     return createLocationFromRow(results.rows[0])
@@ -561,10 +571,10 @@ async function updateLocationData(deviceid, phonenumber, detection_min, detectio
 
 // Adds a location table entry
 // prettier-ignore
-async function createLocation(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay, xethru_heartbeat_number, twilio_number, fallback_phonenumber, unresponded_session_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type) {
+async function createLocation(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay, heartbeat_alert_recipient, twilio_number, fallback_phonenumber, unresponded_session_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type) {
   try {
     await pool.query(
-      'INSERT INTO locations(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,xethru_heartbeat_number,twilio_number,fallback_phonenumber, unresponded_session_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)',
+      'INSERT INTO locations(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,heartbeat_alert_recipient,twilio_number,fallback_phonenumber, unresponded_session_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)',
       [
         locationid,
         deviceid,
@@ -575,7 +585,7 @@ async function createLocation(locationid, deviceid, phonenumber, mov_threshold, 
         unresponded_timer,
         auto_reset_threshold,
         door_stickiness_delay,
-        xethru_heartbeat_number,
+        heartbeat_alert_recipient,
         twilio_number,
         fallback_phonenumber,
         unresponded_session_timer,

@@ -41,7 +41,7 @@ function setupRedis(states = {}, door = {}, innosentHistory = [0], innosent = {}
   }
 }
 
-describe('test getNextState', () => {
+describe('test getNextState with Innosent state machine', () => {
   describe('when no inital state', () => {
     it('should return the RESET state', async () => {
       const db = setupDB()

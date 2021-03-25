@@ -1,6 +1,6 @@
 class Location {
   // prettier-ignore
-  constructor(locationid, displayName, deviceid, phonenumber, detectionzoneMin, detectionzoneMax, sensitivity, led, noisemap, movThreshold, durationThreshold, stillThreshold, rpmThreshold, xethruSentAlerts, xethruHeartbeatNumber, doorCoreId, radarCoreId, radarType) {
+  constructor(locationid, displayName, deviceid, phonenumber, detectionzoneMin, detectionzoneMax, sensitivity, led, noisemap, movThreshold, durationThreshold, stillThreshold, rpmThreshold, heartbeatSentAlerts, heartbeatAlertRecipient, doorCoreId, radarCoreId, radarType) {
     this.locationid = locationid
     this.displayName = displayName
     this.deviceid = deviceid
@@ -14,8 +14,8 @@ class Location {
     this.durationThreshold = durationThreshold
     this.stillThreshold = stillThreshold
     this.rpmThreshold = rpmThreshold
-    this.xethruSentAlerts = xethruSentAlerts
-    this.xethruHeartbeatNumber = xethruHeartbeatNumber
+    this.heartbeatSentAlerts = heartbeatSentAlerts
+    this.heartbeatAlertRecipient = heartbeatAlertRecipient
     this.doorCoreId = doorCoreId
     this.radarCoreId = radarCoreId
     this.radarType = radarType

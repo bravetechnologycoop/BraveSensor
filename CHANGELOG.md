@@ -10,8 +10,14 @@ was committed to the `master` branch. This is not necessarily the date that
 the code was deployed.
 
 ## [Unreleased]
+
+### Added
+- INS radar endpoint (CU-m0wdfn)
+- INS radar state machine (CU-m0wdfn)
+
 ### Changed
 - Update landing page to display list of locations with how long ago most recent session was started (CU-mmzgy9)
+- Update checkHeartbeat to check both XeThru and INS (CU-m0wdfn)
 
 ## [3.0.0] - 2021-03-18
 
@@ -21,8 +27,6 @@ the code was deployed.
 - Update to use Brave-wide linting standard (CU-kcxpaw)
 - Saving control field in door sensor requests (CU-n70k94)
 - Automatic uploading of Docker containers to Digital Ocean using Travis (CU-mrxren)
-- INS radar endpoint (CU-m0wdfn)
-- INS radar state machine (CU-m0wdfn)
 
 ### Changed
 

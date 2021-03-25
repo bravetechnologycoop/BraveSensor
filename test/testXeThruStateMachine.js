@@ -42,7 +42,7 @@ function setupRedis(states = {}, door = {}, xethru_history = [], xethru = {}) {
   }
 }
 
-describe('test getNextState', () => {
+describe('test getNextState with XeThru state machine', () => {
   describe('when no inital state', () => {
     it('should return the RESET state', async () => {
       const db = setupDB()
