@@ -274,3 +274,14 @@ This strategy assumes that each migration script in the `db` directory has a u
    FROM migrations
    ORDER BY id;
    ```
+# Cluster Migration and Setup
+
+## Setting up networking for a new cluster
+
+Follow [these instructions](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nginx-ingress-on-digitalocean-kubernetes-using-helm) from digital ocean if you are setting up a new cluster. After installing cert-manager and Nginx Ingress Controller, you can use the `prod_issuer.yaml` and `sensor-ingress.yaml` to set up certificate management and ingress respectively.
+
+## Setting up redis on a new cluster
+
+1. From a shell with kubectl access to the cluster, cd into `BraveSensor-Server` repository and run `kubectl apply -f manifests/redis_storage.yaml`
+2. Install redis from the bitnami/redis chart by running `helm install <environment name>-sensor-redis bitnami/redis --namespace redis --set persistence.storageClass=redis-storage --set usePassword=false --set cluster.enabled=false`
+3. Run `kubectl get svc --namespace=redis` to get the IP of your new redis instance to use as an environment variable
