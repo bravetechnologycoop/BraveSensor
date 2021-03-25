@@ -24,6 +24,10 @@ spec:
       - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         name: {{ .Chart.Name }}
         imagePullPolicy: Always
+        volumeMounts:
+          - mountPath: "/etc/brave/ssl"
+            name: sensors-tls
+            readOnly: true
         env:
           - name: TWILIO_SID
             valueFrom:
@@ -80,6 +84,10 @@ spec:
               secretKeyRef:
                 name: {{.Values.secretName}}
                 key: PG_PASSWORD
+      volumes:
+        - name: sensors-tls
+          secret:
+            secretName: sensors-tls
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler

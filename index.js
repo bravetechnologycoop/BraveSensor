@@ -1,6 +1,7 @@
 // Third-party dependencies
 const express = require('express')
 const fs = require('fs')
+const https = require('https')
 const moment = require('moment-timezone')
 const bodyParser = require('body-parser')
 const session = require('express-session')
@@ -176,11 +177,11 @@ async function sendSingleAlert(locationid, message) {
 }
 
 async function sendAlerts(locationid) {
-  await sendSingleAlert(locationid, `The XeThru connection for ${locationid} has been lost.`)
+  await sendSingleAlert(locationid, `The Radar connection for ${locationid} has been lost.`)
 }
 
 async function sendReconnectionMessage(locationid) {
-  await sendSingleAlert(locationid, `The XeThru at ${locationid} has been reconnected.`)
+  await sendSingleAlert(locationid, `The Radar at ${locationid} has been reconnected.`)
 }
 
 // Autoreset twilio function
@@ -198,10 +199,10 @@ async function checkHeartbeat() {
     // Query raw sensor data to transmit to the FrontEnd
     if (location.radarType === RADAR_TYPE.XETHRU) {
       const xeThruData = await redis.getLatestXeThruSensorData(location.locationid)
-      latestRadar = Date(xeThruData.timestamp)
+      latestRadar = moment(xeThruData.timestamp, 'x')
     } else if (location.radarType === RADAR_TYPE.INNOSENT) {
       const innosentData = await redis.getLatestInnosentSensorData(location.locationid)
-      latestRadar = Date(innosentData.timestamp)
+      latestRadar = moment(innosentData.timestamp, 'x')
     }
     // Check the XeThru Heartbeat
     const currentTime = moment()
@@ -659,10 +660,19 @@ app.post('/smokeTest/teardown', async (request, response) => {
   }
 })
 
-const server = app.listen(8080)
-helpers.log('brave server listening on port 8080')
-if (!helpers.isTestEnvironment()) {
+let server
+
+if (helpers.isTestEnvironment()) {
+  // local http server for testing
+  server = app.listen(8000)
+} else {
+  const httpsOptions = {
+    key: fs.readFileSync(`/etc/brave/ssl/tls.key`),
+    cert: fs.readFileSync(`/etc/brave/ssl/tls.crt`),
+  }
+  server = https.createServer(httpsOptions, app).listen(8080)
   setInterval(checkHeartbeat, 15000)
+  helpers.log('brave server listening on port 8080')
 }
 
 module.exports.server = server

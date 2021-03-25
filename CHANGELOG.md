@@ -18,6 +18,8 @@ the code was deployed.
 ### Changed
 - Update landing page to display list of locations with how long ago most recent session was started (CU-mmzgy9)
 - Update checkHeartbeat to check both XeThru and INS (CU-m0wdfn)
+- Using https on backend (CU-mt3fah)
+- Updating brave-alert-lib to v2.4.0 (CU-mt3fah)
 
 ## [3.0.0] - 2021-03-18
 
