@@ -22,7 +22,7 @@ const BraveAlerterConfigurator = require('./BraveAlerterConfigurator.js')
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
 const SESSIONSTATE_DOOR = require('./SessionStateDoorEnum')
 
-const XETHRU_THRESHOLD_MILLIS = 60 * 1000
+const RADAR_THRESHOLD_MILLIS = 60 * 1000
 const WATCHDOG_TIMER_FREQUENCY = 60 * 1000
 
 const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationsDashboard.mst`, 'utf-8')
@@ -172,7 +172,7 @@ if (!helpers.isTestEnvironment()) {
 async function sendSingleAlert(locationid, message) {
   const location = await db.getLocationData(locationid)
 
-  await braveAlerter.sendSingleAlert(location.xethru_heartbeat_number, location.twilio_number, message)
+  await braveAlerter.sendSingleAlert(location.heartbeat_alert_recipient, location.twilio_number, message)
 }
 
 async function sendAlerts(locationid) {
@@ -194,19 +194,25 @@ async function checkHeartbeat() {
   const locations = await db.getLocations()
 
   for (const location of locations) {
+    let latestRadar
     // Query raw sensor data to transmit to the FrontEnd
-    const XeThruData = await redis.getLatestXeThruSensorData(location.locationid)
+    if (location.radarType === RADAR_TYPE.XETHRU) {
+      const xeThruData = await redis.getLatestXeThruSensorData(location.locationid)
+      latestRadar = Date(xeThruData.timestamp)
+    } else if (location.radarType === RADAR_TYPE.INNOSENT) {
+      const innosentData = await redis.getLatestInnosentSensorData(location.locationid)
+      latestRadar = Date(innosentData.timestamp)
+    }
     // Check the XeThru Heartbeat
     const currentTime = moment()
-    const latestXethru = moment(XeThruData.timestamp, 'x')
-    const XeThruDelayMillis = currentTime.diff(latestXethru)
+    const radarDelay = currentTime.diff(latestRadar)
 
-    if (XeThruDelayMillis > XETHRU_THRESHOLD_MILLIS && !location.xethruSentAlerts) {
-      helpers.log(`XeThru Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+    if (radarDelay > RADAR_THRESHOLD_MILLIS && !location.heartbeatSentAlerts) {
+      helpers.log(`Radar Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
       await db.updateSentAlerts(location.locationid, true)
       sendAlerts(location.locationid)
-    } else if (XeThruDelayMillis < XETHRU_THRESHOLD_MILLIS && location.xethruSentAlerts) {
-      helpers.log(`XeThru at ${location.locationid} reconnected`)
+    } else if (radarDelay < RADAR_THRESHOLD_MILLIS && location.heartbeatSentAlerts) {
+      helpers.log(`Radar at ${location.locationid} reconnected`)
       await db.updateSentAlerts(location.locationid, false)
       sendReconnectionMessage(location.locationid)
     }
@@ -238,10 +244,12 @@ async function handleSensorRequest(currentLocationId, radarType) {
 
   if (location_start_time !== null && location_start_time !== undefined) {
     const start_time_sesh = new Date(location_start_time)
-    const now = new Date(await db.getCurrentTime())
-
-    // Current Session duration so far:
-    sessionDuration = (now - start_time_sesh) / 1000
+    try {
+      const now = new Date(await db.getCurrentTime())
+      sessionDuration = (now - start_time_sesh) / 1000
+    } catch (e) {
+      helpers.log(`Error running getCurrentTime: e`)
+    }
   }
 
   // If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well.

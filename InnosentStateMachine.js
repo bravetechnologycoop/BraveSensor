@@ -34,7 +34,7 @@ class InnosentStateMachine {
       await redis.addStateMachineData(STATE.RESET, this.location)
       state = STATE.RESET
     } else {
-      state = states.state // Takes current state in case that none of the state conditions get meet for a state transition.
+      state = states.state // Takes current state in case that none of the state conditions are met for a state transition.
 
       switch (states.state) {
         case STATE.RESET:
