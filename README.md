@@ -126,7 +126,7 @@ The twilio number must be a valid number for the account, and must have its SMS 
 The script will take a few minutes to conclude. The expected behavior is for a location to be created, and for two sessions to be started - one which closes without generating an alert, and one which results in a 'Stillness' alert to the phone number provided. These two sessions should also be reflected in the frontend dashboard. If you do not answer the alert on your phone, you should notice a notification about a session being restarted. If you do, you should complete the chatbot flow. The process should then repeat, this time with INS radar data.
 
 You can get further details about the behavior of the build by watching logs for the application with:
-`kubectl logs -f deployment/staging-sensor-server`
+`kubectl logs -f --timestamps deployment/staging-sensor-server`
 and by watching the behavior of redis with:
 `kubectl exec deploy/redis-dev redis-cli monitor`
 

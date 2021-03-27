@@ -17,7 +17,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
-    "brave-alert-lib": "https://github.com/bravetechnologycoop/brave-alert-lib#v2.4.0",
+    "brave-alert-lib": "https://github.com/bravetechnologycoop/brave-alert-lib#v3.0.0",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "execution-time": "^1.4.1",

@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Ability to have multiple fallback phone numbers (CU-pv8hd5)
+
 ## [3.1.0] - 2021-04-12
 
 ### Added
@@ -24,7 +28,7 @@ the code was deployed.
 - Update landing page to display list of locations with how long ago most recent session was started (CU-mmzgy9)
 - Update checkHeartbeat to check both XeThru and INS (CU-m0wdfn)
 - Using https on backend (CU-mt3fah)
-- Updating brave-alert-lib to v2.4.0 (CU-mt3fah)
+- Use helpers.logError (CU-jcuw85)
 
 ### Fixed
 
@@ -34,6 +38,11 @@ the code was deployed.
 ### Removed
 
 - Unused database columns (CU-gez8x0)
+- Timestamps from logs (CU-jcuw85)
+
+### Security
+
+- Add Twilio validation to make sure that post requests are coming from Twilio and relevant tests (CU-dgmfbv)
 
 ## [3.0.0] - 2021-03-18
 
