@@ -25,7 +25,7 @@ class InnosentStateMachine {
     const inPhase_avg =
       innosentHistory
         .map(entry => {
-          return entry.inPhase
+          return Math.abs(entry.inPhase)
         })
         .reduce((a, b) => a + b) / innosentHistory.length
 

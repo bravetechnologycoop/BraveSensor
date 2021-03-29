@@ -21,6 +21,9 @@ the code was deployed.
 - Using https on backend (CU-mt3fah)
 - Updating brave-alert-lib to v2.4.0 (CU-mt3fah)
 
+### Fixed
+- Taking absolute value of INS radar readings before averaging (CU-qv7qqq)
+
 ## [3.0.0] - 2021-03-18
 
 ### Added

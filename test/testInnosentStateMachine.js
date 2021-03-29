@@ -93,6 +93,23 @@ describe('test getNextState with Innosent state machine', () => {
       expect(actualState).to.equal(STATE.MOTION_DETECTED)
     })
 
+    it('and the innosent detects movement and the absolute value of innosent movement is more than the movement threshold, and more than 30 seconds have passed since the door status changed, should return the MOTION_DETECTED state', async () => {
+      const movementThreshold = 5
+      const doorDelay = 10
+
+      const db = setupDB({ mov_threshold: movementThreshold, door_stickiness_delay: doorDelay })
+      const redis = setupRedis({ state: STATE.NO_PRESENCE_NO_SESSION }, { timestamp: moment().subtract(25, 'seconds') }, [
+        { inPhase: -56, quadrature: -56 },
+        { inPhase: -56, quadrature: -56 },
+        { inPhase: -56, quadrature: -56 },
+      ])
+
+      const statemachine = new StateMachine('TestLocation')
+      const actualState = await statemachine.getNextState(db, redis)
+
+      expect(actualState).to.equal(STATE.MOTION_DETECTED)
+    })
+
     it('and the innosent detects movement and the innosent movement is more than the movement threshold, and less than 30 seconds have passed since the door status changed, should return the MOTION_DETECTED state', async () => {
       const initialState = STATE.NO_PRESENCE_NO_SESSION
       const movementThreshold = 5
