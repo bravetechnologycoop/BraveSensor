@@ -3,7 +3,7 @@ DO $migration$
     DECLARE lastSuccessfulMigrationId INT;
 BEGIN
     -- The migration ID of this file
-    migrationId := 12;
+    migrationId := 13;
 
     -- Get the migration ID of the last file to be successfully run
     SELECT MAX(id) INTO lastSuccessfulMigrationId
@@ -15,7 +15,9 @@ BEGIN
         ALTER TABLE locations DROP COLUMN detectionzone_min;
         ALTER TABLE locations DROP COLUMN detectionzone_max;
         ALTER TABLE locations RENAME COLUMN unresponded_timer TO reminder_timer;
-        ALTER TABLE locations RENAME COLUMN unresponded_session_timer TO fallback_timer;  
+        ALTER TABLE locations RENAME COLUMN unresponded_session_timer TO fallback_timer;
+        ALTER TABLE locations ADD PRIMARY KEY locationid;
+        ALTER TABLE locations ADD UNIQUE (locationid);
 
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file
         INSERT INTO migrations (id)
