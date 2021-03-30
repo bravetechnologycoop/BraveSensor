@@ -53,7 +53,6 @@ describe('BraveAlerterConfigurator', () => {
       // Insert a location in the DB
       await db.createLocation(
         'LocationId',
-        'DeviceId',
         this.expectedLocationPhoneNumber,
         1,
         1,
@@ -66,6 +65,11 @@ describe('BraveAlerterConfigurator', () => {
         1,
         1,
         this.expectedLocationDisplayName,
+        'DoorCoreId',
+        'RadarCoreId',
+        1,
+        1,
+        1,
       )
       const locationId = (await db.getLocations())[0].locationid
 
@@ -111,7 +115,6 @@ describe('BraveAlerterConfigurator', () => {
       // Insert a location in the DB
       await db.createLocation(
         'LocationId',
-        'DeviceId',
         this.expectedLocationPhoneNumber,
         1,
         1,
@@ -124,6 +127,13 @@ describe('BraveAlerterConfigurator', () => {
         1,
         1,
         this.expectedLocationDisplayName,
+        'DoorCoreId',
+        'RadarCoreId',
+        'XeThru',
+        1,
+        1,
+        1,
+        1,
       )
       const locationId = (await db.getLocations())[0].locationid
 

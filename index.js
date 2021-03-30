@@ -31,6 +31,9 @@ const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/lan
 const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')
 const landingCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/landingCSSPartial.mst`, 'utf-8')
 const locationsCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationsCSSPartial.mst`, 'utf-8')
+const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newLocation.mst`, 'utf-8')
+const updateLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateLocation.mst`, 'utf-8')
+const locationFormCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationFormCSSPartial.mst`, 'utf-8')
 
 // Start Express App
 const app = express()
@@ -77,7 +80,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      expires: 10 * 60 * 1000,
+      expires: 8 * 60 * 60 * 1000,
     },
   }),
 )
@@ -427,7 +430,24 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
   }
 })
 
-app.get('/dashboard/:locationId', sessionChecker, async (req, res) => {
+app.get('/locations/new', sessionChecker, async (req, res) => {
+  try {
+    const allLocations = await db.getLocations()
+
+    const viewParams = {
+      locations: allLocations.map(location => {
+        return { name: location.displayName, id: location.locationid }
+      }),
+    }
+
+    res.send(Mustache.render(newLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+  } catch (err) {
+    helpers.log(err)
+    res.status(500).send()
+  }
+})
+
+app.get('/locations/:locationId', sessionChecker, async (req, res) => {
   try {
     const recentSessions = await db.getHistoryOfSessions(req.params.locationId)
     const currentLocation = await db.getLocationData(req.params.locationId)
@@ -435,7 +455,7 @@ app.get('/dashboard/:locationId', sessionChecker, async (req, res) => {
 
     const viewParams = {
       recentSessions: [],
-      currentLocationName: currentLocation.display_name,
+      currentLocation,
       locations: allLocations.map(location => {
         return { name: location.displayName, id: location.locationid }
       }),
@@ -462,6 +482,127 @@ app.get('/dashboard/:locationId', sessionChecker, async (req, res) => {
     }
 
     res.send(Mustache.render(locationsDashboardTemplate, viewParams, { nav: navPartial, css: locationsCSSPartial }))
+  } catch (err) {
+    helpers.log(err)
+    res.status(500).send()
+  }
+})
+
+app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
+  try {
+    const allLocations = await db.getLocations()
+    const currentLocation = await db.getLocationData(req.params.locationId)
+
+    const viewParams = {
+      currentLocation,
+      locations: allLocations.map(location => {
+        return { name: location.displayName, id: location.locationid }
+      }),
+    }
+
+    res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+  } catch (err) {
+    helpers.log(err)
+    res.status(500).send()
+  }
+})
+
+// Post routes for new add/update location forms
+
+app.post('/locations', Validator.body(['locationid', 'displayName', 'phone']).exists(), async (req, res) => {
+  try {
+    const validationErrors = Validator.validationResult(req)
+
+    if (validationErrors.isEmpty()) {
+      const allLocations = await db.getLocations()
+      const data = req.body
+
+      for (const location of allLocations) {
+        if (location.locationid === data.locationid) {
+          helpers.log('Location ID already exists')
+          res.status(409).send()
+        }
+      }
+
+      for (const key of Object.keys(data)) {
+        if (data[key] === '') {
+          data[key] = null
+        }
+      }
+
+      await db.createLocation(
+        data.locationid,
+        data.phone,
+        data.movThreshold,
+        data.stillThreshold,
+        data.durationThreshold,
+        data.reminderTimer,
+        data.autoResetThreshold,
+        data.doorDelay,
+        data.xethruPhone,
+        data.twilioPhone,
+        data.fallbackPhone,
+        data.fallbackTimer,
+        data.displayName,
+        data.doorCoreID,
+        data.radarCoreID,
+        data.sensitivity,
+        data.led,
+        data.noiseMap,
+      )
+
+      res.redirect(`/locations/${data.locationid}`)
+    } else {
+      helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+      res.status(400).send()
+    }
+  } catch (err) {
+    helpers.log(err)
+    res.status(500).send()
+  }
+})
+
+app.post('/locations/:locationId', Validator.body(['displayName', 'phone']).exists(), async (req, res) => {
+  try {
+    const validationErrors = Validator.validationResult(req)
+
+    if (validationErrors.isEmpty()) {
+      const data = req.body
+      data.locationid = req.params.locationId
+
+      for (const key of Object.keys(data)) {
+        if (data[key] === '') {
+          data[key] = null
+        }
+      }
+
+      await db.updateLocation(
+        data.displayName,
+        data.doorCoreID,
+        data.radarCoreID,
+        data.phone,
+        data.fallbackPhone,
+        data.xethruPhone,
+        data.twilioPhone,
+        data.sensitivity,
+        data.led,
+        data.noiseMap,
+        data.movThreshold,
+        data.rpmThreshold,
+        data.durationThreshold,
+        data.stillThreshold,
+        data.autoResetThreshold,
+        data.doorDelay,
+        data.reminderTimer,
+        data.fallbackTimer,
+        data.locationid,
+      )
+
+      res.redirect(`/locations/${data.locationid}`)
+    } else {
+      helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+      res.status(400).send()
+    }
   } catch (err) {
     helpers.log(err)
     res.status(500).send()
@@ -625,7 +766,6 @@ app.post('/smokeTest/setup', async (request, response) => {
   try {
     await db.createLocation(
       'SmokeTestLocation',
-      '0',
       recipientNumber,
       17,
       15,
@@ -641,6 +781,10 @@ app.post('/smokeTest/setup', async (request, response) => {
       'door_coreID',
       'radar_coreID',
       radarType,
+      2,
+      0,
+      2,
+      8,
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
     response.status(200).send()

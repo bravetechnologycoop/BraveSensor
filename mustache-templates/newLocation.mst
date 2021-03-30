@@ -18,125 +18,126 @@
     <div class="content-area">
         <div class="content-wrapper">
             <h4 class="no-locations">Add A Location</h4>
-            <h6> Please fill in the form below. Any non-required fields not entered will be filled in with default values on submission</h6>
+            <h6> Please fill in the form below. Any non-required fields not entered will be filled in with default values shown on submission</h6>
             <br>
             <form class="needs-validation" action="/locations" method="POST">
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="location-id" class="col-sm-3 col-form-label">Location ID:</label>
+                    <label for="locationid" class="col-sm-3 col-form-label">Location ID:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="location-id" placeholder="Location ID" required>
+                        <input type="text" class="form-control" name="locationid" placeholder="Location ID" required pattern="^[\S]+$">
+                        <small id="phoneHelp" class="form-text text-muted">No spaces, please</small>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="display-name" class="col-sm-3 col-form-label">Display Name:</label>
+                    <label for="displayName" class="col-sm-3 col-form-label">Display Name:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="display-name" placeholder="Display Name" required>
+                        <input type="text" class="form-control" name="displayName" placeholder="Display Name" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="door-coreid" class="col-sm-3 col-form-label">Door Particle Core ID:</label>
+                    <label for="doorCoreID" class="col-sm-3 col-form-label">Door Particle Core ID:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="door-coreid" placeholder="Door Particle Core ID" required>
+                        <input type="text" class="form-control" name="doorCoreID" placeholder="Door Particle Core ID" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="radar-coreid" class="col-sm-3 col-form-label">Radar Particle Core ID:</label>
+                    <label for="radarCoreID" class="col-sm-3 col-form-label">Radar Particle Core ID:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="radar-coreid" placeholder="Radar Particle Core ID" required>
+                        <input type="text" class="form-control" name="radarCoreID" placeholder="Radar Particle Core ID" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="phone" class="col-sm-3 col-form-label">Responder Phone Number:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="phone" value="+1" required pattern="[+][1]\d{10}">
+                        <input type="text" class="form-control" name="phone" value="+1" required pattern="[+][1]\d{10}">
                         <small id="phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="fallback-phone" class="col-sm-3 col-form-label">Fallback Phone Number:</label>
+                    <label for="fallbackPhone" class="col-sm-3 col-form-label">Fallback Phone Number:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="fallback-phone" value="+1" required pattern="[+][1]\d{10}">
-                        <small id="fallback-phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                        <input type="text" class="form-control" name="fallbackPhone" value="+1" required pattern="[+][1]\d{10}">
+                        <small id="fallbackPhoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="xethru-phone" class="col-sm-3 col-form-label">XeThru Heartbeat Phone Number:</label>
+                    <label for="xethruPhone" class="col-sm-3 col-form-label">XeThru Heartbeat Phone Number:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="xethru-phone" value="+1" pattern="[+][1]\d{10}">
-                        <small id="xethru-phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                        <input type="text" class="form-control" name="xethruPhone" value="+1" pattern="[+][1]\d{10}">
+                        <small id="xethruPhoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="twilio-phone" class="col-sm-3 col-form-label">Twilio Phone Number:</label>
+                    <label for="twilioPhone" class="col-sm-3 col-form-label">Twilio Phone Number:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="twilio-phone" value="+1" required pattern="[+][1]\d{10}">
-                        <small id="twilio-phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                        <input type="text" class="form-control" name="twilioPhone" value="+1" required pattern="[+][1]\d{10}">
+                        <small id="twilioPhoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="sensitivity" class="col-sm-3 col-form-label">Sensitivity:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="sensitivity" placeholder="Sensitivity">
+                        <input type="text" class="form-control" name="sensitivity" placeholder="Sensitivity" value=2>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="led" class="col-sm-3 col-form-label">LED:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="led" placeholder="LED">
+                        <input type="text" class="form-control" name="led" placeholder="LED" value=0>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="noise-map" class="col-sm-3 col-form-label">Noise Map:</label>
+                    <label for="noiseMap" class="col-sm-3 col-form-label">Noise Map:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="noise-map" placeholder="Noise Map">
+                        <input type="text" class="form-control" name="noiseMap" placeholder="Noise Map" value=2>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="mov-threshold" class="col-sm-3 col-form-label">Movement Threshold:</label>
+                    <label for="movThreshold" class="col-sm-3 col-form-label">Movement Threshold:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="mov-threshold" placeholder="Movement Threshold">
+                        <input type="text" class="form-control" name="movThreshold" placeholder="Movement Threshold" value=17>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="rpm-threshold" class="col-sm-3 col-form-label">RPM Threshold:</label>
+                    <label for="rpmThreshold" class="col-sm-3 col-form-label">RPM Threshold:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="rpm-threshold" placeholder="RPM Threshold">
+                        <input type="text" class="form-control" name="rpmThreshold" placeholder="RPM Threshold" value=8>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="duration-threshold" class="col-sm-3 col-form-label">Duration Threshold (s):</label>
+                    <label for="durationThreshold" class="col-sm-3 col-form-label">Duration Threshold (s):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="duration-threshold" placeholder="Duration Threshold (seconds)">
+                        <input type="text" class="form-control" name="durationThreshold" placeholder="Duration Threshold (seconds)" value=900>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="still-threshold" class="col-sm-3 col-form-label">Still Threshold (s):</label>
+                    <label for="stillThreshold" class="col-sm-3 col-form-label">Still Threshold (s):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="still-threshold" placeholder="Still Threshold (seconds)">
+                        <input type="text" class="form-control" name="stillThreshold" placeholder="Still Threshold (seconds)" value=60>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="auto-reset-threshold" class="col-sm-3 col-form-label">Auto Reset Threshold (ms):</label>
+                    <label for="autoResetThreshold" class="col-sm-3 col-form-label">Auto Reset Threshold (ms):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="auto-reset-threshold" placeholder="Auto Reset Threshold (milliseconds)">
+                        <input type="text" class="form-control" name="autoResetThreshold" placeholder="Auto Reset Threshold (milliseconds)" value=1320000>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="door-delay" class="col-sm-3 col-form-label">Door Stickiness Delay (ms):</label>
+                    <label for="doorDelay" class="col-sm-3 col-form-label">Door Stickiness Delay (ms):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="door-delay" placeholder="Door Stickiness Delay (milliseconds)">
+                        <input type="text" class="form-control" name="doorDelay" placeholder="Door Stickiness Delay (milliseconds)" value=15000>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="reminder-timer" class="col-sm-3 col-form-label">Reminder Timer (ms):</label>
+                    <label for="reminderTimer" class="col-sm-3 col-form-label">Reminder Timer (ms):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="reminder-timer" placeholder="Reminder Timer (milliseconds)">
+                        <input type="text" class="form-control" name="reminderTimer" placeholder="Reminder Timer (milliseconds)" value=30000>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="fallback-timer" class="col-sm-3 col-form-label">Fallback Message Timer (ms):</label>
+                    <label for="fallbackTimer" class="col-sm-3 col-form-label">Fallback Message Timer (ms):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" id="fallback-timer" placeholder="Fallback Message Timer (milliseconds)">
+                        <input type="text" class="form-control" name="fallbackTimer" placeholder="Fallback Message Timer (milliseconds)" value=90000>
                     </div>
                 </div>
                 <br>

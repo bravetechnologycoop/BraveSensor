@@ -125,7 +125,6 @@ describe('Brave Sensor server', () => {
       await db.clearLocations()
       await db.createLocation(
         testLocation1Id,
-        '0',
         testLocation1PhoneNumber,
         MOV_THRESHOLD,
         15,
@@ -141,6 +140,10 @@ describe('Brave Sensor server', () => {
         door_coreID,
         radar_coreID,
         'XeThru',
+        2,
+        0,
+        2,
+        8,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
     })
@@ -362,7 +365,6 @@ describe('Brave Sensor server', () => {
         await db.clearLocations()
         await db.createLocation(
           testLocation1Id,
-          '0',
           testLocation1PhoneNumber,
           MOV_THRESHOLD,
           15,
@@ -376,8 +378,12 @@ describe('Brave Sensor server', () => {
           1000,
           'locationName',
           door_coreID,
-          'radar_particlecoreid',
+          radar_coreID,
           'XeThru',
+          2,
+          0,
+          2,
+          8,
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       })
@@ -425,7 +431,6 @@ describe('Brave Sensor server', () => {
         await db.clearLocations()
         await db.createLocation(
           testLocation1Id,
-          '0',
           testLocation1PhoneNumber,
           MOV_THRESHOLD,
           15,
@@ -440,6 +445,10 @@ describe('Brave Sensor server', () => {
           'locationName',
           door_coreID,
           'radar_particlecoreid',
+          2,
+          0,
+          2,
+          8,
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       })
