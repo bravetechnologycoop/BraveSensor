@@ -12,17 +12,26 @@ the code was deployed.
 ## [Unreleased]
 
 ### Added
+
 - INS radar endpoint (CU-m0wdfn)
 - INS radar state machine (CU-m0wdfn)
+- Forms and routes for adding/updating locations in browser instead of having to go into the db (CU-m72ted)
 
 ### Changed
+
 - Update landing page to display list of locations with how long ago most recent session was started (CU-mmzgy9)
 - Update checkHeartbeat to check both XeThru and INS (CU-m0wdfn)
 - Using https on backend (CU-mt3fah)
 - Updating brave-alert-lib to v2.4.0 (CU-mt3fah)
 
 ### Fixed
+
 - Taking absolute value of INS radar readings before averaging (CU-qv7qqq)
+- Renamed locations database columns for clarity, added unique primary key constraint on locationid (CU-gez8x0)
+
+### Removed
+
+- Unused database columns (CU-gez8x0)
 
 ## [3.0.0] - 2021-03-18
 
