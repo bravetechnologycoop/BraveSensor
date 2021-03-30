@@ -17,7 +17,10 @@
     {{> nav}}
     <div class="content-area">
         <div class="content-wrapper">
-            <h3>{{currentLocationName}}</h3>
+        {{#currentLocation}}
+            <h3>{{display_name}}</h3>
+            
+            <a href="/locations/{{locationid}}/edit" class="btn btn-secondary btn-sm" role="button">Edit Location</a>
             <br>
             <div class="table-responsive">
                 <table class="table table-striped table-sm">
@@ -49,6 +52,10 @@
                     </tbody>
                 </table>
             </div>
+        {{/currentLocation}}
+        {{^currentLocation}}
+            <h5>Sorry, this location does not appear to exist. Please select one from the dropdown to continue.</h5>
+        {{/currentLocation}}
         </div>
     </div>
     

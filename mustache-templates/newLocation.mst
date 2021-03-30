@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Brave Sensor Dashboard: New Location</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    {{> css}}
+</head>
+
+<body>
+    {{> nav}}
+    <div class="content-area">
+        <div class="content-wrapper">
+            <h4 class="no-locations">Add A Location</h4>
+            <h6> Please fill in the form below. Any non-required fields not entered will be filled in with default values on submission</h6>
+            <br>
+            <form class="needs-validation" action="/locations" method="POST">
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="location-id" class="col-sm-3 col-form-label">Location ID:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="location-id" placeholder="Location ID" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="display-name" class="col-sm-3 col-form-label">Display Name:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="display-name" placeholder="Display Name" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="door-coreid" class="col-sm-3 col-form-label">Door Particle Core ID:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="door-coreid" placeholder="Door Particle Core ID" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="radar-coreid" class="col-sm-3 col-form-label">Radar Particle Core ID:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="radar-coreid" placeholder="Radar Particle Core ID" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="phone" class="col-sm-3 col-form-label">Responder Phone Number:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="phone" value="+1" required pattern="[+][1]\d{10}">
+                        <small id="phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="fallback-phone" class="col-sm-3 col-form-label">Fallback Phone Number:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="fallback-phone" value="+1" required pattern="[+][1]\d{10}">
+                        <small id="fallback-phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="xethru-phone" class="col-sm-3 col-form-label">XeThru Heartbeat Phone Number:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="xethru-phone" value="+1" pattern="[+][1]\d{10}">
+                        <small id="xethru-phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="twilio-phone" class="col-sm-3 col-form-label">Twilio Phone Number:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="twilio-phone" value="+1" required pattern="[+][1]\d{10}">
+                        <small id="twilio-phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="sensitivity" class="col-sm-3 col-form-label">Sensitivity:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="sensitivity" placeholder="Sensitivity">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="led" class="col-sm-3 col-form-label">LED:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="led" placeholder="LED">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="noise-map" class="col-sm-3 col-form-label">Noise Map:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="noise-map" placeholder="Noise Map">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="mov-threshold" class="col-sm-3 col-form-label">Movement Threshold:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="mov-threshold" placeholder="Movement Threshold">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="rpm-threshold" class="col-sm-3 col-form-label">RPM Threshold:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="rpm-threshold" placeholder="RPM Threshold">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="duration-threshold" class="col-sm-3 col-form-label">Duration Threshold (s):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="duration-threshold" placeholder="Duration Threshold (seconds)">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="still-threshold" class="col-sm-3 col-form-label">Still Threshold (s):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="still-threshold" placeholder="Still Threshold (seconds)">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="auto-reset-threshold" class="col-sm-3 col-form-label">Auto Reset Threshold (ms):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="auto-reset-threshold" placeholder="Auto Reset Threshold (milliseconds)">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="door-delay" class="col-sm-3 col-form-label">Door Stickiness Delay (ms):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="door-delay" placeholder="Door Stickiness Delay (milliseconds)">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="reminder-timer" class="col-sm-3 col-form-label">Reminder Timer (ms):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="reminder-timer" placeholder="Reminder Timer (milliseconds)">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="fallback-timer" class="col-sm-3 col-form-label">Fallback Message Timer (ms):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="fallback-timer" placeholder="Fallback Message Timer (milliseconds)">
+                    </div>
+                </div>
+                <br>
+                <button type="submit" class="btn btn-primary btn-large">Submit</button>
+              </form>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>
