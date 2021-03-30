@@ -16,7 +16,7 @@ BEGIN
         ALTER TABLE locations DROP COLUMN detectionzone_max;
         ALTER TABLE locations RENAME COLUMN unresponded_timer TO reminder_timer;
         ALTER TABLE locations RENAME COLUMN unresponded_session_timer TO fallback_timer;
-        ALTER TABLE locations ADD PRIMARY KEY locationid;
+        ALTER TABLE locations ADD PRIMARY KEY (locationid);
         ALTER TABLE locations ADD UNIQUE (locationid);
 
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file
