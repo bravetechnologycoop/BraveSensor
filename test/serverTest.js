@@ -128,7 +128,7 @@ describe('Brave Sensor server', () => {
         testLocation1PhoneNumber,
         MOV_THRESHOLD,
         15,
-        0.2,
+        1,
         5000,
         5000,
         0,
@@ -246,7 +246,6 @@ describe('Brave Sensor server', () => {
       await db.clearLocations()
       await db.createLocation(
         testLocation1Id,
-        '0',
         testLocation1PhoneNumber,
         MOV_THRESHOLD,
         15,
@@ -262,6 +261,10 @@ describe('Brave Sensor server', () => {
         door_coreID,
         radar_coreID,
         'Innosent',
+        2,
+        0,
+        2,
+        8,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
     })
@@ -368,7 +371,7 @@ describe('Brave Sensor server', () => {
           testLocation1PhoneNumber,
           MOV_THRESHOLD,
           15,
-          0.2,
+          1,
           5000,
           5000,
           0,
@@ -434,7 +437,7 @@ describe('Brave Sensor server', () => {
           testLocation1PhoneNumber,
           MOV_THRESHOLD,
           15,
-          0.2,
+          1,
           5000,
           5000,
           0,
@@ -444,7 +447,7 @@ describe('Brave Sensor server', () => {
           1000,
           'locationName',
           door_coreID,
-          'radar_particlecoreid',
+          radar_coreID,
           2,
           0,
           2,
