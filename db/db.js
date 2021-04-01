@@ -60,7 +60,7 @@ function createSessionFromRow(r) {
 
 // prettier-ignore
 function createLocationFromRow(r) {
-  return new Location(r.locationid, r.display_name, r.phonenumber, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.heartbeat_sent_alerts, r.heartbeat_alert_recipient, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.auto_reset_threshold)
+  return new Location(r.locationid, r.display_name, r.phonenumber, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.heartbeat_sent_alerts, r.heartbeat_alert_recipient, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.auto_reset_threshold, r.twilio_number, r.fallback_phonenumber, r.door_stickiness_delay)
 }
 
 // The following functions will route HTTP requests into database queries
@@ -569,10 +569,33 @@ async function updateLocation(display_name, door_particlecoreid, radar_particlec
       ],
     )
 
-    helpers.log(`Location '${display_name}' successfully updated`)
+    helpers.log(`Location '${locationid}' successfully updated`)
     return results.rows[0]
   } catch (e) {
     helpers.log(`Error running the updateLocation query: ${e}`)
+  }
+}
+
+// Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
+// prettier-ignore
+async function createLocationFromBrowserForm(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, phonenumber, twilio_number) {
+  try {
+    await pool.query(
+      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, phonenumber, twilio_number) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [
+        locationid,
+        display_name,
+        door_particlecoreid,
+        radar_particlecoreid,
+        radar_type,
+        phonenumber,
+        twilio_number,
+      ],
+    )
+
+    helpers.log('New location inserted into Database')
+  } catch (e) {
+    helpers.log(`Error running the createLocationFromBrowserForm query: ${e}`)
   }
 }
 
@@ -681,4 +704,5 @@ module.exports = {
   beginTransaction,
   commitTransaction,
   getCurrentTime,
+  createLocationFromBrowserForm,
 }

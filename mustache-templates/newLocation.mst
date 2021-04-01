@@ -18,7 +18,7 @@
     <div class="content-area">
         <div class="content-wrapper">
             <h4 class="no-locations">Add A Location</h4>
-            <h6> Please fill in the form below. Any non-required fields not entered will be filled in with default values shown on submission</h6>
+            <h6> Please fill in the form below. Any fields not seen here will be filled in with default values on submission and can be modified by clicking the "edit" button on the next screen</h6>
             <br>
             <form class="needs-validation" action="/locations" method="POST">
                 <div class="form-group row justify-content-start row-no-gutters">
@@ -47,6 +47,16 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="radarType" class="col-sm-3 col-form-label">Radar Type:</label>
+                    <div class="col-sm-5">
+                        <select class="form-control" name="radarType" required>
+                            <option selected disabled>Radar Type</option>
+                            <option value="XeThru">XeThru</option>
+                            <option value="Innosent">Innosent</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="phone" class="col-sm-3 col-form-label">Responder Phone Number:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="phone" value="+1" required pattern="[+][1]\d{10}">
@@ -54,90 +64,10 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="fallbackPhone" class="col-sm-3 col-form-label">Fallback Phone Number:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="fallbackPhone" value="+1" required pattern="[+][1]\d{10}">
-                        <small id="fallbackPhoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="xethruPhone" class="col-sm-3 col-form-label">XeThru Heartbeat Phone Number:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="xethruPhone" value="+1" pattern="[+][1]\d{10}">
-                        <small id="xethruPhoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="twilioPhone" class="col-sm-3 col-form-label">Twilio Phone Number:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="twilioPhone" value="+1" required pattern="[+][1]\d{10}">
                         <small id="twilioPhoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="sensitivity" class="col-sm-3 col-form-label">Sensitivity:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="sensitivity" placeholder="Sensitivity" value=2>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="led" class="col-sm-3 col-form-label">LED:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="led" placeholder="LED" value=0>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="noiseMap" class="col-sm-3 col-form-label">Noise Map:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="noiseMap" placeholder="Noise Map" value=2>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="movThreshold" class="col-sm-3 col-form-label">Movement Threshold:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="movThreshold" placeholder="Movement Threshold" value=17>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="rpmThreshold" class="col-sm-3 col-form-label">RPM Threshold:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="rpmThreshold" placeholder="RPM Threshold" value=8>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="durationThreshold" class="col-sm-3 col-form-label">Duration Threshold (s):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="durationThreshold" placeholder="Duration Threshold (seconds)" value=900>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="stillThreshold" class="col-sm-3 col-form-label">Still Threshold (s):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="stillThreshold" placeholder="Still Threshold (seconds)" value=60>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="autoResetThreshold" class="col-sm-3 col-form-label">Auto Reset Threshold (ms):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="autoResetThreshold" placeholder="Auto Reset Threshold (milliseconds)" value=1320000>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="doorDelay" class="col-sm-3 col-form-label">Door Stickiness Delay (ms):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="doorDelay" placeholder="Door Stickiness Delay (milliseconds)" value=15000>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="reminderTimer" class="col-sm-3 col-form-label">Reminder Timer (ms):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="reminderTimer" placeholder="Reminder Timer (milliseconds)" value=30000>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="fallbackTimer" class="col-sm-3 col-form-label">Fallback Message Timer (ms):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="fallbackTimer" placeholder="Fallback Message Timer (milliseconds)" value=90000>
                     </div>
                 </div>
                 <br>

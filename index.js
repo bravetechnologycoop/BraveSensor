@@ -491,7 +491,20 @@ app.get('/locations/:locationId', sessionChecker, async (req, res) => {
 app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
   try {
     const allLocations = await db.getLocations()
-    const currentLocation = await db.getLocationData(req.params.locationId)
+    let currentLocation
+
+    for (const location of allLocations) {
+      if (location.locationid === req.params.locationId) {
+        currentLocation = location
+      }
+    }
+
+    // for the dropdown in the edit screen so it does not display duplicate options
+    if (currentLocation.radarType === 'XeThru') {
+      currentLocation.otherType = 'Innosent'
+    } else {
+      currentLocation.otherType = 'XeThru'
+    }
 
     const viewParams = {
       currentLocation,
@@ -509,105 +522,113 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 
 // Post routes for new add/update location forms
 
-app.post('/locations', Validator.body(['locationid', 'displayName', 'phone']).exists(), async (req, res) => {
-  try {
-    const validationErrors = Validator.validationResult(req)
+app.post(
+  '/locations',
+  Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'phone', 'twilioPhone']).notEmpty(),
+  // sessionChecker,
+  async (req, res) => {
+    try {
+      const validationErrors = Validator.validationResult(req)
 
-    if (validationErrors.isEmpty()) {
-      const allLocations = await db.getLocations()
-      const data = req.body
+      if (validationErrors.isEmpty()) {
+        const allLocations = await db.getLocations()
+        const data = req.body
 
-      for (const location of allLocations) {
-        if (location.locationid === data.locationid) {
-          helpers.log('Location ID already exists')
-          res.status(409).send()
+        for (const location of allLocations) {
+          if (location.locationid === data.locationid) {
+            helpers.log('Location ID already exists')
+            return res.status(409).send()
+          }
         }
+
+        await db.createLocationFromBrowserForm(
+          data.locationid,
+          data.displayName,
+          data.doorCoreID,
+          data.radarCoreID,
+          data.radarType,
+          data.phone,
+          data.twilioPhone,
+        )
+
+        res.redirect(`/locations/${data.locationid}`)
+      } else {
+        helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+        res.status(400).send()
       }
-
-      for (const key of Object.keys(data)) {
-        if (data[key] === '') {
-          data[key] = null
-        }
-      }
-
-      await db.createLocation(
-        data.locationid,
-        data.phone,
-        data.movThreshold,
-        data.stillThreshold,
-        data.durationThreshold,
-        data.reminderTimer,
-        data.autoResetThreshold,
-        data.doorDelay,
-        data.xethruPhone,
-        data.twilioPhone,
-        data.fallbackPhone,
-        data.fallbackTimer,
-        data.displayName,
-        data.doorCoreID,
-        data.radarCoreID,
-        data.sensitivity,
-        data.led,
-        data.noiseMap,
-      )
-
-      res.redirect(`/locations/${data.locationid}`)
-    } else {
-      helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-      res.status(400).send()
+    } catch (err) {
+      helpers.log(err)
+      res.status(500).send()
     }
-  } catch (err) {
-    helpers.log(err)
-    res.status(500).send()
-  }
-})
+  },
+)
 
-app.post('/locations/:locationId', Validator.body(['displayName', 'phone']).exists(), async (req, res) => {
-  try {
-    const validationErrors = Validator.validationResult(req)
+app.post(
+  '/locations/:locationId',
+  Validator.body([
+    'displayName',
+    'doorCoreID',
+    'radarCoreID',
+    'radarType',
+    'phone',
+    'fallbackPhone',
+    'heartbeatPhone',
+    'twilioPhone',
+    'sensitivity',
+    'led',
+    'noiseMap',
+    'movThreshold',
+    'rpmThreshold',
+    'durationThreshold',
+    'stillThreshold',
+    'autoResetThreshold',
+    'doorDelay',
+    'reminderTimer',
+    'fallbackTimer',
+  ]).notEmpty(),
+  // sessionChecker,
+  async (req, res) => {
+    try {
+      const validationErrors = Validator.validationResult(req)
 
-    if (validationErrors.isEmpty()) {
-      const data = req.body
-      data.locationid = req.params.locationId
+      if (validationErrors.isEmpty()) {
+        const data = req.body
+        data.locationid = req.params.locationId
 
-      for (const key of Object.keys(data)) {
-        if (data[key] === '') {
-          data[key] = null
-        }
+        await db.updateLocation(
+          data.displayName,
+          data.doorCoreID,
+          data.radarCoreID,
+          data.radarType,
+          data.phone,
+          data.fallbackPhone,
+          data.heartbeatPhone,
+          data.twilioPhone,
+          data.sensitivity,
+          data.led,
+          data.noiseMap,
+          data.movThreshold,
+          data.rpmThreshold,
+          data.durationThreshold,
+          data.stillThreshold,
+          data.autoResetThreshold,
+          data.doorDelay,
+          data.reminderTimer,
+          data.fallbackTimer,
+          data.locationid,
+        )
+
+        res.redirect(`/locations/${data.locationid}`)
+      } else {
+        helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+        res.status(400).send()
       }
-
-      await db.updateLocation(
-        data.displayName,
-        data.doorCoreID,
-        data.radarCoreID,
-        data.phone,
-        data.fallbackPhone,
-        data.xethruPhone,
-        data.twilioPhone,
-        data.sensitivity,
-        data.led,
-        data.noiseMap,
-        data.movThreshold,
-        data.rpmThreshold,
-        data.durationThreshold,
-        data.stillThreshold,
-        data.autoResetThreshold,
-        data.doorDelay,
-        data.reminderTimer,
-        data.fallbackTimer,
-        data.locationid,
-      )
-
-      res.redirect(`/locations/${data.locationid}`)
-    } else {
-      helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-      res.status(400).send()
+    } catch (err) {
+      helpers.log(err)
+      res.status(500).send()
     }
-  } catch (err) {
-    helpers.log(err)
-    res.status(500).send()
-  }
-})
+  },
+)
 
 // Add BraveAlerter's routes ( /alert/* )
 app.use(braveAlerter.getRouter())

@@ -3,6 +3,7 @@ const chaiHttp = require('chai-http')
 
 const expect = chai.expect
 const { after, afterEach, before, beforeEach, describe, it } = require('mocha')
+const sinon = require('sinon')
 const { helpers } = require('brave-alert-lib')
 const imports = require('../index.js')
 
@@ -360,7 +361,7 @@ describe('Brave Sensor server', () => {
     })
   })
 
-  describe('Express validation of API endpoints', () => {
+  describe('Express validation of API and form endpoints', () => {
     describe('api/door endpoint', () => {
       beforeEach(async () => {
         await redis.clearKeys()
@@ -519,6 +520,247 @@ describe('Brave Sensor server', () => {
 
         const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
         expect(response).to.have.status(400)
+      })
+    })
+
+    describe('form endpoints', () => {
+      beforeEach(async () => {
+        sinon.stub(helpers, 'log')
+        sinon.spy(db, 'createLocationFromBrowserForm')
+        sinon.spy(db, 'updateLocation')
+
+        await redis.clearKeys()
+        await db.clearSessions()
+        await db.clearLocations()
+        await db.createLocation(
+          testLocation1Id,
+          testLocation1PhoneNumber,
+          MOV_THRESHOLD,
+          15,
+          1,
+          5000,
+          5000,
+          0,
+          '+15005550006',
+          '+15005550006',
+          '+15005550006',
+          1000,
+          'locationName',
+          door_coreID,
+          radar_coreID,
+          'XeThru',
+          2,
+          0,
+          2,
+          8,
+        )
+        await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+      })
+
+      afterEach(async () => {
+        helpers.log.restore()
+        db.createLocationFromBrowserForm.restore()
+        db.updateLocation.restore()
+
+        await redis.clearKeys()
+        await db.clearSessions()
+        await db.clearLocations()
+        helpers.log('\n')
+      })
+
+      describe('post to /locations', () => {
+        it('should return 200 for a request that contains valid non-empty fields and create a location in the database', async () => {
+          const goodRequest = {
+            locationid: 'unusedID',
+            displayName: 'locationName',
+            doorCoreID: door_coreID,
+            radarCoreID: radar_coreID,
+            radarType: 'XeThru',
+            phone: testLocation1PhoneNumber,
+            twilioPhone: '+15005550006',
+          }
+
+          const response = await chai.request(server).post('/locations').send(goodRequest)
+          expect(response).to.have.status(200)
+          expect(helpers.log).to.be.calledWith('New location inserted into Database')
+
+          const newLocation = await db.getLocationData('unusedID')
+
+          expect(newLocation).to.not.be.undefined
+        })
+
+        it('should return 400 for a request that contains all valid fields, but empty, and not create a location in the database', async () => {
+          const badRequest = {
+            locationid: '',
+            displayName: '',
+            doorCoreID: '',
+            radarCoreID: '',
+            radarType: '',
+            phone: '',
+            twilioPhone: '',
+          }
+
+          const response = await chai.request(server).post('/locations').send(badRequest)
+
+          expect(response).to.have.status(400)
+          expect(db.createLocationFromBrowserForm).to.not.have.been.called
+          expect(helpers.log).to.have.been.calledWith(
+            // eslint-disable-next-line no-useless-escape
+            `Bad request, parameters missing {\"errors\":[{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"locationid\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"}]}`,
+          )
+        })
+
+        it('should return 400 for an empty request and not create a location in the database', async () => {
+          const response = await chai.request(server).post('/locations').send({})
+
+          expect(response).to.have.status(400)
+          expect(db.createLocationFromBrowserForm).to.not.have.been.called
+          expect(helpers.log).to.have.been.calledWith(
+            // eslint-disable-next-line no-useless-escape
+            `Bad request, parameters missing {\"errors\":[{\"msg\":\"Invalid value\",\"param\":\"locationid\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"}]}`,
+          )
+        })
+
+        it('should return 409 for an otherwise valid request that contains an already existing locationid and not create a location in the database', async () => {
+          const duplicateLocationRequest = {
+            locationid: testLocation1Id,
+            displayName: 'locationName',
+            doorCoreID: door_coreID,
+            radarCoreID: radar_coreID,
+            radarType: 'XeThru',
+            phone: testLocation1PhoneNumber,
+            twilioPhone: '+15005550006',
+          }
+
+          const response = await chai.request(server).post('/locations').send(duplicateLocationRequest)
+
+          expect(response).to.have.status(409)
+          expect(db.createLocationFromBrowserForm).to.not.have.been.called
+          expect(helpers.log).to.have.been.calledWith('Location ID already exists')
+        })
+      })
+
+      describe('post to /locations/:locationId', () => {
+        it('should return 200 for a request that contains valid non-empty fields and update the location in the database', async () => {
+          const testLocationIdForEdit = 'test1'
+
+          await db.createLocation(
+            testLocationIdForEdit,
+            '+14445556789',
+            10,
+            50,
+            100,
+            90000,
+            90000,
+            15000,
+            '+14445556789',
+            '+14445556789',
+            '+14445556789',
+            90000,
+            'Initial Name',
+            'door_core',
+            'radar_core',
+            'XeThru',
+            7,
+            0,
+            3,
+            4,
+          )
+
+          const goodRequest = {
+            displayName: 'New Name',
+            doorCoreID: 'new_door_core',
+            radarCoreID: 'new_radar_core',
+            radarType: 'Innosent',
+            phone: '+12223334567',
+            fallbackPhone: '+13334445678',
+            heartbeatPhone: '+15556667890',
+            twilioPhone: '+11112223456',
+            sensitivity: 5,
+            led: 1,
+            noiseMap: 7,
+            movThreshold: 15,
+            rpmThreshold: 9,
+            durationThreshold: 90,
+            stillThreshold: 10,
+            autoResetThreshold: 9999999,
+            doorDelay: 9856,
+            reminderTimer: 567849,
+            fallbackTimer: 234567,
+          }
+
+          const response = await chai.request(server).post(`/locations/${testLocationIdForEdit}`).send(goodRequest)
+
+          expect(response).to.have.status(200)
+          expect(helpers.log).to.have.been.calledWith(`Location '${testLocationIdForEdit}' successfully updated`)
+          expect(db.updateLocation).to.have.been.called
+
+          const updatedLocation = await db.getLocationData(testLocationIdForEdit)
+
+          expect(updatedLocation.display_name).to.equal(goodRequest.displayName)
+          expect(updatedLocation.door_particlecoreid).to.equal(goodRequest.doorCoreID)
+          expect(updatedLocation.radar_particlecoreid).to.equal(goodRequest.radarCoreID)
+          expect(updatedLocation.radar_type).to.equal(goodRequest.radarType)
+          expect(updatedLocation.phonenumber).to.equal(goodRequest.phone)
+          expect(updatedLocation.fallback_phonenumber).to.equal(goodRequest.fallbackPhone)
+          expect(updatedLocation.heartbeat_alert_recipient).to.equal(goodRequest.heartbeatPhone)
+          expect(updatedLocation.twilio_number).to.equal(goodRequest.twilioPhone)
+          chai.assert.equal(updatedLocation.sensitivity, goodRequest.sensitivity)
+          chai.assert.equal(updatedLocation.led, goodRequest.led)
+          chai.assert.equal(updatedLocation.noisemap, goodRequest.noiseMap)
+          chai.assert.equal(updatedLocation.mov_threshold, goodRequest.movThreshold)
+          chai.assert.equal(updatedLocation.rpm_threshold, goodRequest.rpmThreshold)
+          chai.assert.equal(updatedLocation.duration_threshold, goodRequest.durationThreshold)
+          chai.assert.equal(updatedLocation.still_threshold, goodRequest.stillThreshold)
+          chai.assert.equal(updatedLocation.auto_reset_threshold, goodRequest.autoResetThreshold)
+          chai.assert.equal(updatedLocation.door_stickiness_delay, goodRequest.doorDelay)
+          chai.assert.equal(updatedLocation.reminder_timer, goodRequest.reminderTimer)
+          chai.assert.equal(updatedLocation.fallback_timer, goodRequest.fallbackTimer)
+        })
+
+        it('should return 400 for a request that contains all valid fields, but empty, and not update the location in the database', async () => {
+          const badRequest = {
+            displayName: '',
+            doorCoreID: '',
+            radarCoreID: '',
+            radarType: '',
+            phone: '',
+            fallbackPhone: '',
+            heartbeatPhone: '',
+            twilioPhone: '',
+            sensitivity: '',
+            led: '',
+            noiseMap: '',
+            movThreshold: '',
+            rpmThreshold: '',
+            durationThreshold: '',
+            stillThreshold: '',
+            autoResetThreshold: '',
+            doorDelay: '',
+            reminderTimer: '',
+            fallbackTimer: '',
+          }
+
+          const response = await chai.request(server).post(`/locations/${testLocation1Id}`).send(badRequest)
+
+          expect(response).to.have.status(400)
+          expect(db.updateLocation).to.not.have.been.called
+          expect(helpers.log).to.have.been.calledWith(
+            // eslint-disable-next-line no-useless-escape
+            `Bad request, parameters missing {\"errors\":[{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"fallbackPhone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"heartbeatPhone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"sensitivity\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"led\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"noiseMap\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"movThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"rpmThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"durationThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"stillThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"autoResetThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"doorDelay\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"reminderTimer\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"fallbackTimer\",\"location\":\"body\"}]}`,
+          )
+        })
+
+        it('should return 400 for an empty request and not update the location in the database', async () => {
+          const response = await chai.request(server).post(`/locations/${testLocation1Id}`).send({})
+
+          expect(response).to.have.status(400)
+          expect(db.updateLocation).to.not.have.been.called
+          expect(helpers.log).to.have.been.calledWith(
+            // eslint-disable-next-line no-useless-escape
+            `Bad request, parameters missing {\"errors\":[{\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"fallbackPhone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"heartbeatPhone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"sensitivity\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"led\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"noiseMap\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"movThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"rpmThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"durationThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"stillThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"autoResetThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"doorDelay\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"reminderTimer\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"fallbackTimer\",\"location\":\"body\"}]}`,
+          )
+        })
       })
     })
   })
