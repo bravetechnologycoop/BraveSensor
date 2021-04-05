@@ -322,8 +322,8 @@ async function handleSensorRequest(currentLocationId, radarType) {
             toPhoneNumber: location.phonenumber,
             fromPhoneNumber: location.twilio_number,
             message: `This is a ${latestSession.alert_reason} alert. Please check on the bathroom at ${location.display_name}. Please respond with 'ok' once you have checked on it.`,
-            reminderTimeoutMillis: location.unresponded_timer,
-            fallbackTimeoutMillis: location.unresponded_session_timer,
+            reminderTimeoutMillis: location.reminder_timer,
+            fallbackTimeoutMillis: location.fallback_timer,
             reminderMessage: `This is a reminder to check on the bathroom`,
             fallbackMessage: `An alert to check on the bathroom at ${location.display_name} was not responded to. Please check on it`,
             fallbackToPhoneNumber: location.fallback_phonenumber,
@@ -528,6 +528,12 @@ app.post(
   // sessionChecker,
   async (req, res) => {
     try {
+      if (!req.session.user || !req.cookies.user_sid) {
+        helpers.log('Unauthorized')
+        res.status(401).send()
+        return
+      }
+
       const validationErrors = Validator.validationResult(req)
 
       if (validationErrors.isEmpty()) {
@@ -586,9 +592,14 @@ app.post(
     'reminderTimer',
     'fallbackTimer',
   ]).notEmpty(),
-  // sessionChecker,
   async (req, res) => {
     try {
+      if (!req.session.user || !req.cookies.user_sid) {
+        helpers.log('Unauthorized')
+        res.status(401).send()
+        return
+      }
+
       const validationErrors = Validator.validationResult(req)
 
       if (validationErrors.isEmpty()) {
@@ -639,8 +650,7 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
     const validationErrors = Validator.validationResult(req)
 
     if (validationErrors.isEmpty()) {
-      // eslint-disable-next-line no-unused-vars -- might be useful in the future to know what all we have access to in the body
-      const { deviceid, locationid, devicetype, state, rpm, distance, mov_f, mov_s } = req.body
+      const { locationid, state, rpm, distance, mov_f, mov_s } = req.body
 
       await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s)
       await handleSensorRequest(locationid, RADAR_TYPE.XETHRU)

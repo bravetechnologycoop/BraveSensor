@@ -42,7 +42,7 @@ async function innosentMovement(coreID, min, max) {
   try {
     await axios.post('/api/innosent', {
       name: 'Radar',
-      data: `{ "deviceid": "Test", "inPhase": "${printRandomIntArray(min, max, 15)}", "quadrature": "${printRandomIntArray(min, max, 15)}"}`,
+      data: `{ "inPhase": "${printRandomIntArray(min, max, 15)}", "quadrature": "${printRandomIntArray(min, max, 15)}"}`,
       ttl: 60,
       published_at: '2021-03-09T19:37:28.176Z',
       coreid: `"${coreID}"`,
@@ -56,7 +56,7 @@ async function innosentSilence(coreID) {
   try {
     await axios.post('/api/innosent', {
       name: 'Radar',
-      data: `{ "deviceid": "Test", "inPhase": "${printRandomIntArray(0, 0, 15)}", "quadrature": "${printRandomIntArray(0, 0, 15)}"}`,
+      data: `{ "inPhase": "${printRandomIntArray(0, 0, 15)}", "quadrature": "${printRandomIntArray(0, 0, 15)}"}`,
       ttl: 60,
       published_at: '2021-03-09T19:37:28.176Z',
       coreid: `"${coreID}"`,
@@ -69,7 +69,6 @@ async function innosentSilence(coreID) {
 async function xeThruSilence(locationid) {
   try {
     await axios.post('/api/xethru', {
-      deviceid: 0,
       locationid,
       devicetype: 'XeThru',
       mov_f: 0,
@@ -87,7 +86,6 @@ async function xeThruSilence(locationid) {
 async function xeThruMovement(locationid, mov_f, mov_s) {
   try {
     await axios.post('/api/xethru', {
-      deviceid: 0,
       locationid,
       devicetype: 'XeThru',
       mov_f,
@@ -106,7 +104,7 @@ async function im21Door(coreID, signal) {
   try {
     await axios.post('/api/door', {
       coreid: coreID,
-      data: `{ "deviceid": "FA:E6:51", "data": "${signal}", "control": "86"}`,
+      data: `{ "data": "${signal}", "control": "86"}`,
     })
     await helpers.sleep(1000)
   } catch (e) {

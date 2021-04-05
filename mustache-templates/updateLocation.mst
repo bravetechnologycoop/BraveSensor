@@ -114,13 +114,13 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="durationThreshold" class="col-sm-3 col-form-label">Duration Threshold (s):</label>
+                    <label for="durationThreshold" class="col-sm-3 col-form-label">Duration Threshold (secs):</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="durationThreshold" placeholder="Duration Threshold (seconds)" value="{{durationThreshold}}" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="stillThreshold" class="col-sm-3 col-form-label">Still Threshold (s):</label>
+                    <label for="stillThreshold" class="col-sm-3 col-form-label">Still Threshold (secs):</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="stillThreshold" placeholder="Still Threshold (seconds)" value="{{stillThreshold}}" required>
                     </div>

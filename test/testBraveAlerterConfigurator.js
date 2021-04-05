@@ -67,6 +67,8 @@ describe('BraveAlerterConfigurator', () => {
         this.expectedLocationDisplayName,
         'DoorCoreId',
         'RadarCoreId',
+        'XeThru',
+        1,
         1,
         1,
         1,
