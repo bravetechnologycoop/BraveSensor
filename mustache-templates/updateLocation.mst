@@ -49,7 +49,6 @@
                     <label for="radarType" class="col-sm-3 col-form-label">Radar Type:</label>
                     <div class="col-sm-5">
                         <select class="form-control" name="radarType" required>
-                            <option disabled>Radar Type</option>
                             <option selected value="{{radarType}}">{{radarType}}</option>
                             <option value="{{otherType}}">{{otherType}}</option>
                         </select>

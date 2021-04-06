@@ -50,7 +50,6 @@
                     <label for="radarType" class="col-sm-3 col-form-label">Radar Type:</label>
                     <div class="col-sm-5">
                         <select class="form-control" name="radarType" required>
-                            <option selected disabled>Radar Type</option>
                             <option value="XeThru">XeThru</option>
                             <option value="Innosent">Innosent</option>
                         </select>
