@@ -742,12 +742,12 @@ describe('Brave Sensor server', () => {
         })
 
         afterEach(async () => {
-          await db.clearLocations()
-
           helpers.log.restore()
           db.createLocationFromBrowserForm.restore()
 
           this.agent.close()
+
+          await db.clearLocations()
         })
 
         it('should return 409', () => {

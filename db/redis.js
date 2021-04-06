@@ -17,8 +17,7 @@ function connect() {
     client = new Redis(6379, helpers.getEnvVar('REDIS_CLUSTER_IP')) // uses defaults unless given configuration object
 
     client.on('error', error => {
-      // eslint-disable-next-line no-console
-      console.error(error)
+      helpers.logError(JSON.stringify(error))
     })
   }
 }

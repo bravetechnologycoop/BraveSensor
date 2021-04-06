@@ -18,7 +18,7 @@
     <div class="content-area">
         <div class="content-wrapper">
         {{#currentLocation}}
-            <h3>{{display_name}}</h3>
+            <h3>{{displayName}}</h3>
             
             <a href="/locations/{{locationid}}/edit" class="btn btn-secondary btn-sm" role="button">Edit Location</a>
             <br>

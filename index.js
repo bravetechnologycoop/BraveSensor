@@ -450,8 +450,8 @@ app.get('/locations/new', sessionChecker, async (req, res) => {
 app.get('/locations/:locationId', sessionChecker, async (req, res) => {
   try {
     const recentSessions = await db.getHistoryOfSessions(req.params.locationId)
-    const currentLocation = await db.getLocationData(req.params.locationId)
     const allLocations = await db.getLocations()
+    const currentLocation = allLocations.find(location => location.locationid === req.params.locationId)
 
     const viewParams = {
       recentSessions: [],
@@ -491,13 +491,7 @@ app.get('/locations/:locationId', sessionChecker, async (req, res) => {
 app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
   try {
     const allLocations = await db.getLocations()
-    let currentLocation
-
-    for (const location of allLocations) {
-      if (location.locationid === req.params.locationId) {
-        currentLocation = location
-      }
-    }
+    const currentLocation = allLocations.find(location => location.locationid === req.params.locationId)
 
     // for the dropdown in the edit screen so it does not display duplicate options
     if (currentLocation.radarType === 'XeThru') {
@@ -525,7 +519,6 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 app.post(
   '/locations',
   Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'phone', 'twilioPhone']).notEmpty(),
-  // sessionChecker,
   async (req, res) => {
     try {
       if (!req.session.user || !req.cookies.user_sid) {
@@ -543,7 +536,7 @@ app.post(
         for (const location of allLocations) {
           if (location.locationid === data.locationid) {
             helpers.log('Location ID already exists')
-            return res.status(409).send()
+            return res.status(409).send('Location ID already exists')
           }
         }
 
@@ -560,7 +553,7 @@ app.post(
         res.redirect(`/locations/${data.locationid}`)
       } else {
         helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-        res.status(400).send()
+        res.status(400).send(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
       }
     } catch (err) {
       helpers.log(err)
@@ -632,7 +625,7 @@ app.post(
         res.redirect(`/locations/${data.locationid}`)
       } else {
         helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-        res.status(400).send()
+        res.status(400).send(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
       }
     } catch (err) {
       helpers.log(err)
@@ -768,9 +761,9 @@ app.post(
 
       if (validationErrors.isEmpty()) {
         const coreId = request.body.coreid
-        const locationid = await db.getLocationIDFromParticleCoreID(coreId)
+        const location = await db.getLocationFromParticleCoreID(coreId)
 
-        if (!locationid) {
+        if (!location) {
           helpers.log(`Error - no location matches the coreID ${coreId}`)
           response.status(400).json('No location for CoreID')
         } else {
@@ -778,7 +771,7 @@ app.post(
           const signalStrength = data.device.network.signal.strength
           const cloudDisconnects = data.device.cloud.connection.disconnects
 
-          redis.addVitals(locationid, signalStrength, cloudDisconnects)
+          redis.addVitals(location.locationid, signalStrength, cloudDisconnects)
           response.status(200).json('OK')
         }
       } else {

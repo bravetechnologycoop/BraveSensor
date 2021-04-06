@@ -22,8 +22,7 @@ const pool = new pg.Pool({
 pg.types.setTypeParser(1114, str => str)
 
 pool.on('error', err => {
-  // eslint-disable-next-line no-console
-  console.error('unexpected database error:', err)
+  helpers.logError(`unexpected database error: ${JSON.stringify(err)}`)
 })
 
 async function getCurrentTime(clientParam) {
@@ -485,25 +484,11 @@ async function getLocationData(locationid) {
 }
 
 // Retrieves the locationid corresponding to a particle device coreID
-async function getLocationIDFromParticleCoreID(coreID) {
-  try {
-    const results = await pool.query('SELECT (locationid) FROM locations WHERE door_particlecoreid = $1 OR radar_particlecoreid = $1', [coreID])
-    if (results === undefined) {
-      helpers.log('Error: No location with associated coreID exists')
-      return null
-    }
-
-    return results.rows[0].locationid
-  } catch (e) {
-    helpers.log(`Error running the getLocationIDFromParticleCoreID query: ${e}`)
-  }
-}
-
-// Retrieves the locationid corresponding to a particle device coreID
 async function getLocationFromParticleCoreID(coreID, clientParam) {
+  let client = clientParam
+  const transactionMode = typeof client !== 'undefined'
+
   try {
-    let client = clientParam
-    const transactionMode = typeof client !== 'undefined'
     if (!transactionMode) {
       client = await pool.connect()
     }
@@ -514,13 +499,17 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
       return null
     }
 
-    if (!transactionMode) {
-      client.release()
-    }
-
     return createLocationFromRow(results.rows[0])
   } catch (e) {
-    helpers.log(`Error running the getLocationIDFromParticleCoreID query: ${e}`)
+    helpers.log(`Error running the getLocationFromParticleCoreID query: ${e}`)
+  } finally {
+    if (!transactionMode) {
+      try {
+        client.release()
+      } catch (err) {
+        helpers.log(`getLocationFromParticleCoreID: Error releasing client: ${err}`)
+      }
+    }
   }
 }
 
@@ -688,7 +677,6 @@ module.exports = {
   closeSession,
   saveAlertSession,
   getMostRecentSessionPhone,
-  getLocationIDFromParticleCoreID,
   getLocationFromParticleCoreID,
   getLocationData,
   getLocations,
