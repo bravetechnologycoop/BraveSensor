@@ -22,8 +22,7 @@ const pool = new pg.Pool({
 pg.types.setTypeParser(1114, str => str)
 
 pool.on('error', err => {
-  // eslint-disable-next-line no-console
-  console.error('unexpected database error:', err)
+  helpers.logError(`unexpected database error: ${JSON.stringify(err)}`)
 })
 
 async function getCurrentTime(clientParam) {
@@ -60,7 +59,7 @@ function createSessionFromRow(r) {
 
 // prettier-ignore
 function createLocationFromRow(r) {
-  return new Location(r.locationid, r.display_name, r.deviceid, r.phonenumber, r.detectionzone_min, r.detectionzone_max, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.heartbeat_sent_alerts, r.heartbeat_alert_recipient, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type)
+  return new Location(r.locationid, r.display_name, r.phonenumber, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.heartbeat_sent_alerts, r.heartbeat_alert_recipient, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.auto_reset_threshold, r.twilio_number, r.fallback_phonenumber, r.door_stickiness_delay)
 }
 
 // The following functions will route HTTP requests into database queries
@@ -485,25 +484,11 @@ async function getLocationData(locationid) {
 }
 
 // Retrieves the locationid corresponding to a particle device coreID
-async function getLocationIDFromParticleCoreID(coreID) {
-  try {
-    const results = await pool.query('SELECT (locationid) FROM locations WHERE door_particlecoreid = $1 OR radar_particlecoreid = $1', [coreID])
-    if (results === undefined) {
-      helpers.log('Error: No location with associated coreID exists')
-      return null
-    }
-
-    return results.rows[0].locationid
-  } catch (e) {
-    helpers.log(`Error running the getLocationIDFromParticleCoreID query: ${e}`)
-  }
-}
-
-// Retrieves the locationid corresponding to a particle device coreID
 async function getLocationFromParticleCoreID(coreID, clientParam) {
+  let client = clientParam
+  const transactionMode = typeof client !== 'undefined'
+
   try {
-    let client = clientParam
-    const transactionMode = typeof client !== 'undefined'
     if (!transactionMode) {
       client = await pool.connect()
     }
@@ -514,13 +499,17 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
       return null
     }
 
-    if (!transactionMode) {
-      client.release()
-    }
-
     return createLocationFromRow(results.rows[0])
   } catch (e) {
-    helpers.log(`Error running the getLocationIDFromParticleCoreID query: ${e}`)
+    helpers.log(`Error running the getLocationFromParticleCoreID query: ${e}`)
+  } finally {
+    if (!transactionMode) {
+      try {
+        client.release()
+      } catch (err) {
+        helpers.log(`getLocationFromParticleCoreID: Error releasing client: ${err}`)
+      }
+    }
   }
 }
 
@@ -540,62 +529,95 @@ async function getLocations() {
 }
 
 // Updates the locations table entry for a specific location with the new data
-// prettier-ignore
-async function updateLocationData(deviceid, phonenumber, detection_min, detection_max, sensitivity, noisemap, led, rpm_threshold, still_threshold, duration_threshold, mov_threshold, door_particlecoreid, radar_particlecoreid, radar_type, location) {
+// eslint-disable-next-line prettier/prettier
+async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phonenumber, fallbackNumber, heartbeatAlertRecipient, twilioNumber, sensitivity, led, noisemap, movThreshold, rpmThreshold, durationThreshold, stillThreshold, autoResetThreshold, doorStickinessDelay, reminderTimer, fallbackTimer, locationid) {
   try {
     const results = await pool.query(
-      'UPDATE locations SET deviceid = $1, phonenumber = $2, detectionzone_min = $3, detectionzone_max = $4, sensitivity = $5, noisemap = $6, led = $7, rpm_threshold = $8, still_threshold = $9, duration_threshold = $10, mov_threshold = $11, door_particlecoreid = $12, radar_particlecoreid = $13, radar_type = $14 WHERE locationid = $15 returning *',
+      'UPDATE locations SET display_name = $1, door_particlecoreid = $2, radar_particlecoreid = $3, radar_type = $4, phonenumber = $5, fallback_phonenumber = $6, heartbeat_alert_recipient = $7, twilio_number = $8, sensitivity = $9, led = $10, noisemap = $11, mov_threshold = $12, rpm_threshold = $13, duration_threshold = $14, still_threshold = $15, auto_reset_threshold = $16, door_stickiness_delay = $17, reminder_timer = $18, fallback_timer = $19 WHERE locationid = $20 returning *',
       [
-        deviceid,
+        displayName,
+        doorCoreId,
+        radarCoreId,
+        radarType,
         phonenumber,
-        detection_min,
-        detection_max,
+        fallbackNumber,
+        heartbeatAlertRecipient,
+        twilioNumber,
         sensitivity,
-        noisemap,
         led,
-        rpm_threshold,
-        still_threshold,
-        duration_threshold,
-        mov_threshold,
-        door_particlecoreid,
-        radar_particlecoreid,
-        radar_type,
-        location,
+        noisemap,
+        movThreshold,
+        rpmThreshold,
+        durationThreshold,
+        stillThreshold,
+        autoResetThreshold,
+        doorStickinessDelay,
+        reminderTimer,
+        fallbackTimer,
+        locationid,
       ],
     )
+
+    helpers.log(`Location '${locationid}' successfully updated`)
     return results.rows[0]
   } catch (e) {
-    helpers.log(`Error running the updateLocationData query: ${e}`)
+    helpers.log(`Error running the updateLocation query: ${e}`)
+  }
+}
+
+// Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
+// prettier-ignore
+async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, phonenumber, twilioNumber) {
+  try {
+    await pool.query(
+      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, phonenumber, twilio_number) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [
+        locationid,
+        displayName,
+        doorCoreId,
+        radarCoreId,
+        radarType,
+        phonenumber,
+        twilioNumber,
+      ],
+    )
+
+    helpers.log(`New location inserted into Database: ${locationid}`)
+  } catch (e) {
+    helpers.log(`Error running the createLocationFromBrowserForm query: ${e}`)
   }
 }
 
 // Adds a location table entry
-// prettier-ignore
-async function createLocation(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay, heartbeat_alert_recipient, twilio_number, fallback_phonenumber, unresponded_session_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type) {
+// eslint-disable-next-line prettier/prettier
+async function createLocation(locationid, phonenumber, movThreshold, stillThreshold, durationThreshold, reminderTimer, autoResetThreshold, doorStickinessDelay, heartbeatAlertRecipient, twilioNumber, fallbackNumber, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, sensitivity, led, noisemap, rpmThreshold) {
   try {
     await pool.query(
-      'INSERT INTO locations(locationid, deviceid, phonenumber, mov_threshold, still_threshold, duration_threshold, unresponded_timer, auto_reset_threshold, door_stickiness_delay,heartbeat_alert_recipient,twilio_number,fallback_phonenumber, unresponded_session_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)',
+      'INSERT INTO locations(locationid, phonenumber, mov_threshold, still_threshold, duration_threshold, reminder_timer, auto_reset_threshold, door_stickiness_delay, heartbeat_alert_recipient, twilio_number, fallback_phonenumber, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, sensitivity, led, noisemap, rpm_threshold) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)',
       [
         locationid,
-        deviceid,
         phonenumber,
-        mov_threshold,
-        still_threshold,
-        duration_threshold,
-        unresponded_timer,
-        auto_reset_threshold,
-        door_stickiness_delay,
-        heartbeat_alert_recipient,
-        twilio_number,
-        fallback_phonenumber,
-        unresponded_session_timer,
-        display_name,
-        door_particlecoreid,
-        radar_particlecoreid,
-        radar_type,
+        movThreshold,
+        stillThreshold,
+        durationThreshold,
+        reminderTimer,
+        autoResetThreshold,
+        doorStickinessDelay,
+        heartbeatAlertRecipient,
+        twilioNumber,
+        fallbackNumber,
+        fallbackTimer,
+        displayName,
+        doorCoreId,
+        radarCoreId,
+        radarType,
+        sensitivity,
+        led,
+        noisemap,
+        rpmThreshold,
       ],
     )
-    helpers.log('New location inserted to Database')
+    helpers.log('New location inserted into Database')
   } catch (e) {
     helpers.log(`Error running the createLocation query: ${e}`)
   }
@@ -615,7 +637,7 @@ async function clearSessions() {
 
 async function clearSessionsFromLocation(locationid) {
   try {
-    await pool.query('DELETE FROM sessions where locationid=$1', [locationid])
+    await pool.query('DELETE FROM sessions where locationid = $1', [locationid])
   } catch (e) {
     helpers.log(`Error running clearSessionsFromLocation: ${e}`)
   }
@@ -631,7 +653,7 @@ async function clearLocations() {
 
 async function clearLocation(locationid) {
   try {
-    await pool.query('DELETE FROM locations where locationid=$1', [locationid])
+    await pool.query('DELETE FROM locations where locationid = $1', [locationid])
   } catch (e) {
     helpers.log(`Error running clearLocation: ${e}`)
   }
@@ -655,11 +677,10 @@ module.exports = {
   closeSession,
   saveAlertSession,
   getMostRecentSessionPhone,
-  getLocationIDFromParticleCoreID,
   getLocationFromParticleCoreID,
   getLocationData,
   getLocations,
-  updateLocationData,
+  updateLocation,
   createLocation,
   clearLocation,
   updateSentAlerts,
@@ -671,4 +692,5 @@ module.exports = {
   beginTransaction,
   commitTransaction,
   getCurrentTime,
+  createLocationFromBrowserForm,
 }

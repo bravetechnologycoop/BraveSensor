@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Brave Sensor Dashboard: Edit Location</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    {{> css}}
+</head>
+
+<body>
+    {{> nav}}
+    <div class="content-area">
+        <div class="content-wrapper">
+          {{#currentLocation}}
+            <h4 class="no-locations">Edit Location: {{displayName}}</h4>
+            <br>
+            <form class="needs-validation" action="/locations/{{locationid}}" method="POST">
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="locationid" class="col-sm-3 col-form-label">Location ID:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="locationid" placeholder="{{locationid}}" disabled>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="displayName" class="col-sm-3 col-form-label">Display Name:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="displayName" placeholder="Display Name" value="{{displayName}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="doorCoreID" class="col-sm-3 col-form-label">Door Particle Core ID:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="doorCoreID" placeholder="Door Particle Core ID" value="{{doorCoreId}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="radarCoreID" class="col-sm-3 col-form-label">Radar Particle Core ID:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="radarCoreID" placeholder="Radar Particle Core ID" value="{{radarCoreId}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="radarType" class="col-sm-3 col-form-label">Radar Type:</label>
+                    <div class="col-sm-5">
+                        <select class="form-control" name="radarType" required>
+                            <option selected value="{{radarType}}">{{radarType}}</option>
+                            <option value="{{otherType}}">{{otherType}}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="phone" class="col-sm-3 col-form-label">Responder Phone Number:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="phone" value="{{phonenumber}}" required pattern="[+][1]\d{10}">
+                        <small id="phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="fallbackPhone" class="col-sm-3 col-form-label">Fallback Phone Number:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="fallbackPhone" value="{{fallbackNumber}}" required pattern="[+][1]\d{10}">
+                        <small id="fallbackPhoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="heartbeatPhone" class="col-sm-3 col-form-label">Heartbeat Phone Number:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="heartbeatPhone" value="{{heartbeatAlertRecipient}}" pattern="[+][1]\d{10}">
+                        <small id="xethruPhoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="twilioPhone" class="col-sm-3 col-form-label">Twilio Phone Number:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="twilioPhone" value="{{twilioNumber}}" required pattern="[+][1]\d{10}">
+                        <small id="twilioPhoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="sensitivity" class="col-sm-3 col-form-label">Sensitivity:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="sensitivity" placeholder="Sensitivity" value="{{sensitivity}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="led" class="col-sm-3 col-form-label">LED:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="led" placeholder="LED" value="{{led}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="noiseMap" class="col-sm-3 col-form-label">Noise Map:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="noiseMap" placeholder="Noise Map" value="{{noisemap}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="movThreshold" class="col-sm-3 col-form-label">Movement Threshold:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="movThreshold" placeholder="Movement Threshold" value="{{movThreshold}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="rpmThreshold" class="col-sm-3 col-form-label">RPM Threshold:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="rpmThreshold" placeholder="RPM Threshold" value="{{rpmThreshold}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="durationThreshold" class="col-sm-3 col-form-label">Duration Threshold (secs):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="durationThreshold" placeholder="Duration Threshold (seconds)" value="{{durationThreshold}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="stillThreshold" class="col-sm-3 col-form-label">Still Threshold (secs):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="stillThreshold" placeholder="Still Threshold (seconds)" value="{{stillThreshold}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="autoResetThreshold" class="col-sm-3 col-form-label">Auto Reset Threshold (ms):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="autoResetThreshold" placeholder="Auto Reset Threshold (milliseconds)" value="{{autoResetThreshold}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="doorDelay" class="col-sm-3 col-form-label">Door Stickiness Delay (ms):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="doorDelay" placeholder="Door Stickiness Delay (milliseconds)" value="{{doorStickinessDelay}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="reminderTimer" class="col-sm-3 col-form-label">Reminder Timer (ms):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="reminderTimer" placeholder="Reminder Timer (milliseconds)" value="{{reminderTimer}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="fallbackTimer" class="col-sm-3 col-form-label">Fallback Message Timer (ms):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="fallbackTimer" placeholder="Fallback Message Timer (milliseconds)" value="{{fallbackTimer}}" required>
+                    </div>
+                </div>
+                <br>
+                <button type="submit" class="btn btn-primary btn-large">Submit</button>
+              </form>
+              {{/currentLocation}}
+              {{^currentLocation}}
+                  <h5>Sorry, this location does not appear to exist. Please select an option from the dropdown and then the "edit" button if you would like to update an existing location.</h5>
+              {{/currentLocation}}
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>

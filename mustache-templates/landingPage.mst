@@ -30,14 +30,14 @@
                     <tbody>
                     {{#locations}}
                         <tr class="table-data">
-                            <th scope="row"><a href="/dashboard/{{id}}">{{name}}</a></th>
+                            <th scope="row"><a href="/locations/{{id}}">{{name}}</a></th>
                             <td>{{sessionStart}}</td>
                         </tr>
                     {{/locations}}
                     </tbody>
                 </table>
             </div>
-      </div>
+        </div>
     </div>
     
     <script>
