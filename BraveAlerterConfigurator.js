@@ -56,23 +56,34 @@ class BraveAlerterConfigurator {
 
   async alertSessionChangedCallback(alertSession) {
     const incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
+    let client
 
-    const client = await db.beginTransaction()
+    try {
+      client = await db.beginTransaction()
 
-    const session = await db.getSessionWithSessionId(alertSession.sessionId, client)
-    await db.saveAlertSession(alertSession.alertState, incidentType, alertSession.sessionId, client)
+      const session = await db.getSessionWithSessionId(alertSession.sessionId, client)
+      await db.saveAlertSession(alertSession.alertState, incidentType, alertSession.sessionId, client)
 
-    const locationId = session.locationid
+      const locationId = session.locationid
 
-    if (alertSession.alertState === ALERT_STATE.COMPLETED) {
-      // Closes the session, sets the session state to RESET
-      await db.closeSession(session.sessionid, client) // Adds the end_time to the latest open session from the LocationID
-      helpers.log(`Session at ${locationId} was closed successfully.`)
-      this.startTimes[locationId] = null // Stops the session timer for this location
-      redis.addStateMachineData('Reset', locationId)
+      if (alertSession.alertState === ALERT_STATE.COMPLETED) {
+        // Closes the session, sets the session state to RESET
+        await db.closeSession(session.sessionid, client) // Adds the end_time to the latest open session from the LocationID
+        helpers.log(`Session at ${locationId} was closed successfully.`)
+        this.startTimes[locationId] = null // Stops the session timer for this location
+        redis.addStateMachineData('Reset', locationId)
+      }
+
+      await db.commitTransaction(client)
+    } catch (e) {
+      try {
+        await db.rollbackTransaction(client)
+        helpers.log(`alertSessionChangedCallback: Rolled back transaction because of error: ${e}`)
+      } catch (error) {
+        // Do nothing
+        helpers.log(`alertSessionChangedCallback: Error rolling back transaction: ${e}`)
+      }
     }
-
-    await db.commitTransaction(client)
   }
 
   getReturnMessage(fromAlertState, toAlertState) {
