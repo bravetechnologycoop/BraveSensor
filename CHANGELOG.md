@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- More consistent DB interactions (CU-kry5t5)
+
 ### Added
 
 - Ability to have multiple fallback phone numbers (CU-pv8hd5)

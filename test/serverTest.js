@@ -191,7 +191,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
-      expect(session.end_time).to.be.null
+      expect(session.endTime).to.be.null
     })
 
     it('radar data showing movement should be saved to redis, trigger a session, a door opening should end the session', async () => {
@@ -210,7 +210,7 @@ describe('Brave Sensor server', () => {
       expect(radarRows.length).to.equal(45)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const session = sessions[0]
-      expect(session.end_time).to.not.be.null
+      expect(session.endTime).to.not.be.null
     })
 
     it('radar data showing movement should trigger a session, and cessation of movement without a door event should trigger an alert', async () => {
@@ -224,7 +224,7 @@ describe('Brave Sensor server', () => {
       expect(radarRows.length).to.equal(100)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
-      expect(sessions[0].od_flag).to.equal(1)
+      expect(sessions[0].odFlag).to.equal(1)
       await helpers.sleep(1000)
     })
 
@@ -236,7 +236,7 @@ describe('Brave Sensor server', () => {
       expect(radarRows.length).to.equal(200)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
-      expect(sessions[0].od_flag).to.equal(1)
+      expect(sessions[0].odFlag).to.equal(1)
     })
   })
 
@@ -313,7 +313,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
-      expect(session.end_time).to.be.null
+      expect(session.endTime).to.be.null
     })
 
     it('radar data showing movement should be saved to redis, trigger a session, a door opening should end the session', async () => {
@@ -332,7 +332,7 @@ describe('Brave Sensor server', () => {
       expect(radarRows.length).to.equal(675)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const session = sessions[0]
-      expect(session.end_time).to.not.be.null
+      expect(session.endTime).to.not.be.null
     })
 
     it('radar data showing movement should trigger a session, and cessation of movement without a door event should trigger an alert', async () => {
@@ -346,7 +346,7 @@ describe('Brave Sensor server', () => {
       expect(radarRows.length).to.equal(1500)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
-      expect(sessions[0].od_flag).to.equal(1)
+      expect(sessions[0].odFlag).to.equal(1)
       await helpers.sleep(1000)
     })
 
@@ -358,7 +358,7 @@ describe('Brave Sensor server', () => {
       expect(radarRows.length).to.equal(3000)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
-      expect(sessions[0].od_flag).to.equal(1)
+      expect(sessions[0].odFlag).to.equal(1)
     })
   })
 
@@ -848,26 +848,27 @@ describe('Brave Sensor server', () => {
         it('should update the location in the database', async () => {
           const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
 
-          expect(updatedLocation.display_name).to.equal(this.goodRequest.displayName)
-          expect(updatedLocation.door_particlecoreid).to.equal(this.goodRequest.doorCoreID)
-          expect(updatedLocation.radar_particlecoreid).to.equal(this.goodRequest.radarCoreID)
-          expect(updatedLocation.radar_type).to.equal(this.goodRequest.radarType)
+          expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
+          expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID)
+          expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
+          expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
           expect(updatedLocation.phonenumber).to.equal(this.goodRequest.phone)
-          expect(updatedLocation.fallback_phonenumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
-          expect(updatedLocation.heartbeat_alert_recipient).to.equal(this.goodRequest.heartbeatPhone)
-          expect(updatedLocation.twilio_number).to.equal(this.goodRequest.twilioPhone)
+
+          expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
+          expect(updatedLocation.heartbeatAlertRecipient).to.equal(this.goodRequest.heartbeatPhone)
+          expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
 
           chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
           chai.assert.equal(updatedLocation.led, this.goodRequest.led)
           chai.assert.equal(updatedLocation.noisemap, this.goodRequest.noiseMap)
-          chai.assert.equal(updatedLocation.mov_threshold, this.goodRequest.movThreshold)
-          chai.assert.equal(updatedLocation.rpm_threshold, this.goodRequest.rpmThreshold)
-          chai.assert.equal(updatedLocation.duration_threshold, this.goodRequest.durationThreshold)
-          chai.assert.equal(updatedLocation.still_threshold, this.goodRequest.stillThreshold)
-          chai.assert.equal(updatedLocation.auto_reset_threshold, this.goodRequest.autoResetThreshold)
-          chai.assert.equal(updatedLocation.door_stickiness_delay, this.goodRequest.doorDelay)
-          chai.assert.equal(updatedLocation.reminder_timer, this.goodRequest.reminderTimer)
-          chai.assert.equal(updatedLocation.fallback_timer, this.goodRequest.fallbackTimer)
+          chai.assert.equal(updatedLocation.movThreshold, this.goodRequest.movThreshold)
+          chai.assert.equal(updatedLocation.rpmThreshold, this.goodRequest.rpmThreshold)
+          chai.assert.equal(updatedLocation.durationThreshold, this.goodRequest.durationThreshold)
+          chai.assert.equal(updatedLocation.stillThreshold, this.goodRequest.stillThreshold)
+          chai.assert.equal(updatedLocation.autoResetThreshold, this.goodRequest.autoResetThreshold)
+          chai.assert.equal(updatedLocation.doorStickinessDelay, this.goodRequest.doorDelay)
+          chai.assert.equal(updatedLocation.reminderTimer, this.goodRequest.reminderTimer)
+          chai.assert.equal(updatedLocation.fallbackTimer, this.goodRequest.fallbackTimer)
         })
       })
 

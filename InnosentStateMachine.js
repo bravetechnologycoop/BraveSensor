@@ -16,8 +16,8 @@ class InnosentStateMachine {
     const innosentHistory = await redis.getInnosentWindow(this.location, '+', '-', 25)
     const door = await redis.getLatestDoorSensorData(this.location)
     const states = await redis.getLatestLocationStatesData(this.location)
-    const DOOR_THRESHOLD_MILLIS = locationData.door_stickiness_delay
-    const mov_threshold = locationData.mov_threshold
+    const DOOR_THRESHOLD_MILLIS = locationData.doorStickinessDelay
+    const mov_threshold = locationData.movThreshold
     const currentTime = moment()
     const latestDoor = moment(door.timestamp, 'x')
     const doorDelay = currentTime.diff(latestDoor)
@@ -74,23 +74,23 @@ class InnosentStateMachine {
           state = STATE.RESET
           break
         case STATE.MOVEMENT:
-          if (door.signal === DOOR_STATE.OPEN && session.od_flag === OD_FLAG_STATE.NO_OVERDOSE) {
+          if (door.signal === DOOR_STATE.OPEN && session.odFlag === OD_FLAG_STATE.NO_OVERDOSE) {
             state = STATE.DOOR_OPENED_CLOSE
           } else if (inPhase_avg < mov_threshold) {
             state = STATE.STILL
           }
-          if (session.od_flag === OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspectedInnosent(session, locationData))) {
+          if (session.odFlag === OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspectedInnosent(session, locationData))) {
             state = STATE.SUSPECTED_OD
           }
 
           break
         case STATE.STILL:
-          if (door.signal === DOOR_STATE.OPEN && session.od_flag === OD_FLAG_STATE.NO_OVERDOSE) {
+          if (door.signal === DOOR_STATE.OPEN && session.odFlag === OD_FLAG_STATE.NO_OVERDOSE) {
             state = STATE.DOOR_OPENED_CLOSE
           } else if (inPhase_avg > mov_threshold) {
             state = STATE.MOVEMENT
           }
-          if (session.od_flag === OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspectedInnosent(session, locationData))) {
+          if (session.odFlag === OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspectedInnosent(session, locationData))) {
             state = STATE.SUSPECTED_OD
           }
 

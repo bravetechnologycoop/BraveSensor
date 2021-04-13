@@ -184,7 +184,7 @@ if (!helpers.isTestEnvironment()) {
 async function sendSingleAlert(locationid, message) {
   const location = await db.getLocationData(locationid)
 
-  await braveAlerter.sendSingleAlert(location.heartbeat_alert_recipient, location.twilio_number, message)
+  await braveAlerter.sendSingleAlert(location.heartbeatAlertRecipient, location.twilioNumber, message)
 }
 
 async function sendAlerts(locationid) {
@@ -266,7 +266,7 @@ async function handleSensorRequest(currentLocationId, radarType) {
 
   // If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well.
 
-  if (sessionDuration * 1000 > location.auto_reset_threshold) {
+  if (sessionDuration * 1000 > location.autoResetThreshold) {
     autoResetSession(location.locationid)
     start_times[currentLocationId] = null
     helpers.log('autoResetSession has been called')
@@ -288,7 +288,7 @@ async function handleSensorRequest(currentLocationId, radarType) {
 
         if (typeof latestSession !== 'undefined') {
           // Checks if no session exists for this location yet.
-          if (latestSession.end_time == null) {
+          if (latestSession.endTime == null) {
             // Checks if session is open.
             await db.updateSessionState(latestSession.sessionid, currentState, client)
           }
@@ -311,17 +311,17 @@ async function handleSensorRequest(currentLocationId, radarType) {
 
         if (typeof latestSession !== 'undefined') {
           // Checks if session exists
-          if (latestSession.end_time == null) {
+          if (latestSession.endTime == null) {
             // Checks if session is open for this location
             const currentSession = await db.updateSessionState(latestSession.sessionid, currentState, client)
-            start_times[currentLocationId] = currentSession.start_time
+            start_times[currentLocationId] = currentSession.startTime
           } else {
             const currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client)
-            start_times[currentLocationId] = currentSession.start_time
+            start_times[currentLocationId] = currentSession.startTime
           }
         } else {
           const currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client)
-          start_times[currentLocationId] = currentSession.start_time
+          start_times[currentLocationId] = currentSession.startTime
         }
         await db.commitTransaction(client)
       } catch (e) {
@@ -358,19 +358,19 @@ async function handleSensorRequest(currentLocationId, radarType) {
       const latestSession = await db.getMostRecentSession(currentLocationId)
 
       // eslint-disable-next-line eqeqeq
-      if (latestSession.od_flag == 1) {
-        if (latestSession.chatbot_state === null) {
+      if (latestSession.odFlag == 1) {
+        if (latestSession.chatbotState === null) {
           const alertInfo = {
             sessionId: latestSession.sessionid,
             toPhoneNumber: location.phonenumber,
-            fromPhoneNumber: location.twilio_number,
-            message: `This is a ${latestSession.alert_reason} alert. Please check on the bathroom at ${location.display_name}. Please respond with 'ok' once you have checked on it.`,
-            reminderTimeoutMillis: location.reminder_timer,
-            fallbackTimeoutMillis: location.fallback_timer,
+            fromPhoneNumber: location.twilioNumber,
+            message: `This is a ${latestSession.alertReason} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
+            reminderTimeoutMillis: location.reminderTimer,
+            fallbackTimeoutMillis: location.fallbackTimer,
             reminderMessage: `This is a reminder to check on the bathroom`,
-            fallbackMessage: `An alert to check on the bathroom at ${location.display_name} was not responded to. Please check on it`,
-            fallbackToPhoneNumbers: location.fallback_phonenumbers,
-            fallbackFromPhoneNumber: location.twilio_number,
+            fallbackMessage: `An alert to check on the bathroom at ${location.displayName} was not responded to. Please check on it`,
+            fallbackToPhoneNumber: location.fallbackNumbers,
+            fallbackFromPhoneNumber: location.twilioNumber,
           }
           braveAlerter.startAlertSession(alertInfo)
         }
@@ -385,9 +385,9 @@ async function handleSensorRequest(currentLocationId, radarType) {
     // Checks if session is in the STILL state and, if so, how long it has been in that state for.
     if (typeof currentSession !== 'undefined') {
       if (currentSession.state === 'Still' || currentSession.state === 'Breathing') {
-        if (currentSession.end_time == null) {
+        if (currentSession.endTime == null) {
           // Only increases counter if session is open
-          await db.updateSessionStillCounter(currentSession.still_counter + 1, currentSession.sessionid, currentSession.locationid)
+          await db.updateSessionStillCounter(currentSession.stillCounter + 1, currentSession.sessionid, currentSession.locationid)
         } else {
           // If session is closed still emit its data as it is
         }
@@ -454,7 +454,7 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
     for (const location of allLocations) {
       const recentSession = await db.getMostRecentSession(location.locationid)
       if (recentSession) {
-        const sessionStartTime = Date.parse(recentSession.start_time)
+        const sessionStartTime = Date.parse(recentSession.startTime)
         const timeSinceLastSession = await generateCalculatedTimeDifferenceString(sessionStartTime)
         location.sessionStart = timeSinceLastSession
       }

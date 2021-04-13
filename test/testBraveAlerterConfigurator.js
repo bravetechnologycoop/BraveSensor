@@ -11,6 +11,7 @@ const { ALERT_STATE, AlertSession, helpers } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../BraveAlerterConfigurator.js')
 const db = require('../db/db.js')
 const redis = require('../db/redis.js')
+const Session = require('../Session.js')
 
 // Configure Chai
 chai.use(sinonChai)
@@ -45,6 +46,9 @@ describe('BraveAlerterConfigurator', () => {
 
   describe('getAlertSession', () => {
     beforeEach(async () => {
+      await db.clearSessions()
+      await db.clearLocations()
+
       this.expectedChatbotState = ALERT_STATE.WAITING_FOR_CATEGORY
       this.expectedIncidentType = 'No One Inside'
       this.expectedLocationDisplayName = 'TEST LOCATION'
@@ -182,10 +186,10 @@ describe('BraveAlerterConfigurator', () => {
       // Don't call real DB or Redis
       sinon.stub(db, 'beginTransaction').returns(this.testClient)
       sinon.stub(db, 'saveAlertSession')
-      sinon.stub(db, 'getSessionWithSessionId').returns({
-        sessionid: this.testSessionId,
-        locationid: this.testLocationId,
-      })
+      const testSession = new Session()
+      testSession.locationid = this.testLocationId
+      testSession.sessionid = this.testSessionId
+      sinon.stub(db, 'getSessionWithSessionId').returns(testSession)
       this.closeSessionStub = sinon.stub(db, 'closeSession')
       sinon.stub(db, 'commitTransaction')
       sinon.stub(redis, 'addStateMachineData')

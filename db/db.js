@@ -90,7 +90,7 @@ async function getCurrentTime(clientParam) {
 
     return results.rows[0].now
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -108,9 +108,9 @@ async function getMostRecentSession(locationid, clientParam) {
       return null
     }
 
-    return results.rows[0]
+    return createSessionFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -119,9 +119,9 @@ async function getSessionWithSessionId(sessionid, clientParam) {
   try {
     const results = await runQuery('getSessionWithSessionId', 'SELECT * FROM sessions WHERE sessionid = $1', [sessionid], clientParam)
 
-    return results.rows[0]
+    return createSessionFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -139,9 +139,9 @@ async function getMostRecentSessionPhone(twilioNumber, clientParam) {
       return null
     }
 
-    return results.rows[0]
+    return createSessionFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -160,7 +160,7 @@ async function getHistoryOfSessions(locationid, clientParam) {
 
     return results.rows.map(r => createSessionFromRow(r))
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -177,29 +177,9 @@ async function getAllSessionsFromLocation(location, clientParam) {
       return null
     }
 
-    return results.rows
+    return results.rows.map(r => createSessionFromRow(r))
   } catch (err) {
-    // Errors handled in runQuery
-  }
-}
-
-// Gets the last session data from an unclosed session for a specified location
-async function getLastUnclosedSession(locationid, clientParam) {
-  try {
-    const results = runQuery(
-      'getLastUnclosedSession',
-      "SELECT * FROM sessions WHERE locationid = $1  AND start_time > (CURRENT_TIMESTAMP - interval '7 days') AND end_time = null ORDER BY sessionid DESC LIMIT 1",
-      [locationid],
-      clientParam,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    return results.rows[0]
-  } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -212,9 +192,9 @@ async function createSession(phone, locationid, state, clientParam) {
       [phone, locationid, state, OD_FLAG_STATE.NO_OVERDOSE],
       clientParam,
     )
-    return results.rows[0]
+    return createSessionFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -231,7 +211,7 @@ async function updateSessionEndTime(sessionid, clientParam) {
       clientParam,
     )
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -240,7 +220,7 @@ async function closeSession(sessionid, clientParam) {
   try {
     await updateSessionEndTime(sessionid, clientParam)
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -258,9 +238,9 @@ async function updateSessionState(sessionid, state, clientParam) {
       return null
     }
 
-    return results.rows[0]
+    return createSessionFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -277,9 +257,9 @@ async function updateSentAlerts(location, sentalerts, clientParam) {
       return null
     }
 
-    return results.rows[0]
+    return createLocationFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -296,9 +276,9 @@ async function updateSessionResetDetails(sessionid, notes, state, clientParam) {
       return null
     }
 
-    return results.rows[0]
+    return createSessionFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -316,26 +296,26 @@ async function updateSessionStillCounter(stillcounter, sessionid, locationid, cl
       return null
     }
 
-    return results.rows[0]
+    return createSessionFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
 async function isOverdoseSuspectedInnosent(session, location, clientParam) {
   try {
     const now = new Date(await getCurrentTime())
-    const start_time_sesh = new Date(session.start_time)
+    const start_time_sesh = new Date(session.startTime)
 
     // Current Session duration so far:
     const sessionDuration = (now - start_time_sesh) / 1000
 
     // threshold values for the various overdose conditions
-    const still_threshold = location.still_threshold
-    const sessionDuration_threshold = location.duration_threshold
+    const still_threshold = location.stillThreshold
+    const sessionDuration_threshold = location.durationThreshold
 
     // number in front represents the weighting
-    const condition2 = 1 * (session.still_counter > still_threshold) // seconds
+    const condition2 = 1 * (session.stillCounter > still_threshold) // seconds
     const condition3 = 1 * (sessionDuration > sessionDuration_threshold)
 
     let alertReason = ALERT_REASON.NOTSET
@@ -364,7 +344,7 @@ async function isOverdoseSuspectedInnosent(session, location, clientParam) {
 
         return true
       } catch (err) {
-        // Errors handled in runQuery
+        helpers.log(JSON.stringify(err))
       }
     }
 
@@ -385,20 +365,20 @@ async function isOverdoseSuspectedInnosent(session, location, clientParam) {
 async function isOverdoseSuspected(xethru, session, location, clientParam) {
   try {
     const now = new Date(await getCurrentTime())
-    const start_time_sesh = new Date(session.start_time)
+    const start_time_sesh = new Date(session.startTime)
 
     // Current Session duration so far:
     const sessionDuration = (now - start_time_sesh) / 1000
 
     // threshold values for the various overdose conditions
-    const rpm_threshold = location.rpm_threshold
-    const still_threshold = location.still_threshold
-    const sessionDuration_threshold = location.duration_threshold
+    const rpm_threshold = location.rpmThreshold
+    const still_threshold = location.stillThreshold
+    const sessionDuration_threshold = location.durationThreshold
 
     // number in front represents the weighting
     // eslint-disable-next-line eqeqeq
     const condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0)
-    const condition2 = 1 * (session.still_counter > still_threshold) // seconds
+    const condition2 = 1 * (session.stillCounter > still_threshold) // seconds
     const condition3 = 1 * (sessionDuration > sessionDuration_threshold)
 
     let alertReason = ALERT_REASON.NOTSET
@@ -429,7 +409,7 @@ async function isOverdoseSuspected(xethru, session, location, clientParam) {
 
         return true
       } catch (err) {
-        // Errors handled in runQuery
+        helpers.log(JSON.stringify(err))
       }
     }
     return false
@@ -448,7 +428,7 @@ async function saveAlertSession(chatbotState, incidentType, sessionid, clientPar
       clientParam,
     )
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -461,9 +441,9 @@ async function getLocationData(locationid, clientParam) {
       return null
     }
 
-    return results.rows[0]
+    return createLocationFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -483,7 +463,7 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
 
     return createLocationFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -498,7 +478,7 @@ async function getLocations(clientParam) {
 
     return results.rows.map(r => createLocationFromRow(r))
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -535,9 +515,9 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
     )
 
     helpers.log(`Location '${locationid}' successfully updated`)
-    return results.rows[0]
+    return createLocationFromRow(results.rows[0])
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -560,8 +540,9 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
     )
 
     helpers.log(`New location inserted into Database: ${locationid}`)
-  } catch (err) {// Errors handled in runQuery
-}
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
 }
 
 // Adds a location table entry
@@ -597,7 +578,7 @@ async function createLocation(locationid, phonenumber, movThreshold, stillThresh
     )
     helpers.log('New location inserted into Database')
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -610,7 +591,7 @@ async function clearSessions(clientParam) {
   try {
     await runQuery('clearSessions', 'DELETE FROM sessions', [], clientParam)
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -618,7 +599,7 @@ async function clearSessionsFromLocation(locationid, clientParam) {
   try {
     await runQuery('clearSessionsFromLocation', 'DELETE FROM sessions where locationid = $1', [locationid], clientParam)
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -631,7 +612,7 @@ async function clearLocations(clientParam) {
   try {
     await runQuery('clearLocations', 'DELETE FROM locations', [], clientParam)
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -639,7 +620,7 @@ async function clearLocation(locationid, clientParam) {
   try {
     await runQuery('clearLocation', 'DELETE FROM locations where locationid = $1', [locationid], clientParam)
   } catch (err) {
-    // Errors handled in runQuery
+    helpers.log(JSON.stringify(err))
   }
 }
 
@@ -648,7 +629,6 @@ async function close() {
 }
 
 module.exports = {
-  getLastUnclosedSession,
   getMostRecentSession,
   getSessionWithSessionId,
   getHistoryOfSessions,
