@@ -47,6 +47,7 @@ async function innosentMovement(coreID, min, max) {
       published_at: '2021-03-09T19:37:28.176Z',
       coreid: `${coreID}`,
     })
+    await helpers.sleep(1000)
   } catch (e) {
     helpers.log(e)
   }
