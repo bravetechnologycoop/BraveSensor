@@ -128,15 +128,23 @@ async function generateCalculatedTimeDifferenceString(timeToCompare) {
 
 // Closes any open session and resets state for the given location
 async function autoResetSession(locationid) {
+  let client
   try {
-    const client = await db.beginTransaction()
+    client = await db.beginTransaction()
     const currentSession = await db.getMostRecentSession(locationid, client)
     await db.closeSession(currentSession.sessionid, client)
     await db.updateSessionResetDetails(currentSession.sessionid, 'Auto reset', 'Reset', client)
-    await redis.addStateMachineData('Reset', locationid)
+    redis.addStateMachineData('Reset', locationid)
     await db.commitTransaction(client)
   } catch (e) {
     helpers.log('Could not reset open session')
+    try {
+      await db.rollbackTransaction(client)
+      helpers.log(`autoResetSession: Rolled back transaction because of error: ${e}`)
+    } catch (error) {
+      // Do nothing
+      helpers.log(`autoResetSession: Error rolling back transaction: ${e}`)
+    }
   }
 }
 
@@ -273,44 +281,79 @@ async function handleSensorRequest(currentLocationId, radarType) {
     await redis.addStateMachineData(currentState, currentLocationId)
 
     if (VOIDSTATES.includes(currentState)) {
-      const latestSession = await db.getMostRecentSession(currentLocationId)
+      let client
+      try {
+        client = await db.beginTransaction()
+        const latestSession = await db.getMostRecentSession(currentLocationId, client)
 
-      if (typeof latestSession !== 'undefined') {
-        // Checks if no session exists for this location yet.
-        if (latestSession.end_time == null) {
-          // Checks if session is open.
-          await db.updateSessionState(latestSession.sessionid, currentState)
+        if (typeof latestSession !== 'undefined') {
+          // Checks if no session exists for this location yet.
+          if (latestSession.end_time == null) {
+            // Checks if session is open.
+            await db.updateSessionState(latestSession.sessionid, currentState, client)
+          }
+        }
+        await db.commitTransaction(client)
+      } catch (e) {
+        try {
+          await db.rollbackTransaction(client)
+          helpers.log(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
+        } catch (error) {
+          // Do nothing
+          helpers.log(`handleSensorRequest: Error rolling back transaction: ${e}`)
         }
       }
     } else if (TRIGGERSTATES.includes(currentState)) {
-      const client = await db.beginTransaction()
-      const latestSession = await db.getMostRecentSession(currentLocationId, client)
+      let client
+      try {
+        client = await db.beginTransaction()
+        const latestSession = await db.getMostRecentSession(currentLocationId, client)
 
-      if (typeof latestSession !== 'undefined') {
-        // Checks if session exists
-        if (latestSession.end_time == null) {
-          // Checks if session is open for this location
-          const currentSession = await db.updateSessionState(latestSession.sessionid, currentState, client)
-          start_times[currentLocationId] = currentSession.start_time
+        if (typeof latestSession !== 'undefined') {
+          // Checks if session exists
+          if (latestSession.end_time == null) {
+            // Checks if session is open for this location
+            const currentSession = await db.updateSessionState(latestSession.sessionid, currentState, client)
+            start_times[currentLocationId] = currentSession.start_time
+          } else {
+            const currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client)
+            start_times[currentLocationId] = currentSession.start_time
+          }
         } else {
           const currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client)
           start_times[currentLocationId] = currentSession.start_time
         }
-      } else {
-        const currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client)
-        start_times[currentLocationId] = currentSession.start_time
+        await db.commitTransaction(client)
+      } catch (e) {
+        try {
+          await db.rollbackTransaction(client)
+          helpers.log(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
+        } catch (error) {
+          // Do nothing
+          helpers.log(`handleSensorRequest: Error rolling back transaction: ${e}`)
+        }
       }
-      await db.commitTransaction(client)
     } else if (CLOSINGSTATES.includes(currentState)) {
-      const client = await db.beginTransaction()
+      let client
+      try {
+        client = await db.beginTransaction()
 
-      const latestSession = await db.getMostRecentSession(currentLocationId, client)
-      await db.updateSessionState(latestSession.sessionid, currentState, client)
+        const latestSession = await db.getMostRecentSession(currentLocationId, client)
+        await db.updateSessionState(latestSession.sessionid, currentState, client)
 
-      await db.closeSession(latestSession.sessionid, client)
-      helpers.log(`Session at ${currentLocationId} was closed successfully.`)
-      start_times[currentLocationId] = null
-      await db.commitTransaction(client)
+        await db.closeSession(latestSession.sessionid, client)
+        helpers.log(`Session at ${currentLocationId} was closed successfully.`)
+        start_times[currentLocationId] = null
+        await db.commitTransaction(client)
+      } catch (e) {
+        try {
+          await db.rollbackTransaction(client)
+          helpers.log(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
+        } catch (error) {
+          // Do nothing
+          helpers.log(`handleSensorRequest: Error rolling back transaction: ${e}`)
+        }
+      }
     } else if (ALERTSTARTSTATES.includes(currentState)) {
       const latestSession = await db.getMostRecentSession(currentLocationId)
 

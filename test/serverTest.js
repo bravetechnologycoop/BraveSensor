@@ -245,6 +245,7 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+
       await db.createLocation(
         testLocation1Id,
         testLocation1PhoneNumber,
