@@ -7,8 +7,10 @@ const STATE = require('../SessionStateEnum.js')
 const OD_FLAG_STATE = require('../SessionStateODFlagEnum.js')
 const DOOR_STATE = require('../SessionStateDoorEnum.js')
 const StateMachine = require('../InnosentStateMachine.js')
+const Session = require('../Session.js')
+const Location = require('../Location.js')
 
-function setupDB(location_data = {}, session = {}, is_overdose_suspected = false) {
+function setupDB(location_data = new Location(), session = new Session(), is_overdose_suspected = false) {
   return {
     getLocationData() {
       return location_data
@@ -80,7 +82,10 @@ describe('test getNextState with Innosent state machine', () => {
       const movementThreshold = 5
       const doorDelay = 10
 
-      const db = setupDB({ mov_threshold: movementThreshold, door_stickiness_delay: doorDelay })
+      const initialLocation = new Location()
+      initialLocation.movThreshold = movementThreshold
+      initialLocation.doorStickinessDelay = doorDelay
+      const db = setupDB(initialLocation)
       const redis = setupRedis({ state: STATE.NO_PRESENCE_NO_SESSION }, { timestamp: moment().subtract(25, 'seconds') }, [
         { inPhase: 56, quadrature: 56 },
         { inPhase: 56, quadrature: 56 },
@@ -97,7 +102,10 @@ describe('test getNextState with Innosent state machine', () => {
       const movementThreshold = 5
       const doorDelay = 10
 
-      const db = setupDB({ mov_threshold: movementThreshold, door_stickiness_delay: doorDelay })
+      const initialLocation = new Location()
+      initialLocation.movThreshold = movementThreshold
+      initialLocation.doorStickinessDelay = doorDelay
+      const db = setupDB(initialLocation)
       const redis = setupRedis({ state: STATE.NO_PRESENCE_NO_SESSION }, { timestamp: moment().subtract(25, 'seconds') }, [
         { inPhase: -56, quadrature: -56 },
         { inPhase: -56, quadrature: -56 },
@@ -113,7 +121,10 @@ describe('test getNextState with Innosent state machine', () => {
     it('and the innosent detects movement and the innosent movement is more than the movement threshold, and less than 30 seconds have passed since the door status changed, should return the MOTION_DETECTED state', async () => {
       const initialState = STATE.NO_PRESENCE_NO_SESSION
       const movementThreshold = 5
-      const db = setupDB({ mov_threshold: movementThreshold })
+
+      const initialLocation = new Location()
+      initialLocation.movThreshold = movementThreshold
+      const db = setupDB(initialLocation)
       const redis = setupRedis({ state: STATE.NO_PRESENCE_NO_SESSION }, { timestamp: moment().subtract(25, 'seconds') }, [
         { inPhase: movementThreshold + 1 },
         { inPhase: movementThreshold + 1 },
@@ -129,7 +140,10 @@ describe('test getNextState with Innosent state machine', () => {
     it('and the innosent detects movement and the innosent movement is more than the movement threshold, should not change state', async () => {
       const initialState = STATE.NO_PRESENCE_NO_SESSION
       const movementThreshold = 5
-      const db = setupDB({ mov_threshold: movementThreshold })
+
+      const initialLocation = new Location()
+      initialLocation.movThreshold = movementThreshold
+      const db = setupDB(initialLocation)
 
       const redis = setupRedis({ state: initialState }, {}, [{ inPhase: movementThreshold + 1 }])
 
@@ -143,7 +157,10 @@ describe('test getNextState with Innosent state machine', () => {
     it(' and the innosent detects movement and the innosent movement is equal to the movement threshold, should not change state', async () => {
       const initialState = STATE.NO_PRESENCE_NO_SESSION
       const movementThreshold = 5
-      const db = setupDB({ state: initialState }, {}, [{ inPhase: movementThreshold }], {
+
+      const initialLocation = new Location()
+      initialLocation.state = initialState
+      const db = setupDB(initialLocation, new Session(), [{ inPhase: movementThreshold }], {
         mov_threshold: movementThreshold,
       })
       const redis = setupRedis({ state: initialState }, {}, [{ inPhase: movementThreshold }], {
@@ -160,7 +177,9 @@ describe('test getNextState with Innosent state machine', () => {
     it(' and the innosent detects movement and the innosent movement is less than the movement threshold, should not change state', async () => {
       const initialState = STATE.NO_PRESENCE_NO_SESSION
       const movementThreshold = 5
-      const db = setupDB({ mov_threshold: movementThreshold })
+      const initialLocation = new Location()
+      initialLocation.movThreshold = movementThreshold
+      const db = setupDB(initialLocation)
       const redis = setupRedis({ state: initialState }, {}, [{ inPhase: movementThreshold - 1 }])
       const statemachine = new StateMachine('TestLocation')
 
@@ -200,7 +219,9 @@ describe('test getNextState with Innosent state machine', () => {
   describe('when initial state is MOVEMENT', () => {
     it('and the session does not already suspect an overdose and an overdose is suspected, should return the SUSPECTED_OD state', async () => {
       const initialState = STATE.MOVEMENT
-      const db = setupDB({}, { od_flag: OD_FLAG_STATE.NO_OVERDOSE }, true)
+      const initialSession = new Session()
+      initialSession.odFlag = OD_FLAG_STATE.NO_OVERDOSE
+      const db = setupDB(new Location(), initialSession, true)
       const redis = setupRedis({ state: initialState }, {}, [{}])
       const statemachine = new StateMachine('TestLocation')
 
@@ -211,7 +232,9 @@ describe('test getNextState with Innosent state machine', () => {
 
     it('and the session already suspects an overdose and an overdose is suspected, should not change state', async () => {
       const initialState = STATE.MOVEMENT
-      const db = setupDB({}, { od_flag: OD_FLAG_STATE.OVERDOSE }, true)
+      const initialSession = new Session()
+      initialSession.odFlag = OD_FLAG_STATE.OVERDOSE
+      const db = setupDB(new Location(), initialSession, true)
       const redis = setupRedis({ state: initialState }, {}, [{}])
       const statemachine = new StateMachine('TestLocation')
 
@@ -245,7 +268,9 @@ describe('test getNextState with Innosent state machine', () => {
 
     it('and the door opens and the session does not already suspect an overdose and an overdose is not suspected, should return DOOR_OPEN_CLOSE state', async () => {
       const initialState = STATE.MOVEMENT
-      const db = setupDB({}, { od_flag: OD_FLAG_STATE.NO_OVERDOSE }, false)
+      const initialSession = new Session()
+      initialSession.odFlag = OD_FLAG_STATE.NO_OVERDOSE
+      const db = setupDB(new Location(), initialSession, false)
       const redis = setupRedis({ state: initialState }, { signal: DOOR_STATE.OPEN }, [{}], {}, { od_flag: OD_FLAG_STATE.NO_OVERDOSE }, false)
       const statemachine = new StateMachine('TestLocation')
 

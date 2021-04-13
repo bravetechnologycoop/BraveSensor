@@ -28,10 +28,10 @@ class BraveAlerterConfigurator {
 
     const alertSession = new AlertSession(
       session.sessionid,
-      session.chatbot_state,
-      session.incidenttype,
+      session.chatbotState,
+      session.incidentType,
       undefined,
-      `An alert to check on the washroom at ${locationData.display_name} was not responded to. Please check on it`,
+      `An alert to check on the washroom at ${locationData.displayName} was not responded to. Please check on it`,
       locationData.phonenumber,
       incidentTypeKeys,
       incidentTypes,

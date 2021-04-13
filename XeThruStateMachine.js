@@ -18,8 +18,8 @@ class XeThruStateMachine {
     const xethru = xethru_history[0]
     const door = await redis.getLatestDoorSensorData(this.location)
     const states = await redis.getLatestLocationStatesData(this.location)
-    const DOOR_THRESHOLD_MILLIS = locationData.door_stickiness_delay
-    const residual_mov_f = locationData.mov_threshold
+    const DOOR_THRESHOLD_MILLIS = locationData.doorStickinessDelay
+    const residual_mov_f = locationData.movThreshold
     const currentTime = moment()
     const latestDoor = moment(door.timestamp, 'x')
     const doorDelay = currentTime.diff(latestDoor)
@@ -102,7 +102,7 @@ class XeThruStateMachine {
           break
         case STATE.MOVEMENT:
           // eslint-disable-next-line eqeqeq
-          if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+          if (door.signal == DOOR_STATE.OPEN && session.odFlag == OD_FLAG_STATE.NO_OVERDOSE) {
             state = STATE.DOOR_OPENED_CLOSE
           }
           // if in breathing state, change to that state
@@ -115,14 +115,14 @@ class XeThruStateMachine {
           }
 
           // eslint-disable-next-line eqeqeq
-          if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, locationData))) {
+          if (session.odFlag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, locationData))) {
             state = STATE.SUSPECTED_OD
           }
 
           break
         case STATE.STILL:
           // eslint-disable-next-line eqeqeq
-          if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+          if (door.signal == DOOR_STATE.OPEN && session.odFlag == OD_FLAG_STATE.NO_OVERDOSE) {
             state = STATE.DOOR_OPENED_CLOSE
             // eslint-disable-next-line eqeqeq
           } else if (xethru.state == XETHRU_STATE.BREATHING) {
@@ -132,14 +132,14 @@ class XeThruStateMachine {
           }
 
           // eslint-disable-next-line eqeqeq
-          if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, locationData))) {
+          if (session.odFlag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, locationData))) {
             state = STATE.SUSPECTED_OD
           }
 
           break
         case STATE.BREATH_TRACKING:
           // eslint-disable-next-line eqeqeq
-          if (door.signal == DOOR_STATE.OPEN && session.od_flag == OD_FLAG_STATE.NO_OVERDOSE) {
+          if (door.signal == DOOR_STATE.OPEN && session.odFlag == OD_FLAG_STATE.NO_OVERDOSE) {
             state = STATE.DOOR_OPENED_CLOSE
             // eslint-disable-next-line eqeqeq
           } else if (xethru.state != XETHRU_STATE.BREATHING && xethru.mov_f == 0) {
@@ -153,7 +153,7 @@ class XeThruStateMachine {
 
           // If the flag was originally false and the overdose criteria are met, an overdose is ssuspected and the flag is enabled.
           // eslint-disable-next-line eqeqeq
-          if (session.od_flag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, locationData))) {
+          if (session.odFlag == OD_FLAG_STATE.NO_OVERDOSE && (await db.isOverdoseSuspected(xethru, session, locationData))) {
             state = STATE.SUSPECTED_OD
           }
 
