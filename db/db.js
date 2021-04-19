@@ -51,12 +51,12 @@ async function rollbackTransaction(client) {
   try {
     await client.query('ROLLBACK')
   } catch (e) {
-    helpers.log(`Error running the rollbackTransaction query: ${e}`)
+    helpers.logError(`Error running the rollbackTransaction query: ${e}`)
   } finally {
     try {
       client.release()
     } catch (err) {
-      helpers.log(`rollbackTransaction: Error releasing client: ${err}`)
+      helpers.logError(`rollbackTransaction: Error releasing client: ${err}`)
     }
   }
 }
@@ -72,13 +72,13 @@ async function runQuery(functionName, queryString, queryParams, clientParam) {
 
     return await client.query(queryString, queryParams)
   } catch (e) {
-    helpers.log(`Error running the ${functionName} query: ${e}`)
+    helpers.logError(`Error running the ${functionName} query: ${e}`)
   } finally {
     if (!transactionMode) {
       try {
         client.release()
       } catch (err) {
-        helpers.log(`${functionName}: Error releasing client: ${err}`)
+        helpers.logError(`${functionName}: Error releasing client: ${err}`)
       }
     }
   }
@@ -350,7 +350,7 @@ async function isOverdoseSuspectedInnosent(session, location, clientParam) {
 
     return false
   } catch (e) {
-    helpers.log(`Error running isOverdoseSuspected: ${e}`)
+    helpers.logError(`Error running isOverdoseSuspected: ${e}`)
   }
 }
 
@@ -414,7 +414,7 @@ async function isOverdoseSuspected(xethru, session, location, clientParam) {
     }
     return false
   } catch (e) {
-    helpers.log(`Error running isOverdoseSuspectedInnosent: ${e}`)
+    helpers.logError(`Error running isOverdoseSuspectedInnosent: ${e}`)
   }
 }
 
@@ -457,7 +457,7 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
       clientParam,
     )
     if (results === undefined) {
-      helpers.log('Error: No location with associated coreID exists')
+      helpers.logError('Error: No location with associated coreID exists')
       return null
     }
 

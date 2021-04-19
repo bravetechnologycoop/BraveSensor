@@ -140,10 +140,10 @@ async function autoResetSession(locationid) {
     helpers.log('Could not reset open session')
     try {
       await db.rollbackTransaction(client)
-      helpers.log(`autoResetSession: Rolled back transaction because of error: ${e}`)
+      helpers.logError(`autoResetSession: Rolled back transaction because of error: ${e}`)
     } catch (error) {
       // Do nothing
-      helpers.log(`autoResetSession: Error rolling back transaction: ${e}`)
+      helpers.logError(`autoResetSession: Error rolling back transaction: ${e}`)
     }
   }
 }
@@ -208,25 +208,29 @@ async function checkHeartbeat() {
   for (const location of locations) {
     let latestRadar
     // Query raw sensor data to transmit to the FrontEnd
-    if (location.radarType === RADAR_TYPE.XETHRU) {
-      const xeThruData = await redis.getLatestXeThruSensorData(location.locationid)
-      latestRadar = moment(xeThruData.timestamp, 'x')
-    } else if (location.radarType === RADAR_TYPE.INNOSENT) {
-      const innosentData = await redis.getLatestInnosentSensorData(location.locationid)
-      latestRadar = moment(innosentData.timestamp, 'x')
-    }
-    // Check the XeThru Heartbeat
-    const currentTime = moment()
-    const radarDelay = currentTime.diff(latestRadar)
+    try {
+      if (location.radarType === RADAR_TYPE.XETHRU) {
+        const xeThruData = await redis.getLatestXeThruSensorData(location.locationid)
+        latestRadar = moment(xeThruData.timestamp, 'x')
+      } else if (location.radarType === RADAR_TYPE.INNOSENT) {
+        const innosentData = await redis.getLatestInnosentSensorData(location.locationid)
+        latestRadar = moment(innosentData.timestamp, 'x')
+      }
+      // Check the XeThru Heartbeat
+      const currentTime = moment()
+      const radarDelay = currentTime.diff(latestRadar)
 
-    if (radarDelay > RADAR_THRESHOLD_MILLIS && !location.heartbeatSentAlerts) {
-      helpers.log(`Radar Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
-      await db.updateSentAlerts(location.locationid, true)
-      sendAlerts(location.locationid)
-    } else if (radarDelay < RADAR_THRESHOLD_MILLIS && location.heartbeatSentAlerts) {
-      helpers.log(`Radar at ${location.locationid} reconnected`)
-      await db.updateSentAlerts(location.locationid, false)
-      sendReconnectionMessage(location.locationid)
+      if (radarDelay > RADAR_THRESHOLD_MILLIS && !location.heartbeatSentAlerts) {
+        helpers.logSentry(`Radar Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+        await db.updateSentAlerts(location.locationid, true)
+        sendAlerts(location.locationid)
+      } else if (radarDelay < RADAR_THRESHOLD_MILLIS && location.heartbeatSentAlerts) {
+        helpers.logSentry(`Radar at ${location.locationid} reconnected`)
+        await db.updateSentAlerts(location.locationid, false)
+        sendReconnectionMessage(location.locationid)
+      }
+    } catch (err) {
+      helpers.logError(`Error checking heartbeat: ${err}`)
     }
   }
 }
@@ -260,7 +264,7 @@ async function handleSensorRequest(currentLocationId, radarType) {
       const now = new Date(await db.getCurrentTime())
       sessionDuration = (now - start_time_sesh) / 1000
     } catch (e) {
-      helpers.log(`Error running getCurrentTime: e`)
+      helpers.logError(`Error running getCurrentTime: ${e}`)
     }
   }
 
@@ -297,10 +301,10 @@ async function handleSensorRequest(currentLocationId, radarType) {
       } catch (e) {
         try {
           await db.rollbackTransaction(client)
-          helpers.log(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
+          helpers.logError(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
         } catch (error) {
           // Do nothing
-          helpers.log(`handleSensorRequest: Error rolling back transaction: ${e}`)
+          helpers.logError(`handleSensorRequest: Error rolling back transaction: ${e}`)
         }
       }
     } else if (TRIGGERSTATES.includes(currentState)) {
@@ -327,10 +331,10 @@ async function handleSensorRequest(currentLocationId, radarType) {
       } catch (e) {
         try {
           await db.rollbackTransaction(client)
-          helpers.log(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
+          helpers.logError(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
         } catch (error) {
           // Do nothing
-          helpers.log(`handleSensorRequest: Error rolling back transaction: ${e}`)
+          helpers.logError(`handleSensorRequest: Error rolling back transaction: ${e}`)
         }
       }
     } else if (CLOSINGSTATES.includes(currentState)) {
@@ -348,10 +352,10 @@ async function handleSensorRequest(currentLocationId, radarType) {
       } catch (e) {
         try {
           await db.rollbackTransaction(client)
-          helpers.log(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
+          helpers.logError(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
         } catch (error) {
           // Do nothing
-          helpers.log(`handleSensorRequest: Error rolling back transaction: ${e}`)
+          helpers.logError(`handleSensorRequest: Error rolling back transaction: ${e}`)
         }
       }
     } else if (ALERTSTARTSTATES.includes(currentState)) {
@@ -468,7 +472,7 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
   } catch (err) {
-    helpers.log(err)
+    helpers.logError(err)
     res.status(500).send()
   }
 })
@@ -485,7 +489,7 @@ app.get('/locations/new', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(newLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
-    helpers.log(err)
+    helpers.logError(err)
     res.status(500).send()
   }
 })
@@ -526,7 +530,7 @@ app.get('/locations/:locationId', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(locationsDashboardTemplate, viewParams, { nav: navPartial, css: locationsCSSPartial }))
   } catch (err) {
-    helpers.log(err)
+    helpers.logError(err)
     res.status(500).send()
   }
 })
@@ -552,7 +556,7 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
-    helpers.log(err)
+    helpers.logError(err)
     res.status(500).send()
   }
 })
@@ -595,11 +599,11 @@ app.post(
 
         res.redirect(`/locations/${data.locationid}`)
       } else {
-        helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+        helpers.logError(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
         res.status(400).send(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
       }
     } catch (err) {
-      helpers.log(err)
+      helpers.logError(err)
       res.status(500).send()
     }
   },
@@ -667,11 +671,11 @@ app.post(
 
         res.redirect(`/locations/${data.locationid}`)
       } else {
-        helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+        helpers.logError(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
         res.status(400).send(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
       }
     } catch (err) {
-      helpers.log(err)
+      helpers.logError(err)
       res.status(500).send()
     }
   },
@@ -692,11 +696,11 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
       await handleSensorRequest(locationid, RADAR_TYPE.XETHRU)
       res.status(200).json('OK')
     } else {
-      helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+      helpers.logError(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
       res.status(400).send()
     }
   } catch (err) {
-    helpers.log(err)
+    helpers.logError(err)
     res.status(500).send()
   }
 })
@@ -721,7 +725,7 @@ app.post(
         const coreId = request.body.coreid
         const location = await db.getLocationFromParticleCoreID(coreId)
         if (!location) {
-          helpers.log(`Error - no location matches the coreID ${coreId}`)
+          helpers.logError(`Error - no location matches the coreID ${coreId}`)
           response.status(400).json('No location for CoreID')
         } else {
           const locationid = location.locationid
@@ -733,11 +737,11 @@ app.post(
           response.status(200).json('OK')
         }
       } else {
-        helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+        helpers.logError(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
         response.status(400).send()
       }
     } catch (err) {
-      helpers.log(err)
+      helpers.logError(err)
       response.status(500).send()
     }
   },
@@ -751,7 +755,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
       const location = await db.getLocationFromParticleCoreID(coreId)
 
       if (!location) {
-        helpers.log(`Error - no location matches the coreID ${coreId}`)
+        helpers.logError(`Error - no location matches the coreID ${coreId}`)
         response.status(400).json('No location for CoreID')
       } else {
         const locationid = location.locationid
@@ -766,6 +770,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
           doorSignal = SESSIONSTATE_DOOR.CLOSED
         } else if (signal === IM21_DOOR_STATUS.LOW_BATT) {
           doorSignal = 'LowBatt'
+          helpers.logSentry(`Received a low battery alert for ${locationid}: ${message}`)
         } else if (signal === IM21_DOOR_STATUS.HEARTBEAT_OPEN || signal === IM21_DOOR_STATUS.HEARTBEAT_CLOSED) {
           doorSignal = 'HeartBeat'
         }
@@ -775,11 +780,11 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         response.status(200).json('OK')
       }
     } else {
-      helpers.log(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+      helpers.logError(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
       response.status(400).send()
     }
   } catch (err) {
-    helpers.log(err)
+    helpers.logError(err)
     response.status(500).send()
   }
 })
@@ -807,7 +812,7 @@ app.post(
         const location = await db.getLocationFromParticleCoreID(coreId)
 
         if (!location) {
-          helpers.log(`Error - no location matches the coreID ${coreId}`)
+          helpers.logError(`Error - no location matches the coreID ${coreId}`)
           response.status(400).json('No location for CoreID')
         } else {
           const data = JSON.parse(request.body.data)
@@ -818,11 +823,11 @@ app.post(
           response.status(200).json('OK')
         }
       } else {
-        helpers.log(`Bad request, invalid parameters ${JSON.stringify(validationErrors)}`)
+        helpers.logError(`Bad request, invalid parameters ${JSON.stringify(validationErrors)}`)
         response.status(400).send()
       }
     } catch (err) {
-      helpers.log(err)
+      helpers.logError(err)
       response.status(500).send()
     }
   },
@@ -856,7 +861,7 @@ app.post('/smokeTest/setup', async (request, response) => {
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
     response.status(200).send()
   } catch (error) {
-    helpers.log(`Smoke test setup error: ${error}`)
+    helpers.logError(`Smoke test setup error: ${error}`)
   }
 })
 
@@ -867,7 +872,7 @@ app.post('/smokeTest/teardown', async (request, response) => {
     await redis.addStateMachineData('Reset', 'SmokeTestLocation')
     response.status(200).send()
   } catch (error) {
-    helpers.log(`Smoke test setup error: ${error}`)
+    helpers.logError(`Smoke test setup error: ${error}`)
   }
 })
 
@@ -877,6 +882,7 @@ if (helpers.isTestEnvironment()) {
   // local http server for testing
   server = app.listen(8000)
 } else {
+  helpers.setupSentry(app, helpers.getEnvVar('SENTRY_DSN'), helpers.getEnvVar('ENVIRONMENT'), helpers.getEnvVar('RELEASE'))
   const httpsOptions = {
     key: fs.readFileSync(`/etc/brave/ssl/tls.key`),
     cert: fs.readFileSync(`/etc/brave/ssl/tls.crt`),
