@@ -70,7 +70,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 ### Smoke testing
 
-1. Run `ssh brave@odetect-admin.brave.coop`
+1. Run `ssh brave@sensors-admin.brave.coop`
 
 1. cd into the ~/BraveSensor-Server directory and run `git pull origin master` to get the latest version of the helm chart
 
@@ -86,7 +86,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 # Deploying to the staging or development environment
 
-1. Run `ssh brave@odetect-admin.brave.coop`
+1. Run `ssh brave@sensors-admin.brave.coop`
 
 1. cd into the ~/BraveSensor-Server directory
 
@@ -200,24 +200,24 @@ Reference: https://docs.travis-ci.com/user/environment-variables/#encrypting-env
 
 1. Delete your personal access token from GitHub
 
-# ODetect Admin Server
+# Sensors Admin Server
 
-The ODetect Admin server is used for both **dev** and **prod**.
+The Sensors Admin server is used for both **dev** and **prod**.
 
-To ssh onto the `odetect-admin` server
+To ssh onto the `sensors-admin` server
 
 ```
-ssh brave@odetect-admin.brave.coop
+ssh brave@sensors-admin.brave.coop
 ```
 
-The `sudo` password is on 1Password --> ODetect Credentials --> Login - odetect-admin
+The `sudo` password is on 1Password --> ODetect Credentials --> Login - sensors-admin
 (cluster management) server.
 
 ## Adding public keys to the admin server
 
 Access is restricted to machines whose public key has been added to the server's allowlist.
 
-1. Using an account that can, SSH onto the `odetect-admin` server
+1. Using an account that can, SSH onto the `sensors-admin` server
 
 1. Paste the user's public key onto a new line on the `~/.ssh/authorized_keys` file from a machine that is already capable of accessing the server
 

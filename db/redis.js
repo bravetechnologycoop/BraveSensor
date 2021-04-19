@@ -94,7 +94,7 @@ async function addInnosentRadarSensorData(locationid, inPhase, quadrature) {
     pipeline.xadd(`innosent:${locationid}`, '*', 'inPhase', inPhaseArray[i], 'quadrature', quadratureArray[i])
   }
   await pipeline.exec(err => {
-    helpers.log(err)
+    helpers.logError(err)
   })
 }
 

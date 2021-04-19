@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Tracking errors and outages with Sentry (CU-px7k6e)
+
 ## [3.2.0] - 2021-04-26
 
 ### Changed

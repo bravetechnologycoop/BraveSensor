@@ -609,7 +609,7 @@ describe('Brave Sensor server', () => {
 
       describe('for a request that contains all valid fields, but empty', () => {
         beforeEach(async () => {
-          sinon.stub(helpers, 'log')
+          sinon.stub(helpers, 'logError')
           sinon.spy(db, 'createLocationFromBrowserForm')
 
           this.agent = chai.request.agent(server)
@@ -633,7 +633,7 @@ describe('Brave Sensor server', () => {
         })
 
         afterEach(async () => {
-          helpers.log.restore()
+          helpers.logError.restore()
           db.createLocationFromBrowserForm.restore()
 
           this.agent.close()
@@ -648,7 +648,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should log the error', () => {
-          expect(helpers.log).to.have.been.calledWith(
+          expect(helpers.logError).to.have.been.calledWith(
             // eslint-disable-next-line no-useless-escape
             `Bad request, parameters missing {\"errors\":[{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"locationid\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"}]}`,
           )
@@ -657,7 +657,7 @@ describe('Brave Sensor server', () => {
 
       describe('for an empty request', () => {
         beforeEach(async () => {
-          sinon.stub(helpers, 'log')
+          sinon.stub(helpers, 'logError')
           sinon.spy(db, 'createLocationFromBrowserForm')
 
           this.agent = chai.request.agent(server)
@@ -671,7 +671,7 @@ describe('Brave Sensor server', () => {
         })
 
         afterEach(() => {
-          helpers.log.restore()
+          helpers.logError.restore()
           db.createLocationFromBrowserForm.restore()
 
           this.agent.close()
@@ -686,7 +686,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should log the error', () => {
-          expect(helpers.log).to.have.been.calledWith(
+          expect(helpers.logError).to.have.been.calledWith(
             // eslint-disable-next-line no-useless-escape
             `Bad request, parameters missing {\"errors\":[{\"msg\":\"Invalid value\",\"param\":\"locationid\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"}]}`,
           )
@@ -768,6 +768,7 @@ describe('Brave Sensor server', () => {
     describe('POST /locations/:locationId', () => {
       beforeEach(async () => {
         sinon.stub(helpers, 'log')
+        sinon.stub(helpers, 'logError')
         sinon.spy(db, 'updateLocation')
 
         this.testLocationIdForEdit = 'test1'
@@ -798,6 +799,7 @@ describe('Brave Sensor server', () => {
 
       afterEach(async () => {
         helpers.log.restore()
+        helpers.logError.restore()
         db.updateLocation.restore()
 
         await db.clearLocations()
@@ -959,7 +961,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should log the error', () => {
-          expect(helpers.log).to.have.been.calledWith(
+          expect(helpers.logError).to.have.been.calledWith(
             // eslint-disable-next-line no-useless-escape
             `Bad request, parameters missing {\"errors\":[{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"fallbackPhones\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"heartbeatPhone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"sensitivity\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"led\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"noiseMap\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"movThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"rpmThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"durationThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"stillThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"autoResetThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"doorDelay\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"reminderTimer\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"fallbackTimer\",\"location\":\"body\"}]}`,
           )
@@ -991,7 +993,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should log the error', () => {
-          expect(helpers.log).to.have.been.calledWith(
+          expect(helpers.logError).to.have.been.calledWith(
             // eslint-disable-next-line no-useless-escape
             `Bad request, parameters missing {\"errors\":[{\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"fallbackPhones\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"heartbeatPhone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"sensitivity\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"led\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"noiseMap\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"movThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"rpmThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"durationThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"stillThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"autoResetThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"doorDelay\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"reminderTimer\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"fallbackTimer\",\"location\":\"body\"}]}`,
           )

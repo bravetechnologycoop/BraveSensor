@@ -82,10 +82,10 @@ class BraveAlerterConfigurator {
     } catch (e) {
       try {
         await db.rollbackTransaction(client)
-        helpers.log(`alertSessionChangedCallback: Rolled back transaction because of error: ${e}`)
+        helpers.logError(`alertSessionChangedCallback: Rolled back transaction because of error: ${e}`)
       } catch (error) {
         // Do nothing
-        helpers.log(`alertSessionChangedCallback: Error rolling back transaction: ${e}`)
+        helpers.logError(`alertSessionChangedCallback: Error rolling back transaction: ${e}`)
       }
     }
   }
