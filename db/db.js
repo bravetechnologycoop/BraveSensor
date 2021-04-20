@@ -539,10 +539,10 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, phonenumber, twilioNumber, clientParam) {
+async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, phonenumber, twilioNumber, apiKey, clientParam) {
   try {
     await runQuery('createLocationFromBrowserForm',
-      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, phonenumber, twilio_number) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, phonenumber, twilio_number, api_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
       [
         locationid,
         displayName,
@@ -551,6 +551,7 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
         radarType,
         phonenumber,
         twilioNumber,
+        apiKey,
       ],
       clientParam,
     )
