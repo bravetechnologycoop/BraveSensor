@@ -7,7 +7,7 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 
 // In-house dependencies
-const { ALERT_STATE, AlertSession, helpers } = require('brave-alert-lib')
+const { ALERT_STATE, AlertSession, helpers, Location, SYSTEM } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../BraveAlerterConfigurator.js')
 const db = require('../db/db.js')
 const redis = require('../db/redis.js')
@@ -76,6 +76,7 @@ describe('BraveAlerterConfigurator', () => {
         1,
         1,
         1,
+        'apiKey',
       )
       const locationId = (await db.getLocations())[0].locationid
 
@@ -140,6 +141,7 @@ describe('BraveAlerterConfigurator', () => {
         1,
         1,
         1,
+        'apiKey',
       )
       const locationId = (await db.getLocations())[0].locationid
 
@@ -310,6 +312,59 @@ describe('BraveAlerterConfigurator', () => {
       it('should reset redis for this location', () => {
         expect(redis.addStateMachineData).to.be.calledWith('Reset', this.testLocationId)
       })
+    })
+  })
+
+  describe('getLocationByApiKey', () => {
+    beforeEach(async () => {
+      await db.clearLocations()
+
+      this.expectedLocationDisplayName = 'TEST LOCATION'
+
+      // Insert a location in the DB
+      await db.createLocation(
+        'locationID',
+        '+17772225555',
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        '+3336661234',
+        [],
+        1,
+        this.expectedLocationDisplayName,
+        'DoorCoreId',
+        'RadarCoreId',
+        'XeThru',
+        1,
+        1,
+        1,
+        1,
+        'myApiKey',
+      )
+    })
+
+    afterEach(async () => {
+      await db.clearLocations()
+    })
+
+    it('given a API key that matches a single location should return a BraveAlertLib Location object with the values from that location', async () => {
+      const expectedLocation = new Location(this.expectedLocationDisplayName, SYSTEM.SENSOR)
+
+      const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+      const actualLocation = await braveAlerterConfigurator.getLocationByApiKey('myApiKey')
+
+      expect(actualLocation).to.eql(expectedLocation)
+    })
+
+    it('given a API key that does not match any locations should return null', async () => {
+      const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+      const actualLocation = await braveAlerterConfigurator.getLocationByApiKey('notARealApiKey')
+
+      expect(actualLocation).to.be.null
     })
   })
 

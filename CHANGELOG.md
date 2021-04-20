@@ -14,6 +14,7 @@ the code was deployed.
 ### Added
 
 - Tracking errors and outages with Sentry (CU-px7k6e)
+- API Key for locations (CU-hjwazd)
 
 ## [3.2.0] - 2021-04-26
 
@@ -24,6 +25,10 @@ the code was deployed.
 ### Added
 
 - Ability to have multiple fallback phone numbers (CU-pv8hd5)
+
+### Changed
+
+- More consistent DB interactions (CU-kry5t5)
 
 ### Fixed
 

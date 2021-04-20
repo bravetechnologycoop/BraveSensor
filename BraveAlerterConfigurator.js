@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this */
 // In-house dependencies
-const { BraveAlerter, AlertSession, ALERT_STATE, helpers } = require('brave-alert-lib')
+const { BraveAlerter, AlertSession, ALERT_STATE, helpers, Location, SYSTEM } = require('brave-alert-lib')
 const db = require('./db/db.js')
 const redis = require('./db/redis.js')
 
@@ -18,6 +18,7 @@ class BraveAlerterConfigurator {
       this.getAlertSession.bind(this),
       this.getAlertSessionByPhoneNumber.bind(this),
       this.alertSessionChangedCallback.bind(this),
+      this.getLocationByApiKey.bind(this),
       false,
       this.getReturnMessage.bind(this),
     )
@@ -88,6 +89,18 @@ class BraveAlerterConfigurator {
         helpers.logError(`alertSessionChangedCallback: Error rolling back transaction: ${e}`)
       }
     }
+  }
+
+  async getLocationByApiKey(apiKey) {
+    const locations = await db.getLocationsFromApiKey(apiKey)
+
+    if (!locations || locations.length === 0) {
+      return null
+    }
+
+    // Even if there is more than one matching location, we only return one and it will
+    // be used by the Alert App to indentify this location
+    return new Location(locations[0].displayName, SYSTEM.SENSOR)
   }
 
   getReturnMessage(fromAlertState, toAlertState) {

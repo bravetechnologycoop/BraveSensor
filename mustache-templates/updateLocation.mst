@@ -148,6 +148,12 @@
                         <input type="text" class="form-control" name="fallbackTimer" placeholder="Fallback Message Timer (milliseconds)" value="{{fallbackTimer}}" required>
                     </div>
                 </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="apiKey" class="col-sm-3 col-form-label">API key:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="apiKey" placeholder="API Key" value="{{apiKey}}" required>
+                    </div>
+                </div>
                 <br>
                 <button type="submit" class="btn btn-primary btn-large">Submit</button>
               </form>
