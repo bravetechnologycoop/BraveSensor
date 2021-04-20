@@ -565,7 +565,10 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 
 app.post(
   '/locations',
-  Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'phone', 'twilioPhone']).notEmpty(),
+  [
+    Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'phone', 'twilioPhone']).notEmpty(),
+    Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['apiKey']).notEmpty()]),
+  ],
   async (req, res) => {
     try {
       if (!req.session.user || !req.cookies.user_sid) {
@@ -595,6 +598,7 @@ app.post(
           data.radarType,
           data.phone,
           data.twilioPhone,
+          data.apiKey,
         )
 
         res.redirect(`/locations/${data.locationid}`)
@@ -611,28 +615,29 @@ app.post(
 
 app.post(
   '/locations/:locationId',
-  Validator.body([
-    'displayName',
-    'doorCoreID',
-    'radarCoreID',
-    'radarType',
-    'phone',
-    'fallbackPhones',
-    'heartbeatPhone',
-    'twilioPhone',
-    'sensitivity',
-    'led',
-    'noiseMap',
-    'movThreshold',
-    'rpmThreshold',
-    'durationThreshold',
-    'stillThreshold',
-    'autoResetThreshold',
-    'doorDelay',
-    'reminderTimer',
-    'fallbackTimer',
-    'apiKey',
-  ]).notEmpty(),
+  [
+    Validator.body([
+      'displayName',
+      'doorCoreID',
+      'radarCoreID',
+      'radarType',
+      'fallbackPhones',
+      'heartbeatPhone',
+      'twilioPhone',
+      'sensitivity',
+      'led',
+      'noiseMap',
+      'movThreshold',
+      'rpmThreshold',
+      'durationThreshold',
+      'stillThreshold',
+      'autoResetThreshold',
+      'doorDelay',
+      'reminderTimer',
+      'fallbackTimer',
+    ]).notEmpty(),
+    Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['apiKey']).notEmpty()]),
+  ],
   async (req, res) => {
     try {
       if (!req.session.user || !req.cookies.user_sid) {
@@ -647,12 +652,15 @@ app.post(
         const data = req.body
         data.locationid = req.params.locationId
 
+        const newApiKey = data.apiKey && data.apiKey.trim() !== '' ? data.apiKey : null
+        const newPhone = data.phone && data.phone.trim() !== '' ? data.phone : null
+
         await db.updateLocation(
           data.displayName,
           data.doorCoreID,
           data.radarCoreID,
           data.radarType,
-          data.phone,
+          newPhone,
           data.fallbackPhones.split(','),
           data.heartbeatPhone,
           data.twilioPhone,
@@ -667,7 +675,7 @@ app.post(
           data.doorDelay,
           data.reminderTimer,
           data.fallbackTimer,
-          data.apiKey,
+          newApiKey,
           data.locationid,
         )
 
