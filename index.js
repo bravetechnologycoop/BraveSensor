@@ -631,6 +631,7 @@ app.post(
     'doorDelay',
     'reminderTimer',
     'fallbackTimer',
+    'apiKey',
   ]).notEmpty(),
   async (req, res) => {
     try {
@@ -666,6 +667,7 @@ app.post(
           data.doorDelay,
           data.reminderTimer,
           data.fallbackTimer,
+          data.apiKey,
           data.locationid,
         )
 
@@ -857,6 +859,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       0,
       2,
       8,
+      'apiKey',
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
     response.status(200).send()
