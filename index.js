@@ -566,7 +566,7 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 app.post(
   '/locations',
   [
-    Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'phone', 'twilioPhone']).notEmpty(),
+    Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'twilioPhone']).notEmpty(),
     Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['apiKey']).notEmpty()]),
   ],
   async (req, res) => {
@@ -577,7 +577,7 @@ app.post(
         return
       }
 
-      const validationErrors = Validator.validationResult(req)
+      const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
       if (validationErrors.isEmpty()) {
         const allLocations = await db.getLocations()
@@ -603,8 +603,9 @@ app.post(
 
         res.redirect(`/locations/${data.locationid}`)
       } else {
-        helpers.logError(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-        res.status(400).send(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+        const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
+        helpers.logError(errorMessage)
+        res.status(400).send(errorMessage)
       }
     } catch (err) {
       helpers.logError(err)
@@ -646,7 +647,7 @@ app.post(
         return
       }
 
-      const validationErrors = Validator.validationResult(req)
+      const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
       if (validationErrors.isEmpty()) {
         const data = req.body
@@ -681,8 +682,9 @@ app.post(
 
         res.redirect(`/locations/${data.locationid}`)
       } else {
-        helpers.logError(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-        res.status(400).send(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
+        const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
+        helpers.logError(errorMessage)
+        res.status(400).send(errorMessage)
       }
     } catch (err) {
       helpers.logError(err)
@@ -697,7 +699,7 @@ app.use(braveAlerter.getRouter())
 // Handler for incoming XeThru POST requests
 app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', 'mov_s']).exists(), async (req, res) => {
   try {
-    const validationErrors = Validator.validationResult(req)
+    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
       const { locationid, state, rpm, distance, mov_f, mov_s } = req.body
@@ -706,8 +708,9 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
       await handleSensorRequest(locationid, RADAR_TYPE.XETHRU)
       res.status(200).json('OK')
     } else {
-      helpers.logError(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-      res.status(400).send()
+      const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
+      helpers.logError(errorMessage)
+      res.status(400).send(errorMessage)
     }
   } catch (err) {
     helpers.logError(err)
@@ -730,13 +733,15 @@ app.post(
     .withMessage('missing radar values, check for firmware or device integration errors'),
   async (request, response) => {
     try {
-      const validationErrors = Validator.validationResult(request)
+      const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
+
       if (validationErrors.isEmpty()) {
         const coreId = request.body.coreid
         const location = await db.getLocationFromParticleCoreID(coreId)
         if (!location) {
-          helpers.logError(`Error - no location matches the coreID ${coreId}`)
-          response.status(400).json('No location for CoreID')
+          const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
+          helpers.logError(errorMessage)
+          response.status(400).json(errorMessage)
         } else {
           const locationid = location.locationid
           const data = JSON.parse(request.body.data)
@@ -747,8 +752,9 @@ app.post(
           response.status(200).json('OK')
         }
       } else {
-        helpers.logError(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-        response.status(400).send()
+        const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
+        helpers.logError(errorMessage)
+        response.status(400).send(errorMessage)
       }
     } catch (err) {
       helpers.logError(err)
@@ -759,14 +765,16 @@ app.post(
 
 app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (request, response) => {
   try {
-    const validationErrors = Validator.validationResult(request)
+    const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
+
     if (validationErrors.isEmpty()) {
       const coreId = request.body.coreid
       const location = await db.getLocationFromParticleCoreID(coreId)
 
       if (!location) {
-        helpers.logError(`Error - no location matches the coreID ${coreId}`)
-        response.status(400).json('No location for CoreID')
+        const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
+        helpers.logError(errorMessage)
+        response.status(400).json(errorMessage)
       } else {
         const locationid = location.locationid
         const radarType = location.radarType
@@ -790,8 +798,9 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         response.status(200).json('OK')
       }
     } else {
-      helpers.logError(`Bad request, parameters missing ${JSON.stringify(validationErrors)}`)
-      response.status(400).send()
+      const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
+      helpers.logError(errorMessage)
+      response.status(400).send(errorMessage)
     }
   } catch (err) {
     helpers.logError(err)
@@ -815,15 +824,16 @@ app.post(
     .withMessage('error in schema, check for missing field'),
   async (request, response) => {
     try {
-      const validationErrors = Validator.validationResult(request)
+      const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
 
       if (validationErrors.isEmpty()) {
         const coreId = request.body.coreid
         const location = await db.getLocationFromParticleCoreID(coreId)
 
         if (!location) {
-          helpers.logError(`Error - no location matches the coreID ${coreId}`)
-          response.status(400).json('No location for CoreID')
+          const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
+          helpers.logError(errorMessage)
+          response.status(400).json(errorMessage)
         } else {
           const data = JSON.parse(request.body.data)
           const signalStrength = data.device.network.signal.strength
@@ -833,8 +843,9 @@ app.post(
           response.status(200).json('OK')
         }
       } else {
-        helpers.logError(`Bad request, invalid parameters ${JSON.stringify(validationErrors)}`)
-        response.status(400).send()
+        const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
+        helpers.logError(errorMessage)
+        response.status(400).send(errorMessage)
       }
     } catch (err) {
       helpers.logError(err)
