@@ -588,6 +588,7 @@ describe('Brave Sensor server', () => {
             radarType: 'XeThru',
             phone: testLocation1PhoneNumber,
             twilioPhone: '+15005550006',
+            apiKey: 'myApiKey',
           }
 
           this.response = await chai.request(server).post('/locations').send(goodRequest)
@@ -611,6 +612,96 @@ describe('Brave Sensor server', () => {
         })
       })
 
+      describe('for a request that contains all valid non-empty fields but with no apiKey', () => {
+        beforeEach(async () => {
+          await redis.clearKeys()
+          await db.clearSessions()
+          await db.clearLocations()
+
+          this.agent = chai.request.agent(server)
+
+          await this.agent.post('/login').send({
+            username: helpers.getEnvVar('WEB_USERNAME'),
+            password: helpers.getEnvVar('PASSWORD'),
+          })
+
+          const goodRequest = {
+            locationid: 'unusedID',
+            displayName: 'locationName',
+            doorCoreID: door_coreID,
+            radarCoreID: radar_coreID,
+            radarType: 'XeThru',
+            phone: testLocation1PhoneNumber,
+            twilioPhone: '+15005550006',
+          }
+
+          this.response = await this.agent.post('/locations').send(goodRequest)
+        })
+
+        afterEach(async () => {
+          await redis.clearKeys()
+          await db.clearSessions()
+          await db.clearLocations()
+
+          this.agent.close()
+        })
+
+        it('should return 200', () => {
+          expect(this.response).to.have.status(200)
+        })
+
+        it('should create a location in the database', async () => {
+          const newLocation = await db.getLocationData('unusedID')
+
+          expect(newLocation).to.not.be.undefined
+        })
+      })
+
+      describe('for a request that contains all valid non-empty fields but with no phone', () => {
+        beforeEach(async () => {
+          await redis.clearKeys()
+          await db.clearSessions()
+          await db.clearLocations()
+
+          this.agent = chai.request.agent(server)
+
+          await this.agent.post('/login').send({
+            username: helpers.getEnvVar('WEB_USERNAME'),
+            password: helpers.getEnvVar('PASSWORD'),
+          })
+
+          const goodRequest = {
+            locationid: 'unusedID',
+            displayName: 'locationName',
+            doorCoreID: door_coreID,
+            radarCoreID: radar_coreID,
+            radarType: 'XeThru',
+            twilioPhone: '+15005550006',
+            apiKey: 'apiKey',
+          }
+
+          this.response = await this.agent.post('/locations').send(goodRequest)
+        })
+
+        afterEach(async () => {
+          await redis.clearKeys()
+          await db.clearSessions()
+          await db.clearLocations()
+
+          this.agent.close()
+        })
+
+        it('should return 200', () => {
+          expect(this.response).to.have.status(200)
+        })
+
+        it('should create a location in the database', async () => {
+          const newLocation = await db.getLocationData('unusedID')
+
+          expect(newLocation).to.not.be.undefined
+        })
+      })
+
       describe('for a request that contains all valid fields, but empty', () => {
         beforeEach(async () => {
           sinon.stub(helpers, 'logError')
@@ -631,6 +722,7 @@ describe('Brave Sensor server', () => {
             radarType: '',
             phone: '',
             twilioPhone: '',
+            apiKey: '',
           }
 
           this.response = await this.agent.post('/locations').send(badRequest)
@@ -653,8 +745,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            // eslint-disable-next-line no-useless-escape
-            `Bad request, parameters missing {\"errors\":[{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"locationid\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"},{\"msg\":\"Invalid value(s)\",\"param\":\"_error\",\"nestedErrors\":[{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"apiKey\",\"location\":\"body\"}]}]}`,
+            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),phone/apiKey (Invalid value(s))`,
           )
         })
       })
@@ -691,8 +782,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            // eslint-disable-next-line no-useless-escape
-            `Bad request, parameters missing {\"errors\":[{\"msg\":\"Invalid value\",\"param\":\"locationid\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"},{\"msg\":\"Invalid value(s)\",\"param\":\"_error\",\"nestedErrors\":[{\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"apiKey\",\"location\":\"body\"}]}]}`,
+            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),phone/apiKey (Invalid value(s))`,
           )
         })
       })
@@ -742,6 +832,7 @@ describe('Brave Sensor server', () => {
             radarType: 'XeThru',
             phone: testLocation1PhoneNumber,
             twilioPhone: '+15005550006',
+            apiKey: 'apiKey',
           }
 
           this.response = await this.agent.post('/locations').send(duplicateLocationRequest)
@@ -1073,8 +1164,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            // eslint-disable-next-line no-useless-escape
-            `Bad request, parameters missing {\"errors\":[{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"fallbackPhones\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"heartbeatPhone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"sensitivity\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"led\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"noiseMap\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"movThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"rpmThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"durationThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"stillThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"autoResetThreshold\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"doorDelay\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"reminderTimer\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"fallbackTimer\",\"location\":\"body\"},{\"msg\":\"Invalid value(s)\",\"param\":\"_error\",\"nestedErrors\":[{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"value\":\"\",\"msg\":\"Invalid value\",\"param\":\"apiKey\",\"location\":\"body\"}]}]}`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhone (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/apiKey (Invalid value(s))`,
           )
         })
       })
@@ -1108,8 +1198,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            // eslint-disable-next-line no-useless-escape
-            `Bad request, parameters missing {\"errors\":[{\"msg\":\"Invalid value\",\"param\":\"displayName\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"doorCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarCoreID\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"radarType\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"fallbackPhones\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"heartbeatPhone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"twilioPhone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"sensitivity\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"led\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"noiseMap\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"movThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"rpmThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"durationThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"stillThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"autoResetThreshold\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"doorDelay\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"reminderTimer\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"fallbackTimer\",\"location\":\"body\"},{\"msg\":\"Invalid value(s)\",\"param\":\"_error\",\"nestedErrors\":[{\"msg\":\"Invalid value\",\"param\":\"phone\",\"location\":\"body\"},{\"msg\":\"Invalid value\",\"param\":\"apiKey\",\"location\":\"body\"}]}]}`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhone (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/apiKey (Invalid value(s))`,
           )
         })
       })

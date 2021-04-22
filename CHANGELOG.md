@@ -16,6 +16,9 @@ the code was deployed.
 - Tracking errors and outages with Sentry (CU-px7k6e)
 - API Key for locations (CU-hjwazd)
 
+### Changed
+- Improved some API error messages.
+
 ## [3.2.0] - 2021-04-26
 
 ### Changed
