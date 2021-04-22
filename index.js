@@ -369,7 +369,7 @@ async function handleSensorRequest(currentLocationId, radarType) {
             fallbackTimeoutMillis: location.fallbackTimer,
             reminderMessage: `This is a reminder to check on the bathroom`,
             fallbackMessage: `An alert to check on the bathroom at ${location.displayName} was not responded to. Please check on it`,
-            fallbackToPhoneNumber: location.fallbackNumbers,
+            fallbackToPhoneNumbers: location.fallbackNumbers,
             fallbackFromPhoneNumber: location.twilioNumber,
           }
           braveAlerter.startAlertSession(alertInfo)
