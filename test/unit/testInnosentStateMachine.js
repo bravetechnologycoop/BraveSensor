@@ -3,12 +3,12 @@ const { describe, it } = require('mocha')
 const moment = require('moment')
 
 const expect = chai.expect
-const STATE = require('../SessionStateEnum.js')
-const OD_FLAG_STATE = require('../SessionStateODFlagEnum.js')
-const DOOR_STATE = require('../SessionStateDoorEnum.js')
-const StateMachine = require('../InnosentStateMachine.js')
-const Session = require('../Session.js')
-const Location = require('../Location.js')
+const STATE = require('../../SessionStateEnum.js')
+const OD_FLAG_STATE = require('../../SessionStateODFlagEnum.js')
+const DOOR_STATE = require('../../SessionStateDoorEnum.js')
+const StateMachine = require('../../InnosentStateMachine.js')
+const Session = require('../../Session.js')
+const Location = require('../../Location.js')
 
 function setupDB(location_data = new Location(), session = new Session(), is_overdose_suspected = false) {
   return {
