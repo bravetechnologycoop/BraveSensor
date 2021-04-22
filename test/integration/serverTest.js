@@ -6,16 +6,16 @@ const expect = chai.expect
 const { after, afterEach, before, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
 const { helpers } = require('brave-alert-lib')
-const imports = require('../index.js')
+const imports = require('../../index.js')
 
 const db = imports.db
 const redis = imports.redis
 const server = imports.server
-const XETHRU_STATE = require('../SessionStateXethruEnum.js')
+const XETHRU_STATE = require('../../SessionStateXethruEnum.js')
 
 const MOV_THRESHOLD = 17
-const IM21_DOOR_STATUS = require('../IM21DoorStatusEnum')
-const { getRandomArbitrary, getRandomInt, printRandomIntArray } = require('../testingHelpers.js')
+const IM21_DOOR_STATUS = require('../../IM21DoorStatusEnum')
+const { getRandomArbitrary, getRandomInt, printRandomIntArray } = require('../../testingHelpers.js')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)
