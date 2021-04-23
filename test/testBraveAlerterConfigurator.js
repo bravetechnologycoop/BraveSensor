@@ -230,6 +230,32 @@ describe('BraveAlerterConfigurator', () => {
       })
     })
 
+    describe('if given only the fallbackReturnMessage', async () => {
+      beforeEach(async () => {
+        const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+        const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
+        const alertSession = new AlertSession(this.testSessionId)
+        alertSession.fallbackReturnMessage = 'queued'
+        await braveAlerter.alertSessionChangedCallback(alertSession)
+      })
+
+      it('should not update the sesssion at all', () => {
+        expect(db.saveAlertSession).not.to.be.called
+      })
+
+      it('should not close the session', () => {
+        expect(db.closeSession).not.to.be.called
+      })
+
+      it('should not update the startTimes', () => {
+        expect(this.testStartTimes[this.testLocationId] === this.initialTestStartTime)
+      })
+
+      it('should not reset redis', () => {
+        expect(redis.addStateMachineData).not.to.be.called
+      })
+    })
+
     describe('if given a COMPLETE chatbotState and incidentTypeKey', async () => {
       beforeEach(async () => {
         this.closeSessionStub.returns(true)

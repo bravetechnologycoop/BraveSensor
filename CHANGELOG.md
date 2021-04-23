@@ -19,6 +19,10 @@ the code was deployed.
 
 - Ability to have multiple fallback phone numbers (CU-pv8hd5)
 
+### Fixed
+
+- Sessions are no longer blocked after a fallback message is sent (CU-tnarab)
+
 ## [3.1.0] - 2021-04-12
 
 ### Added
