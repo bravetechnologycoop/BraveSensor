@@ -55,13 +55,17 @@ class BraveAlerterConfigurator {
   }
 
   async alertSessionChangedCallback(alertSession) {
-    const incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
+    if (alertSession.alertState === undefined && alertSession.incidentCategoryKey === undefined) {
+      return
+    }
+
     let client
 
     try {
       client = await db.beginTransaction()
 
       const session = await db.getSessionWithSessionId(alertSession.sessionId, client)
+      const incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
       await db.saveAlertSession(alertSession.alertState, incidentType, alertSession.sessionId, client)
 
       const locationId = session.locationid
