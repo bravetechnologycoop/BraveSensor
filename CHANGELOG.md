@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [3.2.0] - 2021-04-26
+
 ### Changed
 
 - More consistent DB interactions (CU-kry5t5)
@@ -156,7 +158,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.1.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.2.0...v2.0.0
