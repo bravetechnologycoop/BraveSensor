@@ -62,10 +62,10 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="apiKey" class="col-sm-3 col-form-label">Alert App API Key:</label>
+                    <label for="alertApiKey" class="col-sm-3 col-form-label">Alert App API Key:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="apiKey" placeholder="API Key" value="{{apiKey}}">
-                        <small id="apikeyHelp" class="form-text text-muted">Must provide one or both of "Responder Phone Number" and "Alert App API Key"</small>
+                        <input type="text" class="form-control" name="alertApiKey" placeholder="API Key" value="{{alertApiKey}}">
+                        <small id="alertApiKeyHelp" class="form-text text-muted">Must provide one or both of "Responder Phone Number" and "Alert App API Key"</small>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">

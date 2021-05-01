@@ -37,7 +37,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
       1,
       1,
       1,
-      'apiKey',
+      'alertApiKey',
     )
     const locationId = (await db.getLocations())[0].locationid
 
