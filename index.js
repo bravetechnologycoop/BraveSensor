@@ -252,8 +252,6 @@ async function handleSensorRequest(currentLocationId, radarType) {
   }
   const location = await db.getLocationData(currentLocationId)
 
-  helpers.log(`${currentLocationId}: ${currentState}`)
-
   // Get current time to compare to the session's start time
   const location_start_time = start_times[currentLocationId]
   let sessionDuration
@@ -273,15 +271,15 @@ async function handleSensorRequest(currentLocationId, radarType) {
   if (sessionDuration * 1000 > location.autoResetThreshold) {
     autoResetSession(location.locationid)
     start_times[currentLocationId] = null
-    helpers.log('autoResetSession has been called')
+    helpers.log(`${currentLocationId}: autoResetSession has been called`)
     sendResetAlert(location.locationid)
   }
-
-  helpers.log(`${sessionDuration}`)
 
   // To avoid filling the DB with repeated states in a row.
   // eslint-disable-next-line eqeqeq
   if (currentState != prevState) {
+    helpers.log(`${currentLocationId}: ${currentState}`)
+
     await redis.addStateMachineData(currentState, currentLocationId)
 
     if (VOIDSTATES.includes(currentState)) {
@@ -472,7 +470,7 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
   } catch (err) {
-    helpers.logError(err)
+    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
     res.status(500).send()
   }
 })
@@ -489,7 +487,7 @@ app.get('/locations/new', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(newLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
-    helpers.logError(err)
+    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
     res.status(500).send()
   }
 })
@@ -530,7 +528,7 @@ app.get('/locations/:locationId', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(locationsDashboardTemplate, viewParams, { nav: navPartial, css: locationsCSSPartial }))
   } catch (err) {
-    helpers.logError(err)
+    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
     res.status(500).send()
   }
 })
@@ -556,7 +554,7 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
-    helpers.logError(err)
+    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
     res.status(500).send()
   }
 })
@@ -572,7 +570,7 @@ app.post(
   async (req, res) => {
     try {
       if (!req.session.user || !req.cookies.user_sid) {
-        helpers.log('Unauthorized')
+        helpers.logError('Unauthorized')
         res.status(401).send()
         return
       }
@@ -608,7 +606,7 @@ app.post(
         res.status(400).send(errorMessage)
       }
     } catch (err) {
-      helpers.logError(err)
+      helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
       res.status(500).send()
     }
   },
@@ -642,7 +640,7 @@ app.post(
   async (req, res) => {
     try {
       if (!req.session.user || !req.cookies.user_sid) {
-        helpers.log('Unauthorized')
+        helpers.logError('Unauthorized')
         res.status(401).send()
         return
       }
@@ -687,7 +685,7 @@ app.post(
         res.status(400).send(errorMessage)
       }
     } catch (err) {
-      helpers.logError(err)
+      helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
       res.status(500).send()
     }
   },
@@ -713,7 +711,7 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
       res.status(400).send(errorMessage)
     }
   } catch (err) {
-    helpers.logError(err)
+    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
     res.status(500).send()
   }
 })
@@ -757,7 +755,7 @@ app.post(
         response.status(400).send(errorMessage)
       }
     } catch (err) {
-      helpers.logError(err)
+      helpers.logError(`Error calling ${request.path}: ${JSON.stringify(err)}`)
       response.status(500).send()
     }
   },
@@ -803,7 +801,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
       response.status(400).send(errorMessage)
     }
   } catch (err) {
-    helpers.logError(err)
+    helpers.logError(`Error calling ${request.path}: ${JSON.stringify(err)}`)
     response.status(500).send()
   }
 })
@@ -848,7 +846,7 @@ app.post(
         response.status(400).send(errorMessage)
       }
     } catch (err) {
-      helpers.logError(err)
+      helpers.logError(`Error calling ${request.path}: ${JSON.stringify(err)}`)
       response.status(500).send()
     }
   },
