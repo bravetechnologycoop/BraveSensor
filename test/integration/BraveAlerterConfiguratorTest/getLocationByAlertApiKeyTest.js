@@ -11,11 +11,11 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
   beforeEach(async () => {
     await db.clearLocations()
 
-    this.expectedLocationDisplayName = 'TEST LOCATION'
+    this.expectedLocationId = 'TEST LOCATION'
 
     // Insert a location in the DB
     await db.createLocation(
-      'locationID',
+      this.expectedLocationId,
       '+17772225555',
       1,
       1,
@@ -27,7 +27,7 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
       '+3336661234',
       [],
       1,
-      this.expectedLocationDisplayName,
+      'displayName',
       'DoorCoreId',
       'RadarCoreId',
       'XeThru',
@@ -44,7 +44,7 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
   })
 
   it('given a API key that matches a single location should return a BraveAlertLib Location object with the values from that location', async () => {
-    const expectedLocation = new Location(this.expectedLocationDisplayName, SYSTEM.SENSOR)
+    const expectedLocation = new Location(this.expectedLocationId, SYSTEM.SENSOR)
 
     const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
     const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey('myApiKey')
@@ -61,10 +61,10 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
 
   describe('given a API key that matches more than one location', () => {
     before(async () => {
-      this.anotherExpectedDisplayName = 'TEST LOCATION 2'
+      this.anotherExpectedLocationId = 'TEST LOCATION 2'
       // Insert another location in the DB
       await db.createLocation(
-        'locationID',
+        this.anotherExpectedLocationId,
         '+17772225555',
         1,
         1,
@@ -76,7 +76,7 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
         '+3336661234',
         [],
         1,
-        this.anotherExpectedDisplayName,
+        'displayName',
         'DoorCoreId',
         'RadarCoreId',
         'XeThru',
@@ -91,7 +91,7 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
     it('should return a BraveAlertLib Location object with the one of the displaynames', async () => {
       const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
       const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey('myApiKey')
-      expect(actualLocation.name).to.be.oneOf([this.expectedLocationDisplayName, this.anotherExpectedDisplayName])
+      expect(actualLocation.name).to.be.oneOf([this.expectedLocationId, this.anotherExpectedLocationId])
     })
 
     it('should return a BraveAlertLib Location object with the Sensors system', async () => {

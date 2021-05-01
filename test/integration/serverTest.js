@@ -332,6 +332,7 @@ describe('Brave Sensor server', () => {
       }
       const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(675)
+      await helpers.sleep(1000)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const session = sessions[0]
       expect(session.endTime).to.not.be.null
@@ -577,7 +578,7 @@ describe('Brave Sensor server', () => {
 
       describe('for a request with no session', () => {
         beforeEach(async () => {
-          sinon.stub(helpers, 'log')
+          sinon.stub(helpers, 'logError')
           sinon.spy(db, 'createLocationFromBrowserForm')
 
           const goodRequest = {
@@ -595,7 +596,7 @@ describe('Brave Sensor server', () => {
         })
 
         afterEach(async () => {
-          helpers.log.restore()
+          helpers.logError.restore()
           db.createLocationFromBrowserForm.restore()
         })
 
@@ -608,7 +609,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should log the error', () => {
-          expect(helpers.log).to.have.been.calledWith('Unauthorized')
+          expect(helpers.logError).to.have.been.calledWith('Unauthorized')
         })
       })
 

@@ -87,15 +87,17 @@ function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
 /* eslint-enable function-call-argument-newline */
 
 async function addInnosentRadarSensorData(locationid, inPhase, quadrature) {
-  const inPhaseArray = inPhase.split(',')
-  const quadratureArray = quadrature.split(',')
-  const pipeline = client.pipeline()
-  for (let i = 0; i < inPhaseArray.length; i += 1) {
-    pipeline.xadd(`innosent:${locationid}`, '*', 'inPhase', inPhaseArray[i], 'quadrature', quadratureArray[i])
+  try {
+    const inPhaseArray = inPhase.split(',')
+    const quadratureArray = quadrature.split(',')
+    const pipeline = client.pipeline()
+    for (let i = 0; i < inPhaseArray.length; i += 1) {
+      pipeline.xadd(`innosent:${locationid}`, '*', 'inPhase', inPhaseArray[i], 'quadrature', quadratureArray[i])
+    }
+    await pipeline.exec()
+  } catch (error) {
+    helpers.logError(`Error adding Innosent radar sensor data: ${JSON.stringify(error)}`)
   }
-  await pipeline.exec(err => {
-    helpers.logError(err)
-  })
 }
 
 async function getInnosentWindow(locationID, startTime, endTime, windowLength) {
