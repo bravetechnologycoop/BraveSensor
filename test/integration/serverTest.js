@@ -145,7 +145,7 @@ describe('Brave Sensor server', () => {
         0,
         2,
         8,
-        'apiKey',
+        'alertApiKey',
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
     })
@@ -268,7 +268,7 @@ describe('Brave Sensor server', () => {
         0,
         2,
         8,
-        'apiKey',
+        'alertApiKey',
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
     })
@@ -391,7 +391,7 @@ describe('Brave Sensor server', () => {
           0,
           2,
           8,
-          'apiKey',
+          'alertApiKey',
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       })
@@ -458,7 +458,7 @@ describe('Brave Sensor server', () => {
           0,
           2,
           8,
-          'apiKey',
+          'alertApiKey',
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       })
@@ -588,7 +588,7 @@ describe('Brave Sensor server', () => {
             radarType: 'XeThru',
             phone: testLocation1PhoneNumber,
             twilioPhone: '+15005550006',
-            apiKey: 'myApiKey',
+            alertApiKey: 'myApiKey',
           }
 
           this.response = await chai.request(server).post('/locations').send(goodRequest)
@@ -612,7 +612,7 @@ describe('Brave Sensor server', () => {
         })
       })
 
-      describe('for a request that contains all valid non-empty fields but with no apiKey', () => {
+      describe('for a request that contains all valid non-empty fields but with no alertApiKey', () => {
         beforeEach(async () => {
           await redis.clearKeys()
           await db.clearSessions()
@@ -677,7 +677,7 @@ describe('Brave Sensor server', () => {
             radarCoreID: radar_coreID,
             radarType: 'XeThru',
             twilioPhone: '+15005550006',
-            apiKey: 'apiKey',
+            alertApiKey: 'alertApiKey',
           }
 
           this.response = await this.agent.post('/locations').send(goodRequest)
@@ -722,7 +722,7 @@ describe('Brave Sensor server', () => {
             radarType: '',
             phone: '',
             twilioPhone: '',
-            apiKey: '',
+            alertApiKey: '',
           }
 
           this.response = await this.agent.post('/locations').send(badRequest)
@@ -745,7 +745,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),phone/apiKey (Invalid value(s))`,
+            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),phone/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -782,7 +782,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),phone/apiKey (Invalid value(s))`,
+            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),phone/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -814,7 +814,7 @@ describe('Brave Sensor server', () => {
             0,
             2,
             8,
-            'apiKey',
+            'alertApiKey',
           )
 
           this.agent = chai.request.agent(server)
@@ -832,7 +832,7 @@ describe('Brave Sensor server', () => {
             radarType: 'XeThru',
             phone: testLocation1PhoneNumber,
             twilioPhone: '+15005550006',
-            apiKey: 'apiKey',
+            alertApiKey: 'alertApiKey',
           }
 
           this.response = await this.agent.post('/locations').send(duplicateLocationRequest)
@@ -890,7 +890,7 @@ describe('Brave Sensor server', () => {
           0,
           3,
           4,
-          'apiKey',
+          'alertApiKey',
         )
       })
 
@@ -931,7 +931,7 @@ describe('Brave Sensor server', () => {
             doorDelay: 9856,
             reminderTimer: 567849,
             fallbackTimer: 234567,
-            apiKey: 'newApiKey',
+            alertApiKey: 'newApiKey',
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -956,7 +956,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
           expect(updatedLocation.heartbeatAlertRecipient).to.equal(this.goodRequest.heartbeatPhone)
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
-          expect(updatedLocation.apiKey).to.equal(this.goodRequest.apiKey)
+          expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
 
           chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
           chai.assert.equal(updatedLocation.led, this.goodRequest.led)
@@ -972,7 +972,7 @@ describe('Brave Sensor server', () => {
         })
       })
 
-      describe('for a request that contains all valid non-empty fields but with an empty apiKey', () => {
+      describe('for a request that contains all valid non-empty fields but with an empty alertApiKey', () => {
         beforeEach(async () => {
           this.agent = chai.request.agent(server)
 
@@ -1001,7 +1001,7 @@ describe('Brave Sensor server', () => {
             doorDelay: 9856,
             reminderTimer: 567849,
             fallbackTimer: 234567,
-            apiKey: '',
+            alertApiKey: '',
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1026,7 +1026,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
           expect(updatedLocation.heartbeatAlertRecipient).to.equal(this.goodRequest.heartbeatPhone)
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
-          expect(updatedLocation.apiKey).to.be.null
+          expect(updatedLocation.alertApiKey).to.be.null
 
           chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
           chai.assert.equal(updatedLocation.led, this.goodRequest.led)
@@ -1071,7 +1071,7 @@ describe('Brave Sensor server', () => {
             doorDelay: 9856,
             reminderTimer: 567849,
             fallbackTimer: 234567,
-            apiKey: 'newApiKey',
+            alertApiKey: 'newApiKey',
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1096,7 +1096,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
           expect(updatedLocation.heartbeatAlertRecipient).to.equal(this.goodRequest.heartbeatPhone)
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
-          expect(updatedLocation.apiKey).to.equal(this.goodRequest.apiKey)
+          expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
 
           chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
           chai.assert.equal(updatedLocation.led, this.goodRequest.led)
@@ -1144,7 +1144,7 @@ describe('Brave Sensor server', () => {
             doorDelay: '',
             reminderTimer: '',
             fallbackTimer: '',
-            apiKey: '',
+            alertApiKey: '',
           }
 
           this.response = await this.agent.post(`/locations/${testLocation1Id}`).send(badRequest)
@@ -1164,7 +1164,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhone (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/apiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhone (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -1198,7 +1198,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhone (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/apiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhone (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/alertApiKey (Invalid value(s))`,
           )
         })
       })

@@ -567,7 +567,7 @@ app.post(
   '/locations',
   [
     Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'twilioPhone']).notEmpty(),
-    Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['apiKey']).notEmpty()]),
+    Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
   ],
   async (req, res) => {
     try {
@@ -598,7 +598,7 @@ app.post(
           data.radarType,
           data.phone,
           data.twilioPhone,
-          data.apiKey,
+          data.alertApiKey,
         )
 
         res.redirect(`/locations/${data.locationid}`)
@@ -637,7 +637,7 @@ app.post(
       'reminderTimer',
       'fallbackTimer',
     ]).notEmpty(),
-    Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['apiKey']).notEmpty()]),
+    Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
   ],
   async (req, res) => {
     try {
@@ -653,7 +653,7 @@ app.post(
         const data = req.body
         data.locationid = req.params.locationId
 
-        const newApiKey = data.apiKey && data.apiKey.trim() !== '' ? data.apiKey : null
+        const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
         const newPhone = data.phone && data.phone.trim() !== '' ? data.phone : null
 
         await db.updateLocation(
@@ -676,7 +676,7 @@ app.post(
           data.doorDelay,
           data.reminderTimer,
           data.fallbackTimer,
-          newApiKey,
+          newAlertApiKey,
           data.locationid,
         )
 
@@ -878,7 +878,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       0,
       2,
       8,
-      'apiKey',
+      'alertApiKey',
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
     response.status(200).send()
