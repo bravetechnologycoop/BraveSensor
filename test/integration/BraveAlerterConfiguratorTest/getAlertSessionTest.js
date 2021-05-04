@@ -27,7 +27,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
       1,
       1,
       1,
-      1,
+      [],
       1,
       [],
       1,

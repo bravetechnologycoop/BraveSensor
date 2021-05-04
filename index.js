@@ -23,7 +23,7 @@ const BraveAlerterConfigurator = require('./BraveAlerterConfigurator.js')
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
 const SESSIONSTATE_DOOR = require('./SessionStateDoorEnum')
 
-const RADAR_THRESHOLD_MILLIS = 60 * 1000
+const RADAR_THRESHOLD_MILLIS = 30 * 60 * 1000
 const WATCHDOG_TIMER_FREQUENCY = 60 * 1000
 
 const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationsDashboard.mst`, 'utf-8')
@@ -184,15 +184,20 @@ if (!helpers.isTestEnvironment()) {
 async function sendSingleAlert(locationid, message) {
   const location = await db.getLocationData(locationid)
 
-  await braveAlerter.sendSingleAlert(location.heartbeatAlertRecipient, location.twilioNumber, message)
+  location.heartbeatAlertRecipients.forEach(async heartbeatAlertRecipient => {
+    await braveAlerter.sendSingleAlert(heartbeatAlertRecipient, location.twilioNumber, message)
+  })
 }
 
-async function sendAlerts(locationid) {
-  await sendSingleAlert(locationid, `The Radar connection for ${locationid} has been lost.`)
+async function sendAlerts(locationid, displayName) {
+  await sendSingleAlert(
+    locationid,
+    `The Brave Sensor at ${displayName} (${locationid}) has disconnected. \nPlease press the reset buttons on either side of the sensor box.\nIf you do not receive a reconnection message shortly after pressing both reset buttons, contact your network administrator.\nYou can also email contact@brave.coop for further support.`,
+  )
 }
 
-async function sendReconnectionMessage(locationid) {
-  await sendSingleAlert(locationid, `The Radar at ${locationid} has been reconnected.`)
+async function sendReconnectionMessage(locationid, displayName) {
+  await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has been reconnected.`)
 }
 
 // Autoreset twilio function
@@ -207,7 +212,6 @@ async function checkHeartbeat() {
 
   for (const location of locations) {
     let latestRadar
-    // Query raw sensor data to transmit to the FrontEnd
     try {
       if (location.radarType === RADAR_TYPE.XETHRU) {
         const xeThruData = await redis.getLatestXeThruSensorData(location.locationid)
@@ -216,18 +220,17 @@ async function checkHeartbeat() {
         const innosentData = await redis.getLatestInnosentSensorData(location.locationid)
         latestRadar = moment(innosentData.timestamp, 'x')
       }
-      // Check the XeThru Heartbeat
       const currentTime = moment()
       const radarDelay = currentTime.diff(latestRadar)
 
       if (radarDelay > RADAR_THRESHOLD_MILLIS && !location.heartbeatSentAlerts) {
         helpers.logSentry(`Radar Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
         await db.updateSentAlerts(location.locationid, true)
-        sendAlerts(location.locationid)
+        sendAlerts(location.locationid, location.displayName)
       } else if (radarDelay < RADAR_THRESHOLD_MILLIS && location.heartbeatSentAlerts) {
         helpers.logSentry(`Radar at ${location.locationid} reconnected`)
         await db.updateSentAlerts(location.locationid, false)
-        sendReconnectionMessage(location.locationid)
+        sendReconnectionMessage(location.locationid, location.displayName)
       }
     } catch (err) {
       helpers.logError(`Error checking heartbeat: ${err}`)
@@ -621,7 +624,7 @@ app.post(
       'radarCoreID',
       'radarType',
       'fallbackPhones',
-      'heartbeatPhone',
+      'heartbeatPhones',
       'twilioPhone',
       'sensitivity',
       'led',
@@ -661,7 +664,7 @@ app.post(
           data.radarType,
           newPhone,
           data.fallbackPhones.split(','),
-          data.heartbeatPhone,
+          data.heartbeatPhones.split(','),
           data.twilioPhone,
           data.sensitivity,
           data.led,
@@ -908,7 +911,7 @@ if (helpers.isTestEnvironment()) {
     cert: fs.readFileSync(`/etc/brave/ssl/tls.crt`),
   }
   server = https.createServer(httpsOptions, app).listen(8080)
-  setInterval(checkHeartbeat, 15000)
+  setInterval(checkHeartbeat, 60000)
   helpers.log('brave server listening on port 8080')
 }
 
