@@ -25,7 +25,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
       1,
       1,
       1,
-      1,
+      [],
       this.expectedTwilioPhoneNumber,
       [],
       1,

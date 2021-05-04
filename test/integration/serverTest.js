@@ -133,7 +133,7 @@ describe('Brave Sensor server', () => {
         5000,
         5000,
         0,
-        '+15005550006',
+        ['+15005550006'],
         '+15005550006',
         ['+15005550006'],
         1000,
@@ -256,7 +256,7 @@ describe('Brave Sensor server', () => {
         5000,
         5000,
         0,
-        '+15005550006',
+        ['+15005550006'],
         '+15005550006',
         ['+15005550006'],
         1000,
@@ -380,7 +380,7 @@ describe('Brave Sensor server', () => {
           5000,
           5000,
           0,
-          '+15005550006',
+          ['+15005550006'],
           '+15005550006',
           ['+15005550006'],
           1000,
@@ -447,7 +447,7 @@ describe('Brave Sensor server', () => {
           5000,
           5000,
           0,
-          '+15005550006',
+          ['+15005550006'],
           '+15005550006',
           ['+15005550006'],
           1000,
@@ -803,7 +803,7 @@ describe('Brave Sensor server', () => {
             5000,
             5000,
             0,
-            '+15005550006',
+            ['+15005550006'],
             '+15005550006',
             ['+15005550006'],
             1000,
@@ -879,7 +879,7 @@ describe('Brave Sensor server', () => {
           90000,
           90000,
           15000,
-          '+14445556789',
+          ['+14445556789'],
           '+14445556789',
           ['+14445556789'],
           90000,
@@ -919,7 +919,7 @@ describe('Brave Sensor server', () => {
             radarType: 'Innosent',
             phone: '+12223334567',
             fallbackPhones: '+12223334444,+13334445678',
-            heartbeatPhone: '+15556667890',
+            heartbeatPhones: '+15556667890,+16667778901',
             twilioPhone: '+11112223456',
             sensitivity: 5,
             led: 1,
@@ -955,7 +955,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
           expect(updatedLocation.phonenumber).to.equal(this.goodRequest.phone)
           expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
-          expect(updatedLocation.heartbeatAlertRecipient).to.equal(this.goodRequest.heartbeatPhone)
+          expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
 
@@ -988,8 +988,8 @@ describe('Brave Sensor server', () => {
             radarCoreID: 'new_radar_core',
             radarType: 'Innosent',
             phone: '+12223334567',
-            fallbackPhones: '+12223334444,+13334445678',
-            heartbeatPhone: '+15556667890',
+            fallbackPhones: '+13334445678,+12223334444',
+            heartbeatPhones: '+15556667890,+16667778901',
             twilioPhone: '+11112223456',
             sensitivity: 5,
             led: 1,
@@ -1025,7 +1025,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
           expect(updatedLocation.phonenumber).to.equal(this.goodRequest.phone)
           expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
-          expect(updatedLocation.heartbeatAlertRecipient).to.equal(this.goodRequest.heartbeatPhone)
+          expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
           expect(updatedLocation.alertApiKey).to.be.null
 
@@ -1059,7 +1059,7 @@ describe('Brave Sensor server', () => {
             radarType: 'Innosent',
             phone: '',
             fallbackPhones: '+12223334444,+13334445678',
-            heartbeatPhone: '+15556667890',
+            heartbeatPhones: '+15556667890,+16667778901',
             twilioPhone: '+11112223456',
             sensitivity: 5,
             led: 1,
@@ -1095,7 +1095,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
           expect(updatedLocation.phonenumber).to.be.null
           expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
-          expect(updatedLocation.heartbeatAlertRecipient).to.equal(this.goodRequest.heartbeatPhone)
+          expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
 
@@ -1132,7 +1132,7 @@ describe('Brave Sensor server', () => {
             radarType: '',
             phone: '',
             fallbackPhones: '',
-            heartbeatPhone: '',
+            heartbeatPhones: '',
             twilioPhone: '',
             sensitivity: '',
             led: '',
@@ -1165,7 +1165,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhone (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -1199,7 +1199,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhone (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/alertApiKey (Invalid value(s))`,
           )
         })
       })

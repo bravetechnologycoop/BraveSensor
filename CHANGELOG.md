@@ -13,11 +13,13 @@ the code was deployed.
 
 ### Added
 
+- Ability to send heartbeats to multiple recipients (CU-rx46w0)
 - Tracking errors and outages with Sentry (CU-px7k6e)
 - API Key for locations (CU-hjwazd)
 
 ### Changed
 - Improved some API error messages.
+- Heartbeat text now contains troubleshooting instructions and contact email for follow-up. (CU-rx46w0)
 
 ## [3.2.0] - 2021-04-26
 
