@@ -77,6 +77,7 @@
                     </div>
                 </div>
                 <br>
+                <p><em>*** Remember: New Locations are set to INACTIVE ***</em></p>
                 <button type="submit" class="btn btn-primary btn-large">Submit</button>
               </form>
         </div>

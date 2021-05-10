@@ -155,6 +155,13 @@
                         <input type="text" class="form-control" name="fallbackTimer" placeholder="Fallback Message Timer (milliseconds)" value="{{fallbackTimer}}" required>
                     </div>
                 </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="isActive" class="col-sm-3 col-form-label">Is this Location active?</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="isActive" value="{{isActive}}" required pattern="(true|false)">
+                        <small id="isActiveHelp" class="form-text text-muted">"true" or "false"</small>
+                    </div>
+                </div>
                 <br>
                 <button type="submit" class="btn btn-primary btn-large">Submit</button>
               </form>

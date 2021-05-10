@@ -32,7 +32,7 @@ function createSessionFromRow(r) {
 
 function createLocationFromRow(r) {
   // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.phonenumber, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.auto_reset_threshold, r.twilio_number, r.fallback_phonenumbers, r.door_stickiness_delay, r.alert_api_key)
+  return new Location(r.locationid, r.display_name, r.phonenumber, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.auto_reset_threshold, r.twilio_number, r.fallback_phonenumbers, r.door_stickiness_delay, r.alert_api_key, r.is_active)
 }
 
 async function beginTransaction() {
@@ -164,12 +164,12 @@ async function getHistoryOfSessions(locationid, clientParam) {
   }
 }
 
-async function getAllSessionsFromLocation(location, clientParam) {
+async function getAllSessionsFromLocation(locationid, clientParam) {
   try {
     const results = await runQuery(
       'getAllSessionsFromLocation',
       'SELECT * FROM sessions WHERE locationid = $1 order by start_time desc',
-      [location],
+      [locationid],
       clientParam,
     )
 
@@ -245,12 +245,12 @@ async function updateSessionState(sessionid, state, clientParam) {
 }
 
 // Updates the value of the alert flag in the location database
-async function updateSentAlerts(location, sentalerts, clientParam) {
+async function updateSentAlerts(locationid, sentalerts, clientParam) {
   try {
     const results = await runQuery(
       'updateSentAlerts',
       'UPDATE locations SET heartbeat_sent_alerts = $1 WHERE locationid = $2 RETURNING *',
-      [sentalerts, location],
+      [sentalerts, locationid],
       clientParam,
     )
     if (results === undefined) {
@@ -482,6 +482,20 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
   }
 }
 
+async function getActiveLocations(clientParam) {
+  try {
+    const results = await runQuery('getLocations', 'SELECT * FROM locations WHERE is_active', [], clientParam)
+
+    if (typeof results === 'undefined') {
+      return null
+    }
+
+    return results.rows.map(r => createLocationFromRow(r))
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
 // Retrieves the locations table
 async function getLocations(clientParam) {
   try {
@@ -499,11 +513,11 @@ async function getLocations(clientParam) {
 
 // Updates the locations table entry for a specific location with the new data
 // eslint-disable-next-line prettier/prettier
-async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phonenumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, sensitivity, led, noisemap, movThreshold, rpmThreshold, durationThreshold, stillThreshold, autoResetThreshold, doorStickinessDelay, reminderTimer, fallbackTimer, alertApiKey, locationid, clientParam,) {
+async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phonenumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, sensitivity, led, noisemap, movThreshold, rpmThreshold, durationThreshold, stillThreshold, autoResetThreshold, doorStickinessDelay, reminderTimer, fallbackTimer, alertApiKey, isActive, locationid, clientParam) {
   try {
     const results = await runQuery(
       'updateLocation',
-      'UPDATE locations SET display_name = $1, door_particlecoreid = $2, radar_particlecoreid = $3, radar_type = $4, phonenumber = $5, fallback_phonenumbers = $6, heartbeat_alert_recipients = $7, twilio_number = $8, sensitivity = $9, led = $10, noisemap = $11, mov_threshold = $12, rpm_threshold = $13, duration_threshold = $14, still_threshold = $15, auto_reset_threshold = $16, door_stickiness_delay = $17, reminder_timer = $18, fallback_timer = $19, alert_api_key = $20 WHERE locationid = $21 returning *',
+      'UPDATE locations SET display_name = $1, door_particlecoreid = $2, radar_particlecoreid = $3, radar_type = $4, phonenumber = $5, fallback_phonenumbers = $6, heartbeat_alert_recipients = $7, twilio_number = $8, sensitivity = $9, led = $10, noisemap = $11, mov_threshold = $12, rpm_threshold = $13, duration_threshold = $14, still_threshold = $15, auto_reset_threshold = $16, door_stickiness_delay = $17, reminder_timer = $18, fallback_timer = $19, alert_api_key = $20, is_active = $21 WHERE locationid = $22 returning *',
       [
         displayName,
         doorCoreId,
@@ -525,6 +539,7 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
         reminderTimer,
         fallbackTimer,
         alertApiKey,
+        isActive,
         locationid,
       ],
       clientParam,
@@ -564,11 +579,11 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
 
 // Adds a location table entry
 // eslint-disable-next-line prettier/prettier
-async function createLocation(locationid, phonenumber, movThreshold, stillThreshold, durationThreshold, reminderTimer, autoResetThreshold, doorStickinessDelay, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, sensitivity, led, noisemap, rpmThreshold, alertApiKey, clientParam,) {
+async function createLocation(locationid, phonenumber, movThreshold, stillThreshold, durationThreshold, reminderTimer, autoResetThreshold, doorStickinessDelay, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, sensitivity, led, noisemap, rpmThreshold, alertApiKey, isActive, clientParam) {
   try {
     await runQuery(
       'createLocation',
-      'INSERT INTO locations(locationid, phonenumber, mov_threshold, still_threshold, duration_threshold, reminder_timer, auto_reset_threshold, door_stickiness_delay, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, sensitivity, led, noisemap, rpm_threshold, alert_api_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)',
+      'INSERT INTO locations(locationid, phonenumber, mov_threshold, still_threshold, duration_threshold, reminder_timer, auto_reset_threshold, door_stickiness_delay, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, sensitivity, led, noisemap, rpm_threshold, alert_api_key, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)',
       [
         locationid,
         phonenumber,
@@ -591,6 +606,7 @@ async function createLocation(locationid, phonenumber, movThreshold, stillThresh
         noisemap,
         rpmThreshold,
         alertApiKey,
+        isActive,
       ],
       clientParam,
     )
@@ -661,6 +677,7 @@ module.exports = {
   getLocationFromParticleCoreID,
   getLocationsFromAlertApiKey,
   getLocationData,
+  getActiveLocations,
   getLocations,
   updateLocation,
   createLocation,

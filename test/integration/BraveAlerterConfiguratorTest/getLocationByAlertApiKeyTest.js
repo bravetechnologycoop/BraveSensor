@@ -36,6 +36,7 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
       1,
       1,
       'myApiKey',
+      true,
     )
   })
 
@@ -85,6 +86,7 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
         1,
         1,
         'myApiKey',
+        true,
       )
     })
 

@@ -119,7 +119,7 @@ describe('Brave Sensor server', () => {
     await redis.disconnect()
   })
 
-  describe('POST request radar and door events with XeThru radar and mock im21 door sensor', () => {
+  describe('POST request radar and door events with XeThru radar and mock im21 door sensor for an active Location', () => {
     beforeEach(async () => {
       await redis.clearKeys()
       await db.clearSessions()
@@ -146,6 +146,7 @@ describe('Brave Sensor server', () => {
         2,
         8,
         'alertApiKey',
+        true,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
     })
@@ -241,7 +242,83 @@ describe('Brave Sensor server', () => {
     })
   })
 
-  describe('POST request radar and door events with INS radar and mock im21 door sensor', () => {
+  describe('POST request radar and door events with XeThru radar and mock im21 door sensor for an inactive Location', () => {
+    beforeEach(async () => {
+      await redis.clearKeys()
+      await db.clearSessions()
+      await db.clearLocations()
+      await db.createLocation(
+        testLocation1Id,
+        testLocation1PhoneNumber,
+        MOV_THRESHOLD,
+        15,
+        1,
+        5000,
+        5000,
+        0,
+        ['+15005550006'],
+        '+15005550006',
+        ['+15005550006'],
+        1000,
+        'locationName',
+        door_coreID,
+        radar_coreID,
+        'XeThru',
+        2,
+        0,
+        2,
+        8,
+        'alertApiKey',
+        false,
+      )
+      await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+    })
+
+    afterEach(async () => {
+      await redis.clearKeys()
+      await db.clearSessions()
+      await db.clearLocations()
+      helpers.log('\n')
+    })
+
+    it('should return 400 to a im21 door signal with an unregistered coreID', async () => {
+      const response = await chai
+        .request(server)
+        .post('/api/door')
+        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
+      expect(response).to.have.status(400)
+    })
+
+    it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
+      const response = await chai
+        .request(server)
+        .post('/api/devicevitals')
+        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
+      expect(response).to.have.status(400)
+    })
+
+    it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
+      for (let i = 0; i < 5; i += 1) {
+        await xeThruSilence(testLocation1Id)
+      }
+      const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
+      expect(radarRows.length).to.equal(5)
+      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+      expect(sessions.length).to.equal(0)
+    })
+
+    it('radar data showing movement should be saved to redis, but should not trigger a session', async () => {
+      for (let i = 0; i < 15; i += 1) {
+        await xeThruMovement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
+      }
+      const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
+      expect(radarRows.length).to.equal(15)
+      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+      expect(sessions.length).to.equal(0)
+    })
+  })
+
+  describe('POST request radar and door events with INS radar and mock im21 door sensor for an active Location', () => {
     beforeEach(async () => {
       await redis.clearKeys()
       await db.clearSessions()
@@ -269,6 +346,7 @@ describe('Brave Sensor server', () => {
         2,
         8,
         'alertApiKey',
+        true,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
     })
@@ -365,6 +443,83 @@ describe('Brave Sensor server', () => {
     })
   })
 
+  describe('POST request radar and door events with INS radar and mock im21 door sensor for an inactive Location', () => {
+    beforeEach(async () => {
+      await redis.clearKeys()
+      await db.clearSessions()
+      await db.clearLocations()
+
+      await db.createLocation(
+        testLocation1Id,
+        testLocation1PhoneNumber,
+        MOV_THRESHOLD,
+        15,
+        0.2,
+        5000,
+        5000,
+        0,
+        ['+15005550006'],
+        '+15005550006',
+        ['+15005550006'],
+        1000,
+        'locationName',
+        door_coreID,
+        radar_coreID,
+        'Innosent',
+        2,
+        0,
+        2,
+        8,
+        'alertApiKey',
+        false,
+      )
+      await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+    })
+
+    afterEach(async () => {
+      await redis.clearKeys()
+      await db.clearSessions()
+      await db.clearLocations()
+      helpers.log('\n')
+    })
+
+    it('should return 400 to a im21 door signal with an unregistered coreID', async () => {
+      const response = await chai
+        .request(server)
+        .post('/api/door')
+        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
+      expect(response).to.have.status(400)
+    })
+
+    it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
+      const response = await chai
+        .request(server)
+        .post('/api/devicevitals')
+        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
+      expect(response).to.have.status(400)
+    })
+
+    it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
+      for (let i = 0; i < 5; i += 1) {
+        await innosentSilence(radar_coreID)
+      }
+      const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
+      expect(radarRows.length).to.equal(75)
+      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+      expect(sessions.length).to.equal(0)
+    })
+
+    it('radar data showing movement should be saved to redis, but should not trigger a session', async () => {
+      for (let i = 0; i < 15; i += 1) {
+        await innosentMovement(radar_coreID, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
+      }
+      const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
+      expect(radarRows.length).to.equal(225)
+      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+      expect(sessions.length).to.equal(0)
+    })
+  })
+
   describe('Express validation of API and form endpoints', () => {
     describe('api/door endpoint', () => {
       beforeEach(async () => {
@@ -393,6 +548,7 @@ describe('Brave Sensor server', () => {
           2,
           8,
           'alertApiKey',
+          true,
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       })
@@ -460,6 +616,7 @@ describe('Brave Sensor server', () => {
           2,
           8,
           'alertApiKey',
+          true,
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       })
@@ -816,6 +973,7 @@ describe('Brave Sensor server', () => {
             2,
             8,
             'alertApiKey',
+            true,
           )
 
           this.agent = chai.request.agent(server)
@@ -864,8 +1022,8 @@ describe('Brave Sensor server', () => {
 
     describe('POST /locations/:locationId', () => {
       beforeEach(async () => {
-        sinon.stub(helpers, 'log')
-        sinon.stub(helpers, 'logError')
+        sinon.spy(helpers, 'log')
+        sinon.spy(helpers, 'logError')
         sinon.spy(db, 'updateLocation')
 
         this.testLocationIdForEdit = 'test1'
@@ -892,6 +1050,7 @@ describe('Brave Sensor server', () => {
           3,
           4,
           'alertApiKey',
+          true,
         )
       })
 
@@ -933,6 +1092,7 @@ describe('Brave Sensor server', () => {
             reminderTimer: 567849,
             fallbackTimer: 234567,
             alertApiKey: 'newApiKey',
+            isActive: 'true',
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -958,6 +1118,79 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
+          expect(updatedLocation.isActive).to.be.true
+
+          chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
+          chai.assert.equal(updatedLocation.led, this.goodRequest.led)
+          chai.assert.equal(updatedLocation.noisemap, this.goodRequest.noiseMap)
+          chai.assert.equal(updatedLocation.movThreshold, this.goodRequest.movThreshold)
+          chai.assert.equal(updatedLocation.rpmThreshold, this.goodRequest.rpmThreshold)
+          chai.assert.equal(updatedLocation.durationThreshold, this.goodRequest.durationThreshold)
+          chai.assert.equal(updatedLocation.stillThreshold, this.goodRequest.stillThreshold)
+          chai.assert.equal(updatedLocation.autoResetThreshold, this.goodRequest.autoResetThreshold)
+          chai.assert.equal(updatedLocation.doorStickinessDelay, this.goodRequest.doorDelay)
+          chai.assert.equal(updatedLocation.reminderTimer, this.goodRequest.reminderTimer)
+          chai.assert.equal(updatedLocation.fallbackTimer, this.goodRequest.fallbackTimer)
+        })
+      })
+
+      describe('for a request that contains all valid non-empty fields but is inactive', () => {
+        beforeEach(async () => {
+          this.agent = chai.request.agent(server)
+
+          await this.agent.post('/login').send({
+            username: helpers.getEnvVar('WEB_USERNAME'),
+            password: helpers.getEnvVar('PASSWORD'),
+          })
+
+          this.goodRequest = {
+            displayName: 'New Name',
+            doorCoreID: 'new_door_core',
+            radarCoreID: 'new_radar_core',
+            radarType: 'Innosent',
+            phone: '+12223334567',
+            fallbackPhones: '+12223334444,+13334445678',
+            heartbeatPhones: '+15556667890,+16667778901',
+            twilioPhone: '+11112223456',
+            sensitivity: 5,
+            led: 1,
+            noiseMap: 7,
+            movThreshold: 15,
+            rpmThreshold: 9,
+            durationThreshold: 90,
+            stillThreshold: 10,
+            autoResetThreshold: 9999999,
+            doorDelay: 9856,
+            reminderTimer: 567849,
+            fallbackTimer: 234567,
+            alertApiKey: 'newApiKey',
+            isActive: 'false',
+          }
+
+          this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+        })
+
+        afterEach(() => {
+          this.agent.close()
+        })
+
+        it('should return 200', () => {
+          expect(this.response).to.have.status(200)
+        })
+
+        it('should update the location in the database', async () => {
+          const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
+
+          expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
+          expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID)
+          expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
+          expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
+          expect(updatedLocation.phonenumber).to.equal(this.goodRequest.phone)
+          expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
+          expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
+          expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
+          expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
+          expect(updatedLocation.isActive).to.be.false
 
           chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
           chai.assert.equal(updatedLocation.led, this.goodRequest.led)
@@ -1003,6 +1236,7 @@ describe('Brave Sensor server', () => {
             reminderTimer: 567849,
             fallbackTimer: 234567,
             alertApiKey: '',
+            isActive: 'true',
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1028,6 +1262,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
           expect(updatedLocation.alertApiKey).to.be.null
+          expect(updatedLocation.isActive).to.be.true
 
           chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
           chai.assert.equal(updatedLocation.led, this.goodRequest.led)
@@ -1073,6 +1308,7 @@ describe('Brave Sensor server', () => {
             reminderTimer: 567849,
             fallbackTimer: 234567,
             alertApiKey: 'newApiKey',
+            isActive: 'true',
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1098,6 +1334,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
+          expect(updatedLocation.isActive).to.be.true
 
           chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
           chai.assert.equal(updatedLocation.led, this.goodRequest.led)
@@ -1146,6 +1383,7 @@ describe('Brave Sensor server', () => {
             reminderTimer: '',
             fallbackTimer: '',
             alertApiKey: '',
+            isActive: '',
           }
 
           this.response = await this.agent.post(`/locations/${testLocation1Id}`).send(badRequest)
@@ -1165,7 +1403,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),phone/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -1199,7 +1437,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),phone/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),phone/alertApiKey (Invalid value(s))`,
           )
         })
       })
