@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "sensor.fullname" . }}
+  name: {{ include "sensor.fullname" . | quote }}
   labels:
     {{- include "sensor.labels" . | nindent 4 }}
 spec:
@@ -11,4 +11,4 @@ spec:
     targetPort: 8080
   selector:
     {{- include "sensor.selectorLabels" . | nindent 4 }}
-  type: {{ .Values.service.type }}
+  type: {{ .Values.service.type | quote }}
