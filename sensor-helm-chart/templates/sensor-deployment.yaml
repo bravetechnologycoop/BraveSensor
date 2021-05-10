@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "sensor.fullname" . }}
+  name: {{ include "sensor.fullname" . | quote }}
   labels:
     {{- include "sensor.labels" . | nindent 4 }}
 spec:
@@ -15,14 +15,14 @@ spec:
     metadata:
       {{- with .Values.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml . | quote | nindent 8 }}
       {{- end }}
       labels:
         {{- include "sensor.selectorLabels" . | nindent 8 }}
     spec:
       containers:
       - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        name: {{ .Chart.Name }}
+        name: {{ .Chart.Name | quote }}
         imagePullPolicy: Always
         volumeMounts:
           - mountPath: "/etc/brave/ssl"
@@ -32,67 +32,67 @@ spec:
           - name: TWILIO_SID
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: TWILIO_SID
           - name: TWILIO_TOKEN
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: TWILIO_TOKEN
           - name: WEB_USERNAME
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: WEB_USERNAME
           - name: PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: PASSWORD
           - name: REDIS_CLUSTER_IP
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: REDIS_CLUSTER_IP
           - name: SECRET
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: SECRET
           - name: PG_USER
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: PG_USER
           - name: PG_DATABASE
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: PG_DATABASE
           - name: PG_PORT
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: PG_PORT
           - name: PG_HOST
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: PG_HOST
           - name: PG_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: PG_PASSWORD
           - name: SENTRY_DSN
             valueFrom:
               secretKeyRef:
-                name: {{.Values.secretName}}
+                name: {{ .Values.secretName | quote }}
                 key: SENTRY_DSN
           - name: ENVIRONMENT
-            value: {{ include "sensor.fullname" . }}
+            value: {{ include "sensor.fullname" . | quote }}
           - name: RELEASE
-            value: {{ .Values.image.tag }}
+            value: {{ .Values.image.tag | quote }}
       volumes:
         - name: sensors-tls
           secret:

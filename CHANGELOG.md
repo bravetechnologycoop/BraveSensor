@@ -21,6 +21,9 @@ the code was deployed.
 - Improved some API error messages.
 - Heartbeat text now contains troubleshooting instructions and contact email for follow-up. (CU-rx46w0)
 
+### Fixed
+- Helm chart RELEASE variable error when the image tag happened to be an integer.
+
 ## [3.2.0] - 2021-04-26
 
 ### Changed
