@@ -9,6 +9,9 @@ const db = require('../../../db/db.js')
 
 describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneNumber', () => {
   beforeEach(async () => {
+    await db.clearSessions()
+    await db.clearLocations()
+
     this.expectedChatbotState = ALERT_STATE.WAITING_FOR_CATEGORY
     this.expectedIncidentType = 'No One Inside'
     this.expectedLocationDisplayName = 'TEST LOCATION'
@@ -38,6 +41,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
       1,
       1,
       'alertApiKey',
+      true,
     )
     const locationId = (await db.getLocations())[0].locationid
 

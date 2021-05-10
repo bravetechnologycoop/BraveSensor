@@ -152,7 +152,7 @@ async function autoResetSession(locationid) {
 // This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
 if (!helpers.isTestEnvironment()) {
   setInterval(async () => {
-    const locations = await db.getLocations()
+    const locations = await db.getActiveLocations()
     for (let i = 0; i < locations.length; i += 1) {
       const currentLocationId = locations[i]
       const stateHistoryQuery = await redis.getStatesWindow(currentLocationId, '+', '-', 60)
@@ -209,7 +209,7 @@ async function sendResetAlert(locationid) {
 
 // Heartbeat Helper Functions
 async function checkHeartbeat() {
-  const locations = await db.getLocations()
+  const locations = await db.getActiveLocations()
 
   for (const location of locations) {
     let latestRadar
@@ -239,25 +239,24 @@ async function checkHeartbeat() {
   }
 }
 
-async function handleSensorRequest(currentLocationId, radarType) {
+async function handleSensorRequest(location, radarType) {
   let statemachine
   if (radarType === RADAR_TYPE.XETHRU) {
-    statemachine = new XeThruStateMachine(currentLocationId)
+    statemachine = new XeThruStateMachine(location.locationid)
   } else if (radarType === RADAR_TYPE.INNOSENT) {
-    statemachine = new InnosentStateMachine(currentLocationId)
+    statemachine = new InnosentStateMachine(location.locationid)
   }
   const currentState = await statemachine.getNextState(db, redis)
-  const stateobject = await redis.getLatestLocationStatesData(currentLocationId)
+  const stateobject = await redis.getLatestLocationStatesData(location.locationid)
   let prevState
   if (!stateobject) {
     prevState = STATE.RESET
   } else {
     prevState = stateobject.state
   }
-  const location = await db.getLocationData(currentLocationId)
 
   // Get current time to compare to the session's start time
-  const location_start_time = start_times[currentLocationId]
+  const location_start_time = start_times[location.locationid]
   let sessionDuration
 
   if (location_start_time !== null && location_start_time !== undefined) {
@@ -273,22 +272,22 @@ async function handleSensorRequest(currentLocationId, radarType) {
   // If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well.
   if (sessionDuration * 1000 > location.autoResetThreshold) {
     autoResetSession(location.locationid)
-    helpers.log(`${currentLocationId}: autoResetSession has been called`)
+    helpers.log(`${location.locationid}: autoResetSession has been called`)
     sendResetAlert(location.locationid)
   }
 
   // To avoid filling the DB with repeated states in a row.
   // eslint-disable-next-line eqeqeq
   if (currentState != prevState) {
-    helpers.log(`${currentLocationId}: ${currentState}`)
+    helpers.log(`${location.locationid}: ${currentState}`)
 
-    await redis.addStateMachineData(currentState, currentLocationId)
+    await redis.addStateMachineData(currentState, location.locationid)
 
     if (VOIDSTATES.includes(currentState)) {
       let client
       try {
         client = await db.beginTransaction()
-        const latestSession = await db.getMostRecentSession(currentLocationId, client)
+        const latestSession = await db.getMostRecentSession(location.locationid, client)
 
         if (typeof latestSession !== 'undefined') {
           // Checks if no session exists for this location yet.
@@ -311,21 +310,21 @@ async function handleSensorRequest(currentLocationId, radarType) {
       let client
       try {
         client = await db.beginTransaction()
-        const latestSession = await db.getMostRecentSession(currentLocationId, client)
+        const latestSession = await db.getMostRecentSession(location.locationid, client)
 
         if (typeof latestSession !== 'undefined') {
           // Checks if session exists
           if (latestSession.endTime == null) {
             // Checks if session is open for this location
             const currentSession = await db.updateSessionState(latestSession.sessionid, currentState, client)
-            start_times[currentLocationId] = currentSession.startTime
+            start_times[location.locationid] = currentSession.startTime
           } else {
-            const currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client)
-            start_times[currentLocationId] = currentSession.startTime
+            const currentSession = await db.createSession(location.phonenumber, location.locationid, currentState, client)
+            start_times[location.locationid] = currentSession.startTime
           }
         } else {
-          const currentSession = await db.createSession(location.phonenumber, currentLocationId, currentState, client)
-          start_times[currentLocationId] = currentSession.startTime
+          const currentSession = await db.createSession(location.phonenumber, location.locationid, currentState, client)
+          start_times[location.locationid] = currentSession.startTime
         }
         await db.commitTransaction(client)
       } catch (e) {
@@ -342,12 +341,12 @@ async function handleSensorRequest(currentLocationId, radarType) {
       try {
         client = await db.beginTransaction()
 
-        const latestSession = await db.getMostRecentSession(currentLocationId, client)
+        const latestSession = await db.getMostRecentSession(location.locationid, client)
         await db.updateSessionState(latestSession.sessionid, currentState, client)
 
         await db.closeSession(latestSession.sessionid, client)
-        helpers.log(`Session at ${currentLocationId} was closed successfully.`)
-        start_times[currentLocationId] = null
+        helpers.log(`Session at ${location.locationid} was closed successfully.`)
+        start_times[location.locationid] = null
         await db.commitTransaction(client)
       } catch (e) {
         try {
@@ -359,7 +358,7 @@ async function handleSensorRequest(currentLocationId, radarType) {
         }
       }
     } else if (ALERTSTARTSTATES.includes(currentState)) {
-      const latestSession = await db.getMostRecentSession(currentLocationId)
+      const latestSession = await db.getMostRecentSession(location.locationid)
 
       // eslint-disable-next-line eqeqeq
       if (latestSession.odFlag == 1) {
@@ -384,7 +383,7 @@ async function handleSensorRequest(currentLocationId, radarType) {
     }
   } else {
     // If statemachine doesn't run, emits latest session data to Frontend
-    const currentSession = await db.getMostRecentSession(currentLocationId)
+    const currentSession = await db.getMostRecentSession(location.locationid)
 
     // Checks if session is in the STILL state and, if so, how long it has been in that state for.
     if (typeof currentSession !== 'undefined') {
@@ -466,7 +465,7 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
 
     const viewParams = {
       locations: allLocations.map(location => {
-        return { name: location.displayName, id: location.locationid, sessionStart: location.sessionStart }
+        return { name: location.displayName, id: location.locationid, sessionStart: location.sessionStart, isActive: location.isActive }
       }),
     }
 
@@ -636,6 +635,7 @@ app.post(
       'doorDelay',
       'reminderTimer',
       'fallbackTimer',
+      'isActive',
     ]).notEmpty(),
     Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
   ],
@@ -677,6 +677,7 @@ app.post(
           data.reminderTimer,
           data.fallbackTimer,
           newAlertApiKey,
+          data.isActive === 'true',
           data.locationid,
         )
 
@@ -705,7 +706,12 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
       const { locationid, state, rpm, distance, mov_f, mov_s } = req.body
 
       await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s)
-      await handleSensorRequest(locationid, RADAR_TYPE.XETHRU)
+
+      const location = await db.getLocationData(locationid)
+      if (location.isActive) {
+        await handleSensorRequest(location, RADAR_TYPE.XETHRU)
+      }
+
       res.status(200).json('OK')
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
@@ -743,12 +749,16 @@ app.post(
           helpers.logError(errorMessage)
           response.status(400).json(errorMessage)
         } else {
-          const locationid = location.locationid
           const data = JSON.parse(request.body.data)
           const inPhase = data.inPhase
           const quadrature = data.quadrature
-          await redis.addInnosentRadarSensorData(locationid, inPhase, quadrature)
-          await handleSensorRequest(locationid, RADAR_TYPE.INNOSENT)
+
+          await redis.addInnosentRadarSensorData(location.locationid, inPhase, quadrature)
+
+          if (location.isActive) {
+            await handleSensorRequest(location, RADAR_TYPE.INNOSENT)
+          }
+
           response.status(200).json('OK')
         }
       } else {
@@ -794,7 +804,10 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         }
 
         await redis.addIM21DoorSensorData(locationid, doorSignal, control)
-        await handleSensorRequest(locationid, radarType)
+        if (location.isActive) {
+          await handleSensorRequest(location, radarType)
+        }
+
         response.status(200).json('OK')
       }
     } else {
@@ -879,6 +892,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       2,
       8,
       'alertApiKey',
+      true,
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
     response.status(200).send()

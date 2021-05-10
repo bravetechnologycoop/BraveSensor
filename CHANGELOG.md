@@ -16,10 +16,12 @@ the code was deployed.
 - Ability to send heartbeats to multiple recipients (CU-rx46w0)
 - Tracking errors and outages with Sentry (CU-px7k6e)
 - API Key for locations (CU-hjwazd)
+- Concept of active/inactive locations (CU-rk8axg)
 
 ### Changed
 - Improved some API error messages.
 - Heartbeat text now contains troubleshooting instructions and contact email for follow-up. (CU-rx46w0)
+- Do not change state or send alerts for inactive locations (CU-rk8axg)
 
 ### Fixed
 - Helm chart RELEASE variable error when the image tag happened to be an integer.

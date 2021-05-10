@@ -1,6 +1,6 @@
 class Location {
   // prettier-ignore
-  constructor(locationid, displayName, phonenumber, sensitivity, led, noisemap, movThreshold, durationThreshold, stillThreshold, rpmThreshold, heartbeatSentAlerts, heartbeatAlertRecipients, doorCoreId, radarCoreId, radarType, reminderTimer, fallbackTimer, autoResetThreshold, twilioNumber, fallbackNumbers, doorStickinessDelay, alertApiKey) {
+  constructor(locationid, displayName, phonenumber, sensitivity, led, noisemap, movThreshold, durationThreshold, stillThreshold, rpmThreshold, heartbeatSentAlerts, heartbeatAlertRecipients, doorCoreId, radarCoreId, radarType, reminderTimer, fallbackTimer, autoResetThreshold, twilioNumber, fallbackNumbers, doorStickinessDelay, alertApiKey, isActive) {
     this.locationid = locationid
     this.displayName = displayName
     this.phonenumber = phonenumber
@@ -23,6 +23,7 @@ class Location {
     this.fallbackNumbers = fallbackNumbers
     this.doorStickinessDelay = doorStickinessDelay
     this.alertApiKey = alertApiKey
+    this.isActive = isActive
   }
 }
 
