@@ -11,6 +11,14 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- logSentry calls appear as messages instead of exceptions (CU-px7k6e)
+
+### Fixed
+
+- Error log for /alert/sms now has the correct route name
+
 ## [3.3.0] - 2021-05-27
 
 ### Added
