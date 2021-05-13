@@ -867,7 +867,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       30000,
       120000,
       3000,
-      recipientNumber,
+      [recipientNumber],
       twilioNumber,
       [recipientNumber],
       45000,
