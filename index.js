@@ -135,6 +135,7 @@ async function autoResetSession(locationid) {
     await db.closeSession(currentSession.sessionid, client)
     await db.updateSessionResetDetails(currentSession.sessionid, 'Auto reset', 'Reset', client)
     redis.addStateMachineData('Reset', locationid)
+    start_times[locationid] = null
     await db.commitTransaction(client)
   } catch (e) {
     helpers.log('Could not reset open session')
@@ -270,10 +271,8 @@ async function handleSensorRequest(currentLocationId, radarType) {
   }
 
   // If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well.
-
   if (sessionDuration * 1000 > location.autoResetThreshold) {
     autoResetSession(location.locationid)
-    start_times[currentLocationId] = null
     helpers.log(`${currentLocationId}: autoResetSession has been called`)
     sendResetAlert(location.locationid)
   }

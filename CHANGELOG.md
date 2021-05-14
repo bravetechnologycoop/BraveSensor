@@ -23,6 +23,7 @@ the code was deployed.
 
 ### Fixed
 - Helm chart RELEASE variable error when the image tag happened to be an integer.
+- Race condition in auto-reset (CU-vf7z0f).
 
 ## [3.2.0] - 2021-04-26
 
