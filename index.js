@@ -289,12 +289,9 @@ async function handleSensorRequest(location, radarType) {
         client = await db.beginTransaction()
         const latestSession = await db.getMostRecentSession(location.locationid, client)
 
-        if (typeof latestSession !== 'undefined') {
-          // Checks if no session exists for this location yet.
-          if (latestSession.endTime == null) {
-            // Checks if session is open.
-            await db.updateSessionState(latestSession.sessionid, currentState, client)
-          }
+        // If there is an open session for this location
+        if (latestSession !== null && latestSession.endTime === null) {
+          await db.updateSessionState(latestSession.sessionid, currentState, client)
         }
         await db.commitTransaction(client)
       } catch (e) {
@@ -312,7 +309,7 @@ async function handleSensorRequest(location, radarType) {
         client = await db.beginTransaction()
         const latestSession = await db.getMostRecentSession(location.locationid, client)
 
-        if (typeof latestSession !== 'undefined') {
+        if (latestSession !== null) {
           // Checks if session exists
           if (latestSession.endTime == null) {
             // Checks if session is open for this location
@@ -386,7 +383,7 @@ async function handleSensorRequest(location, radarType) {
     const currentSession = await db.getMostRecentSession(location.locationid)
 
     // Checks if session is in the STILL state and, if so, how long it has been in that state for.
-    if (typeof currentSession !== 'undefined') {
+    if (currentSession !== null) {
       if (currentSession.state === 'Still' || currentSession.state === 'Breathing') {
         if (currentSession.endTime == null) {
           // Only increases counter if session is open
@@ -456,7 +453,7 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
 
     for (const location of allLocations) {
       const recentSession = await db.getMostRecentSession(location.locationid)
-      if (recentSession) {
+      if (recentSession !== null) {
         const sessionStartTime = Date.parse(recentSession.startTime)
         const timeSinceLastSession = await generateCalculatedTimeDifferenceString(sessionStartTime)
         location.sessionStart = timeSinceLastSession
