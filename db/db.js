@@ -63,7 +63,7 @@ async function rollbackTransaction(client) {
 
 async function runQuery(functionName, queryString, queryParams, clientParam) {
   let client = clientParam
-  const transactionMode = typeof client !== 'undefined'
+  const transactionMode = client !== undefined
 
   try {
     if (!transactionMode) {
@@ -104,7 +104,7 @@ async function getMostRecentSession(locationid, clientParam) {
       clientParam,
     )
 
-    if (typeof results === 'undefined') {
+    if (results === undefined || results.rows.length === 0) {
       return null
     }
 
@@ -118,6 +118,10 @@ async function getMostRecentSession(locationid, clientParam) {
 async function getSessionWithSessionId(sessionid, clientParam) {
   try {
     const results = await runQuery('getSessionWithSessionId', 'SELECT * FROM sessions WHERE sessionid = $1', [sessionid], clientParam)
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
 
     return createSessionFromRow(results.rows[0])
   } catch (err) {
@@ -135,7 +139,7 @@ async function getMostRecentSessionPhone(twilioNumber, clientParam) {
       clientParam,
     )
 
-    if (results === undefined) {
+    if (results === undefined || results.rows.length === 0) {
       return null
     }
 
@@ -154,7 +158,7 @@ async function getHistoryOfSessions(locationid, clientParam) {
       clientParam,
     )
 
-    if (typeof results === 'undefined') {
+    if (results === undefined) {
       return null
     }
 
@@ -437,7 +441,7 @@ async function getLocationData(locationid, clientParam) {
   try {
     const results = await runQuery('getLocationData', 'SELECT * FROM locations WHERE locationid = $1', [locationid], clientParam)
 
-    if (results === undefined) {
+    if (results === undefined || results.rows.length === 0) {
       return null
     }
 
@@ -471,8 +475,8 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
       [coreID],
       clientParam,
     )
-    if (results === undefined) {
-      helpers.logError('Error: No location with associated coreID exists')
+
+    if (results === undefined || results.rows.length === 0) {
       return null
     }
 
@@ -486,7 +490,7 @@ async function getActiveLocations(clientParam) {
   try {
     const results = await runQuery('getLocations', 'SELECT * FROM locations WHERE is_active', [], clientParam)
 
-    if (typeof results === 'undefined') {
+    if (results === undefined) {
       return null
     }
 
@@ -501,7 +505,7 @@ async function getLocations(clientParam) {
   try {
     const results = await runQuery('getLocations', 'SELECT * FROM locations ORDER BY display_name', [], clientParam)
 
-    if (typeof results === 'undefined') {
+    if (results === undefined) {
       return null
     }
 
