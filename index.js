@@ -713,11 +713,14 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.logError(errorMessage)
-      res.status(400).send(errorMessage)
+      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+      res.status(200).json(errorMessage)
     }
   } catch (err) {
-    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
-    res.status(500).send()
+    const errorMessage = `Error calling ${req.path}: ${JSON.stringify(err)}`
+    helpers.logError(errorMessage)
+    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+    res.status(200).json(errorMessage)
   }
 })
 
@@ -744,7 +747,8 @@ app.post(
         if (!location) {
           const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
           helpers.logError(errorMessage)
-          response.status(400).json(errorMessage)
+          // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+          response.status(200).json(errorMessage)
         } else {
           const data = JSON.parse(request.body.data)
           const inPhase = data.inPhase
@@ -761,11 +765,14 @@ app.post(
       } else {
         const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
         helpers.logError(errorMessage)
-        response.status(400).send(errorMessage)
+        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+        response.status(200).json(errorMessage)
       }
     } catch (err) {
-      helpers.logError(`Error calling ${request.path}: ${JSON.stringify(err)}`)
-      response.status(500).send()
+      const errorMessage = `Error calling ${request.path}: ${JSON.stringify(err)}`
+      helpers.logError(errorMessage)
+      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+      response.status(200).json(errorMessage)
     }
   },
 )
@@ -781,7 +788,8 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
       if (!location) {
         const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
         helpers.logError(errorMessage)
-        response.status(400).json(errorMessage)
+        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+        response.status(200).json(errorMessage)
       } else {
         const locationid = location.locationid
         const radarType = location.radarType
@@ -810,11 +818,14 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
     } else {
       const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
       helpers.logError(errorMessage)
-      response.status(400).send(errorMessage)
+      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+      response.status(200).json(errorMessage)
     }
   } catch (err) {
-    helpers.logError(`Error calling ${request.path}: ${JSON.stringify(err)}`)
-    response.status(500).send()
+    const errorMessage = `Error calling ${request.path}: ${JSON.stringify(err)}`
+    helpers.logError(errorMessage)
+    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+    response.status(200).json(errorMessage)
   }
 })
 

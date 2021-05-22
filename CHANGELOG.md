@@ -19,13 +19,16 @@ the code was deployed.
 - Concept of active/inactive locations (CU-rk8axg)
 
 ### Changed
+
 - Improved some API error messages.
 - Heartbeat text now contains troubleshooting instructions and contact email for follow-up. (CU-rx46w0)
 - Do not change state or send alerts for inactive locations (CU-rk8axg)
+- Always return 200 to Particle when it calls our APIs (CU-m0we6c)
 
 ### Fixed
-- Helm chart RELEASE variable error when the image tag happened to be an integer.
-- Race condition in auto-reset (CU-vf7z0f).
+
+- Helm chart RELEASE variable error when the image tag happened to be an integer
+- Race condition in auto-reset (CU-vf7z0f)
 
 ## [3.2.0] - 2021-04-26
 

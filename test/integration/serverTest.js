@@ -158,12 +158,12 @@ describe('Brave Sensor server', () => {
       helpers.log('\n')
     })
 
-    it('should return 400 to a im21 door signal with an unregistered coreID', async () => {
+    it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
       const response = await chai
         .request(server)
         .post('/api/door')
         .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(400)
+      expect(response).to.have.status(200)
     })
 
     it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
@@ -281,12 +281,12 @@ describe('Brave Sensor server', () => {
       helpers.log('\n')
     })
 
-    it('should return 400 to a im21 door signal with an unregistered coreID', async () => {
+    it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
       const response = await chai
         .request(server)
         .post('/api/door')
         .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(400)
+      expect(response).to.have.status(200)
     })
 
     it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
@@ -358,12 +358,12 @@ describe('Brave Sensor server', () => {
       helpers.log('\n')
     })
 
-    it('should return 400 to a im21 door signal with an unregistered coreID', async () => {
+    it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
       const response = await chai
         .request(server)
         .post('/api/door')
         .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(400)
+      expect(response).to.have.status(200)
     })
 
     it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
@@ -483,12 +483,12 @@ describe('Brave Sensor server', () => {
       helpers.log('\n')
     })
 
-    it('should return 400 to a im21 door signal with an unregistered coreID', async () => {
+    it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
       const response = await chai
         .request(server)
         .post('/api/door')
         .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(400)
+      expect(response).to.have.status(200)
     })
 
     it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
@@ -570,22 +570,22 @@ describe('Brave Sensor server', () => {
         expect(response).to.have.status(200)
       })
 
-      it('should return 400 for a request that does not contain coreid', async () => {
+      it('should return 200 for a request that does not contain coreid', async () => {
         const badRequest = {
           data: `{ "data": "${IM21_DOOR_STATUS.CLOSED}", "control": "86"}`,
         }
 
         const response = await chai.request(server).post('/api/door').send(badRequest)
-        expect(response).to.have.status(400)
+        expect(response).to.have.status(200)
       })
 
-      it('should return 400 for a request that does not contain data', async () => {
+      it('should return 200 for a request that does not contain data', async () => {
         const badRequest = {
           coreid: door_coreID,
         }
 
         const response = await chai.request(server).post('/api/door').send(badRequest)
-        expect(response).to.have.status(400)
+        expect(response).to.have.status(200)
       })
     })
 
