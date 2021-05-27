@@ -22,6 +22,11 @@ function connect() {
   }
 }
 
+async function getCurrentTimeinSeconds() {
+  const time = await client.time()
+  return time[0]
+}
+
 async function getXethruWindow(locationID, startTime, endTime, windowLength) {
   const rows = await client.xrevrange(`xethru:${locationID}`, startTime, endTime, 'count', windowLength)
   const radarStream = rows.map(entry => new XeThruData(entry))
@@ -143,6 +148,7 @@ module.exports = {
   clearKeys,
   connect,
   disconnect,
+  getCurrentTimeinSeconds,
   getInnosentWindow,
   getInnosentStream,
   getXethruWindow,

@@ -23,7 +23,6 @@ const BraveAlerterConfigurator = require('./BraveAlerterConfigurator.js')
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
 const SESSIONSTATE_DOOR = require('./SessionStateDoorEnum')
 
-const RADAR_THRESHOLD_MILLIS = 30 * 60 * 1000
 const WATCHDOG_TIMER_FREQUENCY = 60 * 1000
 
 const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationsDashboard.mst`, 'utf-8')
@@ -84,6 +83,10 @@ app.use(
     },
   }),
 )
+
+function convertToSeconds(milliseconds) {
+  return Math.floor(milliseconds / 1000)
+}
 
 async function generateCalculatedTimeDifferenceString(timeToCompare) {
   const daySecs = 24 * 60 * 60
@@ -190,7 +193,7 @@ async function sendSingleAlert(locationid, message) {
   })
 }
 
-async function sendAlerts(locationid, displayName) {
+async function sendDisconnectionMessage(locationid, displayName) {
   await sendSingleAlert(
     locationid,
     `The Brave Sensor at ${displayName} (${locationid}) has disconnected. \nPlease press the reset buttons on either side of the sensor box.\nIf you do not receive a reconnection message shortly after pressing both reset buttons, contact your network administrator.\nYou can also email contact@brave.coop for further support.`,
@@ -213,23 +216,36 @@ async function checkHeartbeat() {
 
   for (const location of locations) {
     let latestRadar
+    let latestDoor
+
     try {
       if (location.radarType === RADAR_TYPE.XETHRU) {
         const xeThruData = await redis.getLatestXeThruSensorData(location.locationid)
-        latestRadar = moment(xeThruData.timestamp, 'x')
+        latestRadar = convertToSeconds(xeThruData.timestamp)
       } else if (location.radarType === RADAR_TYPE.INNOSENT) {
         const innosentData = await redis.getLatestInnosentSensorData(location.locationid)
-        latestRadar = moment(innosentData.timestamp, 'x')
+        latestRadar = convertToSeconds(innosentData.timestamp)
       }
-      const currentTime = moment()
-      const radarDelay = currentTime.diff(latestRadar)
+      const doorData = await redis.getLatestDoorSensorData(location.locationid)
+      latestDoor = convertToSeconds(doorData.timestamp)
+      const redisTime = await redis.getCurrentTimeinSeconds()
+      const radarDelay = redisTime - latestRadar
+      const doorDelay = redisTime - latestDoor
 
-      if (radarDelay > RADAR_THRESHOLD_MILLIS && !location.heartbeatSentAlerts) {
-        helpers.logSentry(`Radar Heartbeat threshold exceeded; sending alerts for ${location.locationid}`)
+      const doorHeartbeatExceeded = doorDelay > helpers.getEnvVar('DOOR_THRESHOLD_SECONDS')
+      const radarHeartbeatExceeded = radarDelay > helpers.getEnvVar('RADAR_THRESHOLD_SECONDS')
+
+      if ((doorHeartbeatExceeded || radarHeartbeatExceeded) && !location.heartbeatSentAlerts) {
+        if (doorHeartbeatExceeded) {
+          helpers.logSentry(`Door sensor down at ${location.locationid}`)
+        }
+        if (radarHeartbeatExceeded) {
+          helpers.logSentry(`Radar sensor down at ${location.locationid}`)
+        }
         await db.updateSentAlerts(location.locationid, true)
-        sendAlerts(location.locationid, location.displayName)
-      } else if (radarDelay < RADAR_THRESHOLD_MILLIS && location.heartbeatSentAlerts) {
-        helpers.logSentry(`Radar at ${location.locationid} reconnected`)
+        sendDisconnectionMessage(location.locationid, location.displayName)
+      } else if (!doorHeartbeatExceeded && !radarHeartbeatExceeded && location.heartbeatSentAlerts) {
+        helpers.logSentry(`${location.locationid} reconnected`)
         await db.updateSentAlerts(location.locationid, false)
         sendReconnectionMessage(location.locationid, location.displayName)
       }
@@ -705,7 +721,7 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
       await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s)
 
       const location = await db.getLocationData(locationid)
-      if (location.isActive) {
+      if (location.isActive && !location.heartbeatSentAlerts) {
         await handleSensorRequest(location, RADAR_TYPE.XETHRU)
       }
 
@@ -756,7 +772,7 @@ app.post(
 
           await redis.addInnosentRadarSensorData(location.locationid, inPhase, quadrature)
 
-          if (location.isActive) {
+          if (location.isActive && !location.heartbeatSentAlerts) {
             await handleSensorRequest(location, RADAR_TYPE.INNOSENT)
           }
 
@@ -797,19 +813,17 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         const signal = message.data
         const control = message.control
         let doorSignal
-        if (signal === IM21_DOOR_STATUS.OPEN) {
+        if (signal === IM21_DOOR_STATUS.OPEN || signal === IM21_DOOR_STATUS.HEARTBEAT_OPEN) {
           doorSignal = SESSIONSTATE_DOOR.OPEN
-        } else if (signal === IM21_DOOR_STATUS.CLOSED) {
+        } else if (signal === IM21_DOOR_STATUS.CLOSED || signal === IM21_DOOR_STATUS.HEARTBEAT_CLOSED) {
           doorSignal = SESSIONSTATE_DOOR.CLOSED
         } else if (signal === IM21_DOOR_STATUS.LOW_BATT) {
           doorSignal = 'LowBatt'
-          helpers.logSentry(`Received a low battery alert for ${locationid}: ${message}`)
-        } else if (signal === IM21_DOOR_STATUS.HEARTBEAT_OPEN || signal === IM21_DOOR_STATUS.HEARTBEAT_CLOSED) {
-          doorSignal = 'HeartBeat'
+          helpers.logSentry(`Received a low battery alert for ${locationid}`)
+          sendSingleAlert(locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
         }
-
         await redis.addIM21DoorSensorData(locationid, doorSignal, control)
-        if (location.isActive) {
+        if (location.isActive && !location.heartbeatSentAlerts) {
           await handleSensorRequest(location, radarType)
         }
 
