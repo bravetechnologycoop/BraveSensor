@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Storing and checking for door heartbeat messages (CU-wf97dy).
+
 ### Changed
 
 - logSentry calls appear as messages instead of exceptions (CU-px7k6e)

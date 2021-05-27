@@ -89,6 +89,16 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: SENTRY_DSN
+          - name: RADAR_THRESHOLD_SECONDS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: RADAR_THRESHOLD_SECONDS
+          - name: DOOR_THRESHOLD_SECONDS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: DOOR_THRESHOLD_SECONDS
           - name: ENVIRONMENT
             value: {{ include "sensor.fullname" . | quote }}
           - name: RELEASE
