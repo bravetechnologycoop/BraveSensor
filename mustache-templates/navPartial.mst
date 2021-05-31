@@ -26,6 +26,11 @@
             </li>
             <li class="nav-item">
                 <button class="btn btn-logout">
+                    <a href="/notifications/new" class="text-decoration-none">New Notification</a>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="btn btn-logout">
                     <a href="/logout" class="text-decoration-none">Log Out</a>
                 </button>
             </li>

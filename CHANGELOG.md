@@ -13,7 +13,8 @@ the code was deployed.
 
 ### Added
 
-- Storing and checking for door heartbeat messages (CU-wf97dy).
+- Storing and checking for door heartbeat messages (CU-wf97dy)
+- New Notification page on the Dashboard (CU-w9bcb5)
 
 ### Changed
 

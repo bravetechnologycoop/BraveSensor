@@ -7,7 +7,7 @@ const Mustache = require('mustache')
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const { helpers, BraveAlerter } = require('brave-alert-lib')
 const db = require('./db/db.js')
 
 const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationsDashboard.mst`, 'utf-8')
@@ -18,6 +18,8 @@ const locationsCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/loc
 const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newLocation.mst`, 'utf-8')
 const updateLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateLocation.mst`, 'utf-8')
 const locationFormCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationFormCSSPartial.mst`, 'utf-8')
+const newNotificationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newNotification.mst`, 'utf-8')
+const notificationFormCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/notificationFormCSSPartial.mst`, 'utf-8')
 
 async function generateCalculatedTimeDifferenceString(timeToCompare) {
   const daySecs = 24 * 60 * 60
@@ -234,6 +236,23 @@ async function renderLocationEditPage(req, res) {
   }
 }
 
+async function renderNewNotificationPage(req, res) {
+  try {
+    const allLocations = await db.getLocations()
+
+    const viewParams = {
+      locations: allLocations.map(location => {
+        return { name: location.displayName, id: location.locationid }
+      }),
+    }
+
+    res.send(Mustache.render(newNotificationTemplate, viewParams, { nav: navPartial, css: notificationFormCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
+    res.status(500).send()
+  }
+}
+
 const validateNewLocation = [
   Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'twilioPhone']).notEmpty(),
   Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
@@ -362,6 +381,51 @@ async function submitEditLocation(req, res) {
   }
 }
 
+const validateNewNotification = Validator.body(['body']).notEmpty()
+
+async function submitNewNotification(req, res) {
+  try {
+    if (!req.session.user || !req.cookies.user_sid) {
+      helpers.logError('Unauthorized')
+      res.status(401).send()
+      return
+    }
+
+    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+
+    if (validationErrors.isEmpty()) {
+      const { subject, body, sendToInactive } = req.body
+
+      let locations = []
+      if (sendToInactive) {
+        locations = await db.getLocations()
+      } else {
+        locations = await db.getActiveLocations()
+      }
+
+      let message
+      if (subject) {
+        message = `${subject}:\n${body}`
+      } else {
+        message = body
+      }
+
+      for (const location of locations) {
+        await BraveAlerter.sendSingleAlert(location.phonenumber, location.twilioNumber, message)
+      }
+
+      res.redirect('/notifications/new')
+    } else {
+      const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
+      helpers.logError(errorMessage)
+      res.status(400).send(errorMessage)
+    }
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
 module.exports = {
   redirectToHomePage,
   renderLandingPage,
@@ -369,12 +433,15 @@ module.exports = {
   renderLocationEditPage,
   renderLoginPage,
   renderNewLocationPage,
+  renderNewNotificationPage,
   sessionChecker,
   setupDashboardSessions,
   submitEditLocation,
   submitLogin,
   submitLogout,
   submitNewLocation,
+  submitNewNotification,
   validateEditLocation,
   validateNewLocation,
+  validateNewNotification,
 }

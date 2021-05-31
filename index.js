@@ -2,7 +2,6 @@
 const express = require('express')
 const fs = require('fs')
 const https = require('https')
-const moment = require('moment-timezone')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const Validator = require('express-validator')
