@@ -32,7 +32,7 @@ function createSessionFromRow(r) {
 
 function createLocationFromRow(r) {
   // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.phonenumber, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.auto_reset_threshold, r.twilio_number, r.fallback_phonenumbers, r.door_stickiness_delay, r.alert_api_key, r.is_active)
+  return new Location(r.locationid, r.display_name, r.phonenumber, r.mov_threshold, r.duration_threshold, r.still_threshold, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.auto_reset_threshold, r.twilio_number, r.fallback_phonenumbers, r.door_stickiness_delay, r.alert_api_key, r.is_active)
 }
 
 async function beginTransaction() {
@@ -362,7 +362,6 @@ async function isOverdoseSuspectedInnosent(session, location, clientParam) {
  * Checks various conditions to determine whether an overdose has occurred or not
  * If an overdose is detected, the od_flag is raised and saved in the database
  * Checks:
- *   RPM is a low value
  *   Person hasn't been moving for a long time
  *   Total time in the bathroom exceeds a certain value
  */
@@ -375,25 +374,23 @@ async function isOverdoseSuspected(xethru, session, location, clientParam) {
     const sessionDuration = (now - start_time_sesh) / 1000
 
     // threshold values for the various overdose conditions
-    const rpm_threshold = location.rpmThreshold
     const still_threshold = location.stillThreshold
     const sessionDuration_threshold = location.durationThreshold
 
     // number in front represents the weighting
     // eslint-disable-next-line eqeqeq
-    const condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0)
-    const condition2 = 1 * (session.stillCounter > still_threshold) // seconds
-    const condition3 = 1 * (sessionDuration > sessionDuration_threshold)
+    const condition1 = 1 * (session.stillCounter > still_threshold) // seconds
+    const condition2 = 1 * (sessionDuration > sessionDuration_threshold)
 
     let alertReason = ALERT_REASON.NOTSET
 
     // eslint-disable-next-line eqeqeq
-    if (condition3 === 1) {
+    if (condition2 === 1) {
       alertReason = ALERT_REASON.DURATION
     }
 
     // eslint-disable-next-line eqeqeq
-    if (condition2 === 1 || condition1 == 1) {
+    if (condition1 == 1) {
       alertReason = ALERT_REASON.STILLNESS
     }
 
@@ -401,7 +398,7 @@ async function isOverdoseSuspected(xethru, session, location, clientParam) {
 
     // This method just looks for a majority of conditions to be met
     // This method can apply different weights for different criteria
-    if (condition1 + condition2 + condition3 >= conditionThreshold) {
+    if (condition1 + condition2 >= conditionThreshold) {
       // update the table entry so od_flag is 1
       try {
         await runQuery(
@@ -517,11 +514,11 @@ async function getLocations(clientParam) {
 
 // Updates the locations table entry for a specific location with the new data
 // eslint-disable-next-line prettier/prettier
-async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phonenumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, sensitivity, led, noisemap, movThreshold, rpmThreshold, durationThreshold, stillThreshold, autoResetThreshold, doorStickinessDelay, reminderTimer, fallbackTimer, alertApiKey, isActive, locationid, clientParam) {
+async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phonenumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, movThreshold, durationThreshold, stillThreshold, autoResetThreshold, doorStickinessDelay, reminderTimer, fallbackTimer, alertApiKey, isActive, locationid, clientParam) {
   try {
     const results = await runQuery(
       'updateLocation',
-      'UPDATE locations SET display_name = $1, door_particlecoreid = $2, radar_particlecoreid = $3, radar_type = $4, phonenumber = $5, fallback_phonenumbers = $6, heartbeat_alert_recipients = $7, twilio_number = $8, sensitivity = $9, led = $10, noisemap = $11, mov_threshold = $12, rpm_threshold = $13, duration_threshold = $14, still_threshold = $15, auto_reset_threshold = $16, door_stickiness_delay = $17, reminder_timer = $18, fallback_timer = $19, alert_api_key = $20, is_active = $21 WHERE locationid = $22 returning *',
+      'UPDATE locations SET display_name = $1, door_particlecoreid = $2, radar_particlecoreid = $3, radar_type = $4, phonenumber = $5, fallback_phonenumbers = $6, heartbeat_alert_recipients = $7, twilio_number = $8, mov_threshold = $9, duration_threshold = $10, still_threshold = $11, auto_reset_threshold = $12, door_stickiness_delay = $13, reminder_timer = $14, fallback_timer = $15, alert_api_key = $16, is_active = $17 WHERE locationid = $18 returning *',
       [
         displayName,
         doorCoreId,
@@ -531,11 +528,7 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
         fallbackNumbers,
         heartbeatAlertRecipients,
         twilioNumber,
-        sensitivity,
-        led,
-        noisemap,
         movThreshold,
-        rpmThreshold,
         durationThreshold,
         stillThreshold,
         autoResetThreshold,
@@ -583,11 +576,11 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
 
 // Adds a location table entry
 // eslint-disable-next-line prettier/prettier
-async function createLocation(locationid, phonenumber, movThreshold, stillThreshold, durationThreshold, reminderTimer, autoResetThreshold, doorStickinessDelay, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, sensitivity, led, noisemap, rpmThreshold, alertApiKey, isActive, clientParam) {
+async function createLocation(locationid, phonenumber, movThreshold, stillThreshold, durationThreshold, reminderTimer, autoResetThreshold, doorStickinessDelay, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, alertApiKey, isActive, clientParam) {
   try {
     await runQuery(
       'createLocation',
-      'INSERT INTO locations(locationid, phonenumber, mov_threshold, still_threshold, duration_threshold, reminder_timer, auto_reset_threshold, door_stickiness_delay, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, sensitivity, led, noisemap, rpm_threshold, alert_api_key, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)',
+      'INSERT INTO locations(locationid, phonenumber, mov_threshold, still_threshold, duration_threshold, reminder_timer, auto_reset_threshold, door_stickiness_delay, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, alert_api_key, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)',
       [
         locationid,
         phonenumber,
@@ -605,10 +598,6 @@ async function createLocation(locationid, phonenumber, movThreshold, stillThresh
         doorCoreId,
         radarCoreId,
         radarType,
-        sensitivity,
-        led,
-        noisemap,
-        rpmThreshold,
         alertApiKey,
         isActive,
       ],

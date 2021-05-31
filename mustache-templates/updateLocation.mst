@@ -90,33 +90,9 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="sensitivity" class="col-sm-3 col-form-label">Sensitivity:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="sensitivity" placeholder="Sensitivity" value="{{sensitivity}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="led" class="col-sm-3 col-form-label">LED:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="led" placeholder="LED" value="{{led}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="noiseMap" class="col-sm-3 col-form-label">Noise Map:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="noiseMap" placeholder="Noise Map" value="{{noisemap}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="movThreshold" class="col-sm-3 col-form-label">Movement Threshold:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="movThreshold" placeholder="Movement Threshold" value="{{movThreshold}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="rpmThreshold" class="col-sm-3 col-form-label">RPM Threshold:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="rpmThreshold" placeholder="RPM Threshold" value="{{rpmThreshold}}" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">

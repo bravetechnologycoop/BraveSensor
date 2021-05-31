@@ -1080,11 +1080,7 @@ describe('Brave Sensor server', () => {
             fallbackPhones: '+12223334444,+13334445678',
             heartbeatPhones: '+15556667890,+16667778901',
             twilioPhone: '+11112223456',
-            sensitivity: 5,
-            led: 1,
-            noiseMap: 7,
             movThreshold: 15,
-            rpmThreshold: 9,
             durationThreshold: 90,
             stillThreshold: 10,
             autoResetThreshold: 9999999,
@@ -1120,11 +1116,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
           expect(updatedLocation.isActive).to.be.true
 
-          chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
-          chai.assert.equal(updatedLocation.led, this.goodRequest.led)
-          chai.assert.equal(updatedLocation.noisemap, this.goodRequest.noiseMap)
           chai.assert.equal(updatedLocation.movThreshold, this.goodRequest.movThreshold)
-          chai.assert.equal(updatedLocation.rpmThreshold, this.goodRequest.rpmThreshold)
           chai.assert.equal(updatedLocation.durationThreshold, this.goodRequest.durationThreshold)
           chai.assert.equal(updatedLocation.stillThreshold, this.goodRequest.stillThreshold)
           chai.assert.equal(updatedLocation.autoResetThreshold, this.goodRequest.autoResetThreshold)
@@ -1152,11 +1144,7 @@ describe('Brave Sensor server', () => {
             fallbackPhones: '+12223334444,+13334445678',
             heartbeatPhones: '+15556667890,+16667778901',
             twilioPhone: '+11112223456',
-            sensitivity: 5,
-            led: 1,
-            noiseMap: 7,
             movThreshold: 15,
-            rpmThreshold: 9,
             durationThreshold: 90,
             stillThreshold: 10,
             autoResetThreshold: 9999999,
@@ -1192,11 +1180,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
           expect(updatedLocation.isActive).to.be.false
 
-          chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
-          chai.assert.equal(updatedLocation.led, this.goodRequest.led)
-          chai.assert.equal(updatedLocation.noisemap, this.goodRequest.noiseMap)
           chai.assert.equal(updatedLocation.movThreshold, this.goodRequest.movThreshold)
-          chai.assert.equal(updatedLocation.rpmThreshold, this.goodRequest.rpmThreshold)
           chai.assert.equal(updatedLocation.durationThreshold, this.goodRequest.durationThreshold)
           chai.assert.equal(updatedLocation.stillThreshold, this.goodRequest.stillThreshold)
           chai.assert.equal(updatedLocation.autoResetThreshold, this.goodRequest.autoResetThreshold)
@@ -1224,11 +1208,7 @@ describe('Brave Sensor server', () => {
             fallbackPhones: '+13334445678,+12223334444',
             heartbeatPhones: '+15556667890,+16667778901',
             twilioPhone: '+11112223456',
-            sensitivity: 5,
-            led: 1,
-            noiseMap: 7,
             movThreshold: 15,
-            rpmThreshold: 9,
             durationThreshold: 90,
             stillThreshold: 10,
             autoResetThreshold: 9999999,
@@ -1264,11 +1244,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.alertApiKey).to.be.null
           expect(updatedLocation.isActive).to.be.true
 
-          chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
-          chai.assert.equal(updatedLocation.led, this.goodRequest.led)
-          chai.assert.equal(updatedLocation.noisemap, this.goodRequest.noiseMap)
           chai.assert.equal(updatedLocation.movThreshold, this.goodRequest.movThreshold)
-          chai.assert.equal(updatedLocation.rpmThreshold, this.goodRequest.rpmThreshold)
           chai.assert.equal(updatedLocation.durationThreshold, this.goodRequest.durationThreshold)
           chai.assert.equal(updatedLocation.stillThreshold, this.goodRequest.stillThreshold)
           chai.assert.equal(updatedLocation.autoResetThreshold, this.goodRequest.autoResetThreshold)
@@ -1296,11 +1272,7 @@ describe('Brave Sensor server', () => {
             fallbackPhones: '+12223334444,+13334445678',
             heartbeatPhones: '+15556667890,+16667778901',
             twilioPhone: '+11112223456',
-            sensitivity: 5,
-            led: 1,
-            noiseMap: 7,
             movThreshold: 15,
-            rpmThreshold: 9,
             durationThreshold: 90,
             stillThreshold: 10,
             autoResetThreshold: 9999999,
@@ -1336,11 +1308,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
           expect(updatedLocation.isActive).to.be.true
 
-          chai.assert.equal(updatedLocation.sensitivity, this.goodRequest.sensitivity)
-          chai.assert.equal(updatedLocation.led, this.goodRequest.led)
-          chai.assert.equal(updatedLocation.noisemap, this.goodRequest.noiseMap)
           chai.assert.equal(updatedLocation.movThreshold, this.goodRequest.movThreshold)
-          chai.assert.equal(updatedLocation.rpmThreshold, this.goodRequest.rpmThreshold)
           chai.assert.equal(updatedLocation.durationThreshold, this.goodRequest.durationThreshold)
           chai.assert.equal(updatedLocation.stillThreshold, this.goodRequest.stillThreshold)
           chai.assert.equal(updatedLocation.autoResetThreshold, this.goodRequest.autoResetThreshold)
@@ -1371,11 +1339,7 @@ describe('Brave Sensor server', () => {
             fallbackPhones: '',
             heartbeatPhones: '',
             twilioPhone: '',
-            sensitivity: '',
-            led: '',
-            noiseMap: '',
             movThreshold: '',
-            rpmThreshold: '',
             durationThreshold: '',
             stillThreshold: '',
             autoResetThreshold: '',
@@ -1403,7 +1367,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),phone/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),phone/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -1437,7 +1401,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),sensitivity (Invalid value),led (Invalid value),noiseMap (Invalid value),movThreshold (Invalid value),rpmThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),phone/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movThreshold (Invalid value),durationThreshold (Invalid value),stillThreshold (Invalid value),autoResetThreshold (Invalid value),doorDelay (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),phone/alertApiKey (Invalid value(s))`,
           )
         })
       })
