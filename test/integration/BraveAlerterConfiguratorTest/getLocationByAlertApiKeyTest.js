@@ -4,8 +4,8 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
 const { Location, SYSTEM } = require('brave-alert-lib')
-const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator.js')
-const db = require('../../../db/db.js')
+const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
+const db = require('../../../db/db')
 
 describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKey', () => {
   beforeEach(async () => {
@@ -22,7 +22,6 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
       1,
       1,
       1,
-      1,
       [],
       '+3336661234',
       [],
@@ -31,10 +30,6 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
       'DoorCoreId',
       'RadarCoreId',
       'XeThru',
-      1,
-      1,
-      1,
-      1,
       'myApiKey',
       true,
     )
@@ -72,7 +67,6 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
         1,
         1,
         1,
-        1,
         [],
         '+3336661234',
         [],
@@ -81,10 +75,6 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
         'DoorCoreId',
         'RadarCoreId',
         'XeThru',
-        1,
-        1,
-        1,
-        1,
         'myApiKey',
         true,
       )

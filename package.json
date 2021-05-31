@@ -8,6 +8,7 @@
     "test": "NODE_ENV=test mocha --timeout 10000 \"test/**/*.js\"",
     "integrationtest": "NODE_ENV=test mocha --timeout 10000 \"test/integration/**/*.js\"",
     "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/unit/**/*.js\"",
+    "mcdtest": "NODE_ENV=test mocha --timeout 10000 \"test/unit/testStateMachine.js\"",
     "smoketest": "node -e 'require(\"./smokeTest.js\")'"
   },
   "eslintIgnore": [
@@ -20,6 +21,7 @@
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "brave-alert-lib": "https://github.com/bravetechnologycoop/brave-alert-lib#v3.3.0",
+    "chai-datetime": "^1.8.0",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "execution-time": "^1.4.1",

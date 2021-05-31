@@ -27,10 +27,8 @@
                     <thead>
                         <tr class="table-header" scope="row">
                             <th scope="col">Session ID</th>
-                            <th scope="col">Start Time</th>
-                            <th scope="col">End Time</th>
-                            <th scope="col">End State</th>
-                            <th scope="col">Duration</th>
+                            <th scope="col">Created At</th>
+                            <th scope="col">Updated At</th>
                             <th scope="col">Chatbot State</th>
                             <th scope="col">Incident Type</th>
                             <th scope="col">Notes</th>
@@ -39,11 +37,9 @@
                     <tbody>
                         {{#recentSessions}}
                             <tr class="table-data">
-                                <th scope="row">{{sessionid}}</th>
-                                <td>{{startTime}}</td>
-                                <td>{{endTime}}</td>
-                                <td>{{state}}</td>
-                                <td>{{duration}}</td>
+                                <th scope="row">{{id}}</th>
+                                <td>{{createdAt}}</td>
+                                <td>{{updatedAt}}</td>
                                 <td>{{chatbotState}}</td>
                                 <td>{{incidentType}}</td>
                                 <td>{{notes}}</td>

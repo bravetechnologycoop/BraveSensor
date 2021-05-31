@@ -8,7 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Please note that the date associated with a release is the date the code
 was committed to the `master` branch. This is not necessarily the date that
 the code was deployed.
+
 ## [Unreleased]
+
+### Added
+
+- Endpoint for firmware state machine alerts (CU-v9ae26).
+- Storing and checking firmware state machine heartbeat messages (CU-v9ae26).
+
+### Changed
+
+- Decoupled state machine from Sessions (CU-v9ae26).
+- Refactored and merged radar state machines (CU-v9ae26).
+
 
 ## [3.4.0] - 2021-06-21
 
