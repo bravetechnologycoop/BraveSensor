@@ -14,6 +14,7 @@ the code was deployed.
 ### Added
 
 - Storing and checking for door heartbeat messages (CU-wf97dy).
+- Mocha debugging configuration.
 
 ### Changed
 
