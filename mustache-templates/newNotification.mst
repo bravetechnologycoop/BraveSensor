@@ -31,7 +31,7 @@
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="body" class="col-sm-3 col-form-label">Body:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="body" placeholder="Display Name" required>
+                        <textarea class="form-control" name="body" placeholder="Body" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
