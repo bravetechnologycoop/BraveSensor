@@ -534,21 +534,26 @@ app.post(
 app.use(braveAlerter.getRouter())
 
 // Handler for incoming XeThru POST requests
-app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', 'mov_s']).exists(), async (req, res) => {
+app.post('/api/xethru', Validator.body(['coreid', 'state', 'rpm', 'mov_f', 'mov_s']).exists(), async (req, res) => {
   try {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
-      const { locationid, state, rpm, distance, mov_f, mov_s } = req.body
+      const { coreid, state, rpm, distance, mov_f, mov_s } = req.body
+      const location = await db.getLocationFromParticleCoreID(coreid)
+      if (!location) {
+        const errorMessage = `Bad request to ${req.path}: no location matches the coreID ${coreid}`
+        helpers.logError(errorMessage)
+        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+        res.status(200).json(errorMessage)
+      } else {
+        await redis.addXeThruSensorData(location.locationid, state, rpm, distance, mov_f, mov_s)
 
-      await redis.addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s)
-
-      const location = await db.getLocationData(locationid)
-      if (location.isActive && !location.heartbeatSentAlerts) {
-        await StateMachine.getNextState(location, handleAlert)
+        if (location.isActive && !location.heartbeatSentAlerts) {
+          await StateMachine.getNextState(location, handleAlert)
+        }
+        res.status(200).json('OK')
       }
-
-      res.status(200).json('OK')
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.logError(errorMessage)
@@ -556,7 +561,7 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
       res.status(200).json(errorMessage)
     }
   } catch (err) {
-    const errorMessage = `Error calling ${req.path}: ${JSON.stringify(err)}`
+    const errorMessage = `Error calling ${req.path}: ${err.toString()}`
     helpers.logError(errorMessage)
     // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
     res.status(200).json(errorMessage)

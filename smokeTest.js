@@ -7,7 +7,6 @@ const XETHRU_STATE = require('./SessionStateXethruEnum')
 const MOV_THRESHOLD = 17
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
 
-const testLocation1Id = 'SmokeTestLocation'
 const door_coreID = 'door_coreID'
 const radar_coreID = 'radar_coreID'
 
@@ -68,10 +67,10 @@ async function innosentSilence(coreID) {
   }
 }
 
-async function xeThruSilence(locationid) {
+async function xeThruSilence(coreID) {
   try {
     await axios.post('/api/xethru', {
-      locationid,
+      coreid: `${coreID}`,
       devicetype: 'XeThru',
       mov_f: 0,
       mov_s: 0,
@@ -85,10 +84,10 @@ async function xeThruSilence(locationid) {
   }
 }
 
-async function xeThruMovement(locationid, mov_f, mov_s) {
+async function xeThruMovement(coreID, mov_f, mov_s) {
   try {
     await axios.post('/api/xethru', {
-      locationid,
+      coreid: `${coreID}`,
       devicetype: 'XeThru',
       mov_f,
       mov_s,
@@ -121,21 +120,21 @@ async function smokeTest(recipientPhoneNumber, twilioPhoneNumber) {
     await teardown()
     await setup(recipientPhoneNumber, twilioPhoneNumber, RADAR_TYPE.XETHRU)
     for (let i = 0; i < 15; i += 1) {
-      await xeThruMovement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
+      await xeThruMovement(radar_coreID, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
     }
     await im21Door(door_coreID, IM21_DOOR_STATUS.OPEN)
     for (let i = 0; i < 5; i += 1) {
-      await xeThruMovement(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
+      await xeThruMovement(radar_coreID, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
     }
     await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
     for (let i = 0; i < 15; i += 1) {
-      await xeThruMovement(testLocation1Id, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
+      await xeThruMovement(radar_coreID, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
     }
     for (let i = 0; i < 15; i += 1) {
-      await xeThruMovement(testLocation1Id, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
+      await xeThruMovement(radar_coreID, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
     }
     for (let i = 0; i < 85; i += 1) {
-      await xeThruSilence(testLocation1Id)
+      await xeThruSilence(radar_coreID)
     }
   } catch (error) {
     helpers.log(`Error running smoke test: ${error}`)
