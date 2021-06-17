@@ -89,30 +89,33 @@ async function innosentSilence(coreID) {
   }
 }
 
-async function xeThruSilence(locationid) {
+async function xeThruSilence(coreID) {
   try {
-    await chai.request(server).post('/api/xethru').send({
-      locationid,
-      devicetype: 'XeThru',
-      mov_f: 0,
-      mov_s: 0,
-      rpm: 0,
-      state: XETHRU_STATE.MOVEMENT,
-      distance: 0,
-    })
+    await chai
+      .request(server)
+      .post('/api/xethru')
+      .send({
+        coreid: `${coreID}`,
+        devicetype: 'XeThru',
+        mov_f: 0,
+        mov_s: 0,
+        rpm: 0,
+        state: XETHRU_STATE.MOVEMENT,
+        distance: 0,
+      })
     await helpers.sleep(50)
   } catch (e) {
     helpers.log(e)
   }
 }
 
-async function xeThruMovement(locationid, mov_f, mov_s) {
+async function xeThruMovement(coreID, mov_f, mov_s) {
   try {
     await chai
       .request(server)
       .post('/api/xethru')
       .send({
-        locationid,
+        coreid: `${coreID}`,
         devicetype: 'XeThru',
         mov_f,
         mov_s,
@@ -300,7 +303,7 @@ describe('Brave Sensor server', () => {
 
     it('radar data with no movement should be saved to redis, but should not trigger an alert', async () => {
       for (let i = 0; i < 5; i += 1) {
-        await xeThruSilence(testLocation1Id)
+        await xeThruSilence(radar_coreID)
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(5)
@@ -310,7 +313,7 @@ describe('Brave Sensor server', () => {
 
     it('radar data showing movement for longer than the initial timer, with the door closed, should be saved to redis, and result in a transition to to the DURATION_TIMER state', async () => {
       for (let i = 0; i < 20; i += 1) {
-        await xeThruMovement(testLocation1Id, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
+        await xeThruMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(20)
@@ -322,7 +325,7 @@ describe('Brave Sensor server', () => {
 
     it('radar data showing movement for longer than the initial timer, with the door closed, radar data should be saved to redis, and result in a transition to the DURATION_TIMER state, door opening should return it to idle', async () => {
       for (let i = 0; i < 20; i += 1) {
-        await xeThruMovement(testLocation1Id, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
+        await xeThruMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
       }
       await im21Door(door_coreID, IM21_DOOR_STATUS.OPEN)
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
@@ -335,10 +338,10 @@ describe('Brave Sensor server', () => {
 
     it('radar data showing movement should start a Duration timer, and cessation of movement without the door opening should start a Stillness timer and trigger a Stillness alert', async () => {
       for (let i = 0; i < 15; i += 1) {
-        await xeThruMovement(testLocation1Id, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
+        await xeThruMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
       }
       for (let i = 0; i < 35; i += 1) {
-        await xeThruSilence(testLocation1Id)
+        await xeThruSilence(radar_coreID)
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(50)
@@ -350,7 +353,7 @@ describe('Brave Sensor server', () => {
 
     it('radar data showing movement should start a Duration timer, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
       for (let i = 0; i < 80; i += 1) {
-        await xeThruMovement(testLocation1Id, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
+        await xeThruMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(80)
@@ -416,7 +419,7 @@ describe('Brave Sensor server', () => {
 
     it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
       for (let i = 0; i < 5; i += 1) {
-        await xeThruSilence(testLocation1Id)
+        await xeThruSilence(radar_coreID)
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(5)
@@ -427,7 +430,7 @@ describe('Brave Sensor server', () => {
 
     it('radar data showing movement should be saved to redis, but should not trigger a session', async () => {
       for (let i = 0; i < 15; i += 1) {
-        await xeThruMovement(testLocation1Id, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
+        await xeThruMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(15)

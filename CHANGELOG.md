@@ -32,6 +32,7 @@ the code was deployed.
 ### Changed
 
 - logSentry calls appear as messages instead of exceptions (CU-px7k6e)
+- For API calls from XeThru devices, use `coreid` instead of `location` to determine which Location it's from (CU-mt15y9)
 
 ### Fixed
 
