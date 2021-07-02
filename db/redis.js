@@ -126,7 +126,7 @@ async function getLatestHeartbeat(locationid) {
   if (!rows || rows.length === 0) {
     return null
   }
-  return new HeartbeatData(rows)
+  return new HeartbeatData(rows[0])
 }
 // ignore comments included to allow arguments to be split across lines in pairs
 // prettier-ignore
