@@ -311,9 +311,14 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
   }
 }
 
-async function getActiveLocations(clientParam) {
+async function getActiveServerStateMachineLocations(clientParam) {
   try {
-    const results = await runQuery('getLocations', 'SELECT * FROM locations WHERE is_active AND firmware_state_machine = false', [], clientParam)
+    const results = await runQuery(
+      'getActiveServerStateMachineLocations',
+      'SELECT * FROM locations WHERE is_active AND firmware_state_machine = false',
+      [],
+      clientParam,
+    )
 
     if (results === undefined) {
       return null
@@ -361,11 +366,11 @@ async function getLocations(clientParam) {
 
 // Updates the locations table entry for a specific location with the new data
 // eslint-disable-next-line prettier/prettier
-async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phoneNumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, reminderTimer, fallbackTimer, alertApiKey, isActive, locationid, clientParam) {
+async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phoneNumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, reminderTimer, fallbackTimer, alertApiKey, isActive, firmwareStateMachine, locationid, clientParam) {
   try {
     const results = await runQuery(
       'updateLocation',
-      'UPDATE locations SET display_name = $1, door_particlecoreid = $2, radar_particlecoreid = $3, radar_type = $4, responder_phone_number = $5, fallback_phonenumbers = $6, heartbeat_alert_recipients = $7, twilio_number = $8, movement_threshold = $9, duration_timer = $10, stillness_timer = $11, initial_timer = $12, reminder_timer = $13, fallback_timer = $14, alert_api_key = $15, is_active = $16 WHERE locationid = $17 returning *',
+      'UPDATE locations SET display_name = $1, door_particlecoreid = $2, radar_particlecoreid = $3, radar_type = $4, responder_phone_number = $5, fallback_phonenumbers = $6, heartbeat_alert_recipients = $7, twilio_number = $8, movement_threshold = $9, duration_timer = $10, stillness_timer = $11, initial_timer = $12, reminder_timer = $13, fallback_timer = $14, alert_api_key = $15, is_active = $16, firmware_state_machine = $17 WHERE locationid = $18 returning *',
       [
         displayName,
         doorCoreId,
@@ -383,6 +388,7 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
         fallbackTimer,
         alertApiKey,
         isActive,
+        firmwareStateMachine,
         locationid,
       ],
       clientParam,
@@ -397,10 +403,10 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, phonenumber, twilioNumber, alertApiKey, clientParam) {
+async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, phonenumber, twilioNumber, alertApiKey, firmwareStateMachine, clientParam) {
   try {
     await runQuery('createLocationFromBrowserForm',
-      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, responder_phone_number, twilio_number, alert_api_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, responder_phone_number, twilio_number, alert_api_key, firmware_state_machine) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
       [
         locationid,
         displayName,
@@ -410,6 +416,7 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
         phonenumber,
         twilioNumber,
         alertApiKey,
+        firmwareStateMachine,
       ],
       clientParam,
     )
@@ -422,11 +429,11 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
 
 // Adds a location table entry
 // eslint-disable-next-line prettier/prettier
-async function createLocation(locationid, phonenumber, movementThreshold, stillnessTimer, durationTimer, reminderTimer, initialTimer, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, alertApiKey, isActive, clientParam) {
+async function createLocation(locationid, phonenumber, movementThreshold, stillnessTimer, durationTimer, reminderTimer, initialTimer, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, alertApiKey, isActive, firmwareStateMachine, clientParam) {
   try {
     await runQuery(
       'createLocation',
-      'INSERT INTO locations(locationid, responder_phone_number, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, alert_api_key, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)',
+      'INSERT INTO locations(locationid, responder_phone_number, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, alert_api_key, is_active, firmware_state_machine) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)',
       [
         locationid,
         phonenumber,
@@ -445,6 +452,7 @@ async function createLocation(locationid, phonenumber, movementThreshold, stilln
         radarType,
         alertApiKey,
         isActive,
+        firmwareStateMachine,
       ],
       clientParam,
     )
@@ -510,7 +518,7 @@ module.exports = {
   getLocationFromParticleCoreID,
   getLocationsFromAlertApiKey,
   getLocationData,
-  getActiveLocations,
+  getActiveServerStateMachineLocations,
   getActiveFirmwareStateMachineLocations,
   getLocations,
   updateLocation,

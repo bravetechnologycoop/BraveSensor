@@ -110,19 +110,19 @@
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="initialTimer" class="col-sm-3 col-form-label">Initial Timer (ms):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="initialTimer" placeholder="Initial Timer (milliseconds)" value="{{initialTimer}}" required>
+                        <input type="text" class="form-control" name="initialTimer" placeholder="Initial Timer (seconds)" value="{{initialTimer}}" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="reminderTimer" class="col-sm-3 col-form-label">Reminder Timer (ms):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="reminderTimer" placeholder="Reminder Timer (milliseconds)" value="{{reminderTimer}}" required>
+                        <input type="text" class="form-control" name="reminderTimer" placeholder="Reminder Timer (seconds)" value="{{reminderTimer}}" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="fallbackTimer" class="col-sm-3 col-form-label">Fallback Message Timer (ms):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="fallbackTimer" placeholder="Fallback Message Timer (milliseconds)" value="{{fallbackTimer}}" required>
+                        <input type="text" class="form-control" name="fallbackTimer" placeholder="Fallback Message Timer (seconds)" value="{{fallbackTimer}}" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
@@ -130,6 +130,13 @@
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="isActive" value="{{isActive}}" required pattern="(true|false)">
                         <small id="isActiveHelp" class="form-text text-muted">"true" or "false"</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="firmwareStateMachine" class="col-sm-3 col-form-label">Does this Location use a firmware state machine?</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="firmwareStateMachine" value="{{firmwareStateMachine}}" required pattern="(true|false)">
+                        <small id="firmwareStateMachineHelp" class="form-text text-muted">"true" or "false"</small>
                     </div>
                 </div>
                 <br>

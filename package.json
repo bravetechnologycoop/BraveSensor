@@ -8,7 +8,6 @@
     "test": "NODE_ENV=test mocha --timeout 10000 \"test/**/*.js\"",
     "integrationtest": "NODE_ENV=test mocha --timeout 10000 \"test/integration/**/*.js\"",
     "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/unit/**/*.js\"",
-    "mcdtest": "NODE_ENV=test mocha --timeout 10000 \"test/unit/testStateMachine.js\"",
     "smoketest": "node -e 'require(\"./smokeTest.js\")'"
   },
   "eslintIgnore": [

@@ -19,16 +19,13 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     this.testClient = 'testClient'
     this.testSessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
     this.testLocationId = 'TEST_LOCATION'
-    this.initialTestStartTime = '2020-11-15 22:52:43.926226'
-    this.testStartTimes = {}
-    this.testStartTimes[this.testLocationId] = this.initialTestStartTime
 
     // Don't call real DB or Redis
     sinon.stub(db, 'beginTransaction').returns(this.testClient)
     sinon.stub(db, 'saveAlertSession')
     const testSession = new Session()
     testSession.locationid = this.testLocationId
-    testSession.sessionid = this.testSessionId
+    testSession.id = this.testSessionId
     sinon.stub(db, 'getSessionWithSessionId').returns(testSession)
     sinon.stub(db, 'commitTransaction')
     sinon.stub(redis, 'addStateMachineData')
@@ -44,9 +41,9 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     db.beginTransaction.restore()
   })
 
-  describe('if given a chatbotState', async () => {
+  describe('if given only a chatbotState', async () => {
     beforeEach(async () => {
-      const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+      const braveAlerterConfigurator = new BraveAlerterConfigurator()
       const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
       await braveAlerter.alertSessionChangedCallback(new AlertSession(this.testSessionId, ALERT_STATE.WAITING_FOR_REPLY))
     })
@@ -58,7 +55,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
 
   describe('if given only the fallbackReturnMessage', async () => {
     beforeEach(async () => {
-      const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+      const braveAlerterConfigurator = new BraveAlerterConfigurator()
       const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
       const alertSession = new AlertSession(this.testSessionId)
       alertSession.fallbackReturnMessage = 'queued'
@@ -70,21 +67,9 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     })
   })
 
-  describe('if given a COMPLETE chatbotState and incidentTypeKey', async () => {
+  describe('if given a chatbotState and incidentTypeKey', async () => {
     beforeEach(async () => {
-      const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
-      const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
-      await braveAlerter.alertSessionChangedCallback(new AlertSession(this.testSessionId, ALERT_STATE.COMPLETED, '2'))
-    })
-
-    it('should update chatbotState and incidentType', () => {
-      expect(db.saveAlertSession).to.be.calledWith(ALERT_STATE.COMPLETED, 'Person responded', this.testSessionId, this.testClient)
-    })
-  })
-
-  describe('if given a COMPLETE chatbotState but cannot close the session', async () => {
-    beforeEach(async () => {
-      const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+      const braveAlerterConfigurator = new BraveAlerterConfigurator()
       const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
       await braveAlerter.alertSessionChangedCallback(new AlertSession(this.testSessionId, ALERT_STATE.COMPLETED, '2'))
     })

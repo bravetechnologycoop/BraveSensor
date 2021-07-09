@@ -90,12 +90,12 @@ async function getStates(locationID, startTime, endTime) {
 }
 
 async function getLatestState(locationid) {
-  const singleitem = await getStatesWindow(locationid, '+', '-', 1)
+  const singleItem = await getStatesWindow(locationid, '+', '-', 1)
 
-  if (!singleitem) {
+  if (!singleItem || singleItem.length === 0) {
     return null
   }
-  return singleitem[0]
+  return singleItem[0]
 }
 
 async function clearKeys() {
@@ -107,7 +107,6 @@ async function disconnect() {
 }
 
 async function addIM21DoorSensorData(locationid, doorSignal, control) {
-  // eslint-disable-next-line eqeqeq
   if (doorSignal === SESSIONSTATE_DOOR.CLOSED || doorSignal === SESSIONSTATE_DOOR.OPEN) {
     await client.xadd(`door:${locationid}`, 'MAXLEN', '~', '10000', '*', 'signal', doorSignal, 'control', control)
   }
@@ -164,8 +163,8 @@ async function getInnosentWindow(locationID, startTime, endTime, windowLength) {
 }
 
 async function getLatestInnosentSensorData(locationid) {
-  const singleitem = await getInnosentWindow(locationid, '+', '-', 1)
-  return singleitem[0]
+  const singleItem = await getInnosentWindow(locationid, '+', '-', 1)
+  return singleItem[0]
 }
 
 async function addStateMachineData(state, locationid) {
@@ -174,13 +173,13 @@ async function addStateMachineData(state, locationid) {
 }
 
 async function getLatestDoorSensorData(locationid) {
-  const singleitem = await getDoorWindow(locationid, '+', '-', 1)
-  return singleitem[0]
+  const singleItem = await getDoorWindow(locationid, '+', '-', 1)
+  return singleItem[0]
 }
 
 async function getLatestXeThruSensorData(locationid) {
-  const singleitem = await getXethruWindow(locationid, '+', '-', 1)
-  return singleitem[0]
+  const singleItem = await getXethruWindow(locationid, '+', '-', 1)
+  return singleItem[0]
 }
 
 module.exports = {

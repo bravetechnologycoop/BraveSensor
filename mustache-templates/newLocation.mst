@@ -76,6 +76,13 @@
                         <small id="twilioPhoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
                     </div>
                 </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="firmwareStateMachine" class="col-sm-3 col-form-label">Does this Location use a firmware state machine?</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="firmwareStateMachine" value="{{firmwareStateMachine}}" required pattern="(true|false)">
+                        <small id="firmwareStateMachineHelp" class="form-text text-muted">"true" or "false"</small>
+                    </div>
+                </div>
                 <br>
                 <p><em>*** Remember: New Locations are set to INACTIVE ***</em></p>
                 <button type="submit" class="btn btn-primary btn-large">Submit</button>

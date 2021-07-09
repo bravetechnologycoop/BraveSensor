@@ -17,11 +17,13 @@ const braveAlerter = imports.braveAlerter
 const StateMachine = require('../../stateMachine/StateMachine')
 const XETHRU_STATE = require('../../SessionStateXethruEnum')
 const ALERT_REASON = require('../../AlertReasonEnum')
+const SENSOR_EVENT = require('../../SensorEventEnum')
 
 const MOVEMENT_THRESHOLD = 40
-const STILLNESS_TIMER = 300
-const DURATION_TIMER = 600
-const INITIAL_TIMER = 200
+// All timers in seconds
+const INITIAL_TIMER = 1
+const STILLNESS_TIMER = 1.5
+const DURATION_TIMER = 3
 const IM21_DOOR_STATUS = require('../../IM21DoorStatusEnum')
 const { getRandomArbitrary, getRandomInt, printRandomIntArray } = require('../../testingHelpers')
 const STATE = require('../../stateMachine/SessionStateEnum')
@@ -36,19 +38,16 @@ const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid1'
 const radar_coreID = 'radar_particlecoreid1'
 
-async function firmwareAlert(coreID, alertReason) {
+async function firmwareAlert(coreID, sensorEvent) {
   try {
-    await chai
-      .request(server)
-      .post('/api/startChatbot')
-      .send({
-        event: `${alertReason} Alert`,
-        data: 'test-event',
-        ttl: 60,
-        published_at: '2021-06-14T22:49:16.091Z',
-        coreid: coreID,
-      })
-    await helpers.sleep(10)
+    await chai.request(server).post('/api/sensorEvent').send({
+      event: sensorEvent,
+      data: 'test-event',
+      ttl: 60,
+      published_at: '2021-06-14T22:49:16.091Z',
+      coreid: coreID,
+    })
+    await helpers.sleep(50)
   } catch (e) {
     helpers.log(e)
   }
@@ -66,7 +65,7 @@ async function innosentMovement(coreID, min, max) {
         published_at: '2021-03-09T19:37:28.176Z',
         coreid: coreID,
       })
-    await helpers.sleep(10)
+    await helpers.sleep(50)
   } catch (e) {
     helpers.log(e)
   }
@@ -84,7 +83,7 @@ async function innosentSilence(coreID) {
         published_at: '2021-03-09T19:37:28.176Z',
         coreid: coreID,
       })
-    await helpers.sleep(10)
+    await helpers.sleep(50)
   } catch (e) {
     helpers.log(e)
   }
@@ -101,7 +100,7 @@ async function xeThruSilence(locationid) {
       state: XETHRU_STATE.MOVEMENT,
       distance: 0,
     })
-    await helpers.sleep(10)
+    await helpers.sleep(50)
   } catch (e) {
     helpers.log(e)
   }
@@ -121,7 +120,7 @@ async function xeThruMovement(locationid, mov_f, mov_s) {
         state: XETHRU_STATE.MOVEMENT,
         distance: getRandomArbitrary(0, 3),
       })
-    await helpers.sleep(10)
+    await helpers.sleep(50)
   } catch (e) {
     helpers.log(e)
   }
@@ -136,7 +135,7 @@ async function im21Door(doorCoreId, signal) {
         coreid: doorCoreId,
         data: `{ "data": "${signal}", "control": "86"}`,
       })
-    await helpers.sleep(10)
+    await helpers.sleep(50)
   } catch (e) {
     helpers.log(e)
   }
@@ -176,6 +175,7 @@ describe('Brave Sensor server', () => {
         'XeThru',
         'alertApiKey',
         true,
+        true,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
@@ -190,20 +190,20 @@ describe('Brave Sensor server', () => {
     })
 
     it('should return 200 to a request with no headers', async () => {
-      const response = await chai.request(server).post('/api/startChatbot').send({})
+      const response = await chai.request(server).post('/api/sensorEvent').send({})
       expect(response).to.have.status(200)
     })
 
-    it('should create a session with the corresponding alert reason for a valid request', async () => {
-      await firmwareAlert(radar_coreID, ALERT_REASON.DURATION)
+    it('should create a session with DURATION alert reason for a valid DURATION request', async () => {
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.DURATION)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
       expect(session.alertReason).to.equal(ALERT_REASON.DURATION)
     })
 
-    it('should create a session with the corresponding alert reason for a valid request', async () => {
-      await firmwareAlert(radar_coreID, ALERT_REASON.STILLNESS)
+    it('should create a session with STILLNESS as the alert reason for a valid STILLNESS request', async () => {
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
@@ -211,9 +211,9 @@ describe('Brave Sensor server', () => {
     })
 
     it('should only create one new session when receiving multiple alerts within the session reset timeout', async () => {
-      await firmwareAlert(radar_coreID, ALERT_REASON.STILLNESS)
-      await firmwareAlert(radar_coreID, ALERT_REASON.STILLNESS)
-      await firmwareAlert(radar_coreID, ALERT_REASON.DURATION)
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.DURATION)
 
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
@@ -222,7 +222,7 @@ describe('Brave Sensor server', () => {
     })
 
     it('should update updatedAt for the session when a new alert is received within the session reset timeout', async () => {
-      await firmwareAlert(radar_coreID, ALERT_REASON.STILLNESS)
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const oldUpdatedAt = sessions[0].updatedAt
       await sleep(1000)
@@ -233,9 +233,9 @@ describe('Brave Sensor server', () => {
     })
 
     it('should create additional sessions for alerts that come in after the session reset timeout has expired', async () => {
-      await firmwareAlert(radar_coreID, ALERT_REASON.STILLNESS)
-      await sleep(+helpers.getEnvVar('SESSION_RESET_THRESHOLD') + 50)
-      await firmwareAlert(radar_coreID, ALERT_REASON.DURATION)
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
+      await sleep(parseInt(helpers.getEnvVar('SESSION_RESET_THRESHOLD'), 10) + 50)
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.DURATION)
 
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(2)
@@ -267,6 +267,7 @@ describe('Brave Sensor server', () => {
         'XeThru',
         'alertApiKey',
         true,
+        false,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
@@ -319,7 +320,7 @@ describe('Brave Sensor server', () => {
       expect(latestState.state).to.equal(STATE.DURATION_TIMER)
     })
 
-    it('radar data showing movement for longer than the initial timer, with the door closed, radar data should be saved to redis, and result in a transition to to the DURATION_TIMER state, door opening should return it to idle', async () => {
+    it('radar data showing movement for longer than the initial timer, with the door closed, radar data should be saved to redis, and result in a transition to the DURATION_TIMER state, door opening should return it to idle', async () => {
       for (let i = 0; i < 20; i += 1) {
         await xeThruMovement(testLocation1Id, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
       }
@@ -348,11 +349,11 @@ describe('Brave Sensor server', () => {
     })
 
     it('radar data showing movement should start a Duration timer, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
-      for (let i = 0; i < 75; i += 1) {
+      for (let i = 0; i < 80; i += 1) {
         await xeThruMovement(testLocation1Id, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
       }
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(75)
+      expect(radarRows.length).to.equal(80)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
@@ -382,6 +383,7 @@ describe('Brave Sensor server', () => {
         radar_coreID,
         'XeThru',
         'alertApiKey',
+        false,
         false,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
@@ -459,6 +461,7 @@ describe('Brave Sensor server', () => {
         'Innosent',
         'alertApiKey',
         true,
+        false,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       sandbox.spy(StateMachine, 'getNextState')
@@ -577,6 +580,7 @@ describe('Brave Sensor server', () => {
         'Innosent',
         'alertApiKey',
         false,
+        false,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
     })
@@ -649,6 +653,7 @@ describe('Brave Sensor server', () => {
           'XeThru',
           'alertApiKey',
           true,
+          false,
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       })
@@ -712,6 +717,7 @@ describe('Brave Sensor server', () => {
           'XeThru',
           'alertApiKey',
           true,
+          false,
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       })
@@ -804,6 +810,7 @@ describe('Brave Sensor server', () => {
             radarType: 'XeThru',
             responderPhoneNumber: testLocation1PhoneNumber,
             twilioPhone: '+15005550006',
+            firmwareStateMachine: 'false',
           }
 
           this.response = await this.agent.post('/locations').send(goodRequest)
@@ -842,6 +849,7 @@ describe('Brave Sensor server', () => {
             responderPhoneNumber: testLocation1PhoneNumber,
             twilioPhone: '+15005550006',
             alertApiKey: 'myApiKey',
+            firmwareStateMachine: 'false',
           }
 
           this.response = await chai.request(server).post('/locations').send(goodRequest)
@@ -886,6 +894,7 @@ describe('Brave Sensor server', () => {
             radarType: 'XeThru',
             responderPhoneNumber: testLocation1PhoneNumber,
             twilioPhone: '+15005550006',
+            firmwareStateMachine: 'false',
           }
 
           this.response = await this.agent.post('/locations').send(goodRequest)
@@ -931,6 +940,7 @@ describe('Brave Sensor server', () => {
             radarType: 'XeThru',
             twilioPhone: '+15005550006',
             alertApiKey: 'alertApiKey',
+            firmwareStateMachine: 'false',
           }
 
           this.response = await this.agent.post('/locations').send(goodRequest)
@@ -976,6 +986,7 @@ describe('Brave Sensor server', () => {
             responderPhoneNumber: '',
             twilioPhone: '',
             alertApiKey: '',
+            firmwareStateMachine: '',
           }
 
           this.response = await this.agent.post('/locations').send(badRequest)
@@ -998,7 +1009,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -1035,7 +1046,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -1064,6 +1075,7 @@ describe('Brave Sensor server', () => {
             'XeThru',
             'alertApiKey',
             true,
+            false,
           )
 
           this.agent = chai.request.agent(server)
@@ -1082,6 +1094,7 @@ describe('Brave Sensor server', () => {
             responderPhoneNumber: testLocation1PhoneNumber,
             twilioPhone: '+15005550006',
             alertApiKey: 'alertApiKey',
+            firmwareStateMachine: 'false',
           }
 
           this.response = await this.agent.post('/locations').send(duplicateLocationRequest)
@@ -1136,6 +1149,7 @@ describe('Brave Sensor server', () => {
           'XeThru',
           'alertApiKey',
           true,
+          false,
         )
       })
 
@@ -1173,6 +1187,7 @@ describe('Brave Sensor server', () => {
             fallbackTimer: 234567,
             alertApiKey: 'newApiKey',
             isActive: 'true',
+            firmwareStateMachine: 'false',
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1199,6 +1214,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
           expect(updatedLocation.isActive).to.be.true
+          expect(updatedLocation.firmwareStateMachine).to.be.false
 
           chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
           chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
@@ -1235,6 +1251,7 @@ describe('Brave Sensor server', () => {
             fallbackTimer: 234567,
             alertApiKey: 'newApiKey',
             isActive: 'false',
+            firmwareStateMachine: 'false',
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1261,6 +1278,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
           expect(updatedLocation.isActive).to.be.false
+          expect(updatedLocation.firmwareStateMachine).to.be.false
 
           chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
           chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
@@ -1297,6 +1315,7 @@ describe('Brave Sensor server', () => {
             fallbackTimer: 234567,
             alertApiKey: '',
             isActive: 'true',
+            firmwareStateMachine: 'false',
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1323,6 +1342,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
           expect(updatedLocation.alertApiKey).to.be.null
           expect(updatedLocation.isActive).to.be.true
+          expect(updatedLocation.firmwareStateMachine).to.be.false
 
           chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
           chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
@@ -1359,6 +1379,7 @@ describe('Brave Sensor server', () => {
             fallbackTimer: 234567,
             alertApiKey: 'newApiKey',
             isActive: 'true',
+            firmwareStateMachine: 'false',
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1385,6 +1406,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
           expect(updatedLocation.isActive).to.be.true
+          expect(updatedLocation.firmwareStateMachine).to.be.false
 
           chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
           chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
@@ -1443,7 +1465,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -1477,7 +1499,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
           )
         })
       })

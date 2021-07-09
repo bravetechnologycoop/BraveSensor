@@ -12,9 +12,11 @@ const Validator = require('express-validator')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
+const ALERT_REASON = require('./AlertReasonEnum')
 const redis = require('./db/redis')
 const db = require('./db/db')
 const StateMachine = require('./stateMachine/StateMachine')
+const SENSOR_EVENT = require('./SensorEventEnum')
 const RADAR_TYPE = require('./RadarTypeEnum')
 const BraveAlerterConfigurator = require('./BraveAlerterConfigurator')
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
@@ -39,10 +41,10 @@ redis.connect()
 const braveAlerter = new BraveAlerterConfigurator().createBraveAlerter()
 
 // // Body Parser Middleware
-// app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(bodyParser.urlencoded({ extended: true })) // Set to true to allow the body to contain any type of value
 app.use(bodyParser.json())
+
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors())
 
@@ -117,13 +119,13 @@ async function handleAlert(location, alertReason) {
       helpers.logError(`handleAlert: Error starting transaction`)
       return
     }
-    let currentSession = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
+    const currentSession = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
     const currentTime = await db.getCurrentTime(client)
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
-      currentSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertReason, client)
+      const newSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertReason, client)
       const alertInfo = {
-        sessionId: currentSession.id,
+        sessionId: newSession.id,
         toPhoneNumber: location.responderPhoneNumber,
         fromPhoneNumber: location.twilioNumber,
         message: `This is a ${alertReason} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
@@ -177,7 +179,7 @@ async function sendReconnectionMessage(locationid, displayName) {
 
 // Heartbeat Helper Functions
 async function checkHeartbeat() {
-  const backendStateMachineLocations = await db.getActiveLocations()
+  const backendStateMachineLocations = await db.getActiveServerStateMachineLocations()
   for (const location of backendStateMachineLocations) {
     let latestRadar
     let latestDoor
@@ -406,7 +408,7 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 app.post(
   '/locations',
   [
-    Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'twilioPhone']).notEmpty(),
+    Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'twilioPhone', 'firmwareStateMachine']).notEmpty(),
     Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
   ],
   async (req, res) => {
@@ -439,6 +441,7 @@ app.post(
           data.responderPhoneNumber,
           data.twilioPhone,
           data.alertApiKey,
+          data.firmwareStateMachine,
         )
 
         res.redirect(`/locations/${data.locationid}`)
@@ -472,6 +475,7 @@ app.post(
       'reminderTimer',
       'fallbackTimer',
       'isActive',
+      'firmwareStateMachine',
     ]).notEmpty(),
     Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
   ],
@@ -509,6 +513,7 @@ app.post(
           data.fallbackTimer,
           newAlertApiKey,
           data.isActive === 'true',
+          data.firmwareStateMachine === 'true',
           data.locationid,
         )
 
@@ -611,14 +616,22 @@ app.post(
   },
 )
 
-app.post('/api/startChatbot', Validator.body(['coreid', 'event']).exists(), async (request, response) => {
+app.post('/api/sensorEvent', Validator.body(['coreid', 'event']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
+      let alertType
       const coreId = request.body.coreid
-      const alertType = request.body.event.split(' ')[0]
-      helpers.log(alertType)
+      const sensorEvent = request.body.event
+      if (sensorEvent === SENSOR_EVENT.DURATION) {
+        alertType = ALERT_REASON.DURATION
+      } else if (sensorEvent === SENSOR_EVENT.STILLNESS) {
+        alertType = ALERT_REASON.STILLNESS
+      } else {
+        const errorMessage = `Bad request to ${request.path}: Invalid event type`
+        helpers.logError(errorMessage)
+      }
       const location = await db.getLocationFromParticleCoreID(coreId)
       if (!location) {
         const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
@@ -797,6 +810,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       radarType,
       'alertApiKey',
       true,
+      false,
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
     response.status(200).send()

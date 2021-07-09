@@ -1,5 +1,4 @@
 class Session {
-  // prettier-ignore
   constructor(id, locationid, phoneNumber, chatbotState, alertReason, createdAt, updatedAt, incidentType, notes) {
     this.id = id
     this.locationid = locationid
