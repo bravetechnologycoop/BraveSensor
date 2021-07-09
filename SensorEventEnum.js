@@ -1,6 +1,6 @@
-const ALERT_REASON = {
+const SENSOR_EVENT = {
   DURATION: 'Duration Alert',
   STILLNESS: 'Stillness Alert',
 }
 
-module.exports = Object.freeze(ALERT_REASON)
+module.exports = Object.freeze(SENSOR_EVENT)

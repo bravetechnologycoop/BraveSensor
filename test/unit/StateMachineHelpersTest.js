@@ -55,6 +55,12 @@ describe('StateMachineHelpers.js unit tests', async () => {
         const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.XETHRU, testLocationId, 16)
         expect(result).to.be.false
       })
+
+      it('should return false if there are no radar values', async () => {
+        sandbox.stub(redis, 'getXethruWindow').returns([])
+        const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.XETHRU, testLocationId, 16)
+        expect(result).to.be.false
+      })
     })
     describe('when RadarType is Innosent', async () => {
       it('should query redis for Innosent values', async () => {
@@ -77,6 +83,12 @@ describe('StateMachineHelpers.js unit tests', async () => {
 
       it('should return false if inPhase Average is below the threshold', async () => {
         sandbox.stub(redis, 'getInnosentWindow').returns(randomInnosentStream(5, 9, 25))
+        const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.INNOSENT, testLocationId, 10)
+        expect(result).to.be.false
+      })
+
+      it('should return false if there are no radar values', async () => {
+        sandbox.stub(redis, 'getInnosentWindow').returns([])
         const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.INNOSENT, testLocationId, 10)
         expect(result).to.be.false
       })

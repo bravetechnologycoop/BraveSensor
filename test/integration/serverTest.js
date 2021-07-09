@@ -544,11 +544,11 @@ describe('Brave Sensor server', () => {
     })
 
     it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
-      for (let i = 0; i < 75; i += 1) {
+      for (let i = 0; i < 80; i += 1) {
         await innosentMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
       }
       const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(1125)
+      expect(radarRows.length).to.equal(1200)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
