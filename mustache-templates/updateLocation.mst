@@ -57,7 +57,7 @@
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="phone" class="col-sm-3 col-form-label">Responder Phone Number:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="phone" value="{{phonenumber}}" pattern="[+][1]\d{10}">
+                        <input type="text" class="form-control" name="responderPhoneNumber" value="{{responderPhoneNumber}}" pattern="[+][1]\d{10}">
                         <small id="phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
                     </div>
                 </div>
@@ -90,57 +90,27 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="sensitivity" class="col-sm-3 col-form-label">Sensitivity:</label>
+                    <label for="movementThreshold" class="col-sm-3 col-form-label">Movement Threshold:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="sensitivity" placeholder="Sensitivity" value="{{sensitivity}}" required>
+                        <input type="text" class="form-control" name="movementThreshold" placeholder="Movement Threshold" value="{{movementThreshold}}" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="led" class="col-sm-3 col-form-label">LED:</label>
+                    <label for="durationTimer" class="col-sm-3 col-form-label">Duration Timer (secs):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="led" placeholder="LED" value="{{led}}" required>
+                        <input type="text" class="form-control" name="durationTimer" placeholder="Duration Timer (seconds)" value="{{durationTimer}}" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="noiseMap" class="col-sm-3 col-form-label">Noise Map:</label>
+                    <label for="stillnessTimer" class="col-sm-3 col-form-label">Still Timer (secs):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="noiseMap" placeholder="Noise Map" value="{{noisemap}}" required>
+                        <input type="text" class="form-control" name="stillnessTimer" placeholder="Still Timer (seconds)" value="{{stillnessTimer}}" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="movThreshold" class="col-sm-3 col-form-label">Movement Threshold:</label>
+                    <label for="initialTimer" class="col-sm-3 col-form-label">Initial Timer (ms):</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="movThreshold" placeholder="Movement Threshold" value="{{movThreshold}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="rpmThreshold" class="col-sm-3 col-form-label">RPM Threshold:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="rpmThreshold" placeholder="RPM Threshold" value="{{rpmThreshold}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="durationThreshold" class="col-sm-3 col-form-label">Duration Threshold (secs):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="durationThreshold" placeholder="Duration Threshold (seconds)" value="{{durationThreshold}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="stillThreshold" class="col-sm-3 col-form-label">Still Threshold (secs):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="stillThreshold" placeholder="Still Threshold (seconds)" value="{{stillThreshold}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="autoResetThreshold" class="col-sm-3 col-form-label">Auto Reset Threshold (ms):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="autoResetThreshold" placeholder="Auto Reset Threshold (milliseconds)" value="{{autoResetThreshold}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="doorDelay" class="col-sm-3 col-form-label">Door Stickiness Delay (ms):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="doorDelay" placeholder="Door Stickiness Delay (milliseconds)" value="{{doorStickinessDelay}}" required>
+                        <input type="text" class="form-control" name="initialTimer" placeholder="Initial Timer (seconds)" value="{{initialTimer}}" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
@@ -160,6 +130,13 @@
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="isActive" value="{{isActive}}" required pattern="(true|false)">
                         <small id="isActiveHelp" class="form-text text-muted">"true" or "false"</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="firmwareStateMachine" class="col-sm-3 col-form-label">Does this Location use a firmware state machine?</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="firmwareStateMachine" value="{{firmwareStateMachine}}" required pattern="(true|false)">
+                        <small id="firmwareStateMachineHelp" class="form-text text-muted">"true" or "false"</small>
                     </div>
                 </div>
                 <br>

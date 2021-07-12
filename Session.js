@@ -1,19 +1,14 @@
 class Session {
-  // prettier-ignore
-  constructor(locationid, startTime, endTime, odFlag, state, phonenumber, notes, incidentType, sessionid, duration, stillCounter, chatbotState, alertReason) {
+  constructor(id, locationid, phoneNumber, chatbotState, alertReason, createdAt, updatedAt, incidentType, notes) {
+    this.id = id
     this.locationid = locationid
-    this.startTime = startTime
-    this.endTime = endTime
-    this.odFlag = odFlag
-    this.state = state
-    this.phonenumber = phonenumber
-    this.notes = notes
-    this.incidentType = incidentType
-    this.sessionid = sessionid
-    this.duration = duration
-    this.stillCounter = stillCounter
+    this.phoneNumber = phoneNumber
     this.chatbotState = chatbotState
     this.alertReason = alertReason
+    this.createdAt = createdAt
+    this.updatedAt = updatedAt
+    this.incidentType = incidentType
+    this.notes = notes
   }
 }
 

@@ -4,7 +4,7 @@ const { before, describe, it } = require('mocha')
 
 // In-house dependencies
 const { ALERT_STATE } = require('brave-alert-lib')
-const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator.js')
+const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 
 describe('BraveAlerterConfigurator.js unit tests: getReturnMessage', () => {
   before(() => {

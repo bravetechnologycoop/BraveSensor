@@ -3,12 +3,13 @@ const Redis = require('ioredis')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
-const DoorData = require('./DoorData.js')
-const StateData = require('./StateData.js')
-const XeThruData = require('./XeThruData.js')
-const InnosentData = require('./InnosentData.js')
+const DoorData = require('./DoorData')
+const StateData = require('./StateData')
+const XeThruData = require('./XeThruData')
+const InnosentData = require('./InnosentData')
 
-const SESSIONSTATE_DOOR = require('../SessionStateDoorEnum.js')
+const SESSIONSTATE_DOOR = require('../SessionStateDoorEnum')
+const HeartbeatData = require('./HeartbeatData')
 
 let client
 
@@ -25,6 +26,15 @@ function connect() {
 async function getCurrentTimeinSeconds() {
   const time = await client.time()
   return time[0]
+}
+
+async function getCurrentTimeinMilliseconds() {
+  const time = await client.time()
+  const seconds = time[0]
+  const microseconds = time[1]
+
+  const milliseconds = seconds * 1000 + Math.floor(microseconds / 1000)
+  return milliseconds
 }
 
 async function getXethruWindow(locationID, startTime, endTime, windowLength) {
@@ -52,9 +62,40 @@ async function getDoorWindow(locationID, startTime, endTime, windowLength) {
 }
 
 async function getStatesWindow(locationID, startTime, endTime, windowLength) {
-  const rows = await client.xrevrange(`state:${locationID}`, startTime, endTime, 'count', windowLength)
-  const stateStream = rows.map(entry => new StateData(entry))
-  return stateStream
+  try {
+    const rows = await client.xrevrange(`state:${locationID}`, startTime, endTime, 'count', windowLength)
+    if (!rows) {
+      return null
+    }
+    const stateStream = rows.map(entry => new StateData(entry))
+    return stateStream
+  } catch (err) {
+    helpers.logError(`Error running getStatesWindow query: ${err}`)
+    return null
+  }
+}
+
+async function getStates(locationID, startTime, endTime) {
+  try {
+    const rows = await client.xrevrange(`state:${locationID}`, endTime, startTime)
+    if (!rows) {
+      return null
+    }
+    const stateStream = rows.map(entry => new StateData(entry))
+    return stateStream
+  } catch (err) {
+    helpers.logError(`Error running getStates query: ${err}`)
+    return null
+  }
+}
+
+async function getLatestState(locationid) {
+  const singleItem = await getStatesWindow(locationid, '+', '-', 1)
+
+  if (!singleItem || singleItem.length === 0) {
+    return null
+  }
+  return singleItem[0]
 }
 
 async function clearKeys() {
@@ -66,8 +107,7 @@ async function disconnect() {
 }
 
 async function addIM21DoorSensorData(locationid, doorSignal, control) {
-  // eslint-disable-next-line eqeqeq
-  if (doorSignal == SESSIONSTATE_DOOR.CLOSED || doorSignal == SESSIONSTATE_DOOR.OPEN) {
+  if (doorSignal === SESSIONSTATE_DOOR.CLOSED || doorSignal === SESSIONSTATE_DOOR.OPEN) {
     await client.xadd(`door:${locationid}`, 'MAXLEN', '~', '10000', '*', 'signal', doorSignal, 'control', control)
   }
 }
@@ -76,6 +116,17 @@ async function addVitals(locationid, signalStrength, cloudDisconnects) {
   client.xadd(`vitals:${locationid}`, 'MAXLEN', '~', '10000', '*', 'strength', signalStrength, 'cloudDisc', cloudDisconnects)
 }
 
+async function addEdgeDeviceHeartbeat(locationid, doorStatus, doorTime, insTime) {
+  client.xadd(`heartbeat:${locationid}`, 'MAXLEN', '~', '10000', '*', 'doorStatus', doorStatus, 'doorTime', doorTime, 'insTime', insTime)
+}
+
+async function getLatestHeartbeat(locationid) {
+  const rows = await client.xrevrange(`heartbeat:${locationid}`, '+', '-', 'count', 1)
+  if (!rows || rows.length === 0) {
+    return null
+  }
+  return new HeartbeatData(rows[0])
+}
 // ignore comments included to allow arguments to be split across lines in pairs
 // prettier-ignore
 /* eslint-disable function-call-argument-newline */
@@ -112,34 +163,27 @@ async function getInnosentWindow(locationID, startTime, endTime, windowLength) {
 }
 
 async function getLatestInnosentSensorData(locationid) {
-  const singleitem = await getInnosentWindow(locationid, '+', '-', 1)
-  return singleitem[0]
+  const singleItem = await getInnosentWindow(locationid, '+', '-', 1)
+  return singleItem[0]
 }
 
-function addStateMachineData(state, locationid) {
-  client.xadd(`state:${locationid}`, 'MAXLEN', '~', '604800', '*', 'state', state)
+async function addStateMachineData(state, locationid) {
+  helpers.log(`State Transition: ${locationid} -> ${state}`)
+  await client.xadd(`state:${locationid}`, 'MAXLEN', '~', '604800', '*', 'state', state)
 }
 
 async function getLatestDoorSensorData(locationid) {
-  const singleitem = await getDoorWindow(locationid, '+', '-', 1)
-  return singleitem[0]
+  const singleItem = await getDoorWindow(locationid, '+', '-', 1)
+  return singleItem[0]
 }
 
 async function getLatestXeThruSensorData(locationid) {
-  const singleitem = await getXethruWindow(locationid, '+', '-', 1)
-  return singleitem[0]
-}
-
-async function getLatestLocationStatesData(locationid) {
-  const singleitem = await getStatesWindow(locationid, '+', '-', 1)
-
-  if (!singleitem) {
-    return null
-  }
-  return singleitem[0]
+  const singleItem = await getXethruWindow(locationid, '+', '-', 1)
+  return singleItem[0]
 }
 
 module.exports = {
+  addEdgeDeviceHeartbeat,
   addIM21DoorSensorData,
   addInnosentRadarSensorData,
   addVitals,
@@ -149,13 +193,16 @@ module.exports = {
   connect,
   disconnect,
   getCurrentTimeinSeconds,
+  getCurrentTimeinMilliseconds,
   getInnosentWindow,
   getInnosentStream,
   getXethruWindow,
   getXethruStream,
+  getStates,
   getStatesWindow,
   getLatestDoorSensorData,
+  getLatestHeartbeat,
   getLatestXeThruSensorData,
-  getLatestLocationStatesData,
+  getLatestState,
   getLatestInnosentSensorData,
 }

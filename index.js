@@ -1,9 +1,8 @@
 // Third-party dependencies
+const bodyParser = require('body-parser')
 const express = require('express')
 const fs = require('fs')
 const https = require('https')
-const moment = require('moment-timezone')
-const bodyParser = require('body-parser')
 const session = require('express-session')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
@@ -13,17 +12,15 @@ const Validator = require('express-validator')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
-const redis = require('./db/redis.js')
-const db = require('./db/db.js')
-const XeThruStateMachine = require('./XeThruStateMachine.js')
-const InnosentStateMachine = require('./InnosentStateMachine.js')
-const STATE = require('./SessionStateEnum.js')
-const RADAR_TYPE = require('./RadarTypeEnum.js')
-const BraveAlerterConfigurator = require('./BraveAlerterConfigurator.js')
+const ALERT_REASON = require('./AlertReasonEnum')
+const redis = require('./db/redis')
+const db = require('./db/db')
+const StateMachine = require('./stateMachine/StateMachine')
+const SENSOR_EVENT = require('./SensorEventEnum')
+const RADAR_TYPE = require('./RadarTypeEnum')
+const BraveAlerterConfigurator = require('./BraveAlerterConfigurator')
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
-const SESSIONSTATE_DOOR = require('./SessionStateDoorEnum')
-
-const WATCHDOG_TIMER_FREQUENCY = 60 * 1000
+const DOOR_STATUS = require('./SessionStateDoorEnum')
 
 const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationsDashboard.mst`, 'utf-8')
 const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/landingPage.mst`, 'utf-8')
@@ -40,32 +37,14 @@ const app = express()
 // Open Redis connection
 redis.connect()
 
-// RESET IDs that had discrepancies
-const resetDiscrepancies = []
-
-// Session start_times dictionary.
-const start_times = {}
-
 // Configure braveAlerter
-const braveAlerter = new BraveAlerterConfigurator(start_times).createBraveAlerter()
+const braveAlerter = new BraveAlerterConfigurator().createBraveAlerter()
 
-// These states do not start nor close a session
-const VOIDSTATES = [STATE.RESET, STATE.NO_PRESENCE_NO_SESSION, STATE.DOOR_OPENED_START, STATE.MOVEMENT, STATE.STILL, STATE.BREATH_TRACKING]
-
-// These states will start a new session for a certain location
-const TRIGGERSTATES = [STATE.DOOR_CLOSED_START, STATE.MOTION_DETECTED]
-
-// These states will close an ongoing session for a certain location
-const CLOSINGSTATES = [STATE.DOOR_OPENED_CLOSE]
-
-// These states will start a Brave Alert session for a location
-const ALERTSTARTSTATES = [STATE.SUSPECTED_OD]
-
-// Body Parser Middleware
+// // Body Parser Middleware
+app.use(express.json())
 app.use(bodyParser.urlencoded({ extended: true })) // Set to true to allow the body to contain any type of value
 app.use(bodyParser.json())
-app.use(express.json())
-//
+
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors())
 
@@ -129,60 +108,54 @@ async function generateCalculatedTimeDifferenceString(timeToCompare) {
   return returnString
 }
 
-// Closes any open session and resets state for the given location
-async function autoResetSession(locationid) {
+async function handleAlert(location, alertReason) {
+  helpers.log(`Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId}`)
+
   let client
+
   try {
     client = await db.beginTransaction()
-    const currentSession = await db.getMostRecentSession(locationid, client)
-    await db.closeSession(currentSession.sessionid, client)
-    await db.updateSessionResetDetails(currentSession.sessionid, 'Auto reset', 'Reset', client)
-    redis.addStateMachineData('Reset', locationid)
-    start_times[locationid] = null
+    if (client === null) {
+      helpers.logError(`handleAlert: Error starting transaction`)
+      return
+    }
+    const currentSession = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
+    const currentTime = await db.getCurrentTime(client)
+
+    if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
+      const newSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertReason, client)
+      const alertInfo = {
+        sessionId: newSession.id,
+        toPhoneNumber: location.responderPhoneNumber,
+        fromPhoneNumber: location.twilioNumber,
+        message: `This is a ${alertReason} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
+        reminderTimeoutMillis: location.reminderTimer,
+        fallbackTimeoutMillis: location.fallbackTimer,
+        reminderMessage: `This is a reminder to check on the bathroom`,
+        fallbackMessage: `An alert to check on the bathroom at ${location.displayName} was not responded to. Please check on it`,
+        fallbackToPhoneNumbers: location.fallbackNumbers,
+        fallbackFromPhoneNumber: location.twilioNumber,
+      }
+      braveAlerter.startAlertSession(alertInfo)
+    } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
+      helpers.log('handleAlert: sending singleAlert')
+      await db.updateSession(currentSession.id, client)
+      braveAlerter.sendSingleAlert(
+        location.responderPhoneNumber,
+        location.twilioNumber,
+        `An additional ${alertReason} alert was generated at ${location.displayName}`,
+      )
+    }
     await db.commitTransaction(client)
   } catch (e) {
-    helpers.log('Could not reset open session')
     try {
       await db.rollbackTransaction(client)
-      helpers.logError(`autoResetSession: Rolled back transaction because of error: ${e}`)
+      helpers.logError(`handleAlert: Rolled back transaction because of error: ${e}`)
     } catch (error) {
       // Do nothing
-      helpers.logError(`autoResetSession: Error rolling back transaction: ${e}`)
+      helpers.logError(`handleAlert: Error rolling back transaction: ${error} Rollback attempted because of error: ${e}`)
     }
   }
-}
-
-// This function seeds the state table with a RESET state in case there was a prior unresolved state discrepancy
-if (!helpers.isTestEnvironment()) {
-  setInterval(async () => {
-    const locations = await db.getActiveLocations()
-    for (let i = 0; i < locations.length; i += 1) {
-      const currentLocationId = locations[i]
-      const stateHistoryQuery = await redis.getStatesWindow(currentLocationId, '+', '-', 60)
-      const stateMemory = []
-      for (let j = 0; j < stateHistoryQuery.length; j += 1) {
-        stateMemory.push(stateHistoryQuery[j].state)
-      }
-      // If RESET state is not succeeded by NO_PRESENCE_NO_SESSION, and already hasn't been artificially seeded, seed the sessions table with a reset state
-      for (let j = 1; j < stateHistoryQuery.length; j += 1) {
-        if (
-          // eslint-disable-next-line eqeqeq
-          stateHistoryQuery[j].state == STATE.RESET &&
-          // eslint-disable-next-line eqeqeq
-          !(stateHistoryQuery[j - 1].state == STATE.NO_PRESENCE_NO_SESSION || stateHistoryQuery[j - 1].state == STATE.RESET) &&
-          !resetDiscrepancies.includes(stateHistoryQuery[j].timestamp)
-        ) {
-          helpers.log(`The Reset state logged at ${stateHistoryQuery[j].timestamp} has a discrepancy`)
-          resetDiscrepancies.push(stateHistoryQuery[j].timestamp)
-          helpers.log('Adding a reset state to the sessions table since there seems to be a discrepancy')
-          helpers.log(resetDiscrepancies)
-          await redis.addStateMachineData(STATE.RESET, currentLocationId)
-          // Once a reset state has been added, additionally reset any ongoing sessions
-          autoResetSession(currentLocationId)
-        }
-      }
-    }
-  }, WATCHDOG_TIMER_FREQUENCY)
 }
 
 async function sendSingleAlert(locationid, message) {
@@ -204,17 +177,10 @@ async function sendReconnectionMessage(locationid, displayName) {
   await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has been reconnected.`)
 }
 
-// Autoreset twilio function
-
-async function sendResetAlert(locationid) {
-  await sendSingleAlert(locationid, `An unresponded session at ${locationid} has been automatically reset.`)
-}
-
 // Heartbeat Helper Functions
 async function checkHeartbeat() {
-  const locations = await db.getActiveLocations()
-
-  for (const location of locations) {
+  const backendStateMachineLocations = await db.getActiveServerStateMachineLocations()
+  for (const location of backendStateMachineLocations) {
     let latestRadar
     let latestDoor
 
@@ -253,164 +219,32 @@ async function checkHeartbeat() {
       helpers.logError(`Error checking heartbeat: ${err}`)
     }
   }
-}
 
-async function handleSensorRequest(location, radarType) {
-  let statemachine
-  if (radarType === RADAR_TYPE.XETHRU) {
-    statemachine = new XeThruStateMachine(location.locationid)
-  } else if (radarType === RADAR_TYPE.INNOSENT) {
-    statemachine = new InnosentStateMachine(location.locationid)
-  }
-  const currentState = await statemachine.getNextState(db, redis)
-  const stateobject = await redis.getLatestLocationStatesData(location.locationid)
-  let prevState
-  if (!stateobject) {
-    prevState = STATE.RESET
-  } else {
-    prevState = stateobject.state
-  }
-
-  // Get current time to compare to the session's start time
-  const location_start_time = start_times[location.locationid]
-  let sessionDuration
-
-  if (location_start_time !== null && location_start_time !== undefined) {
-    const start_time_sesh = new Date(location_start_time)
+  const firmwareStateMachineLocations = await db.getActiveFirmwareStateMachineLocations()
+  for (const location of firmwareStateMachineLocations) {
     try {
-      const now = new Date(await db.getCurrentTime())
-      sessionDuration = (now - start_time_sesh) / 1000
-    } catch (e) {
-      helpers.logError(`Error running getCurrentTime: ${e}`)
-    }
-  }
+      const latestHeartbeat = await redis.getLatestHeartbeat(location.locationid)
 
-  // If session duration is longer than the threshold (20 min), reset the session at this location, send an alert to notify as well.
-  if (sessionDuration * 1000 > location.autoResetThreshold) {
-    autoResetSession(location.locationid)
-    helpers.log(`${location.locationid}: autoResetSession has been called`)
-    sendResetAlert(location.locationid)
-  }
+      if (latestHeartbeat) {
+        const heartbeatTimestamp = convertToSeconds(latestHeartbeat.timestamp)
 
-  // To avoid filling the DB with repeated states in a row.
-  // eslint-disable-next-line eqeqeq
-  if (currentState != prevState) {
-    helpers.log(`${location.locationid}: ${currentState}`)
+        const redisTime = await redis.getCurrentTimeinSeconds()
+        const delay = redisTime - heartbeatTimestamp
 
-    await redis.addStateMachineData(currentState, location.locationid)
+        const heartbeatExceeded = delay > helpers.getEnvVar('RADAR_THRESHOLD_SECONDS')
 
-    if (VOIDSTATES.includes(currentState)) {
-      let client
-      try {
-        client = await db.beginTransaction()
-        const latestSession = await db.getMostRecentSession(location.locationid, client)
-
-        // If there is an open session for this location
-        if (latestSession !== null && latestSession.endTime === null) {
-          await db.updateSessionState(latestSession.sessionid, currentState, client)
-        }
-        await db.commitTransaction(client)
-      } catch (e) {
-        try {
-          await db.rollbackTransaction(client)
-          helpers.logError(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
-        } catch (error) {
-          // Do nothing
-          helpers.logError(`handleSensorRequest: Error rolling back transaction: ${e}`)
+        if (heartbeatExceeded && !location.heartbeatSentAlerts) {
+          helpers.logSentry(`System disconnected at ${location.locationid}`)
+          await db.updateSentAlerts(location.locationid, true)
+          sendDisconnectionMessage(location.locationid, location.displayName)
+        } else if (!heartbeatExceeded && location.heartbeatSentAlerts) {
+          helpers.logSentry(`${location.locationid} reconnected`)
+          await db.updateSentAlerts(location.locationid, false)
+          sendReconnectionMessage(location.locationid, location.displayName)
         }
       }
-    } else if (TRIGGERSTATES.includes(currentState)) {
-      let client
-      try {
-        client = await db.beginTransaction()
-        const latestSession = await db.getMostRecentSession(location.locationid, client)
-
-        if (latestSession !== null) {
-          // Checks if session exists
-          if (latestSession.endTime == null) {
-            // Checks if session is open for this location
-            const currentSession = await db.updateSessionState(latestSession.sessionid, currentState, client)
-            start_times[location.locationid] = currentSession.startTime
-          } else {
-            const currentSession = await db.createSession(location.phonenumber, location.locationid, currentState, client)
-            start_times[location.locationid] = currentSession.startTime
-          }
-        } else {
-          const currentSession = await db.createSession(location.phonenumber, location.locationid, currentState, client)
-          start_times[location.locationid] = currentSession.startTime
-        }
-        await db.commitTransaction(client)
-      } catch (e) {
-        try {
-          await db.rollbackTransaction(client)
-          helpers.logError(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
-        } catch (error) {
-          // Do nothing
-          helpers.logError(`handleSensorRequest: Error rolling back transaction: ${e}`)
-        }
-      }
-    } else if (CLOSINGSTATES.includes(currentState)) {
-      let client
-      try {
-        client = await db.beginTransaction()
-
-        const latestSession = await db.getMostRecentSession(location.locationid, client)
-        await db.updateSessionState(latestSession.sessionid, currentState, client)
-
-        await db.closeSession(latestSession.sessionid, client)
-        helpers.log(`Session at ${location.locationid} was closed successfully.`)
-        start_times[location.locationid] = null
-        await db.commitTransaction(client)
-      } catch (e) {
-        try {
-          await db.rollbackTransaction(client)
-          helpers.logError(`handleSensorRequest: Rolled back transaction because of error: ${e}`)
-        } catch (error) {
-          // Do nothing
-          helpers.logError(`handleSensorRequest: Error rolling back transaction: ${e}`)
-        }
-      }
-    } else if (ALERTSTARTSTATES.includes(currentState)) {
-      const latestSession = await db.getMostRecentSession(location.locationid)
-
-      // eslint-disable-next-line eqeqeq
-      if (latestSession.odFlag == 1) {
-        if (latestSession.chatbotState === null) {
-          const alertInfo = {
-            sessionId: latestSession.sessionid,
-            toPhoneNumber: location.phonenumber,
-            fromPhoneNumber: location.twilioNumber,
-            message: `This is a ${latestSession.alertReason} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
-            reminderTimeoutMillis: location.reminderTimer,
-            fallbackTimeoutMillis: location.fallbackTimer,
-            reminderMessage: `This is a reminder to check on the bathroom`,
-            fallbackMessage: `An alert to check on the bathroom at ${location.displayName} was not responded to. Please check on it`,
-            fallbackToPhoneNumbers: location.fallbackNumbers,
-            fallbackFromPhoneNumber: location.twilioNumber,
-          }
-          braveAlerter.startAlertSession(alertInfo)
-        }
-      }
-    } else {
-      helpers.log('Current State does not belong to any of the States groups')
-    }
-  } else {
-    // If statemachine doesn't run, emits latest session data to Frontend
-    const currentSession = await db.getMostRecentSession(location.locationid)
-
-    // Checks if session is in the STILL state and, if so, how long it has been in that state for.
-    if (currentSession !== null) {
-      if (currentSession.state === 'Still' || currentSession.state === 'Breathing') {
-        if (currentSession.endTime == null) {
-          // Only increases counter if session is open
-          await db.updateSessionStillCounter(currentSession.stillCounter + 1, currentSession.sessionid, currentSession.locationid)
-        } else {
-          // If session is closed still emit its data as it is
-        }
-      } else {
-        // If current session is anything else than STILL it returns the counter to 0
-        await db.updateSessionStillCounter(0, currentSession.sessionid, currentSession.locationid)
-      }
+    } catch (err) {
+      helpers.logError(`Error checking heartbeat: ${err}`)
     }
   }
 }
@@ -470,8 +304,8 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
     for (const location of allLocations) {
       const recentSession = await db.getMostRecentSession(location.locationid)
       if (recentSession !== null) {
-        const sessionStartTime = Date.parse(recentSession.startTime)
-        const timeSinceLastSession = await generateCalculatedTimeDifferenceString(sessionStartTime)
+        const sessionCreatedAt = Date.parse(recentSession.createdAt)
+        const timeSinceLastSession = await generateCalculatedTimeDifferenceString(sessionCreatedAt)
         location.sessionStart = timeSinceLastSession
       }
     }
@@ -522,19 +356,15 @@ app.get('/locations/:locationId', sessionChecker, async (req, res) => {
 
     // commented out keys were not shown on the old frontend but have been included in case that changes
     for (const recentSession of recentSessions) {
-      const startTime = moment(recentSession.startTime, moment.ISO_8601).tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A')
-      const endTime = recentSession.endTime
-        ? moment(recentSession.endTime, moment.ISO_8601).tz('America/Vancouver').format('DD MMM Y, hh:mm:ss A')
-        : 'Ongoing'
+      const createdAt = recentSession.createdAt
+      const updatedAt = recentSession.updatedAt
 
       viewParams.recentSessions.push({
-        startTime,
-        endTime,
-        state: recentSession.state,
+        createdAt,
+        updatedAt,
         notes: recentSession.notes,
         incidentType: recentSession.incidentType,
-        sessionid: recentSession.sessionid,
-        duration: recentSession.duration,
+        id: recentSession.id,
         chatbotState: recentSession.chatbotState,
         // alertReason: recentSession.alertReason,
       })
@@ -578,8 +408,8 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 app.post(
   '/locations',
   [
-    Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'twilioPhone']).notEmpty(),
-    Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
+    Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'twilioPhone', 'firmwareStateMachine']).notEmpty(),
+    Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
   ],
   async (req, res) => {
     try {
@@ -608,9 +438,10 @@ app.post(
           data.doorCoreID,
           data.radarCoreID,
           data.radarType,
-          data.phone,
+          data.responderPhoneNumber,
           data.twilioPhone,
           data.alertApiKey,
+          data.firmwareStateMachine,
         )
 
         res.redirect(`/locations/${data.locationid}`)
@@ -637,20 +468,16 @@ app.post(
       'fallbackPhones',
       'heartbeatPhones',
       'twilioPhone',
-      'sensitivity',
-      'led',
-      'noiseMap',
-      'movThreshold',
-      'rpmThreshold',
-      'durationThreshold',
-      'stillThreshold',
-      'autoResetThreshold',
-      'doorDelay',
+      'movementThreshold',
+      'durationTimer',
+      'stillnessTimer',
+      'initialTimer',
       'reminderTimer',
       'fallbackTimer',
       'isActive',
+      'firmwareStateMachine',
     ]).notEmpty(),
-    Validator.oneOf([Validator.body(['phone']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
+    Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
   ],
   async (req, res) => {
     try {
@@ -667,7 +494,7 @@ app.post(
         data.locationid = req.params.locationId
 
         const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
-        const newPhone = data.phone && data.phone.trim() !== '' ? data.phone : null
+        const newPhone = data.responderPhoneNumber && data.responderPhoneNumber.trim() !== '' ? data.responderPhoneNumber : null
 
         await db.updateLocation(
           data.displayName,
@@ -678,19 +505,15 @@ app.post(
           data.fallbackPhones.split(','),
           data.heartbeatPhones.split(','),
           data.twilioPhone,
-          data.sensitivity,
-          data.led,
-          data.noiseMap,
-          data.movThreshold,
-          data.rpmThreshold,
-          data.durationThreshold,
-          data.stillThreshold,
-          data.autoResetThreshold,
-          data.doorDelay,
+          data.movementThreshold,
+          data.durationTimer,
+          data.stillnessTimer,
+          data.initialTimer,
           data.reminderTimer,
           data.fallbackTimer,
           newAlertApiKey,
           data.isActive === 'true',
+          data.firmwareStateMachine === 'true',
           data.locationid,
         )
 
@@ -722,7 +545,7 @@ app.post('/api/xethru', Validator.body(['locationid', 'state', 'rpm', 'mov_f', '
 
       const location = await db.getLocationData(locationid)
       if (location.isActive && !location.heartbeatSentAlerts) {
-        await handleSensorRequest(location, RADAR_TYPE.XETHRU)
+        await StateMachine.getNextState(location, handleAlert)
       }
 
       res.status(200).json('OK')
@@ -773,7 +596,7 @@ app.post(
           await redis.addInnosentRadarSensorData(location.locationid, inPhase, quadrature)
 
           if (location.isActive && !location.heartbeatSentAlerts) {
-            await handleSensorRequest(location, RADAR_TYPE.INNOSENT)
+            await StateMachine.getNextState(location, handleAlert)
           }
 
           response.status(200).json('OK')
@@ -793,6 +616,48 @@ app.post(
   },
 )
 
+app.post('/api/sensorEvent', Validator.body(['coreid', 'event']).exists(), async (request, response) => {
+  try {
+    const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
+
+    if (validationErrors.isEmpty()) {
+      let alertType
+      const coreId = request.body.coreid
+      const sensorEvent = request.body.event
+      if (sensorEvent === SENSOR_EVENT.DURATION) {
+        alertType = ALERT_REASON.DURATION
+      } else if (sensorEvent === SENSOR_EVENT.STILLNESS) {
+        alertType = ALERT_REASON.STILLNESS
+      } else {
+        const errorMessage = `Bad request to ${request.path}: Invalid event type`
+        helpers.logError(errorMessage)
+      }
+      const location = await db.getLocationFromParticleCoreID(coreId)
+      if (!location) {
+        const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
+        helpers.logError(errorMessage)
+        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+        response.status(200).json(errorMessage)
+      } else {
+        if (location.isActive) {
+          await handleAlert(location, alertType)
+        }
+        response.status(200).json('OK')
+      }
+    } else {
+      const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
+      helpers.logError(errorMessage)
+      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+      response.status(200).json(errorMessage)
+    }
+  } catch (err) {
+    const errorMessage = `Error calling ${request.path}: ${err.toString()}`
+    helpers.logError(errorMessage)
+    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+    response.status(200).json(errorMessage)
+  }
+})
+
 app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
@@ -808,15 +673,14 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         response.status(200).json(errorMessage)
       } else {
         const locationid = location.locationid
-        const radarType = location.radarType
         const message = JSON.parse(request.body.data)
         const signal = message.data
         const control = message.control
         let doorSignal
         if (signal === IM21_DOOR_STATUS.OPEN || signal === IM21_DOOR_STATUS.HEARTBEAT_OPEN) {
-          doorSignal = SESSIONSTATE_DOOR.OPEN
+          doorSignal = DOOR_STATUS.OPEN
         } else if (signal === IM21_DOOR_STATUS.CLOSED || signal === IM21_DOOR_STATUS.HEARTBEAT_CLOSED) {
-          doorSignal = SESSIONSTATE_DOOR.CLOSED
+          doorSignal = DOOR_STATUS.CLOSED
         } else if (signal === IM21_DOOR_STATUS.LOW_BATT) {
           doorSignal = 'LowBatt'
           helpers.logSentry(`Received a low battery alert for ${locationid}`)
@@ -824,7 +688,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         }
         await redis.addIM21DoorSensorData(locationid, doorSignal, control)
         if (location.isActive && !location.heartbeatSentAlerts) {
-          await handleSensorRequest(location, radarType)
+          await StateMachine.getNextState(location, handleAlert)
         }
 
         response.status(200).json('OK')
@@ -889,6 +753,42 @@ app.post(
   },
 )
 
+app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(), async (request, response) => {
+  try {
+    const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
+
+    if (validationErrors.isEmpty()) {
+      const coreId = request.body.coreid
+      const location = await db.getLocationFromParticleCoreID(coreId)
+      if (!location) {
+        const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
+        helpers.logError(errorMessage)
+        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+        response.status(200).json(errorMessage)
+      } else {
+        const message = JSON.parse(request.body.data)
+        const doorStatus = message.door_status
+        const doorTime = message.door_time
+        const insTime = message.ins_time
+
+        await redis.addEdgeDeviceHeartbeat(location.locationid, doorStatus, doorTime, insTime)
+
+        response.status(200).json('OK')
+      }
+    } else {
+      const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
+      helpers.logError(errorMessage)
+      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+      response.status(200).json(errorMessage)
+    }
+  } catch (err) {
+    const errorMessage = `Error calling ${request.path}: ${JSON.stringify(err)}`
+    helpers.logError(errorMessage)
+    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+    response.status(200).json(errorMessage)
+  }
+})
+
 app.post('/smokeTest/setup', async (request, response) => {
   const { recipientNumber, twilioNumber, radarType } = request.body
   try {
@@ -896,10 +796,9 @@ app.post('/smokeTest/setup', async (request, response) => {
       'SmokeTestLocation',
       recipientNumber,
       17,
-      15,
-      150,
+      15000,
+      150000,
       30000,
-      120000,
       3000,
       [recipientNumber],
       twilioNumber,
@@ -909,12 +808,9 @@ app.post('/smokeTest/setup', async (request, response) => {
       'door_coreID',
       'radar_coreID',
       radarType,
-      2,
-      0,
-      2,
-      8,
       'alertApiKey',
       true,
+      false,
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
     response.status(200).send()
@@ -927,7 +823,6 @@ app.post('/smokeTest/teardown', async (request, response) => {
   try {
     await db.clearLocation('SmokeTestLocation')
     await db.clearSessionsFromLocation('SmokeTestLocation')
-    await redis.addStateMachineData('Reset', 'SmokeTestLocation')
     response.status(200).send()
   } catch (error) {
     helpers.logError(`Smoke test setup error: ${error}`)
@@ -954,3 +849,4 @@ module.exports.server = server
 module.exports.db = db
 module.exports.routes = routes
 module.exports.redis = redis
+module.exports.braveAlerter = braveAlerter

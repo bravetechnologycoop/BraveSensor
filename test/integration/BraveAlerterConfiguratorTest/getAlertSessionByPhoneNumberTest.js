@@ -4,8 +4,9 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
 const { ALERT_STATE, AlertSession } = require('brave-alert-lib')
-const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator.js')
-const db = require('../../../db/db.js')
+const ALERT_REASON = require('../../../AlertReasonEnum')
+const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
+const db = require('../../../db/db')
 
 describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneNumber', () => {
   beforeEach(async () => {
@@ -27,7 +28,6 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
       1,
       1,
       1,
-      1,
       [],
       this.expectedTwilioPhoneNumber,
       [],
@@ -36,20 +36,17 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
       'DoorCoreId',
       'RadarCoreId',
       'XeThru',
-      1,
-      1,
-      1,
-      1,
       'alertApiKey',
       true,
+      false,
     )
     const locationId = (await db.getLocations())[0].locationid
 
     // Insert a session for that location in the DB
-    await db.createSession(this.expectedLocationPhoneNumber, locationId)
-    const sessionId = (await db.getAllSessionsFromLocation(locationId))[0].sessionid
-    await db.saveAlertSession(this.expectedChatbotState, this.expectedIncidentType, sessionId)
-    this.session = await db.getSessionWithSessionId(sessionId)
+    await db.createSession(locationId, this.expectedLocationPhoneNumber, ALERT_REASON.DURATION)
+    const id = (await db.getAllSessionsFromLocation(locationId))[0].id
+    await db.saveAlertSession(this.expectedChatbotState, this.expectedIncidentType, id)
+    this.session = await db.getSessionWithSessionId(id)
   })
 
   afterEach(async () => {
@@ -58,11 +55,11 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
   })
 
   it('should create a new AlertSession with expected values from the sessions and locations DB tables', async () => {
-    const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const actualAlertSession = await braveAlerterConfigurator.getAlertSessionByPhoneNumber(this.expectedTwilioPhoneNumber)
 
     const expectedAlertSession = new AlertSession(
-      this.session.sessionid,
+      this.session.id,
       this.expectedChatbotState,
       this.expectedIncidentType,
       undefined,

@@ -4,8 +4,8 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
 const { Location, SYSTEM } = require('brave-alert-lib')
-const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator.js')
-const db = require('../../../db/db.js')
+const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
+const db = require('../../../db/db')
 
 describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKey', () => {
   beforeEach(async () => {
@@ -22,7 +22,6 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
       1,
       1,
       1,
-      1,
       [],
       '+3336661234',
       [],
@@ -31,12 +30,9 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
       'DoorCoreId',
       'RadarCoreId',
       'XeThru',
-      1,
-      1,
-      1,
-      1,
       'myApiKey',
       true,
+      false,
     )
   })
 
@@ -47,14 +43,14 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
   it('given a API key that matches a single location should return a BraveAlertLib Location object with the values from that location', async () => {
     const expectedLocation = new Location(this.expectedLocationId, SYSTEM.SENSOR)
 
-    const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey('myApiKey')
 
     expect(actualLocation).to.eql(expectedLocation)
   })
 
   it('given a API key that does not match any locations should return null', async () => {
-    const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey('notARealApiKey')
 
     expect(actualLocation).to.be.null
@@ -72,7 +68,6 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
         1,
         1,
         1,
-        1,
         [],
         '+3336661234',
         [],
@@ -81,23 +76,20 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
         'DoorCoreId',
         'RadarCoreId',
         'XeThru',
-        1,
-        1,
-        1,
-        1,
         'myApiKey',
         true,
+        false,
       )
     })
 
     it('should return a BraveAlertLib Location object with the one of the displaynames', async () => {
-      const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+      const braveAlerterConfigurator = new BraveAlerterConfigurator()
       const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey('myApiKey')
       expect(actualLocation.name).to.be.oneOf([this.expectedLocationId, this.anotherExpectedLocationId])
     })
 
     it('should return a BraveAlertLib Location object with the Sensors system', async () => {
-      const braveAlerterConfigurator = new BraveAlerterConfigurator(this.testStartTimes)
+      const braveAlerterConfigurator = new BraveAlerterConfigurator()
       const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey('myApiKey')
       expect(actualLocation.system).to.equal(SYSTEM.SENSOR)
     })

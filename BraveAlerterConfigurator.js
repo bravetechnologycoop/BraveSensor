@@ -1,18 +1,13 @@
 /* eslint-disable class-methods-use-this */
 // In-house dependencies
 const { BraveAlerter, AlertSession, ALERT_STATE, helpers, Location, SYSTEM } = require('brave-alert-lib')
-const db = require('./db/db.js')
-const redis = require('./db/redis.js')
+const db = require('./db/db')
 
 const incidentTypes = ['No One Inside', 'Person responded', 'Overdose', 'None of the above']
 
 const incidentTypeKeys = ['1', '2', '3', '4']
 
 class BraveAlerterConfigurator {
-  constructor(startTimes) {
-    this.startTimes = startTimes
-  }
-
   createBraveAlerter() {
     return new BraveAlerter(
       this.getAlertSession.bind(this),
@@ -28,12 +23,12 @@ class BraveAlerterConfigurator {
     const locationData = await db.getLocationData(session.locationid)
 
     const alertSession = new AlertSession(
-      session.sessionid,
+      session.id,
       session.chatbotState,
       session.incidentType,
       undefined,
       `An alert to check on the washroom at ${locationData.displayName} was not responded to. Please check on it`,
-      locationData.phonenumber,
+      locationData.responderPhoneNumber,
       incidentTypeKeys,
       incidentTypes,
     )
@@ -64,19 +59,17 @@ class BraveAlerterConfigurator {
 
     try {
       client = await db.beginTransaction()
-
+      if (client === null) {
+        helpers.logError(`alertSessionChangedCallback: Error starting transaction`)
+        return
+      }
       const session = await db.getSessionWithSessionId(alertSession.sessionId, client)
-      const incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
-      await db.saveAlertSession(alertSession.alertState, incidentType, alertSession.sessionId, client)
 
-      const locationId = session.locationid
-
-      if (alertSession.alertState === ALERT_STATE.COMPLETED) {
-        // Closes the session, sets the session state to RESET
-        await db.closeSession(session.sessionid, client) // Adds the end_time to the latest open session from the LocationID
-        helpers.log(`Session at ${locationId} was closed successfully.`)
-        this.startTimes[locationId] = null // Stops the session timer for this location
-        redis.addStateMachineData('Reset', locationId)
+      if (session) {
+        const incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
+        await db.saveAlertSession(alertSession.alertState, incidentType, alertSession.sessionId, client)
+      } else {
+        helpers.logError(`alertSessionChangedCallback was called for a non-existent session: ${alertSession.sessionId}`)
       }
 
       await db.commitTransaction(client)

@@ -1,16 +1,12 @@
 class Location {
   // prettier-ignore
-  constructor(locationid, displayName, phonenumber, sensitivity, led, noisemap, movThreshold, durationThreshold, stillThreshold, rpmThreshold, heartbeatSentAlerts, heartbeatAlertRecipients, doorCoreId, radarCoreId, radarType, reminderTimer, fallbackTimer, autoResetThreshold, twilioNumber, fallbackNumbers, doorStickinessDelay, alertApiKey, isActive) {
+  constructor(locationid, displayName, responderPhoneNumber, movementThreshold, durationTimer, stillnessTimer, heartbeatSentAlerts, heartbeatAlertRecipients, doorCoreId, radarCoreId, radarType, reminderTimer, fallbackTimer, twilioNumber, fallbackNumbers, initialTimer, alertApiKey, isActive, firmwareStateMachine) {
     this.locationid = locationid
     this.displayName = displayName
-    this.phonenumber = phonenumber
-    this.sensitivity = sensitivity
-    this.led = led
-    this.noisemap = noisemap
-    this.movThreshold = movThreshold
-    this.durationThreshold = durationThreshold
-    this.stillThreshold = stillThreshold
-    this.rpmThreshold = rpmThreshold
+    this.responderPhoneNumber = responderPhoneNumber
+    this.movementThreshold = movementThreshold
+    this.durationTimer = durationTimer
+    this.stillnessTimer = stillnessTimer
     this.heartbeatSentAlerts = heartbeatSentAlerts
     this.heartbeatAlertRecipients = heartbeatAlertRecipients
     this.doorCoreId = doorCoreId
@@ -18,12 +14,12 @@ class Location {
     this.radarType = radarType
     this.reminderTimer = reminderTimer
     this.fallbackTimer = fallbackTimer
-    this.autoResetThreshold = autoResetThreshold
     this.twilioNumber = twilioNumber
     this.fallbackNumbers = fallbackNumbers
-    this.doorStickinessDelay = doorStickinessDelay
+    this.initialTimer = initialTimer
     this.alertApiKey = alertApiKey
     this.isActive = isActive
+    this.firmwareStateMachine = firmwareStateMachine
   }
 }
 

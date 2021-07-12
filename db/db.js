@@ -2,11 +2,9 @@
 const pg = require('pg')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
-const OD_FLAG_STATE = require('../SessionStateODFlagEnum')
-const ALERT_REASON = require('../AlertReasonEnum')
-const Session = require('../Session.js')
-const Location = require('../Location.js')
+const { ALERT_STATE, helpers } = require('brave-alert-lib')
+const Session = require('../Session')
+const Location = require('../Location')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -27,12 +25,12 @@ pool.on('error', err => {
 
 function createSessionFromRow(r) {
   // prettier-ignore
-  return new Session(r.locationid, r.start_time, r.end_time, r.od_flag, r.state, r.phonenumber, r.notes, r.incidenttype, r.sessionid, r.duration, r.still_counter, r.chatbot_state, r.alert_reason)
+  return new Session(r.id, r.locationid, r.phone_number, r.chatbot_state, r.alert_reason, r.created_at, r.updated_at, r.incident_type, r.notes)
 }
 
 function createLocationFromRow(r) {
   // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.phonenumber, r.sensitivity, r.led, r.noisemap, r.mov_threshold, r.duration_threshold, r.still_threshold, r.rpm_threshold, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.auto_reset_threshold, r.twilio_number, r.fallback_phonenumbers, r.door_stickiness_delay, r.alert_api_key, r.is_active)
+  return new Location(r.locationid, r.display_name, r.responder_phone_number, r.movement_threshold, r.duration_timer, r.stillness_timer, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.alert_api_key, r.is_active, r.firmware_state_machine)
 }
 
 async function beginTransaction() {
@@ -99,7 +97,7 @@ async function getMostRecentSession(locationid, clientParam) {
   try {
     const results = await runQuery(
       'getMostRecentSession',
-      'SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 1',
+      'SELECT * FROM sessions WHERE locationid = $1 ORDER BY created_at DESC LIMIT 1',
       [locationid],
       clientParam,
     )
@@ -115,9 +113,9 @@ async function getMostRecentSession(locationid, clientParam) {
 }
 
 // Gets session with a specific SessionID
-async function getSessionWithSessionId(sessionid, clientParam) {
+async function getSessionWithSessionId(id, clientParam) {
   try {
-    const results = await runQuery('getSessionWithSessionId', 'SELECT * FROM sessions WHERE sessionid = $1', [sessionid], clientParam)
+    const results = await runQuery('getSessionWithSessionId', 'SELECT * FROM sessions WHERE id = $1', [id], clientParam)
 
     if (results === undefined || results.rows.length === 0) {
       return null
@@ -134,7 +132,7 @@ async function getMostRecentSessionPhone(twilioNumber, clientParam) {
   try {
     const results = await runQuery(
       'getMostRecentSessionPhone',
-      "SELECT s.* FROM sessions AS s LEFT JOIN locations AS l ON s.locationid = l.locationid WHERE l.twilio_number = $1  AND s.start_time > (CURRENT_TIMESTAMP - interval '7 days') ORDER BY s.start_time DESC LIMIT 1",
+      'SELECT s.* FROM sessions AS s LEFT JOIN locations AS l ON s.locationid = l.locationid WHERE l.twilio_number = $1 ORDER BY s.created_at DESC LIMIT 1',
       [twilioNumber],
       clientParam,
     )
@@ -153,7 +151,7 @@ async function getHistoryOfSessions(locationid, clientParam) {
   try {
     const results = await runQuery(
       'getHistoryOfSessions',
-      'SELECT * FROM sessions WHERE locationid = $1 ORDER BY sessionid DESC LIMIT 200',
+      'SELECT * FROM sessions WHERE locationid = $1 ORDER BY created_at DESC LIMIT 200',
       [locationid],
       clientParam,
     )
@@ -168,11 +166,30 @@ async function getHistoryOfSessions(locationid, clientParam) {
   }
 }
 
+async function getUnrespondedSessionWithLocationId(locationid, clientParam) {
+  try {
+    const results = await runQuery(
+      'getUnrespondedSessionWithLocationId',
+      'SELECT * FROM sessions WHERE locationid = $1 AND chatbot_state != $2 AND chatbot_state != $3 AND chatbot_state != $4 ORDER BY created_at DESC LIMIT 1',
+      [locationid, ALERT_STATE.WAITING_FOR_CATEGORY, ALERT_STATE.WAITING_FOR_DETAILS, ALERT_STATE.COMPLETED],
+      clientParam,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
 async function getAllSessionsFromLocation(locationid, clientParam) {
   try {
     const results = await runQuery(
       'getAllSessionsFromLocation',
-      'SELECT * FROM sessions WHERE locationid = $1 order by start_time desc',
+      'SELECT * FROM sessions WHERE locationid = $1 order by created_at desc',
       [locationid],
       clientParam,
     )
@@ -188,60 +205,14 @@ async function getAllSessionsFromLocation(locationid, clientParam) {
 }
 
 // Creates a new session for a specific location
-async function createSession(phone, locationid, state, clientParam) {
+async function createSession(locationid, phoneNumber, alertReason, clientParam) {
   try {
     const results = await runQuery(
       'createSession',
-      'INSERT INTO sessions(phonenumber, locationid, state, od_flag) VALUES ($1, $2, $3, $4) RETURNING *',
-      [phone, locationid, state, OD_FLAG_STATE.NO_OVERDOSE],
+      'INSERT INTO sessions(locationid, phone_number, alert_reason, chatbot_state) VALUES ($1, $2, $3, $4) RETURNING *',
+      [locationid, phoneNumber, alertReason, ALERT_STATE.STARTED],
       clientParam,
     )
-    return createSessionFromRow(results.rows[0])
-  } catch (err) {
-    helpers.log(JSON.stringify(err))
-  }
-}
-
-// Enters the end time of a session when it closes and calculates the duration of the session
-async function updateSessionEndTime(sessionid, clientParam) {
-  try {
-    await runQuery('updateSessionEndTime', 'UPDATE sessions SET end_time = CURRENT_TIMESTAMP WHERE sessionid = $1', [sessionid], clientParam)
-
-    // Sets the duration to the difference between the end and start time
-    await runQuery(
-      'updateSessionEndTime',
-      "UPDATE sessions SET duration = TO_CHAR(age(end_time, start_time),'HH24:MI:SS') WHERE sessionid = $1",
-      [sessionid],
-      clientParam,
-    )
-  } catch (err) {
-    helpers.log(JSON.stringify(err))
-  }
-}
-
-// Closes the session by updating the end time
-async function closeSession(sessionid, clientParam) {
-  try {
-    await updateSessionEndTime(sessionid, clientParam)
-  } catch (err) {
-    helpers.log(JSON.stringify(err))
-  }
-}
-
-// Updates the state value in the sessions database row
-async function updateSessionState(sessionid, state, clientParam) {
-  try {
-    const results = await runQuery(
-      'updateSessionState',
-      'UPDATE sessions SET state = $1 WHERE sessionid = $2 RETURNING *',
-      [state, sessionid],
-      clientParam,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
     return createSessionFromRow(results.rows[0])
   } catch (err) {
     helpers.log(JSON.stringify(err))
@@ -267,170 +238,24 @@ async function updateSentAlerts(locationid, sentalerts, clientParam) {
   }
 }
 
-async function updateSessionResetDetails(sessionid, notes, state, clientParam) {
-  try {
-    const results = await runQuery(
-      'updateSessionResetDetails',
-      'UPDATE sessions SET state = $1, notes = $2 WHERE sessionid = $3 RETURNING *',
-      [state, notes, sessionid],
-      clientParam,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    return createSessionFromRow(results.rows[0])
-  } catch (err) {
-    helpers.log(JSON.stringify(err))
-  }
-}
-
-// Updates the still_counter in the sessions database row
-
-async function updateSessionStillCounter(stillcounter, sessionid, locationid, clientParam) {
-  try {
-    const results = await runQuery(
-      'updateSessionStillCounter',
-      'UPDATE sessions SET still_counter = $1 WHERE sessionid = $2 AND locationid = $3 RETURNING *',
-      [stillcounter, sessionid, locationid],
-      clientParam,
-    )
-    if (results === undefined) {
-      return null
-    }
-
-    return createSessionFromRow(results.rows[0])
-  } catch (err) {
-    helpers.log(JSON.stringify(err))
-  }
-}
-
-async function isOverdoseSuspectedInnosent(session, location, clientParam) {
-  try {
-    const now = new Date(await getCurrentTime())
-    const start_time_sesh = new Date(session.startTime)
-
-    // Current Session duration so far:
-    const sessionDuration = (now - start_time_sesh) / 1000
-
-    // threshold values for the various overdose conditions
-    const still_threshold = location.stillThreshold
-    const sessionDuration_threshold = location.durationThreshold
-
-    // number in front represents the weighting
-    const condition2 = 1 * (session.stillCounter > still_threshold) // seconds
-    const condition3 = 1 * (sessionDuration > sessionDuration_threshold)
-
-    let alertReason = ALERT_REASON.NOTSET
-
-    if (condition3 === 1) {
-      alertReason = ALERT_REASON.DURATION
-    }
-
-    if (condition2 === 1) {
-      alertReason = ALERT_REASON.STILLNESS
-    }
-
-    const conditionThreshold = 1
-
-    // This method just looks for a majority of conditions to be met
-    // This method can apply different weights for different criteria
-    if (condition2 + condition3 >= conditionThreshold) {
-      // update the table entry so od_flag is 1
-      try {
-        await runQuery(
-          'isOverdoseSuspectedInnosent',
-          'UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3',
-          [OD_FLAG_STATE.OVERDOSE, alertReason, session.sessionid],
-          clientParam,
-        )
-
-        return true
-      } catch (err) {
-        helpers.log(JSON.stringify(err))
-      }
-    }
-
-    return false
-  } catch (e) {
-    helpers.logError(`Error running isOverdoseSuspected: ${e}`)
-  }
-}
-
-/*
- * Checks various conditions to determine whether an overdose has occurred or not
- * If an overdose is detected, the od_flag is raised and saved in the database
- * Checks:
- *   RPM is a low value
- *   Person hasn't been moving for a long time
- *   Total time in the bathroom exceeds a certain value
- */
-async function isOverdoseSuspected(xethru, session, location, clientParam) {
-  try {
-    const now = new Date(await getCurrentTime())
-    const start_time_sesh = new Date(session.startTime)
-
-    // Current Session duration so far:
-    const sessionDuration = (now - start_time_sesh) / 1000
-
-    // threshold values for the various overdose conditions
-    const rpm_threshold = location.rpmThreshold
-    const still_threshold = location.stillThreshold
-    const sessionDuration_threshold = location.durationThreshold
-
-    // number in front represents the weighting
-    // eslint-disable-next-line eqeqeq
-    const condition1 = 1 * (xethru.rpm <= rpm_threshold && xethru.rpm != 0)
-    const condition2 = 1 * (session.stillCounter > still_threshold) // seconds
-    const condition3 = 1 * (sessionDuration > sessionDuration_threshold)
-
-    let alertReason = ALERT_REASON.NOTSET
-
-    // eslint-disable-next-line eqeqeq
-    if (condition3 === 1) {
-      alertReason = ALERT_REASON.DURATION
-    }
-
-    // eslint-disable-next-line eqeqeq
-    if (condition2 === 1 || condition1 == 1) {
-      alertReason = ALERT_REASON.STILLNESS
-    }
-
-    const conditionThreshold = 1
-
-    // This method just looks for a majority of conditions to be met
-    // This method can apply different weights for different criteria
-    if (condition1 + condition2 + condition3 >= conditionThreshold) {
-      // update the table entry so od_flag is 1
-      try {
-        await runQuery(
-          'isOverdoseSuspected',
-          'UPDATE sessions SET od_flag = $1, alert_reason = $2  WHERE sessionid = $3',
-          [OD_FLAG_STATE.OVERDOSE, alertReason, session.sessionid],
-          clientParam,
-        )
-
-        return true
-      } catch (err) {
-        helpers.log(JSON.stringify(err))
-      }
-    }
-    return false
-  } catch (e) {
-    helpers.logError(`Error running isOverdoseSuspectedInnosent: ${e}`)
-  }
-}
-
 // Saves the state and incident type into the sessions table
 async function saveAlertSession(chatbotState, incidentType, sessionid, clientParam) {
   try {
     await runQuery(
       'saveAlertSession',
-      'UPDATE sessions SET chatbot_state = $1, incidenttype = $2 WHERE sessionid = $3',
+      'UPDATE sessions SET chatbot_state = $1, incident_type = $2 WHERE id = $3',
       [chatbotState, incidentType, sessionid],
       clientParam,
     )
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
+// Saves the state and incident type into the sessions table
+async function updateSession(id, clientParam) {
+  try {
+    await runQuery('updateSession', 'UPDATE sessions SET updated_at = now() WHERE id = $1', [id], clientParam)
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -486,9 +311,33 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
   }
 }
 
-async function getActiveLocations(clientParam) {
+async function getActiveServerStateMachineLocations(clientParam) {
   try {
-    const results = await runQuery('getLocations', 'SELECT * FROM locations WHERE is_active', [], clientParam)
+    const results = await runQuery(
+      'getActiveServerStateMachineLocations',
+      'SELECT * FROM locations WHERE is_active AND firmware_state_machine = false',
+      [],
+      clientParam,
+    )
+
+    if (results === undefined) {
+      return null
+    }
+
+    return results.rows.map(r => createLocationFromRow(r))
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
+async function getActiveFirmwareStateMachineLocations(clientParam) {
+  try {
+    const results = await runQuery(
+      'getActiveFirmwareStateMachineLocations',
+      'SELECT * FROM locations WHERE is_active AND firmware_state_machine',
+      [],
+      clientParam,
+    )
 
     if (results === undefined) {
       return null
@@ -517,33 +366,29 @@ async function getLocations(clientParam) {
 
 // Updates the locations table entry for a specific location with the new data
 // eslint-disable-next-line prettier/prettier
-async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phonenumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, sensitivity, led, noisemap, movThreshold, rpmThreshold, durationThreshold, stillThreshold, autoResetThreshold, doorStickinessDelay, reminderTimer, fallbackTimer, alertApiKey, isActive, locationid, clientParam) {
+async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phoneNumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, reminderTimer, fallbackTimer, alertApiKey, isActive, firmwareStateMachine, locationid, clientParam) {
   try {
     const results = await runQuery(
       'updateLocation',
-      'UPDATE locations SET display_name = $1, door_particlecoreid = $2, radar_particlecoreid = $3, radar_type = $4, phonenumber = $5, fallback_phonenumbers = $6, heartbeat_alert_recipients = $7, twilio_number = $8, sensitivity = $9, led = $10, noisemap = $11, mov_threshold = $12, rpm_threshold = $13, duration_threshold = $14, still_threshold = $15, auto_reset_threshold = $16, door_stickiness_delay = $17, reminder_timer = $18, fallback_timer = $19, alert_api_key = $20, is_active = $21 WHERE locationid = $22 returning *',
+      'UPDATE locations SET display_name = $1, door_particlecoreid = $2, radar_particlecoreid = $3, radar_type = $4, responder_phone_number = $5, fallback_phonenumbers = $6, heartbeat_alert_recipients = $7, twilio_number = $8, movement_threshold = $9, duration_timer = $10, stillness_timer = $11, initial_timer = $12, reminder_timer = $13, fallback_timer = $14, alert_api_key = $15, is_active = $16, firmware_state_machine = $17 WHERE locationid = $18 returning *',
       [
         displayName,
         doorCoreId,
         radarCoreId,
         radarType,
-        phonenumber,
+        phoneNumber,
         fallbackNumbers,
         heartbeatAlertRecipients,
         twilioNumber,
-        sensitivity,
-        led,
-        noisemap,
-        movThreshold,
-        rpmThreshold,
-        durationThreshold,
-        stillThreshold,
-        autoResetThreshold,
-        doorStickinessDelay,
+        movementThreshold,
+        durationTimer,
+        stillnessTimer,
+        initialTimer,
         reminderTimer,
         fallbackTimer,
         alertApiKey,
         isActive,
+        firmwareStateMachine,
         locationid,
       ],
       clientParam,
@@ -558,10 +403,10 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, phonenumber, twilioNumber, alertApiKey, clientParam) {
+async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, phonenumber, twilioNumber, alertApiKey, firmwareStateMachine, clientParam) {
   try {
     await runQuery('createLocationFromBrowserForm',
-      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, phonenumber, twilio_number, alert_api_key) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, responder_phone_number, twilio_number, alert_api_key, firmware_state_machine) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
       [
         locationid,
         displayName,
@@ -571,6 +416,7 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
         phonenumber,
         twilioNumber,
         alertApiKey,
+        firmwareStateMachine,
       ],
       clientParam,
     )
@@ -583,20 +429,19 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
 
 // Adds a location table entry
 // eslint-disable-next-line prettier/prettier
-async function createLocation(locationid, phonenumber, movThreshold, stillThreshold, durationThreshold, reminderTimer, autoResetThreshold, doorStickinessDelay, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, sensitivity, led, noisemap, rpmThreshold, alertApiKey, isActive, clientParam) {
+async function createLocation(locationid, phonenumber, movementThreshold, stillnessTimer, durationTimer, reminderTimer, initialTimer, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, alertApiKey, isActive, firmwareStateMachine, clientParam) {
   try {
     await runQuery(
       'createLocation',
-      'INSERT INTO locations(locationid, phonenumber, mov_threshold, still_threshold, duration_threshold, reminder_timer, auto_reset_threshold, door_stickiness_delay, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, sensitivity, led, noisemap, rpm_threshold, alert_api_key, is_active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)',
+      'INSERT INTO locations(locationid, responder_phone_number, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, alert_api_key, is_active, firmware_state_machine) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)',
       [
         locationid,
         phonenumber,
-        movThreshold,
-        stillThreshold,
-        durationThreshold,
+        movementThreshold,
+        stillnessTimer,
+        durationTimer,
         reminderTimer,
-        autoResetThreshold,
-        doorStickinessDelay,
+        initialTimer,
         heartbeatAlertRecipients,
         twilioNumber,
         fallbackNumbers,
@@ -605,12 +450,9 @@ async function createLocation(locationid, phonenumber, movThreshold, stillThresh
         doorCoreId,
         radarCoreId,
         radarType,
-        sensitivity,
-        led,
-        noisemap,
-        rpmThreshold,
         alertApiKey,
         isActive,
+        firmwareStateMachine,
       ],
       clientParam,
     )
@@ -669,19 +511,15 @@ module.exports = {
   getMostRecentSession,
   getSessionWithSessionId,
   getHistoryOfSessions,
+  getUnrespondedSessionWithLocationId,
   createSession,
-  isOverdoseSuspected,
-  isOverdoseSuspectedInnosent,
-  updateSessionState,
-  updateSessionStillCounter,
-  updateSessionResetDetails,
-  closeSession,
   saveAlertSession,
   getMostRecentSessionPhone,
   getLocationFromParticleCoreID,
   getLocationsFromAlertApiKey,
   getLocationData,
-  getActiveLocations,
+  getActiveServerStateMachineLocations,
+  getActiveFirmwareStateMachineLocations,
   getLocations,
   updateLocation,
   createLocation,
@@ -697,4 +535,5 @@ module.exports = {
   rollbackTransaction,
   getCurrentTime,
   createLocationFromBrowserForm,
+  updateSession,
 }

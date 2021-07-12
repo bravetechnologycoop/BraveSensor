@@ -99,6 +99,16 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: DOOR_THRESHOLD_SECONDS
+          - name: SESSION_RESET_THRESHOLD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: SESSION_RESET_THRESHOLD
+          - name: SUBSEQUENT_ALERT_MESSAGE_THRESHOLD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: SUBSEQUENT_ALERT_MESSAGE_THRESHOLD
           - name: ENVIRONMENT
             value: {{ include "sensor.fullname" . | quote }}
           - name: RELEASE

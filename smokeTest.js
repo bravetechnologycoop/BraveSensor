@@ -1,8 +1,8 @@
 const { helpers } = require('brave-alert-lib')
 const axios = require('axios').default
-const { getRandomArbitrary, getRandomInt, printRandomIntArray } = require('./testingHelpers.js')
-const RADAR_TYPE = require('./RadarTypeEnum.js')
-const XETHRU_STATE = require('./SessionStateXethruEnum.js')
+const { getRandomArbitrary, getRandomInt, printRandomIntArray } = require('./testingHelpers')
+const RADAR_TYPE = require('./RadarTypeEnum')
+const XETHRU_STATE = require('./SessionStateXethruEnum')
 
 const MOV_THRESHOLD = 17
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
