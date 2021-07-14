@@ -216,7 +216,7 @@ async function checkHeartbeat() {
         sendReconnectionMessage(location.locationid, location.displayName)
       }
     } catch (err) {
-      helpers.logError(`Error checking heartbeat: ${err}`)
+      helpers.logError(`Error checking heartbeat: ${err.toString()}`)
     }
   }
 
@@ -244,7 +244,7 @@ async function checkHeartbeat() {
         }
       }
     } catch (err) {
-      helpers.logError(`Error checking heartbeat: ${err}`)
+      helpers.logError(`Error checking heartbeat: ${err.toString()}`)
     }
   }
 }
@@ -318,7 +318,7 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
   } catch (err) {
-    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
 })
@@ -335,7 +335,7 @@ app.get('/locations/new', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(newLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
-    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
 })
@@ -372,7 +372,7 @@ app.get('/locations/:locationId', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(locationsDashboardTemplate, viewParams, { nav: navPartial, css: locationsCSSPartial }))
   } catch (err) {
-    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
 })
@@ -398,7 +398,7 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 
     res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
-    helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
 })
@@ -451,7 +451,7 @@ app.post(
         res.status(400).send(errorMessage)
       }
     } catch (err) {
-      helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
+      helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
       res.status(500).send()
     }
   },
@@ -524,7 +524,7 @@ app.post(
         res.status(400).send(errorMessage)
       }
     } catch (err) {
-      helpers.logError(`Error calling ${req.path}: ${JSON.stringify(err)}`)
+      helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
       res.status(500).send()
     }
   },
@@ -613,7 +613,7 @@ app.post(
         response.status(200).json(errorMessage)
       }
     } catch (err) {
-      const errorMessage = `Error calling ${request.path}: ${JSON.stringify(err)}`
+      const errorMessage = `Error calling ${request.path}: ${err.toString()}`
       helpers.logError(errorMessage)
       // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
       response.status(200).json(errorMessage)
@@ -705,7 +705,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
       response.status(200).json(errorMessage)
     }
   } catch (err) {
-    const errorMessage = `Error calling ${request.path}: ${JSON.stringify(err)}`
+    const errorMessage = `Error calling ${request.path}: ${err.toString()}`
     helpers.logError(errorMessage)
     // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
     response.status(200).json(errorMessage)
@@ -752,7 +752,7 @@ app.post(
         response.status(400).send(errorMessage)
       }
     } catch (err) {
-      helpers.logError(`Error calling ${request.path}: ${JSON.stringify(err)}`)
+      helpers.logError(`Error calling ${request.path}: ${err.toString()}`)
       response.status(500).send()
     }
   },
@@ -787,7 +787,7 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(),
       response.status(200).json(errorMessage)
     }
   } catch (err) {
-    const errorMessage = `Error calling ${request.path}: ${JSON.stringify(err)}`
+    const errorMessage = `Error calling ${request.path}: ${err.toString()}`
     helpers.logError(errorMessage)
     // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
     response.status(200).json(errorMessage)
