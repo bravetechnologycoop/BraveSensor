@@ -20,6 +20,11 @@ the code was deployed.
 
 - Decoupled state machine from Sessions (CU-v9ae26).
 - Refactored and merged radar state machines (CU-v9ae26).
+- Querying for radar moving average with time instead of number of entries.
+
+### Fixed
+
+- Fixed bug where stringifying error messages was resulting in empty strings instead of useful error information.
 
 
 ## [3.4.0] - 2021-06-21

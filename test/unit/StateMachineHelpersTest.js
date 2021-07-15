@@ -21,74 +21,74 @@ describe('StateMachineHelpers.js unit tests', async () => {
   describe('movementOverAverage', async () => {
     describe('when RadarType is XeThru', async () => {
       it('should query redis for XeThru values', async () => {
-        sandbox.stub(redis, 'getXethruWindow').returns([{ mov_f: 10, mov_s: 10 }])
+        sandbox.stub(redis, 'getXethruTimeWindow').returns([{ mov_f: 10, mov_s: 10 }])
         await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.XETHRU, testLocationId, 10)
-        expect(redis.getXethruWindow).to.be.called
+        expect(redis.getXethruTimeWindow).to.be.called
       })
 
       it('should not query redis for Innosent values', async () => {
-        sandbox.stub(redis, 'getInnosentWindow')
+        sandbox.stub(redis, 'getInnosentTimeWindow')
         await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.XETHRU, testLocationId, 10)
-        expect(redis.getInnosentWindow).to.be.not.called
+        expect(redis.getInnosentTimeWindow).to.be.not.called
       })
 
       it('should return true if both movement fast or slow are above the threshold', async () => {
-        sandbox.stub(redis, 'getXethruWindow').returns(randomXethruStream(11, 20, 11, 20, 15))
+        sandbox.stub(redis, 'getXethruTimeWindow').returns(randomXethruStream(11, 20, 11, 20, 15))
         const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.XETHRU, testLocationId, 10)
         expect(result).to.be.true
       })
 
       it('should return true if movement fast is above the threshold but movement slow is below', async () => {
-        sandbox.stub(redis, 'getXethruWindow').returns(randomXethruStream(11, 20, 5, 9, 15))
+        sandbox.stub(redis, 'getXethruTimeWindow').returns(randomXethruStream(11, 20, 5, 9, 15))
         const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.XETHRU, testLocationId, 10)
         expect(result).to.be.true
       })
 
       it('should return true if movement fast average is below the threshold and movement slow is above', async () => {
-        sandbox.stub(redis, 'getXethruWindow').returns(randomXethruStream(5, 9, 11, 20, 15))
+        sandbox.stub(redis, 'getXethruTimeWindow').returns(randomXethruStream(5, 9, 11, 20, 15))
         const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.XETHRU, testLocationId, 10)
         expect(result).to.be.true
       })
 
       it('should return false if both movement fast and slow are below the threshold', async () => {
-        sandbox.stub(redis, 'getXethruWindow').returns(randomXethruStream(5, 9, 5, 9, 15))
+        sandbox.stub(redis, 'getXethruTimeWindow').returns(randomXethruStream(5, 9, 5, 9, 15))
         const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.XETHRU, testLocationId, 16)
         expect(result).to.be.false
       })
 
       it('should return false if there are no radar values', async () => {
-        sandbox.stub(redis, 'getXethruWindow').returns([])
+        sandbox.stub(redis, 'getXethruTimeWindow').returns([])
         const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.XETHRU, testLocationId, 16)
         expect(result).to.be.false
       })
     })
     describe('when RadarType is Innosent', async () => {
       it('should query redis for Innosent values', async () => {
-        sandbox.stub(redis, 'getInnosentWindow')
+        sandbox.stub(redis, 'getInnosentTimeWindow')
         await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.INNOSENT, testLocationId, 10)
-        expect(redis.getInnosentWindow).to.be.called
+        expect(redis.getInnosentTimeWindow).to.be.called
       })
 
       it('should not query redis for XeThru values', async () => {
-        sandbox.stub(redis, 'getXethruWindow')
+        sandbox.stub(redis, 'getXethruTimeWindow')
         await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.INNOSENT, testLocationId, 10)
-        expect(redis.getXethruWindow).to.not.be.called
+        expect(redis.getXethruTimeWindow).to.not.be.called
       })
 
       it('should return true inPhase Average is above the threshold', async () => {
-        sandbox.stub(redis, 'getInnosentWindow').returns(randomInnosentStream(11, 20, 25))
+        sandbox.stub(redis, 'getInnosentTimeWindow').returns(randomInnosentStream(11, 20, 25))
         const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.INNOSENT, testLocationId, 10)
         expect(result).to.be.true
       })
 
       it('should return false if inPhase Average is below the threshold', async () => {
-        sandbox.stub(redis, 'getInnosentWindow').returns(randomInnosentStream(5, 9, 25))
+        sandbox.stub(redis, 'getInnosentTimeWindow').returns(randomInnosentStream(5, 9, 25))
         const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.INNOSENT, testLocationId, 10)
         expect(result).to.be.false
       })
 
       it('should return false if there are no radar values', async () => {
-        sandbox.stub(redis, 'getInnosentWindow').returns([])
+        sandbox.stub(redis, 'getInnosentTimeWindow').returns([])
         const result = await stateMachineHelpers.movementAverageOverThreshold(RADAR_TYPE.INNOSENT, testLocationId, 10)
         expect(result).to.be.false
       })

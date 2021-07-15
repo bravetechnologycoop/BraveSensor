@@ -162,6 +162,26 @@ async function getInnosentWindow(locationID, startTime, endTime, windowLength) {
   return radarStream
 }
 
+async function getInnosentTimeWindow(locationID, windowSize) {
+  const windowSizeinMilliseconds = windowSize * 1000
+  const currentTime = await getCurrentTimeinMilliseconds()
+  const startTime = currentTime - windowSizeinMilliseconds
+
+  const rows = await client.xrevrange(`innosent:${locationID}`, '+', startTime)
+  const radarStream = rows.map(entry => new InnosentData(entry))
+  return radarStream
+}
+
+async function getXethruTimeWindow(locationID, windowSize) {
+  const windowSizeinMilliseconds = windowSize * 1000
+  const currentTime = await getCurrentTimeinMilliseconds()
+  const startTime = currentTime - windowSizeinMilliseconds
+
+  const rows = await client.xrevrange(`xethru:${locationID}`, '+', startTime)
+  const radarStream = rows.map(entry => new XeThruData(entry))
+  return radarStream
+}
+
 async function getLatestInnosentSensorData(locationid) {
   const singleItem = await getInnosentWindow(locationid, '+', '-', 1)
   return singleItem[0]
@@ -196,6 +216,8 @@ module.exports = {
   getCurrentTimeinMilliseconds,
   getInnosentWindow,
   getInnosentStream,
+  getInnosentTimeWindow,
+  getXethruTimeWindow,
   getXethruWindow,
   getXethruStream,
   getStates,

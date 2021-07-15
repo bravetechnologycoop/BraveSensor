@@ -3,10 +3,11 @@ const redis = require('../db/redis')
 const RADAR_TYPE = require('../RadarTypeEnum')
 
 async function movementAverageOverThreshold(radarType, locationid, movementThreshold) {
+  const windowSize = helpers.getEnvVar('RADAR_WINDOW_SIZE_SECONDS')
   if (radarType === RADAR_TYPE.XETHRU) {
     try {
-      const xethruHistory = await redis.getXethruWindow(locationid, '+', '-', 15) // Array of last 15 readings from this location
-      // xethruHistory will only have length 0 before the first radar data is added to the stream
+      const xethruHistory = await redis.getXethruTimeWindow(locationid, windowSize)
+      // xethruHistory will only have length 0 if there has been no radar data received in the last windowSize seconds
       if (xethruHistory.length === 0) {
         return false
       }
@@ -29,8 +30,8 @@ async function movementAverageOverThreshold(radarType, locationid, movementThres
     }
   } else if (radarType === RADAR_TYPE.INNOSENT) {
     try {
-      const innosentHistory = await redis.getInnosentWindow(locationid, '+', '-', 25)
-      // innosentHistory will only have length 0 before the first radar data is added to the stream
+      const innosentHistory = await redis.getInnosentTimeWindow(locationid, windowSize)
+      // innosentHistory will only have length 0 if there has been no radar data received in the last windowSize seconds
       if (innosentHistory.length === 0) {
         return false
       }
