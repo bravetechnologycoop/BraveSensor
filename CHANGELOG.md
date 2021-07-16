@@ -15,12 +15,12 @@ the code was deployed.
 
 - Endpoint for firmware state machine alerts (CU-v9ae26).
 - Storing and checking firmware state machine heartbeat messages (CU-v9ae26).
+- Security audit to Travis (CU-121j22d).
 
 ### Changed
 
 - Decoupled state machine from Sessions (CU-v9ae26).
 - Refactored and merged radar state machines (CU-v9ae26).
-
 
 ## [3.4.0] - 2021-06-21
 

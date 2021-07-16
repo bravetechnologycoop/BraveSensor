@@ -57,9 +57,10 @@ before_script:
 
 jobs:
   include:
-    # Run linting, unit tests, and integration tests
+    # Run security audit, linting, unit tests, and integration tests
     - stage: test
       script:
+        - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then npx audit-ci --config ./audit-ci.json; fi
         - npm run lint
         - sudo env "PATH=$PATH" npm test
     # If all the test stage passes, then pushes the Docker container to DO
