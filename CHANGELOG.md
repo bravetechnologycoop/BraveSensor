@@ -14,6 +14,7 @@ the code was deployed.
 ### Added
 
 - Alert Type to the Dashboard.
+- Tracking of when sessions are first responded to (CU-hjwfx2).
 
 ### Changed
 

@@ -42,10 +42,10 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
     const locationId = (await db.getLocations())[0].locationid
 
     // Insert a session for that location in the DB
-    await db.createSession(locationId, this.expectedLocationPhoneNumber, ALERT_TYPE.SENSOR_DURATION)
-    const id = (await db.getAllSessionsFromLocation(locationId))[0].id
-    await db.saveAlertSession(this.expectedChatbotState, this.expectedIncidentType, id)
-    this.session = await db.getSessionWithSessionId(id)
+    this.session = await db.createSession(locationId, this.expectedLocationPhoneNumber, ALERT_TYPE.SENSOR_DURATION)
+    this.session.chatbotState = this.expectedChatbotState
+    this.session.incidentType = this.expectedIncidentType
+    await db.saveSession(this.session)
   })
 
   afterEach(async () => {

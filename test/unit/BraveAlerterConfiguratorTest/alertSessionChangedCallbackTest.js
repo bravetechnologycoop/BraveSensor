@@ -14,31 +14,30 @@ const Session = require('../../../Session')
 // Configure Chai
 use(sinonChai)
 
+const sandbox = sinon.createSandbox()
+
 describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', () => {
   beforeEach(() => {
     this.testClient = 'testClient'
     this.testSessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
     this.testLocationId = 'TEST_LOCATION'
+    this.testCurrentTime = new Date('2020-10-13T14:45.432Z')
 
     // Don't call real DB or Redis
-    sinon.stub(db, 'beginTransaction').returns(this.testClient)
-    sinon.stub(db, 'saveAlertSession')
-    const testSession = new Session()
-    testSession.locationid = this.testLocationId
-    testSession.id = this.testSessionId
-    sinon.stub(db, 'getSessionWithSessionId').returns(testSession)
-    sinon.stub(db, 'commitTransaction')
-    sinon.stub(redis, 'addStateMachineData')
-    sinon.spy(helpers, 'log')
+    sandbox.stub(db, 'beginTransaction').returns(this.testClient)
+    sandbox.stub(db, 'saveSession')
+    this.testSession = new Session()
+    this.testSession.locationid = this.testLocationId
+    this.testSession.id = this.testSessionId
+    sandbox.stub(db, 'getSessionWithSessionId').returns(this.testSession)
+    sandbox.stub(db, 'commitTransaction')
+    sandbox.stub(db, 'getCurrentTime').returns(this.testCurrentTime)
+    sandbox.stub(redis, 'addStateMachineData')
+    sandbox.spy(helpers, 'log')
   })
 
   afterEach(() => {
-    helpers.log.restore()
-    redis.addStateMachineData.restore()
-    db.commitTransaction.restore()
-    db.getSessionWithSessionId.restore()
-    db.saveAlertSession.restore()
-    db.beginTransaction.restore()
+    sandbox.restore()
   })
 
   describe('if given only a chatbotState', async () => {
@@ -49,7 +48,9 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     })
 
     it('should update the chatbotState', () => {
-      expect(db.saveAlertSession).to.be.calledWith(CHATBOT_STATE.WAITING_FOR_REPLY, undefined, this.testSessionId)
+      this.testSession.chatbotState = CHATBOT_STATE.WAITING_FOR_REPLY
+      this.testSession.incidentType = undefined
+      expect(db.saveSession).to.be.calledWith(this.testSession, this.testClient)
     })
   })
 
@@ -63,7 +64,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     })
 
     it('should not update the sesssion at all', () => {
-      expect(db.saveAlertSession).not.to.be.called
+      expect(db.saveSession).not.to.be.called
     })
   })
 
@@ -75,7 +76,23 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     })
 
     it('should update chatbotState and incidentType', () => {
-      expect(db.saveAlertSession).to.be.calledWith(CHATBOT_STATE.COMPLETED, 'Person responded', this.testSessionId, this.testClient)
+      this.testSession.chatbotState = CHATBOT_STATE.COMPLETED
+      this.testSession.incidentType = 'Person responded'
+      expect(db.saveSession).to.be.calledWith(this.testSession, this.testClient)
+    })
+  })
+
+  describe('if given a chatbotState and respondedAt', async () => {
+    beforeEach(async () => {
+      const braveAlerterConfigurator = new BraveAlerterConfigurator()
+      const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
+      await braveAlerter.alertSessionChangedCallback(new AlertSession(this.testSessionId, CHATBOT_STATE.COMPLETED, '2'))
+    })
+
+    it('should update chatbotState and incidentType', () => {
+      this.testSession.chatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
+      this.testSession.respondedAt = this.testCurrentTime
+      expect(db.saveSession).to.be.calledWith(this.testSession, this.testClient)
     })
   })
 })
