@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this */
 // In-house dependencies
-const { BraveAlerter, AlertSession, ALERT_STATE, helpers, Location, SYSTEM } = require('brave-alert-lib')
+const { BraveAlerter, AlertSession, CHATBOT_STATE, helpers, Location, SYSTEM } = require('brave-alert-lib')
 const db = require('./db/db')
 
 const incidentTypes = ['No One Inside', 'Person responded', 'Overdose', 'None of the above']
@@ -14,6 +14,8 @@ class BraveAlerterConfigurator {
       this.getAlertSessionByPhoneNumber.bind(this),
       this.alertSessionChangedCallback.bind(this),
       this.getLocationByAlertApiKey.bind(this),
+      this.getHistoricAlertsByAlertApiKey.bind(this),
+      () => {},
       false,
       this.getReturnMessage.bind(this),
     )
@@ -96,26 +98,30 @@ class BraveAlerterConfigurator {
     return new Location(locations[0].locationid, SYSTEM.SENSOR)
   }
 
+  async getHistoricAlertsByAlertApiKey() {
+    return null
+  }
+
   getReturnMessage(fromAlertState, toAlertState) {
     let returnMessage
 
     switch (fromAlertState) {
-      case ALERT_STATE.STARTED:
-      case ALERT_STATE.WAITING_FOR_REPLY:
+      case CHATBOT_STATE.STARTED:
+      case CHATBOT_STATE.WAITING_FOR_REPLY:
         returnMessage =
           'Please respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above'
         break
 
-      case ALERT_STATE.WAITING_FOR_CATEGORY:
-        if (toAlertState === ALERT_STATE.WAITING_FOR_CATEGORY) {
+      case CHATBOT_STATE.WAITING_FOR_CATEGORY:
+        if (toAlertState === CHATBOT_STATE.WAITING_FOR_CATEGORY) {
           returnMessage =
             'Invalid category, please try again\n\nPlease respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above'
-        } else if (toAlertState === ALERT_STATE.COMPLETED) {
+        } else if (toAlertState === CHATBOT_STATE.COMPLETED) {
           returnMessage = 'Thank you!'
         }
         break
 
-      case ALERT_STATE.COMPLETED:
+      case CHATBOT_STATE.COMPLETED:
         returnMessage = 'Thank you'
         break
 

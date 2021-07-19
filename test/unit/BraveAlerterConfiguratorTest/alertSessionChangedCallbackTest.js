@@ -5,7 +5,7 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 
 // In-house dependencies
-const { ALERT_STATE, AlertSession, helpers } = require('brave-alert-lib')
+const { CHATBOT_STATE, AlertSession, helpers } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
 const redis = require('../../../db/redis')
@@ -45,11 +45,11 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     beforeEach(async () => {
       const braveAlerterConfigurator = new BraveAlerterConfigurator()
       const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
-      await braveAlerter.alertSessionChangedCallback(new AlertSession(this.testSessionId, ALERT_STATE.WAITING_FOR_REPLY))
+      await braveAlerter.alertSessionChangedCallback(new AlertSession(this.testSessionId, CHATBOT_STATE.WAITING_FOR_REPLY))
     })
 
     it('should update the chatbotState', () => {
-      expect(db.saveAlertSession).to.be.calledWith(ALERT_STATE.WAITING_FOR_REPLY, undefined, this.testSessionId)
+      expect(db.saveAlertSession).to.be.calledWith(CHATBOT_STATE.WAITING_FOR_REPLY, undefined, this.testSessionId)
     })
   })
 
@@ -71,11 +71,11 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     beforeEach(async () => {
       const braveAlerterConfigurator = new BraveAlerterConfigurator()
       const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
-      await braveAlerter.alertSessionChangedCallback(new AlertSession(this.testSessionId, ALERT_STATE.COMPLETED, '2'))
+      await braveAlerter.alertSessionChangedCallback(new AlertSession(this.testSessionId, CHATBOT_STATE.COMPLETED, '2'))
     })
 
     it('should update chatbotState and incidentType', () => {
-      expect(db.saveAlertSession).to.be.calledWith(ALERT_STATE.COMPLETED, 'Person responded', this.testSessionId, this.testClient)
+      expect(db.saveAlertSession).to.be.calledWith(CHATBOT_STATE.COMPLETED, 'Person responded', this.testSessionId, this.testClient)
     })
   })
 })

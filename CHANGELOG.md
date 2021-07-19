@@ -11,6 +11,14 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Alert Type to the Dashboard.
+
+### Changed
+
+- Use an enum for Alert Type in the DB and from Alert Lib instead of strings.
+
 ## [4.0.0] - 2021-07-26
 
 ### Added

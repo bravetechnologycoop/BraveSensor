@@ -1,17 +1,19 @@
+// Third-party dependencies
 const { expect, use } = require('chai')
 const { describe, it } = require('mocha')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
+
+// In-house dependencies
+const { ALERT_TYPE } = require('brave-alert-lib')
 const redis = require('../../db/redis')
-
-const testLocationId = 'TestLocation1'
-
-const ALERT_REASON = require('../../AlertReasonEnum')
 const STATE = require('../../stateMachine/SessionStateEnum')
 const DOOR_STATE = require('../../SessionStateDoorEnum')
 const StateMachine = require('../../stateMachine/StateMachine')
 const stateMachineHelpers = require('../../stateMachine/stateMachineHelpers')
 const Location = require('../../Location')
+
+const testLocationId = 'TestLocation1'
 
 // Configure Chai
 use(sinonChai)
@@ -391,7 +393,7 @@ describe('StateMachine.js unit tests: getNextState', () => {
       it('should issue a duration alert', async () => {
         const handleAlert = sinon.stub()
         await StateMachine.getNextState(new Location(testLocationId), handleAlert)
-        expect(handleAlert).to.be.calledWith(new Location(testLocationId), ALERT_REASON.DURATION)
+        expect(handleAlert).to.be.calledWith(new Location(testLocationId), ALERT_TYPE.SENSOR_DURATION)
       })
     })
   })
@@ -524,7 +526,7 @@ describe('StateMachine.js unit tests: getNextState', () => {
     it('should issue a duration alert', async () => {
       const handleAlert = sinon.stub()
       await StateMachine.getNextState(new Location(testLocationId), handleAlert)
-      expect(handleAlert).to.be.calledWith(new Location(testLocationId), ALERT_REASON.DURATION)
+      expect(handleAlert).to.be.calledWith(new Location(testLocationId), ALERT_TYPE.SENSOR_DURATION)
     })
   })
 
@@ -554,7 +556,7 @@ describe('StateMachine.js unit tests: getNextState', () => {
     it('should issue a stillness alert', async () => {
       const handleAlert = sinon.stub()
       await StateMachine.getNextState(new Location(testLocationId), handleAlert)
-      expect(handleAlert).to.be.calledWith(new Location(testLocationId), ALERT_REASON.STILLNESS)
+      expect(handleAlert).to.be.calledWith(new Location(testLocationId), ALERT_TYPE.SENSOR_STILLNESS)
     })
   })
 })
