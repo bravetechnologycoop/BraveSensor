@@ -15,6 +15,7 @@ the code was deployed.
 
 - Alert Type to the Dashboard.
 - Tracking of when sessions are first responded to (CU-hjwfx2).
+- `GET /alert/historicAlerts` endpoint (CU-hjwfx2).
 
 ### Changed
 

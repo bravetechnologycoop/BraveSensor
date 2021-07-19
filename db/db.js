@@ -276,6 +276,37 @@ async function saveSession(session, clientParam) {
   }
 }
 
+async function getHistoricAlertsByAlertApiKey(alertApiKey, maxHistoricAlerts, maxTimeAgoInMillis, clientParam) {
+  try {
+    // Historic Alerts are those with status "Completed" or that were last updated longer ago than the SESSION_RESET_TIMEOUT
+    const results = await runQuery(
+      'getHistoricAlertsByAlertApiKey',
+      `
+      SELECT s.id, l.display_name, s.incident_type, s.alert_type, s.created_at, s.responded_at
+      FROM sessions AS s
+      LEFT JOIN locations AS l ON s.locationid = l.locationid
+      WHERE l.alert_api_key = $1
+      AND (
+        s.chatbot_state = $2
+        OR s.updated_at < now() - $3 * INTERVAL '1 millisecond'
+      )
+      ORDER BY s.created_at DESC
+      LIMIT $4
+      `,
+      [alertApiKey, CHATBOT_STATE.COMPLETED, maxTimeAgoInMillis, maxHistoricAlerts],
+      clientParam,
+    )
+
+    if (results === undefined) {
+      return null
+    }
+
+    return results.rows
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
 // Retrieves the data from the locations table for a given location
 async function getLocationData(locationid, clientParam) {
   try {
@@ -526,6 +557,7 @@ module.exports = {
   getMostRecentSession,
   getSessionWithSessionId,
   getHistoryOfSessions,
+  getHistoricAlertsByAlertApiKey,
   getUnrespondedSessionWithLocationId,
   createSession,
   saveSession,

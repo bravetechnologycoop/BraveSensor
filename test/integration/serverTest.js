@@ -228,7 +228,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const oldUpdatedAt = sessions[0].updatedAt
       await sleep(1000)
-      await firmwareAlert(radar_coreID, ALERT_TYPE.SENSOR_STILLNESS)
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       const newSessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const newUpdatedAt = newSessions[0].updatedAt
       expect(newUpdatedAt).to.be.afterTime(oldUpdatedAt)
