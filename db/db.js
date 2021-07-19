@@ -25,7 +25,7 @@ pool.on('error', err => {
 
 function createSessionFromRow(r) {
   // prettier-ignore
-  return new Session(r.id, r.locationid, r.phone_number, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_type, r.notes)
+  return new Session(r.id, r.locationid, r.phone_number, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_type, r.notes, r.responded_at)
 }
 
 function createLocationFromRow(r) {
@@ -238,24 +238,39 @@ async function updateSentAlerts(locationid, sentalerts, clientParam) {
   }
 }
 
-// Saves the state and incident type into the sessions table
-async function saveAlertSession(chatbotState, incidentType, sessionid, clientParam) {
+async function saveSession(session, clientParam) {
   try {
-    await runQuery(
-      'saveAlertSession',
-      'UPDATE sessions SET chatbot_state = $1, incident_type = $2 WHERE id = $3',
-      [chatbotState, incidentType, sessionid],
+    const results = await runQuery(
+      'saveSessionSelect',
+      `
+      SELECT *
+      FROM sessions
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [session.id],
       clientParam,
     )
-  } catch (err) {
-    helpers.log(JSON.stringify(err))
-  }
-}
+    if (results === undefined || results.rows === undefined || results.rows.length === 0) {
+      throw new Error("Tried to save a session that doesn't exist yet. Use createSession() instead.")
+    }
 
-// Saves the state and incident type into the sessions table
-async function updateSession(id, clientParam) {
-  try {
-    await runQuery('updateSession', 'UPDATE sessions SET updated_at = now() WHERE id = $1', [id], clientParam)
+    await runQuery(
+      'saveSessionUpdate',
+      'UPDATE sessions SET locationid = $1, state = $2, phone_number = $3, notes = $4, incident_type = $5, chatbot_state = $6, alert_type = $7, responded_at = $8 where id = $9',
+      [
+        session.locationid,
+        session.state,
+        session.phoneNumber,
+        session.notes,
+        session.incidentType,
+        session.chatbotState,
+        session.alertType,
+        session.respondedAt,
+        session.id,
+      ],
+      clientParam,
+    )
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -513,7 +528,7 @@ module.exports = {
   getHistoryOfSessions,
   getUnrespondedSessionWithLocationId,
   createSession,
-  saveAlertSession,
+  saveSession,
   getMostRecentSessionPhone,
   getLocationFromParticleCoreID,
   getLocationsFromAlertApiKey,
@@ -535,5 +550,4 @@ module.exports = {
   rollbackTransaction,
   getCurrentTime,
   createLocationFromBrowserForm,
-  updateSession,
 }

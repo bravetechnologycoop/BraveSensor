@@ -152,7 +152,7 @@ async function handleAlert(location, alertType) {
       braveAlerter.startAlertSession(alertInfo)
     } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
       helpers.log('handleAlert: sending singleAlert')
-      await db.updateSession(currentSession.id, client)
+      await db.saveSession(currentSession, client)
       braveAlerter.sendSingleAlert(
         location.responderPhoneNumber,
         location.twilioNumber,
@@ -380,6 +380,7 @@ app.get('/locations/:locationId', sessionChecker, async (req, res) => {
         id: recentSession.id,
         chatbotState: recentSession.chatbotState,
         alertType: getAlertTypeDisplayName(recentSession.alertType),
+        respondedAt: recentSession.respondedAt,
       })
     }
 

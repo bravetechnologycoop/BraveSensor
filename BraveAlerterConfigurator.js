@@ -68,8 +68,19 @@ class BraveAlerterConfigurator {
       const session = await db.getSessionWithSessionId(alertSession.sessionId, client)
 
       if (session) {
-        const incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
-        await db.saveAlertSession(alertSession.alertState, incidentType, alertSession.sessionId, client)
+        if (alertSession.alertState) {
+          session.chatbotState = alertSession.alertState
+        }
+
+        if (alertSession.incidentCategoryKey) {
+          session.incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
+        }
+
+        if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY) {
+          session.respondedAt = await db.getCurrentTime(client)
+        }
+
+        await db.saveSession(session, client)
       } else {
         helpers.logError(`alertSessionChangedCallback was called for a non-existent session: ${alertSession.sessionId}`)
       }
