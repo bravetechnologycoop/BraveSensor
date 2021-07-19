@@ -11,8 +11,7 @@ const Mustache = require('mustache')
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
-const ALERT_REASON = require('./AlertReasonEnum')
+const { ALERT_TYPE, helpers } = require('brave-alert-lib')
 const redis = require('./db/redis')
 const db = require('./db/db')
 const StateMachine = require('./stateMachine/StateMachine')
@@ -108,8 +107,22 @@ async function generateCalculatedTimeDifferenceString(timeToCompare) {
   return returnString
 }
 
-async function handleAlert(location, alertReason) {
-  helpers.log(`Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId}`)
+function getAlertTypeDisplayName(alertType) {
+  let displayName = ''
+  if (alertType === ALERT_TYPE.SENSOR_DURATION) {
+    displayName = 'Duration'
+  } else if (alertType === ALERT_TYPE.SENSOR_STILLNESS) {
+    displayName = 'Stillness'
+  } else {
+    displayName = 'Unknown'
+  }
+
+  return displayName
+}
+
+async function handleAlert(location, alertType) {
+  const alertTypeDisplayName = getAlertTypeDisplayName(alertType)
+  helpers.log(`${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId}`)
 
   let client
 
@@ -123,12 +136,12 @@ async function handleAlert(location, alertReason) {
     const currentTime = await db.getCurrentTime(client)
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
-      const newSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertReason, client)
+      const newSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertType, client)
       const alertInfo = {
         sessionId: newSession.id,
         toPhoneNumber: location.responderPhoneNumber,
         fromPhoneNumber: location.twilioNumber,
-        message: `This is a ${alertReason} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
+        message: `This is a ${alertTypeDisplayName} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
         reminderTimeoutMillis: location.reminderTimer,
         fallbackTimeoutMillis: location.fallbackTimer,
         reminderMessage: `This is a reminder to check on the bathroom`,
@@ -143,7 +156,7 @@ async function handleAlert(location, alertReason) {
       braveAlerter.sendSingleAlert(
         location.responderPhoneNumber,
         location.twilioNumber,
-        `An additional ${alertReason} alert was generated at ${location.displayName}`,
+        `An additional ${alertTypeDisplayName} alert was generated at ${location.displayName}`,
       )
     }
     await db.commitTransaction(client)
@@ -366,7 +379,7 @@ app.get('/locations/:locationId', sessionChecker, async (req, res) => {
         incidentType: recentSession.incidentType,
         id: recentSession.id,
         chatbotState: recentSession.chatbotState,
-        // alertReason: recentSession.alertReason,
+        alertType: getAlertTypeDisplayName(recentSession.alertType),
       })
     }
 
@@ -630,9 +643,9 @@ app.post('/api/sensorEvent', Validator.body(['coreid', 'event']).exists(), async
       const coreId = request.body.coreid
       const sensorEvent = request.body.event
       if (sensorEvent === SENSOR_EVENT.DURATION) {
-        alertType = ALERT_REASON.DURATION
+        alertType = ALERT_TYPE.SENSOR_DURATION
       } else if (sensorEvent === SENSOR_EVENT.STILLNESS) {
-        alertType = ALERT_REASON.STILLNESS
+        alertType = ALERT_TYPE.SENSOR_STILLNESS
       } else {
         const errorMessage = `Bad request to ${request.path}: Invalid event type`
         helpers.logError(errorMessage)

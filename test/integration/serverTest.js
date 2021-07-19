@@ -6,7 +6,7 @@ const chaiDateTime = require('chai-datetime')
 const expect = chai.expect
 const { after, afterEach, before, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
-const { helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, helpers } = require('brave-alert-lib')
 const { sleep } = require('brave-alert-lib/lib/helpers')
 const imports = require('../../index')
 
@@ -16,7 +16,6 @@ const server = imports.server
 const braveAlerter = imports.braveAlerter
 const StateMachine = require('../../stateMachine/StateMachine')
 const XETHRU_STATE = require('../../SessionStateXethruEnum')
-const ALERT_REASON = require('../../AlertReasonEnum')
 const SENSOR_EVENT = require('../../SensorEventEnum')
 
 const MOVEMENT_THRESHOLD = 40
@@ -202,7 +201,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
-      expect(session.alertReason).to.equal(ALERT_REASON.DURATION)
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
     })
 
     it('should create a session with STILLNESS as the alert reason for a valid STILLNESS request', async () => {
@@ -210,7 +209,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
-      expect(session.alertReason).to.equal(ALERT_REASON.STILLNESS)
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
     })
 
     it('should only create one new session when receiving multiple alerts within the session reset timeout', async () => {
@@ -221,7 +220,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
-      expect(session.alertReason).to.equal(ALERT_REASON.STILLNESS)
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
     })
 
     it('should update updatedAt for the session when a new alert is received within the session reset timeout', async () => {
@@ -229,7 +228,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const oldUpdatedAt = sessions[0].updatedAt
       await sleep(1000)
-      await firmwareAlert(radar_coreID, ALERT_REASON.STILLNESS)
+      await firmwareAlert(radar_coreID, ALERT_TYPE.SENSOR_STILLNESS)
       const newSessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const newUpdatedAt = newSessions[0].updatedAt
       expect(newUpdatedAt).to.be.afterTime(oldUpdatedAt)
@@ -243,7 +242,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(2)
       const session = sessions[0]
-      expect(session.alertReason).to.equal(ALERT_REASON.DURATION)
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
     })
   })
 
@@ -348,7 +347,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
-      expect(session.alertReason).to.equal(ALERT_REASON.STILLNESS)
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
     })
 
     it('radar data showing movement should start a Duration timer, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
@@ -360,7 +359,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
-      expect(session.alertReason).to.equal(ALERT_REASON.DURATION)
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
     })
   })
 
@@ -543,7 +542,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
-      expect(session.alertReason).to.equal(ALERT_REASON.STILLNESS)
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
     })
 
     it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
@@ -555,7 +554,7 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(1)
       const session = sessions[0]
-      expect(session.alertReason).to.equal(ALERT_REASON.DURATION)
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
     })
   })
 

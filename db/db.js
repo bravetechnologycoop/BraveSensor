@@ -2,7 +2,7 @@
 const pg = require('pg')
 
 // In-house dependencies
-const { ALERT_STATE, helpers } = require('brave-alert-lib')
+const { CHATBOT_STATE, helpers } = require('brave-alert-lib')
 const Session = require('../Session')
 const Location = require('../Location')
 
@@ -25,7 +25,7 @@ pool.on('error', err => {
 
 function createSessionFromRow(r) {
   // prettier-ignore
-  return new Session(r.id, r.locationid, r.phone_number, r.chatbot_state, r.alert_reason, r.created_at, r.updated_at, r.incident_type, r.notes)
+  return new Session(r.id, r.locationid, r.phone_number, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_type, r.notes)
 }
 
 function createLocationFromRow(r) {
@@ -171,7 +171,7 @@ async function getUnrespondedSessionWithLocationId(locationid, clientParam) {
     const results = await runQuery(
       'getUnrespondedSessionWithLocationId',
       'SELECT * FROM sessions WHERE locationid = $1 AND chatbot_state != $2 AND chatbot_state != $3 AND chatbot_state != $4 ORDER BY created_at DESC LIMIT 1',
-      [locationid, ALERT_STATE.WAITING_FOR_CATEGORY, ALERT_STATE.WAITING_FOR_DETAILS, ALERT_STATE.COMPLETED],
+      [locationid, CHATBOT_STATE.WAITING_FOR_CATEGORY, CHATBOT_STATE.WAITING_FOR_DETAILS, CHATBOT_STATE.COMPLETED],
       clientParam,
     )
 
@@ -205,12 +205,12 @@ async function getAllSessionsFromLocation(locationid, clientParam) {
 }
 
 // Creates a new session for a specific location
-async function createSession(locationid, phoneNumber, alertReason, clientParam) {
+async function createSession(locationid, phoneNumber, alertType, clientParam) {
   try {
     const results = await runQuery(
       'createSession',
-      'INSERT INTO sessions(locationid, phone_number, alert_reason, chatbot_state) VALUES ($1, $2, $3, $4) RETURNING *',
-      [locationid, phoneNumber, alertReason, ALERT_STATE.STARTED],
+      'INSERT INTO sessions(locationid, phone_number, alert_type, chatbot_state) VALUES ($1, $2, $3, $4) RETURNING *',
+      [locationid, phoneNumber, alertType, CHATBOT_STATE.STARTED],
       clientParam,
     )
     return createSessionFromRow(results.rows[0])

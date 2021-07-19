@@ -153,7 +153,7 @@ You will need to populate the .env file with connection parameters for both redi
 To do this, cd into the BraveSensor-Server directory and run the following command
 
 ```
-sudo PG_PORT=<your db's port> PG_HOST=<your db's host> PG_PASSWORD=<your db's password> PG_USER=<your db's user> PG_DATABASE=<your db name> setup_postgresql_local.sh
+sudo PG_PORT=<your db's port> PG_HOST=<your db's host> PG_PASSWORD=<your db's password> PG_USER=<your db's user> PG_DATABASE=<your db name> ./setup_postgresql_local.sh
 ```
 
 ## Tests
@@ -274,6 +274,7 @@ This strategy assumes that each migration script in the `db` directory has a u
    FROM migrations
    ORDER BY id;
    ```
+
 # Cluster Migration and Setup
 
 ## Setting up networking for a new cluster

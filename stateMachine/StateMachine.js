@@ -1,7 +1,6 @@
-const { helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, helpers } = require('brave-alert-lib')
 const stateMachineHelpers = require('./stateMachineHelpers')
 const redis = require('../db/redis')
-const ALERT_REASON = require('../AlertReasonEnum')
 const DOOR_STATUS = require('../SessionStateDoorEnum')
 const STATE = require('./SessionStateEnum')
 
@@ -47,7 +46,7 @@ async function getNextState(location, handleAlert) {
             STATE.INITIAL_TIMER,
           )
         ) {
-          await handleAlert(location, ALERT_REASON.DURATION)
+          await handleAlert(location, ALERT_TYPE.SENSOR_DURATION)
           await redis.addStateMachineData(STATE.IDLE, location.locationid)
         }
         break
@@ -57,7 +56,7 @@ async function getNextState(location, handleAlert) {
         } else if (movementOverThreshold) {
           await redis.addStateMachineData(STATE.DURATION_TIMER, location.locationid)
         } else if (await stateMachineHelpers.timerExceeded(location.locationid, parseInt(location.stillnessTimer, 10), STATE.STILLNESS_TIMER)) {
-          await handleAlert(location, ALERT_REASON.STILLNESS)
+          await handleAlert(location, ALERT_TYPE.SENSOR_STILLNESS)
           await redis.addStateMachineData(STATE.IDLE, location.locationid)
         } else if (
           await stateMachineHelpers.timerExceeded(
@@ -66,7 +65,7 @@ async function getNextState(location, handleAlert) {
             STATE.INITIAL_TIMER,
           )
         ) {
-          await handleAlert(location, ALERT_REASON.DURATION)
+          await handleAlert(location, ALERT_TYPE.SENSOR_DURATION)
           await redis.addStateMachineData(STATE.IDLE, location.locationid)
         }
         break

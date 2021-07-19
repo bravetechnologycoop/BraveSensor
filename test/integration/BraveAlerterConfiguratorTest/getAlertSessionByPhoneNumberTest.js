@@ -3,8 +3,7 @@ const { expect } = require('chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
-const { ALERT_STATE, AlertSession } = require('brave-alert-lib')
-const ALERT_REASON = require('../../../AlertReasonEnum')
+const { CHATBOT_STATE, ALERT_TYPE, AlertSession } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
 
@@ -13,7 +12,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
     await db.clearSessions()
     await db.clearLocations()
 
-    this.expectedChatbotState = ALERT_STATE.WAITING_FOR_CATEGORY
+    this.expectedChatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
     this.expectedIncidentType = 'No One Inside'
     this.expectedLocationDisplayName = 'TEST LOCATION'
     this.expectedLocationPhoneNumber = '+17772225555'
@@ -43,7 +42,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
     const locationId = (await db.getLocations())[0].locationid
 
     // Insert a session for that location in the DB
-    await db.createSession(locationId, this.expectedLocationPhoneNumber, ALERT_REASON.DURATION)
+    await db.createSession(locationId, this.expectedLocationPhoneNumber, ALERT_TYPE.SENSOR_DURATION)
     const id = (await db.getAllSessionsFromLocation(locationId))[0].id
     await db.saveAlertSession(this.expectedChatbotState, this.expectedIncidentType, id)
     this.session = await db.getSessionWithSessionId(id)
