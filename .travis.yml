@@ -5,6 +5,7 @@ node_js: 'node' # node version specified in .nvmrc
 
 # install dependencies
 install:
+  - cd server
   - npm ci
   - npm install pg@latest
 

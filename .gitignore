@@ -1,10 +1,17 @@
 node_modules
 .env
 .vs
-Public
-Dockerfile
-appServerLite.js
-devReplay1.js
-db/seeds.sql
 dump.rdb
 .env.local
+
+#ignore vscode settings
+.vscode/
+
+#ignore binary files
+firmware/target/
+
+#ignore my logs
+*.log
+
+#ignore PlatformIO config files
+workspaceconfig.code-workspace

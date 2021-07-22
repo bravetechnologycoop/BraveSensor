@@ -22,6 +22,7 @@ the code was deployed.
 - Decoupled state machine from Sessions (CU-v9ae26).
 - Refactored and merged radar state machines (CU-v9ae26).
 - Querying for radar moving average with time instead of number of entries.
+- Added firmware code to create Sensors monorepo.
 
 ### Fixed
 
