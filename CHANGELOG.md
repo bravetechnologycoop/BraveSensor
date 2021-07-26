@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [4.0.0] - 2021-07-26
+
 ### Added
 
 - Endpoint for firmware state machine alerts (CU-v9ae26).
@@ -22,6 +24,7 @@ the code was deployed.
 - Decoupled state machine from Sessions (CU-v9ae26).
 - Refactored and merged radar state machines (CU-v9ae26).
 - Querying for radar moving average with time instead of number of entries.
+- For API calls from XeThru devices, use `coreid` instead of `location` to determine which Location it's from (CU-mt15y9)
 
 ### Fixed
 
@@ -37,7 +40,6 @@ the code was deployed.
 ### Changed
 
 - logSentry calls appear as messages instead of exceptions (CU-px7k6e)
-- For API calls from XeThru devices, use `coreid` instead of `location` to determine which Location it's from (CU-mt15y9)
 
 ### Fixed
 
@@ -215,7 +217,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.4.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.4.0...v4.0.0
 [3.4.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.1.0...v3.2.0
