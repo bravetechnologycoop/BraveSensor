@@ -8,16 +8,21 @@
         <ul class="navbar-nav ml-auto">
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Locations
+                    Clients
                 </a>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                    {{#locations}}
-                        <a class="nav-link dropdown-item" href="/locations/{{id}}">{{name}}</a>
-                    {{/locations}}
-                    {{^locations}}
-                        <a class="nav-link dropdown-item no-locations" href="/">(No locations)</a>
-                    {{/locations}}
+                    {{#clients}}
+                        <a class="nav-link dropdown-item" href="/clients/{{id}}">{{displayName}}</a>
+                    {{/clients}}
+                    {{^clients}}
+                        <a class="nav-link dropdown-item no-locations" href="/">(No clients)</a>
+                    {{/clients}}
                 </div>
+            </li>
+            <li class="nav-item">
+                <button class="btn btn-logout">
+                    <a href="/clients/new" class="text-decoration-none">New Client</a>
+                </button>
             </li>
             <li class="nav-item">
                 <button class="btn btn-logout">

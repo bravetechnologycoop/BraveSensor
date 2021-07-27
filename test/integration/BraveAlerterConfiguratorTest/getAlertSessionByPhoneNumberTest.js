@@ -6,11 +6,13 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { CHATBOT_STATE, ALERT_TYPE, AlertSession } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
+const { clientFactory } = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneNumber', () => {
   beforeEach(async () => {
     await db.clearSessions()
     await db.clearLocations()
+    await db.clearClients()
 
     this.expectedChatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
     this.expectedIncidentType = 'No One Inside'
@@ -19,6 +21,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
     this.expectedTwilioPhoneNumber = '+3336661234'
 
     // Insert a location in the DB
+    const client = await clientFactory(db)
     await db.createLocation(
       'LocationId',
       this.expectedLocationPhoneNumber,
@@ -38,6 +41,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
       'alertApiKey',
       true,
       false,
+      client.id,
     )
     const locationId = (await db.getLocations())[0].locationid
 
@@ -51,6 +55,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
   afterEach(async () => {
     await db.clearSessions()
     await db.clearLocations()
+    await db.clearClients()
   })
 
   it('should create a new AlertSession with expected values from the sessions and locations DB tables', async () => {

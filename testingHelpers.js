@@ -25,7 +25,19 @@ function randomInnosentStream(min, max, length) {
   return array
 }
 
+async function clientFactory(db, overrides) {
+  const hasOverrides = typeof overrides === 'object' && overrides !== null && !Array.isArray(overrides)
+
+  // prettier-ignore
+  const client = await db.createClient(
+    hasOverrides && overrides.displayName || 'factoryClient',
+    hasOverrides && overrides.fromPhoneNumber || '+15558881234',
+  )
+  return client
+}
+
 module.exports = {
+  clientFactory,
   getRandomArbitrary,
   getRandomInt,
   printRandomIntArray,

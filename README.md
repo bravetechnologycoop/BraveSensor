@@ -261,7 +261,7 @@ This strategy assumes that each migration script in the `db` directory has a u
 
    ```
 
-   PG_PORT=<your db's port> PG_HOST=<your db's host> PG_PASSWORD=<your db's password> PG_USER=<your db's user> PG_DATABASE=<your db name> setup_postgresql.sh
+   PG_PORT=<your db's port> PG_HOST=<your db's host> PG_PASSWORD=<your db's password> PG_USER=<your db's user> PG_DATABASE=<your db name> ./setup_postgresql.sh
    ```
 
 ## Viewing which migration scripts have been run and when

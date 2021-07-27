@@ -20,6 +20,8 @@ the code was deployed.
 ### Changed
 
 - Use an enum for Alert Type in the DB and from Alert Lib instead of strings.
+- Use the `from_phone_number` from the database for heartbeat and fallback messages (CU-qv3nj3).
+- Updated dashboard to reflect the new structure of `Client` and `Location` (CU-qv3nj3).
 
 ### Removed
 

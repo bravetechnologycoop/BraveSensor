@@ -7,14 +7,17 @@ const { ALERT_TYPE, CHATBOT_STATE, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const Session = require('../../../Session')
 const RADAR_TYPE = require('../../../RadarTypeEnum')
+const { clientFactory } = require('../../../testingHelpers')
 
 describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
   describe('if there are no locations with the given Alert API Key', () => {
     beforeEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
 
       // Insert a single location that has a single session that doesn't match the Alert API Key that we ask for
+      const client = await clientFactory(db)
       await db.createLocation(
         'locationid',
         'phonenumber',
@@ -34,6 +37,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'alertApiKey',
         true,
         false,
+        client.id,
       )
       const locationid = (await db.getLocations())[0].locationid
       const session = await db.createSession(locationid, 'phoneNumber', ALERT_TYPE.SENSOR_DURATION)
@@ -44,6 +48,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     afterEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
     })
 
     it('should return an empty array', async () => {
@@ -57,8 +62,10 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     beforeEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
 
       // Insert a single location that has a single session that doesn't match the Alert API Key that we ask for
+      const client = await clientFactory(db)
       await db.createLocation(
         'locationid',
         'phonenumber',
@@ -78,6 +85,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'not our API key',
         true,
         false,
+        client.id,
       )
       const locationid = (await db.getLocations())[0].locationid
       const session = await db.createSession(locationid, 'phoneNumber', ALERT_TYPE.SENSOR_DURATION)
@@ -105,12 +113,14 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         this.alertApiKey,
         true,
         false,
+        client.id,
       )
     })
 
     afterEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
     })
 
     it('should return an empty array', async () => {
@@ -124,12 +134,14 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     beforeEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
 
       // Insert a single location
       this.alertApiKey = 'alertApiKey'
       this.displayName = 'displayName'
       const locationid = 'locationid'
       const phonenumber = 'phonenumber'
+      const client = await clientFactory(db)
       await db.createLocation(
         locationid,
         phonenumber,
@@ -149,6 +161,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         this.alertApiKey,
         true,
         false,
+        client.id,
       )
 
       // Insert a single session for that API key
@@ -174,6 +187,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
 
     afterEach(async () => {
       await db.clearLocations()
+      await db.clearClients()
     })
 
     it('should return an array with one object with the correct values in it', async () => {
@@ -196,10 +210,12 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     beforeEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
 
       // Insert a single location and more than maxHistoricAlerts sessions
       this.alertApiKey = 'alertApiKey'
       const locationid = 'locationid'
+      const client = await clientFactory(db)
       await db.createLocation(
         locationid,
         'phonenumber',
@@ -219,6 +235,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         this.alertApiKey,
         true,
         false,
+        client.id,
       )
 
       this.session1 = await db.createSession(locationid, 'phonenumber1', ALERT_TYPE.SENSOR_DURATION)
@@ -231,6 +248,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     afterEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
     })
 
     it('should return only the most recent maxHistoricAlerts of them', async () => {
@@ -246,10 +264,12 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     beforeEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
 
       // Insert a single location and maxHistoricAlerts sessions
       this.alertApiKey = 'alertApiKey'
       const locationid = 'locationid'
+      const client = await clientFactory(db)
       await db.createLocation(
         locationid,
         'phonenumber',
@@ -269,6 +289,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         this.alertApiKey,
         true,
         false,
+        client.id,
       )
 
       this.maxTimeAgoInMillis = 1000
@@ -288,6 +309,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     afterEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
     })
 
     it('should return only the matches', async () => {
@@ -303,10 +325,12 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     beforeEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
 
       // Insert a single location and one session
       this.alertApiKey = 'alertApiKey'
       const locationid = 'locationid'
+      const client = await clientFactory(db)
       await db.createLocation(
         locationid,
         'phonenumber',
@@ -326,6 +350,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         this.alertApiKey,
         true,
         false,
+        client.id,
       )
 
       this.session = await db.createSession(locationid, 'phonenumber1', ALERT_TYPE.SENSOR_DURATION)
@@ -334,6 +359,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     afterEach(async () => {
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
     })
 
     it('and it is COMPLETED, should return the Completed session', async () => {

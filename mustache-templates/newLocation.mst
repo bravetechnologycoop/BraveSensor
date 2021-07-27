@@ -35,6 +35,16 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="clientId" class="col-sm-3 col-form-label">Client:</label>
+                    <div class="col-sm-5">
+                        <select class="form-control" name="clientId" required>
+                            {{#clients}}
+                                <option value="{{id}}">{{displayName}}</option>
+                            {{/clients}}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="doorCoreID" class="col-sm-3 col-form-label">Door Particle Core ID:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="doorCoreID" placeholder="Door Particle Core ID" required>

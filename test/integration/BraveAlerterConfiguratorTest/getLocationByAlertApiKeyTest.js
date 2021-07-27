@@ -6,6 +6,7 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { Location, SYSTEM } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
+const { clientFactory } = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKey', () => {
   beforeEach(async () => {
@@ -14,6 +15,7 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
     this.expectedLocationId = 'TEST LOCATION'
 
     // Insert a location in the DB
+    this.client = await clientFactory(db)
     await db.createLocation(
       this.expectedLocationId,
       '+17772225555',
@@ -33,11 +35,13 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
       'myApiKey',
       true,
       false,
+      this.client.id,
     )
   })
 
   afterEach(async () => {
     await db.clearLocations()
+    await db.clearClients()
   })
 
   it('given a API key that matches a single location should return a BraveAlertLib Location object with the values from that location', async () => {
@@ -79,6 +83,7 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
         'myApiKey',
         true,
         false,
+        this.client.id,
       )
     })
 
