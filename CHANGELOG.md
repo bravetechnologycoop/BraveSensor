@@ -21,6 +21,10 @@ the code was deployed.
 
 - Use an enum for Alert Type in the DB and from Alert Lib instead of strings.
 
+### Removed
+
+- INS smoke tests.
+
 ## [4.0.0] - 2021-07-26
 
 ### Added
