@@ -123,7 +123,7 @@ The twilio number must be a valid number for the account, and must have its SMS 
 
     `npm run smoketest 'https://staging.odetect.brave.coop' '+17781234567' '+17786083684'`
 
-The script will take a few minutes to conclude. The expected behavior is for a location to be created, and a session which results from a 'Stillness' alert to the phone number provided. The process should then repeat, this time with INS radar data.
+The script will take a few minutes to conclude. The expected behavior is for a location to be created, and a session which results from a 'Stillness' alert to the phone number provided.
 
 You can get further details about the behavior of the build by watching logs for the application with:
 `kubectl logs -f --timestamps deployment/staging-sensor-server`
