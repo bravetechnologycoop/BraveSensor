@@ -17,30 +17,36 @@
     {{> nav}}
     <div class="content-area">
         <div class="content-wrapper">
-            <h4 class="no-locations">Sensor Sessions Overview</h4>
-            <br>
-            <div class="table-responsive">
-                <table class="table table-striped table-sm table-fixed">
-                    <thead>
-                        <tr class="table-header" scope="row">
-                            <th scope="col"></th>
-                            <th scope="col"><h5>Client</h5></th>
-                            <th scope="col"><h5>Location</h5></th>
-                            <th scope="col"><h5>Last Session Started</h5></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {{#locations}}
-                        <tr class="table-data">
-                            <td>{{^isActive}}[INACTIVE]{{/isActive}}</td>
-                            <th scope="row"><a href="/clients/{{clientId}}">{{clientDisplayName}}</a></th>
-                            <th scope="row"><a href="/locations/{{id}}">{{name}}</a></th>
-                            <td>{{sessionStart}}</td>
-                        </tr>
-                    {{/locations}}
-                    </tbody>
-                </table>
-            </div>
+            {{#currentClient}}
+                <h3>{{displayName}} Sessions Overview</h3>
+
+                <a href="/clients/{{id}}/edit" class="btn btn-secondary btn-sm" role="button">Edit Client</a>
+                <br>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm table-fixed">
+                        <thead>
+                            <tr class="table-header" scope="row">
+                                <th scope="col"></th>
+                                <th scope="col"><h5>Location</h5></th>
+                                <th scope="col"><h5>Last Session Started</h5></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {{#locations}}
+                            <tr class="table-data">
+                                <td>{{^isActive}}[INACTIVE]{{/isActive}}</td>
+                                <th scope="row"><a href="/locations/{{id}}">{{name}}</a></th>
+                                <td>{{sessionStart}}</td>
+                            </tr>
+                        {{/locations}}
+                        </tbody>
+                    </table>
+                </div>
+            {{/currentClient}}
+            {{^currentClient}}
+                <p>No matching client</p>
+            {{/currentClient}}
         </div>
     </div>
     

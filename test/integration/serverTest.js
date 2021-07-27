@@ -24,7 +24,7 @@ const INITIAL_TIMER = 1
 const STILLNESS_TIMER = 1.5
 const DURATION_TIMER = 3
 const IM21_DOOR_STATUS = require('../../IM21DoorStatusEnum')
-const { getRandomArbitrary, getRandomInt, printRandomIntArray } = require('../../testingHelpers')
+const { getRandomArbitrary, getRandomInt, printRandomIntArray, clientFactory } = require('../../testingHelpers')
 const STATE = require('../../stateMachine/SessionStateEnum')
 
 chai.use(chaiHttp)
@@ -159,6 +159,9 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
+
+      const client = await clientFactory(db)
       await db.createLocation(
         testLocation1Id,
         testLocation1PhoneNumber,
@@ -178,6 +181,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         true,
+        client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
@@ -187,6 +191,7 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
       sandbox.restore()
       helpers.log('\n')
     })
@@ -251,6 +256,9 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
+
+      const client = await clientFactory(db)
       await db.createLocation(
         testLocation1Id,
         testLocation1PhoneNumber,
@@ -270,6 +278,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         false,
+        client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
@@ -280,6 +289,7 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
       sandbox.restore()
       helpers.log('\n')
     })
@@ -368,6 +378,9 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
+
+      const client = await clientFactory(db)
       await db.createLocation(
         testLocation1Id,
         testLocation1PhoneNumber,
@@ -387,6 +400,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         false,
         false,
+        client.id,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       sandbox.spy(StateMachine, 'getNextState')
@@ -396,6 +410,7 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
       sandbox.restore()
       helpers.log('\n')
     })
@@ -444,7 +459,9 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
 
+      const client = await clientFactory(db)
       await db.createLocation(
         testLocation1Id,
         testLocation1PhoneNumber,
@@ -464,6 +481,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         false,
+        client.id,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       sandbox.spy(StateMachine, 'getNextState')
@@ -475,6 +493,7 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
       helpers.log('\n')
       sandbox.restore()
     })
@@ -563,7 +582,9 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients
 
+      const client = await clientFactory(db)
       await db.createLocation(
         testLocation1Id,
         testLocation1PhoneNumber,
@@ -583,6 +604,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         false,
         false,
+        client.id,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
     })
@@ -591,6 +613,7 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
+      await db.clearClients()
       helpers.log('\n')
     })
 
@@ -637,6 +660,9 @@ describe('Brave Sensor server', () => {
         await redis.clearKeys()
         await db.clearSessions()
         await db.clearLocations()
+        await db.clearClients()
+
+        const client = await clientFactory(db)
         await db.createLocation(
           testLocation1Id,
           testLocation1PhoneNumber,
@@ -656,6 +682,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
+          client.id,
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       })
@@ -664,6 +691,7 @@ describe('Brave Sensor server', () => {
         await redis.clearKeys()
         await db.clearSessions()
         await db.clearLocations()
+        await db.clearClients()
         helpers.log('\n')
       })
 
@@ -701,6 +729,9 @@ describe('Brave Sensor server', () => {
         await redis.clearKeys()
         await db.clearSessions()
         await db.clearLocations()
+        await db.clearClients()
+
+        const client = await clientFactory(db)
         await db.createLocation(
           testLocation1Id,
           testLocation1PhoneNumber,
@@ -720,6 +751,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
+          client.id,
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
       })
@@ -728,6 +760,7 @@ describe('Brave Sensor server', () => {
         await redis.clearKeys()
         await db.clearSessions()
         await db.clearLocations()
+        await db.clearClients()
         helpers.log('\n')
       })
 
@@ -796,6 +829,9 @@ describe('Brave Sensor server', () => {
           await redis.clearKeys()
           await db.clearSessions()
           await db.clearLocations()
+          await db.clearClients()
+
+          this.client = await clientFactory(db)
 
           this.agent = chai.request.agent(server)
 
@@ -813,6 +849,7 @@ describe('Brave Sensor server', () => {
             responderPhoneNumber: testLocation1PhoneNumber,
             twilioPhone: '+15005550006',
             firmwareStateMachine: 'false',
+            clientId: this.client.id,
           }
 
           this.response = await this.agent.post('/locations').send(goodRequest)
@@ -822,6 +859,7 @@ describe('Brave Sensor server', () => {
           await redis.clearKeys()
           await db.clearSessions()
           await db.clearLocations()
+          await db.clearClients()
 
           this.agent.close()
         })
@@ -837,7 +875,55 @@ describe('Brave Sensor server', () => {
         })
       })
 
-      describe('for a request with no session', () => {
+      describe('for a request with an non-existant client ID', () => {
+        beforeEach(async () => {
+          sinon.stub(helpers, 'log')
+          sinon.spy(db, 'createLocationFromBrowserForm')
+
+          this.agent = chai.request.agent(server)
+
+          await this.agent.post('/login').send({
+            username: helpers.getEnvVar('WEB_USERNAME'),
+            password: helpers.getEnvVar('PASSWORD'),
+          })
+
+          this.clientId = 'fbb3e19d-5884-46d6-a0e5-ed5c7c406274'
+          const goodRequest = {
+            locationid: 'unusedID',
+            displayName: 'locationName',
+            doorCoreID: door_coreID,
+            radarCoreID: radar_coreID,
+            radarType: 'XeThru',
+            responderPhoneNumber: testLocation1PhoneNumber,
+            twilioPhone: '+15005550006',
+            firmwareStateMachine: 'false',
+            clientId: this.clientId,
+          }
+
+          this.response = await this.agent.post('/locations').send(goodRequest)
+        })
+
+        afterEach(async () => {
+          helpers.log.restore()
+          db.createLocationFromBrowserForm.restore()
+
+          this.agent.close()
+        })
+
+        it('should return 400', () => {
+          expect(this.response).to.have.status(400)
+        })
+
+        it('should not create a new location in the database', () => {
+          expect(db.createLocationFromBrowserForm).to.not.have.been.called
+        })
+
+        it('should log the error', () => {
+          expect(helpers.log).to.have.been.calledWith(`Client ID '${this.clientId}' does not exist`)
+        })
+      })
+
+      describe('for a request with no login session', () => {
         beforeEach(async () => {
           sinon.stub(helpers, 'logError')
           sinon.spy(db, 'createLocationFromBrowserForm')
@@ -852,6 +938,7 @@ describe('Brave Sensor server', () => {
             twilioPhone: '+15005550006',
             alertApiKey: 'myApiKey',
             firmwareStateMachine: 'false',
+            clientId: '91ddc8f7-c2e7-490e-bfe9-3d2880a76108',
           }
 
           this.response = await chai.request(server).post('/locations').send(goodRequest)
@@ -880,6 +967,9 @@ describe('Brave Sensor server', () => {
           await redis.clearKeys()
           await db.clearSessions()
           await db.clearLocations()
+          await db.clearClients()
+
+          this.client = await clientFactory(db)
 
           this.agent = chai.request.agent(server)
 
@@ -897,6 +987,7 @@ describe('Brave Sensor server', () => {
             responderPhoneNumber: testLocation1PhoneNumber,
             twilioPhone: '+15005550006',
             firmwareStateMachine: 'false',
+            clientId: this.client.id,
           }
 
           this.response = await this.agent.post('/locations').send(goodRequest)
@@ -906,6 +997,7 @@ describe('Brave Sensor server', () => {
           await redis.clearKeys()
           await db.clearSessions()
           await db.clearLocations()
+          await db.clearClients()
 
           this.agent.close()
         })
@@ -926,6 +1018,9 @@ describe('Brave Sensor server', () => {
           await redis.clearKeys()
           await db.clearSessions()
           await db.clearLocations()
+          await db.clearClients()
+
+          this.client = await clientFactory(db)
 
           this.agent = chai.request.agent(server)
 
@@ -943,6 +1038,7 @@ describe('Brave Sensor server', () => {
             twilioPhone: '+15005550006',
             alertApiKey: 'alertApiKey',
             firmwareStateMachine: 'false',
+            clientId: this.client.id,
           }
 
           this.response = await this.agent.post('/locations').send(goodRequest)
@@ -952,6 +1048,7 @@ describe('Brave Sensor server', () => {
           await redis.clearKeys()
           await db.clearSessions()
           await db.clearLocations()
+          await db.clearClients()
 
           this.agent.close()
         })
@@ -989,6 +1086,7 @@ describe('Brave Sensor server', () => {
             twilioPhone: '',
             alertApiKey: '',
             firmwareStateMachine: '',
+            clientId: '',
           }
 
           this.response = await this.agent.post('/locations').send(badRequest)
@@ -1011,7 +1109,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -1048,7 +1146,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -1057,6 +1155,8 @@ describe('Brave Sensor server', () => {
         beforeEach(async () => {
           sinon.stub(helpers, 'log')
           sinon.spy(db, 'createLocationFromBrowserForm')
+
+          this.client = await clientFactory(db)
 
           await db.clearLocations()
           await db.createLocation(
@@ -1078,6 +1178,7 @@ describe('Brave Sensor server', () => {
             'alertApiKey',
             true,
             false,
+            this.client.id,
           )
 
           this.agent = chai.request.agent(server)
@@ -1097,6 +1198,7 @@ describe('Brave Sensor server', () => {
             twilioPhone: '+15005550006',
             alertApiKey: 'alertApiKey',
             firmwareStateMachine: 'false',
+            clientId: this.client.id,
           }
 
           this.response = await this.agent.post('/locations').send(duplicateLocationRequest)
@@ -1109,6 +1211,7 @@ describe('Brave Sensor server', () => {
           this.agent.close()
 
           await db.clearLocations()
+          await db.clearClients()
         })
 
         it('should return 409', () => {
@@ -1133,6 +1236,9 @@ describe('Brave Sensor server', () => {
 
         this.testLocationIdForEdit = 'test1'
         await db.clearLocations()
+        await db.clearClients()
+
+        this.client = await clientFactory(db)
         await db.createLocation(
           this.testLocationIdForEdit,
           '+14445556789',
@@ -1152,6 +1258,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
+          this.client.id,
         )
       })
 
@@ -1161,6 +1268,7 @@ describe('Brave Sensor server', () => {
         db.updateLocation.restore()
 
         await db.clearLocations()
+        await db.clearClients()
       })
 
       describe('for a request that contains all valid non-empty fields', () => {
@@ -1190,6 +1298,7 @@ describe('Brave Sensor server', () => {
             alertApiKey: 'newApiKey',
             isActive: 'true',
             firmwareStateMachine: 'false',
+            clientId: this.client.id,
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1217,6 +1326,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
           expect(updatedLocation.isActive).to.be.true
           expect(updatedLocation.firmwareStateMachine).to.be.false
+          expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
           chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
           chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
@@ -1254,6 +1364,7 @@ describe('Brave Sensor server', () => {
             alertApiKey: 'newApiKey',
             isActive: 'false',
             firmwareStateMachine: 'false',
+            clientId: this.client.id,
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1281,6 +1392,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
           expect(updatedLocation.isActive).to.be.false
           expect(updatedLocation.firmwareStateMachine).to.be.false
+          expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
           chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
           chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
@@ -1318,6 +1430,7 @@ describe('Brave Sensor server', () => {
             alertApiKey: '',
             isActive: 'true',
             firmwareStateMachine: 'false',
+            clientId: this.client.id,
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1345,6 +1458,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.alertApiKey).to.be.null
           expect(updatedLocation.isActive).to.be.true
           expect(updatedLocation.firmwareStateMachine).to.be.false
+          expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
           chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
           chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
@@ -1382,6 +1496,7 @@ describe('Brave Sensor server', () => {
             alertApiKey: 'newApiKey',
             isActive: 'true',
             firmwareStateMachine: 'false',
+            clientId: this.client.id,
           }
 
           this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
@@ -1409,6 +1524,7 @@ describe('Brave Sensor server', () => {
           expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
           expect(updatedLocation.isActive).to.be.true
           expect(updatedLocation.firmwareStateMachine).to.be.false
+          expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
           chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
           chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
@@ -1416,6 +1532,57 @@ describe('Brave Sensor server', () => {
           chai.assert.equal(updatedLocation.initialTimer, this.goodRequest.initialTimer)
           chai.assert.equal(updatedLocation.reminderTimer, this.goodRequest.reminderTimer)
           chai.assert.equal(updatedLocation.fallbackTimer, this.goodRequest.fallbackTimer)
+        })
+      })
+
+      describe('for a request that contains all valid non-empty fields but with a non-existant clientId', () => {
+        beforeEach(async () => {
+          this.agent = chai.request.agent(server)
+
+          await this.agent.post('/login').send({
+            username: helpers.getEnvVar('WEB_USERNAME'),
+            password: helpers.getEnvVar('PASSWORD'),
+          })
+
+          this.clientId = '8244c552-6753-4713-bbb6-07ad1c7fb8f8'
+          this.goodRequest = {
+            displayName: 'New Name',
+            doorCoreID: 'new_door_core',
+            radarCoreID: 'new_radar_core',
+            radarType: 'Innosent',
+            responderPhoneNumber: '+12223334567',
+            fallbackPhones: '+12223334444,+13334445678',
+            heartbeatPhones: '+15556667890,+16667778901',
+            twilioPhone: '+11112223456',
+            movementThreshold: 15,
+            durationTimer: 90,
+            stillnessTimer: 10,
+            initialTimer: 9856,
+            reminderTimer: 567849,
+            fallbackTimer: 234567,
+            alertApiKey: 'newApiKey',
+            isActive: 'true',
+            firmwareStateMachine: 'false',
+            clientId: this.clientId,
+          }
+
+          this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+        })
+
+        afterEach(() => {
+          this.agent.close()
+        })
+
+        it('should return 400', () => {
+          expect(this.response).to.have.status(400)
+        })
+
+        it('should not update the location in the database', () => {
+          expect(db.updateLocation).to.not.have.been.called
+        })
+
+        it('should log the error', () => {
+          expect(helpers.log).to.have.been.calledWith(`Client ID '${this.clientId}' does not exist`)
         })
       })
 
@@ -1448,6 +1615,7 @@ describe('Brave Sensor server', () => {
             fallbackTimer: '',
             alertApiKey: '',
             isActive: '',
+            clientId: '',
           }
 
           this.response = await this.agent.post(`/locations/${testLocation1Id}`).send(badRequest)
@@ -1467,7 +1635,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
           )
         })
       })
@@ -1501,7 +1669,7 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.have.been.calledWith(
-            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+            `Bad request to /locations/TestLocation1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
           )
         })
       })

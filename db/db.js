@@ -5,6 +5,7 @@ const pg = require('pg')
 const { CHATBOT_STATE, helpers } = require('brave-alert-lib')
 const Session = require('../Session')
 const Location = require('../Location')
+const Client = require('../Client')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -22,16 +23,6 @@ pg.types.setTypeParser(1114, str => str)
 pool.on('error', err => {
   helpers.logError(`unexpected database error: ${JSON.stringify(err)}`)
 })
-
-function createSessionFromRow(r) {
-  // prettier-ignore
-  return new Session(r.id, r.locationid, r.phone_number, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_type, r.notes, r.responded_at)
-}
-
-function createLocationFromRow(r) {
-  // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.responder_phone_number, r.movement_threshold, r.duration_timer, r.stillness_timer, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.alert_api_key, r.is_active, r.firmware_state_machine)
-}
 
 async function beginTransaction() {
   const client = await pool.connect()
@@ -82,6 +73,44 @@ async function runQuery(functionName, queryString, queryParams, clientParam) {
   }
 }
 
+function createSessionFromRow(r) {
+  // prettier-ignore
+  return new Session(r.id, r.locationid, r.phone_number, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_type, r.notes, r.responded_at)
+}
+
+function createClientFromRow(r) {
+  // prettier-ignore
+  return new Client(r.id, r.display_name, r.from_phone_number, r.created_at, r.updated_at)
+}
+
+async function createLocationFromRow(r, clientParam) {
+  try {
+    const results = await runQuery(
+      'createLocationFromRow',
+      `
+      SELECT *
+      FROM clients
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [r.client_id],
+      clientParam,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      helpers.logError(`Missing client with id: ${r.client_id}`)
+      return null
+    }
+
+    const client = createClientFromRow(results.rows[0])
+
+    // prettier-ignore
+    return new Location(r.locationid, r.display_name, r.responder_phone_number, r.movement_threshold, r.duration_timer, r.stillness_timer, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.alert_api_key, r.is_active, r.firmware_state_machine, client)
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
 async function getCurrentTime(clientParam) {
   try {
     const results = await runQuery('getCurrentTime', 'SELECT NOW()', [], clientParam)
@@ -122,6 +151,29 @@ async function getSessionWithSessionId(id, clientParam) {
     }
 
     return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
+async function getClientWithClientId(id, clientParam) {
+  try {
+    const results = await runQuery(
+      'getSessionWithSessionId',
+      `
+      SELECT *
+      FROM clients
+      WHERE id = $1
+      `,
+      [id],
+      clientParam,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -232,7 +284,7 @@ async function updateSentAlerts(locationid, sentalerts, clientParam) {
       return null
     }
 
-    return createLocationFromRow(results.rows[0])
+    return await createLocationFromRow(results.rows[0], clientParam)
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -316,7 +368,7 @@ async function getLocationData(locationid, clientParam) {
       return null
     }
 
-    return createLocationFromRow(results.rows[0])
+    return await createLocationFromRow(results.rows[0], clientParam)
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -331,7 +383,7 @@ async function getLocationsFromAlertApiKey(alertApiKey, clientParam) {
       return null
     }
 
-    return results.rows.map(r => createLocationFromRow(r))
+    return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -351,7 +403,32 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
       return null
     }
 
-    return createLocationFromRow(results.rows[0])
+    return await createLocationFromRow(results.rows[0], clientParam)
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
+async function getLocationsFromClientId(clientId, clientParam) {
+  try {
+    const results = await runQuery(
+      'getLocationsFromClientId',
+      `
+      SELECT *
+      FROM locations
+      WHERE client_id = $1
+      ORDER BY display_name
+      `,
+      [clientId],
+      clientParam,
+    )
+
+    if (results === undefined) {
+      helpers.log(`Error: No location with client ID ${clientId} key exists`)
+      return null
+    }
+
+    return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -370,7 +447,7 @@ async function getActiveServerStateMachineLocations(clientParam) {
       return null
     }
 
-    return results.rows.map(r => createLocationFromRow(r))
+    return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -389,7 +466,7 @@ async function getActiveFirmwareStateMachineLocations(clientParam) {
       return null
     }
 
-    return results.rows.map(r => createLocationFromRow(r))
+    return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -398,13 +475,46 @@ async function getActiveFirmwareStateMachineLocations(clientParam) {
 // Retrieves the locations table
 async function getLocations(clientParam) {
   try {
-    const results = await runQuery('getLocations', 'SELECT * FROM locations ORDER BY display_name', [], clientParam)
+    const results = await runQuery(
+      'getLocations',
+      `
+      SELECT l.*
+      FROM locations AS l
+      LEFT JOIN clients AS c ON l.client_id = c.id
+      ORDER BY c.display_name, l.display_name
+      `,
+      [],
+      clientParam,
+    )
 
     if (results === undefined) {
       return null
     }
 
-    return results.rows.map(r => createLocationFromRow(r))
+    return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
+async function getClients(clientParam) {
+  try {
+    const results = await runQuery(
+      'getLocations',
+      `
+      SELECT *
+      FROM clients
+      ORDER BY display_name
+      `,
+      [],
+      clientParam,
+    )
+
+    if (results === undefined) {
+      return null
+    }
+
+    return await Promise.all(results.rows.map(r => createClientFromRow(r, clientParam)))
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -412,11 +522,34 @@ async function getLocations(clientParam) {
 
 // Updates the locations table entry for a specific location with the new data
 // eslint-disable-next-line prettier/prettier
-async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phoneNumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, reminderTimer, fallbackTimer, alertApiKey, isActive, firmwareStateMachine, locationid, clientParam) {
+async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phoneNumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, reminderTimer, fallbackTimer, alertApiKey, isActive, firmwareStateMachine, locationid, clientId, clientParam) {
   try {
     const results = await runQuery(
       'updateLocation',
-      'UPDATE locations SET display_name = $1, door_particlecoreid = $2, radar_particlecoreid = $3, radar_type = $4, responder_phone_number = $5, fallback_phonenumbers = $6, heartbeat_alert_recipients = $7, twilio_number = $8, movement_threshold = $9, duration_timer = $10, stillness_timer = $11, initial_timer = $12, reminder_timer = $13, fallback_timer = $14, alert_api_key = $15, is_active = $16, firmware_state_machine = $17 WHERE locationid = $18 returning *',
+      `
+      UPDATE locations
+      SET
+        display_name = $1,
+        door_particlecoreid = $2,
+        radar_particlecoreid = $3,
+        radar_type = $4,
+        responder_phone_number = $5,
+        fallback_phonenumbers = $6,
+        heartbeat_alert_recipients = $7,
+        twilio_number = $8,
+        movement_threshold = $9,
+        duration_timer = $10,
+        stillness_timer = $11,
+        initial_timer = $12,
+        reminder_timer = $13,
+        fallback_timer = $14,
+        alert_api_key = $15,
+        is_active = $16,
+        firmware_state_machine = $17,
+        client_id = $18
+      WHERE locationid = $19
+      RETURNING *
+      `,
       [
         displayName,
         doorCoreId,
@@ -435,13 +568,44 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
         alertApiKey,
         isActive,
         firmwareStateMachine,
+        clientId,
         locationid,
       ],
       clientParam,
     )
 
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
     helpers.log(`Location '${locationid}' successfully updated`)
-    return createLocationFromRow(results.rows[0])
+    return await createLocationFromRow(results.rows[0], clientParam)
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
+async function updateClient(displayName, fromPhoneNumber, id, clientParam) {
+  try {
+    const results = await runQuery(
+      'updateClient',
+      `
+      UPDATE clients
+      SET display_name = $1, from_phone_number = $2
+      WHERE id = $3
+      RETURNING *
+      `,
+      [displayName, fromPhoneNumber, id],
+      clientParam,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    helpers.log(`Client '${displayName}' successfully updated`)
+
+    return await createClientFromRow(results.rows[0], clientParam)
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -449,10 +613,10 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, phonenumber, twilioNumber, alertApiKey, firmwareStateMachine, clientParam) {
+async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, phonenumber, twilioNumber, alertApiKey, firmwareStateMachine, clientId, clientParam) {
   try {
     await runQuery('createLocationFromBrowserForm',
-      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, responder_phone_number, twilio_number, alert_api_key, firmware_state_machine) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, responder_phone_number, twilio_number, alert_api_key, firmware_state_machine, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
       [
         locationid,
         displayName,
@@ -463,6 +627,7 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
         twilioNumber,
         alertApiKey,
         firmwareStateMachine,
+        clientId,
       ],
       clientParam,
     )
@@ -475,11 +640,11 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
 
 // Adds a location table entry
 // eslint-disable-next-line prettier/prettier
-async function createLocation(locationid, phonenumber, movementThreshold, stillnessTimer, durationTimer, reminderTimer, initialTimer, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, alertApiKey, isActive, firmwareStateMachine, clientParam) {
+async function createLocation(locationid, phonenumber, movementThreshold, stillnessTimer, durationTimer, reminderTimer, initialTimer, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, alertApiKey, isActive, firmwareStateMachine, clientId, clientParam) {
   try {
     await runQuery(
       'createLocation',
-      'INSERT INTO locations(locationid, responder_phone_number, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, alert_api_key, is_active, firmware_state_machine) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)',
+      'INSERT INTO locations(locationid, responder_phone_number, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, alert_api_key, is_active, firmware_state_machine, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)',
       [
         locationid,
         phonenumber,
@@ -499,9 +664,28 @@ async function createLocation(locationid, phonenumber, movementThreshold, stilln
         alertApiKey,
         isActive,
         firmwareStateMachine,
+        clientId,
       ],
       clientParam,
     )
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
+async function createClient(displayName, fromPhoneNumber, clientParam) {
+  try {
+    const results = await runQuery(
+      'createClient',
+      `
+      INSERT INTO clients(display_name, from_phone_number)
+      VALUES ($1, $2)
+      RETURNING *
+      `,
+      [displayName, fromPhoneNumber],
+      clientParam,
+    )
+    return createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.log(JSON.stringify(err))
   }
@@ -549,6 +733,41 @@ async function clearLocation(locationid, clientParam) {
   }
 }
 
+async function clearClients(clientParam) {
+  if (!helpers.isTestEnvironment()) {
+    helpers.log('warning - tried to clear clients table outside of a test environment!')
+    return
+  }
+
+  try {
+    await runQuery(
+      'clearClients',
+      `
+      DELETE FROM clients`,
+      [],
+      clientParam,
+    )
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
+async function clearClientWithDisplayName(displayName, clientParam) {
+  try {
+    await runQuery(
+      'clearClientWithDisplayName',
+      `
+      DELETE FROM clients
+      WHERE display_name = $1
+      `,
+      [displayName],
+      clientParam,
+    )
+  } catch (err) {
+    helpers.log(JSON.stringify(err))
+  }
+}
+
 async function close() {
   await pool.end()
 }
@@ -564,6 +783,7 @@ module.exports = {
   getMostRecentSessionPhone,
   getLocationFromParticleCoreID,
   getLocationsFromAlertApiKey,
+  getLocationsFromClientId,
   getLocationData,
   getActiveServerStateMachineLocations,
   getActiveFirmwareStateMachineLocations,
@@ -575,6 +795,12 @@ module.exports = {
   clearSessions,
   clearSessionsFromLocation,
   clearLocations,
+  createClient,
+  clearClients,
+  clearClientWithDisplayName,
+  getClients,
+  getClientWithClientId,
+  updateClient,
   close,
   getAllSessionsFromLocation,
   beginTransaction,

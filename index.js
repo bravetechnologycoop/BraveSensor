@@ -6,7 +6,6 @@ const https = require('https')
 const session = require('express-session')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
-const routes = require('express').Router()
 const Mustache = require('mustache')
 const Validator = require('express-validator')
 
@@ -20,6 +19,7 @@ const RADAR_TYPE = require('./RadarTypeEnum')
 const BraveAlerterConfigurator = require('./BraveAlerterConfigurator')
 const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
 const DOOR_STATUS = require('./SessionStateDoorEnum')
+const routes = require('./routes')
 
 const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationsDashboard.mst`, 'utf-8')
 const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/landingPage.mst`, 'utf-8')
@@ -147,7 +147,7 @@ async function handleAlert(location, alertType) {
         reminderMessage: `This is a reminder to check on the bathroom`,
         fallbackMessage: `An alert to check on the bathroom at ${location.displayName} was not responded to. Please check on it`,
         fallbackToPhoneNumbers: location.fallbackNumbers,
-        fallbackFromPhoneNumber: location.twilioNumber,
+        fallbackFromPhoneNumber: location.client.fromPhoneNumber,
       }
       braveAlerter.startAlertSession(alertInfo)
     } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
@@ -175,7 +175,7 @@ async function sendSingleAlert(locationid, message) {
   const location = await db.getLocationData(locationid)
 
   location.heartbeatAlertRecipients.forEach(async heartbeatAlertRecipient => {
-    await braveAlerter.sendSingleAlert(heartbeatAlertRecipient, location.twilioNumber, message)
+    await braveAlerter.sendSingleAlert(heartbeatAlertRecipient, location.client.fromPhoneNumber, message)
   })
 }
 
@@ -312,6 +312,8 @@ app.get('/logout', (req, res) => {
 
 app.get('/dashboard', sessionChecker, async (req, res) => {
   try {
+    // Needed for the navigation bar
+    const clients = await db.getClients()
     const allLocations = await db.getLocations()
 
     for (const location of allLocations) {
@@ -324,8 +326,16 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
     }
 
     const viewParams = {
+      clients,
       locations: allLocations.map(location => {
-        return { name: location.displayName, id: location.locationid, sessionStart: location.sessionStart, isActive: location.isActive }
+        return {
+          name: location.displayName,
+          id: location.locationid,
+          sessionStart: location.sessionStart,
+          isActive: location.isActive,
+          clientId: location.client.id,
+          clientDisplayName: location.client.displayName,
+        }
       }),
     }
 
@@ -338,13 +348,8 @@ app.get('/dashboard', sessionChecker, async (req, res) => {
 
 app.get('/locations/new', sessionChecker, async (req, res) => {
   try {
-    const allLocations = await db.getLocations()
-
-    const viewParams = {
-      locations: allLocations.map(location => {
-        return { name: location.displayName, id: location.locationid }
-      }),
-    }
+    const clients = await db.getClients()
+    const viewParams = { clients }
 
     res.send(Mustache.render(newLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
@@ -355,16 +360,17 @@ app.get('/locations/new', sessionChecker, async (req, res) => {
 
 app.get('/locations/:locationId', sessionChecker, async (req, res) => {
   try {
+    // Needed for the navigation bar
+    const clients = await db.getClients()
+
     const recentSessions = await db.getHistoryOfSessions(req.params.locationId)
     const allLocations = await db.getLocations()
     const currentLocation = allLocations.find(location => location.locationid === req.params.locationId)
 
     const viewParams = {
+      clients,
       recentSessions: [],
       currentLocation,
-      locations: allLocations.map(location => {
-        return { name: location.displayName, id: location.locationid }
-      }),
     }
 
     // commented out keys were not shown on the old frontend but have been included in case that changes
@@ -393,6 +399,7 @@ app.get('/locations/:locationId', sessionChecker, async (req, res) => {
 
 app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
   try {
+    const clients = await db.getClients()
     const allLocations = await db.getLocations()
     const currentLocation = allLocations.find(location => location.locationid === req.params.locationId)
 
@@ -405,8 +412,11 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 
     const viewParams = {
       currentLocation,
-      locations: allLocations.map(location => {
-        return { name: location.displayName, id: location.locationid }
+      clients: clients.map(client => {
+        return {
+          ...client,
+          selected: client.id === currentLocation.client.id,
+        }
       }),
     }
 
@@ -422,7 +432,16 @@ app.get('/locations/:locationId/edit', sessionChecker, async (req, res) => {
 app.post(
   '/locations',
   [
-    Validator.body(['locationid', 'displayName', 'doorCoreID', 'radarCoreID', 'radarType', 'twilioPhone', 'firmwareStateMachine']).notEmpty(),
+    Validator.body([
+      'locationid',
+      'displayName',
+      'doorCoreID',
+      'radarCoreID',
+      'radarType',
+      'twilioPhone',
+      'firmwareStateMachine',
+      'clientId',
+    ]).notEmpty(),
     Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
   ],
   async (req, res) => {
@@ -446,6 +465,13 @@ app.post(
           }
         }
 
+        const client = await db.getClientWithClientId(data.clientId)
+        if (client === null) {
+          const errorMessage = `Client ID '${data.clientId}' does not exist`
+          helpers.log(errorMessage)
+          return res.status(400).send(errorMessage)
+        }
+
         await db.createLocationFromBrowserForm(
           data.locationid,
           data.displayName,
@@ -456,6 +482,7 @@ app.post(
           data.twilioPhone,
           data.alertApiKey,
           data.firmwareStateMachine,
+          data.clientId,
         )
 
         res.redirect(`/locations/${data.locationid}`)
@@ -490,6 +517,7 @@ app.post(
       'fallbackTimer',
       'isActive',
       'firmwareStateMachine',
+      'clientId',
     ]).notEmpty(),
     Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
   ],
@@ -506,6 +534,13 @@ app.post(
       if (validationErrors.isEmpty()) {
         const data = req.body
         data.locationid = req.params.locationId
+
+        const client = await db.getClientWithClientId(data.clientId)
+        if (client === null) {
+          const errorMessage = `Client ID '${data.clientId}' does not exist`
+          helpers.log(errorMessage)
+          return res.status(400).send(errorMessage)
+        }
 
         const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
         const newPhone = data.responderPhoneNumber && data.responderPhoneNumber.trim() !== '' ? data.responderPhoneNumber : null
@@ -529,6 +564,7 @@ app.post(
           data.isActive === 'true',
           data.firmwareStateMachine === 'true',
           data.locationid,
+          data.clientId,
         )
 
         res.redirect(`/locations/${data.locationid}`)
@@ -543,6 +579,9 @@ app.post(
     }
   },
 )
+
+// Add routes
+routes.configureRoutes(app)
 
 // Add BraveAlerter's routes ( /alert/* )
 app.use(braveAlerter.getRouter())
@@ -811,6 +850,7 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(),
 app.post('/smokeTest/setup', async (request, response) => {
   const { recipientNumber, twilioNumber, radarType } = request.body
   try {
+    const client = await db.createClient('SmokeTestClient', twilioNumber)
     await db.createLocation(
       'SmokeTestLocation',
       recipientNumber,
@@ -830,6 +870,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       'alertApiKey',
       true,
       false,
+      client.id,
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
     response.status(200).send()
@@ -840,8 +881,9 @@ app.post('/smokeTest/setup', async (request, response) => {
 
 app.post('/smokeTest/teardown', async (request, response) => {
   try {
-    await db.clearLocation('SmokeTestLocation')
     await db.clearSessionsFromLocation('SmokeTestLocation')
+    await db.clearLocation('SmokeTestLocation')
+    await db.clearClientWithDisplayName('SmokeTestClient')
     response.status(200).send()
   } catch (error) {
     helpers.logError(`Smoke test setup error: ${error}`)
