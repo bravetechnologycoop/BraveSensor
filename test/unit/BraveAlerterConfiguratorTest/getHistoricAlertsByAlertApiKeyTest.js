@@ -58,7 +58,7 @@ describe('BraveAlerterConfigurator.js unit tests: getHistoricAlertsByAlertApiKey
       id: 'id2',
       display_name: 'displayName2',
       incident_type: 'incidentType2',
-      alert_type: ALERT_TYPE.SENSOR_NO_MOTION,
+      alert_type: ALERT_TYPE.SENSOR_STILLNESS,
       created_at: new Date('2019-02-20T09:10:10.000Z'),
       responded_at: new Date('2019-02-20T09:12:40.000Z'),
     }
