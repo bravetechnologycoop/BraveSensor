@@ -18,7 +18,7 @@ function connect() {
     client = new Redis(6379, helpers.getEnvVar('REDIS_CLUSTER_IP')) // uses defaults unless given configuration object
 
     client.on('error', error => {
-      helpers.logError(JSON.stringify(error))
+      helpers.logError(error.toString())
     })
   }
 }
@@ -152,7 +152,7 @@ async function addInnosentRadarSensorData(locationid, inPhase, quadrature) {
     }
     await pipeline.exec()
   } catch (error) {
-    helpers.logError(`Error adding Innosent radar sensor data: ${JSON.stringify(error)}`)
+    helpers.logError(`Error adding Innosent radar sensor data: ${error.toString()}`)
   }
 }
 

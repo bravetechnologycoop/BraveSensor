@@ -27,6 +27,10 @@ the code was deployed.
 
 - INS smoke tests.
 
+### Fixed
+
+- Database and Redis error output.
+
 ## [4.0.0] - 2021-07-26
 
 ### Added

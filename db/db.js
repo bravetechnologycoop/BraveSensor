@@ -21,7 +21,7 @@ const pool = new pg.Pool({
 pg.types.setTypeParser(1114, str => str)
 
 pool.on('error', err => {
-  helpers.logError(`unexpected database error: ${JSON.stringify(err)}`)
+  helpers.logError(`unexpected database error: ${err.toString()}`)
 })
 
 async function beginTransaction() {
@@ -107,7 +107,7 @@ async function createLocationFromRow(r, clientParam) {
     // prettier-ignore
     return new Location(r.locationid, r.display_name, r.responder_phone_number, r.movement_threshold, r.duration_timer, r.stillness_timer, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.alert_api_key, r.is_active, r.firmware_state_machine, client)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -117,7 +117,7 @@ async function getCurrentTime(clientParam) {
 
     return results.rows[0].now
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -137,7 +137,7 @@ async function getMostRecentSession(locationid, clientParam) {
 
     return createSessionFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -152,7 +152,7 @@ async function getSessionWithSessionId(id, clientParam) {
 
     return createSessionFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -175,7 +175,7 @@ async function getClientWithClientId(id, clientParam) {
 
     return createClientFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -195,7 +195,7 @@ async function getMostRecentSessionPhone(twilioNumber, clientParam) {
 
     return createSessionFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -214,7 +214,7 @@ async function getHistoryOfSessions(locationid, clientParam) {
 
     return results.rows.map(r => createSessionFromRow(r))
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -233,7 +233,7 @@ async function getUnrespondedSessionWithLocationId(locationid, clientParam) {
 
     return createSessionFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -252,7 +252,7 @@ async function getAllSessionsFromLocation(locationid, clientParam) {
 
     return results.rows.map(r => createSessionFromRow(r))
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -267,7 +267,7 @@ async function createSession(locationid, phoneNumber, alertType, clientParam) {
     )
     return createSessionFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -286,7 +286,7 @@ async function updateSentAlerts(locationid, sentalerts, clientParam) {
 
     return await createLocationFromRow(results.rows[0], clientParam)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -324,7 +324,7 @@ async function saveSession(session, clientParam) {
       clientParam,
     )
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -355,7 +355,7 @@ async function getHistoricAlertsByAlertApiKey(alertApiKey, maxHistoricAlerts, ma
 
     return results.rows
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -370,7 +370,7 @@ async function getLocationData(locationid, clientParam) {
 
     return await createLocationFromRow(results.rows[0], clientParam)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -385,7 +385,7 @@ async function getLocationsFromAlertApiKey(alertApiKey, clientParam) {
 
     return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -405,7 +405,7 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
 
     return await createLocationFromRow(results.rows[0], clientParam)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -430,7 +430,7 @@ async function getLocationsFromClientId(clientId, clientParam) {
 
     return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -449,7 +449,7 @@ async function getActiveServerStateMachineLocations(clientParam) {
 
     return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -468,7 +468,7 @@ async function getActiveFirmwareStateMachineLocations(clientParam) {
 
     return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -493,7 +493,7 @@ async function getLocations(clientParam) {
 
     return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -516,7 +516,7 @@ async function getClients(clientParam) {
 
     return await Promise.all(results.rows.map(r => createClientFromRow(r, clientParam)))
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -581,7 +581,7 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
     helpers.log(`Location '${locationid}' successfully updated`)
     return await createLocationFromRow(results.rows[0], clientParam)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -607,7 +607,7 @@ async function updateClient(displayName, fromPhoneNumber, id, clientParam) {
 
     return await createClientFromRow(results.rows[0], clientParam)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -634,7 +634,7 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
 
     helpers.log(`New location inserted into Database: ${locationid}`)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -669,7 +669,7 @@ async function createLocation(locationid, phonenumber, movementThreshold, stilln
       clientParam,
     )
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -687,7 +687,7 @@ async function createClient(displayName, fromPhoneNumber, clientParam) {
     )
     return createClientFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -700,7 +700,7 @@ async function clearSessions(clientParam) {
   try {
     await runQuery('clearSessions', 'DELETE FROM sessions', [], clientParam)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -708,7 +708,7 @@ async function clearSessionsFromLocation(locationid, clientParam) {
   try {
     await runQuery('clearSessionsFromLocation', 'DELETE FROM sessions where locationid = $1', [locationid], clientParam)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -721,7 +721,7 @@ async function clearLocations(clientParam) {
   try {
     await runQuery('clearLocations', 'DELETE FROM locations', [], clientParam)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -729,7 +729,7 @@ async function clearLocation(locationid, clientParam) {
   try {
     await runQuery('clearLocation', 'DELETE FROM locations where locationid = $1', [locationid], clientParam)
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -748,7 +748,7 @@ async function clearClients(clientParam) {
       clientParam,
     )
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
@@ -764,7 +764,7 @@ async function clearClientWithDisplayName(displayName, clientParam) {
       clientParam,
     )
   } catch (err) {
-    helpers.log(JSON.stringify(err))
+    helpers.log(err.toString())
   }
 }
 
