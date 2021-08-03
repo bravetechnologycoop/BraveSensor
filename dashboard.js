@@ -130,7 +130,6 @@ async function submitLogout(req, res) {
 
 async function renderDashboardPage(req, res) {
   try {
-    // Needed for the navigation bar
     const clients = await db.getClients()
     const allLocations = await db.getLocations()
 
@@ -143,18 +142,21 @@ async function renderDashboardPage(req, res) {
       }
     }
 
+    for (const client of clients) {
+      client.locations = allLocations
+        .filter(location => location.client.id === client.id)
+        .map(location => {
+          return {
+            name: location.displayName,
+            id: location.locationid,
+            sessionStart: location.sessionStart,
+            isActive: location.isActive,
+          }
+        })
+    }
+
     const viewParams = {
       clients,
-      locations: allLocations.map(location => {
-        return {
-          name: location.displayName,
-          id: location.locationid,
-          sessionStart: location.sessionStart,
-          isActive: location.isActive,
-          clientId: location.client.id,
-          clientDisplayName: location.client.displayName,
-        }
-      }),
     }
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
