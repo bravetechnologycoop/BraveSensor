@@ -307,7 +307,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     })
   })
 
-  describe('for a request that contains all valid non-empty fields but with a non-existant clientId', () => {
+  describe('for a request that contains all valid non-empty fields but with a nonexistent clientId', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
         username: helpers.getEnvVar('WEB_USERNAME'),

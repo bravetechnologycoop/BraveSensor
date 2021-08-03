@@ -108,7 +108,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
     })
   })
 
-  describe('for a request with an non-existant client ID', () => {
+  describe('for a request with an nonexistent client ID', () => {
     beforeEach(async () => {
       sandbox.spy(db, 'createLocationFromBrowserForm')
 
