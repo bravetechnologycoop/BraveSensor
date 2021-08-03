@@ -10,7 +10,9 @@ const { clientFactory } = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKey', () => {
   beforeEach(async () => {
+    await db.clearSessions()
     await db.clearLocations()
+    await db.clearClients()
 
     this.expectedLocationId = 'TEST LOCATION'
 
@@ -61,7 +63,7 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
   })
 
   describe('given a API key that matches more than one location', () => {
-    before(async () => {
+    beforeEach(async () => {
       this.anotherExpectedLocationId = 'TEST LOCATION 2'
       // Insert another location in the DB
       await db.createLocation(
