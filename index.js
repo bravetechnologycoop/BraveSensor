@@ -444,11 +444,12 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(),
         response.status(200).json(errorMessage)
       } else {
         const message = JSON.parse(request.body.data)
-        const doorStatus = message.door_status
-        const doorTime = message.door_time
-        const insTime = message.ins_time
+        const missedDoorMessages = message.md
+        const doorLowBattery = message.lb
+        const doorHeartbeatReceived = message.dh
+        const stateTransitions = message.states
 
-        await redis.addEdgeDeviceHeartbeat(location.locationid, doorStatus, doorTime, insTime)
+        await redis.addEdgeDeviceHeartbeat(location.locationid, missedDoorMessages, doorLowBattery, doorHeartbeatReceived, stateTransitions)
 
         response.status(200).json('OK')
       }
