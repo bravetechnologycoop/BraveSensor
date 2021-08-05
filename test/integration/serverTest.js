@@ -9,6 +9,7 @@ const sinon = require('sinon')
 const { ALERT_TYPE, helpers } = require('brave-alert-lib')
 const { sleep } = require('brave-alert-lib/lib/helpers')
 const imports = require('../../index')
+const im21door = require('../../im21door')
 
 const db = imports.db
 const redis = imports.redis
@@ -23,7 +24,6 @@ const MOVEMENT_THRESHOLD = 40
 const INITIAL_TIMER = 1
 const STILLNESS_TIMER = 1.5
 const DURATION_TIMER = 3
-const IM21_DOOR_STATUS = require('../../IM21DoorStatusEnum')
 const { getRandomArbitrary, getRandomInt, printRandomIntArray, clientFactory } = require('../../testingHelpers')
 const STATE = require('../../stateMachine/SessionStateEnum')
 
@@ -282,7 +282,7 @@ describe('Brave Sensor server', () => {
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
-      await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+      await im21Door(door_coreID, im21door.createClosedSignal())
     })
 
     afterEach(async () => {
@@ -336,7 +336,7 @@ describe('Brave Sensor server', () => {
       for (let i = 0; i < 20; i += 1) {
         await xeThruMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
       }
-      await im21Door(door_coreID, IM21_DOOR_STATUS.OPEN)
+      await im21Door(door_coreID, im21door.createOpenSignal())
       const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(20)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
@@ -402,7 +402,7 @@ describe('Brave Sensor server', () => {
         false,
         client.id,
       )
-      await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+      await im21Door(door_coreID, im21door.createClosedSignal())
       sandbox.spy(StateMachine, 'getNextState')
     })
 
@@ -483,7 +483,7 @@ describe('Brave Sensor server', () => {
         false,
         client.id,
       )
-      await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+      await im21Door(door_coreID, im21door.createClosedSignal())
       sandbox.spy(StateMachine, 'getNextState')
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
@@ -540,7 +540,7 @@ describe('Brave Sensor server', () => {
       for (let i = 0; i < 20; i += 1) {
         await innosentMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
       }
-      await im21Door(door_coreID, IM21_DOOR_STATUS.OPEN)
+      await im21Door(door_coreID, im21door.createOpenSignal())
       const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
       expect(radarRows.length).to.equal(300)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
@@ -606,7 +606,7 @@ describe('Brave Sensor server', () => {
         false,
         client.id,
       )
-      await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+      await im21Door(door_coreID, im21door.createClosedSignal())
     })
 
     afterEach(async () => {
@@ -655,7 +655,7 @@ describe('Brave Sensor server', () => {
   })
 
   describe('Express validation of API and form endpoints', () => {
-    describe('api/door endpoint', () => {
+    describe('/api/door endpoint', () => {
       beforeEach(async () => {
         await redis.clearKeys()
         await db.clearSessions()
@@ -684,7 +684,7 @@ describe('Brave Sensor server', () => {
           false,
           client.id,
         )
-        await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+        await im21Door(door_coreID, im21door.createClosedSignal())
       })
 
       afterEach(async () => {
@@ -698,7 +698,7 @@ describe('Brave Sensor server', () => {
       it('should return 200 for a valid request', async () => {
         const goodRequest = {
           coreid: door_coreID,
-          data: `{ "data": "${IM21_DOOR_STATUS.CLOSED}", "control": "86"}`,
+          data: `{ "data": "${im21door.createClosedSignal()}", "control": "86"}`,
         }
 
         const response = await chai.request(server).post('/api/door').send(goodRequest)
@@ -707,7 +707,7 @@ describe('Brave Sensor server', () => {
 
       it('should return 200 for a request that does not contain coreid', async () => {
         const badRequest = {
-          data: `{ "data": "${IM21_DOOR_STATUS.CLOSED}", "control": "86"}`,
+          data: `{ "data": "${im21door.createClosedSignal()}", "control": "86"}`,
         }
 
         const response = await chai.request(server).post('/api/door').send(badRequest)
@@ -753,7 +753,7 @@ describe('Brave Sensor server', () => {
           false,
           client.id,
         )
-        await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+        await im21Door(door_coreID, im21door.createClosedSignal())
       })
 
       afterEach(async () => {
