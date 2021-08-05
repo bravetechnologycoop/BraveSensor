@@ -14,7 +14,7 @@ const StateMachine = require('./stateMachine/StateMachine')
 const SENSOR_EVENT = require('./SensorEventEnum')
 const RADAR_TYPE = require('./RadarTypeEnum')
 const BraveAlerterConfigurator = require('./BraveAlerterConfigurator')
-const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
+const im21door = require('./im21door')
 const DOOR_STATUS = require('./SessionStateDoorEnum')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
@@ -351,17 +351,19 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         const message = JSON.parse(request.body.data)
         const signal = message.data
         const control = message.control
-        let doorSignal
-        if (signal === IM21_DOOR_STATUS.OPEN || signal === IM21_DOOR_STATUS.HEARTBEAT_OPEN) {
-          doorSignal = DOOR_STATUS.OPEN
-        } else if (signal === IM21_DOOR_STATUS.CLOSED || signal === IM21_DOOR_STATUS.HEARTBEAT_CLOSED) {
-          doorSignal = DOOR_STATUS.CLOSED
-        } else if (signal === IM21_DOOR_STATUS.LOW_BATT) {
-          doorSignal = 'LowBatt'
+
+        const doorSignal = im21door.isOpen(signal) ? DOOR_STATUS.OPEN : DOOR_STATUS.CLOSED
+        await redis.addIM21DoorSensorData(locationid, doorSignal, control)
+
+        if (im21door.isLowBattery(signal)) {
           helpers.logSentry(`Received a low battery alert for ${locationid}`)
           sendSingleAlert(locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
         }
-        await redis.addIM21DoorSensorData(locationid, doorSignal, control)
+
+        if (im21door.isTampered(signal)) {
+          helpers.logSentry(`Received an IM21 tamper alarm for ${locationid}`)
+        }
+
         if (location.isActive && !location.heartbeatSentAlerts) {
           await StateMachine.getNextState(location, handleAlert)
         }

@@ -1,11 +1,14 @@
-const { helpers } = require('brave-alert-lib')
+// Third-party dependencies
 const axios = require('axios').default
+
+// In-house dependencies
+const { helpers } = require('brave-alert-lib')
 const { getRandomArbitrary, getRandomInt } = require('./testingHelpers')
 const RADAR_TYPE = require('./RadarTypeEnum')
 const XETHRU_STATE = require('./SessionStateXethruEnum')
+const im21door = require('./im21door')
 
 const MOV_THRESHOLD = 17
-const IM21_DOOR_STATUS = require('./IM21DoorStatusEnum')
 
 const door_coreID = 'door_coreID'
 const radar_coreID = 'radar_coreID'
@@ -92,11 +95,11 @@ async function smokeTest(recipientPhoneNumber, twilioPhoneNumber) {
     for (let i = 0; i < 15; i += 1) {
       await xeThruMovement(radar_coreID, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
     }
-    await im21Door(door_coreID, IM21_DOOR_STATUS.OPEN)
+    await im21Door(door_coreID, im21door.createOpenSignal())
     for (let i = 0; i < 5; i += 1) {
       await xeThruMovement(radar_coreID, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
     }
-    await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
+    await im21Door(door_coreID, im21door.createClosedSignal())
     for (let i = 0; i < 15; i += 1) {
       await xeThruMovement(radar_coreID, getRandomInt(0, MOV_THRESHOLD), getRandomInt(0, MOV_THRESHOLD))
     }
