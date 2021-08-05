@@ -1,7 +1,7 @@
 const { ALERT_TYPE, helpers } = require('brave-alert-lib')
 const stateMachineHelpers = require('./stateMachineHelpers')
 const redis = require('../db/redis')
-const DOOR_STATUS = require('../SessionStateDoorEnum')
+const DOOR_STATE = require('../SessionStateDoorEnum')
 const STATE = require('./SessionStateEnum')
 
 async function getNextState(location, handleAlert) {
@@ -23,19 +23,19 @@ async function getNextState(location, handleAlert) {
 
     switch (state) {
       case STATE.IDLE:
-        if (door.signal === DOOR_STATUS.CLOSED && movementOverThreshold) {
+        if (door.signal === DOOR_STATE.CLOSED && movementOverThreshold) {
           await redis.addStateMachineData(STATE.INITIAL_TIMER, location.locationid)
         }
         break
       case STATE.INITIAL_TIMER:
-        if (door.signal === DOOR_STATUS.OPEN || !movementOverThreshold) {
+        if (door.signal === DOOR_STATE.OPEN || !movementOverThreshold) {
           await redis.addStateMachineData(STATE.IDLE, location.locationid)
         } else if (await stateMachineHelpers.timerExceeded(location.locationid, parseInt(location.initialTimer, 10), STATE.INITIAL_TIMER)) {
           await redis.addStateMachineData(STATE.DURATION_TIMER, location.locationid)
         }
         break
       case STATE.DURATION_TIMER:
-        if (door.signal === DOOR_STATUS.OPEN) {
+        if (door.signal === DOOR_STATE.OPEN) {
           await redis.addStateMachineData(STATE.IDLE, location.locationid)
         } else if (!movementOverThreshold) {
           await redis.addStateMachineData(STATE.STILLNESS_TIMER, location.locationid)
@@ -51,7 +51,7 @@ async function getNextState(location, handleAlert) {
         }
         break
       case STATE.STILLNESS_TIMER:
-        if (door.signal === DOOR_STATUS.OPEN) {
+        if (door.signal === DOOR_STATE.OPEN) {
           await redis.addStateMachineData(STATE.IDLE, location.locationid)
         } else if (movementOverThreshold) {
           await redis.addStateMachineData(STATE.DURATION_TIMER, location.locationid)

@@ -15,7 +15,7 @@ const SENSOR_EVENT = require('./SensorEventEnum')
 const RADAR_TYPE = require('./RadarTypeEnum')
 const BraveAlerterConfigurator = require('./BraveAlerterConfigurator')
 const im21door = require('./im21door')
-const DOOR_STATUS = require('./SessionStateDoorEnum')
+const DOOR_STATE = require('./SessionStateDoorEnum')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
 
@@ -352,7 +352,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         const signal = message.data
         const control = message.control
 
-        const doorSignal = im21door.isOpen(signal) ? DOOR_STATUS.OPEN : DOOR_STATUS.CLOSED
+        const doorSignal = im21door.isOpen(signal) ? DOOR_STATE.OPEN : DOOR_STATE.CLOSED
         await redis.addIM21DoorSensorData(locationid, doorSignal, control)
 
         if (im21door.isLowBattery(signal)) {
