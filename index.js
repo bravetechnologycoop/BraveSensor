@@ -5,6 +5,7 @@ const fs = require('fs')
 const https = require('https')
 const cors = require('cors')
 const Validator = require('express-validator')
+const axios = require('axios')
 
 // In-house dependencies
 const { ALERT_TYPE, helpers } = require('brave-alert-lib')
@@ -83,8 +84,22 @@ async function handleAlert(location, alertType) {
         fallbackMessage: `An alert to check on the bathroom at ${location.displayName} was not responded to. Please check on it`,
         fallbackToPhoneNumbers: location.fallbackNumbers,
         fallbackFromPhoneNumber: location.client.fromPhoneNumber,
+        sirenParticleId: location.siren_particle_id,
       }
-      braveAlerter.startAlertSession(alertInfo)
+
+      if (location.siren_particle_id != null) {
+        try{
+          await axios.post('https://api.particle.io/v1/devices/location.siren_particle_id/start-siren', {
+            arg: 'start',
+            access_token: process.env.ACCESS_TOKEN
+          })
+        } catch (e) {
+          helpers.log(e)
+        }
+      } else if (location.siren_particle_id == null) {
+        braveAlerter.startAlertSession(alertInfo)
+      }
+      
     } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
       helpers.log('handleAlert: sending singleAlert')
       await db.saveSession(currentSession, client)
