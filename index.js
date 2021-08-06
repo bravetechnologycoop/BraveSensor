@@ -197,6 +197,21 @@ async function checkHeartbeat() {
   }
 }
 
+function reformatHeartbeatStates(stateTransitionsArrays) {
+  let stateTransitionsObjects = []
+  stateTransitionsArrays.forEach(objToArray)
+  const reasonsTable = ["movement","no_movement","door_open","initial_timer","duration_alert","stillness_alert"]
+  function objToArray(value) {
+    const stateObject = {
+      "state": value[0],
+      "reason": reasonsTable[value[1]],
+      "time": value[2]
+    }
+    displayName.push(stateObject)
+  }
+  return stateTransitionsObjects
+}
+
 // Add routes
 routes.configureRoutes(app)
 
@@ -447,7 +462,7 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(),
         const missedDoorMessages = message.md
         const doorLowBattery = message.lb
         const doorHeartbeatReceived = message.dh
-        const stateTransitions = message.states
+        const stateTransitions = reformatHeartbeatStates(message.states)
 
         await redis.addEdgeDeviceHeartbeat(location.locationid, missedDoorMessages, doorLowBattery, doorHeartbeatReceived, stateTransitions)
 
