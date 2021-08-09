@@ -198,17 +198,17 @@ async function checkHeartbeat() {
 }
 
 function reformatHeartbeatStates(stateTransitionsArrays) {
-  let stateTransitionsObjects = []
-  stateTransitionsArrays.forEach(objToArray)
-  const reasonsTable = ["movement","no_movement","door_open","initial_timer","duration_alert","stillness_alert"]
+  const reasonsTable = ['movement', 'no_movement', 'door_open', 'initial_timer', 'duration_alert', 'stillness_alert']
+  const stateTransitionsObjects = []
   function objToArray(value) {
     const stateObject = {
-      "state": value[0],
-      "reason": reasonsTable[value[1]],
-      "time": value[2]
+      state: value[0],
+      reason: reasonsTable[value[1]],
+      time: value[2],
     }
-    displayName.push(stateObject)
+    stateTransitionsObjects.push(stateObject)
   }
+  stateTransitionsArrays.forEach(objToArray)
   return stateTransitionsObjects
 }
 
