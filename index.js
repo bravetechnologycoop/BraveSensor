@@ -74,30 +74,23 @@ async function handleAlert(location, alertType) {
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
       const newSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertType, client)
 
-      const alertInfo = {
-        sessionId: newSession.id,
-        toPhoneNumber: location.responderPhoneNumber,
-        fromPhoneNumber: location.twilioNumber,
-        message: `This is a ${alertTypeDisplayName} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
-        reminderTimeoutMillis: location.reminderTimer,
-        fallbackTimeoutMillis: location.fallbackTimer,
-        reminderMessage: `This is a reminder to check on the bathroom`,
-        fallbackMessage: `An alert to check on the bathroom at ${location.displayName} was not responded to. Please check on it`,
-        fallbackToPhoneNumbers: location.fallbackNumbers,
-        fallbackFromPhoneNumber: location.client.fromPhoneNumber,
-        sirenParticleId: location.siren_particle_id,
-      }
-
-      if (location.siren_particle_id !== null) {
+      if (location.sirenParticleId !== null) {
         try{
-          await axios.post('https://api.particle.io/v1/devices/${location.siren_particle_id}/start-siren', {
-            arg: 'start',
-            access_token: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN')
-          })
+          var fnPr = particle.callFunction({
+            deviceId: `${location.sirenParticleId}`,
+            name: `start-siren`, argument: `start`,
+            auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN')
+          });
+          fnPr.then(
+            function(data) {
+              console.log('Function called succesfully:', data);
+            }, function(err) {
+              console.log('An error occurred:', err);
+            });
         } catch (e) {
-          helpers.log(e)
+          helpers.logError(e)
         }
-      } else if (location.siren_particle_id === null) {
+      } else {
         const alertInfo = {
           sessionId: newSession.id,
           toPhoneNumber: location.responderPhoneNumber,
@@ -109,7 +102,6 @@ async function handleAlert(location, alertType) {
           fallbackMessage: `An alert to check on the bathroom at ${location.displayName} was not responded to. Please check on it`,
           fallbackToPhoneNumbers: location.fallbackNumbers,
           fallbackFromPhoneNumber: location.client.fromPhoneNumber,
-          sirenParticleId: location.siren_particle_id,
         }
         braveAlerter.startAlertSession(alertInfo)
       }
