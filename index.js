@@ -5,7 +5,7 @@ const fs = require('fs')
 const https = require('https')
 const cors = require('cors')
 const Validator = require('express-validator')
-const axios = require('axios')
+const particle = require('particle-api-js')
 
 // In-house dependencies
 const { ALERT_TYPE, helpers } = require('brave-alert-lib')
@@ -75,18 +75,21 @@ async function handleAlert(location, alertType) {
       const newSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertType, client)
 
       if (location.sirenParticleId !== null) {
-        try{
-          var fnPr = particle.callFunction({
+        try {
+          const fnPr = particle.callFunction({
             deviceId: `${location.sirenParticleId}`,
-            name: `start-siren`, argument: `start`,
-            auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN')
-          });
+            name: `start-siren`,
+            argument: `start`,
+            auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
+          })
           fnPr.then(
-            function(data) {
-              console.log('Function called succesfully:', data);
-            }, function(err) {
-              console.log('An error occurred:', err);
-            });
+            function (data) {
+              console.log('Function called succesfully:', data)
+            },
+            function (err) {
+              console.log('An error occurred:', err)
+            },
+          )
         } catch (e) {
           helpers.logError(e)
         }
@@ -105,7 +108,6 @@ async function handleAlert(location, alertType) {
         }
         braveAlerter.startAlertSession(alertInfo)
       }
-
     } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
       helpers.log('handleAlert: sending singleAlert')
       await db.saveSession(currentSession, client)
