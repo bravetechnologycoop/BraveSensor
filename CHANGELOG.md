@@ -16,12 +16,14 @@ the code was deployed.
 - Alert Type to the Dashboard.
 - Tracking of when sessions are first responded to (CU-hjwfx2).
 - `GET /alert/historicAlerts` endpoint (CU-hjwfx2).
+- Low battery checks in heartbeat api for firmware state machine (CU-4avrhp)
 
 ### Changed
 
 - Use an enum for Alert Type in the DB and from Alert Lib instead of strings.
 - Use the `from_phone_number` from the database for heartbeat and fallback messages (CU-qv3nj3).
 - Updated dashboard to reflect the new structure of `Client` and `Location` (CU-qv3nj3).
+- Heartbeat messages enriched, including state transition data (CU-1c1qd5u).
 
 ### Removed
 

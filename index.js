@@ -197,19 +197,14 @@ async function checkHeartbeat() {
   }
 }
 
-function reformatHeartbeatStates(stateTransitionsArrays) {
+function convertStateArrayToObject(stateTransition) {
   const reasonsTable = ['movement', 'no_movement', 'door_open', 'initial_timer', 'duration_alert', 'stillness_alert']
-  const stateTransitionsObjects = []
-  function objToArray(value) {
-    const stateObject = {
-      state: value[0],
-      reason: reasonsTable[value[1]],
-      time: value[2],
-    }
-    stateTransitionsObjects.push(stateObject)
+  const stateObject = {
+    state: stateTransition[0],
+    reason: reasonsTable[stateTransition[1]],
+    time: stateTransition[2],
   }
-  stateTransitionsArrays.forEach(objToArray)
-  return stateTransitionsObjects
+  return stateObject
 }
 
 // Add routes
@@ -443,7 +438,7 @@ app.post(
   },
 )
 
-app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(), async (request, response) => {
+app.post('/api/heartbeat', Validator.body(['coreid', 'data']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
 
@@ -457,13 +452,21 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(),
         response.status(200).json(errorMessage)
       } else {
         const message = JSON.parse(request.body.data)
-        const missedDoorMessages = message.md
-        const doorLowBattery = message.lb
-        const doorHeartbeatReceived = message.dh
-        const stateTransitions = reformatHeartbeatStates(message.states)
-
-        await redis.addEdgeDeviceHeartbeat(location.locationid, missedDoorMessages, doorLowBattery, doorHeartbeatReceived, stateTransitions)
-
+        const missedDoorMessagesCount = message.missedDoor
+        const doorLowBatteryFlag = message.lowBatt
+        const millisSinceDoorHeartbeat = message.doorHeartbeat
+        const stateTransitionsArray = message.states.map(convertStateArrayToObject)
+        if (doorLowBatteryFlag) {
+          helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
+          sendSingleAlert(location.locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
+        }
+        await redis.addEdgeDeviceHeartbeat(
+          location.locationid,
+          missedDoorMessagesCount,
+          doorLowBatteryFlag,
+          millisSinceDoorHeartbeat,
+          stateTransitionsArray,
+        )
         response.status(200).json('OK')
       }
     } else {
