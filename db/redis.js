@@ -119,12 +119,13 @@ async function addVitals(locationid, signalStrength, cloudDisconnects) {
 // ignore comments included to allow arguments to be split across lines in pairs
 // prettier-ignore
 /* eslint-disable function-call-argument-newline */
-async function addEdgeDeviceHeartbeat(locationid, missedDoorMessagesCount, doorLowBatteryFlag, millisSinceDoorHeartbeat, stateTransitionsArray) {
+async function addEdgeDeviceHeartbeat(locationid, missedDoorMessagesCount, doorLowBatteryFlag, millisSinceDoorHeartbeat, resetReason, stateTransitionsArray) {
   client.xadd(
     `heartbeat:${locationid}`, 'MAXLEN', '~', '10000', '*',
     'missedDoorMessagesCount', missedDoorMessagesCount,
     'doorLowBatteryFlag', doorLowBatteryFlag,
     'millisSinceDoorHeartbeat', millisSinceDoorHeartbeat,
+    'resetReason', resetReason,
     'stateTransitionsArray', JSON.stringify(stateTransitionsArray)
   )
 }

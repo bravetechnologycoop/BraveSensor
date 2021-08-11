@@ -121,8 +121,8 @@ async function sendDisconnectionMessage(locationid, displayName) {
   )
 }
 
-async function sendReconnectionMessage(locationid, displayName) {
-  await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has been reconnected.`)
+async function sendReconnectionMessage(locationid, displayName, resetReason) {
+  await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has been reconnected after reason: ${resetReason}.`)
 }
 
 // Heartbeat Helper Functions
@@ -186,9 +186,9 @@ async function checkHeartbeat() {
           await db.updateSentAlerts(location.locationid, true)
           sendDisconnectionMessage(location.locationid, location.displayName)
         } else if (!heartbeatExceeded && location.heartbeatSentAlerts) {
-          helpers.logSentry(`${location.locationid} reconnected`)
+          helpers.logSentry(`${location.locationid} reconnected after reason: ${latestHeartbeat.resetReason}`)
           await db.updateSentAlerts(location.locationid, false)
-          sendReconnectionMessage(location.locationid, location.displayName)
+          sendReconnectionMessage(location.locationid, location.displayName, latestHeartbeat.resetReason)
         }
       }
     } catch (err) {
@@ -455,6 +455,7 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'data']).exists(), async (r
         const missedDoorMessagesCount = message.missedDoor
         const doorLowBatteryFlag = message.lowBatt
         const millisSinceDoorHeartbeat = message.doorHeartbeat
+        const resetReason = message.resetReason
         const stateTransitionsArray = message.states.map(convertStateArrayToObject)
         if (doorLowBatteryFlag) {
           helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
@@ -465,6 +466,7 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'data']).exists(), async (r
           missedDoorMessagesCount,
           doorLowBatteryFlag,
           millisSinceDoorHeartbeat,
+          resetReason,
           stateTransitionsArray,
         )
         response.status(200).json('OK')

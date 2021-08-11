@@ -4,7 +4,8 @@ class HeartbeatData {
     this.missedDoorMessagesCount = streamEntry[1][1]
     this.doorLowBatteryFlag = streamEntry[1][3]
     this.millisSinceDoorHeartbeat = streamEntry[1][5]
-    this.stateTransitionsArray = streamEntry[1][7]
+    this.resetReason = streamEntry[1][7]
+    this.stateTransitionsArray = streamEntry[1][9]
   }
 }
 
