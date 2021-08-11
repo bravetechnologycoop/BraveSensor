@@ -76,20 +76,13 @@ async function handleAlert(location, alertType) {
 
       if (location.sirenParticleId !== null) {
         try {
-          const fnPr = particle.callFunction({
-            deviceId: `${location.sirenParticleId}`,
+          await particle.callFunction({
+            deviceId: location.sirenParticleId,
             name: `start-siren`,
             argument: `start`,
             auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
           })
-          fnPr.then(
-            function (data) {
-              console.log('Function called succesfully:', data)
-            },
-            function (err) {
-              console.log('An error occurred:', err)
-            },
-          )
+          helpers.log('Brave Siren started successfully')
         } catch (e) {
           helpers.logError(e)
         }
