@@ -125,7 +125,7 @@ async function addEdgeDeviceHeartbeat(locationid, missedDoorMessagesCount, doorL
     'missedDoorMessagesCount', missedDoorMessagesCount,
     'doorLowBatteryFlag', doorLowBatteryFlag,
     'millisSinceDoorHeartbeat', millisSinceDoorHeartbeat,
-    'stateTransitionsArray', stateTransitionsArray
+    'stateTransitionsArray', JSON.stringify(stateTransitionsArray)
   )
 }
 
