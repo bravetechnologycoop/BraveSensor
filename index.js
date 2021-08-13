@@ -122,7 +122,11 @@ async function sendDisconnectionMessage(locationid, displayName) {
 }
 
 async function sendReconnectionMessage(locationid, displayName, resetReason) {
-  await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has been reconnected after reason: ${resetReason}.`)
+  if (resetReason === undefined) {
+    await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has been reconnected`)
+  } else {
+    await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has reconnected after reason: ${resetReason}.`)
+  }
 }
 
 // Heartbeat Helper Functions
