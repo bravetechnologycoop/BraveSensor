@@ -12,23 +12,25 @@ use(sinonChai)
 describe('HeartbeatTest.js unit tests', () => {
   describe('when given state transitions array', () => {
     it('should reformat the state transitions array', () => {
-      const stateTransitionsArray = [
-        [0, 0, 1],
-        // [1,1,1000],
-        // [2,2,1000],
-        // [3,3,1000],
-        // [0,4,4294967295],
-        // [1,5,1000],
-        // [2,6,1000]
-      ]
-      const stateTransitionsArrayReadable = [
+      const stateTransitionsArray1 = [[0, 0, 1]]
+      const stateTransitionsArrayReadable1 = [
         {
           state: 0,
           reason: 'movement',
           time: 1,
         },
       ]
-      expect(stateTransitionsArray.map(index.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
+      expect(stateTransitionsArray1.map(index.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable1)
+
+      const stateTransitionsArray2 = [[1, 4, 4294967295]]
+      const stateTransitionsArrayReadable2 = [
+        {
+          state: 1,
+          reason: 'duration_alert',
+          time: 4294967295,
+        },
+      ]
+      expect(stateTransitionsArray2.map(index.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable2)
     })
   })
 })
