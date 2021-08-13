@@ -551,4 +551,3 @@ module.exports.db = db
 module.exports.routes = routes
 module.exports.redis = redis
 module.exports.braveAlerter = braveAlerter
-module.exports.convertStateArrayToObject = convertStateArrayToObject
