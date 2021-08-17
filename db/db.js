@@ -105,7 +105,7 @@ async function createLocationFromRow(r, clientParam) {
     const client = createClientFromRow(results.rows[0])
 
     // prettier-ignore
-    return new Location(r.locationid, r.display_name, r.responder_phone_number, r.movement_threshold, r.duration_timer, r.stillness_timer, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.alert_api_key, r.is_active, r.firmware_state_machine, client)
+    return new Location(r.locationid, r.display_name, r.responder_phone_number, r.movement_threshold, r.duration_timer, r.stillness_timer, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.alert_api_key, r.is_active, r.firmware_state_machine, r.last_low_battery_alert, client)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -278,6 +278,25 @@ async function updateSentAlerts(locationid, sentalerts, clientParam) {
       'updateSentAlerts',
       'UPDATE locations SET heartbeat_sent_alerts = $1 WHERE locationid = $2 RETURNING *',
       [sentalerts, locationid],
+      clientParam,
+    )
+    if (results === undefined) {
+      return null
+    }
+
+    return await createLocationFromRow(results.rows[0], clientParam)
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+// Updates the value of the low battery alert time to current time for a specific location
+async function updateLowBatteryAlertTime(locationid, clientParam) {
+  try {
+    const results = await runQuery(
+      'setLowBatteryAlertTime',
+      'UPDATE locations SET last_low_battery_alert = NOW() WHERE locationid = $1 RETURNING *',
+      [locationid],
       clientParam,
     )
     if (results === undefined) {
@@ -808,4 +827,5 @@ module.exports = {
   rollbackTransaction,
   getCurrentTime,
   createLocationFromBrowserForm,
+  updateLowBatteryAlertTime,
 }
