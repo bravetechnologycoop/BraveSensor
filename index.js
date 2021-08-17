@@ -211,6 +211,12 @@ function convertStateArrayToObject(stateTransition) {
   return stateObject
 }
 
+// Returns whether the last low battery alert was sent within the timeout threshold
+async function lowBatteryAlertTimeout(lastLowBatteryAlert) {
+  const currentTime = await db.getCurrentTime()
+  return currentTime - lastLowBatteryAlert < helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT_THRESHOLD')
+}
+
 // Add routes
 routes.configureRoutes(app)
 
@@ -372,6 +378,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         if (im21door.isLowBattery(signal)) {
           helpers.logSentry(`Received a low battery alert for ${locationid}`)
           sendSingleAlert(locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
+          await db.updateLowBatteryAlertTime(locationid)
         }
 
         if (im21door.isTampered(signal)) {
@@ -463,9 +470,10 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'data']).exists(), async (r
         const millisSinceDoorHeartbeat = message.doorHeartbeat
         const resetReason = message.resetReason
         const stateTransitionsArray = message.states.map(convertStateArrayToObject)
-        if (doorLowBatteryFlag) {
+        if (doorLowBatteryFlag && !lowBatteryAlertTimeout(location.lastLowBatteryAlert)) {
           helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
           sendSingleAlert(location.locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
+          await db.updateLowBatteryAlertTime(location.locationid)
         }
         await redis.addEdgeDeviceHeartbeat(
           location.locationid,
