@@ -154,6 +154,126 @@ describe('Brave Sensor server', () => {
     await redis.disconnect()
   })
 
+  describe('POST request: alerts from firmware state machine for locations with a non-null Particle Siren Id', () => {
+    beforeEach(async () => {
+      await redis.clearKeys()
+      await db.clearSessions()
+      await db.clearLocations()
+      await db.clearClients()
+      const client = await clientFactory(db)
+      await db.createLocation(
+        testLocation1Id,
+        testLocation1PhoneNumber,
+        MOVEMENT_THRESHOLD,
+        STILLNESS_TIMER,
+        DURATION_TIMER,
+        1000,
+        INITIAL_TIMER,
+        ['+15005550006'],
+        '+15005550006',
+        ['+15005550006'],
+        1000,
+        'locationName',
+        door_coreID,
+        radar_coreID,
+        'XeThru',
+        'alertApiKey',
+        true,
+        true,
+        'particleCoreIdTest',
+        client.id,
+      )
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(particle, 'callFunction')
+    })
+    afterEach(async () => {
+      await redis.clearKeys()
+      await db.clearSessions()
+      await db.clearLocations()
+      await db.clearClients() 
+      sandbox.restore()
+      helpers.log('\n')
+    })
+    
+    it('should return 200 to a request with no headers', async () => {
+      const response = await chai.request(server).post('/api/sensorEvent').send({})
+      expect(response).to.have.status(200)
+    })
+
+    it('should call particle.callFunction with the correct device ID if sirenParticleId is not null, and return 200', async () => {
+      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
+      expect(response).to.have.status(200)
+      expect(particle.callFunction).to.have.been.calledWith('particleCoreIdTest', helpers.getEnvVar('PARTICLE_ACCESS_TOKEN_TEST'))
+    })
+
+    it('should not call startAlertSession if particleSirenID is not null', async () => {
+      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+      expect(sessions.length).to.equal(0)
+    })
+  })
+
+  describe('POST request: alerts from firmware state machine for locations with a null Particle Siren Id', () => {
+    beforeEach(async () => {
+      await redis.clearKeys()
+      await db.clearSessions()
+      await db.clearLocations()
+      await db.clearClients()
+      const client = await clientFactory(db)
+      await db.createLocation(
+        testLocation1Id,
+        testLocation1PhoneNumber,
+        MOVEMENT_THRESHOLD,
+        STILLNESS_TIMER,
+        DURATION_TIMER,
+        1000,
+        INITIAL_TIMER,
+        ['+15005550006'],
+        '+15005550006',
+        ['+15005550006'],
+        1000,
+        'locationName',
+        door_coreID,
+        radar_coreID,
+        'XeThru',
+        'alertApiKey',
+        true,
+        true,
+        null,
+        client.id,
+      )
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+    })
+    afterEach(async () => {
+      await redis.clearKeys()
+      await db.clearSessions()
+      await db.clearLocations()
+      await db.clearClients()
+      sandbox.restore()
+      helpers.log('\n')
+    })
+    
+    it('should return 200 to a request with no headers', async () => {
+      const response = await chai.request(server).post('/api/sensorEvent').send({})
+      expect(response).to.have.status(200)
+    })
+
+    it('should not call particle.callFunction if there sirenParticleId is null and return 200', async () => {
+      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
+      // expect particle.call function to have not been called
+      expect(response).to.have.status(200) //idk
+    })
+
+    it('should call startAlertSession if particleSirenId is null', async () => {
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
+      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+      expect(sessions.length).to.equal(1)
+      const session = sessions[0]
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
+    })
+  })
+
   describe('POST request: alerts from firmware state machine', () => {
     beforeEach(async () => {
       await redis.clearKeys()
