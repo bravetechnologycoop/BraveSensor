@@ -199,6 +199,18 @@ describe('Brave Sensor server', () => {
     
     it('should return 200 to a request with no headers', async () => {
       const response = await chai.request(server).post('/api/sensorEvent').send({})
+      expect(helpers.logError).to.have.been.called
+      expect(response).to.have.status(200)
+    })
+
+    it('should return 200 for a valid request', async () => {
+      const response = await chai.request(server).post('/api/sensorEvent').send({
+        event: sensorEvent,
+        data: 'test-event',
+        ttl: 60,
+        published_at: '2021-06-14T22:49:16.091Z',
+        coreid: coreID,
+      })
       expect(response).to.have.status(200)
     })
 
@@ -257,6 +269,18 @@ describe('Brave Sensor server', () => {
     
     it('should return 200 to a request with no headers', async () => {
       const response = await chai.request(server).post('/api/sensorEvent').send({})
+      expect(helpers.logError).to.have.been.called
+      expect(response).to.have.status(200)
+    })
+
+    it('should return 200 for a valid request', async () => {
+      const response = await chai.request(server).post('/api/sensorEvent').send({
+        event: sensorEvent,
+        data: 'test-event',
+        ttl: 60,
+        published_at: '2021-06-14T22:49:16.091Z',
+        coreid: coreID,
+      })
       expect(response).to.have.status(200)
     })
 
