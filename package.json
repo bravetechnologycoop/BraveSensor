@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
-    "test": "NODE_ENV=test mocha --timeout 10000 \"test/**/*.js\"",
+    "test": "NODE_ENV=test mocha --timeout 1000000 \"test/**/*.js\"",
     "integrationtest": "NODE_ENV=test mocha --timeout 10000 \"test/integration/**/*.js\"",
     "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/unit/**/*.js\"",
     "smoketest": "node -e 'require(\"./smokeTest.js\")'"
@@ -36,6 +36,7 @@
     "mustache": "^3.2.1",
     "particle-api-js": "^7.4.0",
     "pg": "^7.18.2",
+    "react": "^17.0.2",
     "redis": "^3.0.2",
     "winston": "^3.3.3"
   },
