@@ -463,9 +463,9 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'data']).exists(), async (r
         response.status(200).json(errorMessage)
       } else {
         const message = JSON.parse(request.body.data)
-        const missedDoorMessagesCount = message.missedDoor
-        const doorLowBatteryFlag = message.lowBatt
-        const millisSinceDoorHeartbeat = message.doorHeartbeat
+        const missedDoorMessagesCount = message.doorMissedMsg
+        const doorLowBatteryFlag = message.doorLowBatt
+        const millisSinceDoorHeartbeat = message.doorLastHeartbeat
         const resetReason = message.resetReason
         const stateTransitionsArray = message.states.map(convertStateArrayToObject)
         if (doorLowBatteryFlag && !lowBatteryAlertTimeout(location.lastLowBatteryAlert)) {
