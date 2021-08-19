@@ -644,7 +644,7 @@ async function createLocation(locationid, phonenumber, movementThreshold, stilln
   try {
     await runQuery(
       'createLocation',
-      'INSERT INTO locations(locationid, responder_phone_number, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, alert_api_key, is_active, firmware_state_machine, sirenParticleId, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)',
+      'INSERT INTO locations(locationid, responder_phone_number, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, alert_api_key, is_active, firmware_state_machine, siren_particle_id, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)',
       [
         locationid,
         phonenumber,

@@ -10,6 +10,7 @@ const { ALERT_TYPE, helpers } = require('brave-alert-lib')
 const { sleep } = require('brave-alert-lib/lib/helpers')
 const imports = require('../../index')
 const im21door = require('../../im21door')
+const particle = require('particle-api-js')
 
 const db = imports.db
 const redis = imports.redis
