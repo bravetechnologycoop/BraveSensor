@@ -509,7 +509,6 @@ app.post('/api/siren-addressed', Validator.body(['coreid', 'event', 'data']).exi
           const session = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
           if (session) {
             session.respondedAt = await db.getCurrentTime(client)
-            session.chatbotState = CHATBOT_STATE.COMPLETED    
             await db.saveSession(session, client)
           } else {
             helpers.logError(`error stopping session and chatbot due to siren button press`)
