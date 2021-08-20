@@ -212,9 +212,9 @@ function convertStateArrayToObject(stateTransition) {
 }
 
 // Returns whether the last low battery alert was sent within the timeout threshold
-async function lowBatteryAlertTimeout(lastLowBatteryAlert) {
+async function lowBatteryAlertTimeout(sentLowBatteryAlertAt) {
   const currentTime = await db.getCurrentTime()
-  return currentTime - lastLowBatteryAlert < helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT_THRESHOLD')
+  return currentTime - sentLowBatteryAlertAt < helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT_THRESHOLD')
 }
 
 // Add routes
@@ -376,7 +376,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
           doorSignal = DOOR_STATUS.OPEN
         } else if (signal === IM21_DOOR_STATUS.CLOSED || signal === IM21_DOOR_STATUS.HEARTBEAT_CLOSED) {
           doorSignal = DOOR_STATUS.CLOSED
-        } else if (signal === IM21_DOOR_STATUS.LOW_BATT && !lowBatteryAlertTimeout(location.lastLowBatteryAlert)) {
+        } else if (signal === IM21_DOOR_STATUS.LOW_BATT && !lowBatteryAlertTimeout(location.sentLowBatteryAlertAt)) {
           doorSignal = 'LowBatt'
           helpers.logSentry(`Received a low battery alert for ${locationid}`)
           sendSingleAlert(locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
@@ -468,7 +468,7 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'data']).exists(), async (r
         const millisSinceDoorHeartbeat = message.doorLastHeartbeat
         const resetReason = message.resetReason
         const stateTransitionsArray = message.states.map(convertStateArrayToObject)
-        if (doorLowBatteryFlag && !lowBatteryAlertTimeout(location.lastLowBatteryAlert)) {
+        if (doorLowBatteryFlag && !lowBatteryAlertTimeout(location.sentLowBatteryAlertAt)) {
           helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
           sendSingleAlert(location.locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
           await db.updateLowBatteryAlertTime(location.locationid)
