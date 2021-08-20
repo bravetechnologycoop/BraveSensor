@@ -489,14 +489,13 @@ app.post('/api/siren-addressed', Validator.body(['coreid', 'event', 'data']).exi
     if (validationErrors.isEmpty()) {
       const coreId = request.body.coreid
       const location = await db.getLocationFromParticleCoreID(coreId)
-      
+
       if (!location) {
         const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
         helpers.logError(errorMessage)
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
         response.status(200).json(errorMessage)
       } else {
-        const message = JSON.parse(request.body.data)
         let client
 
         try {
@@ -513,7 +512,7 @@ app.post('/api/siren-addressed', Validator.body(['coreid', 'event', 'data']).exi
           } else {
             helpers.logError(`error stopping session and chatbot due to siren button press`)
           }
-    
+
           await db.commitTransaction(client)
         } catch (e) {
           try {
@@ -547,14 +546,13 @@ app.post('/api/siren-escalate', Validator.body(['coreid', 'event', 'data']).exis
     if (validationErrors.isEmpty()) {
       const coreId = request.body.coreid
       const location = await db.getLocationFromParticleCoreID(coreId)
-      
+
       if (!location) {
         const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
         helpers.logError(errorMessage)
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
         response.status(200).json(errorMessage)
       } else {
-        const message = JSON.parse(request.body.data)
         let client
 
         try {
@@ -566,12 +564,12 @@ app.post('/api/siren-escalate', Validator.body(['coreid', 'event', 'data']).exis
 
           const session = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
           if (session) {
-            session.chatbotState = CHATBOT_STATE.STARTED    
+            session.chatbotState = CHATBOT_STATE.STARTED
             await db.saveSession(session, client)
           } else {
             helpers.logError(`Siren not responded to - error starting normal chatbot`)
           }
-    
+
           await db.commitTransaction(client)
         } catch (e) {
           try {
@@ -597,8 +595,6 @@ app.post('/api/siren-escalate', Validator.body(['coreid', 'event', 'data']).exis
     response.status(200).json(errorMessage)
   }
 })
-
-
 
 app.post('/smokeTest/setup', async (request, response) => {
   const { recipientNumber, twilioNumber, radarType } = request.body
