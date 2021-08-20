@@ -217,7 +217,7 @@ describe('Brave Sensor server', () => {
     it('should call particle.callFunction with the correct device ID if sirenParticleId is not null, and return 200', async () => {
       const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       expect(response).to.have.status(200)
-      expect(particle.callFunction).to.have.been.calledWith('particleCoreIdTest', helpers.getEnvVar('PARTICLE_ACCESS_TOKEN_TEST'))
+      expect(particle.callFunction).to.have.been.calledWith('particleCoreIdTest', helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'))
     })
 
     it('should not call startAlertSession if particleSirenID is not null', async () => {
