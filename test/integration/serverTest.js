@@ -326,6 +326,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         true,
+        null,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -423,6 +424,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         false,
+        null,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -545,6 +547,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         false,
         false,
+        null,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -626,6 +629,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         false,
+        null,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -749,6 +753,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         false,
         false,
+        null,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -827,6 +832,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
+          null,
           client.id,
         )
         await im21Door(door_coreID, im21door.createClosedSignal())
@@ -896,6 +902,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
+          null,
           client.id,
         )
         await im21Door(door_coreID, im21door.createClosedSignal())
