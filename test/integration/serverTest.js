@@ -36,6 +36,7 @@ const testLocation1Id = 'TestLocation1'
 const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid1'
 const radar_coreID = 'radar_particlecoreid1'
+const lastLowBatteryAlert = '2021-03-09T19:37:28.176Z'
 
 async function firmwareAlert(coreID, sensorEvent) {
   try {
@@ -137,6 +138,30 @@ async function im21Door(doorCoreId, signal) {
         coreid: doorCoreId,
         data: `{ "data": "${signal}", "control": "86"}`,
       })
+    await helpers.sleep(50)
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
+async function nominalHeartbeat(coreId) {
+  try {
+    await chai.request(server).post('/api/heartbeat').send({
+      coreid: coreId,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+    })
+    await helpers.sleep(50)
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
+async function lowBatteryHeartbeat(coreId) {
+  try {
+    await chai.request(server).post('/api/heartbeat').send({
+      coreid: coreId,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+    })
     await helpers.sleep(50)
   } catch (e) {
     helpers.log(e)
@@ -821,6 +846,81 @@ describe('Brave Sensor server', () => {
         const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
         expect(response).to.have.status(400)
       })
+    })
+  })
+
+  describe('POST request heartbeat events with mock INS Firmware State Machine', () => {
+    beforeEach(async () => {
+      await redis.clearKeys()
+      await db.clearSessions()
+      await db.clearLocations()
+      await db.clearClients()
+
+      const client = await clientFactory(db)
+      await db.createLocation(
+        testLocation1Id,
+        testLocation1PhoneNumber,
+        MOVEMENT_THRESHOLD,
+        STILLNESS_TIMER,
+        DURATION_TIMER,
+        1000,
+        INITIAL_TIMER,
+        ['+15005550006'],
+        '+15005550006',
+        ['+15005550006'],
+        1000,
+        'locationName',
+        radar_coreID,
+        radar_coreID,
+        'Innosent',
+        'alertApiKey',
+        true,
+        true,
+        lastLowBatteryAlert,
+        client.id,
+      )
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+    })
+
+    afterEach(async () => {
+      await redis.clearKeys()
+      await db.clearSessions()
+      await db.clearLocations()
+      await db.clearClients()
+      sandbox.restore()
+      helpers.log('\n')
+    })
+
+    it('should return 200 for a heartbeat request with no headers', async () => {
+      const response = await chai.request(server).post('/api/heartbeat').send({})
+      expect(response).to.have.status(200)
+    })
+
+    it('should return 200 for a valid heartbeat request', async () => {
+      const request = {
+        coreid: radar_coreID,
+        data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+      }
+      const response = await chai.request(server).post('/api/heartbeat').send(request)
+      expect(response).to.have.status(200)
+    })
+
+    it('should not update LastLowBatteryAlert if battery is nominal', async () => {
+      await nominalHeartbeat(radar_coreID)
+      const testLocation = await db.getLocationData(testLocation1Id)
+      expect(testLocation.lastLowBatteryAlert).to.deep.equal(lastLowBatteryAlert)
+    })
+
+    it('should update LastLowBatteryAlert if battery is low and only when not timed out', async () => {
+      await lowBatteryHeartbeat(radar_coreID)
+      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      const newLowBatteryAlert = locationAfterHeartbeat.lastLowBatteryAlert
+      expect(newLowBatteryAlert).to.not.equal(lastLowBatteryAlert)
+
+      await lowBatteryHeartbeat(radar_coreID)
+      const locationAfterTwoHeartbeats = await db.getLocationData(testLocation1Id)
+      expect(locationAfterTwoHeartbeats.lastLowBatteryAlert).to.deep.equal(newLowBatteryAlert)
     })
   })
 })
