@@ -914,20 +914,21 @@ describe('Brave Sensor server', () => {
     })
 
     it('should not update sentLowBatteryAlertAt if battery is nominal', async () => {
-      await nominalHeartbeat(radar_coreID)
       const testLocation = await db.getLocationData(testLocation1Id)
-      expect(testLocation.sentLowBatteryAlertAt).to.deep.equal(firstLowBatteryAlert)
+      await nominalHeartbeat(radar_coreID)
+      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      expect(locationAfterHeartbeat.sentLowBatteryAlertAt).to.deep.equal(testLocation.sentLowBatteryAlertAt)
     })
 
     it('should update sentLowBatteryAlertAt if battery is low and only when not timed out', async () => {
+      const testLocation = await db.getLocationData(testLocation1Id)
       await lowBatteryHeartbeat(radar_coreID)
       const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
-      const newLowBatteryAlert = locationAfterHeartbeat.sentLowBatteryAlertAt
-      expect(newLowBatteryAlert).to.not.equal(firstLowBatteryAlert)
+      expect(locationAfterHeartbeat.sentLowBatteryAlertAt).to.not.equal(testLocation.sentLowBatteryAlertAt)
 
       await lowBatteryHeartbeat(radar_coreID)
       const locationAfterTwoHeartbeats = await db.getLocationData(testLocation1Id)
-      expect(locationAfterTwoHeartbeats.sentLowBatteryAlertAt).to.deep.equal(newLowBatteryAlert)
+      expect(locationAfterTwoHeartbeats.sentLowBatteryAlertAt).to.deep.equal(locationAfterHeartbeat.sentLowBatteryAlertAt)
     })
   })
 })
