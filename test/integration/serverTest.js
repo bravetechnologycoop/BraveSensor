@@ -206,6 +206,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         true,
+        lastLowBatteryAlert,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -303,6 +304,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         false,
+        lastLowBatteryAlert,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -425,6 +427,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         false,
         false,
+        lastLowBatteryAlert,
         client.id,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
@@ -506,6 +509,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         false,
+        lastLowBatteryAlert,
         client.id,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
@@ -629,6 +633,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         false,
         false,
+        lastLowBatteryAlert,
         client.id,
       )
       await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
@@ -707,6 +712,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
+          lastLowBatteryAlert,
           client.id,
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
@@ -776,6 +782,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
+          lastLowBatteryAlert,
           client.id,
         )
         await im21Door(door_coreID, IM21_DOOR_STATUS.CLOSED)
