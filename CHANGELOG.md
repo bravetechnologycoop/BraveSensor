@@ -16,8 +16,8 @@ the code was deployed.
 - Alert Type to the Dashboard.
 - Tracking of when sessions are first responded to (CU-hjwfx2).
 - `GET /alert/historicAlerts` endpoint (CU-hjwfx2).
-- Low battery checks in heartbeat api for firmware state machine (CU-4avrhp)
-- Tracking of reset reason to reconnection alerts (CU-z9e1md)
+- Low battery checks in heartbeat api for firmware state machine (CU-4avrhp).
+- Tracking of reset reason to reconnection alerts (CU-z9e1md).
 
 ### Changed
 

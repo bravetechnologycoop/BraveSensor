@@ -121,12 +121,8 @@ async function sendDisconnectionMessage(locationid, displayName) {
   )
 }
 
-async function sendReconnectionMessage(locationid, displayName, resetReason) {
-  if (resetReason === undefined) {
-    await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has been reconnected`)
-  } else {
-    await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has reconnected after reason: ${resetReason}.`)
-  }
+async function sendReconnectionMessage(locationid, displayName) {
+  await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has been reconnected`)
 }
 
 // Heartbeat Helper Functions
@@ -192,7 +188,7 @@ async function checkHeartbeat() {
         } else if (!heartbeatExceeded && location.heartbeatSentAlerts) {
           helpers.logSentry(`${location.locationid} reconnected after reason: ${latestHeartbeat.resetReason}`)
           await db.updateSentAlerts(location.locationid, false)
-          sendReconnectionMessage(location.locationid, location.displayName, latestHeartbeat.resetReason)
+          sendReconnectionMessage(location.locationid, location.displayName)
         }
       }
     } catch (err) {
@@ -202,19 +198,24 @@ async function checkHeartbeat() {
 }
 
 function convertStateArrayToObject(stateTransition) {
+  const statesTable = ['idle', 'initial_timer', 'duration_timer', 'stillness_timer']
   const reasonsTable = ['movement', 'no_movement', 'door_open', 'initial_timer', 'duration_alert', 'stillness_alert']
   const stateObject = {
-    state: stateTransition[0],
+    state: statesTable[stateTransition[0]],
     reason: reasonsTable[stateTransition[1]],
     time: stateTransition[2],
   }
   return stateObject
 }
 
-// Returns whether the last low battery alert was sent within the timeout threshold
-async function lowBatteryAlertTimeout(sentLowBatteryAlertAt) {
+// Sends a low battery alert if the time since the last alert is null or greater than the timeout
+async function sendLowBatteryAlert(location) {
   const currentTime = await db.getCurrentTime()
-  return currentTime - sentLowBatteryAlertAt < helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT_THRESHOLD')
+  if (location.sentLowBatteryAlertAt === null || currentTime - sentLowBatteryAlertAt >= helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT')) {
+    helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
+    await sendSingleAlert(location.locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
+    await db.updateLowBatteryAlertTime(location.locationid)
+  }
 }
 
 // Add routes
@@ -376,11 +377,9 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
           doorSignal = DOOR_STATUS.OPEN
         } else if (signal === IM21_DOOR_STATUS.CLOSED || signal === IM21_DOOR_STATUS.HEARTBEAT_CLOSED) {
           doorSignal = DOOR_STATUS.CLOSED
-        } else if (signal === IM21_DOOR_STATUS.LOW_BATT && !lowBatteryAlertTimeout(location.sentLowBatteryAlertAt)) {
+        } else if (signal === IM21_DOOR_STATUS.LOW_BATT) {
           doorSignal = 'LowBatt'
-          helpers.logSentry(`Received a low battery alert for ${locationid}`)
-          sendSingleAlert(locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
-          await db.updateLowBatteryAlertTime(locationid)
+          await sendLowBatteryAlert(location)
         }
         await redis.addIM21DoorSensorData(locationid, doorSignal, control)
         if (location.isActive && !location.heartbeatSentAlerts) {
@@ -468,10 +467,8 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'data']).exists(), async (r
         const doorTimeSinceLastHeartbeat = message.doorLastHeartbeat
         const resetReason = message.resetReason
         const stateTransitionsArray = message.states.map(convertStateArrayToObject)
-        if (doorLowBatteryFlag && !lowBatteryAlertTimeout(location.sentLowBatteryAlertAt)) {
-          helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
-          sendSingleAlert(location.locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
-          await db.updateLowBatteryAlertTime(location.locationid)
+        if (doorLowBatteryFlag) {
+          await sendLowBatteryAlert(location)
         }
         await redis.addEdgeDeviceHeartbeat(
           location.locationid,
