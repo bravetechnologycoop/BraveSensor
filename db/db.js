@@ -293,7 +293,7 @@ async function updateSentAlerts(locationid, sentalerts, clientParam) {
 // Updates the value of the low battery alert time to current time for a specific location
 async function updateLowBatteryAlertTime(locationid, clientParam) {
   try {
-    const results = await runQuery(
+    await runQuery(
       'updateLowBatteryAlertTime',
       'UPDATE locations SET sent_low_battery_alert_at = NOW() WHERE locationid = $1',
       [locationid],

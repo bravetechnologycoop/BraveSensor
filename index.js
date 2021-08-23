@@ -211,7 +211,7 @@ function convertStateArrayToObject(stateTransition) {
 // Sends a low battery alert if the time since the last alert is null or greater than the timeout
 async function sendLowBatteryAlert(location) {
   const currentTime = await db.getCurrentTime()
-  if (location.sentLowBatteryAlertAt === null || currentTime - sentLowBatteryAlertAt >= helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT')) {
+  if (location.sentLowBatteryAlertAt === null || currentTime - location.sentLowBatteryAlertAt >= helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT')) {
     helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
     await sendSingleAlert(location.locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
     await db.updateLowBatteryAlertTime(location.locationid)
