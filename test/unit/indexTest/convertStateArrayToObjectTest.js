@@ -24,7 +24,10 @@ describe('index.js unit tests: convertStateArrayToObject', () => {
     })
 
     it('should handle the unsigned integer limits and multiple subarrays', () => {
-      const stateTransitionsArray = [[1, 4, 4294967295], [2, 5, 0]]
+      const stateTransitionsArray = [
+        [1, 4, 4294967295],
+        [2, 5, 0],
+      ]
       const stateTransitionsArrayReadable = [
         {
           state: 'initial_timer',
