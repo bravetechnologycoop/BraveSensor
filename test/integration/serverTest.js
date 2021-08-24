@@ -16,6 +16,7 @@ const db = imports.db
 const redis = imports.redis
 const server = imports.server
 const braveAlerter = imports.braveAlerter
+const particle = imports.particle
 const StateMachine = require('../../stateMachine/StateMachine')
 const XETHRU_STATE = require('../../SessionStateXethruEnum')
 const SENSOR_EVENT = require('../../SensorEventEnum')

@@ -5,7 +5,8 @@ const fs = require('fs')
 const https = require('https')
 const cors = require('cors')
 const Validator = require('express-validator')
-const particle = require('particle-api-js')
+const Particle = require('particle-api-js')
+const particle = new Particle()
 
 // In-house dependencies
 const { ALERT_TYPE, helpers } = require('brave-alert-lib')
@@ -547,3 +548,4 @@ module.exports.db = db
 module.exports.routes = routes
 module.exports.redis = redis
 module.exports.braveAlerter = braveAlerter
+module.exports.particle = particle
