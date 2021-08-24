@@ -482,7 +482,7 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(),
   }
 })
 
-app.post('/api/siren-addressed', Validator.body(['coreid', 'event', 'data']).exists(), async (request, response) => {
+app.post('/api/sirenAddressed', Validator.body(['coreid', 'event', 'data']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
 
@@ -501,26 +501,27 @@ app.post('/api/siren-addressed', Validator.body(['coreid', 'event', 'data']).exi
         try {
           client = await db.beginTransaction()
           if (client === null) {
-            helpers.logError(`alertSessionChangedCallback: Error starting transaction`)
+            helpers.logError(`sirenAddressedCallback: Error starting transaction`)
             return
           }
 
           const session = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
           if (session) {
             session.respondedAt = await db.getCurrentTime(client)
+            session.chatbotState = CHATBOT_STATE.COMPLETED
             await db.saveSession(session, client)
           } else {
-            helpers.logError(`error stopping session and chatbot due to siren button press`)
+            helpers.logError(`Error stopping session and chatbot due to siren button press`)
           }
 
           await db.commitTransaction(client)
         } catch (e) {
           try {
             await db.rollbackTransaction(client)
-            helpers.logError(`alertSessionChangedCallback: Rolled back transaction because of error: ${e}`)
+            helpers.logError(`sirenAddressedCallback: Rolled back transaction because of error: ${e}`)
           } catch (error) {
             // Do nothing
-            helpers.logError(`alertSessionChangedCallback: Error rolling back transaction: ${e}`)
+            helpers.logError(`sirenAddressedCallback: Error rolling back transaction: ${e}`)
           }
         }
         response.status(200).json('OK')
@@ -539,7 +540,7 @@ app.post('/api/siren-addressed', Validator.body(['coreid', 'event', 'data']).exi
   }
 })
 
-app.post('/api/siren-escalate', Validator.body(['coreid', 'event', 'data']).exists(), async (request, response) => {
+app.post('/api/sirenEscalated', Validator.body(['coreid', 'event', 'data']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
 
@@ -558,7 +559,7 @@ app.post('/api/siren-escalate', Validator.body(['coreid', 'event', 'data']).exis
         try {
           client = await db.beginTransaction()
           if (client === null) {
-            helpers.logError(`alertSessionChangedCallback: Error starting transaction`)
+            helpers.logError(`sirenEscalatedCallback: Error starting transaction`)
             return
           }
 
@@ -574,10 +575,10 @@ app.post('/api/siren-escalate', Validator.body(['coreid', 'event', 'data']).exis
         } catch (e) {
           try {
             await db.rollbackTransaction(client)
-            helpers.logError(`alertSessionChangedCallback: Rolled back transaction because of error: ${e}`)
+            helpers.logError(`sirenEscalatedCallback: Rolled back transaction because of error: ${e}`)
           } catch (error) {
             // Do nothing
-            helpers.logError(`alertSessionChangedCallback: Error rolling back transaction: ${e}`)
+            helpers.logError(`sirenEscalatedCallback: Error rolling back transaction: ${e}`)
           }
         }
         response.status(200).json('OK')
