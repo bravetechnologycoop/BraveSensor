@@ -37,6 +37,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'alertApiKey',
         true,
         false,
+        null,
         client.id,
       )
       const locationid = (await db.getLocations())[0].locationid
@@ -85,6 +86,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'not our API key',
         true,
         false,
+        null,
         client.id,
       )
       const locationid = (await db.getLocations())[0].locationid
@@ -113,6 +115,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         this.alertApiKey,
         true,
         false,
+        null,
         client.id,
       )
     })
@@ -161,6 +164,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         this.alertApiKey,
         true,
         false,
+        null,
         client.id,
       )
 
@@ -235,6 +239,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         this.alertApiKey,
         true,
         false,
+        null,
         client.id,
       )
 
@@ -289,6 +294,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         this.alertApiKey,
         true,
         false,
+        null,
         client.id,
       )
 
@@ -350,6 +356,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         this.alertApiKey,
         true,
         false,
+        null,
         client.id,
       )
 

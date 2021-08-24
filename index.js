@@ -505,6 +505,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       'alertApiKey',
       true,
       false,
+      null,
       client.id,
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')

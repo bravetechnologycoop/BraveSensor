@@ -2,6 +2,7 @@ const chai = require('chai')
 const chaiHttp = require('chai-http')
 const sinonChai = require('sinon-chai')
 const chaiDateTime = require('chai-datetime')
+const particle = require('particle-api-js')
 
 const expect = chai.expect
 const { after, afterEach, before, beforeEach, describe, it } = require('mocha')
@@ -10,7 +11,6 @@ const { ALERT_TYPE, helpers } = require('brave-alert-lib')
 const { sleep } = require('brave-alert-lib/lib/helpers')
 const imports = require('../../index')
 const im21door = require('../../im21door')
-const particle = require('particle-api-js')
 
 const db = imports.db
 const redis = imports.redis
@@ -192,11 +192,11 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
-      await db.clearClients() 
+      await db.clearClients()
       sandbox.restore()
       helpers.log('\n')
     })
-    
+
     it('should return 200 to a request with no headers', async () => {
       const response = await chai.request(server).post('/api/sensorEvent').send({})
       expect(helpers.logError).to.have.been.called
@@ -204,13 +204,7 @@ describe('Brave Sensor server', () => {
     })
 
     it('should return 200 for a valid request', async () => {
-      const response = await chai.request(server).post('/api/sensorEvent').send({
-        event: sensorEvent,
-        data: 'test-event',
-        ttl: 60,
-        published_at: '2021-06-14T22:49:16.091Z',
-        coreid: coreID,
-      })
+      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       expect(response).to.have.status(200)
     })
 
@@ -266,7 +260,7 @@ describe('Brave Sensor server', () => {
       sandbox.restore()
       helpers.log('\n')
     })
-    
+
     it('should return 200 to a request with no headers', async () => {
       const response = await chai.request(server).post('/api/sensorEvent').send({})
       expect(helpers.logError).to.have.been.called
@@ -274,20 +268,14 @@ describe('Brave Sensor server', () => {
     })
 
     it('should return 200 for a valid request', async () => {
-      const response = await chai.request(server).post('/api/sensorEvent').send({
-        event: sensorEvent,
-        data: 'test-event',
-        ttl: 60,
-        published_at: '2021-06-14T22:49:16.091Z',
-        coreid: coreID,
-      })
+      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       expect(response).to.have.status(200)
     })
 
     it('should not call particle.callFunction if there sirenParticleId is null and return 200', async () => {
       const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       // expect particle.call function to have not been called
-      expect(response).to.have.status(200) //idk
+      expect(response).to.have.status(200)
     })
 
     it('should call startAlertSession if particleSirenId is null', async () => {
