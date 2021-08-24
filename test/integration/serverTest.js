@@ -39,8 +39,9 @@ const door_coreID = 'door_particlecoreid1'
 const radar_coreID = 'radar_particlecoreid1'
 
 async function firmwareAlert(coreID, sensorEvent) {
+  let response
   try {
-    await chai.request(server).post('/api/sensorEvent').send({
+    response = await chai.request(server).post('/api/sensorEvent').send({
       event: sensorEvent,
       data: 'test-event',
       ttl: 60,
@@ -51,6 +52,7 @@ async function firmwareAlert(coreID, sensorEvent) {
   } catch (e) {
     helpers.log(e)
   }
+  return response
 }
 
 async function innosentMovement(coreID, min, max) {
@@ -212,7 +214,12 @@ describe('Brave Sensor server', () => {
     it('should call particle.callFunction with the correct device ID if sirenParticleId is not null, and return 200', async () => {
       const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       expect(response).to.have.status(200)
-      expect(particle.callFunction).to.have.been.calledWith('particleCoreIdTest', helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'))
+      expect(particle.callFunction).to.have.been.calledWith({
+        deviceId: 'particleCoreIdTest',
+        name: 'start-siren',
+        argument: 'start',
+        auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
+      })
     })
 
     it('should not call startAlertSession if particleSirenID is not null', async () => {
