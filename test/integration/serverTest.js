@@ -2,7 +2,6 @@ const chai = require('chai')
 const chaiHttp = require('chai-http')
 const sinonChai = require('sinon-chai')
 const chaiDateTime = require('chai-datetime')
-const particle = require('particle-api-js')
 
 const expect = chai.expect
 const { after, afterEach, before, beforeEach, describe, it } = require('mocha')

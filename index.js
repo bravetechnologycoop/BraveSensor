@@ -6,7 +6,6 @@ const https = require('https')
 const cors = require('cors')
 const Validator = require('express-validator')
 const Particle = require('particle-api-js')
-const particle = new Particle()
 
 // In-house dependencies
 const { ALERT_TYPE, helpers } = require('brave-alert-lib')
@@ -20,6 +19,9 @@ const im21door = require('./im21door')
 const DOOR_STATE = require('./SessionStateDoorEnum')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
+
+// Start Particle object
+const particle = new Particle()
 
 // Start Express App
 const app = express()
