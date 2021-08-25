@@ -114,6 +114,11 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: RADAR_WINDOW_SIZE_SECONDS
+          - name: LOW_BATTERY_ALERT_TIMEOUT
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: LOW_BATTERY_ALERT_TIMEOUT
           - name: ENVIRONMENT
             value: {{ include "sensor.fullname" . | quote }}
           - name: RELEASE

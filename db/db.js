@@ -294,16 +294,11 @@ async function updateSentAlerts(locationid, sentalerts, clientParam) {
 async function updateLowBatteryAlertTime(locationid, clientParam) {
   try {
     const results = await runQuery(
-      'setLowBatteryAlertTime',
-      'UPDATE locations SET sent_low_battery_alert_at = NOW() WHERE locationid = $1 RETURNING *',
+      'updateLowBatteryAlertTime',
+      'UPDATE locations SET sent_low_battery_alert_at = NOW() WHERE locationid = $1',
       [locationid],
       clientParam,
     )
-    if (results === undefined) {
-      return null
-    }
-
-    return await createLocationFromRow(results.rows[0], clientParam)
   } catch (err) {
     helpers.log(err.toString())
   }
