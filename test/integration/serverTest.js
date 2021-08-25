@@ -36,7 +36,7 @@ const testLocation1Id = 'TestLocation1'
 const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid1'
 const radar_coreID = 'radar_particlecoreid1'
-const lastLowBatteryAlert = '2021-03-09T19:37:28.176Z'
+const firstLowBatteryAlert = '2021-03-09T19:37:28.176Z'
 
 async function firmwareAlert(coreID, sensorEvent) {
   try {
@@ -206,7 +206,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         true,
-        lastLowBatteryAlert,
+        firstLowBatteryAlert,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -304,7 +304,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         false,
-        lastLowBatteryAlert,
+        firstLowBatteryAlert,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -427,7 +427,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         false,
         false,
-        lastLowBatteryAlert,
+        firstLowBatteryAlert,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -509,7 +509,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         false,
-        lastLowBatteryAlert,
+        firstLowBatteryAlert,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -633,7 +633,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         false,
         false,
-        lastLowBatteryAlert,
+        firstLowBatteryAlert,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -712,7 +712,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
-          lastLowBatteryAlert,
+          firstLowBatteryAlert,
           client.id,
         )
         await im21Door(door_coreID, im21door.createClosedSignal())
@@ -782,7 +782,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
-          lastLowBatteryAlert,
+          firstLowBatteryAlert,
           client.id,
         )
         await im21Door(door_coreID, im21door.createClosedSignal())
@@ -883,7 +883,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         true,
-        lastLowBatteryAlert,
+        firstLowBatteryAlert,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -913,21 +913,21 @@ describe('Brave Sensor server', () => {
       expect(response).to.have.status(200)
     })
 
-    it('should not update LastLowBatteryAlert if battery is nominal', async () => {
+    it('should not update sentLowBatteryAlertAt if battery is nominal', async () => {
       await nominalHeartbeat(radar_coreID)
       const testLocation = await db.getLocationData(testLocation1Id)
-      expect(testLocation.lastLowBatteryAlert).to.deep.equal(lastLowBatteryAlert)
+      expect(testLocation.sentLowBatteryAlertAt).to.deep.equal(firstLowBatteryAlert)
     })
 
-    it('should update LastLowBatteryAlert if battery is low and only when not timed out', async () => {
+    it('should update sentLowBatteryAlertAt if battery is low and only when not timed out', async () => {
       await lowBatteryHeartbeat(radar_coreID)
       const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
-      const newLowBatteryAlert = locationAfterHeartbeat.lastLowBatteryAlert
-      expect(newLowBatteryAlert).to.not.equal(lastLowBatteryAlert)
+      const newLowBatteryAlert = locationAfterHeartbeat.sentLowBatteryAlertAt
+      expect(newLowBatteryAlert).to.not.equal(firstLowBatteryAlert)
 
       await lowBatteryHeartbeat(radar_coreID)
       const locationAfterTwoHeartbeats = await db.getLocationData(testLocation1Id)
-      expect(locationAfterTwoHeartbeats.lastLowBatteryAlert).to.deep.equal(newLowBatteryAlert)
+      expect(locationAfterTwoHeartbeats.sentLowBatteryAlertAt).to.deep.equal(newLowBatteryAlert)
     })
   })
 })

@@ -11,7 +11,7 @@ BEGIN
 
     -- Only execute this script if its migration ID is next after the last successful migration ID
     IF migrationId - lastSuccessfulMigrationId = 1 THEN
-        ALTER TABLE locations ADD COLUMN last_low_battery_alert timestamptz NOT NULL DEFAULT NOW(); 
+        ALTER TABLE locations ADD COLUMN sent_low_battery_alert_at timestamptz NOT NULL DEFAULT NOW(); 
 
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file
         INSERT INTO migrations (id)
