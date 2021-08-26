@@ -12,6 +12,8 @@
  *
  *
 */
+#include <string>
+using std::string;
 #include "Particle.h"
 #include "consoleFunctions.h"
 #include "flashAddresses.h"
