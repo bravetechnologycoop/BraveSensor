@@ -282,7 +282,6 @@ describe('Brave Sensor server', () => {
     })
 
     it('should not call particle.callFunction if there sirenParticleId is null', async () => {
-      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       expect(particle.callFunction).to.have.not.been.called
     })
 
