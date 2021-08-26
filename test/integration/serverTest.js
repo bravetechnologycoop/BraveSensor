@@ -259,6 +259,7 @@ describe('Brave Sensor server', () => {
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(particle, 'callFunction')
       sandbox.spy(helpers, 'logError')
     })
     afterEach(async () => {
