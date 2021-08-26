@@ -1,19 +1,23 @@
 #include "base.h"
-#include "../../src/consoleFunctions.cpp"
+#include "../src/consoleFunctions.cpp"
+#include "../src/flashAddresses.h"
 
-  Particle.function("Change_Initial_Timer", initial_timer_set); 
-  Particle.function("Change_Duration_Timer", duration_timer_set);     
-  Particle.function("Change_Stillness_Timer", stillness_timer_set);  
-  Particle.function("Change_INS_Threshold", ins_threshold_set);
-  Particle.function("Turn_Debugging_Publishes_On_Off", toggle_debugging_publishes);   
-  Particle.function("Change_IM21_Door_ID", im21_door_id_set); 
-
-SCENARIO("Console Functions", "[consoleFnTests]")
+SCENARIO("Console Functions update appropriate EEPROM addresses with supplied arguments", "[consoleFnTests]")
 {
     GIVEN("An initial timer value of 0")
     {
-        WHEN("initial_timer_Set is called with a value")
-        initial_timer_set("100");
+        EEPROM.put(ADDR_STATE1_MAX_TIME, 0);
+        unsigned long initial_timer_data;
 
+        WHEN("initial_timer_set is called with the argument 100")
+        {
+            initial_timer_set("100");
+
+            THEN("the address of the initial timer is correctly set to 100")
+            {
+                EEPROM.get(ADDR_STATE1_MAX_TIME, initial_timer_data);
+                REQUIRE(initial_timer_data == 100);
+            }
+        }
     }
 }
