@@ -295,7 +295,7 @@ describe('Brave Sensor server', () => {
     it('should call startAlertSession if particleSirenId is null', async () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      const session = sessions[sizeof(sessions) - 1]
+      const session = sessions[sessions.length - 1]
       expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
     })
   })
