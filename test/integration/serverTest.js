@@ -216,7 +216,7 @@ describe('Brave Sensor server', () => {
       expect(response).to.have.status(200)
       expect(particle.callFunction).to.have.been.calledWith({
         deviceId: 'particleCoreIdTest',
-        name: 'start_siren',
+        name: 'start',
         argument: 'start',
         auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
       })

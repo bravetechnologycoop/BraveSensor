@@ -81,7 +81,7 @@ async function handleAlert(location, alertType) {
         try {
           await particle.callFunction({
             deviceId: location.sirenParticleId,
-            name: `start_siren`,
+            name: `start`,
             argument: `start`,
             auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
           })
