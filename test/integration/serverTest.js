@@ -202,8 +202,12 @@ describe('Brave Sensor server', () => {
 
     it('should return 200 to a request with no headers', async () => {
       const response = await chai.request(server).post('/api/sensorEvent').send({})
-      expect(helpers.logError).to.have.been.called
       expect(response).to.have.status(200)
+    })
+
+    it('should log an error for a request with no headers', async () => {
+      await chai.request(server).post('/api/sensorEvent').send({})
+      expect(helpers.logError).to.have.been.called
     })
 
     it('should return 200 for a valid request', async () => {
@@ -211,9 +215,7 @@ describe('Brave Sensor server', () => {
       expect(response).to.have.status(200)
     })
 
-    it('should call particle.callFunction with the correct device ID if sirenParticleId is not null, and return 200', async () => {
-      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      expect(response).to.have.status(200)
+    it('should call particle.callFunction with the correct device ID if sirenParticleId is not null', async () => {
       expect(particle.callFunction).to.have.been.calledWith({
         deviceId: 'particleCoreIdTest',
         name: 'start',
@@ -273,8 +275,12 @@ describe('Brave Sensor server', () => {
 
     it('should return 200 to a request with no headers', async () => {
       const response = await chai.request(server).post('/api/sensorEvent').send({})
-      expect(helpers.logError).to.have.been.called
       expect(response).to.have.status(200)
+    })
+
+    it('should log an error for a request with no headers', async () => {
+      await chai.request(server).post('/api/sensorEvent').send({})
+      expect(helpers.logError).to.have.been.called
     })
 
     it('should return 200 for a valid request', async () => {
@@ -289,8 +295,7 @@ describe('Brave Sensor server', () => {
     it('should call startAlertSession if particleSirenId is null', async () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(1)
-      const session = sessions[0]
+      const session = sessions[sizeof(sessions) - 1]
       expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
     })
   })
