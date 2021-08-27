@@ -10,12 +10,12 @@ const { ALERT_TYPE, helpers } = require('brave-alert-lib')
 const { sleep } = require('brave-alert-lib/lib/helpers')
 const imports = require('../../index')
 const im21door = require('../../im21door')
-const particle = require('particle-api-js')
 
 const db = imports.db
 const redis = imports.redis
 const server = imports.server
 const braveAlerter = imports.braveAlerter
+const particle = imports.particle
 const StateMachine = require('../../stateMachine/StateMachine')
 const XETHRU_STATE = require('../../SessionStateXethruEnum')
 const SENSOR_EVENT = require('../../SensorEventEnum')
@@ -39,8 +39,9 @@ const door_coreID = 'door_particlecoreid1'
 const radar_coreID = 'radar_particlecoreid1'
 
 async function firmwareAlert(coreID, sensorEvent) {
+  let response
   try {
-    await chai.request(server).post('/api/sensorEvent').send({
+    response = await chai.request(server).post('/api/sensorEvent').send({
       event: sensorEvent,
       data: 'test-event',
       ttl: 60,
@@ -51,6 +52,7 @@ async function firmwareAlert(coreID, sensorEvent) {
   } catch (e) {
     helpers.log(e)
   }
+  return response
 }
 
 async function innosentMovement(coreID, min, max) {
@@ -187,37 +189,40 @@ describe('Brave Sensor server', () => {
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.spy(particle, 'callFunction')
+      sandbox.spy(helpers, 'logError')
     })
     afterEach(async () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
-      await db.clearClients() 
+      await db.clearClients()
       sandbox.restore()
       helpers.log('\n')
     })
-    
+
     it('should return 200 to a request with no headers', async () => {
       const response = await chai.request(server).post('/api/sensorEvent').send({})
-      expect(helpers.logError).to.have.been.called
       expect(response).to.have.status(200)
+    })
+
+    it('should log an error for a request with no headers', async () => {
+      await chai.request(server).post('/api/sensorEvent').send({})
+      expect(helpers.logError).to.have.been.called
     })
 
     it('should return 200 for a valid request', async () => {
-      const response = await chai.request(server).post('/api/sensorEvent').send({
-        event: sensorEvent,
-        data: 'test-event',
-        ttl: 60,
-        published_at: '2021-06-14T22:49:16.091Z',
-        coreid: coreID,
-      })
+      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       expect(response).to.have.status(200)
     })
 
-    it('should call particle.callFunction with the correct device ID if sirenParticleId is not null, and return 200', async () => {
-      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      expect(response).to.have.status(200)
-      expect(particle.callFunction).to.have.been.calledWith('particleCoreIdTest', helpers.getEnvVar('PARTICLE_ACCESS_TOKEN_TEST'))
+    it('should call particle.callFunction with the correct device ID if sirenParticleId is not null', async () => {
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
+      expect(particle.callFunction).to.have.been.calledWith({
+        deviceId: 'particleCoreIdTest',
+        name: 'start',
+        argument: 'start',
+        auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
+      })
     })
 
     it('should not call startAlertSession if particleSirenID is not null', async () => {
@@ -257,6 +262,8 @@ describe('Brave Sensor server', () => {
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(particle, 'callFunction')
+      sandbox.spy(helpers, 'logError')
     })
     afterEach(async () => {
       await redis.clearKeys()
@@ -266,35 +273,30 @@ describe('Brave Sensor server', () => {
       sandbox.restore()
       helpers.log('\n')
     })
-    
+
     it('should return 200 to a request with no headers', async () => {
       const response = await chai.request(server).post('/api/sensorEvent').send({})
-      expect(helpers.logError).to.have.been.called
       expect(response).to.have.status(200)
+    })
+
+    it('should log an error for a request with no headers', async () => {
+      await chai.request(server).post('/api/sensorEvent').send({})
+      expect(helpers.logError).to.have.been.called
     })
 
     it('should return 200 for a valid request', async () => {
-      const response = await chai.request(server).post('/api/sensorEvent').send({
-        event: sensorEvent,
-        data: 'test-event',
-        ttl: 60,
-        published_at: '2021-06-14T22:49:16.091Z',
-        coreid: coreID,
-      })
+      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       expect(response).to.have.status(200)
     })
 
-    it('should not call particle.callFunction if there sirenParticleId is null and return 200', async () => {
-      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      // expect particle.call function to have not been called
-      expect(response).to.have.status(200) //idk
+    it('should not call particle.callFunction if there sirenParticleId is null', async () => {
+      expect(particle.callFunction).to.have.not.been.called
     })
 
     it('should call startAlertSession if particleSirenId is null', async () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(1)
-      const session = sessions[0]
+      const session = sessions[sessions.length - 1]
       expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
     })
   })
@@ -326,6 +328,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         true,
+        null,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -423,6 +426,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         false,
+        null,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -545,6 +549,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         false,
         false,
+        null,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -626,6 +631,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         false,
+        null,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -749,6 +755,7 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         false,
         false,
+        null,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -827,6 +834,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
+          null,
           client.id,
         )
         await im21Door(door_coreID, im21door.createClosedSignal())
@@ -896,6 +904,7 @@ describe('Brave Sensor server', () => {
           'alertApiKey',
           true,
           false,
+          null,
           client.id,
         )
         await im21Door(door_coreID, im21door.createClosedSignal())

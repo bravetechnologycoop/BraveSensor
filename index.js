@@ -5,7 +5,7 @@ const fs = require('fs')
 const https = require('https')
 const cors = require('cors')
 const Validator = require('express-validator')
-const particle = require('particle-api-js')
+const Particle = require('particle-api-js')
 
 // In-house dependencies
 const { ALERT_TYPE, helpers, CHATBOT_STATE } = require('brave-alert-lib')
@@ -19,6 +19,9 @@ const im21door = require('./im21door')
 const DOOR_STATE = require('./SessionStateDoorEnum')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
+
+// Start Particle object
+const particle = new Particle()
 
 // Start Express App
 const app = express()
@@ -78,7 +81,7 @@ async function handleAlert(location, alertType) {
         try {
           await particle.callFunction({
             deviceId: location.sirenParticleId,
-            name: `start-siren`,
+            name: `start`,
             argument: `start`,
             auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
           })
@@ -620,6 +623,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       'alertApiKey',
       true,
       false,
+      null,
       client.id,
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
@@ -661,3 +665,4 @@ module.exports.db = db
 module.exports.routes = routes
 module.exports.redis = redis
 module.exports.braveAlerter = braveAlerter
+module.exports.particle = particle

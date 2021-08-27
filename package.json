@@ -23,6 +23,7 @@
     "chai-datetime": "^1.8.0",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
+    "curl": "^0.1.4",
     "execution-time": "^1.4.1",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
@@ -36,6 +37,7 @@
     "mustache": "^3.2.1",
     "particle-api-js": "^7.4.0",
     "pg": "^7.18.2",
+    "react": "^17.0.2",
     "redis": "^3.0.2",
     "winston": "^3.3.3"
   },

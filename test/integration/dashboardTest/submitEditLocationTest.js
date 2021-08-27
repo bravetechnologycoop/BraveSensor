@@ -51,6 +51,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       'alertApiKey',
       true,
       false,
+      null,
       this.client.id,
     )
 
@@ -212,6 +213,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         alertApiKey: '',
         isActive: 'true',
         firmwareStateMachine: 'false',
+        sirenParticlId: null,
         clientId: this.client.id,
       }
 
