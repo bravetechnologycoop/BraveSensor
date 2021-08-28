@@ -225,6 +225,26 @@ describe('Brave Sensor server', () => {
       })
     })
 
+    it('should send a 200 response if a sirenAddressed call is receieved', async () => {
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
+      await chai.request(server).post('/api/sirenAddressed').send({})
+      expect(response).to.have.status(200)
+    })
+
+    it('should send a 200 response if a sirenEscalated call is receieved', async () => {
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
+      await chai.request(server).post('/api/sirenEscalated').send({})
+      expect(response).to.have.status(200)
+    })
+
+    it('should start an alert session if a sirenEscalated call is receieved', async () => {
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
+      await chai.request(server).post('/api/sirenEscalated').send({})
+      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+      const session = sessions[sessions.length - 1]
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)      
+    })
+
     it('should not call startAlertSession if particleSirenID is not null', async () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(0)
