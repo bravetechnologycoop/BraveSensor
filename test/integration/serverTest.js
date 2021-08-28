@@ -216,6 +216,7 @@ describe('Brave Sensor server', () => {
     })
 
     it('should call particle.callFunction with the correct device ID if sirenParticleId is not null', async () => {
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       expect(particle.callFunction).to.have.been.calledWith({
         deviceId: 'particleCoreIdTest',
         name: 'start',
