@@ -242,7 +242,7 @@ describe('Brave Sensor server', () => {
       await chai.request(server).post('/api/sirenEscalated').send({})
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const session = sessions[sessions.length - 1]
-      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)      
+      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
     })
 
     it('should not call startAlertSession if particleSirenID is not null', async () => {
