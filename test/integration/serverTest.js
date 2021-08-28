@@ -229,7 +229,6 @@ describe('Brave Sensor server', () => {
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(0)
     })
-
   })
 
   describe('POST request: alerts from firmware state machine for locations with a null Particle Siren Id', () => {
