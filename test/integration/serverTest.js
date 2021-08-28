@@ -227,13 +227,13 @@ describe('Brave Sensor server', () => {
 
     it('should send a 200 response if a sirenAddressed call is receieved', async () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      await chai.request(server).post('/api/sirenAddressed').send({})
+      const response = await chai.request(server).post('/api/sirenAddressed').send({})
       expect(response).to.have.status(200)
     })
 
     it('should send a 200 response if a sirenEscalated call is receieved', async () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      await chai.request(server).post('/api/sirenEscalated').send({})
+      const response = await chai.request(server).post('/api/sirenEscalated').send({})
       expect(response).to.have.status(200)
     })
 
