@@ -6,7 +6,7 @@ const chaiDateTime = require('chai-datetime')
 const expect = chai.expect
 const { after, afterEach, before, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
-const { ALERT_TYPE, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, helpers, CHATBOT_STATE } = require('brave-alert-lib')
 const { sleep } = require('brave-alert-lib/lib/helpers')
 const imports = require('../../index')
 const im21door = require('../../im21door')
@@ -37,6 +37,40 @@ const testLocation1Id = 'TestLocation1'
 const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid1'
 const radar_coreID = 'radar_particlecoreid1'
+
+async function sirenAddressedAlert(coreID) {
+  let response
+  try {
+    response = await chai.request(server).post('/api/sirenAddressed').send({
+      event: 'addressed',
+      data: 'test-event',
+      ttl: 60,
+      published_at: '2021-06-14T22:49:16.091Z',
+      coreid: coreID,
+    })
+    await helpers.sleep(50)
+  } catch (e) {
+    helpers.log(e)
+  }
+  return response
+}
+
+async function sirenEscalatedAlert(coreID) {
+  let response
+  try {
+    response = await chai.request(server).post('/api/sensorEvent').send({
+      event: 'escalated',
+      data: 'test-event',
+      ttl: 60,
+      published_at: '2021-06-14T22:49:16.091Z',
+      coreid: coreID,
+    })
+    await helpers.sleep(50)
+  } catch (e) {
+    helpers.log(e)
+  }
+  return response
+}
 
 async function firmwareAlert(coreID, sensorEvent) {
   let response
@@ -227,22 +261,20 @@ describe('Brave Sensor server', () => {
 
     it('should send a 200 response if a sirenAddressed call is receieved', async () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      const response = await chai.request(server).post('/api/sirenAddressed').send({})
+      const response = await sirenAddressedAlert('particleCoreIdTest')
       expect(response).to.have.status(200)
     })
 
     it('should send a 200 response if a sirenEscalated call is receieved', async () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      const response = await chai.request(server).post('/api/sirenEscalated').send({})
+      const response = await sirenEscalatedAlert('particleCoreIdTest')
       expect(response).to.have.status(200)
     })
 
-    it('should start an alert session if a sirenEscalated call is receieved', async () => {
+    it('should make the chatbot state completed after an addressed alert', async () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      await chai.request(server).post('/api/sirenEscalated').send({})
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      const session = sessions[sessions.length - 1]
-      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
+      const response = await sirenAddressedAlert('particleCoreIdTest')
+      expect(response).to.have.status(CHATBOT_STATE.COMPLETED)
     })
 
     it('should not call startAlertSession if particleSirenID is not null', async () => {

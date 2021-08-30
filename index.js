@@ -485,7 +485,7 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(),
   }
 })
 
-app.post('/api/sirenAddressed', Validator.body(['coreid', 'event', 'data']).exists(), async (request, response) => {
+app.post('/api/sirenAddressed', Validator.body(['coreid']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
 
@@ -514,7 +514,7 @@ app.post('/api/sirenAddressed', Validator.body(['coreid', 'event', 'data']).exis
             session.chatbotState = CHATBOT_STATE.COMPLETED
             await db.saveSession(session, client)
           } else {
-            helpers.logError(`Error stopping session and chatbot due to siren button press`)
+            helpers.logError(`Error stopping session and chatbot due to siren ${coreId} button press`)
           }
 
           await db.commitTransaction(client)
@@ -543,7 +543,7 @@ app.post('/api/sirenAddressed', Validator.body(['coreid', 'event', 'data']).exis
   }
 })
 
-app.post('/api/sirenEscalated', Validator.body(['coreid', 'event', 'data']).exists(), async (request, response) => {
+app.post('/api/sirenEscalated', Validator.body(['coreid']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
 
