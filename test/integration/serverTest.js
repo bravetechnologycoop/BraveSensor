@@ -27,6 +27,7 @@ const STILLNESS_TIMER = 1.5
 const DURATION_TIMER = 3
 const { getRandomArbitrary, getRandomInt, printRandomIntArray, clientFactory } = require('../../testingHelpers')
 const STATE = require('../../stateMachine/SessionStateEnum')
+const { getMostRecentSession } = require('../../db/db')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)
@@ -273,8 +274,9 @@ describe('Brave Sensor server', () => {
 
     it('should make the chatbot state completed after an addressed alert', async () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      const response = await sirenAddressedAlert('particleCoreIdTest')
-      expect(response).to.have.status(CHATBOT_STATE.COMPLETED)
+      await sirenAddressedAlert('particleCoreIdTest')
+      const session = await db.getMostRecentSession(testLocation1Id)
+      expect(session.chatbotState).to.have.status(CHATBOT_STATE.COMPLETED)
     })
 
     it('should not call startAlertSession if particleSirenID is not null', async () => {
