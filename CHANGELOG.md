@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [4.1.0] - 2021-08-30
+
 ### Added
 
 - Alert Type to the Dashboard.
@@ -239,7 +241,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v4.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v4.1.0...HEAD
+[4.0.1]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.4.0...v4.0.0
 [3.4.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.2.0...v3.3.0
