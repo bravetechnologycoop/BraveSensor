@@ -568,7 +568,6 @@ app.post('/api/sirenEscalated', Validator.body(['coreid', 'event', 'data']).exis
 
           const session = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
           if (session) {
-            session.chatbotState = CHATBOT_STATE.STARTED
             const alertInfo = {
               sessionId: session.id,
               toPhoneNumber: location.responderPhoneNumber,
