@@ -12,6 +12,10 @@ enum PublishFlag
     WITH_ACK
 };
 
+typedef struct os_queue_t{
+
+}; 
+
 class MockParticle
 {
 public:
@@ -27,12 +31,14 @@ public:
 
     bool publish(char const* const szEventName,
                  char const* const szData,
-                 int const _ttl,
                  int /*PublishFlag*/ const flags)
     {
         printf("Particle.Publish: '%s' = '%s' (flags: 0x%02x)", szEventName, szData, flags);
         return true;
     }
+
+    bool function(char const* const functionName,
+    )
 };
 
 extern MockParticle Particle;

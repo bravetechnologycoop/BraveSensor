@@ -4,8 +4,10 @@
 
 #include <iostream>
 #include <string>
+#include <queue>
+using namespace std;
 
 // Mocks
 #include "mocks/eeprom.h"
 #include "mocks/Particle.h"
-#include "mocks/string.h"
+#include "../inc/spark_wiring_string.h"
