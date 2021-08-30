@@ -573,7 +573,7 @@ app.post('/api/sirenEscalated', Validator.body(['coreid', 'event', 'data']).exis
               sessionId: session.id,
               toPhoneNumber: location.responderPhoneNumber,
               fromPhoneNumber: location.twilioNumber,
-              message: `This is a ${alertTypeDisplayName} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
+              message: `This is an unresponded siren alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
               reminderTimeoutMillis: location.reminderTimer,
               fallbackTimeoutMillis: location.fallbackTimer,
               reminderMessage: `This is a reminder to check on the bathroom`,
