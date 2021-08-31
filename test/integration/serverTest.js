@@ -27,7 +27,6 @@ const STILLNESS_TIMER = 1.5
 const DURATION_TIMER = 3
 const { getRandomArbitrary, getRandomInt, printRandomIntArray, clientFactory } = require('../../testingHelpers')
 const STATE = require('../../stateMachine/SessionStateEnum')
-const { getMostRecentSession } = require('../../db/db')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)

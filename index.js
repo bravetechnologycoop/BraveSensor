@@ -568,8 +568,8 @@ app.post('/api/sirenEscalated', Validator.body(['coreid']).exists(), async (requ
 
           const session = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
           if (session) {
-            alertMessage= 'There is an unresponded siren. Please check on the bathroom at ${location.displayName}.'
-            braveAlerter.sendSingleAlert(location.responderPhoneNumber,location.twilioNumber,alertMessage)
+            const alertMessage = `There is an unresponded siren. Please check on the bathroom at ${location.displayName}.`
+            braveAlerter.sendSingleAlert(location.responderPhoneNumber, location.twilioNumber, alertMessage)
             await db.saveSession(session, client)
           } else {
             helpers.logError(`Siren not responded to - error starting normal chatbot`)
