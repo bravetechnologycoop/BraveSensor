@@ -225,12 +225,6 @@ describe('Brave Sensor server', () => {
         auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
       })
     })
-
-    it('should not create a new session if particleSirenID is not null', async () => {
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(0)
-    })
   })
 
   describe('POST request: alerts from firmware state machine for locations with a null Particle Siren Id', () => {
