@@ -19,6 +19,7 @@ the code was deployed.
 - Tracking of when sessions are first responded to (CU-hjwfx2).
 - `GET /alert/historicAlerts` endpoint (CU-hjwfx2).
 - Sentry log when the IM21 sends the tamper bit.
+- Added cloud function call to siren in case of alert (CU-18r17vf).
 
 ### Changed
 

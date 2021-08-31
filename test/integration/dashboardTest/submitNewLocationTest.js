@@ -396,6 +396,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         'alertApiKey',
         true,
         false,
+        null,
         this.client.id,
       )
 

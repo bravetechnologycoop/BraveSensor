@@ -114,6 +114,11 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: RADAR_WINDOW_SIZE_SECONDS
+          - name: PARTICLE_ACCESS_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: PARTICLE_ACCESS_TOKEN
           - name: ENVIRONMENT
             value: {{ include "sensor.fullname" . | quote }}
           - name: RELEASE

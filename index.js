@@ -5,6 +5,7 @@ const fs = require('fs')
 const https = require('https')
 const cors = require('cors')
 const Validator = require('express-validator')
+const Particle = require('particle-api-js')
 
 // In-house dependencies
 const { ALERT_TYPE, helpers } = require('brave-alert-lib')
@@ -18,6 +19,9 @@ const im21door = require('./im21door')
 const DOOR_STATE = require('./SessionStateDoorEnum')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
+
+// Start Particle object
+const particle = new Particle()
 
 // Start Express App
 const app = express()
@@ -72,19 +76,34 @@ async function handleAlert(location, alertType) {
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
       const newSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertType, client)
-      const alertInfo = {
-        sessionId: newSession.id,
-        toPhoneNumber: location.responderPhoneNumber,
-        fromPhoneNumber: location.twilioNumber,
-        message: `This is a ${alertTypeDisplayName} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
-        reminderTimeoutMillis: location.reminderTimer,
-        fallbackTimeoutMillis: location.fallbackTimer,
-        reminderMessage: `This is a reminder to check on the bathroom`,
-        fallbackMessage: `An alert to check on the bathroom at ${location.displayName} was not responded to. Please check on it`,
-        fallbackToPhoneNumbers: location.fallbackNumbers,
-        fallbackFromPhoneNumber: location.client.fromPhoneNumber,
+
+      if (location.sirenParticleId !== null) {
+        try {
+          await particle.callFunction({
+            deviceId: location.sirenParticleId,
+            name: `start`,
+            argument: `start`,
+            auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
+          })
+          helpers.log('Brave Siren started successfully')
+        } catch (e) {
+          helpers.logError(e)
+        }
+      } else {
+        const alertInfo = {
+          sessionId: newSession.id,
+          toPhoneNumber: location.responderPhoneNumber,
+          fromPhoneNumber: location.twilioNumber,
+          message: `This is a ${alertTypeDisplayName} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
+          reminderTimeoutMillis: location.reminderTimer,
+          fallbackTimeoutMillis: location.fallbackTimer,
+          reminderMessage: `This is a reminder to check on the bathroom`,
+          fallbackMessage: `An alert to check on the bathroom at ${location.displayName} was not responded to. Please check on it`,
+          fallbackToPhoneNumbers: location.fallbackNumbers,
+          fallbackFromPhoneNumber: location.client.fromPhoneNumber,
+        }
+        braveAlerter.startAlertSession(alertInfo)
       }
-      braveAlerter.startAlertSession(alertInfo)
     } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
       helpers.log('handleAlert: sending singleAlert')
       await db.saveSession(currentSession, client)
@@ -489,6 +508,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       'alertApiKey',
       true,
       false,
+      null,
       client.id,
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
@@ -530,3 +550,4 @@ module.exports.db = db
 module.exports.routes = routes
 module.exports.redis = redis
 module.exports.braveAlerter = braveAlerter
+module.exports.particle = particle
