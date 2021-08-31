@@ -191,6 +191,7 @@ describe('Brave Sensor server', () => {
       sandbox.spy(particle, 'callFunction')
       sandbox.spy(helpers, 'logError')
     })
+
     afterEach(async () => {
       await redis.clearKeys()
       await db.clearSessions()
@@ -225,7 +226,8 @@ describe('Brave Sensor server', () => {
       })
     })
 
-    it('should not call startAlertSession if particleSirenID is not null', async () => {
+    it('should not create a new session if particleSirenID is not null', async () => {
+      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       expect(sessions.length).to.equal(0)
     })
@@ -265,6 +267,7 @@ describe('Brave Sensor server', () => {
       sandbox.spy(particle, 'callFunction')
       sandbox.spy(helpers, 'logError')
     })
+
     afterEach(async () => {
       await redis.clearKeys()
       await db.clearSessions()
@@ -293,7 +296,7 @@ describe('Brave Sensor server', () => {
       expect(particle.callFunction).to.have.not.been.called
     })
 
-    it('should call startAlertSession if particleSirenId is null', async () => {
+    it('should create a session with the right alert type if particleSirenId is null', async () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       const session = sessions[sessions.length - 1]
