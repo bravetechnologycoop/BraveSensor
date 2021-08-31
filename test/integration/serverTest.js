@@ -276,7 +276,7 @@ describe('Brave Sensor server', () => {
       await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
       await sirenAddressedAlert('particleCoreIdTest')
       const session = await db.getMostRecentSession(testLocation1Id)
-      expect(session.chatbotState).to.have.status(CHATBOT_STATE.COMPLETED)
+      expect(session.chatbotState).to.equal(CHATBOT_STATE.COMPLETED)
     })
 
     it('should not call startAlertSession if particleSirenID is not null', async () => {
