@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
-    "test": "NODE_ENV=test mocha --timeout 10000 \"test/**/*.js\"",
-    "integrationtest": "NODE_ENV=test mocha --timeout 10000 \"test/integration/**/*.js\"",
+    "test": "NODE_ENV=test mocha --timeout 10000 --require \"test/mochaFixtures.js\" \"test/**/*.js\"",
+    "integrationtest": "NODE_ENV=test mocha --timeout 10000 --require \"test/mochaFixtures.js\" \"test/integration/**/*.js\"",
     "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/unit/**/*.js\"",
     "smoketest": "node -e 'require(\"./smokeTest.js\")'"
   },

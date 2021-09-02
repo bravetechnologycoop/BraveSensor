@@ -11,6 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Added Particle cloud function call to start siren in case of alert (CU-18r17vf).
+- `POST /api/sirenAddressed` to handle when a Brave Siren's button is pressed (CU-1dffcm4).
+- `POST /api/sirenEscalated` to handled when a Brave Siren times out and it wants to escalate the alert to the Fallback phones (CU-1dffcm4).
+
 ## [4.1.0] - 2021-08-30
 
 ### Added
@@ -19,7 +25,6 @@ the code was deployed.
 - Tracking of when sessions are first responded to (CU-hjwfx2).
 - `GET /alert/historicAlerts` endpoint (CU-hjwfx2).
 - Sentry log when the IM21 sends the tamper bit.
-- Added cloud function call to siren in case of alert (CU-18r17vf).
 
 ### Changed
 

@@ -5,10 +5,9 @@ const fs = require('fs')
 const https = require('https')
 const cors = require('cors')
 const Validator = require('express-validator')
-const Particle = require('particle-api-js')
 
 // In-house dependencies
-const { ALERT_TYPE, CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, helpers } = require('brave-alert-lib')
 const redis = require('./db/redis')
 const db = require('./db/db')
 const StateMachine = require('./stateMachine/StateMachine')
@@ -19,9 +18,7 @@ const im21door = require('./im21door')
 const DOOR_STATE = require('./SessionStateDoorEnum')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
-
-// Start Particle object
-const particle = new Particle()
+const siren = require('./siren')
 
 // Start Express App
 const app = express()
@@ -41,6 +38,8 @@ app.use(bodyParser.json())
 app.use(cors())
 
 dashboard.setupDashboardSessions(app)
+
+siren.setupSiren(braveAlerter)
 
 function convertToSeconds(milliseconds) {
   return Math.floor(milliseconds / 1000)
@@ -78,17 +77,7 @@ async function handleAlert(location, alertType) {
       const newSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertType, client)
 
       if (location.sirenParticleId !== null) {
-        try {
-          await particle.callFunction({
-            deviceId: location.sirenParticleId,
-            name: `start`,
-            argument: `start`,
-            auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
-          })
-          helpers.log('Brave Siren started successfully')
-        } catch (e) {
-          helpers.logError(e)
-        }
+        await siren.startSiren(location.sirenParticleId)
       } else {
         const alertInfo = {
           sessionId: newSession.id,
@@ -105,13 +94,16 @@ async function handleAlert(location, alertType) {
         braveAlerter.startAlertSession(alertInfo)
       }
     } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
-      helpers.log('handleAlert: sending singleAlert')
-      await db.saveSession(currentSession, client)
-      braveAlerter.sendSingleAlert(
-        location.responderPhoneNumber,
-        location.twilioNumber,
-        `An additional ${alertTypeDisplayName} alert was generated at ${location.displayName}`,
-      )
+      db.saveSession(currentSession, client) // update updatedAt
+      if (location.sirenParticleId !== null) {
+        await siren.startSiren(location.sirenParticleId)
+      } else {
+        braveAlerter.sendSingleAlert(
+          location.responderPhoneNumber,
+          location.twilioNumber,
+          `An additional ${alertTypeDisplayName} alert was generated at ${location.displayName}`,
+        )
+      }
     }
     await db.commitTransaction(client)
   } catch (e) {
@@ -485,124 +477,6 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(),
   }
 })
 
-app.post('/api/sirenAddressed', Validator.body(['coreid']).exists(), async (request, response) => {
-  try {
-    const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
-
-    if (validationErrors.isEmpty()) {
-      const coreId = request.body.coreid
-      const location = await db.getLocationFromParticleCoreID(coreId)
-
-      if (!location) {
-        const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
-        helpers.logError(errorMessage)
-        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-        response.status(200).json(errorMessage)
-      } else {
-        let client
-
-        try {
-          client = await db.beginTransaction()
-          if (client === null) {
-            helpers.logError(`sirenAddressedCallback: Error starting transaction`)
-            return
-          }
-
-          const session = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
-          if (session) {
-            session.respondedAt = await db.getCurrentTime(client)
-            session.chatbotState = CHATBOT_STATE.COMPLETED
-            await db.saveSession(session, client)
-          } else {
-            helpers.logError(`Error stopping session and chatbot due to siren ${coreId} button press`)
-          }
-
-          await db.commitTransaction(client)
-        } catch (e) {
-          try {
-            await db.rollbackTransaction(client)
-            helpers.logError(`sirenAddressedCallback: Rolled back transaction because of error: ${e}`)
-          } catch (error) {
-            // Do nothing
-            helpers.logError(`sirenAddressedCallback: Error rolling back transaction: ${e}`)
-          }
-        }
-        response.status(200).json('OK')
-      }
-    } else {
-      const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
-      helpers.logError(errorMessage)
-      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-      response.status(200).json(errorMessage)
-    }
-  } catch (err) {
-    const errorMessage = `Error calling ${request.path}: ${err.toString()}`
-    helpers.logError(errorMessage)
-    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-    response.status(200).json(errorMessage)
-  }
-})
-
-app.post('/api/sirenEscalated', Validator.body(['coreid']).exists(), async (request, response) => {
-  try {
-    const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
-
-    if (validationErrors.isEmpty()) {
-      const coreId = request.body.coreid
-      const location = await db.getLocationFromParticleCoreID(coreId)
-
-      if (!location) {
-        const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
-        helpers.logError(errorMessage)
-        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-        response.status(200).json(errorMessage)
-      } else {
-        let client
-
-        try {
-          client = await db.beginTransaction()
-          if (client === null) {
-            helpers.logError(`sirenEscalatedCallback: Error starting transaction`)
-            return
-          }
-
-          const session = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
-          if (session) {
-            const alertMessage = `There is an unresponded siren. Please check on the bathroom at ${location.displayName}.`
-            for (const fallbackPhoneNumber in location.fallbackNumbers) {
-              await braveAlerter.sendSingleAlert(fallbackPhoneNumber, location.client.fromPhoneNumber, alertMessage)
-            }
-            await db.saveSession(session, client)
-          } else {
-            helpers.logError(`Siren not responded to - error starting normal chatbot`)
-          }
-
-          await db.commitTransaction(client)
-        } catch (e) {
-          try {
-            await db.rollbackTransaction(client)
-            helpers.logError(`sirenEscalatedCallback: Rolled back transaction because of error: ${e}`)
-          } catch (error) {
-            // Do nothing
-            helpers.logError(`sirenEscalatedCallback: Error rolling back transaction: ${e}`)
-          }
-        }
-        response.status(200).json('OK')
-      }
-    } else {
-      const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
-      helpers.logError(errorMessage)
-      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-      response.status(200).json(errorMessage)
-    }
-  } catch (err) {
-    const errorMessage = `Error calling ${request.path}: ${err.toString()}`
-    helpers.logError(errorMessage)
-    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-    response.status(200).json(errorMessage)
-  }
-})
-
 app.post('/smokeTest/setup', async (request, response) => {
   const { recipientNumber, twilioNumber, radarType } = request.body
   try {
@@ -668,4 +542,3 @@ module.exports.db = db
 module.exports.routes = routes
 module.exports.redis = redis
 module.exports.braveAlerter = braveAlerter
-module.exports.particle = particle
