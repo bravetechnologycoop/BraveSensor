@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <functional>
+#include "../../inc/spark_wiring_string.h"
 
 enum PublishFlag
 {
@@ -37,8 +39,10 @@ public:
         return true;
     }
 
-    bool function(char const* const functionName,
-    )
+    static void function(const char *funcKey, std::function<int(String)> func) {
+        printf("Particle.function: '%s'", funcKey);
+
+    }
 };
 
 extern MockParticle Particle;
