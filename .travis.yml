@@ -5,7 +5,7 @@ jobs:
     - stage: 'firmware tests'
       language: cpp
       script:
-        - cd ../firmware/test && g++ -std=c++14 -o Test test.cpp && ./Test
+        - cd ../firmware/test && g++ -I../inc -I./ -I./mocks -o ConsoleTests consoleFnTests.cpp -lstdc++ -lm && ./ConsoleTests -s
     - stage: 'server tests'
         language: node_js
         node_js: 'node' # node version specified in .nvmrc

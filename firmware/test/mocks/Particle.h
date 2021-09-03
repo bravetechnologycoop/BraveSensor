@@ -14,7 +14,7 @@ enum PublishFlag
     WITH_ACK
 };
 
-typedef struct os_queue_t{
+struct os_queue_t{
 
 }; 
 
