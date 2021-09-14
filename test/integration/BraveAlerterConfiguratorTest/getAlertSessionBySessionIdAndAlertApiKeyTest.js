@@ -8,7 +8,7 @@ const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
 const { clientFactory } = require('../../../testingHelpers')
 
-describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () => {
+describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessionIdAndAlertApiKey', () => {
   beforeEach(async () => {
     await db.clearTables()
 
@@ -16,9 +16,11 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
     this.expectedIncidentType = 'No One Inside'
     this.expectedLocationDisplayName = 'TEST LOCATION'
     this.expectedLocationPhoneNumber = '+17772225555'
+    this.expectedTwilioPhoneNumber = '+3336661234'
+    this.alertApiKey = 'myAlertApiKey'
 
     // Insert a location in the DB
-    const client = await clientFactory(db, { responderPhoneNumber: this.expectedLocationPhoneNumber })
+    const client = await clientFactory(db, { responderPhoneNumber: this.expectedLocationPhoneNumber, alertApiKey: this.alertApiKey })
     await db.createLocation(
       'LocationId',
       1,
@@ -27,7 +29,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
       1,
       1,
       [],
-      1,
+      this.expectedTwilioPhoneNumber,
       [],
       1,
       this.expectedLocationDisplayName,
@@ -45,7 +47,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
     this.session = await db.createSession(locationId, this.expectedLocationPhoneNumber, ALERT_TYPE.SENSOR_DURATION)
     this.session.chatbotState = this.expectedChatbotState
     this.session.incidentType = this.expectedIncidentType
-    db.saveSession(this.session)
+    await db.saveSession(this.session)
   })
 
   afterEach(async () => {
@@ -54,7 +56,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
 
   it('should create a new AlertSession with expected values from the sessions and locations DB tables', async () => {
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
-    const actualAlertSession = await braveAlerterConfigurator.createAlertSessionFromSession(this.session)
+    const actualAlertSession = await braveAlerterConfigurator.getAlertSessionBySessionIdAndAlertApiKey(this.session.id, this.alertApiKey)
 
     const expectedAlertSession = new AlertSession(
       this.session.id,

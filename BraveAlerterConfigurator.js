@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this */
 // In-house dependencies
-const { BraveAlerter, AlertSession, CHATBOT_STATE, helpers, HistoricAlert, Location, SYSTEM } = require('brave-alert-lib')
+const { ActiveAlert, BraveAlerter, AlertSession, CHATBOT_STATE, helpers, HistoricAlert, Location, SYSTEM } = require('brave-alert-lib')
 const db = require('./db/db')
 
 const incidentTypes = ['No One Inside', 'Person responded', 'Overdose', 'None of the above']
@@ -12,8 +12,10 @@ class BraveAlerterConfigurator {
     return new BraveAlerter(
       this.getAlertSession.bind(this),
       this.getAlertSessionByPhoneNumber.bind(this),
+      this.getAlertSessionBySessionIdAndAlertApiKey.bind(this),
       this.alertSessionChangedCallback.bind(this),
       this.getLocationByAlertApiKey.bind(this),
+      this.getActiveAlertsByAlertApiKey.bind(this),
       this.getHistoricAlertsByAlertApiKey.bind(this),
       () => {},
       false,
@@ -21,7 +23,7 @@ class BraveAlerterConfigurator {
     )
   }
 
-  async buildAlertSession(session) {
+  async createAlertSessionFromSession(session) {
     const locationData = await db.getLocationData(session.locationid)
 
     const alertSession = new AlertSession(
@@ -40,14 +42,30 @@ class BraveAlerterConfigurator {
 
   async getAlertSession(sessionId) {
     const session = await db.getSessionWithSessionId(sessionId)
-    const alertSession = await this.buildAlertSession(session)
+    const alertSession = await this.createAlertSessionFromSession(session)
 
     return alertSession
   }
 
   async getAlertSessionByPhoneNumber(phoneNumber) {
     const session = await db.getMostRecentSessionPhone(phoneNumber)
-    const alertSession = await this.buildAlertSession(session)
+    const alertSession = await this.createAlertSessionFromSession(session)
+
+    return alertSession
+  }
+
+  async getAlertSessionBySessionIdAndAlertApiKey(sessionId, alertApiKey) {
+    let alertSession = null
+    try {
+      const session = await db.getSessionWithSessionIdAndAlertApiKey(sessionId, alertApiKey)
+      if (session === null) {
+        return null
+      }
+
+      alertSession = await this.createAlertSessionFromSession(session)
+    } catch (e) {
+      helpers.logError(`getAlertSessionBySessionIdAndAlertApiKey: failed to get and create a new alert session: ${e.toString()}`)
+    }
 
     return alertSession
   }
@@ -107,6 +125,23 @@ class BraveAlerterConfigurator {
     // Even if there is more than one matching location, we only return one and it will
     // be used by the Alert App to indentify this location
     return new Location(locations[0].locationid, SYSTEM.SENSOR)
+  }
+
+  createActiveAlertFromRow(row) {
+    return new ActiveAlert(row.id, row.chatbot_state, row.display_name, row.alert_type, incidentTypes, row.created_at)
+  }
+
+  // Active Alerts are those with status that is not "Completed" and were last updated SESSION_RESET_THRESHOLD ago or more recently
+  async getActiveAlertsByAlertApiKey(alertApiKey) {
+    const maxTimeAgoInMillis = helpers.getEnvVar('SESSION_RESET_THRESHOLD')
+
+    const activeAlerts = await db.getActiveAlertsByAlertApiKey(alertApiKey, maxTimeAgoInMillis)
+
+    if (!Array.isArray(activeAlerts)) {
+      return null
+    }
+
+    return activeAlerts.map(this.createActiveAlertFromRow)
   }
 
   createHistoricAlertFromRow(row) {

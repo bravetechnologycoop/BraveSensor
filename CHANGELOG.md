@@ -17,6 +17,10 @@ the code was deployed.
 - `POST /api/sirenAddressed` to handle when a Brave Siren's button is pressed (CU-1dffcm4).
 - `POST /api/sirenEscalated` to handled when a Brave Siren times out and it wants to escalate the alert to the Fallback phones (CU-1dffcm4).
 - `responder_push_id` to the DB to store the Responder Device's Push Notification ID (CU-10xfkhr).
+- `POST /alert/acknowledgeAlertSession` to acknowledge an alert session through the Alert App (CU-10xfkhr).
+- `POST /alert/respondToAlertSession` to respond to an alert session through the Alert App (CU-10xfkhr).
+- `POST /alert/setIncidentCategory` to set the incident category for an alert session through the Alert App (CU-10xfkhr).
+- `GET /alert/activeAlerts` endpoint (CU-10xfkhr).
 
 ## [4.1.0] - 2021-08-30
 

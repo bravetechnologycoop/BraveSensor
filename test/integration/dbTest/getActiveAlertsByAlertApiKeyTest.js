@@ -1,7 +1,7 @@
 // Third-party dependencies
 const { expect } = require('chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
-const { ALERT_TYPE, CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, CHATBOT_STATE } = require('brave-alert-lib')
 
 // In-house dependencies
 const db = require('../../../db/db')
@@ -9,7 +9,7 @@ const Session = require('../../../Session')
 const RADAR_TYPE = require('../../../RadarTypeEnum')
 const { clientFactory } = require('../../../testingHelpers')
 
-describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
+describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
   beforeEach(async () => {
     await db.clearTables()
   })
@@ -49,7 +49,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     })
 
     it('should return an empty array', async () => {
-      const rows = await db.getHistoricAlertsByAlertApiKey('not alertApiKey', 10, 50000)
+      const rows = await db.getActiveAlertsByAlertApiKey('not alertApiKey', 50000)
 
       expect(rows).to.eql([])
     })
@@ -110,7 +110,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     })
 
     it('should return an empty array', async () => {
-      const rows = await db.getHistoricAlertsByAlertApiKey(this.alertApiKey, 10, 50000)
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 50000)
 
       expect(rows).to.eql([])
     })
@@ -146,7 +146,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       )
 
       // Insert a single session for that API key
-      this.incidentType = ALERT_TYPE.SENSOR_DURATION
+      this.incidentType = 'Overdose'
       this.respondedAt = new Date('2021-01-20T06:20:19.000Z')
       this.alertType = ALERT_TYPE.SENSOR_DURATION
       this.session = await db.createSession(locationid, phonenumber, this.alertType)
@@ -167,120 +167,21 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     })
 
     it('should return an array with one object with the correct values in it', async () => {
-      const rows = await db.getHistoricAlertsByAlertApiKey(this.alertApiKey, 1, 0)
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 120000)
 
       expect(rows).to.eql([
         {
           id: this.session.id,
+          chatbot_state: this.session.chatbotState,
           display_name: this.displayName,
-          incident_type: this.incidentType,
           alert_type: this.alertType,
           created_at: this.session.createdAt,
-          responded_at: this.respondedAt,
         },
       ])
     })
   })
 
-  describe('if there are more matching sessions than maxHistoricAlerts', () => {
-    beforeEach(async () => {
-      // Insert a single location and more than maxHistoricAlerts sessions
-      this.alertApiKey = 'alertApiKey'
-      const locationid = 'locationid'
-      const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
-      await db.createLocation(
-        locationid,
-        'movementThreshold',
-        'stillnessThreshold',
-        'durationTimer',
-        120000,
-        'initialTimer',
-        '{"heartbeatAlertRecipients"}',
-        'twilioNumber',
-        '{"fallbackNumbers"}',
-        300000,
-        'displayName',
-        'doorCoreId',
-        'radarCoreId',
-        'radarType',
-        true,
-        false,
-        null,
-        client.id,
-      )
-
-      this.session1 = await db.createSession(locationid, 'phonenumber1', ALERT_TYPE.SENSOR_DURATION)
-      await helpers.sleep(1) // sleep to make sure that these have created_at values at least one millisecond apart
-      this.session2 = await db.createSession(locationid, 'phonenumber2', ALERT_TYPE.SENSOR_DURATION)
-      await helpers.sleep(1)
-      this.session3 = await db.createSession(locationid, 'phonenumber3', ALERT_TYPE.SENSOR_DURATION)
-      await helpers.sleep(1)
-      this.session4 = await db.createSession(locationid, 'phonenumber4', ALERT_TYPE.SENSOR_DURATION)
-      await helpers.sleep(1)
-      this.session5 = await db.createSession(locationid, 'phonenumber5', ALERT_TYPE.SENSOR_DURATION)
-      await helpers.sleep(1)
-    })
-
-    it('should return only the most recent maxHistoricAlerts of them', async () => {
-      const rows = await db.getHistoricAlertsByAlertApiKey(this.alertApiKey, 3, 0)
-
-      const ids = rows.map(row => row.id)
-
-      expect(ids).to.eql([this.session5.id, this.session4.id, this.session3.id])
-    })
-  })
-
-  describe('if there are fewer matching sessions than maxHistoricAlerts', () => {
-    beforeEach(async () => {
-      // Insert a single location and maxHistoricAlerts sessions
-      this.alertApiKey = 'alertApiKey'
-      const locationid = 'locationid'
-      const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
-      await db.createLocation(
-        locationid,
-        'movementThreshold',
-        'stillnessThreshold',
-        'durationTimer',
-        120000,
-        'initialTimer',
-        '{"heartbeatAlertRecipients"}',
-        'twilioNumber',
-        '{"fallbackNumbers"}',
-        300000,
-        'displayName',
-        'doorCoreId',
-        'radarCoreId',
-        'radarType',
-        true,
-        false,
-        null,
-        client.id,
-      )
-
-      this.maxTimeAgoInMillis = 1000
-
-      // Incompleted sessions older than `this.maxTimeAgoInMillis` should be returned
-      this.session1 = await db.createSession(locationid, 'phonenumber1', ALERT_TYPE.SENSOR_DURATION)
-      this.session2 = await db.createSession(locationid, 'phonenumber2', ALERT_TYPE.SENSOR_DURATION)
-
-      await helpers.sleep(this.maxTimeAgoInMillis + 1)
-
-      // Inncompleted sessions more recent than `this.maxTimeAgoInMillis` should not be returned
-      this.session3 = await db.createSession(locationid, 'phonenumber3', ALERT_TYPE.SENSOR_DURATION)
-      this.session4 = await db.createSession(locationid, 'phonenumber4', ALERT_TYPE.SENSOR_DURATION)
-      this.session5 = await db.createSession(locationid, 'phonenumber5', ALERT_TYPE.SENSOR_DURATION)
-    })
-
-    it('should return only the matches', async () => {
-      const rows = await db.getHistoricAlertsByAlertApiKey(this.alertApiKey, 5, this.maxTimeAgoInMillis)
-
-      const ids = rows.map(row => row.id)
-
-      expect(ids).to.eql([this.session2.id, this.session1.id])
-    })
-  })
-
-  describe('if is a session more recent than maxTimeAgoInMillis', () => {
+  describe('if the session was more recent than maxTimeAgoInMillis', () => {
     beforeEach(async () => {
       // Insert a single location and one session
       this.alertApiKey = 'alertApiKey'
@@ -310,18 +211,119 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       this.session = await db.createSession(locationid, 'phonenumber1', ALERT_TYPE.SENSOR_DURATION)
     })
 
-    it('and it is COMPLETED, should return the Completed session', async () => {
+    it('and it is COMPLETED, should not return it', async () => {
       // Update the session to COMPLETED
       const updatedSession = { ...this.session }
       updatedSession.chatbotState = CHATBOT_STATE.COMPLETED
       await db.saveSession(updatedSession)
 
       // maxTimeAgoInMillis is much greater than the time this test should take to run
-      const rows = await db.getHistoricAlertsByAlertApiKey(this.alertApiKey, 1, 120000)
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 120000)
+
+      const ids = rows.map(row => row.id)
+
+      expect(ids).to.eql([])
+    })
+
+    it('and it is WAITING_FOR_CATEGORY, should return the session', async () => {
+      // Update the session to WAITING_FOR_CATEGORY
+      const updatedSession = { ...this.session }
+      updatedSession.chatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
+      await db.saveSession(updatedSession)
+
+      // maxTimeAgoInMillis is much greater than the time this test should take to run
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 120000)
 
       const ids = rows.map(row => row.id)
 
       expect(ids).to.eql([this.session.id])
+    })
+
+    it('and it is RESPONDING, should return the session', async () => {
+      // Update the session to RESPONDING
+      const updatedSession = { ...this.session }
+      updatedSession.chatbotState = CHATBOT_STATE.RESPONDING
+      await db.saveSession(updatedSession)
+
+      // maxTimeAgoInMillis is much greater than the time this test should take to run
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 120000)
+
+      const ids = rows.map(row => row.id)
+
+      expect(ids).to.eql([this.session.id])
+    })
+
+    it('and it is WAITING_FOR_REPLY, should return the session', async () => {
+      // Update the session to WAITING_FOR_REPLY
+      const updatedSession = { ...this.session }
+      updatedSession.chatbotState = CHATBOT_STATE.WAITING_FOR_REPLY
+      await db.saveSession(updatedSession)
+
+      // maxTimeAgoInMillis is much greater than the time this test should take to run
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 120000)
+
+      const ids = rows.map(row => row.id)
+
+      expect(ids).to.eql([this.session.id])
+    })
+
+    it('and it is STARTED, should return the session', async () => {
+      // Update the session to STARTED
+      const updatedSession = { ...this.session }
+      updatedSession.chatbotState = CHATBOT_STATE.STARTED
+      await db.saveSession(updatedSession)
+
+      // maxTimeAgoInMillis is much greater than the time this test should take to run
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 120000)
+
+      const ids = rows.map(row => row.id)
+
+      expect(ids).to.eql([this.session.id])
+    })
+  })
+
+  describe('if the session was longer ago than maxTimeAgoInMillis', () => {
+    beforeEach(async () => {
+      // Insert a single location and one session
+      this.alertApiKey = 'alertApiKey'
+      const locationid = 'locationid'
+      const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
+      await db.createLocation(
+        locationid,
+        'movementThreshold',
+        'stillnessThreshold',
+        'durationTimer',
+        120000,
+        'initialTimer',
+        '{"heartbeatAlertRecipients"}',
+        'twilioNumber',
+        '{"fallbackNumbers"}',
+        300000,
+        'displayName',
+        'doorCoreId',
+        'radarCoreId',
+        'radarType',
+        true,
+        false,
+        null,
+        client.id,
+      )
+
+      this.session = await db.createSession(locationid, 'phonenumber1', ALERT_TYPE.SENSOR_DURATION)
+    })
+
+    it('and it is COMPLETED, should not return it', async () => {
+      // Update the session to COMPLETED
+      const updatedSession = { ...this.session }
+      updatedSession.chatbotState = CHATBOT_STATE.COMPLETED
+      await db.saveSession(updatedSession)
+
+      // maxTimeAgoInMillis is less than the time this test should take to run
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 0)
+
+      const ids = rows.map(row => row.id)
+
+      expect(ids).to.eql([])
     })
 
     it('and it is WAITING_FOR_CATEGORY, should not return it', async () => {
@@ -330,8 +332,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       updatedSession.chatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
       await db.saveSession(updatedSession)
 
-      // maxTimeAgoInMillis is much greater than the time this test should take to run
-      const rows = await db.getHistoricAlertsByAlertApiKey(this.alertApiKey, 1, 120000)
+      // maxTimeAgoInMillis is less than the time this test should take to run
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 0)
 
       const ids = rows.map(row => row.id)
 
@@ -344,8 +346,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       updatedSession.chatbotState = CHATBOT_STATE.RESPONDING
       await db.saveSession(updatedSession)
 
-      // maxTimeAgoInMillis is much greater than the time this test should take to run
-      const rows = await db.getHistoricAlertsByAlertApiKey(this.alertApiKey, 1, 120000)
+      // maxTimeAgoInMillis is less than the time this test should take to run
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 0)
 
       const ids = rows.map(row => row.id)
 
@@ -358,8 +360,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       updatedSession.chatbotState = CHATBOT_STATE.WAITING_FOR_REPLY
       await db.saveSession(updatedSession)
 
-      // maxTimeAgoInMillis is much greater than the time this test should take to run
-      const rows = await db.getHistoricAlertsByAlertApiKey(this.alertApiKey, 1, 120000)
+      // maxTimeAgoInMillis is less than the time this test should take to run
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 0)
 
       const ids = rows.map(row => row.id)
 
@@ -372,8 +374,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       updatedSession.chatbotState = CHATBOT_STATE.STARTED
       await db.saveSession(updatedSession)
 
-      // maxTimeAgoInMillis is much greater than the time this test should take to run
-      const rows = await db.getHistoricAlertsByAlertApiKey(this.alertApiKey, 1, 120000)
+      // maxTimeAgoInMillis is less than the time this test should take to run
+      const rows = await db.getActiveAlertsByAlertApiKey(this.alertApiKey, 0)
 
       const ids = rows.map(row => row.id)
 

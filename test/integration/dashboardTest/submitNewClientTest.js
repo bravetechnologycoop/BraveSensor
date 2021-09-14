@@ -24,20 +24,14 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     sandbox.spy(helpers, 'log')
     sandbox.spy(helpers, 'logError')
 
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
+    await db.clearTables()
 
     this.agent = chai.request.agent(server)
   })
 
   afterEach(async () => {
     this.agent.close()
-
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
-
+    await db.clearTables()
     sandbox.restore()
   })
 

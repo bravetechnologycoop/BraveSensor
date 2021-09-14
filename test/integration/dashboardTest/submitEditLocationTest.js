@@ -27,9 +27,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     this.testLocationIdForEdit = 'test1'
 
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
+    await db.clearTables()
 
     this.client = await clientFactory(db)
     await db.createLocation(
@@ -58,11 +56,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
   afterEach(async () => {
     sandbox.restore()
-
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
-
+    await db.clearTables
     this.agent.close()
   })
 
