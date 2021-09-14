@@ -10,9 +10,7 @@ const { clientFactory } = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKey', () => {
   beforeEach(async () => {
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
+    await db.clearTables()
 
     this.expectedLocationId = 'TEST LOCATION'
     this.apiKey = 'myApiKey'
@@ -42,8 +40,7 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
   })
 
   afterEach(async () => {
-    await db.clearLocations()
-    await db.clearClients()
+    await db.clearTables()
   })
 
   it('given a API key that matches a single client with a single location should return a BraveAlertLib Location object with the values from that location', async () => {

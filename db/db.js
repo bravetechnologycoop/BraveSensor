@@ -156,6 +156,33 @@ async function getSessionWithSessionId(id, clientParam) {
   }
 }
 
+async function getSessionWithSessionIdAndAlertApiKey(sessionId, alertApiKey, clientParam) {
+  try {
+    const results = await helpers.runQuery(
+      'getSessionWithSessionIdAndAlertApiKey',
+      `
+      SELECT s.*
+      FROM sessions AS s
+      LEFT JOIN locations AS l ON s.locationid = l.locationid
+      LEFT JOIN clients AS c ON l.client_id = c.id
+      WHERE s.id = $1
+      AND c.alert_api_key = $2
+      `,
+      [sessionId, alertApiKey],
+      pool,
+      clientParam,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(err.toString())
+  }
+}
+
 async function getClientWithClientId(id, clientParam) {
   try {
     const results = await runQuery(
@@ -325,6 +352,33 @@ async function saveSession(session, clientParam) {
     )
   } catch (err) {
     helpers.log(err.toString())
+  }
+}
+
+async function getActiveAlertsByAlertApiKey(alertApiKey, maxTimeAgoInMillis, clientParam) {
+  try {
+    const results = await helpers.runQuery(
+      'getActiveAlertsByAlertApiKey',
+      `
+      SELECT s.id, s.chatbot_state, l.display_name, s.alert_type, s.created_at
+      FROM sessions AS s
+      LEFT JOIN locations AS l ON l.locationid = s.locationid
+      LEFT JOIN clients AS c ON l.client_id = c.id
+      WHERE c.alert_api_key = $1
+      AND (
+        s.chatbot_state <> $2
+        AND s.updated_at >= now() - $3 * INTERVAL '1 millisecond'
+      )
+      ORDER BY s.created_at DESC
+      `,
+      [alertApiKey, CHATBOT_STATE.COMPLETED, maxTimeAgoInMillis],
+      pool,
+      clientParam,
+    )
+
+    return results.rows
+  } catch (err) {
+    helpers.logError(err.toString())
   }
 }
 
@@ -772,6 +826,17 @@ async function clearClientWithDisplayName(displayName, clientParam) {
   }
 }
 
+async function clearTables(clientParam) {
+  if (!helpers.isTestEnvironment()) {
+    helpers.log('warning - tried to clear tables outside of a test environment!')
+    return
+  }
+
+  await clearSessions(clientParam)
+  await clearLocations(clientParam)
+  await clearClients(clientParam)
+}
+
 async function close() {
   await pool.end()
 }
@@ -779,7 +844,9 @@ async function close() {
 module.exports = {
   getMostRecentSession,
   getSessionWithSessionId,
+  getSessionWithSessionIdAndAlertApiKey,
   getHistoryOfSessions,
+  getActiveAlertsByAlertApiKey,
   getHistoricAlertsByAlertApiKey,
   getUnrespondedSessionWithLocationId,
   createSession,
@@ -802,6 +869,7 @@ module.exports = {
   createClient,
   clearClients,
   clearClientWithDisplayName,
+  clearTables,
   getClients,
   getClientWithClientId,
   updateClient,

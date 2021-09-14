@@ -45,21 +45,8 @@ function convertToSeconds(milliseconds) {
   return Math.floor(milliseconds / 1000)
 }
 
-function getAlertTypeDisplayName(alertType) {
-  let displayName = ''
-  if (alertType === ALERT_TYPE.SENSOR_DURATION) {
-    displayName = 'Duration'
-  } else if (alertType === ALERT_TYPE.SENSOR_STILLNESS) {
-    displayName = 'Stillness'
-  } else {
-    displayName = 'Unknown'
-  }
-
-  return displayName
-}
-
 async function handleAlert(location, alertType) {
-  const alertTypeDisplayName = getAlertTypeDisplayName(alertType)
+  const alertTypeDisplayName = helpers.getAlertTypeDisplayName(alertType)
   helpers.log(`${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId}`)
 
   let client
@@ -74,15 +61,18 @@ async function handleAlert(location, alertType) {
     const currentTime = await db.getCurrentTime(client)
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
-      const newSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertType, client)
+      const newSession = await db.createSession(location.locationid, location.client.responderPhoneNumber, alertType, client)
 
       if (location.sirenParticleId !== null) {
         await siren.startSiren(location.sirenParticleId)
       } else {
         const alertInfo = {
           sessionId: newSession.id,
-          toPhoneNumber: location.responderPhoneNumber,
+          toPhoneNumber: location.client.responderPhoneNumber,
           fromPhoneNumber: location.twilioNumber,
+          responderPushId: location.client.responderPushId,
+          deviceName: location.displayName,
+          alertType: newSession.alertType,
           message: `This is a ${alertTypeDisplayName} alert. Please check on the bathroom at ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
           reminderTimeoutMillis: location.reminderTimer,
           fallbackTimeoutMillis: location.fallbackTimer,
@@ -98,10 +88,13 @@ async function handleAlert(location, alertType) {
       if (location.sirenParticleId !== null) {
         await siren.startSiren(location.sirenParticleId)
       } else {
-        braveAlerter.sendSingleAlert(
-          location.responderPhoneNumber,
+        braveAlerter.sendAlertSessionUpdate(
+          currentSession.id,
+          location.client.repsonderPushId,
+          location.client.responderPhoneNumber,
           location.twilioNumber,
           `An additional ${alertTypeDisplayName} alert was generated at ${location.displayName}`,
+          `${alertTypeDisplayName} Alert:\n${location.displayName}`,
         )
       }
     }

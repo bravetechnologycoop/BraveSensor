@@ -24,9 +24,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
     sandbox.spy(helpers, 'log')
     sandbox.spy(helpers, 'logError')
 
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
+    await db.clearTables()
 
     this.client = await clientFactory(db)
 
@@ -35,11 +33,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
   afterEach(async () => {
     sandbox.restore()
-
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
-
+    await db.clearTables()
     this.agent.close()
   })
 

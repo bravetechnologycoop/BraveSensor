@@ -130,12 +130,19 @@ async function im21Door(doorCoreId, signal) {
 }
 
 describe('Brave Sensor server', () => {
+  beforeEach(async () => {
+    await redis.clearKeys()
+    await db.clearTables()
+  })
+
+  afterEach(async () => {
+    await redis.clearKeys()
+    await db.clearTables()
+    sandbox.restore()
+  })
+
   describe('POST /sensorEvent: alerts from firmware state machine when the sirenParticleId is null', () => {
     beforeEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
@@ -161,14 +168,6 @@ describe('Brave Sensor server', () => {
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.stub(siren, 'startSiren')
       sandbox.spy(helpers, 'logError')
-    })
-
-    afterEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-      sandbox.restore()
     })
 
     describe('given an invalid request (no body)', () => {
@@ -270,11 +269,6 @@ describe('Brave Sensor server', () => {
 
   describe('POST request: alerts from firmware state machine when the sirenParticleId is not null', () => {
     beforeEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
@@ -302,12 +296,18 @@ describe('Brave Sensor server', () => {
       sandbox.spy(helpers, 'logError')
     })
 
-    afterEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-      sandbox.restore()
+    describe('given an invalid request (no body)', () => {
+      beforeEach(async () => {
+        this.response = await chai.request(server).post('/api/sensorEvent').send({})
+      })
+
+      it('should return 200', () => {
+        expect(this.response).to.have.status(200)
+      })
+
+      it('should log the error', () => {
+        expect(helpers.logError).to.be.calledWithExactly('Bad request to /api/sensorEvent: coreid (Invalid value),event (Invalid value)')
+      })
     })
 
     describe('for a valid DURATION request', () => {
@@ -395,11 +395,6 @@ describe('Brave Sensor server', () => {
 
   describe('POST request radar and door events with XeThru radar and mock im21 door sensor for an active Location', () => {
     beforeEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
@@ -424,15 +419,6 @@ describe('Brave Sensor server', () => {
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       await im21Door(door_coreID, im21door.createClosedSignal())
-    })
-
-    afterEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-      sandbox.restore()
-      helpers.log('\n')
     })
 
     it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
@@ -516,11 +502,6 @@ describe('Brave Sensor server', () => {
 
   describe('POST request radar and door events with XeThru radar and mock im21 door sensor for an inactive Location', () => {
     beforeEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
@@ -544,15 +525,6 @@ describe('Brave Sensor server', () => {
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
       sandbox.spy(StateMachine, 'getNextState')
-    })
-
-    afterEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-      sandbox.restore()
-      helpers.log('\n')
     })
 
     it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
@@ -596,11 +568,6 @@ describe('Brave Sensor server', () => {
 
   describe('POST request radar and door events with INS radar and mock im21 door sensor for an active Location', () => {
     beforeEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
@@ -626,15 +593,6 @@ describe('Brave Sensor server', () => {
       sandbox.spy(StateMachine, 'getNextState')
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
-    })
-
-    afterEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-      helpers.log('\n')
-      sandbox.restore()
     })
 
     it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
@@ -718,11 +676,6 @@ describe('Brave Sensor server', () => {
 
   describe('POST request radar and door events with INS radar and mock im21 door sensor for an inactive Location', () => {
     beforeEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients
-
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
@@ -745,14 +698,6 @@ describe('Brave Sensor server', () => {
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
-    })
-
-    afterEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-      helpers.log('\n')
     })
 
     it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
@@ -795,11 +740,6 @@ describe('Brave Sensor server', () => {
   describe('Express validation of API and form endpoints', () => {
     describe('/api/door endpoint', () => {
       beforeEach(async () => {
-        await redis.clearKeys()
-        await db.clearSessions()
-        await db.clearLocations()
-        await db.clearClients()
-
         const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
         await db.createLocation(
           testLocation1Id,
@@ -822,14 +762,6 @@ describe('Brave Sensor server', () => {
           client.id,
         )
         await im21Door(door_coreID, im21door.createClosedSignal())
-      })
-
-      afterEach(async () => {
-        await redis.clearKeys()
-        await db.clearSessions()
-        await db.clearLocations()
-        await db.clearClients()
-        helpers.log('\n')
       })
 
       it('should return 200 for a valid request', async () => {
@@ -863,11 +795,6 @@ describe('Brave Sensor server', () => {
 
     describe('api/devicevitals endpoint', () => {
       beforeEach(async () => {
-        await redis.clearKeys()
-        await db.clearSessions()
-        await db.clearLocations()
-        await db.clearClients()
-
         const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
         await db.createLocation(
           testLocation1Id,
@@ -890,14 +817,6 @@ describe('Brave Sensor server', () => {
           client.id,
         )
         await im21Door(door_coreID, im21door.createClosedSignal())
-      })
-
-      afterEach(async () => {
-        await redis.clearKeys()
-        await db.clearSessions()
-        await db.clearLocations()
-        await db.clearClients()
-        helpers.log('\n')
       })
 
       it('should return 200 for a valid request', async () => {

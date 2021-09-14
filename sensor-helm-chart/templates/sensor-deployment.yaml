@@ -124,6 +124,16 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: PARTICLE_PRODUCT_GROUP
+          - name: ONESIGNAL_APP_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: ONESIGNAL_APP_ID
+          - name: ONESIGNAL_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: ONESIGNAL_API_KEY
           - name: ENVIRONMENT
             value: {{ include "sensor.fullname" . | quote }}
           - name: RELEASE

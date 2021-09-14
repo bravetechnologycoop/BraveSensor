@@ -48,9 +48,8 @@ async function sirenAddressedAlert(coreID) {
 describe('siren.js integration tests: handleSirenAddressed', () => {
   beforeEach(async () => {
     await redis.clearKeys()
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
+    await db.clearTables()
+
     const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
     await db.createLocation(
       testLocation1Id,
@@ -80,10 +79,7 @@ describe('siren.js integration tests: handleSirenAddressed', () => {
 
   afterEach(async () => {
     await redis.clearKeys()
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
-
+    await db.clearTables()
     sandbox.restore()
   })
 

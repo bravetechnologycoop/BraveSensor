@@ -48,9 +48,8 @@ async function sirenEscalatedAlert(coreID) {
 describe('siren.js integration tests: handleSirenEscalated', () => {
   beforeEach(async () => {
     await redis.clearKeys()
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
+    await db.clearTables()
+
     const client = await clientFactory(db, {
       fromPhoneNumber: '+12223334444',
       responderPhoneNumber: testLocation1PhoneNumber,
@@ -83,10 +82,7 @@ describe('siren.js integration tests: handleSirenEscalated', () => {
 
   afterEach(async () => {
     await redis.clearKeys()
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
-
+    await db.clearTables()
     sandbox.restore()
   })
 

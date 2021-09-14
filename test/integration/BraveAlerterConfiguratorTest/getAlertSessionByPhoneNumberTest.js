@@ -10,9 +10,7 @@ const { clientFactory } = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneNumber', () => {
   beforeEach(async () => {
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
+    await db.clearTables()
 
     this.expectedChatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
     this.expectedIncidentType = 'No One Inside'
@@ -52,9 +50,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
   })
 
   afterEach(async () => {
-    await db.clearSessions()
-    await db.clearLocations()
-    await db.clearClients()
+    await db.clearTables()
   })
 
   it('should create a new AlertSession with expected values from the sessions and locations DB tables', async () => {
