@@ -30,7 +30,7 @@ class BraveAlerterConfigurator {
       session.incidentType,
       undefined,
       `An alert to check on the washroom at ${locationData.displayName} was not responded to. Please check on it`,
-      locationData.responderPhoneNumber,
+      locationData.client.responderPhoneNumber,
       incidentTypeKeys,
       incidentTypes,
     )

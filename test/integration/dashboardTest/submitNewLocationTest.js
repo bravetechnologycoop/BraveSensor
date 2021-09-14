@@ -43,7 +43,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
     this.agent.close()
   })
 
-  describe('for a request that contains valid non-empty fields', () => {
+  describe('for a request that contains all valid non-empty fields', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
         username: helpers.getEnvVar('WEB_USERNAME'),
@@ -55,20 +55,16 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.doorCoreId = 'door_coreID'
       this.radarCoreId = 'radar_coreID'
       this.radarType = 'XeThru'
-      this.responderPhoneNumber = '+18001231234'
       this.twilioNumber = '+15005550006'
       this.firmwareStateMachine = false
-      this.alertApiKey = 'myApiKey'
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
         doorCoreID: this.doorCoreId,
         radarCoreID: this.radarCoreId,
         radarType: this.radarType,
-        responderPhoneNumber: this.responderPhoneNumber,
         twilioPhone: this.twilioNumber,
         firmwareStateMachine: this.firmwareStateMachine.toString(),
-        alertApiKey: this.alertApiKey,
         clientId: this.client.id,
       }
 
@@ -88,10 +84,8 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         doorCoreId: newLocation.doorCoreId,
         radarCoreId: newLocation.radarCoreId,
         radarType: newLocation.radarType,
-        responderPhoneNumber: newLocation.responderPhoneNumber,
         twilioNumber: newLocation.twilioNumber,
         firmwareStateMachine: newLocation.firmwareStateMachine,
-        alertApiKey: newLocation.alertApiKey,
         clientId: newLocation.client.id,
       }).to.eql({
         locationid: this.locationid,
@@ -99,10 +93,8 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         doorCoreId: this.doorCoreId,
         radarCoreId: this.radarCoreId,
         radarType: this.radarType,
-        responderPhoneNumber: this.responderPhoneNumber,
         twilioNumber: this.twilioNumber,
         firmwareStateMachine: this.firmwareStateMachine,
-        alertApiKey: this.alertApiKey,
         clientId: this.client.id,
       })
     })
@@ -124,7 +116,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         doorCoreID: 'door_coreID',
         radarCoreID: 'radar_coreID',
         radarType: 'XeThru',
-        responderPhoneNumber: '+18001231234',
         twilioPhone: '+15005550006',
         firmwareStateMachine: 'false',
         clientId: this.clientId,
@@ -156,9 +147,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         doorCoreID: 'door_coreID',
         radarCoreID: 'radar_coreID',
         radarType: 'XeThru',
-        responderPhoneNumber: '+18001231234',
         twilioPhone: '+15005550006',
-        alertApiKey: 'myApiKey',
         firmwareStateMachine: 'false',
         clientId: '91ddc8f7-c2e7-490e-bfe9-3d2880a76108',
       }
@@ -179,132 +168,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
     })
   })
 
-  describe('for a request that contains all valid non-empty fields but with no alertApiKey', () => {
-    beforeEach(async () => {
-      await this.agent.post('/login').send({
-        username: helpers.getEnvVar('WEB_USERNAME'),
-        password: helpers.getEnvVar('PASSWORD'),
-      })
-
-      this.locationid = 'unusedID'
-      this.displayName = 'locationName'
-      this.doorCoreId = 'door_coreID'
-      this.radarCoreId = 'radar_coreID'
-      this.radarType = 'XeThru'
-      this.responderPhoneNumber = '+18001231234'
-      this.twilioNumber = '+15005550006'
-      this.firmwareStateMachine = false
-      const goodRequest = {
-        locationid: this.locationid,
-        displayName: this.displayName,
-        doorCoreID: this.doorCoreId,
-        radarCoreID: this.radarCoreId,
-        radarType: this.radarType,
-        responderPhoneNumber: this.responderPhoneNumber,
-        twilioPhone: this.twilioNumber,
-        firmwareStateMachine: this.firmwareStateMachine.toString(),
-        clientId: this.client.id,
-      }
-
-      this.response = await this.agent.post('/locations').send(goodRequest)
-    })
-
-    it('should return 200', () => {
-      expect(this.response).to.have.status(200)
-    })
-
-    it('should create a location in the database with the given values', async () => {
-      const newLocation = await db.getLocationData(this.locationid)
-
-      expect({
-        locationid: newLocation.locationid,
-        displayName: newLocation.displayName,
-        doorCoreId: newLocation.doorCoreId,
-        radarCoreId: newLocation.radarCoreId,
-        radarType: newLocation.radarType,
-        responderPhoneNumber: newLocation.responderPhoneNumber,
-        twilioNumber: newLocation.twilioNumber,
-        firmwareStateMachine: newLocation.firmwareStateMachine,
-        alertApiKey: newLocation.alertApiKey,
-        clientId: newLocation.client.id,
-      }).to.eql({
-        locationid: this.locationid,
-        displayName: this.displayName,
-        doorCoreId: this.doorCoreId,
-        radarCoreId: this.radarCoreId,
-        radarType: this.radarType,
-        responderPhoneNumber: this.responderPhoneNumber,
-        twilioNumber: this.twilioNumber,
-        firmwareStateMachine: this.firmwareStateMachine,
-        alertApiKey: null,
-        clientId: this.client.id,
-      })
-    })
-  })
-
-  describe('for a request that contains all valid non-empty fields but with no responderPhoneNumber', () => {
-    beforeEach(async () => {
-      await this.agent.post('/login').send({
-        username: helpers.getEnvVar('WEB_USERNAME'),
-        password: helpers.getEnvVar('PASSWORD'),
-      })
-
-      this.locationid = 'unusedID'
-      this.displayName = 'locationName'
-      this.doorCoreId = 'door_coreID'
-      this.radarCoreId = 'radar_coreID'
-      this.radarType = 'XeThru'
-      this.twilioNumber = '+15005550006'
-      this.firmwareStateMachine = false
-      this.alertApiKey = 'myApiKey'
-      const goodRequest = {
-        locationid: this.locationid,
-        displayName: this.displayName,
-        doorCoreID: this.doorCoreId,
-        radarCoreID: this.radarCoreId,
-        radarType: this.radarType,
-        twilioPhone: this.twilioNumber,
-        firmwareStateMachine: this.firmwareStateMachine.toString(),
-        alertApiKey: this.alertApiKey,
-        clientId: this.client.id,
-      }
-
-      this.response = await this.agent.post('/locations').send(goodRequest)
-    })
-
-    it('should return 200', () => {
-      expect(this.response).to.have.status(200)
-    })
-
-    it('should create a location in the database with the given values', async () => {
-      const newLocation = await db.getLocationData(this.locationid)
-
-      expect({
-        locationid: newLocation.locationid,
-        displayName: newLocation.displayName,
-        doorCoreId: newLocation.doorCoreId,
-        radarCoreId: newLocation.radarCoreId,
-        radarType: newLocation.radarType,
-        responderPhoneNumber: newLocation.responderPhoneNumber,
-        twilioNumber: newLocation.twilioNumber,
-        firmwareStateMachine: newLocation.firmwareStateMachine,
-        alertApiKey: newLocation.alertApiKey,
-        clientId: newLocation.client.id,
-      }).to.eql({
-        locationid: this.locationid,
-        displayName: this.displayName,
-        doorCoreId: this.doorCoreId,
-        radarCoreId: this.radarCoreId,
-        radarType: this.radarType,
-        responderPhoneNumber: null,
-        twilioNumber: this.twilioNumber,
-        firmwareStateMachine: this.firmwareStateMachine,
-        alertApiKey: this.alertApiKey,
-        clientId: this.client.id,
-      })
-    })
-  })
-
   describe('for a request that contains all valid fields, but empty', () => {
     beforeEach(async () => {
       sandbox.spy(db, 'createLocationFromBrowserForm')
@@ -320,9 +183,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         doorCoreID: '',
         radarCoreID: '',
         radarType: '',
-        responderPhoneNumber: '',
         twilioPhone: '',
-        alertApiKey: '',
         firmwareStateMachine: '',
         clientId: '',
       }
@@ -340,7 +201,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.logError).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -367,7 +228,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.logError).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -379,7 +240,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.locationid = 'existingLocationId'
       await db.createLocation(
         this.locationid,
-        '+18881231234',
         40,
         15,
         1,
@@ -393,7 +253,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         'door_coreID',
         'radar_coreID',
         'XeThru',
-        'alertApiKey',
         true,
         false,
         null,
@@ -411,9 +270,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         doorCoreID: 'door_coreID',
         radarCoreID: 'radar_coreID',
         radarType: 'XeThru',
-        responderPhoneNumber: '+13338885555',
         twilioPhone: '+15005550006',
-        alertApiKey: 'alertApiKey',
         firmwareStateMachine: 'false',
         clientId: this.client.id,
       }

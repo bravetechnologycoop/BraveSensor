@@ -15,12 +15,12 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
     await db.clearClients()
 
     this.expectedLocationId = 'TEST LOCATION'
+    this.apiKey = 'myApiKey'
 
     // Insert a location in the DB
-    this.client = await clientFactory(db)
+    this.client = await clientFactory(db, { alertApiKey: this.apiKey })
     await db.createLocation(
       this.expectedLocationId,
-      '+17772225555',
       1,
       1,
       1,
@@ -34,7 +34,6 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
       'DoorCoreId',
       'RadarCoreId',
       'XeThru',
-      'myApiKey',
       true,
       false,
       null,
@@ -47,29 +46,38 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
     await db.clearClients()
   })
 
-  it('given a API key that matches a single location should return a BraveAlertLib Location object with the values from that location', async () => {
+  it('given a API key that matches a single client with a single location should return a BraveAlertLib Location object with the values from that location', async () => {
     const expectedLocation = new Location(this.expectedLocationId, SYSTEM.SENSOR)
 
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
-    const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey('myApiKey')
+    const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey(this.apiKey)
 
     expect(actualLocation).to.eql(expectedLocation)
   })
 
-  it('given a API key that does not match any locations should return null', async () => {
+  it('given a API key that does not match any clients should return null', async () => {
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey('notARealApiKey')
 
     expect(actualLocation).to.be.null
   })
 
-  describe('given a API key that matches more than one location', () => {
+  it('given an API key that matches a single client that has no locations should return null', async () => {
+    await db.clearLocations()
+
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
+    const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey(this.apiKey)
+
+    expect(actualLocation).to.be.null
+  })
+
+  describe('given a API key that matches more than one client and each client has a single location', () => {
     beforeEach(async () => {
       this.anotherExpectedLocationId = 'TEST LOCATION 2'
-      // Insert another location in the DB
+      // Insert another client and location in the DB
+      const newClient = await clientFactory(db, { displayName: 'TEST CLIENT 2', alertApiKey: this.apiKey })
       await db.createLocation(
         this.anotherExpectedLocationId,
-        '+17772225555',
         1,
         1,
         1,
@@ -83,17 +91,16 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
         'DoorCoreId',
         'RadarCoreId',
         'XeThru',
-        'myApiKey',
         true,
         false,
         null,
-        this.client.id,
+        newClient.id,
       )
     })
 
     it('should return a BraveAlertLib Location object with the one of the displaynames', async () => {
       const braveAlerterConfigurator = new BraveAlerterConfigurator()
-      const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey('myApiKey')
+      const actualLocation = await braveAlerterConfigurator.getLocationByAlertApiKey(this.apiKey)
       expect(actualLocation.name).to.be.oneOf([this.expectedLocationId, this.anotherExpectedLocationId])
     })
 

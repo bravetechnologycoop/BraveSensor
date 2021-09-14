@@ -480,10 +480,9 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(),
 app.post('/smokeTest/setup', async (request, response) => {
   const { recipientNumber, twilioNumber, radarType } = request.body
   try {
-    const client = await db.createClient('SmokeTestClient', twilioNumber)
+    const client = await db.createClient('SmokeTestClient', twilioNumber, recipientNumber, null, 'alertApiKey')
     await db.createLocation(
       'SmokeTestLocation',
-      recipientNumber,
       17,
       15,
       150,
@@ -497,7 +496,6 @@ app.post('/smokeTest/setup', async (request, response) => {
       'door_coreID',
       'radar_coreID',
       radarType,
-      'alertApiKey',
       true,
       false,
       null,

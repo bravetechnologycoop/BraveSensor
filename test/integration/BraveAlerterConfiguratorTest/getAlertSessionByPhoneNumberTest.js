@@ -21,10 +21,9 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
     this.expectedTwilioPhoneNumber = '+3336661234'
 
     // Insert a location in the DB
-    const client = await clientFactory(db)
+    const client = await clientFactory(db, { responderPhoneNumber: this.expectedLocationPhoneNumber })
     await db.createLocation(
       'LocationId',
-      this.expectedLocationPhoneNumber,
       1,
       1,
       1,
@@ -38,7 +37,6 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
       'DoorCoreId',
       'RadarCoreId',
       'XeThru',
-      'alertApiKey',
       true,
       false,
       null,

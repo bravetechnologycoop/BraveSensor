@@ -51,10 +51,9 @@ describe('siren.js integration tests: handleSirenAddressed', () => {
     await db.clearSessions()
     await db.clearLocations()
     await db.clearClients()
-    const client = await clientFactory(db)
+    const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
     await db.createLocation(
       testLocation1Id,
-      testLocation1PhoneNumber,
       MOVEMENT_THRESHOLD,
       STILLNESS_TIMER,
       DURATION_TIMER,
@@ -68,7 +67,6 @@ describe('siren.js integration tests: handleSirenAddressed', () => {
       door_coreID,
       radar_coreID,
       'XeThru',
-      'alertApiKey',
       true,
       true,
       testSirenId,
