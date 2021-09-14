@@ -34,7 +34,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     this.client = await clientFactory(db)
     await db.createLocation(
       this.testLocationIdForEdit,
-      '+14445556789',
       10,
       50,
       100,
@@ -48,7 +47,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       'door_core',
       'radar_core',
       'XeThru',
-      'alertApiKey',
       true,
       false,
       null,
@@ -110,11 +108,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID)
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
       expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
-      expect(updatedLocation.responderPhoneNumber).to.equal(this.goodRequest.responderPhoneNumber)
       expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
       expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
       expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
-      expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
       expect(updatedLocation.isActive).to.be.true
       expect(updatedLocation.firmwareStateMachine).to.be.false
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
@@ -170,133 +166,10 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID)
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
       expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
-      expect(updatedLocation.responderPhoneNumber).to.equal(this.goodRequest.responderPhoneNumber)
       expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
       expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
       expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
-      expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
       expect(updatedLocation.isActive).to.be.false
-      expect(updatedLocation.firmwareStateMachine).to.be.false
-      expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
-
-      chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
-      chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
-      chai.assert.equal(updatedLocation.stillnessTimer, this.goodRequest.stillnessTimer)
-      chai.assert.equal(updatedLocation.initialTimer, this.goodRequest.initialTimer)
-      chai.assert.equal(updatedLocation.reminderTimer, this.goodRequest.reminderTimer)
-      chai.assert.equal(updatedLocation.fallbackTimer, this.goodRequest.fallbackTimer)
-    })
-  })
-
-  describe('for a request that contains all valid non-empty fields but with an empty alertApiKey', () => {
-    beforeEach(async () => {
-      await this.agent.post('/login').send({
-        username: helpers.getEnvVar('WEB_USERNAME'),
-        password: helpers.getEnvVar('PASSWORD'),
-      })
-
-      this.goodRequest = {
-        displayName: 'New Name',
-        doorCoreID: 'new_door_core',
-        radarCoreID: 'new_radar_core',
-        radarType: 'Innosent',
-        responderPhoneNumber: '+12223334567',
-        fallbackPhones: '+13334445678,+12223334444',
-        heartbeatPhones: '+15556667890,+16667778901',
-        twilioPhone: '+11112223456',
-        movementThreshold: 15,
-        durationTimer: 90,
-        stillnessTimer: 10,
-        initialTimer: 9856,
-        reminderTimer: 567849,
-        fallbackTimer: 234567,
-        alertApiKey: '',
-        isActive: 'true',
-        firmwareStateMachine: 'false',
-        sirenParticlId: null,
-        clientId: this.client.id,
-      }
-
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
-    })
-
-    it('should return 200', () => {
-      expect(this.response).to.have.status(200)
-    })
-
-    it('should update the location in the database', async () => {
-      const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
-
-      expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
-      expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID)
-      expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
-      expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
-      expect(updatedLocation.responderPhoneNumber).to.equal(this.goodRequest.responderPhoneNumber)
-      expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
-      expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
-      expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
-      expect(updatedLocation.alertApiKey).to.be.null
-      expect(updatedLocation.isActive).to.be.true
-      expect(updatedLocation.firmwareStateMachine).to.be.false
-      expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
-
-      chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
-      chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
-      chai.assert.equal(updatedLocation.stillnessTimer, this.goodRequest.stillnessTimer)
-      chai.assert.equal(updatedLocation.initialTimer, this.goodRequest.initialTimer)
-      chai.assert.equal(updatedLocation.reminderTimer, this.goodRequest.reminderTimer)
-      chai.assert.equal(updatedLocation.fallbackTimer, this.goodRequest.fallbackTimer)
-    })
-  })
-
-  describe('for a request that contains all valid non-empty fields but with an empty phone', () => {
-    beforeEach(async () => {
-      await this.agent.post('/login').send({
-        username: helpers.getEnvVar('WEB_USERNAME'),
-        password: helpers.getEnvVar('PASSWORD'),
-      })
-
-      this.goodRequest = {
-        displayName: 'New Name',
-        doorCoreID: 'new_door_core',
-        radarCoreID: 'new_radar_core',
-        radarType: 'Innosent',
-        responderPhoneNumber: '',
-        fallbackPhones: '+12223334444,+13334445678',
-        heartbeatPhones: '+15556667890,+16667778901',
-        twilioPhone: '+11112223456',
-        movementThreshold: 15,
-        durationTimer: 90,
-        stillnessTimer: 10,
-        initialTimer: 9856,
-        reminderTimer: 567849,
-        fallbackTimer: 234567,
-        alertApiKey: 'newApiKey',
-        isActive: 'true',
-        firmwareStateMachine: 'false',
-        clientId: this.client.id,
-      }
-
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
-    })
-
-    it('should return 200', () => {
-      expect(this.response).to.have.status(200)
-    })
-
-    it('should update the location in the database', async () => {
-      const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
-
-      expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
-      expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID)
-      expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
-      expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
-      expect(updatedLocation.responderPhoneNumber).to.be.null
-      expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
-      expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
-      expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
-      expect(updatedLocation.alertApiKey).to.equal(this.goodRequest.alertApiKey)
-      expect(updatedLocation.isActive).to.be.true
       expect(updatedLocation.firmwareStateMachine).to.be.false
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
@@ -397,7 +270,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.logError).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+        `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -429,7 +302,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.logError).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value),responderPhoneNumber/alertApiKey (Invalid value(s))`,
+        `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
   })

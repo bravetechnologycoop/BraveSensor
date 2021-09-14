@@ -136,11 +136,9 @@ describe('Brave Sensor server', () => {
       await db.clearSessions()
       await db.clearLocations()
       await db.clearClients()
-
-      const client = await clientFactory(db)
+      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
-        testLocation1PhoneNumber,
         MOVEMENT_THRESHOLD,
         STILLNESS_TIMER,
         DURATION_TIMER,
@@ -154,7 +152,6 @@ describe('Brave Sensor server', () => {
         door_coreID,
         radar_coreID,
         'XeThru',
-        'alertApiKey',
         true,
         true,
         null,
@@ -278,10 +275,9 @@ describe('Brave Sensor server', () => {
       await db.clearLocations()
       await db.clearClients()
 
-      const client = await clientFactory(db)
+      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
-        testLocation1PhoneNumber,
         MOVEMENT_THRESHOLD,
         STILLNESS_TIMER,
         DURATION_TIMER,
@@ -295,7 +291,6 @@ describe('Brave Sensor server', () => {
         door_coreID,
         radar_coreID,
         'XeThru',
-        'alertApiKey',
         true,
         true,
         testSirenId,
@@ -405,10 +400,9 @@ describe('Brave Sensor server', () => {
       await db.clearLocations()
       await db.clearClients()
 
-      const client = await clientFactory(db)
+      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
-        testLocation1PhoneNumber,
         MOVEMENT_THRESHOLD,
         STILLNESS_TIMER,
         DURATION_TIMER,
@@ -422,7 +416,6 @@ describe('Brave Sensor server', () => {
         door_coreID,
         radar_coreID,
         'XeThru',
-        'alertApiKey',
         true,
         false,
         null,
@@ -528,10 +521,9 @@ describe('Brave Sensor server', () => {
       await db.clearLocations()
       await db.clearClients()
 
-      const client = await clientFactory(db)
+      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
-        testLocation1PhoneNumber,
         MOVEMENT_THRESHOLD,
         STILLNESS_TIMER,
         DURATION_TIMER,
@@ -545,7 +537,6 @@ describe('Brave Sensor server', () => {
         door_coreID,
         radar_coreID,
         'XeThru',
-        'alertApiKey',
         false,
         false,
         null,
@@ -610,10 +601,9 @@ describe('Brave Sensor server', () => {
       await db.clearLocations()
       await db.clearClients()
 
-      const client = await clientFactory(db)
+      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
-        testLocation1PhoneNumber,
         MOVEMENT_THRESHOLD,
         STILLNESS_TIMER,
         DURATION_TIMER,
@@ -627,7 +617,6 @@ describe('Brave Sensor server', () => {
         door_coreID,
         radar_coreID,
         'Innosent',
-        'alertApiKey',
         true,
         false,
         null,
@@ -734,10 +723,9 @@ describe('Brave Sensor server', () => {
       await db.clearLocations()
       await db.clearClients
 
-      const client = await clientFactory(db)
+      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
       await db.createLocation(
         testLocation1Id,
-        testLocation1PhoneNumber,
         MOVEMENT_THRESHOLD,
         STILLNESS_TIMER,
         DURATION_TIMER,
@@ -751,7 +739,6 @@ describe('Brave Sensor server', () => {
         door_coreID,
         radar_coreID,
         'Innosent',
-        'alertApiKey',
         false,
         false,
         null,
@@ -813,10 +800,9 @@ describe('Brave Sensor server', () => {
         await db.clearLocations()
         await db.clearClients()
 
-        const client = await clientFactory(db)
+        const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
         await db.createLocation(
           testLocation1Id,
-          testLocation1PhoneNumber,
           MOVEMENT_THRESHOLD,
           STILLNESS_TIMER,
           DURATION_TIMER,
@@ -830,7 +816,6 @@ describe('Brave Sensor server', () => {
           door_coreID,
           radar_coreID,
           'XeThru',
-          'alertApiKey',
           true,
           false,
           null,
@@ -883,10 +868,9 @@ describe('Brave Sensor server', () => {
         await db.clearLocations()
         await db.clearClients()
 
-        const client = await clientFactory(db)
+        const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
         await db.createLocation(
           testLocation1Id,
-          testLocation1PhoneNumber,
           MOVEMENT_THRESHOLD,
           200,
           400,
@@ -900,7 +884,6 @@ describe('Brave Sensor server', () => {
           door_coreID,
           radar_coreID,
           'XeThru',
-          'alertApiKey',
           true,
           false,
           null,

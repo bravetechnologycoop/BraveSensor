@@ -41,7 +41,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     sandbox.restore()
   })
 
-  describe('for a request that contains valid non-empty fields', () => {
+  describe('for a request that contains all valid non-empty fields', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
         username: helpers.getEnvVar('WEB_USERNAME'),
@@ -50,9 +50,15 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
       this.displayName = 'myNewClient'
       this.fromPhoneNumber = '+19998887777'
+      this.responderPhoneNumber = '+16665553333'
+      this.responderPushId = 'pushId'
+      this.alertApiKey = 'myApiKey'
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
+        responderPhoneNumber: this.responderPhoneNumber,
+        responderPushId: this.responderPushId,
+        alertApiKey: this.alertApiKey,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -70,12 +76,18 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           return {
             displayName: client.displayName,
             fromPhoneNumber: client.fromPhoneNumber,
+            responderPhoneNumber: client.responderPhoneNumber,
+            responderPushId: client.responderPushId,
+            alertApiKey: client.alertApiKey,
           }
         }),
       ).to.eql([
         {
           displayName: this.displayName,
           fromPhoneNumber: this.fromPhoneNumber,
+          responderPhoneNumber: this.responderPhoneNumber,
+          responderPushId: this.responderPushId,
+          alertApiKey: this.alertApiKey,
         },
       ])
     })
@@ -88,6 +100,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const goodRequest = {
         displayName: 'testDisplayName',
         fromPhoneNumber: '+17778889999',
+        responderPhoneNumber: '+12223334444',
+        responderPushId: 'myResponderPushId',
+        alertApiKey: 'myAlertApiKey',
       }
 
       this.response = await chai.request(server).post('/clients').send(goodRequest)
@@ -103,6 +118,191 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.logError).to.have.been.calledWith('Unauthorized')
+    })
+  })
+
+  describe('for a request that contains valid non-empty fields but with no responderPhoneNumber', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.displayName = 'myNewClient'
+      this.fromPhoneNumber = '+19998887777'
+      this.responderPushId = 'pushId'
+      this.alertApiKey = 'myApiKey'
+      const goodRequest = {
+        displayName: this.displayName,
+        fromPhoneNumber: this.fromPhoneNumber,
+        responderPushId: this.responderPushId,
+        alertApiKey: this.alertApiKey,
+      }
+
+      this.response = await this.agent.post('/clients').send(goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should create a single client in the database with the given values', async () => {
+      const clients = await db.getClients()
+
+      expect(
+        clients.map(client => {
+          return {
+            displayName: client.displayName,
+            fromPhoneNumber: client.fromPhoneNumber,
+            responderPhoneNumber: client.responderPhoneNumber,
+            responderPushId: client.responderPushId,
+            alertApiKey: client.alertApiKey,
+          }
+        }),
+      ).to.eql([
+        {
+          displayName: this.displayName,
+          fromPhoneNumber: this.fromPhoneNumber,
+          responderPhoneNumber: null,
+          responderPushId: this.responderPushId,
+          alertApiKey: this.alertApiKey,
+        },
+      ])
+    })
+  })
+
+  describe('for a request that contains valid non-empty fields but with no responderPushId', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.displayName = 'myNewClient'
+      this.fromPhoneNumber = '+19998887777'
+      this.responderPhoneNumber = '+16665553333'
+      this.alertApiKey = 'myApiKey'
+      const goodRequest = {
+        displayName: this.displayName,
+        fromPhoneNumber: this.fromPhoneNumber,
+        responderPhoneNumber: this.responderPhoneNumber,
+        alertApiKey: this.alertApiKey,
+      }
+
+      this.response = await this.agent.post('/clients').send(goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should create a single client in the database with the given values', async () => {
+      const clients = await db.getClients()
+
+      expect(
+        clients.map(client => {
+          return {
+            displayName: client.displayName,
+            fromPhoneNumber: client.fromPhoneNumber,
+            responderPhoneNumber: client.responderPhoneNumber,
+            responderPushId: client.responderPushId,
+            alertApiKey: client.alertApiKey,
+          }
+        }),
+      ).to.eql([
+        {
+          displayName: this.displayName,
+          fromPhoneNumber: this.fromPhoneNumber,
+          responderPhoneNumber: this.responderPhoneNumber,
+          responderPushId: null,
+          alertApiKey: this.alertApiKey,
+        },
+      ])
+    })
+  })
+
+  describe('for a request that contains valid non-empty fields but with no alertApiKey', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.displayName = 'myNewClient'
+      this.fromPhoneNumber = '+19998887777'
+      this.responderPhoneNumber = '+16665553333'
+      this.responderPushId = 'pushId'
+      const goodRequest = {
+        displayName: this.displayName,
+        fromPhoneNumber: this.fromPhoneNumber,
+        responderPhoneNumber: this.responderPhoneNumber,
+        responderPushId: this.responderPushId,
+      }
+
+      this.response = await this.agent.post('/clients').send(goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should create a single client in the database with the given values', async () => {
+      const clients = await db.getClients()
+
+      expect(
+        clients.map(client => {
+          return {
+            displayName: client.displayName,
+            fromPhoneNumber: client.fromPhoneNumber,
+            responderPhoneNumber: client.responderPhoneNumber,
+            responderPushId: client.responderPushId,
+            alertApiKey: client.alertApiKey,
+          }
+        }),
+      ).to.eql([
+        {
+          displayName: this.displayName,
+          fromPhoneNumber: this.fromPhoneNumber,
+          responderPhoneNumber: this.responderPhoneNumber,
+          responderPushId: this.responderPushId,
+          alertApiKey: null,
+        },
+      ])
+    })
+  })
+
+  describe('for a request that contains valid non-empty fields but with no responderPhoneNumber and no responderPushId', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.displayName = 'myNewClient'
+      this.fromPhoneNumber = '+19998887777'
+      this.responderPushId = 'pushId'
+      this.alertApiKey = 'myApiKey'
+      const goodRequest = {
+        displayName: this.displayName,
+        fromPhoneNumber: this.fromPhoneNumber,
+        alertApiKey: this.alertApiKey,
+      }
+
+      this.response = await this.agent.post('/clients').send(goodRequest)
+    })
+
+    it('should return 400', () => {
+      expect(this.response).to.have.status(400)
+    })
+
+    it('should not create a new client in the database', async () => {
+      const clients = await db.getClients()
+
+      expect(clients.length).to.equal(0)
+    })
+
+    it('should log the error', () => {
+      expect(helpers.logError).to.have.been.calledWith('Bad request to /clients: responderPhoneNumber/responderPushId (Invalid value(s))')
     })
   })
 
@@ -125,14 +325,16 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       expect(this.response).to.have.status(400)
     })
 
-    it('should not create a new location in the database', async () => {
+    it('should not create a new client in the database', async () => {
       const clients = await db.getClients()
 
       expect(clients.length).to.equal(0)
     })
 
     it('should log the error', () => {
-      expect(helpers.logError).to.have.been.calledWith('Bad request to /clients: displayName (Invalid value),fromPhoneNumber (Invalid value)')
+      expect(helpers.logError).to.have.been.calledWith(
+        'Bad request to /clients: displayName (Invalid value),fromPhoneNumber (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))',
+      )
     })
   })
 
@@ -157,7 +359,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
 
     it('should log the error', () => {
-      expect(helpers.logError).to.have.been.calledWith('Bad request to /clients: displayName (Invalid value),fromPhoneNumber (Invalid value)')
+      expect(helpers.logError).to.have.been.calledWith(
+        'Bad request to /clients: displayName (Invalid value),fromPhoneNumber (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))',
+      )
     })
   })
 
@@ -173,6 +377,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const duplicateDisplayNameRequest = {
         displayName: this.existingClient.displayName,
         fromPhoneNumber: '+14445556666',
+        responderPhoneNumber: '+19995552222',
+        responderPushId: 'mypushid',
+        alertApiKey: 'myapikey',
       }
 
       this.response = await this.agent.post('/clients').send(duplicateDisplayNameRequest)

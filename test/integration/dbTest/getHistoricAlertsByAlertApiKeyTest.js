@@ -20,7 +20,6 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       const client = await clientFactory(db)
       await db.createLocation(
         'locationid',
-        'phonenumber',
         'movementThreshold',
         'stillnessThreshold',
         'durationTimer',
@@ -34,7 +33,6 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'doorCoreId',
         'radarCoreId',
         RADAR_TYPE.INNOSENT,
-        'alertApiKey',
         true,
         false,
         null,
@@ -65,11 +63,10 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       await db.clearLocations()
       await db.clearClients()
 
-      // Insert a single location that has a single session that doesn't match the Alert API Key that we ask for
-      const client = await clientFactory(db)
+      // Insert a single client with a single location that has a single session that doesn't match the Alert API Key that we ask for
+      const client = await clientFactory(db, { alertApiKey: 'not our API key' })
       await db.createLocation(
         'locationid',
-        'phonenumber',
         'movementThreshold',
         'stillnessThreshold',
         'durationTimer',
@@ -83,7 +80,6 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'doorCoreId',
         'radarCoreId',
         RADAR_TYPE.INNOSENT,
-        'not our API key',
         true,
         false,
         null,
@@ -94,11 +90,11 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       session.chatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
       await db.saveSession(session)
 
-      // Insert a single location with no sessions that matches the Alert API Key that we ask for
+      // Insert a single client with a single location with no sessions that matches the Alert API Key that we ask for
       this.alertApiKey = 'alertApiKey'
+      const client2 = await clientFactory(db, { displayName: 'some other name', alertApiKey: this.alertApiKey })
       await db.createLocation(
         'locationid2',
-        'phonenumber',
         'movementThreshold',
         'stillnessThreshold',
         'durationTimer',
@@ -112,11 +108,10 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'doorCoreId',
         'radarCoreId',
         RADAR_TYPE.INNOSENT,
-        this.alertApiKey,
         true,
         false,
         null,
-        client.id,
+        client2.id,
       )
     })
 
@@ -144,10 +139,9 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       this.displayName = 'displayName'
       const locationid = 'locationid'
       const phonenumber = 'phonenumber'
-      const client = await clientFactory(db)
+      const client = await clientFactory(db, { responderPhoneNumber: phonenumber, alertApiKey: this.alertApiKey })
       await db.createLocation(
         locationid,
-        phonenumber,
         'movementThreshold',
         'stillnessThreshold',
         'durationTimer',
@@ -161,7 +155,6 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'doorCoreId',
         'radarCoreId',
         RADAR_TYPE.INNOSENT,
-        this.alertApiKey,
         true,
         false,
         null,
@@ -219,10 +212,9 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       // Insert a single location and more than maxHistoricAlerts sessions
       this.alertApiKey = 'alertApiKey'
       const locationid = 'locationid'
-      const client = await clientFactory(db)
+      const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
       await db.createLocation(
         locationid,
-        'phonenumber',
         'movementThreshold',
         'stillnessThreshold',
         'durationTimer',
@@ -236,7 +228,6 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'doorCoreId',
         'radarCoreId',
         'radarType',
-        this.alertApiKey,
         true,
         false,
         null,
@@ -274,10 +265,9 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       // Insert a single location and maxHistoricAlerts sessions
       this.alertApiKey = 'alertApiKey'
       const locationid = 'locationid'
-      const client = await clientFactory(db)
+      const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
       await db.createLocation(
         locationid,
-        'phonenumber',
         'movementThreshold',
         'stillnessThreshold',
         'durationTimer',
@@ -291,7 +281,6 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'doorCoreId',
         'radarCoreId',
         'radarType',
-        this.alertApiKey,
         true,
         false,
         null,
@@ -336,10 +325,9 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       // Insert a single location and one session
       this.alertApiKey = 'alertApiKey'
       const locationid = 'locationid'
-      const client = await clientFactory(db)
+      const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
       await db.createLocation(
         locationid,
-        'phonenumber',
         'movementThreshold',
         'stillnessThreshold',
         'durationTimer',
@@ -353,7 +341,6 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         'doorCoreId',
         'radarCoreId',
         'radarType',
-        this.alertApiKey,
         true,
         false,
         null,

@@ -36,6 +36,9 @@ async function clientFactory(db, overrides) {
   const client = await db.createClient(
     hasOverrides && overrides.displayName || 'factoryClient',
     hasOverrides && overrides.fromPhoneNumber || '+15558881234',
+    hasOverrides && overrides.responderPhoneNumber || '+16665552222',
+    hasOverrides && overrides.responderPushId || 'myPushId',
+    hasOverrides && overrides.alertApiKey || 'alertApiKey',
   )
   return client
 }

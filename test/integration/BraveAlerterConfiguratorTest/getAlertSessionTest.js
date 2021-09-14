@@ -20,10 +20,9 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
     this.expectedLocationPhoneNumber = '+17772225555'
 
     // Insert a location in the DB
-    const client = await clientFactory(db)
+    const client = await clientFactory(db, { responderPhoneNumber: this.expectedLocationPhoneNumber })
     await db.createLocation(
       'LocationId',
-      this.expectedLocationPhoneNumber,
       1,
       1,
       1,
@@ -37,7 +36,6 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
       'DoorCoreId',
       'RadarCoreId',
       'XeThru',
-      'alertApiKey',
       true,
       false,
       null,

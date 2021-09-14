@@ -306,7 +306,10 @@ async function renderClientDetailsPage(req, res) {
   }
 }
 
-const validateNewClient = Validator.body(['displayName', 'fromPhoneNumber']).notEmpty()
+const validateNewClient = [
+  Validator.body(['displayName', 'fromPhoneNumber']).notEmpty(),
+  Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey', 'responderPushId']).notEmpty()]),
+]
 
 async function submitNewClient(req, res) {
   try {
@@ -330,7 +333,11 @@ async function submitNewClient(req, res) {
         }
       }
 
-      const newClient = await db.createClient(data.displayName, data.fromPhoneNumber)
+      const newResponderPhone = data.responderPhoneNumber && data.responderPhoneNumber.trim() !== '' ? data.responderPhoneNumber : null
+      const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
+      const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
+
+      const newClient = await db.createClient(data.displayName, data.fromPhoneNumber, newResponderPhone, newResponderPushId, newAlertApiKey)
 
       res.redirect(`/clients/${newClient.id}`)
     } else {
@@ -344,7 +351,10 @@ async function submitNewClient(req, res) {
   }
 }
 
-const validateEditClient = Validator.body(['displayName', 'fromPhoneNumber']).notEmpty()
+const validateEditClient = [
+  Validator.body(['displayName', 'fromPhoneNumber']).notEmpty(),
+  Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey', 'responderPushId']).notEmpty()]),
+]
 
 async function submitEditClient(req, res) {
   try {
@@ -368,7 +378,11 @@ async function submitEditClient(req, res) {
         }
       }
 
-      await db.updateClient(data.displayName, data.fromPhoneNumber, req.params.id)
+      const newResponderPhone = data.responderPhoneNumber && data.responderPhoneNumber.trim() !== '' ? data.responderPhoneNumber : null
+      const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
+      const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
+
+      await db.updateClient(data.displayName, data.fromPhoneNumber, newResponderPhone, newResponderPushId, newAlertApiKey, req.params.id)
 
       res.redirect(`/clients/${req.params.id}`)
     } else {
@@ -382,19 +396,16 @@ async function submitEditClient(req, res) {
   }
 }
 
-const validateNewLocation = [
-  Validator.body([
-    'locationid',
-    'displayName',
-    'doorCoreID',
-    'radarCoreID',
-    'radarType',
-    'twilioPhone',
-    'firmwareStateMachine',
-    'clientId',
-  ]).notEmpty(),
-  Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
-]
+const validateNewLocation = Validator.body([
+  'locationid',
+  'displayName',
+  'doorCoreID',
+  'radarCoreID',
+  'radarType',
+  'twilioPhone',
+  'firmwareStateMachine',
+  'clientId',
+]).notEmpty()
 
 async function submitNewLocation(req, res) {
   try {
@@ -430,9 +441,7 @@ async function submitNewLocation(req, res) {
         data.doorCoreID,
         data.radarCoreID,
         data.radarType,
-        data.responderPhoneNumber,
         data.twilioPhone,
-        data.alertApiKey,
         data.firmwareStateMachine,
         data.clientId,
       )
@@ -449,27 +458,24 @@ async function submitNewLocation(req, res) {
   }
 }
 
-const validateEditLocation = [
-  Validator.body([
-    'displayName',
-    'doorCoreID',
-    'radarCoreID',
-    'radarType',
-    'fallbackPhones',
-    'heartbeatPhones',
-    'twilioPhone',
-    'movementThreshold',
-    'durationTimer',
-    'stillnessTimer',
-    'initialTimer',
-    'reminderTimer',
-    'fallbackTimer',
-    'isActive',
-    'firmwareStateMachine',
-    'clientId',
-  ]).notEmpty(),
-  Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey']).notEmpty()]),
-]
+const validateEditLocation = Validator.body([
+  'displayName',
+  'doorCoreID',
+  'radarCoreID',
+  'radarType',
+  'fallbackPhones',
+  'heartbeatPhones',
+  'twilioPhone',
+  'movementThreshold',
+  'durationTimer',
+  'stillnessTimer',
+  'initialTimer',
+  'reminderTimer',
+  'fallbackTimer',
+  'isActive',
+  'firmwareStateMachine',
+  'clientId',
+]).notEmpty()
 
 async function submitEditLocation(req, res) {
   try {
@@ -492,15 +498,11 @@ async function submitEditLocation(req, res) {
         return res.status(400).send(errorMessage)
       }
 
-      const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
-      const newPhone = data.responderPhoneNumber && data.responderPhoneNumber.trim() !== '' ? data.responderPhoneNumber : null
-
       await db.updateLocation(
         data.displayName,
         data.doorCoreID,
         data.radarCoreID,
         data.radarType,
-        newPhone,
         data.fallbackPhones.split(','),
         data.heartbeatPhones.split(','),
         data.twilioPhone,
@@ -510,7 +512,6 @@ async function submitEditLocation(req, res) {
         data.initialTimer,
         data.reminderTimer,
         data.fallbackTimer,
-        newAlertApiKey,
         data.isActive === 'true',
         data.firmwareStateMachine === 'true',
         data.locationid,

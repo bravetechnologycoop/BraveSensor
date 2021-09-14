@@ -80,7 +80,7 @@ function createSessionFromRow(r) {
 
 function createClientFromRow(r) {
   // prettier-ignore
-  return new Client(r.id, r.display_name, r.from_phone_number, r.created_at, r.updated_at)
+  return new Client(r.id, r.display_name, r.from_phone_number, r.responder_phone_number, r.responder_push_id, r.alert_api_key, r.created_at, r.updated_at)
 }
 
 async function createLocationFromRow(r, clientParam) {
@@ -105,7 +105,7 @@ async function createLocationFromRow(r, clientParam) {
     const client = createClientFromRow(results.rows[0])
 
     // prettier-ignore
-    return new Location(r.locationid, r.display_name, r.responder_phone_number, r.movement_threshold, r.duration_timer, r.stillness_timer, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.alert_api_key, r.is_active, r.firmware_state_machine, r.siren_particle_id, client)
+    return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, client)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -337,7 +337,8 @@ async function getHistoricAlertsByAlertApiKey(alertApiKey, maxHistoricAlerts, ma
       SELECT s.id, l.display_name, s.incident_type, s.alert_type, s.created_at, s.responded_at
       FROM sessions AS s
       LEFT JOIN locations AS l ON s.locationid = l.locationid
-      WHERE l.alert_api_key = $1
+      LEFT JOIN clients as c ON l.client_id = c.id
+      WHERE c.alert_api_key = $1
       AND (
         s.chatbot_state = $2
         OR s.updated_at < now() - $3 * INTERVAL '1 millisecond'
@@ -376,7 +377,17 @@ async function getLocationData(locationid, clientParam) {
 
 async function getLocationsFromAlertApiKey(alertApiKey, clientParam) {
   try {
-    const results = await runQuery('getLocationsFromAlertApiKey', 'SELECT * FROM locations WHERE alert_api_key = $1', [alertApiKey], clientParam)
+    const results = await runQuery(
+      'getLocationsFromAlertApiKey',
+      `
+      SELECT l.*
+      FROM locations AS l
+      LEFT JOIN clients AS c on l.client_id = c.id
+      WHERE c.alert_api_key = $1
+      `,
+      [alertApiKey],
+      clientParam,
+    )
 
     if (results === undefined) {
       helpers.log('Error: No location with associated API key exists')
@@ -500,7 +511,7 @@ async function getLocations(clientParam) {
 async function getClients(clientParam) {
   try {
     const results = await runQuery(
-      'getLocations',
+      'getClients',
       `
       SELECT *
       FROM clients
@@ -522,7 +533,7 @@ async function getClients(clientParam) {
 
 // Updates the locations table entry for a specific location with the new data
 // eslint-disable-next-line prettier/prettier
-async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, phoneNumber, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, reminderTimer, fallbackTimer, alertApiKey, isActive, firmwareStateMachine, locationid, clientId, clientParam) {
+async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, reminderTimer, fallbackTimer, isActive, firmwareStateMachine, locationid, clientId, clientParam) {
   try {
     const results = await runQuery(
       'updateLocation',
@@ -533,21 +544,19 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
         door_particlecoreid = $2,
         radar_particlecoreid = $3,
         radar_type = $4,
-        responder_phone_number = $5,
-        fallback_phonenumbers = $6,
-        heartbeat_alert_recipients = $7,
-        twilio_number = $8,
-        movement_threshold = $9,
-        duration_timer = $10,
-        stillness_timer = $11,
-        initial_timer = $12,
-        reminder_timer = $13,
-        fallback_timer = $14,
-        alert_api_key = $15,
-        is_active = $16,
-        firmware_state_machine = $17,
-        client_id = $18
-      WHERE locationid = $19
+        fallback_phonenumbers = $5,
+        heartbeat_alert_recipients = $6,
+        twilio_number = $7,
+        movement_threshold = $8,
+        duration_timer = $9,
+        stillness_timer = $10,
+        initial_timer = $11,
+        reminder_timer = $12,
+        fallback_timer = $13,
+        is_active = $14,
+        firmware_state_machine = $15,
+        client_id = $16
+      WHERE locationid = $17
       RETURNING *
       `,
       [
@@ -555,7 +564,6 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
         doorCoreId,
         radarCoreId,
         radarType,
-        phoneNumber,
         fallbackNumbers,
         heartbeatAlertRecipients,
         twilioNumber,
@@ -565,7 +573,6 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
         initialTimer,
         reminderTimer,
         fallbackTimer,
-        alertApiKey,
         isActive,
         firmwareStateMachine,
         clientId,
@@ -585,17 +592,17 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, p
   }
 }
 
-async function updateClient(displayName, fromPhoneNumber, id, clientParam) {
+async function updateClient(displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey, id, clientParam) {
   try {
     const results = await runQuery(
       'updateClient',
       `
       UPDATE clients
-      SET display_name = $1, from_phone_number = $2
-      WHERE id = $3
+      SET display_name = $1, from_phone_number = $2, responder_phone_number = $3, responder_push_id = $4, alert_api_key = $5
+      WHERE id = $6
       RETURNING *
       `,
-      [displayName, fromPhoneNumber, id],
+      [displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey, id],
       clientParam,
     )
 
@@ -613,19 +620,17 @@ async function updateClient(displayName, fromPhoneNumber, id, clientParam) {
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, phonenumber, twilioNumber, alertApiKey, firmwareStateMachine, clientId, clientParam) {
+async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, twilioNumber, firmwareStateMachine, clientId, clientParam) {
   try {
     await runQuery('createLocationFromBrowserForm',
-      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, responder_phone_number, twilio_number, alert_api_key, firmware_state_machine, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, twilio_number, firmware_state_machine, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
       [
         locationid,
         displayName,
         doorCoreId,
         radarCoreId,
         radarType,
-        phonenumber,
         twilioNumber,
-        alertApiKey,
         firmwareStateMachine,
         clientId,
       ],
@@ -640,14 +645,13 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
 
 // Adds a location table entry
 // eslint-disable-next-line prettier/prettier
-async function createLocation(locationid, phonenumber, movementThreshold, stillnessTimer, durationTimer, reminderTimer, initialTimer, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, alertApiKey, isActive, firmwareStateMachine, sirenParticleId, clientId, clientParam) {
+async function createLocation(locationid, movementThreshold, stillnessTimer, durationTimer, reminderTimer, initialTimer, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, isActive, firmwareStateMachine, sirenParticleId, clientId, clientParam) {
   try {
     await runQuery(
       'createLocation',
-      'INSERT INTO locations(locationid, responder_phone_number, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, alert_api_key, is_active, firmware_state_machine, siren_particle_id, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)',
+      'INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, is_active, firmware_state_machine, siren_particle_id, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)',
       [
         locationid,
-        phonenumber,
         movementThreshold,
         stillnessTimer,
         durationTimer,
@@ -661,7 +665,6 @@ async function createLocation(locationid, phonenumber, movementThreshold, stilln
         doorCoreId,
         radarCoreId,
         radarType,
-        alertApiKey,
         isActive,
         firmwareStateMachine,
         sirenParticleId,
@@ -674,16 +677,16 @@ async function createLocation(locationid, phonenumber, movementThreshold, stilln
   }
 }
 
-async function createClient(displayName, fromPhoneNumber, clientParam) {
+async function createClient(displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey, clientParam) {
   try {
     const results = await runQuery(
       'createClient',
       `
-      INSERT INTO clients(display_name, from_phone_number)
-      VALUES ($1, $2)
+      INSERT INTO clients(display_name, from_phone_number, responder_phone_number, responder_push_id, alert_api_key)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
       `,
-      [displayName, fromPhoneNumber],
+      [displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey],
       clientParam,
     )
     return createClientFromRow(results.rows[0])

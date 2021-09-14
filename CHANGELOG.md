@@ -16,6 +16,7 @@ the code was deployed.
 - Added Particle cloud function call to start siren in case of alert (CU-18r17vf).
 - `POST /api/sirenAddressed` to handle when a Brave Siren's button is pressed (CU-1dffcm4).
 - `POST /api/sirenEscalated` to handled when a Brave Siren times out and it wants to escalate the alert to the Fallback phones (CU-1dffcm4).
+- `responder_push_id` to the DB to store the Responder Device's Push Notification ID (CU-10xfkhr).
 
 ## [4.1.0] - 2021-08-30
 
