@@ -58,7 +58,7 @@ async function handleSirenAddressed(req, res) {
           session.chatbotState = CHATBOT_STATE.COMPLETED
           await db.saveSession(session, client)
         } else {
-          helpers.logError(`Error stopping session and chatbot due to siren ${coreId} button press`)
+          helpers.logError(`sirenAddressedCallback: No unrepsonded session for location ${location.locationid}`)
         }
 
         await db.commitTransaction(client)
@@ -119,7 +119,7 @@ async function handleSirenEscalated(req, res) {
           }
           await db.saveSession(session, client)
         } else {
-          helpers.logError(`Siren not responded to - error starting normal chatbot`)
+          helpers.logError(`sirenEscalatedCallback: No unresponded sessions for location ${location.locationid}`)
         }
 
         await db.commitTransaction(client)
