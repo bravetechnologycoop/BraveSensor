@@ -107,7 +107,7 @@ describe('siren.js integration tests: handleSirenEscalated', () => {
 
   describe('given a valid request for an ongoing session', () => {
     beforeEach(async () => {
-      await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+      await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
       const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
       this.oldUpdatedAt = sessions[0].updatedAt
 
@@ -152,7 +152,7 @@ describe('siren.js integration tests: handleSirenEscalated', () => {
       sandbox.stub(db, 'saveSession').rejects(new Error('myErrorMessage'))
       sandbox.spy(db, 'rollbackTransaction')
 
-      await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+      await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
       this.response = await sirenEscalatedAlert(testSirenId)
     })
 

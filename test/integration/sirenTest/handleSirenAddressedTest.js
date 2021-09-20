@@ -105,7 +105,7 @@ describe('siren.js integration tests: handleSirenAddressed', () => {
 
   describe('given a valid request for an ongoing session', () => {
     beforeEach(async () => {
-      await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+      await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
       this.response = await sirenAddressedAlert(testSirenId)
     })
 
@@ -138,7 +138,7 @@ describe('siren.js integration tests: handleSirenAddressed', () => {
       sandbox.stub(db, 'saveSession').rejects(new Error('myErrorMessage'))
       sandbox.spy(db, 'rollbackTransaction')
 
-      await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+      await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
       this.response = await sirenAddressedAlert(testSirenId)
     })
 

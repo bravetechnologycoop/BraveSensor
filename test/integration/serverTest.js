@@ -190,7 +190,7 @@ describe('Brave Sensor server', () => {
 
     describe('for a valid DURATION request', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.DURATION)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
       })
 
       it('should create a session with DURATION alert reason', async () => {
@@ -207,7 +207,7 @@ describe('Brave Sensor server', () => {
 
     describe('for a value STILLNESS request', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
       })
 
       it('should create a session with STILLNESS as the alert reason for a valid STILLNESS request', async () => {
@@ -224,13 +224,13 @@ describe('Brave Sensor server', () => {
 
     describe('for multiple alerts within the session reset timeout', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
 
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
         const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
         this.oldUpdatedAt = sessions[0].updatedAt
 
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.DURATION)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
         const newSessions = await db.getAllSessionsFromLocation(testLocation1Id)
         this.newUpdatedAt = newSessions[0].updatedAt
       })
@@ -253,9 +253,9 @@ describe('Brave Sensor server', () => {
 
     describe('for alerts that come in after the session reset timeout has expired', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
         await helpers.sleep(parseInt(helpers.getEnvVar('SESSION_RESET_THRESHOLD'), 10) + 50)
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.DURATION)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
       })
 
       it('should create additional sessions for alerts', async () => {
@@ -317,7 +317,7 @@ describe('Brave Sensor server', () => {
 
     describe('for a valid DURATION request', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.DURATION)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
       })
 
       it('should create a session with DURATION alert reason', async () => {
@@ -334,7 +334,7 @@ describe('Brave Sensor server', () => {
 
     describe('for a value STILLNESS request', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
       })
 
       it('should create a session with STILLNESS as the alert reason for a valid STILLNESS request', async () => {
@@ -351,13 +351,13 @@ describe('Brave Sensor server', () => {
 
     describe('for multiple alerts within the session reset timeout', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
 
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
         const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
         this.oldUpdatedAt = sessions[0].updatedAt
 
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.DURATION)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
         const newSessions = await db.getAllSessionsFromLocation(testLocation1Id)
         this.newUpdatedAt = newSessions[0].updatedAt
       })
@@ -380,9 +380,9 @@ describe('Brave Sensor server', () => {
 
     describe('for alerts that come in after the session reset timeout has expired', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
         await helpers.sleep(parseInt(helpers.getEnvVar('SESSION_RESET_THRESHOLD'), 10) + 50)
-        await firmwareAlert(chai, radar_coreID, SENSOR_EVENT.DURATION)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
       })
 
       it('should create additional sessions for alerts', async () => {

@@ -3,7 +3,6 @@ const { fill } = require('lodash')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
-const { server } = require('./index')
 
 function getRandomInt(minValue, maxValue) {
   const min = Math.ceil(minValue)
@@ -42,7 +41,7 @@ async function clientFactory(db, overrides) {
 }
 
 // Sends chai as a parameter so I don't need to include it as a regular dependency in package.json
-async function firmwareAlert(chai, coreID, sensorEvent) {
+async function firmwareAlert(chai, server, coreID, sensorEvent) {
   let response
   try {
     response = await chai.request(server).post('/api/sensorEvent').send({
