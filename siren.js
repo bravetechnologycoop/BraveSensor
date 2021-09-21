@@ -20,6 +20,7 @@ async function startSiren(sirenParticleId) {
       name: `start`,
       argument: `start`,
       auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
+      product: helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'),
     })
 
     helpers.log('startSiren: Brave Siren started')

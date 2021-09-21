@@ -37,6 +37,7 @@ describe('siren.js unit tests: startSiren', () => {
         name: 'start',
         argument: 'start',
         auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
+        product: helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'),
       })
     })
 
