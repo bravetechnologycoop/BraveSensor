@@ -287,3 +287,35 @@ Follow [these instructions](https://www.digitalocean.com/community/tutorials/how
 1. From a shell with kubectl access to the cluster, cd into `BraveSensor-Server` repository and run `kubectl apply -f manifests/redis_storage.yaml`
 2. Install redis from the bitnami/redis chart by running `helm install <environment name>-sensor-redis bitnami/redis --namespace redis --set persistence.storageClass=redis-storage --set usePassword=false --set cluster.enabled=false`
 3. Run `kubectl get svc --namespace=redis` to get the IP of your new redis instance to use as an environment variable
+
+# Particle API access
+
+The Brave Siren functions use the Particle API to trigger the Siren when a `DURATION` or `STILLNESS` event occurs. This requires the access token (`PARTICLE_ACCESS_TOKEN`) for an API user with permission to call functions in the product group (`PARTICLE_PRODUCT_GROUP`).
+
+To generate this token:
+
+1. Generate an access token for dev@brave.coop (https://docs.particle.io/reference/device-cloud/api/#generate-an-access-token)
+
+   ```
+   curl https://api.particle.io/oauth/token -u particle:particle -d grant_type=password -d "username=dev@brave.coop" -d "password=<get from 1Password>"
+   ```
+
+1. Create a _new_ API user (https://docs.particle.io/reference/device-cloud/api/#creating-an-api-user) that is allowed to call functions in the given product group. Find the product group in the Particle Console - it should match the value in the `PARTICLE_PRODUCT_GROUP` environment variable (https://docs.particle.io/reference/SDKs/javascript/#product-support). Use a different `friendly_name` than the previous API user, which we will delete later.
+
+   ```
+   curl "https://api.particle.io/v1/products/<product group slug or ID>?access_token=<access_token returned in step 1>" -H "Content-Type: application/json" -d '{ "friendly_name": "<new api user name>", "scopes": [ "devices.function:call" ]}'
+   ```
+
+1. Set the `PARTICLE_ACCESS_TOKEN` environment variable to the `token` returned by the API call in the previous step
+
+1. _AFTER_ the updated environment variable is deployed to all environments, delete the _old_ API user (https://docs.particle.io/reference/device-cloud/api/#deleting-an-api-user). Note that the username of the old API user can be found in the Particle Console: https://console.particle.io/orgs/brave-technology-coop/team under "API Users"
+
+   ```
+   curl -X DELETE "https://api.particle.io/v1/orgs/brave-technology-coop/team/<username of OLD api user>?access_token=<access_token returned in step 1>"
+   ```
+
+1. Delete the access token for dev@brave.coop that you created in the first step (https://docs.particle.io/reference/device-cloud/api/#delete-current-access-token) so that it cannot be used for any nefarious purposes.
+
+   ```
+   curl -X DELETE "https://api.particle.io/v1/access_tokens/current?access_token=<access_token returned in step 1>"
+   ```

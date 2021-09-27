@@ -1,4 +1,5 @@
 const dashboard = require('./dashboard')
+const siren = require('./siren')
 
 function configureRoutes(app) {
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)
@@ -17,6 +18,9 @@ function configureRoutes(app) {
   app.post('/locations', dashboard.validateNewLocation, dashboard.submitNewLocation)
   app.post('/locations/:locationId', dashboard.validateEditLocation, dashboard.submitEditLocation)
   app.post('/login', dashboard.submitLogin)
+
+  app.post('/api/sirenAddressed', siren.validateSirenAddressed, siren.handleSirenAddressed)
+  app.post('/api/sirenEscalated', siren.validateSirenEscalated, siren.handleSirenEscalated)
 
   // TODO add the other routes
 }

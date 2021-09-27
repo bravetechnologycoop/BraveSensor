@@ -5,7 +5,6 @@ const fs = require('fs')
 const https = require('https')
 const cors = require('cors')
 const Validator = require('express-validator')
-const Particle = require('particle-api-js')
 
 // In-house dependencies
 const { ALERT_TYPE, helpers } = require('brave-alert-lib')
@@ -19,9 +18,7 @@ const im21door = require('./im21door')
 const DOOR_STATE = require('./SessionStateDoorEnum')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
-
-// Start Particle object
-const particle = new Particle()
+const siren = require('./siren')
 
 // Start Express App
 const app = express()
@@ -41,6 +38,8 @@ app.use(bodyParser.json())
 app.use(cors())
 
 dashboard.setupDashboardSessions(app)
+
+siren.setupSiren(braveAlerter)
 
 function convertToSeconds(milliseconds) {
   return Math.floor(milliseconds / 1000)
@@ -78,17 +77,7 @@ async function handleAlert(location, alertType) {
       const newSession = await db.createSession(location.locationid, location.responderPhoneNumber, alertType, client)
 
       if (location.sirenParticleId !== null) {
-        try {
-          await particle.callFunction({
-            deviceId: location.sirenParticleId,
-            name: `start`,
-            argument: `start`,
-            auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
-          })
-          helpers.log('Brave Siren started successfully')
-        } catch (e) {
-          helpers.logError(e)
-        }
+        await siren.startSiren(location.sirenParticleId)
       } else {
         const alertInfo = {
           sessionId: newSession.id,
@@ -105,13 +94,16 @@ async function handleAlert(location, alertType) {
         braveAlerter.startAlertSession(alertInfo)
       }
     } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
-      helpers.log('handleAlert: sending singleAlert')
-      await db.saveSession(currentSession, client)
-      braveAlerter.sendSingleAlert(
-        location.responderPhoneNumber,
-        location.twilioNumber,
-        `An additional ${alertTypeDisplayName} alert was generated at ${location.displayName}`,
-      )
+      db.saveSession(currentSession, client) // update updatedAt
+      if (location.sirenParticleId !== null) {
+        await siren.startSiren(location.sirenParticleId)
+      } else {
+        braveAlerter.sendSingleAlert(
+          location.responderPhoneNumber,
+          location.twilioNumber,
+          `An additional ${alertTypeDisplayName} alert was generated at ${location.displayName}`,
+        )
+      }
     }
     await db.commitTransaction(client)
   } catch (e) {
@@ -550,4 +542,3 @@ module.exports.db = db
 module.exports.routes = routes
 module.exports.redis = redis
 module.exports.braveAlerter = braveAlerter
-module.exports.particle = particle

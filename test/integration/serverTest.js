@@ -4,18 +4,17 @@ const sinonChai = require('sinon-chai')
 const chaiDateTime = require('chai-datetime')
 
 const expect = chai.expect
-const { after, afterEach, before, beforeEach, describe, it } = require('mocha')
+const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
 const { ALERT_TYPE, helpers } = require('brave-alert-lib')
-const { sleep } = require('brave-alert-lib/lib/helpers')
 const imports = require('../../index')
+const siren = require('../../siren')
 const im21door = require('../../im21door')
 
 const db = imports.db
 const redis = imports.redis
 const server = imports.server
 const braveAlerter = imports.braveAlerter
-const particle = imports.particle
 const StateMachine = require('../../stateMachine/StateMachine')
 const XETHRU_STATE = require('../../SessionStateXethruEnum')
 const SENSOR_EVENT = require('../../SensorEventEnum')
@@ -25,7 +24,7 @@ const MOVEMENT_THRESHOLD = 40
 const INITIAL_TIMER = 1
 const STILLNESS_TIMER = 1.5
 const DURATION_TIMER = 3
-const { getRandomArbitrary, getRandomInt, printRandomIntArray, clientFactory } = require('../../testingHelpers')
+const { firmwareAlert, getRandomArbitrary, getRandomInt, printRandomIntArray, clientFactory } = require('../../testingHelpers')
 const STATE = require('../../stateMachine/SessionStateEnum')
 
 chai.use(chaiHttp)
@@ -34,26 +33,10 @@ chai.use(chaiDateTime)
 
 const sandbox = sinon.createSandbox()
 const testLocation1Id = 'TestLocation1'
+const testSirenId = 'TestSiren1'
 const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid1'
 const radar_coreID = 'radar_particlecoreid1'
-
-async function firmwareAlert(coreID, sensorEvent) {
-  let response
-  try {
-    response = await chai.request(server).post('/api/sensorEvent').send({
-      event: sensorEvent,
-      data: 'test-event',
-      ttl: 60,
-      published_at: '2021-06-14T22:49:16.091Z',
-      coreid: coreID,
-    })
-    await helpers.sleep(50)
-  } catch (e) {
-    helpers.log(e)
-  }
-  return response
-}
 
 async function innosentMovement(coreID, min, max) {
   try {
@@ -147,22 +130,13 @@ async function im21Door(doorCoreId, signal) {
 }
 
 describe('Brave Sensor server', () => {
-  before(() => {
-    redis.connect()
-  })
-
-  after(async () => {
-    await helpers.sleep(3000)
-    server.close()
-    await redis.disconnect()
-  })
-
-  describe('POST request: alerts from firmware state machine for locations with a non-null Particle Siren Id', () => {
+  describe('POST /sensorEvent: alerts from firmware state machine when the sirenParticleId is null', () => {
     beforeEach(async () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
       await db.clearClients()
+
       const client = await clientFactory(db)
       await db.createLocation(
         testLocation1Id,
@@ -183,12 +157,12 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         true,
-        'particleCoreIdTest',
+        null,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
-      sandbox.spy(particle, 'callFunction')
+      sandbox.stub(siren, 'startSiren')
       sandbox.spy(helpers, 'logError')
     })
 
@@ -198,41 +172,112 @@ describe('Brave Sensor server', () => {
       await db.clearLocations()
       await db.clearClients()
       sandbox.restore()
-      helpers.log('\n')
     })
 
-    it('should return 200 to a request with no headers', async () => {
-      const response = await chai.request(server).post('/api/sensorEvent').send({})
-      expect(response).to.have.status(200)
+    describe('given an invalid request (no body)', () => {
+      beforeEach(async () => {
+        this.response = await chai.request(server).post('/api/sensorEvent').send({})
+      })
+
+      it('should return 200', () => {
+        expect(this.response).to.have.status(200)
+      })
+
+      it('should log the error', () => {
+        expect(helpers.logError).to.be.calledWithExactly('Bad request to /api/sensorEvent: coreid (Invalid value),event (Invalid value)')
+      })
     })
 
-    it('should log an error for a request with no headers', async () => {
-      await chai.request(server).post('/api/sensorEvent').send({})
-      expect(helpers.logError).to.have.been.called
+    describe('for a valid DURATION request', () => {
+      beforeEach(async () => {
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
+      })
+
+      it('should create a session with DURATION alert reason', async () => {
+        const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        expect(sessions.length).to.equal(1)
+        const session = sessions[0]
+        expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
+      })
+
+      it('should start the alert session', () => {
+        expect(braveAlerter.startAlertSession).to.be.calledOnce
+      })
     })
 
-    it('should return 200 for a valid request', async () => {
-      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      expect(response).to.have.status(200)
+    describe('for a value STILLNESS request', () => {
+      beforeEach(async () => {
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+      })
+
+      it('should create a session with STILLNESS as the alert reason for a valid STILLNESS request', async () => {
+        const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        expect(sessions.length).to.equal(1)
+        const session = sessions[0]
+        expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
+      })
+
+      it('should start the alert session', () => {
+        expect(braveAlerter.startAlertSession).to.be.calledOnce
+      })
     })
 
-    it('should call particle.callFunction with the correct device ID if sirenParticleId is not null', async () => {
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      expect(particle.callFunction).to.have.been.calledWith({
-        deviceId: 'particleCoreIdTest',
-        name: 'start',
-        argument: 'start',
-        auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
+    describe('for multiple alerts within the session reset timeout', () => {
+      beforeEach(async () => {
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+        const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        this.oldUpdatedAt = sessions[0].updatedAt
+
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
+        const newSessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        this.newUpdatedAt = newSessions[0].updatedAt
+      })
+
+      it('should only create one new session', async () => {
+        const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        expect(sessions.length).to.equal(1)
+        const session = sessions[0]
+        expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
+      })
+
+      it('should start the alert session', () => {
+        expect(braveAlerter.startAlertSession).to.be.calledOnce
+      })
+
+      it('should update updatedAt for the session', () => {
+        expect(this.newUpdatedAt).to.not.equal(this.oldUpdatedAt)
+      })
+    })
+
+    describe('for alerts that come in after the session reset timeout has expired', () => {
+      beforeEach(async () => {
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await helpers.sleep(parseInt(helpers.getEnvVar('SESSION_RESET_THRESHOLD'), 10) + 50)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
+      })
+
+      it('should create additional sessions for alerts', async () => {
+        const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        expect(sessions.length).to.equal(2)
+        const session = sessions[0]
+        expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
+      })
+
+      it('should start the alert session', () => {
+        expect(braveAlerter.startAlertSession).to.be.calledTwice
       })
     })
   })
 
-  describe('POST request: alerts from firmware state machine for locations with a null Particle Siren Id', () => {
+  describe('POST request: alerts from firmware state machine when the sirenParticleId is not null', () => {
     beforeEach(async () => {
       await redis.clearKeys()
       await db.clearSessions()
       await db.clearLocations()
       await db.clearClients()
+
       const client = await clientFactory(db)
       await db.createLocation(
         testLocation1Id,
@@ -253,12 +298,12 @@ describe('Brave Sensor server', () => {
         'alertApiKey',
         true,
         true,
-        null,
+        testSirenId,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
-      sandbox.spy(particle, 'callFunction')
+      sandbox.stub(siren, 'startSiren')
       sandbox.spy(helpers, 'logError')
     })
 
@@ -268,132 +313,88 @@ describe('Brave Sensor server', () => {
       await db.clearLocations()
       await db.clearClients()
       sandbox.restore()
-      helpers.log('\n')
     })
 
-    it('should return 200 to a request with no headers', async () => {
-      const response = await chai.request(server).post('/api/sensorEvent').send({})
-      expect(response).to.have.status(200)
+    describe('for a valid DURATION request', () => {
+      beforeEach(async () => {
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
+      })
+
+      it('should create a session with DURATION alert reason', async () => {
+        const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        expect(sessions.length).to.equal(1)
+        const session = sessions[0]
+        expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
+      })
+
+      it('should start the siren', () => {
+        expect(siren.startSiren).to.be.calledOnce
+      })
     })
 
-    it('should log an error for a request with no headers', async () => {
-      await chai.request(server).post('/api/sensorEvent').send({})
-      expect(helpers.logError).to.have.been.called
+    describe('for a value STILLNESS request', () => {
+      beforeEach(async () => {
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+      })
+
+      it('should create a session with STILLNESS as the alert reason for a valid STILLNESS request', async () => {
+        const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        expect(sessions.length).to.equal(1)
+        const session = sessions[0]
+        expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
+      })
+
+      it('should start the siren', () => {
+        expect(siren.startSiren).to.be.calledOnce
+      })
     })
 
-    it('should return 200 for a valid request', async () => {
-      const response = await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      expect(response).to.have.status(200)
+    describe('for multiple alerts within the session reset timeout', () => {
+      beforeEach(async () => {
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+        const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        this.oldUpdatedAt = sessions[0].updatedAt
+
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
+        const newSessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        this.newUpdatedAt = newSessions[0].updatedAt
+      })
+
+      it('should only create one new session', async () => {
+        const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        expect(sessions.length).to.equal(1)
+        const session = sessions[0]
+        expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
+      })
+
+      it('should only start the siren once', () => {
+        expect(siren.startSiren).to.be.calledOnce
+      })
+
+      it('should update updatedAt for the session', () => {
+        expect(this.newUpdatedAt).to.not.equal(this.oldUpdatedAt)
+      })
     })
 
-    it('should not call particle.callFunction if there sirenParticleId is null', async () => {
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      expect(particle.callFunction).to.have.not.been.called
-    })
+    describe('for alerts that come in after the session reset timeout has expired', () => {
+      beforeEach(async () => {
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await helpers.sleep(parseInt(helpers.getEnvVar('SESSION_RESET_THRESHOLD'), 10) + 50)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
+      })
 
-    it('should create a session with the right alert type if particleSirenId is null', async () => {
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      const session = sessions[sessions.length - 1]
-      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
-    })
-  })
+      it('should create additional sessions for alerts', async () => {
+        const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+        expect(sessions.length).to.equal(2)
+        const session = sessions[0]
+        expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
+      })
 
-  describe('POST request: alerts from firmware state machine', () => {
-    beforeEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-
-      const client = await clientFactory(db)
-      await db.createLocation(
-        testLocation1Id,
-        testLocation1PhoneNumber,
-        MOVEMENT_THRESHOLD,
-        STILLNESS_TIMER,
-        DURATION_TIMER,
-        1000,
-        INITIAL_TIMER,
-        ['+15005550006'],
-        '+15005550006',
-        ['+15005550006'],
-        1000,
-        'locationName',
-        door_coreID,
-        radar_coreID,
-        'XeThru',
-        'alertApiKey',
-        true,
-        true,
-        null,
-        client.id,
-      )
-      sandbox.stub(braveAlerter, 'startAlertSession')
-      sandbox.stub(braveAlerter, 'sendSingleAlert')
-    })
-
-    afterEach(async () => {
-      await redis.clearKeys()
-      await db.clearSessions()
-      await db.clearLocations()
-      await db.clearClients()
-      sandbox.restore()
-      helpers.log('\n')
-    })
-
-    it('should return 200 to a request with no headers', async () => {
-      const response = await chai.request(server).post('/api/sensorEvent').send({})
-      expect(response).to.have.status(200)
-    })
-
-    it('should create a session with DURATION alert reason for a valid DURATION request', async () => {
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.DURATION)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(1)
-      const session = sessions[0]
-      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
-    })
-
-    it('should create a session with STILLNESS as the alert reason for a valid STILLNESS request', async () => {
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(1)
-      const session = sessions[0]
-      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
-    })
-
-    it('should only create one new session when receiving multiple alerts within the session reset timeout', async () => {
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.DURATION)
-
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(1)
-      const session = sessions[0]
-      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
-    })
-
-    it('should update updatedAt for the session when a new alert is received within the session reset timeout', async () => {
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      const oldUpdatedAt = sessions[0].updatedAt
-      await sleep(1000)
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      const newSessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      const newUpdatedAt = newSessions[0].updatedAt
-      expect(newUpdatedAt).to.be.afterTime(oldUpdatedAt)
-    })
-
-    it('should create additional sessions for alerts that come in after the session reset timeout has expired', async () => {
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.STILLNESS)
-      await sleep(parseInt(helpers.getEnvVar('SESSION_RESET_THRESHOLD'), 10) + 50)
-      await firmwareAlert(radar_coreID, SENSOR_EVENT.DURATION)
-
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(2)
-      const session = sessions[0]
-      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
+      it('should start the siren for each additional alert', () => {
+        expect(siren.startSiren).to.be.calledTwice
+      })
     })
   })
 

@@ -394,7 +394,7 @@ async function getLocationFromParticleCoreID(coreID, clientParam) {
   try {
     const results = await runQuery(
       'getLocationFromParticleCoreID',
-      'SELECT * FROM locations WHERE door_particlecoreid = $1 OR radar_particlecoreid = $1',
+      'SELECT * FROM locations WHERE door_particlecoreid = $1 OR radar_particlecoreid = $1 OR siren_particle_id = $1',
       [coreID],
       clientParam,
     )

@@ -119,6 +119,11 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: PARTICLE_ACCESS_TOKEN
+          - name: PARTICLE_PRODUCT_GROUP
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: PARTICLE_PRODUCT_GROUP
           - name: ENVIRONMENT
             value: {{ include "sensor.fullname" . | quote }}
           - name: RELEASE
