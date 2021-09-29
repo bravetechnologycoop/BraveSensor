@@ -21,6 +21,12 @@ the code was deployed.
 - `POST /alert/respondToAlertSession` to respond to an alert session through the Alert App (CU-10xfkhr).
 - `POST /alert/setIncidentCategory` to set the incident category for an alert session through the Alert App (CU-10xfkhr).
 - `GET /alert/activeAlerts` endpoint (CU-10xfkhr).
+- Low battery checks in heartbeat api for firmware state machine (CU-4avrhp).
+- Tracking of reset reason to reconnection alerts (CU-z9e1md).
+- Heartbeat messages enriched, including state transition data (CU-1c1qd5u).
+
+### Fixed
+- IM21 door sensor signal processing (CU-4avrue).
 
 ## [4.1.0] - 2021-08-30
 
@@ -44,7 +50,6 @@ the code was deployed.
 ### Fixed
 
 - Database and Redis error output.
-- IM21 door sensor signal processing (CU-4avrue).
 
 ## [4.0.0] - 2021-07-26
 

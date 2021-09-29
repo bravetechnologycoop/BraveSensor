@@ -27,6 +27,7 @@ const MOVEMENT_THRESHOLD = 40
 const INITIAL_TIMER = 1
 const STILLNESS_TIMER = 1.5
 const DURATION_TIMER = 3
+const firstLowBatteryAlert = '2021-03-09T19:37:28.176Z'
 
 async function sirenAddressedAlert(coreID) {
   let response
@@ -69,6 +70,7 @@ describe('siren.js integration tests: handleSirenAddressed', () => {
       true,
       true,
       testSirenId,
+      firstLowBatteryAlert,
       client.id,
     )
     sandbox.stub(braveAlerter, 'startAlertSession')

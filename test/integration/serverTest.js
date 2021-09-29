@@ -37,6 +37,7 @@ const testSirenId = 'TestSiren1'
 const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid1'
 const radar_coreID = 'radar_particlecoreid1'
+const firstLowBatteryAlert = '2021-03-09T19:37:28.176Z'
 
 async function innosentMovement(coreID, min, max) {
   try {
@@ -129,6 +130,30 @@ async function im21Door(doorCoreId, signal) {
   }
 }
 
+async function normalHeartbeat(coreId) {
+  try {
+    await chai.request(server).post('/api/heartbeat').send({
+      coreid: coreId,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+    })
+    await helpers.sleep(50)
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
+async function lowBatteryHeartbeat(coreId) {
+  try {
+    await chai.request(server).post('/api/heartbeat').send({
+      coreid: coreId,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+    })
+    await helpers.sleep(50)
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
 describe('Brave Sensor server', () => {
   beforeEach(async () => {
     await redis.clearKeys()
@@ -162,6 +187,7 @@ describe('Brave Sensor server', () => {
         true,
         true,
         null,
+        firstLowBatteryAlert,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -288,6 +314,7 @@ describe('Brave Sensor server', () => {
         true,
         true,
         testSirenId,
+        firstLowBatteryAlert,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -414,10 +441,12 @@ describe('Brave Sensor server', () => {
         true,
         false,
         null,
+        firstLowBatteryAlert,
         client.id,
       )
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.stub(helpers, 'logSentry')
       await im21Door(door_coreID, im21door.createClosedSignal())
     })
 
@@ -435,6 +464,16 @@ describe('Brave Sensor server', () => {
         .post('/api/devicevitals')
         .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
       expect(response).to.have.status(400)
+    })
+
+    it('should call sendSingleAlert if door sends low battery signal', async () => {
+      await im21Door(door_coreID, im21door.createOpenLowBatterySignal())
+      expect(braveAlerter.sendSingleAlert).to.be.called
+    })
+
+    it('should log to sentry if door sends low battery signal', async () => {
+      await im21Door(door_coreID, im21door.createOpenLowBatterySignal())
+      expect(helpers.logSentry).to.be.called
     })
 
     it('radar data with no movement should be saved to redis, but should not trigger an alert', async () => {
@@ -521,6 +560,7 @@ describe('Brave Sensor server', () => {
         false,
         false,
         null,
+        firstLowBatteryAlert,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -587,6 +627,7 @@ describe('Brave Sensor server', () => {
         true,
         false,
         null,
+        firstLowBatteryAlert,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -695,6 +736,7 @@ describe('Brave Sensor server', () => {
         false,
         false,
         null,
+        firstLowBatteryAlert,
         client.id,
       )
       await im21Door(door_coreID, im21door.createClosedSignal())
@@ -759,6 +801,7 @@ describe('Brave Sensor server', () => {
           true,
           false,
           null,
+          firstLowBatteryAlert,
           client.id,
         )
         await im21Door(door_coreID, im21door.createClosedSignal())
@@ -814,6 +857,7 @@ describe('Brave Sensor server', () => {
           true,
           false,
           null,
+          firstLowBatteryAlert,
           client.id,
         )
         await im21Door(door_coreID, im21door.createClosedSignal())
@@ -876,6 +920,163 @@ describe('Brave Sensor server', () => {
         const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
         expect(response).to.have.status(400)
       })
+    })
+  })
+
+  describe('POST request heartbeat events with mock INS Firmware State Machine when battery level is normal', () => {
+    beforeEach(async () => {
+      await redis.clearKeys()
+      await db.clearTables()
+
+      const client = await clientFactory(db)
+      await db.createLocation(
+        testLocation1Id,
+        MOVEMENT_THRESHOLD,
+        STILLNESS_TIMER,
+        DURATION_TIMER,
+        1000,
+        INITIAL_TIMER,
+        ['+15005550006'],
+        '+15005550006',
+        ['+15005550006'],
+        1000,
+        'locationName',
+        radar_coreID,
+        radar_coreID,
+        'Innosent',
+        true,
+        true,
+        null,
+        firstLowBatteryAlert,
+        client.id,
+      )
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(helpers, 'logSentry')
+      sandbox.stub(redis, 'addEdgeDeviceHeartbeat')
+    })
+
+    afterEach(async () => {
+      await redis.clearKeys()
+      await db.clearTables()
+      sandbox.restore()
+      helpers.log('\n')
+    })
+
+    it('should return 200 for a heartbeat request with no headers', async () => {
+      const response = await chai.request(server).post('/api/heartbeat').send({})
+      expect(response).to.have.status(200)
+    })
+
+    it('should return 200 for a valid heartbeat request', async () => {
+      const request = {
+        coreid: radar_coreID,
+        data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+      }
+      const response = await chai.request(server).post('/api/heartbeat').send(request)
+      expect(response).to.have.status(200)
+    })
+
+    it('should call addEdgeDeviceHeartbeat', async () => {
+      await normalHeartbeat(radar_coreID)
+      expect(redis.addEdgeDeviceHeartbeat).to.be.calledOnce
+    })
+
+    it('should not call logSentry', async () => {
+      await normalHeartbeat(radar_coreID)
+      expect(helpers.logSentry).to.not.be.called
+    })
+
+    it('should not update sentLowBatteryAlertAt if battery is normal', async () => {
+      const testLocation = await db.getLocationData(testLocation1Id)
+      await normalHeartbeat(radar_coreID)
+      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      expect(locationAfterHeartbeat.sentLowBatteryAlertAt).to.deep.equal(testLocation.sentLowBatteryAlertAt)
+    })
+
+    it('should not call sendSingleAlert if battery level is normal', async () => {
+      await normalHeartbeat(radar_coreID)
+      expect(braveAlerter.sendSingleAlert).to.not.be.called
+    })
+  })
+
+  describe('POST request heartbeat events with mock INS Firmware State Machine when battery level is low', () => {
+    beforeEach(async () => {
+      await redis.clearKeys()
+      await db.clearTables()
+
+      const client = await clientFactory(db)
+      await db.createLocation(
+        testLocation1Id,
+        MOVEMENT_THRESHOLD,
+        STILLNESS_TIMER,
+        DURATION_TIMER,
+        1000,
+        INITIAL_TIMER,
+        ['+15005550006'],
+        '+15005550006',
+        ['+15005550006'],
+        1000,
+        'locationName',
+        radar_coreID,
+        radar_coreID,
+        'Innosent',
+        true,
+        true,
+        null,
+        firstLowBatteryAlert,
+        client.id,
+      )
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(helpers, 'logSentry')
+      sandbox.stub(redis, 'addEdgeDeviceHeartbeat')
+    })
+
+    afterEach(async () => {
+      await redis.clearKeys()
+      await db.clearTables()
+      sandbox.restore()
+      helpers.log('\n')
+    })
+
+    it('should return 200 for a heartbeat request with no headers', async () => {
+      const response = await chai.request(server).post('/api/heartbeat').send({})
+      expect(response).to.have.status(200)
+    })
+
+    it('should return 200 for a valid heartbeat request', async () => {
+      const request = {
+        coreid: radar_coreID,
+        data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+      }
+      const response = await chai.request(server).post('/api/heartbeat').send(request)
+      expect(response).to.have.status(200)
+    })
+
+    it('should call addEdgeDeviceHeartbeat', async () => {
+      await normalHeartbeat(radar_coreID)
+      expect(redis.addEdgeDeviceHeartbeat).to.be.called
+    })
+
+    it('should update sentLowBatteryAlertAt if the period since the last alert is greater than the timeout', async () => {
+      const locationBeforeHeartbeat = await db.getLocationData(testLocation1Id)
+      await lowBatteryHeartbeat(radar_coreID)
+      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      expect(locationBeforeHeartbeat.sentLowBatteryAlertAt).to.not.deep.equal(locationAfterHeartbeat.sentLowBatteryAlertAt)
+    })
+
+    it('should not update sentLowBatteryAlertAt if the period since the last alert is less than the timeout', async () => {
+      await lowBatteryHeartbeat(radar_coreID)
+      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      await lowBatteryHeartbeat(radar_coreID)
+      const locationAfterTwoHeartbeats = await db.getLocationData(testLocation1Id)
+      expect(locationAfterTwoHeartbeats.sentLowBatteryAlertAt).to.deep.equal(locationAfterHeartbeat.sentLowBatteryAlertAt)
+    })
+
+    it('should call sendSingleAlert', async () => {
+      await lowBatteryHeartbeat(radar_coreID)
+      expect(braveAlerter.sendSingleAlert).to.be.called
     })
   })
 })
