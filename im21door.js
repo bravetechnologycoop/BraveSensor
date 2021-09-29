@@ -53,6 +53,10 @@ function createOpenSignal() {
   return createSignal(false, false, true, false)
 }
 
+function createOpenLowBatterySignal() {
+  return createSignal(false, true, true, false)
+}
+
 function createClosedSignal() {
   return createSignal(false, false, false, false)
 }
@@ -60,6 +64,7 @@ function createClosedSignal() {
 module.exports = {
   createClosedSignal,
   createOpenSignal,
+  createOpenLowBatterySignal,
   isLowBattery,
   isOpen,
   isTampered,

@@ -116,8 +116,18 @@ async function addVitals(locationid, signalStrength, cloudDisconnects) {
   client.xadd(`vitals:${locationid}`, 'MAXLEN', '~', '10000', '*', 'strength', signalStrength, 'cloudDisc', cloudDisconnects)
 }
 
-async function addEdgeDeviceHeartbeat(locationid, doorStatus, doorTime, insTime) {
-  client.xadd(`heartbeat:${locationid}`, 'MAXLEN', '~', '10000', '*', 'doorStatus', doorStatus, 'doorTime', doorTime, 'insTime', insTime)
+// ignore comments included to allow arguments to be split across lines in pairs
+// prettier-ignore
+/* eslint-disable function-call-argument-newline */
+async function addEdgeDeviceHeartbeat(locationid, doorMissedMessagesCount, doorLowBatteryFlag, doorTimeSinceLastHeartbeat, resetReason, stateTransitionsArray) {
+  client.xadd(
+    `heartbeat:${locationid}`, 'MAXLEN', '~', '10000', '*',
+    'doorMissedMessagesCount', doorMissedMessagesCount,
+    'doorLowBatteryFlag', doorLowBatteryFlag,
+    'doorTimeSinceLastHeartbeat', doorTimeSinceLastHeartbeat,
+    'resetReason', resetReason,
+    'stateTransitionsArray', JSON.stringify(stateTransitionsArray)
+  )
 }
 
 async function getLatestHeartbeat(locationid) {

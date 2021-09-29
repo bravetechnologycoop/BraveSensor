@@ -40,6 +40,7 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
         true,
         false,
         null,
+        '2021-03-09T19:37:28.176Z',
         client.id,
       )
       const locationid = (await db.getLocations())[0].locationid
@@ -77,6 +78,7 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
         true,
         false,
         null,
+        '2021-03-09T19:37:28.176Z',
         client.id,
       )
       const locationid = (await db.getLocations())[0].locationid
@@ -105,6 +107,7 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
         true,
         false,
         null,
+        '2021-03-09T19:37:28.176Z',
         client2.id,
       )
     })
@@ -142,6 +145,7 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
         true,
         false,
         null,
+        '2021-03-09T19:37:28.176Z',
         client.id,
       )
 
@@ -205,6 +209,7 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
         true,
         false,
         null,
+        '2021-03-09T19:37:28.176Z',
         client.id,
       )
 
@@ -306,6 +311,7 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
         true,
         false,
         null,
+        '2021-03-09T19:37:28.176Z',
         client.id,
       )
 

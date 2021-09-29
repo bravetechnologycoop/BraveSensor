@@ -110,8 +110,8 @@ async function handleAlert(location, alertType) {
   }
 }
 
-async function sendSingleAlert(locationid, message) {
-  const location = await db.getLocationData(locationid)
+async function sendSingleAlert(locationid, message, client) {
+  const location = await db.getLocationData(locationid, client)
 
   location.heartbeatAlertRecipients.forEach(async heartbeatAlertRecipient => {
     await braveAlerter.sendSingleAlert(heartbeatAlertRecipient, location.client.fromPhoneNumber, message)
@@ -190,7 +190,7 @@ async function checkHeartbeat() {
           await db.updateSentAlerts(location.locationid, true)
           sendDisconnectionMessage(location.locationid, location.displayName)
         } else if (!heartbeatExceeded && location.heartbeatSentAlerts) {
-          helpers.logSentry(`${location.locationid} reconnected`)
+          helpers.logSentry(`${location.locationid} reconnected after reason: ${latestHeartbeat.resetReason}`)
           await db.updateSentAlerts(location.locationid, false)
           sendReconnectionMessage(location.locationid, location.displayName)
         }
@@ -198,6 +198,29 @@ async function checkHeartbeat() {
     } catch (err) {
       helpers.logError(`Error checking heartbeat: ${err.toString()}`)
     }
+  }
+}
+
+function convertStateArrayToObject(stateTransition) {
+  const statesTable = ['idle', 'initial_timer', 'duration_timer', 'stillness_timer']
+  const reasonsTable = ['movement', 'no_movement', 'door_open', 'initial_timer', 'duration_alert', 'stillness_alert']
+  const stateObject = {
+    state: statesTable[stateTransition[0]],
+    reason: reasonsTable[stateTransition[1]],
+    time: stateTransition[2],
+  }
+  return stateObject
+}
+
+// Sends a low battery alert if the time since the last alert is null or greater than the timeout
+async function sendLowBatteryAlert(location, client) {
+  const currentTime = await db.getCurrentTime(client)
+  const timeoutInMillis = parseInt(helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT'), 10) * 1000
+
+  if (location.sentLowBatteryAlertAt === null || currentTime - location.sentLowBatteryAlertAt >= timeoutInMillis) {
+    helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
+    await sendSingleAlert(location.locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`, client)
+    await db.updateLowBatteryAlertTime(location.locationid, client)
   }
 }
 
@@ -338,17 +361,20 @@ app.post('/api/sensorEvent', Validator.body(['coreid', 'event']).exists(), async
 })
 
 app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (request, response) => {
+  let client
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
+      client = await db.beginTransaction()
       const coreId = request.body.coreid
-      const location = await db.getLocationFromParticleCoreID(coreId)
+      const location = await db.getLocationFromParticleCoreID(coreId, client)
 
       if (!location) {
         const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
         helpers.logError(errorMessage)
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+        await db.commitTransaction(client)
         response.status(200).json(errorMessage)
       } else {
         const locationid = location.locationid
@@ -360,8 +386,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         await redis.addIM21DoorSensorData(locationid, doorSignal, control)
 
         if (im21door.isLowBattery(signal)) {
-          helpers.logSentry(`Received a low battery alert for ${locationid}`)
-          sendSingleAlert(locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`)
+          await sendLowBatteryAlert(location, client)
         }
 
         if (im21door.isTampered(signal)) {
@@ -371,7 +396,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
         if (location.isActive && !location.heartbeatSentAlerts) {
           await StateMachine.getNextState(location, handleAlert)
         }
-
+        await db.commitTransaction(client)
         response.status(200).json('OK')
       }
     } else {
@@ -381,6 +406,14 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
       response.status(200).json(errorMessage)
     }
   } catch (err) {
+    try {
+      await db.rollbackTransaction(client)
+      helpers.logError(`POST to /api/door: Rolled back transaction because of error: ${err}`)
+    } catch (error) {
+      // Do nothing
+      helpers.logError(`POST to /api/door: Error rolling back transaction: ${error} Rollback attempted because of error: ${error}`)
+    }
+
     const errorMessage = `Error calling ${request.path}: ${err.toString()}`
     helpers.logError(errorMessage)
     // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
@@ -434,26 +467,40 @@ app.post(
   },
 )
 
-app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(), async (request, response) => {
+app.post('/api/heartbeat', Validator.body(['coreid', 'data']).exists(), async (request, response) => {
+  let client
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
+      client = await db.beginTransaction()
       const coreId = request.body.coreid
-      const location = await db.getLocationFromParticleCoreID(coreId)
+      const location = await db.getLocationFromParticleCoreID(coreId, client)
       if (!location) {
         const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
         helpers.logError(errorMessage)
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+        await db.commitTransaction(client)
         response.status(200).json(errorMessage)
       } else {
         const message = JSON.parse(request.body.data)
-        const doorStatus = message.door_status
-        const doorTime = message.door_time
-        const insTime = message.ins_time
-
-        await redis.addEdgeDeviceHeartbeat(location.locationid, doorStatus, doorTime, insTime)
-
+        const doorMissedMessagesCount = message.doorMissedMsg
+        const doorLowBatteryFlag = message.doorLowBatt
+        const doorTimeSinceLastHeartbeat = message.doorLastHeartbeat
+        const resetReason = message.resetReason
+        const stateTransitionsArray = message.states.map(convertStateArrayToObject)
+        if (doorLowBatteryFlag) {
+          await sendLowBatteryAlert(location, client)
+        }
+        await redis.addEdgeDeviceHeartbeat(
+          location.locationid,
+          doorMissedMessagesCount,
+          doorLowBatteryFlag,
+          doorTimeSinceLastHeartbeat,
+          resetReason,
+          stateTransitionsArray,
+        )
+        await db.commitTransaction(client)
         response.status(200).json('OK')
       }
     } else {
@@ -463,6 +510,13 @@ app.post('/api/heartbeat', Validator.body(['coreid', 'event', 'data']).exists(),
       response.status(200).json(errorMessage)
     }
   } catch (err) {
+    try {
+      await db.rollbackTransaction(client)
+      helpers.logError(`POST to /api/heartbeat: Rolled back transaction because of error: ${err}`)
+    } catch (error) {
+      // Do nothing
+      helpers.logError(`POST to /api/heartbeat: Error rolling back transaction: ${error} Rollback attempted because of error: ${error}`)
+    }
     const errorMessage = `Error calling ${request.path}: ${err.toString()}`
     helpers.logError(errorMessage)
     // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
@@ -492,6 +546,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       true,
       false,
       null,
+      '2021-03-09T19:37:28.176Z',
       client.id,
     )
     await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
@@ -533,3 +588,4 @@ module.exports.db = db
 module.exports.routes = routes
 module.exports.redis = redis
 module.exports.braveAlerter = braveAlerter
+module.exports.convertStateArrayToObject = convertStateArrayToObject
