@@ -94,7 +94,7 @@ class BraveAlerterConfigurator {
           session.incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
         }
 
-        if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY) {
+        if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
           session.respondedAt = await db.getCurrentTime(client)
         }
 
