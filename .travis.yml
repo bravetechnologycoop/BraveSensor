@@ -5,6 +5,7 @@ node_js: 'node' # node version specified in .nvmrc
 
 # install dependencies
 install:
+  - cd server
   - npm ci
   - npm install pg@latest
 
@@ -60,11 +61,15 @@ before_script:
 jobs:
   include:
     # Run security audit, linting, unit tests, and integration tests
-    - stage: test
+    - stage: 'server test'
       script:
         - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then npx audit-ci --config ./audit-ci.json; fi
         - npm run lint
         - sudo env "PATH=$PATH" npm test
+    - stage: 'firmware tests'
+      language: cpp
+      script:
+        - cd ../firmware/test && g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFnTests.cpp -lstdc++ -lm && ./ConsoleTests -s
     # If all the test stage passes, then pushes the Docker container to DO
     - stage: 'push container'
       script:
