@@ -24,7 +24,7 @@ the code was deployed.
 - Low battery checks in heartbeat api for firmware state machine (CU-4avrhp).
 - Tracking of reset reason to reconnection alerts (CU-z9e1md).
 - Heartbeat messages enriched, including state transition data (CU-1c1qd5u).
-- `/firmware` folder with production code for Boron devices (CU-un6ybt).
+- `/firmware` folder with production code for devices (CU-un6ybt).
 - Unit tests for Particle console functions (CU-vbep38).
 
 ### Fixed

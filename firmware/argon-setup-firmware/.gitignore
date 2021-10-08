@@ -1,0 +1,36 @@
+#ignore the generated .cpp file from production code...
+BraveSensorProductionFirmware.cpp
+
+
+#ignore the files that contain sensitive client passwords
+SetupFiles/
+setupFirmware.h
+
+#ignore cpp file - keeping it messes up my git merge handling of the .ino file
+setupFirmware.cpp
+
+# ignore vscode settings
+.vscode/
+
+#ignore particle binaries
+target/
+
+#ignore binary called core
+#I think this is the core OS binary?
+core
+
+#ignore... I think it's my app's binary?
+code
+
+#ignore log files
+*.log
+
+#ignore... I think it's platformIO config files
+workspaceconfig.code-workspace
+
+#don't ignore particle workbench's project properties
+#need it for when someone clones your repo and wants
+#to run the code on their Argon
+#project.properties
+
+#ditto don't ignore lib/ folders, need these to run the code
