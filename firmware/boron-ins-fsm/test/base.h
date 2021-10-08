@@ -11,8 +11,6 @@
 #include "../inc/spark_wiring_string.cpp"
 #include "../src/im21door.h"
 
-
-
 MockEEPROM EEPROM;
 MockParticle Particle;
 
