@@ -6,7 +6,7 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { Location, SYSTEM } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
-const { clientFactory } = require('../../../testingHelpers')
+const { clientFactory, locationFactory } = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKey', () => {
   beforeEach(async () => {
@@ -17,27 +17,10 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
 
     // Insert a location in the DB
     this.client = await clientFactory(db, { alertApiKey: this.apiKey })
-    await db.createLocation(
-      this.expectedLocationId,
-      1,
-      1,
-      1,
-      1,
-      1,
-      [],
-      '+3336661234',
-      [],
-      1,
-      'displayName',
-      'DoorCoreId',
-      'RadarCoreId',
-      'XeThru',
-      true,
-      false,
-      null,
-      '2021-03-09T19:37:28.176Z',
-      this.client.id,
-    )
+    await locationFactory(db, {
+      locationid: this.expectedLocationId,
+      clientId: this.client.id,
+    })
   })
 
   afterEach(async () => {
@@ -74,27 +57,10 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
       this.anotherExpectedLocationId = 'TEST LOCATION 2'
       // Insert another client and location in the DB
       const newClient = await clientFactory(db, { displayName: 'TEST CLIENT 2', alertApiKey: this.apiKey })
-      await db.createLocation(
-        this.anotherExpectedLocationId,
-        1,
-        1,
-        1,
-        1,
-        1,
-        [],
-        '+3336661234',
-        [],
-        1,
-        'displayName',
-        'DoorCoreId',
-        'RadarCoreId',
-        'XeThru',
-        true,
-        false,
-        null,
-        '2021-03-09T19:37:28.176Z',
-        newClient.id,
-      )
+      await locationFactory(db, {
+        locationid: this.anotherExpectedLocationId,
+        clientId: newClient.id,
+      })
     })
 
     it('should return a BraveAlertLib Location object with the one of the displaynames', async () => {

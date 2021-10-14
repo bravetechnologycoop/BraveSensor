@@ -3,6 +3,7 @@ const { fill } = require('lodash')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
+const RADAR_TYPE = require('./RadarTypeEnum')
 
 function getRandomInt(minValue, maxValue) {
   const min = Math.ceil(minValue)
@@ -29,18 +30,44 @@ function randomInnosentStream(min, max, length) {
   return array
 }
 
-async function clientFactory(db, overrides) {
-  const hasOverrides = typeof overrides === 'object' && overrides !== null && !Array.isArray(overrides)
-
+async function clientFactory(db, overrides = {}) {
   // prettier-ignore
   const client = await db.createClient(
-    hasOverrides && overrides.displayName || 'factoryClient',
-    hasOverrides && overrides.fromPhoneNumber || '+15558881234',
-    hasOverrides && overrides.responderPhoneNumber || '+16665552222',
-    hasOverrides && overrides.responderPushId || 'myPushId',
-    hasOverrides && overrides.alertApiKey || 'alertApiKey',
+    overrides.displayName !== undefined ? overrides.displayName : 'factoryClient',
+    overrides.fromPhoneNumber !== undefined ? overrides.fromPhoneNumber : '+15558881234',
+    overrides.responderPhoneNumber !== undefined ? overrides.responderPhoneNumber : '+16665552222',
+    overrides.responderPushId !== undefined ? overrides.responderPushId : 'myPushId',
+    overrides.alertApiKey !== undefined ? overrides.alertApiKey : 'alertApiKey',
   )
   return client
+}
+
+async function locationFactory(db, overrides = {}) {
+  // prettier-ignore
+  const location = await db.createLocation(
+    overrides.locationid !== undefined ? overrides.locationid : 'fakeLocationid',
+    overrides.movementThreshold !== undefined ? overrides.movementThreshold : 40,
+    overrides.stillnessTimer !== undefined ? overrides.stillnessTimer : 1.5,
+    overrides.durationTimer !== undefined ? overrides.durationTimer : 3,
+    overrides.reminderTimer !== undefined ? overrides.reminderTimer : 5000,
+    overrides.initialTimer !== undefined ? overrides.initialTimer : 1,
+    overrides.sentVitalsAlertAt !== undefined ? overrides.sentVitalsAlertAt : null,
+    overrides.heartbeatAlertRecipients !== undefined ? overrides.heartbeatAlertRecipients : ['+16665552222'],
+    overrides.twilioNumber !== undefined ? overrides.twilioNumber : '+17775559999',
+    overrides.fallbackNumbers !== undefined ? overrides.fallbackNumbers : ['+13336669999'],
+    overrides.fallbackTimer !== undefined ? overrides.fallbackTimer : 1000,
+    overrides.displayName !== undefined ? overrides.displayName : 'fakeLocationName',
+    overrides.doorCoreId !== undefined ? overrides.doorCoreId : 'fakeDoorParticleId',
+    overrides.radarCoreId !== undefined ? overrides.radarCoreId : 'fakeRadarParticleId',
+    overrides.radarType !== undefined ? overrides.radarType : RADAR_TYPE.INNOSENT,
+    overrides.isActive !== undefined ? overrides.isActive : true,
+    overrides.firmwareStateMachine !== undefined ? overrides.firmwareStateMachine : true,
+    overrides.sirenParticleId !== undefined ? overrides.sirenParticleId : 'fakeSirenParticleId',
+    overrides.sentLowBatteryAlertAt !== undefined ? overrides.sentLowBatteryAlertAt : '2021-03-09T19:37:28.176Z',
+    overrides.clientId !== undefined ? overrides.clientId : 'fakeClientId',
+  )
+
+  return location
 }
 
 // Sends chai as a parameter so I don't need to include it as a regular dependency in package.json
@@ -66,6 +93,7 @@ module.exports = {
   firmwareAlert,
   getRandomArbitrary,
   getRandomInt,
+  locationFactory,
   printRandomIntArray,
   randomXethruStream,
   randomInnosentStream,

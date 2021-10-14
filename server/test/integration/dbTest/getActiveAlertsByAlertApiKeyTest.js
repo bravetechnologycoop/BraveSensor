@@ -6,8 +6,7 @@ const { ALERT_TYPE, CHATBOT_STATE } = require('brave-alert-lib')
 // In-house dependencies
 const db = require('../../../db/db')
 const Session = require('../../../Session')
-const RADAR_TYPE = require('../../../RadarTypeEnum')
-const { clientFactory } = require('../../../testingHelpers')
+const { clientFactory, locationFactory } = require('../../../testingHelpers')
 
 describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
   beforeEach(async () => {
@@ -22,29 +21,10 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
     beforeEach(async () => {
       // Insert a single location that has a single session that doesn't match the Alert API Key that we ask for
       const client = await clientFactory(db)
-      await db.createLocation(
-        'locationid',
-        'movementThreshold',
-        'stillnessThreshold',
-        'durationTimer',
-        120000,
-        'initialTimer',
-        '{"heartbeatAlertRecipients"}',
-        'twilioNumber',
-        '{"fallbackNumbers"}',
-        300000,
-        'displayName',
-        'doorCoreId',
-        'radarCoreId',
-        RADAR_TYPE.INNOSENT,
-        true,
-        false,
-        null,
-        '2021-03-09T19:37:28.176Z',
-        client.id,
-      )
-      const locationid = (await db.getLocations())[0].locationid
-      const session = await db.createSession(locationid, 'phoneNumber', ALERT_TYPE.SENSOR_DURATION)
+      const location = await locationFactory(db, {
+        clientId: client.id,
+      })
+      const session = await db.createSession(location.locationid, 'phoneNumber', ALERT_TYPE.SENSOR_DURATION)
       session.chatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
       await db.saveSession(session)
     })
@@ -60,56 +40,20 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
     beforeEach(async () => {
       // Insert a single client with a single location that has a single session that doesn't match the Alert API Key that we ask for
       const client = await clientFactory(db, { alertApiKey: 'not our API key' })
-      await db.createLocation(
-        'locationid',
-        'movementThreshold',
-        'stillnessThreshold',
-        'durationTimer',
-        120000,
-        'initialTimer',
-        '{"heartbeatAlertRecipients"}',
-        'twilioNumber',
-        '{"fallbackNumbers"}',
-        300000,
-        'displayName',
-        'doorCoreId',
-        'radarCoreId',
-        RADAR_TYPE.INNOSENT,
-        true,
-        false,
-        null,
-        '2021-03-09T19:37:28.176Z',
-        client.id,
-      )
-      const locationid = (await db.getLocations())[0].locationid
-      const session = await db.createSession(locationid, 'phoneNumber', ALERT_TYPE.SENSOR_DURATION)
+      const location = await locationFactory(db, {
+        clientId: client.id,
+      })
+      const session = await db.createSession(location.locationid, 'phoneNumber', ALERT_TYPE.SENSOR_DURATION)
       session.chatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
       await db.saveSession(session)
 
       // Insert a single client with a single location with no sessions that matches the Alert API Key that we ask for
       this.alertApiKey = 'alertApiKey'
       const client2 = await clientFactory(db, { displayName: 'some other name', alertApiKey: this.alertApiKey })
-      await db.createLocation(
-        'locationid2',
-        'movementThreshold',
-        'stillnessThreshold',
-        'durationTimer',
-        120000,
-        'initialTimer',
-        '{"heartbeatAlertRecipients"}',
-        'twilioNumber',
-        '{"fallbackNumbers"}',
-        300000,
-        'displayName',
-        'doorCoreId',
-        'radarCoreId',
-        RADAR_TYPE.INNOSENT,
-        true,
-        false,
-        null,
-        '2021-03-09T19:37:28.176Z',
-        client2.id,
-      )
+      await locationFactory(db, {
+        locationid: 'differentLocationId',
+        clientId: client2.id,
+      })
     })
 
     it('should return an empty array', async () => {
@@ -127,27 +71,11 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
       const locationid = 'locationid'
       const phonenumber = 'phonenumber'
       const client = await clientFactory(db, { responderPhoneNumber: phonenumber, alertApiKey: this.alertApiKey })
-      await db.createLocation(
+      await locationFactory(db, {
         locationid,
-        'movementThreshold',
-        'stillnessThreshold',
-        'durationTimer',
-        120000,
-        'initialTimer',
-        '{"heartbeatAlertRecipients"}',
-        'twilioNumber',
-        '{"fallbackNumbers"}',
-        300000,
-        this.displayName,
-        'doorCoreId',
-        'radarCoreId',
-        RADAR_TYPE.INNOSENT,
-        true,
-        false,
-        null,
-        '2021-03-09T19:37:28.176Z',
-        client.id,
-      )
+        displayName: this.displayName,
+        clientId: client.id,
+      })
 
       // Insert a single session for that API key
       this.incidentType = 'Overdose'
@@ -191,27 +119,10 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
       this.alertApiKey = 'alertApiKey'
       const locationid = 'locationid'
       const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
-      await db.createLocation(
+      await locationFactory(db, {
         locationid,
-        'movementThreshold',
-        'stillnessThreshold',
-        'durationTimer',
-        120000,
-        'initialTimer',
-        '{"heartbeatAlertRecipients"}',
-        'twilioNumber',
-        '{"fallbackNumbers"}',
-        300000,
-        'displayName',
-        'doorCoreId',
-        'radarCoreId',
-        'radarType',
-        true,
-        false,
-        null,
-        '2021-03-09T19:37:28.176Z',
-        client.id,
-      )
+        clientId: client.id,
+      })
 
       this.session = await db.createSession(locationid, 'phonenumber1', ALERT_TYPE.SENSOR_DURATION)
     })
@@ -293,27 +204,10 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
       this.alertApiKey = 'alertApiKey'
       const locationid = 'locationid'
       const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
-      await db.createLocation(
+      await locationFactory(db, {
         locationid,
-        'movementThreshold',
-        'stillnessThreshold',
-        'durationTimer',
-        120000,
-        'initialTimer',
-        '{"heartbeatAlertRecipients"}',
-        'twilioNumber',
-        '{"fallbackNumbers"}',
-        300000,
-        'displayName',
-        'doorCoreId',
-        'radarCoreId',
-        'radarType',
-        true,
-        false,
-        null,
-        '2021-03-09T19:37:28.176Z',
-        client.id,
-      )
+        clientId: client.id,
+      })
 
       this.session = await db.createSession(locationid, 'phonenumber1', ALERT_TYPE.SENSOR_DURATION)
     })

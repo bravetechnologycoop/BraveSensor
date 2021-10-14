@@ -113,6 +113,8 @@ async function handleAlert(location, alertType) {
 async function sendSingleAlert(locationid, message, client) {
   const location = await db.getLocationData(locationid, client)
 
+  await braveAlerter.sendSingleAlert(location.client.responderPhoneNumber, location.client.fromPhoneNumber, message)
+
   location.heartbeatAlertRecipients.forEach(async heartbeatAlertRecipient => {
     await braveAlerter.sendSingleAlert(heartbeatAlertRecipient, location.client.fromPhoneNumber, message)
   })
@@ -122,6 +124,13 @@ async function sendDisconnectionMessage(locationid, displayName) {
   await sendSingleAlert(
     locationid,
     `The Brave Sensor at ${displayName} (${locationid}) has disconnected. \nPlease press the reset buttons on either side of the sensor box.\nIf you do not receive a reconnection message shortly after pressing both reset buttons, contact your network administrator.\nYou can also email contact@brave.coop for further support.`,
+  )
+}
+
+async function sendDisconnectionReminder(locationid, displayName) {
+  await sendSingleAlert(
+    locationid,
+    `The Brave Sensor at ${displayName} (${locationid}) is still disconnected. \nPlease press the reset buttons on either side of the sensor box.\nIf you do not receive a reconnection message shortly after pressing both reset buttons, contact your network administrator.\nYou can also email contact@brave.coop for further support.`,
   )
 }
 
@@ -153,16 +162,22 @@ async function checkHeartbeat() {
       const doorHeartbeatExceeded = doorDelay > helpers.getEnvVar('DOOR_THRESHOLD_SECONDS')
       const radarHeartbeatExceeded = radarDelay > helpers.getEnvVar('RADAR_THRESHOLD_SECONDS')
 
-      if ((doorHeartbeatExceeded || radarHeartbeatExceeded) && !location.heartbeatSentAlerts) {
-        if (doorHeartbeatExceeded) {
-          helpers.logSentry(`Door sensor down at ${location.locationid}`)
+      if (doorHeartbeatExceeded || radarHeartbeatExceeded) {
+        const dbTime = await db.getCurrentTime()
+        if (location.sentVitalsAlertAt === null) {
+          if (doorHeartbeatExceeded) {
+            helpers.logSentry(`Door sensor down at ${location.locationid}`)
+          }
+          if (radarHeartbeatExceeded) {
+            helpers.logSentry(`Radar sensor down at ${location.locationid}`)
+          }
+          await db.updateSentAlerts(location.locationid, true)
+          sendDisconnectionMessage(location.locationid, location.displayName)
+        } else if (dbTime - location.sentVitalsAlertAt > helpers.getEnvVar('SUBSEQUENT_VITALS_ALERT_THRESHOLD') * 1000) {
+          await db.updateSentAlerts(location.locationid, true)
+          sendDisconnectionReminder(location.locationid, location.displayName)
         }
-        if (radarHeartbeatExceeded) {
-          helpers.logSentry(`Radar sensor down at ${location.locationid}`)
-        }
-        await db.updateSentAlerts(location.locationid, true)
-        sendDisconnectionMessage(location.locationid, location.displayName)
-      } else if (!doorHeartbeatExceeded && !radarHeartbeatExceeded && location.heartbeatSentAlerts) {
+      } else if (location.sentVitalsAlertAt !== null) {
         helpers.logSentry(`${location.locationid} reconnected`)
         await db.updateSentAlerts(location.locationid, false)
         sendReconnectionMessage(location.locationid, location.displayName)
@@ -185,11 +200,17 @@ async function checkHeartbeat() {
 
         const heartbeatExceeded = delay > helpers.getEnvVar('RADAR_THRESHOLD_SECONDS')
 
-        if (heartbeatExceeded && !location.heartbeatSentAlerts) {
-          helpers.logSentry(`System disconnected at ${location.locationid}`)
-          await db.updateSentAlerts(location.locationid, true)
-          sendDisconnectionMessage(location.locationid, location.displayName)
-        } else if (!heartbeatExceeded && location.heartbeatSentAlerts) {
+        if (heartbeatExceeded) {
+          const dbTime = await db.getCurrentTime()
+          if (location.sentVitalsAlertAt === null) {
+            helpers.logSentry(`System disconnected at ${location.locationid}`)
+            await db.updateSentAlerts(location.locationid, true)
+            sendDisconnectionMessage(location.locationid, location.displayName)
+          } else if (dbTime - location.sentVitalsAlertAt > helpers.getEnvVar('SUBSEQUENT_VITALS_ALERT_THRESHOLD') * 1000) {
+            await db.updateSentAlerts(location.locationid, true)
+            sendDisconnectionReminder(location.locationid, location.displayName)
+          }
+        } else if (location.sentVitalsAlertAt !== null) {
           helpers.logSentry(`${location.locationid} reconnected after reason: ${latestHeartbeat.resetReason}`)
           await db.updateSentAlerts(location.locationid, false)
           sendReconnectionMessage(location.locationid, location.displayName)
@@ -246,7 +267,7 @@ app.post('/api/xethru', Validator.body(['coreid', 'state', 'rpm', 'mov_f', 'mov_
       } else {
         await redis.addXeThruSensorData(location.locationid, state, rpm, distance, mov_f, mov_s)
 
-        if (location.isActive && !location.heartbeatSentAlerts) {
+        if (location.isActive && location.sentVitalsAlertAt === null) {
           await StateMachine.getNextState(location, handleAlert)
         }
         res.status(200).json('OK')
@@ -297,7 +318,7 @@ app.post(
 
           await redis.addInnosentRadarSensorData(location.locationid, inPhase, quadrature)
 
-          if (location.isActive && !location.heartbeatSentAlerts) {
+          if (location.isActive && location.sentVitalsAlertAt === null) {
             await StateMachine.getNextState(location, handleAlert)
           }
 
@@ -393,7 +414,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
           helpers.logSentry(`Received an IM21 tamper alarm for ${locationid}`)
         }
 
-        if (location.isActive && !location.heartbeatSentAlerts) {
+        if (location.isActive && location.sentVitalsAlertAt === null) {
           await StateMachine.getNextState(location, handleAlert)
         }
         await db.commitTransaction(client)
@@ -535,6 +556,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       150,
       30000,
       3,
+      null,
       [recipientNumber],
       twilioNumber,
       [recipientNumber],
