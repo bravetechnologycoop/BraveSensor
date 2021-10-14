@@ -6,7 +6,7 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { CHATBOT_STATE, ALERT_TYPE, AlertSession } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
-const { clientFactory } = require('../../../testingHelpers')
+const { clientFactory, locationFactory } = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneNumber', () => {
   beforeEach(async () => {
@@ -20,31 +20,14 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
 
     // Insert a location in the DB
     const client = await clientFactory(db, { responderPhoneNumber: this.expectedLocationPhoneNumber })
-    await db.createLocation(
-      'LocationId',
-      1,
-      1,
-      1,
-      1,
-      1,
-      [],
-      this.expectedTwilioPhoneNumber,
-      [],
-      1,
-      this.expectedLocationDisplayName,
-      'DoorCoreId',
-      'RadarCoreId',
-      'XeThru',
-      true,
-      false,
-      null,
-      '2021-03-09T19:37:28.176Z',
-      client.id,
-    )
-    const locationId = (await db.getLocations())[0].locationid
+    const location = await locationFactory(db, {
+      twilioNumber: this.expectedTwilioPhoneNumber,
+      displayName: this.expectedLocationDisplayName,
+      clientId: client.id,
+    })
 
     // Insert a session for that location in the DB
-    this.session = await db.createSession(locationId, this.expectedLocationPhoneNumber, ALERT_TYPE.SENSOR_DURATION)
+    this.session = await db.createSession(location.locationid, this.expectedLocationPhoneNumber, ALERT_TYPE.SENSOR_DURATION)
     this.session.chatbotState = this.expectedChatbotState
     this.session.incidentType = this.expectedIncidentType
     await db.saveSession(this.session)

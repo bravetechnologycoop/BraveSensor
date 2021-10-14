@@ -105,7 +105,7 @@ async function createLocationFromRow(r, clientParam) {
     const client = createClientFromRow(results.rows[0])
 
     // prettier-ignore
-    return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.heartbeat_sent_alerts, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, client)
+    return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, client)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -332,15 +332,24 @@ async function createSession(locationid, phoneNumber, alertType, clientParam) {
   }
 }
 
-// Updates the value of the alert flag in the location database
 async function updateSentAlerts(locationid, sentalerts, clientParam) {
   try {
-    const results = await runQuery(
-      'updateSentAlerts',
-      'UPDATE locations SET heartbeat_sent_alerts = $1 WHERE locationid = $2 RETURNING *',
-      [sentalerts, locationid],
-      clientParam,
-    )
+    const query = sentalerts
+      ? `
+        UPDATE locations
+        SET sent_vitals_alert_at = NOW()
+        WHERE locationid = $1
+        RETURNING *
+      `
+      : `
+        UPDATE locations
+        SET sent_vitals_alert_at = NULL
+        WHERE locationid = $1
+        RETURNING *
+      `
+
+    const results = await helpers.runQuery('updateSentAlerts', query, [locationid], pool, clientParam)
+
     if (results === undefined) {
       return null
     }
@@ -746,11 +755,15 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
 
 // Adds a location table entry
 // eslint-disable-next-line prettier/prettier
-async function createLocation(locationid, movementThreshold, stillnessTimer, durationTimer, reminderTimer, initialTimer, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, isActive, firmwareStateMachine, sirenParticleId, sentLowBatteryAlertAt, clientId, clientParam) {
+async function createLocation(locationid, movementThreshold, stillnessTimer, durationTimer, reminderTimer, initialTimer, sentVitalsAlertAt, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, isActive, firmwareStateMachine, sirenParticleId, sentLowBatteryAlertAt, clientId, clientParam) {
   try {
-    await runQuery(
+    const results = await helpers.runQuery(
       'createLocation',
-      'INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, is_active, firmware_state_machine, siren_particle_id, sent_low_battery_alert_at, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)',
+      `
+      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, sent_vitals_alert_at, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, is_active, firmware_state_machine, siren_particle_id, sent_low_battery_alert_at, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      RETURNING *
+      `,
       [
         locationid,
         movementThreshold,
@@ -758,6 +771,7 @@ async function createLocation(locationid, movementThreshold, stillnessTimer, dur
         durationTimer,
         reminderTimer,
         initialTimer,
+        sentVitalsAlertAt,
         heartbeatAlertRecipients,
         twilioNumber,
         fallbackNumbers,
@@ -772,8 +786,11 @@ async function createLocation(locationid, movementThreshold, stillnessTimer, dur
         sentLowBatteryAlertAt,
         clientId,
       ],
+      pool,
       clientParam,
     )
+
+    return createLocationFromRow(results.rows[0])
   } catch (err) {
     helpers.log(err.toString())
   }

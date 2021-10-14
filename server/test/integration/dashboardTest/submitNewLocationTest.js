@@ -9,7 +9,7 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { clientFactory } = require('../../../testingHelpers')
+const { clientFactory, locationFactory } = require('../../../testingHelpers')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -232,27 +232,10 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       sandbox.spy(db, 'createLocationFromBrowserForm')
 
       this.locationid = 'existingLocationId'
-      await db.createLocation(
-        this.locationid,
-        40,
-        15,
-        1,
-        5000,
-        5000,
-        ['+15005550006'],
-        '+15005550006',
-        ['+15005550006'],
-        1000,
-        'locationName',
-        'door_coreID',
-        'radar_coreID',
-        'XeThru',
-        true,
-        false,
-        null,
-        '2021-03-09T19:37:28.176Z',
-        this.client.id,
-      )
+      await locationFactory(db, {
+        locationid: this.locationid,
+        clientId: this.client.id,
+      })
 
       await this.agent.post('/login').send({
         username: helpers.getEnvVar('WEB_USERNAME'),

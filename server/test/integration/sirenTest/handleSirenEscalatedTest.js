@@ -9,7 +9,7 @@ const sinon = require('sinon')
 const { helpers } = require('brave-alert-lib')
 const { braveAlerter, db, redis, server } = require('../../../index')
 const siren = require('../../../siren')
-const { firmwareAlert, clientFactory } = require('../../../testingHelpers')
+const { firmwareAlert, clientFactory, locationFactory } = require('../../../testingHelpers')
 const SENSOR_EVENT = require('../../../SensorEventEnum')
 
 chai.use(chaiHttp)
@@ -20,14 +20,7 @@ const sandbox = sinon.createSandbox()
 const testLocation1Id = 'TestLocation1'
 const testSirenId = 'particleCoreIdTest'
 const testLocation1PhoneNumber = '+15005550006'
-const door_coreID = 'door_particlecoreid1'
 const radar_coreID = 'radar_particlecoreid1'
-
-const MOVEMENT_THRESHOLD = 40
-const INITIAL_TIMER = 1
-const STILLNESS_TIMER = 1.5
-const DURATION_TIMER = 3
-const firstLowBatteryAlert = '2021-03-09T19:37:28.176Z'
 
 async function sirenEscalatedAlert(coreID) {
   let response
@@ -51,31 +44,23 @@ describe('siren.js integration tests: handleSirenEscalated', () => {
     await redis.clearKeys()
     await db.clearTables()
 
+    this.fromPhoneNumber = '+15552226666'
     const client = await clientFactory(db, {
-      fromPhoneNumber: '+12223334444',
+      fromPhoneNumber: this.fromPhoneNumber,
       responderPhoneNumber: testLocation1PhoneNumber,
     })
-    await db.createLocation(
-      testLocation1Id,
-      MOVEMENT_THRESHOLD,
-      STILLNESS_TIMER,
-      DURATION_TIMER,
-      1000,
-      INITIAL_TIMER,
-      ['+14446667777'],
-      '+19998887777',
-      ['+15005550006'],
-      1000,
-      'locationName',
-      door_coreID,
-      radar_coreID,
-      'XeThru',
-      true,
-      true,
-      testSirenId,
-      firstLowBatteryAlert,
-      client.id,
-    )
+    this.fallbackNumber = '+199988855555'
+    this.locationName = 'myLocationName'
+    await locationFactory(db, {
+      locationid: testLocation1Id,
+      displayName: this.locationName,
+      fallbackNumbers: [this.fallbackNumber],
+      radarCoreId: radar_coreID,
+      sirenParticleId: testSirenId,
+      isActive: true,
+      clientId: client.id,
+    })
+
     sandbox.stub(braveAlerter, 'startAlertSession')
     sandbox.stub(braveAlerter, 'sendSingleAlert')
     sandbox.stub(siren, 'startSiren')
@@ -119,9 +104,9 @@ describe('siren.js integration tests: handleSirenEscalated', () => {
 
     it('should send a text message to the fallback phones', () => {
       expect(braveAlerter.sendSingleAlert).to.be.calledWithExactly(
-        '+15005550006',
-        '+12223334444',
-        'There is an unresponded siren. Please check on the bathroom at locationName.',
+        this.fallbackNumber,
+        this.fromPhoneNumber,
+        `There is an unresponded siren. Please check on the bathroom at ${this.locationName}.`,
       )
     })
 

@@ -9,7 +9,7 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { clientFactory } = require('../../../testingHelpers')
+const { clientFactory, locationFactory } = require('../../../testingHelpers')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -30,27 +30,10 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     await db.clearTables()
 
     this.client = await clientFactory(db)
-    await db.createLocation(
-      this.testLocationIdForEdit,
-      10,
-      50,
-      100,
-      90000,
-      15000,
-      ['+14445556789'],
-      '+14445556789',
-      ['+14445556789'],
-      90000,
-      'Initial Name',
-      'door_core',
-      'radar_core',
-      'XeThru',
-      true,
-      false,
-      null,
-      '2021-03-09T19:37:28.176Z',
-      this.client.id,
-    )
+    await locationFactory(db, {
+      locationid: this.testLocationIdForEdit,
+      clientId: this.client.id,
+    })
 
     this.agent = chai.request.agent(server)
   })

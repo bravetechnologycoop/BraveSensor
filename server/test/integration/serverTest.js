@@ -10,6 +10,7 @@ const { ALERT_TYPE, helpers } = require('brave-alert-lib')
 const imports = require('../../index')
 const siren = require('../../siren')
 const im21door = require('../../im21door')
+const RADAR_TYPE = require('../../RadarTypeEnum')
 
 const db = imports.db
 const redis = imports.redis
@@ -20,11 +21,7 @@ const XETHRU_STATE = require('../../SessionStateXethruEnum')
 const SENSOR_EVENT = require('../../SensorEventEnum')
 
 const MOVEMENT_THRESHOLD = 40
-// All timers in seconds
-const INITIAL_TIMER = 1
-const STILLNESS_TIMER = 1.5
-const DURATION_TIMER = 3
-const { firmwareAlert, getRandomArbitrary, getRandomInt, printRandomIntArray, clientFactory } = require('../../testingHelpers')
+const { firmwareAlert, getRandomArbitrary, getRandomInt, printRandomIntArray, clientFactory, locationFactory } = require('../../testingHelpers')
 const STATE = require('../../stateMachine/SessionStateEnum')
 
 chai.use(chaiHttp)
@@ -169,27 +166,15 @@ describe('Brave Sensor server', () => {
   describe('POST /sensorEvent: alerts from firmware state machine when the sirenParticleId is null', () => {
     beforeEach(async () => {
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await db.createLocation(
-        testLocation1Id,
-        MOVEMENT_THRESHOLD,
-        STILLNESS_TIMER,
-        DURATION_TIMER,
-        1000,
-        INITIAL_TIMER,
-        ['+15005550006'],
-        '+15005550006',
-        ['+15005550006'],
-        1000,
-        'locationName',
-        door_coreID,
-        radar_coreID,
-        'XeThru',
-        true,
-        true,
-        null,
-        firstLowBatteryAlert,
-        client.id,
-      )
+      await locationFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        firmwareStateMachine: true,
+        sirenParticleId: null,
+        isActive: true,
+        clientId: client.id,
+      })
+
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.stub(siren, 'startSiren')
@@ -296,27 +281,15 @@ describe('Brave Sensor server', () => {
   describe('POST request: alerts from firmware state machine when the sirenParticleId is not null', () => {
     beforeEach(async () => {
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await db.createLocation(
-        testLocation1Id,
-        MOVEMENT_THRESHOLD,
-        STILLNESS_TIMER,
-        DURATION_TIMER,
-        1000,
-        INITIAL_TIMER,
-        ['+15005550006'],
-        '+15005550006',
-        ['+15005550006'],
-        1000,
-        'locationName',
-        door_coreID,
-        radar_coreID,
-        'XeThru',
-        true,
-        true,
-        testSirenId,
-        firstLowBatteryAlert,
-        client.id,
-      )
+      await locationFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        firmwareStateMachine: true,
+        sirenParticleId: testSirenId,
+        isActive: true,
+        clientId: client.id,
+      })
+
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.stub(siren, 'startSiren')
@@ -423,27 +396,18 @@ describe('Brave Sensor server', () => {
   describe('POST request radar and door events with XeThru radar and mock im21 door sensor for an active Location', () => {
     beforeEach(async () => {
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await db.createLocation(
-        testLocation1Id,
-        MOVEMENT_THRESHOLD,
-        STILLNESS_TIMER,
-        DURATION_TIMER,
-        1000,
-        INITIAL_TIMER,
-        ['+15005550006'],
-        '+15005550006',
-        ['+15005550006'],
-        1000,
-        'locationName',
-        door_coreID,
-        radar_coreID,
-        'XeThru',
-        true,
-        false,
-        null,
-        firstLowBatteryAlert,
-        client.id,
-      )
+      await locationFactory(db, {
+        locationid: testLocation1Id,
+        movementThreshold: MOVEMENT_THRESHOLD,
+        doorCoreId: door_coreID,
+        radarCoreId: radar_coreID,
+        radarType: RADAR_TYPE.XETHRU,
+        isActive: true,
+        firmwareStateMachine: false,
+        sentLowBatteryAlertAt: firstLowBatteryAlert,
+        clientId: client.id,
+      })
+
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.stub(helpers, 'logSentry')
@@ -542,27 +506,17 @@ describe('Brave Sensor server', () => {
   describe('POST request radar and door events with XeThru radar and mock im21 door sensor for an inactive Location', () => {
     beforeEach(async () => {
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await db.createLocation(
-        testLocation1Id,
-        MOVEMENT_THRESHOLD,
-        STILLNESS_TIMER,
-        DURATION_TIMER,
-        5000,
-        INITIAL_TIMER,
-        ['+15005550006'],
-        '+15005550006',
-        ['+15005550006'],
-        1000,
-        'locationName',
-        door_coreID,
-        radar_coreID,
-        'XeThru',
-        false,
-        false,
-        null,
-        firstLowBatteryAlert,
-        client.id,
-      )
+      await locationFactory(db, {
+        locationid: testLocation1Id,
+        movementThreshold: MOVEMENT_THRESHOLD,
+        doorCoreId: door_coreID,
+        radarCoreId: radar_coreID,
+        radarType: RADAR_TYPE.XETHRU,
+        firmwareStateMachine: false,
+        isActive: false,
+        clientId: client.id,
+      })
+
       await im21Door(door_coreID, im21door.createClosedSignal())
       sandbox.spy(StateMachine, 'getNextState')
     })
@@ -609,27 +563,16 @@ describe('Brave Sensor server', () => {
   describe('POST request radar and door events with INS radar and mock im21 door sensor for an active Location', () => {
     beforeEach(async () => {
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await db.createLocation(
-        testLocation1Id,
-        MOVEMENT_THRESHOLD,
-        STILLNESS_TIMER,
-        DURATION_TIMER,
-        5000,
-        INITIAL_TIMER,
-        ['+15005550006'],
-        '+15005550006',
-        ['+15005550006'],
-        1000,
-        'locationName',
-        door_coreID,
-        radar_coreID,
-        'Innosent',
-        true,
-        false,
-        null,
-        firstLowBatteryAlert,
-        client.id,
-      )
+      await locationFactory(db, {
+        locationid: testLocation1Id,
+        movementThreshold: MOVEMENT_THRESHOLD,
+        doorCoreId: door_coreID,
+        radarCoreId: radar_coreID,
+        radarType: RADAR_TYPE.INNOSENT,
+        isActive: true,
+        clientId: client.id,
+      })
+
       await im21Door(door_coreID, im21door.createClosedSignal())
       sandbox.spy(StateMachine, 'getNextState')
       sandbox.stub(braveAlerter, 'startAlertSession')
@@ -718,27 +661,16 @@ describe('Brave Sensor server', () => {
   describe('POST request radar and door events with INS radar and mock im21 door sensor for an inactive Location', () => {
     beforeEach(async () => {
       const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await db.createLocation(
-        testLocation1Id,
-        MOVEMENT_THRESHOLD,
-        STILLNESS_TIMER,
-        DURATION_TIMER,
-        5000,
-        INITIAL_TIMER,
-        ['+15005550006'],
-        '+15005550006',
-        ['+15005550006'],
-        1000,
-        'locationName',
-        door_coreID,
-        radar_coreID,
-        'Innosent',
-        false,
-        false,
-        null,
-        firstLowBatteryAlert,
-        client.id,
-      )
+      await locationFactory(db, {
+        locationid: testLocation1Id,
+        movementThreshold: MOVEMENT_THRESHOLD,
+        doorCoreId: door_coreID,
+        radarCoreId: radar_coreID,
+        radarType: RADAR_TYPE.INNOSENT,
+        firmwareStateMachine: false,
+        clientId: client.id,
+      })
+
       await im21Door(door_coreID, im21door.createClosedSignal())
     })
 
@@ -783,27 +715,14 @@ describe('Brave Sensor server', () => {
     describe('/api/door endpoint', () => {
       beforeEach(async () => {
         const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-        await db.createLocation(
-          testLocation1Id,
-          MOVEMENT_THRESHOLD,
-          STILLNESS_TIMER,
-          DURATION_TIMER,
-          5000,
-          INITIAL_TIMER,
-          ['+15005550006'],
-          '+15005550006',
-          ['+15005550006'],
-          1000,
-          'locationName',
-          door_coreID,
-          radar_coreID,
-          'XeThru',
-          true,
-          false,
-          null,
-          firstLowBatteryAlert,
-          client.id,
-        )
+        await locationFactory(db, {
+          locationid: testLocation1Id,
+          doorCoreId: door_coreID,
+          radarType: RADAR_TYPE.XETHRU,
+          firmwareStateMachine: false,
+          clientId: client.id,
+        })
+
         await im21Door(door_coreID, im21door.createClosedSignal())
       })
 
@@ -839,27 +758,13 @@ describe('Brave Sensor server', () => {
     describe('api/devicevitals endpoint', () => {
       beforeEach(async () => {
         const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-        await db.createLocation(
-          testLocation1Id,
-          MOVEMENT_THRESHOLD,
-          200,
-          400,
-          5000,
-          100,
-          ['+15005550006'],
-          '+15005550006',
-          ['+15005550006'],
-          1000,
-          'locationName',
-          door_coreID,
-          radar_coreID,
-          'XeThru',
-          true,
-          false,
-          null,
-          firstLowBatteryAlert,
-          client.id,
-        )
+        await locationFactory(db, {
+          locationid: testLocation1Id,
+          doorCoreId: door_coreID,
+          radarType: RADAR_TYPE.XETHRU,
+          firmwareStateMachine: false,
+          clientId: client.id,
+        })
         await im21Door(door_coreID, im21door.createClosedSignal())
       })
 
@@ -929,27 +834,14 @@ describe('Brave Sensor server', () => {
       await db.clearTables()
 
       const client = await clientFactory(db)
-      await db.createLocation(
-        testLocation1Id,
-        MOVEMENT_THRESHOLD,
-        STILLNESS_TIMER,
-        DURATION_TIMER,
-        1000,
-        INITIAL_TIMER,
-        ['+15005550006'],
-        '+15005550006',
-        ['+15005550006'],
-        1000,
-        'locationName',
-        radar_coreID,
-        radar_coreID,
-        'Innosent',
-        true,
-        true,
-        null,
-        firstLowBatteryAlert,
-        client.id,
-      )
+      await locationFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        doorCoreId: radar_coreID,
+        firmwareStateMachine: true,
+        clientId: client.id,
+      })
+
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.spy(helpers, 'logSentry')
@@ -960,7 +852,6 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearTables()
       sandbox.restore()
-      helpers.log('\n')
     })
 
     it('should return 200 for a heartbeat request with no headers', async () => {
@@ -1006,27 +897,15 @@ describe('Brave Sensor server', () => {
       await db.clearTables()
 
       const client = await clientFactory(db)
-      await db.createLocation(
-        testLocation1Id,
-        MOVEMENT_THRESHOLD,
-        STILLNESS_TIMER,
-        DURATION_TIMER,
-        1000,
-        INITIAL_TIMER,
-        ['+15005550006'],
-        '+15005550006',
-        ['+15005550006'],
-        1000,
-        'locationName',
-        radar_coreID,
-        radar_coreID,
-        'Innosent',
-        true,
-        true,
-        null,
-        firstLowBatteryAlert,
-        client.id,
-      )
+      await locationFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        doorCoreId: radar_coreID,
+        firmwareStateMachine: true,
+        sentLowBatteryAlertAt: firstLowBatteryAlert,
+        clientId: client.id,
+      })
+
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.spy(helpers, 'logSentry')
@@ -1037,7 +916,6 @@ describe('Brave Sensor server', () => {
       await redis.clearKeys()
       await db.clearTables()
       sandbox.restore()
-      helpers.log('\n')
     })
 
     it('should return 200 for a heartbeat request with no headers', async () => {

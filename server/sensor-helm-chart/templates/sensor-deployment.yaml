@@ -144,6 +144,11 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: ONESIGNAL_ALERT_ANDROID_CATEGORY_ID
+          - name: SUBSEQUENT_VITALS_ALERT_THRESHOLD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: SUBSEQUENT_VITALS_ALERT_THRESHOLD
           - name: ENVIRONMENT
             value: {{ include "sensor.fullname" . | quote }}
           - name: RELEASE

@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Reminder messages about disconnections (CU-121pbg9).
+
 ## [4.3.0] 2021-12-02
 
 ### Added
