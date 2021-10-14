@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [4.2.0] 2021-10-14
+
 ### Added
 
 - Added Particle cloud function call to start siren in case of alert (CU-18r17vf).
@@ -259,16 +261,17 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v4.1.0...HEAD
-[4.0.1]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v4.0.0...v4.1.0
-[4.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.4.0...v4.0.0
-[3.4.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.3.0...v3.4.0
-[3.3.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.2.0...v3.3.0
-[3.2.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.1.0...v3.2.0
-[3.1.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v3.0.0...v3.1.0
-[3.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v2.0.0...v3.0.0
-[2.0.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.2.0...v2.0.0
-[1.2.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1...v1.2.0
-[1.1]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.1-alpha...v1.1
-[1.1-alpha]: https://github.com/bravetechnologycoop/BraveSensor-Server/compare/v1.0...v1.1-alpha
-[1.0]: https://github.com/bravetechnologycoop/BraveSensor-Server/releases/tag/v1.0
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.2.0...HEAD
+[4.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.1.0...v4.2.0
+[4.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.0.0...v4.1.0
+[4.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v3.4.0...v4.0.0
+[3.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v3.3.0...v3.4.0
+[3.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v3.2.0...v3.3.0
+[3.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v3.1.0...v3.2.0
+[3.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v3.0.0...v3.1.0
+[3.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v2.0.0...v3.0.0
+[2.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v1.2.0...v2.0.0
+[1.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v1.1...v1.2.0
+[1.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v1.1-alpha...v1.1
+[1.1-alpha]: https://github.com/bravetechnologycoop/BraveSensor/compare/v1.0...v1.1-alpha
+[1.0]: https://github.com/bravetechnologycoop/BraveSensor/releases/tag/v1.0

@@ -1,12 +1,12 @@
-# BraveSensor-Server
+# BraveSensor
 
-[![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor-Server.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/BraveSensor-Server)
+[![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/BraveSensor)
 
-# How to release a new version of BraveSensor-Server
+# How to release a new version of BraveSensor Server
 
 ## 1. Update git to reflect the new release
 
-1. on your local machine, in the `BraveSensor-Server` repository:
+1. on your local machine, in the `BraveSensor` repository:
 
    1. pull the latest code ready for release: `git checkout devenv && git pull origin devenv`
 
@@ -14,7 +14,7 @@
 
    1. update `CHANGELOG.md` by moving everything in `Unreleased` to a section for the new version
 
-   1. `cd` into the `~/BraveSensor-Server/server/sensor-helm-chart` directory
+   1. `cd` into the `~/BraveSensor/server/sensor-helm-chart` directory
 
       1. Update `Chart.yaml` with a new `version` and new `appVersion`, if applicable
 
@@ -38,7 +38,7 @@ If your changes involve changes to the database schema, you'll need to run your 
 
 ## 3. Environment Variable changes
 
-We deploy BraveSensor-Server onto a [Kubernetes](https://kubernetes.io/docs/home/) cluster as our production environment. On the cluster, environment variables are handled within `secret` resources. You can access the list of secrets on the cluster by running the command:
+We deploy BraveSensor onto a [Kubernetes](https://kubernetes.io/docs/home/) cluster as our production environment. On the cluster, environment variables are handled within `secret` resources. You can access the list of secrets on the cluster by running the command:
 `kubectl get secrets`
 
 ### Creating a secret from a .env file
@@ -62,7 +62,7 @@ A easier option is to delete the secret and re-create a new secret from scratch 
 
 ### Altering a secret's schema
 
-If there are changes to the schema of the environment variables (like the addition or deletion of a key) this change must be reflected in the env variables section of `BraveSensor-Server/server/sensor-helm-chart/templates/sensor-deployment.yaml`, in addition to changing the Kubernetes secret as described above.
+If there are changes to the schema of the environment variables (like the addition or deletion of a key) this change must be reflected in the env variables section of `BraveSensor/server/sensor-helm-chart/templates/sensor-deployment.yaml`, in addition to changing the Kubernetes secret as described above.
 
 ## 4. Deploy changes to the Kubernetes Cluster
 
@@ -72,7 +72,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. Run `ssh brave@sensors-admin.brave.coop`
 
-1. cd into the `~/BraveSensor-Server/server` directory and run `git pull origin master` to get the latest version of the helm chart
+1. cd into the `~/BraveSensor/server` directory and run `git pull origin master` to get the latest version of the helm chart
 
 1. Run the command `helm upgrade staging --set secretName=sensor-dev --set image.tag=<your new container tag> sensor-helm-chart` to deploy the latest version to staging
 
@@ -88,7 +88,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. Run `ssh brave@sensors-admin.brave.coop`
 
-1. cd into the `~/BraveSensor-Server/server` directory
+1. cd into the `~/BraveSensor/server` directory
 
 #### To deploy to staging
 
@@ -150,7 +150,7 @@ For local development, we use .env files to set environment variables. To set on
 
 You will need to populate the `.env` file with connection parameters for both redis and Postgresql. If you are using a local database you will also need to setup the database schema.
 
-To do this, cd into the `BraveSensor-Server/server` directory and run the following command
+To do this, cd into the `BraveSensor/server` directory and run the following command
 
 ```
 sudo PG_PORT=<your db's port> PG_HOST=<your db's host> PG_PASSWORD=<your db's password> PG_USER=<your db's user> PG_DATABASE=<your db name> ./setup_postgresql_local.sh
@@ -259,7 +259,7 @@ This strategy assumes that each migration script in the `db` directory has a u
 
 ## Deploying the migration scripts
 
-1. In the `BraveSensor-Server/server` directory, run the following command
+1. In the `BraveSensor/server` directory, run the following command
 
    ```
    PG_PORT=<your db's port> PG_HOST=<your db's host> PG_PASSWORD=<your db's password> PG_USER=<your db's user> PG_DATABASE=<your db name> ./setup_postgresql.sh
@@ -284,7 +284,7 @@ Follow [these instructions](https://www.digitalocean.com/community/tutorials/how
 
 ## Setting up redis on a new cluster
 
-1. From a shell with kubectl access to the cluster, cd into `BraveSensor-Server/server` repository and run `kubectl apply -f manifests/redis_storage.yaml`
+1. From a shell with kubectl access to the cluster, cd into `BraveSensor/server` repository and run `kubectl apply -f manifests/redis_storage.yaml`
 2. Install redis from the bitnami/redis chart by running `helm install <environment name>-sensor-redis bitnami/redis --namespace redis --set persistence.storageClass=redis-storage --set usePassword=false --set cluster.enabled=false`
 3. Run `kubectl get svc --namespace=redis` to get the IP of your new redis instance to use as an environment variable
 

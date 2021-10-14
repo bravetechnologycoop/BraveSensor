@@ -1,6 +1,6 @@
 FROM node:11
-RUN mkdir -p /home/node/BraveSensor-Server/node_modules && chown -R node:node /home/node/BraveSensor-Server
-WORKDIR /home/node/BraveSensor-Server
+RUN mkdir -p /home/node/BraveSensor/node_modules && chown -R node:node /home/node/BraveSensor
+WORKDIR /home/node/BraveSensor
 COPY package*.json ./
 USER node
 RUN npm install
