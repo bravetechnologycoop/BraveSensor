@@ -1,6 +1,6 @@
 # BraveSensor
 
-[![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor-Server.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/BraveSensor-Server)
+[![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/BraveSensor)
 
 This is the BraveSensors monorepo. The Firmware and Server directories each have their own README.
 
