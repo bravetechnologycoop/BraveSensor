@@ -15,6 +15,7 @@ the code was deployed.
 
 - Sound effects to push notifications (CU-10xfkhr).
 - "Export CSV" button to the Dashboard (CU-1mek79g).
+- `GET /alert/newNotificationsCount` endpoint (CU-hjwcwk).
 
 ## [4.2.0] 2021-10-14
 

@@ -797,6 +797,46 @@ async function createClient(displayName, fromPhoneNumber, responderPhoneNumber, 
   }
 }
 
+async function getNewNotificationsCountByAlertApiKey(alertApiKey, clientParam) {
+  try {
+    const { rows } = await runQuery(
+      'getNewNotificationsCountByAlertApiKey',
+      'SELECT COUNT (*) FROM notifications n LEFT JOIN locations l ON n.location_id = l.locationid LEFT JOIN clients c ON l.client_id = c.id WHERE c.alert_api_key = $1 AND NOT n.is_acknowledged',
+      [alertApiKey],
+      clientParam,
+    )
+    return parseInt(rows[0].count, 10)
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function createNotification(locationId, subject, body, isAcknowledged, clientParam) {
+  try {
+    await runQuery(
+      'createNotification',
+      'INSERT INTO notifications (location_id, subject, body, is_acknowledged) VALUES ($1, $2, $3, $4)',
+      [locationId, subject, body, isAcknowledged],
+      clientParam,
+    )
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function clearNotifications(clientParam) {
+  if (!helpers.isTestEnvironment()) {
+    helpers.log('warning - tried to clear notifications table outside of a test environment!')
+    return
+  }
+
+  try {
+    await runQuery('clearNotifications', 'DELETE FROM notifications', [], clientParam)
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
 async function clearSessions(clientParam) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear sessions database outside of a test environment!')
@@ -881,6 +921,7 @@ async function clearTables(clientParam) {
   }
 
   await clearSessions(clientParam)
+  await clearNotifications(clientParam)
   await clearLocations(clientParam)
   await clearClients(clientParam)
 }
@@ -930,4 +971,7 @@ module.exports = {
   getCurrentTime,
   createLocationFromBrowserForm,
   updateLowBatteryAlertTime,
+  clearNotifications,
+  createNotification,
+  getNewNotificationsCountByAlertApiKey,
 }
