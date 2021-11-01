@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Sound effects to push notifications (CU-10xfkhr).
+
 ## [4.2.0] 2021-10-14
 
 ### Added
@@ -30,6 +34,7 @@ the code was deployed.
 - Unit tests for Particle console functions (CU-vbep38).
 
 ### Fixed
+
 - IM21 door sensor signal processing (CU-4avrue).
 
 ## [4.1.0] - 2021-08-30
