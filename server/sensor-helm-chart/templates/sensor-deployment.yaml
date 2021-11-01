@@ -139,6 +139,11 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: LOW_BATTERY_ALERT_TIMEOUT
+          - name: ONESIGNAL_ALERT_ANDROID_CATEGORY_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: ONESIGNAL_ALERT_ANDROID_CATEGORY_ID
           - name: ENVIRONMENT
             value: {{ include "sensor.fullname" . | quote }}
           - name: RELEASE
