@@ -4,12 +4,12 @@ const { describe, it } = require('mocha')
 const sinonChai = require('sinon-chai')
 
 // In-house dependencies
-const index = require('../../../index')
+const vitals = require('../../../vitals')
 
 // Configure Chai
 use(sinonChai)
 
-describe('index.js unit tests: convertStateArrayToObject', () => {
+describe('vitals.js unit tests: convertStateArrayToObject', () => {
   describe('when given state transitions array', () => {
     it('should reformat the state transitions array', () => {
       const stateTransitionsArray = [[0, 0, 1]]
@@ -20,7 +20,7 @@ describe('index.js unit tests: convertStateArrayToObject', () => {
           time: 1,
         },
       ]
-      expect(stateTransitionsArray.map(index.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
+      expect(stateTransitionsArray.map(vitals.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
     })
 
     it('should handle the unsigned integer limits and multiple subarrays', () => {
@@ -40,7 +40,7 @@ describe('index.js unit tests: convertStateArrayToObject', () => {
           time: 0,
         },
       ]
-      expect(stateTransitionsArray.map(index.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
+      expect(stateTransitionsArray.map(vitals.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
     })
 
     it('should default to undefined if state or reason index is out of array bounds', () => {
@@ -52,7 +52,7 @@ describe('index.js unit tests: convertStateArrayToObject', () => {
           time: 0,
         },
       ]
-      expect(stateTransitionsArray.map(index.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
+      expect(stateTransitionsArray.map(vitals.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
     })
   })
 })
