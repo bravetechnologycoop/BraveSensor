@@ -258,7 +258,6 @@ async function handleHeartbeat(req, res) {
 
 module.exports = {
   checkHeartbeat,
-  convertStateArrayToObject,
   handleDeviceVitals,
   handleHeartbeat,
   sendLowBatteryAlert,
