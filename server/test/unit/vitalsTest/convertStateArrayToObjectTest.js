@@ -2,12 +2,16 @@
 const { expect, use } = require('chai')
 const { describe, it } = require('mocha')
 const sinonChai = require('sinon-chai')
+const rewire = require('rewire')
 
 // In-house dependencies
-const vitals = require('../../../vitals')
+const vitals = rewire('../../../vitals')
 
 // Configure Chai
 use(sinonChai)
+
+/* eslint-disable no-underscore-dangle */
+const convertStateArrayToObject = vitals.__get__('convertStateArrayToObject')
 
 describe('vitals.js unit tests: convertStateArrayToObject', () => {
   describe('when given state transitions array', () => {
@@ -20,7 +24,7 @@ describe('vitals.js unit tests: convertStateArrayToObject', () => {
           time: 1,
         },
       ]
-      expect(stateTransitionsArray.map(vitals.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
+      expect(stateTransitionsArray.map(convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
     })
 
     it('should handle the unsigned integer limits and multiple subarrays', () => {
@@ -40,7 +44,7 @@ describe('vitals.js unit tests: convertStateArrayToObject', () => {
           time: 0,
         },
       ]
-      expect(stateTransitionsArray.map(vitals.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
+      expect(stateTransitionsArray.map(convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
     })
 
     it('should default to undefined if state or reason index is out of array bounds', () => {
@@ -52,7 +56,7 @@ describe('vitals.js unit tests: convertStateArrayToObject', () => {
           time: 0,
         },
       ]
-      expect(stateTransitionsArray.map(vitals.convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
+      expect(stateTransitionsArray.map(convertStateArrayToObject)).to.deep.equal(stateTransitionsArrayReadable)
     })
   })
 })
