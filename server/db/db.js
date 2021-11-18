@@ -111,6 +111,40 @@ async function createLocationFromRow(r, clientParam) {
   }
 }
 
+async function getDataForExport(clientParam) {
+  try {
+    const results = await helpers.runQuery(
+      'getDataForExport',
+      `
+      SELECT
+        c.id AS "Client ID",
+        c.display_name AS "Client Name",
+        l.locationid AS "Sensor ID",
+        l.display_name AS "Sensor Name",
+        l.radar_type AS "Radar Type",
+        l.is_active AS "Active?",
+        s.id AS "Session ID",
+        TO_CHAR(s.created_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Start",
+        TO_CHAR(s.responded_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Responded At",
+        TO_CHAR(s.updated_at, 'yyyy-MM-dd HH24:mi:ss') AS "Last Session Activity",
+        s.incident_type AS "Session Incident Type",
+        s.chatbot_state AS "Session State",
+        s.alert_type As "Alert Type"
+      FROM sessions s
+        LEFT JOIN locations l ON s.locationid = l.locationid
+        LEFT JOIN clients c on l.client_id = c.id
+      `,
+      [],
+      pool,
+      clientParam,
+    )
+
+    return results.rows
+  } catch (err) {
+    helpers.logError(err.toString())
+  }
+}
+
 async function getCurrentTime(clientParam) {
   try {
     const results = await runQuery('getCurrentTime', 'SELECT NOW()', [], clientParam)
@@ -865,6 +899,7 @@ module.exports = {
   getUnrespondedSessionWithLocationId,
   createSession,
   saveSession,
+  getDataForExport,
   getMostRecentSessionPhone,
   getLocationFromParticleCoreID,
   getLocationsFromAlertApiKey,
