@@ -14,6 +14,7 @@ the code was deployed.
 ### Added
 
 - Sound effects to push notifications (CU-10xfkhr).
+- "Export CSV" button to the Dashboard (CU-1mek79g).
 
 ## [4.2.0] 2021-10-14
 
