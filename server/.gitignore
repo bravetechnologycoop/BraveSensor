@@ -3,3 +3,4 @@ node_modules
 .vs
 Public
 .env.local
+cluster-setup/sensor-ingress.yaml
