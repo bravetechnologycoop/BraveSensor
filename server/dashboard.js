@@ -88,6 +88,8 @@ function setupDashboardSessions(app) {
       resave: false,
       saveUninitialized: false,
       cookie: {
+        secure: !helpers.isTestEnvironment(),
+        httpOnly: true,
         expires: 8 * 60 * 60 * 1000,
       },
     }),
@@ -122,6 +124,7 @@ async function renderLoginPage(req, res) {
 
 async function submitLogout(req, res) {
   if (req.session.user && req.cookies.user_sid) {
+    req.session.destroy()
     res.clearCookie('user_sid')
     res.redirect('/')
   } else {
