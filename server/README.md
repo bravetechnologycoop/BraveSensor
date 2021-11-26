@@ -1,6 +1,6 @@
 # BraveSensor
 
-[![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor.svg?branch=master)](https://travis-ci.com/bravetechnologycoop/BraveSensor)
+[![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor.svg?branch=main)](https://travis-ci.com/bravetechnologycoop/BraveSensor)
 
 # How to release a new version of BraveSensor Server
 
@@ -8,7 +8,7 @@
 
 1. on your local machine, in the `BraveSensor` repository:
 
-   1. pull the latest code ready for release: `git checkout devenv && git pull origin devenv`
+   1. pull the latest code ready for release: `git checkout main && git pull origin main`
 
    1. decide on an appropriate version number for the new version
 
@@ -22,13 +22,13 @@
 
       1. Update `values.yaml` by putting the tag of your new container image in the `tag` field of `image`
 
-   1. make a new commit directly on `devenv` which updates the changelog and helm chart
+   1. make a new commit directly on `main` which updates the changelog and helm chart
 
    1. tag the new commit - for example, if the version number is v1.0.0, use `git tag v1.0.0`
 
-   1. push the new version to GitHub: `git push origin devenv --tags`
+   1. push the new version to GitHub: `git push origin main --tags`
 
-   1. update the `master` branch: `git checkout master && git merge devenv && git push origin master`
+   1. update the `production` branch: `git checkout production && git merge main && git push origin production`
 
 ## 2. Database changes
 
@@ -72,7 +72,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. Run `ssh brave@sensors-admin.brave.coop`
 
-1. cd into the `~/BraveSensor/server` directory and run `git pull origin master` to get the latest version of the helm chart
+1. cd into the `~/BraveSensor/server` directory and run `git pull origin production` to get the latest version of the helm chart
 
 1. Run the command `helm upgrade staging --set secretName=sensor-dev --set image.tag=<your new container tag> sensor-helm-chart` to deploy the latest version to staging
 

@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Please note that the date associated with a release is the date the code
-was committed to the `master` branch. This is not necessarily the date that
+was committed to the `production` branch. This is not necessarily the date that
 the code was deployed.
 
 ## [Unreleased]
@@ -22,6 +22,10 @@ the code was deployed.
 - Sound effects to push notifications (CU-10xfkhr).
 - "Export CSV" button to the Dashboard (CU-1mek79g).
 - `GET /alert/newNotificationsCount` endpoint (CU-hjwcwk).
+
+### Changed
+
+- Branching scheme (CU-mn5q4g).
 
 ## [4.2.0] 2021-10-14
 
