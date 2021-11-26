@@ -12,38 +12,14 @@ describe('BraveAlerterConfigurator.js integration tests: getNewNotificationsCoun
     await db.clearTables()
 
     this.alertApiKey = '00000000-000000000000001'
-    this.locationId = 'asdfasdfasdf'
 
     const client = await testingHelpers.clientFactory(db, { alertApiKey: this.alertApiKey })
 
-    // Insert a location in the DB
-    await db.createLocation(
-      this.locationId, // locationId
-      1, // movementThreshold
-      1, // stillnessTimer
-      1, // durationTimer
-      1, // reminderTimer
-      1, // initialTimer
-      [], // heartbeatAlertRecipients
-      '+12345678900', // twilioNumber
-      [], // fallbackNumbers
-      1, // fallbackTimer
-      'MyLocationName', // displayName
-      'DoorCoreId', // doorCoreId
-      'RadarCoreId', // radarCoreId
-      'XeThru', // radarType
-      true, // isActive
-      false, // firmwareStateMachine
-      'TestSirenId', // sirenParticleId
-      '2021-03-09T19:37:28.176Z', // sentLowBatteryAlertAt
-      client.id, // clientId
-    )
-
     // create 3 new notifications and 1 acknowledged notification
-    await db.createNotification(this.locationId, 'subject', 'body', false)
-    await db.createNotification(this.locationId, 'subject', 'body', false)
-    await db.createNotification(this.locationId, 'subject', 'body', false)
-    await db.createNotification(this.locationId, 'subject', 'body', true)
+    await db.createNotification(client.id, 'subject', 'body', false)
+    await db.createNotification(client.id, 'subject', 'body', false)
+    await db.createNotification(client.id, 'subject', 'body', false)
+    await db.createNotification(client.id, 'subject', 'body', true)
   })
 
   afterEach(async () => {

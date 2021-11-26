@@ -13,7 +13,7 @@ BEGIN
     IF migrationId - lastSuccessfulMigrationId = 1 THEN
         CREATE TABLE IF NOT EXISTS notifications (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-            location_id text REFERENCES locations (locationid) NOT NULL,
+            client_id uuid REFERENCES clients (id) NOT NULL,
             subject text,
             body text NOT NULL,
             is_acknowledged boolean NOT NULL default false,

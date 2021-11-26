@@ -799,24 +799,33 @@ async function createClient(displayName, fromPhoneNumber, responderPhoneNumber, 
 
 async function getNewNotificationsCountByAlertApiKey(alertApiKey, clientParam) {
   try {
-    const { rows } = await runQuery(
+    const { rows } = await helpers.runQuery(
       'getNewNotificationsCountByAlertApiKey',
-      'SELECT COUNT (*) FROM notifications n LEFT JOIN locations l ON n.location_id = l.locationid LEFT JOIN clients c ON l.client_id = c.id WHERE c.alert_api_key = $1 AND NOT n.is_acknowledged',
+      `
+      SELECT COUNT (*)
+      FROM notifications n 
+      LEFT JOIN clients c ON n.client_id = c.id
+      WHERE c.alert_api_key = $1
+      AND NOT n.is_acknowledged
+      `,
       [alertApiKey],
+      pool,
       clientParam,
     )
+
     return parseInt(rows[0].count, 10)
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function createNotification(locationId, subject, body, isAcknowledged, clientParam) {
+async function createNotification(clientId, subject, body, isAcknowledged, clientParam) {
   try {
-    await runQuery(
+    await helpers.runQuery(
       'createNotification',
-      'INSERT INTO notifications (location_id, subject, body, is_acknowledged) VALUES ($1, $2, $3, $4)',
-      [locationId, subject, body, isAcknowledged],
+      'INSERT INTO notifications (client_id, subject, body, is_acknowledged) VALUES ($1, $2, $3, $4)',
+      [clientId, subject, body, isAcknowledged],
+      pool,
       clientParam,
     )
   } catch (err) {
@@ -831,7 +840,7 @@ async function clearNotifications(clientParam) {
   }
 
   try {
-    await runQuery('clearNotifications', 'DELETE FROM notifications', [], clientParam)
+    await helpers.runQuery('clearNotifications', 'DELETE FROM notifications', [], pool, clientParam)
   } catch (err) {
     helpers.log(err.toString())
   }
