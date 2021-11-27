@@ -797,6 +797,55 @@ async function createClient(displayName, fromPhoneNumber, responderPhoneNumber, 
   }
 }
 
+async function getNewNotificationsCountByAlertApiKey(alertApiKey, clientParam) {
+  try {
+    const { rows } = await helpers.runQuery(
+      'getNewNotificationsCountByAlertApiKey',
+      `
+      SELECT COUNT (*)
+      FROM notifications n 
+      LEFT JOIN clients c ON n.client_id = c.id
+      WHERE c.alert_api_key = $1
+      AND NOT n.is_acknowledged
+      `,
+      [alertApiKey],
+      pool,
+      clientParam,
+    )
+
+    return parseInt(rows[0].count, 10)
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function createNotification(clientId, subject, body, isAcknowledged, clientParam) {
+  try {
+    await helpers.runQuery(
+      'createNotification',
+      'INSERT INTO notifications (client_id, subject, body, is_acknowledged) VALUES ($1, $2, $3, $4)',
+      [clientId, subject, body, isAcknowledged],
+      pool,
+      clientParam,
+    )
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function clearNotifications(clientParam) {
+  if (!helpers.isTestEnvironment()) {
+    helpers.log('warning - tried to clear notifications table outside of a test environment!')
+    return
+  }
+
+  try {
+    await helpers.runQuery('clearNotifications', 'DELETE FROM notifications', [], pool, clientParam)
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
 async function clearSessions(clientParam) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear sessions database outside of a test environment!')
@@ -881,6 +930,7 @@ async function clearTables(clientParam) {
   }
 
   await clearSessions(clientParam)
+  await clearNotifications(clientParam)
   await clearLocations(clientParam)
   await clearClients(clientParam)
 }
@@ -930,4 +980,7 @@ module.exports = {
   getCurrentTime,
   createLocationFromBrowserForm,
   updateLowBatteryAlertTime,
+  clearNotifications,
+  createNotification,
+  getNewNotificationsCountByAlertApiKey,
 }
