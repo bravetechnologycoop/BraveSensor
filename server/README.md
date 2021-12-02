@@ -72,7 +72,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. Run `ssh brave@sensors-admin.brave.coop`
 
-1. cd into the `~/BraveSensor/server` directory and run `git pull origin production` to get the latest version of the helm chart
+1. cd into the `~/BraveSensor/server` directory and run `git checkout production && git pull origin production` to get the latest version of the helm chart
 
 1. Run the command `helm upgrade staging --set secretName=sensor-dev --set image.tag=<your new container tag> sensor-helm-chart` to deploy the latest version to staging
 
@@ -219,6 +219,40 @@ Access is restricted to machines whose public key has been added to the server's
 1. Using an account that can, SSH onto the `sensors-admin` server
 
 1. Paste the user's public key onto a new line on the `~/.ssh/authorized_keys` file from a machine that is already capable of accessing the server
+
+## Toublehooting authentication error
+
+If you get the error
+
+```error: You must be logged in to the server (Unauthorized)```
+
+when you try to run any `kubectl` or `helm` commands. It's possible that your `doctl` access token has expired or was deleted. To see if that's the case, in run
+
+```doctl auth init```
+
+You will know that this is the case, if you get a response like this:
+
+```
+Using token [<long token here>]
+
+Validating token... invalid token
+
+Error: Unable to use supplied token to access API: GET https://api.digitalocean.com/v2/account: 401 (request "<guid>") Unable to authenticate you
+```
+
+To fix this problem:
+
+1. Create a new token following the instructions here: https://docs.digitalocean.com/reference/api/create-personal-access-token/
+
+2. On the Sensors Admin Server, run the command
+
+   `doctl auth init --access-token <new access token>`
+
+3. Open up the Cluster in Digital Ocean and navigate to Step 2 of the Getting Started Guide (https://cloud.digitalocean.com/kubernetes/clusters/565044a4-6b9d-4f08-859b-c42a6272a038?showGettingStarted=true&i=c5171f). Copy and paste the "Automated" command that looks like 
+
+   `doctl kubernetes cluster kubeconfig save <guid>`
+
+4. Run that command on the Sensors Admin Server
 
 # Interacting with the Managed Database
 
