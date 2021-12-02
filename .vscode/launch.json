@@ -10,10 +10,17 @@
       "request": "launch",
       "name": "Mocha All within 'test' folder",
       "program": "${workspaceFolder}/server/node_modules/mocha/bin/_mocha",
-      "args": ["--timeout", "999999", "--require", "${workspaceFolder}/server/test/mochaFixtures.js", "--colors", "${workspaceFolder}/test/**/*"],
+      "args": [
+        "--timeout",
+        "999999",
+        "--require",
+        "${workspaceFolder}/server/test/mochaFixtures.js",
+        "--colors",
+        "${workspaceFolder}/server/test/**/*"
+      ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "envFile": "${workspaceFolder}/.env",
+      "envFile": "${workspaceFolder}/server/.env",
       "env": { "NODE_ENV": "test" }
     },
     {

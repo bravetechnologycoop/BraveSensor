@@ -12,6 +12,7 @@ function configureRoutes(app) {
   app.get('/locations/:locationId/edit', dashboard.sessionChecker, dashboard.renderLocationEditPage)
   app.get('/login', dashboard.renderLoginPage)
   app.get('/logout', dashboard.submitLogout)
+  app.get('/export-data', dashboard.sessionChecker, dashboard.downloadCsv)
 
   app.post('/clients', dashboard.validateNewClient, dashboard.submitNewClient)
   app.post('/clients/:id', dashboard.validateEditClient, dashboard.submitEditClient)

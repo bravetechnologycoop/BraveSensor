@@ -30,6 +30,11 @@
                 </button>
             </li>
             <li class="nav-item">
+                <button class="btn btn-logout" id="export-csv">
+                    <a href="/export-data" class="text-decoration-none">Export CSV</a>
+                </button>
+            </li>
+            <li class="nav-item">
                 <button class="btn btn-logout">
                     <a href="/logout" class="text-decoration-none">Log Out</a>
                 </button>

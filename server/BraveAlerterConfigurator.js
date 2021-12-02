@@ -17,7 +17,7 @@ class BraveAlerterConfigurator {
       this.getLocationByAlertApiKey.bind(this),
       this.getActiveAlertsByAlertApiKey.bind(this),
       this.getHistoricAlertsByAlertApiKey.bind(this),
-      () => {},
+      this.getNewNotificationsCountByAlertApiKey.bind(this),
       false,
       this.getReturnMessage.bind(this),
     )
@@ -94,7 +94,7 @@ class BraveAlerterConfigurator {
           session.incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
         }
 
-        if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY) {
+        if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
           session.respondedAt = await db.getCurrentTime(client)
         }
 
@@ -159,6 +159,11 @@ class BraveAlerterConfigurator {
     }
 
     return historicAlerts.map(this.createHistoricAlertFromRow)
+  }
+
+  async getNewNotificationsCountByAlertApiKey(alertApiKey) {
+    const count = await db.getNewNotificationsCountByAlertApiKey(alertApiKey)
+    return count
   }
 
   getReturnMessage(fromAlertState, toAlertState) {

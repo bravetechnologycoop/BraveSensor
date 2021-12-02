@@ -4,6 +4,7 @@ const Mustache = require('mustache')
 const Validator = require('express-validator')
 const session = require('express-session')
 const cookieParser = require('cookie-parser')
+const { Parser } = require('json2csv')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
@@ -87,6 +88,8 @@ function setupDashboardSessions(app) {
       resave: false,
       saveUninitialized: false,
       cookie: {
+        secure: !helpers.isTestEnvironment(),
+        httpOnly: true,
         expires: 8 * 60 * 60 * 1000,
       },
     }),
@@ -121,11 +124,39 @@ async function renderLoginPage(req, res) {
 
 async function submitLogout(req, res) {
   if (req.session.user && req.cookies.user_sid) {
+    req.session.destroy()
     res.clearCookie('user_sid')
     res.redirect('/')
   } else {
     res.redirect('/login')
   }
+}
+
+async function downloadCsv(req, res) {
+  const data = await db.getDataForExport()
+  const fields = [
+    'Client ID',
+    'Client Name',
+    'Sensor ID',
+    'Sensor Name',
+    'Radar Type',
+    'Active?',
+    'Session ID',
+    'Session Start',
+    'Session Responded At',
+    'Last Session Activity',
+    'Session Incident Type',
+    'Session State',
+    'Alert Type',
+  ]
+
+  const csvParser = new Parser({ fields })
+  const csv = csvParser.parse(data)
+
+  const millis = Date.now()
+  const timestamp = new Date(millis).toISOString().slice(0, -5).replace(/T|:/g, '_')
+
+  res.set('Content-Type', 'text/csv').attachment(`sensor-data(${timestamp}).csv`).send(csv)
 }
 
 async function renderDashboardPage(req, res) {
@@ -543,6 +574,7 @@ async function submitLogin(req, res) {
 }
 
 module.exports = {
+  downloadCsv,
   redirectToHomePage,
   renderClientDetailsPage,
   renderClientEditPage,

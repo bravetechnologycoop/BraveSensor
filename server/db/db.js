@@ -111,6 +111,40 @@ async function createLocationFromRow(r, clientParam) {
   }
 }
 
+async function getDataForExport(clientParam) {
+  try {
+    const results = await helpers.runQuery(
+      'getDataForExport',
+      `
+      SELECT
+        c.id AS "Client ID",
+        c.display_name AS "Client Name",
+        l.locationid AS "Sensor ID",
+        l.display_name AS "Sensor Name",
+        l.radar_type AS "Radar Type",
+        l.is_active AS "Active?",
+        s.id AS "Session ID",
+        TO_CHAR(s.created_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Start",
+        TO_CHAR(s.responded_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Responded At",
+        TO_CHAR(s.updated_at, 'yyyy-MM-dd HH24:mi:ss') AS "Last Session Activity",
+        s.incident_type AS "Session Incident Type",
+        s.chatbot_state AS "Session State",
+        s.alert_type As "Alert Type"
+      FROM sessions s
+        LEFT JOIN locations l ON s.locationid = l.locationid
+        LEFT JOIN clients c on l.client_id = c.id
+      `,
+      [],
+      pool,
+      clientParam,
+    )
+
+    return results.rows
+  } catch (err) {
+    helpers.logError(err.toString())
+  }
+}
+
 async function getCurrentTime(clientParam) {
   try {
     const results = await runQuery('getCurrentTime', 'SELECT NOW()', [], clientParam)
@@ -763,6 +797,55 @@ async function createClient(displayName, fromPhoneNumber, responderPhoneNumber, 
   }
 }
 
+async function getNewNotificationsCountByAlertApiKey(alertApiKey, clientParam) {
+  try {
+    const { rows } = await helpers.runQuery(
+      'getNewNotificationsCountByAlertApiKey',
+      `
+      SELECT COUNT (*)
+      FROM notifications n 
+      LEFT JOIN clients c ON n.client_id = c.id
+      WHERE c.alert_api_key = $1
+      AND NOT n.is_acknowledged
+      `,
+      [alertApiKey],
+      pool,
+      clientParam,
+    )
+
+    return parseInt(rows[0].count, 10)
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function createNotification(clientId, subject, body, isAcknowledged, clientParam) {
+  try {
+    await helpers.runQuery(
+      'createNotification',
+      'INSERT INTO notifications (client_id, subject, body, is_acknowledged) VALUES ($1, $2, $3, $4)',
+      [clientId, subject, body, isAcknowledged],
+      pool,
+      clientParam,
+    )
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function clearNotifications(clientParam) {
+  if (!helpers.isTestEnvironment()) {
+    helpers.log('warning - tried to clear notifications table outside of a test environment!')
+    return
+  }
+
+  try {
+    await helpers.runQuery('clearNotifications', 'DELETE FROM notifications', [], pool, clientParam)
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
 async function clearSessions(clientParam) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear sessions database outside of a test environment!')
@@ -847,6 +930,7 @@ async function clearTables(clientParam) {
   }
 
   await clearSessions(clientParam)
+  await clearNotifications(clientParam)
   await clearLocations(clientParam)
   await clearClients(clientParam)
 }
@@ -865,6 +949,7 @@ module.exports = {
   getUnrespondedSessionWithLocationId,
   createSession,
   saveSession,
+  getDataForExport,
   getMostRecentSessionPhone,
   getLocationFromParticleCoreID,
   getLocationsFromAlertApiKey,
@@ -895,4 +980,7 @@ module.exports = {
   getCurrentTime,
   createLocationFromBrowserForm,
   updateLowBatteryAlertTime,
+  clearNotifications,
+  createNotification,
+  getNewNotificationsCountByAlertApiKey,
 }

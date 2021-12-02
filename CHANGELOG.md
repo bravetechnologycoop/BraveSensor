@@ -11,6 +11,14 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [4.3.0] 2021-12-02
+
+### Added
+
+- Sound effects to push notifications (CU-10xfkhr).
+- "Export CSV" button to the Dashboard (CU-1mek79g).
+- `GET /alert/newNotificationsCount` endpoint (CU-hjwcwk).
+
 ## [4.2.0] 2021-10-14
 
 ### Added
@@ -30,6 +38,7 @@ the code was deployed.
 - Unit tests for Particle console functions (CU-vbep38).
 
 ### Fixed
+
 - IM21 door sensor signal processing (CU-4avrue).
 
 ## [4.1.0] - 2021-08-30
@@ -261,7 +270,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.2.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.3.0...HEAD
+[4.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.2.0...v4.3.0
 [4.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.1.0...v4.2.0
 [4.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v3.4.0...v4.0.0
