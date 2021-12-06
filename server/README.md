@@ -22,7 +22,9 @@
 
       1. Update `values.yaml` by putting the tag of your new container image in the `tag` field of `image`
 
-   1. make a new commit directly on `main` which updates the changelog and helm chart
+   1. update `BRAVE_FIRMWARE_VERSION` in all `BraveSensorProductionFirmware.ino` files to the new version (versioning scheme described in `firmware/README.md#firmware-versioning`)
+
+   1. make a new commit directly on `main` which updates the changelog, helm chart, and .ino files
 
    1. tag the new commit - for example, if the version number is v1.0.0, use `git tag v1.0.0`
 

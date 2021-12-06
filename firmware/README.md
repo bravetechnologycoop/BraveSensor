@@ -46,6 +46,11 @@
 * v2000 = 1 Boron + INS3331 code = v4.0 on Sensor Product Release Timeline [here](https://docs.google.com/spreadsheets/d/1qa0hrfZ9nuKfag2WtU9p4lWTh8E7RW6DfsR_nHg383g/edit?usp=sharing)
 * v2001 = 1 Argon + INS3331 code = v3.2 ""
 
+From version 4.2.0 onwards, we will use the following: For any given server version `AA.BB.CC`, the firmware version will be `AABBCC`. Some examples:
+- `v4.2.0` => `40200`
+- `v4.10.5` => `41005`
+- `v11.6.12` => `110612`
+
 # Particle Project Structure
 
 Every Particle project is composed of 3 important elements.
