@@ -1,5 +1,4 @@
 // Third-party dependencies
-const bodyParser = require('body-parser')
 const express = require('express')
 const fs = require('fs')
 const https = require('https')
@@ -29,10 +28,9 @@ redis.connect()
 // Configure braveAlerter
 const braveAlerter = new BraveAlerterConfigurator().createBraveAlerter()
 
-// // Body Parser Middleware
+// Body Parser Middleware
 app.use(express.json())
-app.use(bodyParser.urlencoded({ extended: true })) // Set to true to allow the body to contain any type of value
-app.use(bodyParser.json())
+app.use(express.urlencoded({ extended: true })) // Set to true to allow the body to contain any type of value
 
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors())
