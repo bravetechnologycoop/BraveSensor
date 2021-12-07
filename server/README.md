@@ -24,7 +24,7 @@
 
    1. update `BRAVE_FIRMWARE_VERSION` in all `BraveSensorProductionFirmware.ino` files to the new version (versioning scheme described in `firmware/README.md#firmware-versioning`)
 
-   1. make a new commit directly on `main` which updates the changelog, helm chart, and .ino files
+   1. make a new commit directly on `main` which updates the changelog, helm chart, and `.ino` files
 
    1. tag the new commit - for example, if the version number is v1.0.0, use `git tag v1.0.0`
 
@@ -32,73 +32,75 @@
 
    1. update the `production` branch: `git checkout production && git merge main && git push origin production`
 
-## 2. Database changes
+## 2. Update the Staging database
 
 If your changes involve changes to the database schema, you'll need to run your database migration script on the appropriate database for your environment. See the [Database Migration section](#adding-a-new-database-migration-script).
 
-**If the database changes are breaking, think carefully about how to do this. It may be preferable to briefly shut down the server rather than risk undefined behavior from changing the database schema before changing the code that's running**
-
-## 3. Environment Variable changes
+## 3. Update the Staging secrets
 
 We deploy BraveSensor onto a [Kubernetes](https://kubernetes.io/docs/home/) cluster as our production environment. On the cluster, environment variables are handled within `secret` resources. You can access the list of secrets on the cluster by running the command:
+
 `kubectl get secrets`
+
+To view the currently deployed value of an enviornment variable:
+
+`kubectl exec deploy/production-sensor-server -- printenv | grep <environment-variable-name>`
 
 ### Creating a secret from a .env file
 
-To create a secret from a .env file, run the following command:
+To create a secret from a .env file, first delete the old secret (don't worry, this won't affect the currently deployed version):
+
+`kubectl delete secret <your-secret-name>`
+
+then create it from the correct `.env` file (for example, on the Sensors Admin server, `~/.env.staging` is the file to use for the Staging secret)
 
 `kubectl create secret generic <your-secret-name> --from-env-file=<path-to-env-file>`
-
-### Altering a secret values after it's been created
-
-If there are any changes to environment variables values, the corresponding Kubernetes secret objects must be changed too.
-
-To update a Kubernetes secret use the command:
-`kubectl edit secret <name-of-your-secret>`
-
-The values displayed will be encoded in base64, and new or altered values must also be entered in this encoding. To encode a string, use a command like the following one:
-
-`echo 'mySecretValue' | encode base64`
-
-A easier option is to delete the secret and re-create a new secret from scratch using the method described above for [creating a sensor from an env file](#creating-a-secret-from-a-.env-file). This is safe to do and will not affect running pods.
-
-### Altering a secret's schema
-
-If there are changes to the schema of the environment variables (like the addition or deletion of a key) this change must be reflected in the env variables section of `BraveSensor/server/sensor-helm-chart/templates/sensor-deployment.yaml`, in addition to changing the Kubernetes secret as described above.
 
 ## 4. Deploy changes to the Kubernetes Cluster
 
 We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us to deploy different instances of the application corresponding to dev, staging, and production environments as different 'releases'. Before updating production, we run smoke tests to verify that there's nothing obviously wrong with a release candidate.
 
-### Smoke testing
+### Deploy and run the smoke tests on Staging
 
 1. Run `ssh brave@sensors-admin.brave.coop`
 
 1. cd into the `~/BraveSensor/server` directory and run `git checkout production && git pull origin production` to get the latest version of the helm chart
 
-1. Run the command `helm upgrade staging --set secretName=sensor-dev --set image.tag=<your new container tag> sensor-helm-chart` to deploy the latest version to staging
+1. Run the command `helm upgrade staging --set secretName=sensor-staging --set image.tag=<your new container tag> ~/BraveSensor/server/sensor-helm-chart` to deploy the latest version to staging
 
 1. Run the smoke test script as described [below](#running-smoke-tests-on-the-kubernetes-cluster)
 
 1. Verify that the deployment shows the expected behavior before proceeding
 
-### Updating production
+### Update production
 
-1. Run the command `helm upgrade production sensor-helm-chart`
+1. If you determined that the database changes require downtime:
+
+   1. Send a notification to all the responder phones informing them of the downtime
+
+   1. Take the production server offline `helm uninstall production`
+
+1. Update the production DB and secrets, as necessary
+
+1. Run the command `helm upgrade production ~/BraveSensor/server/sensor-helm-chart`
+
+1. If you determined that the database changes require downtime:
+
+   1. Send a notification to all the responder phones informing them that everything is back online
+
+1. Post a message to the `#sensor-aa-general` Slack channel letting everyone know that the deployment is finished and list the changes in this deployment from the `CHANGELOG`
 
 # Deploying to the staging or development environment
 
 1. Run `ssh brave@sensors-admin.brave.coop`
 
-1. cd into the `~/BraveSensor/server` directory
-
 #### To deploy to staging
 
-1. Run the command `helm upgrade staging --set secretName=sensor-staging --set image.tag=<image tag you want to deploy> sensor-helm-chart`
+1. Run the command `helm upgrade staging --set secretName=sensor-staging --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
 
 #### To deploy to development
 
-1. Run the command `helm upgrade dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> sensor-helm-chart`
+1. Run the command `helm upgrade dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
 
 # Build and push a new container manually
 
@@ -117,13 +119,13 @@ Note that a new container is built and pushed automatically by Travis each time 
 
 ## Running Smoke Tests on the Kubernetes Cluster
 
-Once a build is deployed to the cluster, you can test basic aspects of its functionality by running the smoketest.js script. The script takes three parameters, a url for a deployment, a recipient phone number, and a Twilio number.:
+Once a build is deployed to the cluster, you can test basic aspects of its functionality by running the `smoketest.js` script on your local machine in the `BraveSensor/server` directory. The script takes three parameters, a url for a deployment, a recipient phone number, and a Twilio number.:
 
     `npm run smoketest <server url> <your phone number> <valid Twilio number>`
 
-The twilio number must be a valid number for the account, and must have its SMS webhook pointing at the server you're running the smoketest on. So, for example, if I wanted to run the smoke test with +17781234567 as the recipient phone number, and I knew +17786083684 was a valid twilio number for the deployment I'm testing, I could run the following command:
+The twilio number must have its SMS webhook pointing at the server you're running the smoketest on. So, for example, if I wanted to run the smoke test on Staging with +17781234567 as the recipient phone number, and I knew +17786083684 was a valid twilio number pointing to the Staging server, I could run the following command:
 
-    `npm run smoketest 'https://staging.odetect.brave.coop' '+17781234567' '+17786083684'`
+    `npm run smoketest 'https://staging.sensors.brave.coop' '+17781234567' '+17786083684'`
 
 The script will take a few minutes to conclude. The expected behavior is for a location to be created, and a session which results from a 'Stillness' alert to the phone number provided.
 
@@ -146,7 +148,11 @@ Alternately, you have the option of installing these dependencies as docker cont
 
 ## Environment Variables
 
-For local development, we use .env files to set environment variables. To set one of these up, copy the `.env.example` and rename it to `.env`, and fill in the values as appropriate.
+For local development, we use `.env` files to set environment variables. To set one of these up, copy the `.env.example` and rename it to `.env`, and fill in the values as appropriate.
+
+### Altering a secret's schema
+
+If there are changes to the schema of the environment variables (like the addition or deletion of a key) this change must be reflected in the env variables section of `BraveSensor/server/sensor-helm-chart/templates/sensor-deployment.yaml`, in addition to changing the Kubernetes secret.
 
 ## Database Setup
 
