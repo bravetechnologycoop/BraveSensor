@@ -15,6 +15,10 @@ the code was deployed.
 
 - Reminder messages about disconnections (CU-121pbg9).
 
+### Changed
+
+- No longer use body-parser (CU-13kqxyt).
+
 ## [4.3.0] 2021-12-02
 
 ### Added
