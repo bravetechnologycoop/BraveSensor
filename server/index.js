@@ -18,6 +18,7 @@ const routes = require('./routes')
 const dashboard = require('./dashboard')
 const siren = require('./siren')
 const vitals = require('./vitals')
+const RADAR_TYPE = require('./RadarTypeEnum')
 
 // Start Express App
 const app = express()
@@ -324,7 +325,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       'radar_coreID',
       radarType,
       true,
-      false,
+      radarType === RADAR_TYPE.INNOSENT,
       null,
       '2021-03-09T19:37:28.176Z',
       client.id,

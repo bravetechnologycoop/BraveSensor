@@ -127,9 +127,9 @@ The twilio number must have its SMS webhook pointing at the server you're runnin
 
     `npm run smoketest 'https://staging.sensors.brave.coop' '+17781234567' '+17786083684'`
 
-The script will take a few minutes to conclude. The expected behavior is for a location to be created, and a session which results from a 'Stillness' alert to the phone number provided.
+The script will take a few minutes to conclude. The expected behavior is for a location to be created, and a session which results from a 'Stillness' alert to the phone number provided for a XeThru + Server-side State Machine sensor and then a second time for an INS + Firmware State Machine sensor.
 
-You can get further details about the behavior of the build by watching logs for the application with:
+You can get further details about the behaviour of the build by watching logs for the application with:
 `kubectl logs -f --timestamps deployment/staging-sensor-server`
 and by watching the behavior of redis with:
 `kubectl exec deploy/redis-dev redis-cli monitor`

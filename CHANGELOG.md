@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Innosent firmware state machine smoke test (CU-1tdbnjg).
+
 ## [4.4.0] 2021-12-21
 
 ### Added
