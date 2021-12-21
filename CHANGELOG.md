@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [4.4.0] 2021-12-21
+
 ### Added
 
 - Reminder messages about disconnections (CU-121pbg9).
@@ -282,7 +284,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.3.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.4.0...HEAD
+[4.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.3.0...v4.4.0
 [4.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.2.0...v4.3.0
 [4.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.1.0...v4.2.0
 [4.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.0.0...v4.1.0
