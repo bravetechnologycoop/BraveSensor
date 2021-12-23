@@ -373,7 +373,7 @@ async function submitNewClient(req, res) {
       res.redirect(`/clients/${newClient.id}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
-      helpers.logError(errorMessage)
+      helpers.log(errorMessage)
       res.status(400).send(errorMessage)
     }
   } catch (err) {
@@ -418,7 +418,7 @@ async function submitEditClient(req, res) {
       res.redirect(`/clients/${req.params.id}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
-      helpers.logError(errorMessage)
+      helpers.log(errorMessage)
       res.status(400).send(errorMessage)
     }
   } catch (err) {
@@ -482,7 +482,7 @@ async function submitNewLocation(req, res) {
       res.redirect(`/locations/${data.locationid}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
-      helpers.logError(errorMessage)
+      helpers.log(errorMessage)
       res.status(400).send(errorMessage)
     }
   } catch (err) {
@@ -556,7 +556,7 @@ async function submitEditLocation(req, res) {
       res.redirect(`/locations/${data.locationid}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
-      helpers.logError(errorMessage)
+      helpers.log(errorMessage)
       res.status(400).send(errorMessage)
     }
   } catch (err) {
