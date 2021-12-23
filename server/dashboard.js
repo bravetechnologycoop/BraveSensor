@@ -338,8 +338,8 @@ async function renderClientDetailsPage(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'fromPhoneNumber']).notEmpty(),
-  Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey', 'responderPushId']).notEmpty()]),
+  Validator.body(['displayName', 'fromPhoneNumber']).trim().notEmpty(),
+  Validator.oneOf([Validator.body(['responderPhoneNumber']).trim().notEmpty(), Validator.body(['alertApiKey', 'responderPushId']).trim().notEmpty()]),
 ]
 
 async function submitNewClient(req, res) {
@@ -383,8 +383,8 @@ async function submitNewClient(req, res) {
 }
 
 const validateEditClient = [
-  Validator.body(['displayName', 'fromPhoneNumber']).notEmpty(),
-  Validator.oneOf([Validator.body(['responderPhoneNumber']).notEmpty(), Validator.body(['alertApiKey', 'responderPushId']).notEmpty()]),
+  Validator.body(['displayName', 'fromPhoneNumber']).trim().notEmpty(),
+  Validator.oneOf([Validator.body(['responderPhoneNumber']).trim().notEmpty(), Validator.body(['alertApiKey', 'responderPushId']).trim().notEmpty()]),
 ]
 
 async function submitEditClient(req, res) {
@@ -436,7 +436,9 @@ const validateNewLocation = Validator.body([
   'twilioPhone',
   'firmwareStateMachine',
   'clientId',
-]).notEmpty()
+])
+  .trim()
+  .notEmpty()
 
 async function submitNewLocation(req, res) {
   try {
@@ -506,7 +508,9 @@ const validateEditLocation = Validator.body([
   'isActive',
   'firmwareStateMachine',
   'clientId',
-]).notEmpty()
+])
+  .trim()
+  .notEmpty()
 
 async function submitEditLocation(req, res) {
   try {
@@ -534,8 +538,8 @@ async function submitEditLocation(req, res) {
         data.doorCoreID,
         data.radarCoreID,
         data.radarType,
-        data.fallbackPhones.split(','),
-        data.heartbeatPhones.split(','),
+        data.fallbackPhones.split(',').map(phone => phone.trim()),
+        data.heartbeatPhones.split(',').map(phone => phone.trim()),
         data.twilioPhone,
         data.movementThreshold,
         data.durationTimer,

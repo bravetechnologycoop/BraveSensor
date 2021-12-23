@@ -102,6 +102,64 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     })
   })
 
+  describe('for a request that contains all valid non-empty fields with leading and trailing whitespace', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.goodRequest = {
+        displayName: ' New Name ',
+        doorCoreID: '  new_door_core  ',
+        radarCoreID: '   new_radar_core ',
+        radarType: '   Innosent   ',
+        responderPhoneNumber: ' +12223334567   ',
+        fallbackPhones: '   +12223334444,   +13334445678    ',
+        heartbeatPhones: ' +15556667890, +16667778901 ',
+        twilioPhone: '    +11112223456    ',
+        movementThreshold: '    15    ',
+        durationTimer: ' 90   ',
+        stillnessTimer: '   10   ',
+        initialTimer: ' 9856 ',
+        reminderTimer: '  567849  ',
+        fallbackTimer: '   234567   ',
+        alertApiKey: '  newApiKey   ',
+        isActive: '    true     ',
+        firmwareStateMachine: ' false ',
+        clientId: `   ${this.client.id}   `,
+      }
+
+      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should update the location in the database', async () => {
+      const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
+
+      expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName.trim())
+      expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID.trim())
+      expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID.trim())
+      expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType.trim())
+      expect(updatedLocation.fallbackNumbers).to.eql(this.goodRequest.fallbackPhones.split(',').map(phone => phone.trim()))
+      expect(updatedLocation.heartbeatAlertRecipients).to.eql(this.goodRequest.heartbeatPhones.split(',').map(phone => phone.trim()))
+      expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone.trim())
+      expect(updatedLocation.isActive).to.be.true
+      expect(updatedLocation.firmwareStateMachine).to.be.false
+      expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId.trim())
+
+      chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold.trim())
+      chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer.trim())
+      chai.assert.equal(updatedLocation.stillnessTimer, this.goodRequest.stillnessTimer.trim())
+      chai.assert.equal(updatedLocation.initialTimer, this.goodRequest.initialTimer.trim())
+      chai.assert.equal(updatedLocation.reminderTimer, this.goodRequest.reminderTimer.trim())
+      chai.assert.equal(updatedLocation.fallbackTimer, this.goodRequest.fallbackTimer.trim())
+    })
+  })
+
   describe('for a request that contains all valid non-empty fields but is inactive', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({

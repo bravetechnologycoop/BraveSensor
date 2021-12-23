@@ -15,6 +15,10 @@ the code was deployed.
 
 - Innosent firmware state machine smoke test (CU-1tdbnjg).
 
+### Changed
+
+- Trim all values when adding or editing Clients and Locations (CU-1pdmvee).
+
 ## [4.4.0] 2021-12-21
 
 ### Added

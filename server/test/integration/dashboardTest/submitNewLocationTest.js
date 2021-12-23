@@ -94,6 +94,63 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
     })
   })
 
+  describe('for a request that contains all valid non-empty fields with leading and trailing whitespace', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.locationid = ' unusedID '
+      this.displayName = '  locationName  '
+      this.doorCoreId = '   door_coreID   '
+      this.radarCoreId = '    radar_coreID    '
+      this.radarType = '  XeThru  '
+      this.twilioNumber = '   +15005550006    '
+      this.firmwareStateMachine = false
+      const goodRequest = {
+        locationid: this.locationid,
+        displayName: this.displayName,
+        doorCoreID: this.doorCoreId,
+        radarCoreID: this.radarCoreId,
+        radarType: this.radarType,
+        twilioPhone: this.twilioNumber,
+        firmwareStateMachine: `  ${this.firmwareStateMachine.toString()} `,
+        clientId: `  ${this.client.id}   `,
+      }
+
+      this.response = await this.agent.post('/locations').send(goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should create a location in the database with the trimmed values', async () => {
+      const newLocation = await db.getLocationData(this.locationid.trim())
+
+      expect({
+        locationid: newLocation.locationid,
+        displayName: newLocation.displayName,
+        doorCoreId: newLocation.doorCoreId,
+        radarCoreId: newLocation.radarCoreId,
+        radarType: newLocation.radarType,
+        twilioNumber: newLocation.twilioNumber,
+        firmwareStateMachine: newLocation.firmwareStateMachine,
+        clientId: newLocation.client.id,
+      }).to.eql({
+        locationid: this.locationid.trim(),
+        displayName: this.displayName.trim(),
+        doorCoreId: this.doorCoreId.trim(),
+        radarCoreId: this.radarCoreId.trim(),
+        radarType: this.radarType.trim(),
+        twilioNumber: this.twilioNumber.trim(),
+        firmwareStateMachine: this.firmwareStateMachine,
+        clientId: this.client.id.trim(),
+      })
+    })
+  })
+
   describe('for a request with an nonexistent client ID', () => {
     beforeEach(async () => {
       sandbox.spy(db, 'createLocationFromBrowserForm')
