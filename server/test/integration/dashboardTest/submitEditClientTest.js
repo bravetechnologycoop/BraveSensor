@@ -83,6 +83,52 @@ describe('dashboard.js integration tests: submitEditClient', () => {
     })
   })
 
+  describe('for a request that contains all valid non-empty fields with leading and trailing whitespace', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.newDisplayname = ' New Display Name '
+      this.newFromPhoneNumber = '   +17549553216    '
+      this.newResponderPhoneNumber = '   +18885554444      '
+      this.newResponderPushId = '     myPushId     '
+      this.newAlertApiKey = '  myApiKey  '
+      this.goodRequest = {
+        displayName: this.newDisplayname,
+        fromPhoneNumber: this.newFromPhoneNumber,
+        responderPhoneNumber: this.newResponderPhoneNumber,
+        responderPushId: this.newResponderPushId,
+        alertApiKey: this.newAlertApiKey,
+      }
+
+      this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should update the client in the database with the trimmed values', async () => {
+      const updatedClient = await db.getClientWithClientId(this.existingClient.id)
+
+      expect({
+        displayName: updatedClient.displayName,
+        fromPhoneNumber: updatedClient.fromPhoneNumber,
+        responderPhoneNumber: updatedClient.responderPhoneNumber,
+        responderPushId: updatedClient.responderPushId,
+        alertApiKey: updatedClient.alertApiKey,
+      }).to.eql({
+        displayName: this.newDisplayname.trim(),
+        fromPhoneNumber: this.newFromPhoneNumber.trim(),
+        responderPhoneNumber: this.newResponderPhoneNumber.trim(),
+        responderPushId: this.newResponderPushId.trim(),
+        alertApiKey: this.newAlertApiKey.trim(),
+      })
+    })
+  })
+
   describe('for a request with no login session', () => {
     beforeEach(async () => {
       sandbox.spy(db, 'updateClient')

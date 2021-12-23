@@ -87,6 +87,58 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
   })
 
+  describe('for a request that contains all valid non-empty fields with leading and trailing whitespace', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.displayName = ' myNewClient  '
+      this.fromPhoneNumber = '  +19998887777  '
+      this.responderPhoneNumber = ' +16665553333 '
+      this.responderPushId = '  pushId  '
+      this.alertApiKey = '   myApiKey  '
+      const goodRequest = {
+        displayName: this.displayName,
+        fromPhoneNumber: this.fromPhoneNumber,
+        responderPhoneNumber: this.responderPhoneNumber,
+        responderPushId: this.responderPushId,
+        alertApiKey: this.alertApiKey,
+      }
+
+      this.response = await this.agent.post('/clients').send(goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should create a single client in the database with the trimmed values', async () => {
+      const clients = await db.getClients()
+
+      expect(
+        clients.map(client => {
+          return {
+            displayName: client.displayName,
+            fromPhoneNumber: client.fromPhoneNumber,
+            responderPhoneNumber: client.responderPhoneNumber,
+            responderPushId: client.responderPushId,
+            alertApiKey: client.alertApiKey,
+          }
+        }),
+      ).to.eql([
+        {
+          displayName: this.displayName.trim(),
+          fromPhoneNumber: this.fromPhoneNumber.trim(),
+          responderPhoneNumber: this.responderPhoneNumber.trim(),
+          responderPushId: this.responderPushId.trim(),
+          alertApiKey: this.alertApiKey.trim(),
+        },
+      ])
+    })
+  })
+
   describe('for a request with no login session', () => {
     beforeEach(async () => {
       sandbox.spy(db, 'createClient')
