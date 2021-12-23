@@ -50,7 +50,7 @@
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="responderPushId" class="col-sm-3 col-form-label">Responder Push ID:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="responderPushId" placeholder="Responder Push ID" value={{responderPushId}}>
+                        <input type="text" class="form-control" name="responderPushId" placeholder="Responder Push ID" value="{{responderPushId}}">
                         <small id="responderPushIdHelp" class="form-text text-muted">Must provide either "Responder Phone Number" or ("Responder Push ID" and "Alert App API Key")</small>
                     </div>
                 </div>
