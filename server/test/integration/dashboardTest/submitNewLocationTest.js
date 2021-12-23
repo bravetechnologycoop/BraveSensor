@@ -251,7 +251,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
     })
 
     it('should log the error', () => {
-      expect(helpers.logError).to.have.been.calledWith(
+      expect(helpers.log).to.have.been.calledWith(
         `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
@@ -278,7 +278,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
     })
 
     it('should log the error', () => {
-      expect(helpers.logError).to.have.been.calledWith(
+      expect(helpers.log).to.have.been.calledWith(
         `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })

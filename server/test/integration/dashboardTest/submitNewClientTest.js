@@ -348,7 +348,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
 
     it('should log the error', () => {
-      expect(helpers.logError).to.have.been.calledWith('Bad request to /clients: responderPhoneNumber/responderPushId (Invalid value(s))')
+      expect(helpers.log).to.have.been.calledWith('Bad request to /clients: responderPhoneNumber/responderPushId (Invalid value(s))')
     })
   })
 
@@ -378,7 +378,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
 
     it('should log the error', () => {
-      expect(helpers.logError).to.have.been.calledWith(
+      expect(helpers.log).to.have.been.calledWith(
         'Bad request to /clients: displayName (Invalid value),fromPhoneNumber (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))',
       )
     })
@@ -405,7 +405,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
 
     it('should log the error', () => {
-      expect(helpers.logError).to.have.been.calledWith(
+      expect(helpers.log).to.have.been.calledWith(
         'Bad request to /clients: displayName (Invalid value),fromPhoneNumber (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))',
       )
     })

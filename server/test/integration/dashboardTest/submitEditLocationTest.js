@@ -305,7 +305,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     })
 
     it('should log the error', () => {
-      expect(helpers.logError).to.have.been.calledWith(
+      expect(helpers.log).to.have.been.calledWith(
         `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
@@ -337,7 +337,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     })
 
     it('should log the error', () => {
-      expect(helpers.logError).to.have.been.calledWith(
+      expect(helpers.log).to.have.been.calledWith(
         `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
