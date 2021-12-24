@@ -1,6 +1,28 @@
 class Location {
-  // prettier-ignore
-  constructor(locationid, displayName, movementThreshold, durationTimer, stillnessTimer, sentVitalsAlertAt, heartbeatAlertRecipients, doorCoreId, radarCoreId, radarType, reminderTimer, fallbackTimer, twilioNumber, fallbackNumbers, initialTimer, isActive, firmwareStateMachine, sirenParticleId, sentLowBatteryAlertAt, client) {
+  constructor(
+    locationid,
+    displayName,
+    movementThreshold,
+    durationTimer,
+    stillnessTimer,
+    sentVitalsAlertAt,
+    heartbeatAlertRecipients,
+    doorCoreId,
+    radarCoreId,
+    radarType,
+    reminderTimer,
+    fallbackTimer,
+    twilioNumber,
+    fallbackNumbers,
+    initialTimer,
+    isActive,
+    firmwareStateMachine,
+    sirenParticleId,
+    sentLowBatteryAlertAt,
+    createdAt,
+    updatedAt,
+    client,
+  ) {
     this.locationid = locationid
     this.displayName = displayName
     this.movementThreshold = movementThreshold
@@ -18,9 +40,11 @@ class Location {
     this.initialTimer = initialTimer
     this.isActive = isActive
     this.firmwareStateMachine = firmwareStateMachine
-    this.client = client
     this.sirenParticleId = sirenParticleId
     this.sentLowBatteryAlertAt = sentLowBatteryAlertAt
+    this.createdAt = createdAt
+    this.updatedAt = updatedAt
+    this.client = client
   }
 }
 
