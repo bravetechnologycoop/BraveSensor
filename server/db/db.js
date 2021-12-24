@@ -105,7 +105,7 @@ async function createLocationFromRow(r, clientParam) {
     const client = createClientFromRow(results.rows[0])
 
     // prettier-ignore
-    return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, client)
+    return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
   } catch (err) {
     helpers.log(err.toString())
   }
