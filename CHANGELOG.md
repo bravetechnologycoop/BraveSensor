@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Security
+
+- Updated dependencies.
+
 ## [4.5.0] - 2022-01-14
 
 ### Added
