@@ -34,20 +34,14 @@ describe('BraveAlerterConfigurator.js unit tests: getActiveAlertsByAlertApiKey a
       display_name: 'displayName',
       alert_type: ALERT_TYPE.SENSOR_DURATION,
       created_at: new Date('2020-01-20T10:10:10.000Z'),
+      incident_categories: ['No One Inside', 'Person responded', 'None of the above'],
     }
     sandbox.stub(db, 'getActiveAlertsByAlertApiKey').returns([results])
 
     const activeAlerts = await this.braveAlerter.getActiveAlertsByAlertApiKey('alertApiKey')
 
     expect(activeAlerts).to.eql([
-      new ActiveAlert(
-        results.id,
-        results.chatbot_state,
-        results.display_name,
-        results.alert_type,
-        ['No One Inside', 'Person responded', 'Overdose', 'None of the above'],
-        results.created_at,
-      ),
+      new ActiveAlert(results.id, results.chatbot_state, results.display_name, results.alert_type, results.incident_categories, results.created_at),
     ])
   })
 
@@ -58,6 +52,7 @@ describe('BraveAlerterConfigurator.js unit tests: getActiveAlertsByAlertApiKey a
       display_name: 'displayName1',
       alert_type: ALERT_TYPE.SENSOR_DURATION,
       created_at: new Date('2020-01-20T10:10:10.000Z'),
+      incident_categories: ['Overdose', 'Other'],
     }
     const results2 = {
       id: 'id2',
@@ -65,6 +60,7 @@ describe('BraveAlerterConfigurator.js unit tests: getActiveAlertsByAlertApiKey a
       display_name: 'displayName2',
       alert_type: ALERT_TYPE.SENSOR_STILLNESS,
       created_at: new Date('2019-02-20T09:10:10.000Z'),
+      incident_categories: ['No One Inside', 'Person Responded'],
     }
     sandbox.stub(db, 'getActiveAlertsByAlertApiKey').returns([results1, results2])
 
@@ -76,7 +72,7 @@ describe('BraveAlerterConfigurator.js unit tests: getActiveAlertsByAlertApiKey a
         results1.chatbot_state,
         results1.display_name,
         results1.alert_type,
-        ['No One Inside', 'Person responded', 'Overdose', 'None of the above'],
+        results1.incident_categories,
         results1.created_at,
       ),
       new ActiveAlert(
@@ -84,7 +80,7 @@ describe('BraveAlerterConfigurator.js unit tests: getActiveAlertsByAlertApiKey a
         results2.chatbot_state,
         results2.display_name,
         results2.alert_type,
-        ['No One Inside', 'Person responded', 'Overdose', 'None of the above'],
+        results2.incident_categories,
         results2.created_at,
       ),
     ])

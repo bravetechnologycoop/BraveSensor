@@ -32,7 +32,7 @@ async function startSiren(sirenParticleId) {
 const validateSirenAddressed = Validator.body(['coreid']).exists()
 
 async function handleSirenAddressed(req, res) {
-  let client
+  let pgClient
 
   try {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
@@ -47,22 +47,22 @@ async function handleSirenAddressed(req, res) {
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
         res.status(200).json(errorMessage)
       } else {
-        client = await db.beginTransaction()
-        if (client === null) {
+        pgClient = await db.beginTransaction()
+        if (pgClient === null) {
           helpers.logError(`sirenAddressedCallback: Error starting transaction`)
           return
         }
 
-        const session = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
+        const session = await db.getUnrespondedSessionWithLocationId(location.locationid, pgClient)
         if (session) {
-          session.respondedAt = await db.getCurrentTime(client)
+          session.respondedAt = await db.getCurrentTime(pgClient)
           session.chatbotState = CHATBOT_STATE.COMPLETED
-          await db.saveSession(session, client)
+          await db.saveSession(session, pgClient)
         } else {
           helpers.logError(`sirenAddressedCallback: No unrepsonded session for location ${location.locationid}`)
         }
 
-        await db.commitTransaction(client)
+        await db.commitTransaction(pgClient)
         res.status(200).json('OK')
       }
     } else {
@@ -72,9 +72,9 @@ async function handleSirenAddressed(req, res) {
       res.status(200).json(errorMessage)
     }
   } catch (e) {
-    if (client !== null) {
+    if (pgClient !== null) {
       try {
-        await db.rollbackTransaction(client)
+        await db.rollbackTransaction(pgClient)
         helpers.logError(`sirenAddressedCallback: Rolled back transaction because of error: ${e}`)
       } catch (error) {
         // Do nothing
@@ -91,7 +91,7 @@ async function handleSirenAddressed(req, res) {
 const validateSirenEscalated = Validator.body(['coreid']).exists()
 
 async function handleSirenEscalated(req, res) {
-  let client
+  let pgClient
 
   try {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
@@ -106,24 +106,24 @@ async function handleSirenEscalated(req, res) {
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
         res.status(200).json(errorMessage)
       } else {
-        client = await db.beginTransaction()
-        if (client === null) {
+        pgClient = await db.beginTransaction()
+        if (pgClient === null) {
           helpers.logError(`sirenEscalatedCallback: Error starting transaction`)
           return
         }
 
-        const session = await db.getUnrespondedSessionWithLocationId(location.locationid, client)
+        const session = await db.getUnrespondedSessionWithLocationId(location.locationid, pgClient)
         if (session) {
           const alertMessage = `There is an unresponded siren. Please check on the bathroom at ${location.displayName}.`
-          for (const fallbackPhoneNumber of location.fallbackNumbers) {
+          for (const fallbackPhoneNumber of location.client.fallbackPhoneNumbers) {
             await braveAlerter.sendSingleAlert(fallbackPhoneNumber, location.client.fromPhoneNumber, alertMessage)
           }
-          await db.saveSession(session, client)
+          await db.saveSession(session, pgClient)
         } else {
           helpers.logError(`sirenEscalatedCallback: No unresponded sessions for location ${location.locationid}`)
         }
 
-        await db.commitTransaction(client)
+        await db.commitTransaction(pgClient)
 
         res.status(200).json('OK')
       }
@@ -134,9 +134,9 @@ async function handleSirenEscalated(req, res) {
       res.status(200).json(errorMessage)
     }
   } catch (err) {
-    if (client !== null) {
+    if (pgClient !== null) {
       try {
-        await db.rollbackTransaction(client)
+        await db.rollbackTransaction(pgClient)
         helpers.logError(`sirenEscalatedCallback: Rolled back transaction because of error: ${err}`)
       } catch (error) {
         // Do nothing

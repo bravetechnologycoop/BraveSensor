@@ -7,11 +7,10 @@ const rewire = require('rewire')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
-const Location = require('../../../Location')
-const Client = require('../../../Client')
 const db = require('../../../db/db')
 const redis = require('../../../db/redis')
 const RADAR_TYPE = require('../../../RadarTypeEnum')
+const { locationFactory } = require('../../../testingHelpers')
 
 const vitals = rewire('../../../vitals')
 
@@ -19,48 +18,6 @@ const vitals = rewire('../../../vitals')
 use(sinonChai)
 
 const sandbox = sinon.createSandbox()
-
-function clientFactory(overrides = {}) {
-  // prettier-ignore
-  return new Client(
-    overrides.id !== undefined ? overrides.id : 'fakeClientId',
-    overrides.displayName !== undefined ? overrides.displayName : 'factoryClient',
-    overrides.fromPhoneNumber !== undefined ? overrides.fromPhoneNumber : '+15558881234',
-    overrides.responderPhoneNumber !== undefined ? overrides.responderPhoneNumber : '+16665552222',
-    overrides.responderPushId !== undefined ? overrides.responderPushId : 'myPushId',
-    overrides.alertApiKey !== undefined ? overrides.alertApiKey : 'alertApiKey',
-    overrides.createdAt !== undefined ? overrides.createdAt : new Date(),
-    overrides.updatedAt !== undefined ? overrides.updatedAt : new Date(),
-  )
-}
-
-function locationFactory(overrides = {}) {
-  // prettier-ignore
-  return new Location(
-    overrides.locationid !== undefined ? overrides.locationid : 'fakeLocationid',
-    overrides.displayName !== undefined ? overrides.displayName : 'fakeLocationName',
-    overrides.movementThreshold !== undefined ? overrides.movementThreshold : 40,
-    overrides.durationTimer !== undefined ? overrides.durationTimer : 3,
-    overrides.stillnessTimer !== undefined ? overrides.stillnessTimer : 1.5,
-    overrides.sentVitalsAlertAt !== undefined ? overrides.sentVitalsAlertAt : null,
-    overrides.heartbeatAlertRecipients !== undefined ? overrides.heartbeatAlertRecipients : ['+16665552222'],
-    overrides.doorCoreId !== undefined ? overrides.doorCoreId : 'fakeDoorParticleId',
-    overrides.radarCoreId !== undefined ? overrides.radarCoreId : 'fakeRadarParticleId',
-    overrides.radarType !== undefined ? overrides.radarType : RADAR_TYPE.INNOSENT,
-    overrides.reminderTimer !== undefined ? overrides.reminderTimer : 5000,
-    overrides.fallbackTimer !== undefined ? overrides.fallbackTimer : 1000,
-    overrides.twilioNumber !== undefined ? overrides.twilioNumber : '+17775559999',
-    overrides.fallbackNumbers !== undefined ? overrides.fallbackNumbers : ['+13336669999'],
-    overrides.initialTimer !== undefined ? overrides.initialTimer : 1,
-    overrides.isActive !== undefined ? overrides.isActive : true,
-    overrides.firmwareStateMachine !== undefined ? overrides.firmwareStateMachine : true,
-    overrides.sirenParticleId !== undefined ? overrides.sirenParticleId : 'fakeSirenParticleId',
-    overrides.sentLowBatteryAlertAt !== undefined ? overrides.sentLowBatteryAlertAt : '2021-03-09T19:37:28.176Z',
-    overrides.createdAt !== undefined ? overrides.createdAt : '2021-05-05T19:37:28.176Z',
-    overrides.updatedAt !== undefined ? overrides.updatedAt : '2021-06-07T03:19:30.832Z',
-    overrides.client !== undefined ? overrides.client : clientFactory(),
-  )
-}
 
 const doorThreshold = 300
 const radarThreshold = 60

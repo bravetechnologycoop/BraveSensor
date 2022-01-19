@@ -3,10 +3,10 @@ const { expect } = require('chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
-const { CHATBOT_STATE, ALERT_TYPE, AlertSession } = require('brave-alert-lib')
+const { ALERT_TYPE, AlertSession, CHATBOT_STATE, factories } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
-const { clientFactory, locationFactory } = require('../../../testingHelpers')
+const { locationDBFactory } = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessionIdAndAlertApiKey', () => {
   beforeEach(async () => {
@@ -17,11 +17,17 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
     this.expectedLocationDisplayName = 'TEST LOCATION'
     this.expectedLocationPhoneNumber = '+17772225555'
     this.expectedTwilioPhoneNumber = '+3336661234'
+    this.expectedIncidentCategoryKeys = ['1', '2', '3']
+    this.expectedIncidentCategories = ['No One Inside', 'Person responded', 'None of the above']
     this.alertApiKey = 'myAlertApiKey'
 
     // Insert a location in the DB
-    const client = await clientFactory(db, { responderPhoneNumber: this.expectedLocationPhoneNumber, alertApiKey: this.alertApiKey })
-    const location = await locationFactory(db, {
+    const client = await factories.clientDBFactory(db, {
+      responderPhoneNumber: this.expectedLocationPhoneNumber,
+      alertApiKey: this.alertApiKey,
+      incidentCategories: this.expectedIncidentCategories,
+    })
+    const location = await locationDBFactory(db, {
       twilioNumber: this.expectedTwilioPhoneNumber,
       displayName: this.expectedLocationDisplayName,
       clientId: client.id,
@@ -49,8 +55,8 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
       undefined,
       `An alert to check on the washroom at ${this.expectedLocationDisplayName} was not responded to. Please check on it`,
       this.expectedLocationPhoneNumber,
-      ['1', '2', '3', '4'],
-      ['No One Inside', 'Person responded', 'Overdose', 'None of the above'],
+      this.expectedIncidentCategoryKeys,
+      this.expectedIncidentCategories,
     )
 
     expect(actualAlertSession).to.eql(expectedAlertSession)

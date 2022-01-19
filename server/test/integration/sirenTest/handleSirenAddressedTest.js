@@ -6,10 +6,10 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
 
 // In-house dependencies
-const { CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const { CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
 const { braveAlerter, db, redis, server } = require('../../../index')
 const siren = require('../../../siren')
-const { firmwareAlert, clientFactory, locationFactory } = require('../../../testingHelpers')
+const { firmwareAlert, locationDBFactory } = require('../../../testingHelpers')
 const SENSOR_EVENT = require('../../../SensorEventEnum')
 
 chai.use(chaiHttp)
@@ -44,8 +44,8 @@ describe('siren.js integration tests: handleSirenAddressed', () => {
     await redis.clearKeys()
     await db.clearTables()
 
-    const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-    await locationFactory(db, {
+    const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
+    await locationDBFactory(db, {
       locationid: testLocation1Id,
       radarCoreId: radar_coreID,
       sirenParticleId: testSirenId,

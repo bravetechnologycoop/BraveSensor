@@ -22,7 +22,7 @@ async function sendSingleAlert(locationid, message, client) {
 
   await braveAlerter.sendSingleAlert(location.client.responderPhoneNumber, location.client.fromPhoneNumber, message)
 
-  location.heartbeatAlertRecipients.forEach(async heartbeatAlertRecipient => {
+  location.client.heartbeatPhoneNumbers.forEach(async heartbeatAlertRecipient => {
     await braveAlerter.sendSingleAlert(heartbeatAlertRecipient, location.client.fromPhoneNumber, message)
   })
 }
@@ -200,19 +200,19 @@ async function handleDeviceVitals(req, res) {
 const validateHeartbeat = Validator.body(['coreid', 'data']).exists()
 
 async function handleHeartbeat(req, res) {
-  let client
+  let pgClient
   try {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
-      client = await db.beginTransaction()
+      pgClient = await db.beginTransaction()
       const coreId = req.body.coreid
-      const location = await db.getLocationFromParticleCoreID(coreId, client)
+      const location = await db.getLocationFromParticleCoreID(coreId, pgClient)
       if (!location) {
         const errorMessage = `Bad request to ${req.path}: no location matches the coreID ${coreId}`
         helpers.logError(errorMessage)
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-        await db.commitTransaction(client)
+        await db.commitTransaction(pgClient)
         res.status(200).json(errorMessage)
       } else {
         const message = JSON.parse(req.body.data)
@@ -222,7 +222,7 @@ async function handleHeartbeat(req, res) {
         const resetReason = message.resetReason
         const stateTransitionsArray = message.states.map(convertStateArrayToObject)
         if (doorLowBatteryFlag) {
-          await sendLowBatteryAlert(location, client)
+          await sendLowBatteryAlert(location, pgClient)
         }
         await redis.addEdgeDeviceHeartbeat(
           location.locationid,
@@ -232,7 +232,7 @@ async function handleHeartbeat(req, res) {
           resetReason,
           stateTransitionsArray,
         )
-        await db.commitTransaction(client)
+        await db.commitTransaction(pgClient)
         res.status(200).json('OK')
       }
     } else {
@@ -243,7 +243,7 @@ async function handleHeartbeat(req, res) {
     }
   } catch (err) {
     try {
-      await db.rollbackTransaction(client)
+      await db.rollbackTransaction(pgClient)
       helpers.logError(`POST to /api/heartbeat: Rolled back transaction because of error: ${err}`)
     } catch (error) {
       // Do nothing

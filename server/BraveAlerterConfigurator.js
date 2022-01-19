@@ -3,10 +3,6 @@
 const { ActiveAlert, BraveAlerter, AlertSession, CHATBOT_STATE, helpers, HistoricAlert, Location, SYSTEM } = require('brave-alert-lib')
 const db = require('./db/db')
 
-const incidentTypes = ['No One Inside', 'Person responded', 'Overdose', 'None of the above']
-
-const incidentTypeKeys = ['1', '2', '3', '4']
-
 class BraveAlerterConfigurator {
   createBraveAlerter() {
     return new BraveAlerter(
@@ -24,17 +20,17 @@ class BraveAlerterConfigurator {
   }
 
   async createAlertSessionFromSession(session) {
-    const locationData = await db.getLocationData(session.locationid)
+    const location = await db.getLocationData(session.locationid)
 
     const alertSession = new AlertSession(
       session.id,
       session.chatbotState,
       session.incidentType,
       undefined,
-      `An alert to check on the washroom at ${locationData.displayName} was not responded to. Please check on it`,
-      locationData.client.responderPhoneNumber,
-      incidentTypeKeys,
-      incidentTypes,
+      `An alert to check on the washroom at ${location.displayName} was not responded to. Please check on it`,
+      location.client.responderPhoneNumber,
+      this.createIncidentCategoryKeys(location.client.incidentCategories),
+      location.client.incidentCategories,
     )
 
     return alertSession
@@ -75,15 +71,15 @@ class BraveAlerterConfigurator {
       return
     }
 
-    let client
+    let pgClient
 
     try {
-      client = await db.beginTransaction()
-      if (client === null) {
+      pgClient = await db.beginTransaction()
+      if (pgClient === null) {
         helpers.logError(`alertSessionChangedCallback: Error starting transaction`)
         return
       }
-      const session = await db.getSessionWithSessionId(alertSession.sessionId, client)
+      const session = await db.getSessionWithSessionId(alertSession.sessionId, pgClient)
 
       if (session) {
         if (alertSession.alertState) {
@@ -91,22 +87,23 @@ class BraveAlerterConfigurator {
         }
 
         if (alertSession.incidentCategoryKey) {
-          session.incidentType = incidentTypes[incidentTypeKeys.indexOf(alertSession.incidentCategoryKey)]
+          const location = await db.getLocationData(session.locationid)
+          session.incidentType = location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey) - 1]
         }
 
         if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
-          session.respondedAt = await db.getCurrentTime(client)
+          session.respondedAt = await db.getCurrentTime(pgClient)
         }
 
-        await db.saveSession(session, client)
+        await db.saveSession(session, pgClient)
       } else {
         helpers.logError(`alertSessionChangedCallback was called for a non-existent session: ${alertSession.sessionId}`)
       }
 
-      await db.commitTransaction(client)
+      await db.commitTransaction(pgClient)
     } catch (e) {
       try {
-        await db.rollbackTransaction(client)
+        await db.rollbackTransaction(pgClient)
         helpers.logError(`alertSessionChangedCallback: Rolled back transaction because of error: ${e}`)
       } catch (error) {
         // Do nothing
@@ -128,7 +125,7 @@ class BraveAlerterConfigurator {
   }
 
   createActiveAlertFromRow(row) {
-    return new ActiveAlert(row.id, row.chatbot_state, row.display_name, row.alert_type, incidentTypes, row.created_at)
+    return new ActiveAlert(row.id, row.chatbot_state, row.display_name, row.alert_type, row.incident_categories, row.created_at)
   }
 
   // Active Alerts are those with status that is not "Completed" and were last updated SESSION_RESET_THRESHOLD ago or more recently
@@ -195,6 +192,16 @@ class BraveAlerterConfigurator {
     }
 
     return returnMessage
+  }
+
+  createIncidentCategoryKeys(incidentCategories) {
+    // Incident categories in Sensors are always 1-indexed
+    const incidentCategoryKeys = []
+    for (let i = 1; i <= incidentCategories.length; i += 1) {
+      incidentCategoryKeys.push(i.toString())
+    }
+
+    return incidentCategoryKeys
   }
 }
 

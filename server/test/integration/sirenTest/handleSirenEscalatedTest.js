@@ -6,10 +6,10 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const { factories, helpers } = require('brave-alert-lib')
 const { braveAlerter, db, redis, server } = require('../../../index')
 const siren = require('../../../siren')
-const { firmwareAlert, clientFactory, locationFactory } = require('../../../testingHelpers')
+const { firmwareAlert, locationDBFactory } = require('../../../testingHelpers')
 const SENSOR_EVENT = require('../../../SensorEventEnum')
 
 chai.use(chaiHttp)
@@ -45,16 +45,16 @@ describe('siren.js integration tests: handleSirenEscalated', () => {
     await db.clearTables()
 
     this.fromPhoneNumber = '+15552226666'
-    const client = await clientFactory(db, {
+    const client = await factories.clientDBFactory(db, {
       fromPhoneNumber: this.fromPhoneNumber,
       responderPhoneNumber: testLocation1PhoneNumber,
+      fallbackPhoneNumbers: [this.fallbackNumber],
     })
     this.fallbackNumber = '+199988855555'
     this.locationName = 'myLocationName'
-    await locationFactory(db, {
+    await locationDBFactory(db, {
       locationid: testLocation1Id,
       displayName: this.locationName,
-      fallbackNumbers: [this.fallbackNumber],
       radarCoreId: radar_coreID,
       sirenParticleId: testSirenId,
       isActive: true,

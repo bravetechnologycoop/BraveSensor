@@ -6,10 +6,9 @@ const sinonChai = require('sinon-chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const { factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { clientFactory } = require('../../../testingHelpers')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -26,7 +25,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     await db.clearTables()
 
-    this.existingClient = await clientFactory(db)
+    this.existingClient = await factories.clientDBFactory(db)
 
     this.agent = chai.request.agent(server)
   })
@@ -436,7 +435,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       })
 
       this.otherClientName = 'otherClientName'
-      this.otherExistingClient = await clientFactory(db, {
+      this.otherExistingClient = await factories.clientDBFactory(db, {
         displayName: this.otherClientName,
       })
 

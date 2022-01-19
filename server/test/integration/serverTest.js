@@ -6,7 +6,7 @@ const chaiDateTime = require('chai-datetime')
 const expect = chai.expect
 const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
-const { ALERT_TYPE, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, factories, helpers } = require('brave-alert-lib')
 const imports = require('../../index')
 const siren = require('../../siren')
 const im21door = require('../../im21door')
@@ -21,7 +21,7 @@ const XETHRU_STATE = require('../../SessionStateXethruEnum')
 const SENSOR_EVENT = require('../../SensorEventEnum')
 
 const MOVEMENT_THRESHOLD = 40
-const { firmwareAlert, getRandomArbitrary, getRandomInt, printRandomIntArray, clientFactory, locationFactory } = require('../../testingHelpers')
+const { firmwareAlert, getRandomArbitrary, getRandomInt, printRandomIntArray, locationDBFactory } = require('../../testingHelpers')
 const STATE = require('../../stateMachine/SessionStateEnum')
 
 chai.use(chaiHttp)
@@ -141,8 +141,8 @@ describe('Brave Sensor server', () => {
 
   describe('POST /sensorEvent: alerts from firmware state machine when the sirenParticleId is null', () => {
     beforeEach(async () => {
-      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
+      await locationDBFactory(db, {
         locationid: testLocation1Id,
         radarCoreId: radar_coreID,
         firmwareStateMachine: true,
@@ -256,8 +256,8 @@ describe('Brave Sensor server', () => {
 
   describe('POST request: alerts from firmware state machine when the sirenParticleId is not null', () => {
     beforeEach(async () => {
-      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
+      await locationDBFactory(db, {
         locationid: testLocation1Id,
         radarCoreId: radar_coreID,
         firmwareStateMachine: true,
@@ -371,8 +371,8 @@ describe('Brave Sensor server', () => {
 
   describe('POST request radar and door events with XeThru radar and mock im21 door sensor for an active Location', () => {
     beforeEach(async () => {
-      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
+      await locationDBFactory(db, {
         locationid: testLocation1Id,
         movementThreshold: MOVEMENT_THRESHOLD,
         doorCoreId: door_coreID,
@@ -481,8 +481,8 @@ describe('Brave Sensor server', () => {
 
   describe('POST request radar and door events with XeThru radar and mock im21 door sensor for an inactive Location', () => {
     beforeEach(async () => {
-      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
+      await locationDBFactory(db, {
         locationid: testLocation1Id,
         movementThreshold: MOVEMENT_THRESHOLD,
         doorCoreId: door_coreID,
@@ -538,8 +538,8 @@ describe('Brave Sensor server', () => {
 
   describe('POST request radar and door events with INS radar and mock im21 door sensor for an active Location', () => {
     beforeEach(async () => {
-      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
+      await locationDBFactory(db, {
         locationid: testLocation1Id,
         movementThreshold: MOVEMENT_THRESHOLD,
         doorCoreId: door_coreID,
@@ -636,8 +636,8 @@ describe('Brave Sensor server', () => {
 
   describe('POST request radar and door events with INS radar and mock im21 door sensor for an inactive Location', () => {
     beforeEach(async () => {
-      const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
+      await locationDBFactory(db, {
         locationid: testLocation1Id,
         movementThreshold: MOVEMENT_THRESHOLD,
         doorCoreId: door_coreID,
@@ -690,8 +690,8 @@ describe('Brave Sensor server', () => {
   describe('Express validation of API and form endpoints', () => {
     describe('/api/door endpoint', () => {
       beforeEach(async () => {
-        const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-        await locationFactory(db, {
+        const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
+        await locationDBFactory(db, {
           locationid: testLocation1Id,
           doorCoreId: door_coreID,
           radarType: RADAR_TYPE.XETHRU,
@@ -733,8 +733,8 @@ describe('Brave Sensor server', () => {
 
     describe('api/devicevitals endpoint', () => {
       beforeEach(async () => {
-        const client = await clientFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-        await locationFactory(db, {
+        const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
+        await locationDBFactory(db, {
           locationid: testLocation1Id,
           doorCoreId: door_coreID,
           radarType: RADAR_TYPE.XETHRU,

@@ -6,10 +6,10 @@ const sinonChai = require('sinon-chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const { factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { clientFactory, locationFactory } = require('../../../testingHelpers')
+const { locationDBFactory } = require('../../../testingHelpers')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -26,7 +26,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     await db.clearTables()
 
-    this.client = await clientFactory(db)
+    this.client = await factories.clientDBFactory(db)
 
     this.agent = chai.request.agent(server)
   })
@@ -289,7 +289,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       sandbox.spy(db, 'createLocationFromBrowserForm')
 
       this.locationid = 'existingLocationId'
-      await locationFactory(db, {
+      await locationDBFactory(db, {
         locationid: this.locationid,
         clientId: this.client.id,
       })
