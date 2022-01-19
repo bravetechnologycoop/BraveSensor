@@ -3,10 +3,10 @@ const { expect } = require('chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
-const { Location, SYSTEM } = require('brave-alert-lib')
+const { factories, Location, SYSTEM } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
-const { clientFactory, locationFactory } = require('../../../testingHelpers')
+const { locationDBFactory } = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKey', () => {
   beforeEach(async () => {
@@ -16,8 +16,8 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
     this.apiKey = 'myApiKey'
 
     // Insert a location in the DB
-    this.client = await clientFactory(db, { alertApiKey: this.apiKey })
-    await locationFactory(db, {
+    this.client = await factories.clientDBFactory(db, { alertApiKey: this.apiKey })
+    await locationDBFactory(db, {
       locationid: this.expectedLocationId,
       clientId: this.client.id,
     })
@@ -56,8 +56,8 @@ describe('BraveAlerterConfigurator.js integration tests: getLocationByAlertApiKe
     beforeEach(async () => {
       this.anotherExpectedLocationId = 'TEST LOCATION 2'
       // Insert another client and location in the DB
-      const newClient = await clientFactory(db, { displayName: 'TEST CLIENT 2', alertApiKey: this.apiKey })
-      await locationFactory(db, {
+      const newClient = await factories.clientDBFactory(db, { displayName: 'TEST CLIENT 2', alertApiKey: this.apiKey })
+      await locationDBFactory(db, {
         locationid: this.anotherExpectedLocationId,
         clientId: newClient.id,
       })

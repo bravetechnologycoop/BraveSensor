@@ -3,9 +3,9 @@ const { expect } = require('chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
+const { factories } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
-const testingHelpers = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getNewNotificationsCountByAlertApiKey', () => {
   beforeEach(async () => {
@@ -13,7 +13,7 @@ describe('BraveAlerterConfigurator.js integration tests: getNewNotificationsCoun
 
     this.alertApiKey = '00000000-000000000000001'
 
-    const client = await testingHelpers.clientFactory(db, { alertApiKey: this.alertApiKey })
+    const client = await factories.clientDBFactory(db, { alertApiKey: this.alertApiKey })
 
     // create 3 new notifications and 1 acknowledged notification
     await db.createNotification(client.id, 'subject', 'body', false)

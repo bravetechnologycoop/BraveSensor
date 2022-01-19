@@ -6,9 +6,9 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const { factories, helpers } = require('brave-alert-lib')
 const { braveAlerter, db, redis, server } = require('../../../index')
-const { clientFactory, locationFactory } = require('../../../testingHelpers')
+const { locationDBFactory } = require('../../../testingHelpers')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)
@@ -49,8 +49,8 @@ describe('siren.js integration tests: handleHeartbeat', () => {
       await redis.clearKeys()
       await db.clearTables()
 
-      const client = await clientFactory(db)
-      await locationFactory(db, {
+      const client = await factories.clientDBFactory(db)
+      await locationDBFactory(db, {
         locationid: testLocation1Id,
         radarCoreId: radar_coreID,
         doorCoreId: radar_coreID,
@@ -112,8 +112,8 @@ describe('siren.js integration tests: handleHeartbeat', () => {
       await redis.clearKeys()
       await db.clearTables()
 
-      const client = await clientFactory(db)
-      await locationFactory(db, {
+      const client = await factories.clientDBFactory(db)
+      await locationDBFactory(db, {
         locationid: testLocation1Id,
         radarCoreId: radar_coreID,
         doorCoreId: radar_coreID,

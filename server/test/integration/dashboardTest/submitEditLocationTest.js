@@ -6,10 +6,10 @@ const sinonChai = require('sinon-chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const { factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { clientFactory, locationFactory } = require('../../../testingHelpers')
+const { locationDBFactory } = require('../../../testingHelpers')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -29,8 +29,8 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     await db.clearTables()
 
-    this.client = await clientFactory(db)
-    await locationFactory(db, {
+    this.client = await factories.clientDBFactory(db)
+    await locationDBFactory(db, {
       locationid: this.testLocationIdForEdit,
       clientId: this.client.id,
     })
@@ -57,15 +57,11 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         radarCoreID: 'new_radar_core',
         radarType: 'Innosent',
         responderPhoneNumber: '+12223334567',
-        fallbackPhones: '+12223334444,+13334445678',
-        heartbeatPhones: '+15556667890,+16667778901',
         twilioPhone: '+11112223456',
         movementThreshold: 15,
         durationTimer: 90,
         stillnessTimer: 10,
         initialTimer: 9856,
-        reminderTimer: 567849,
-        fallbackTimer: 234567,
         alertApiKey: 'newApiKey',
         isActive: 'true',
         firmwareStateMachine: 'false',
@@ -86,8 +82,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID)
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
       expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
-      expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
-      expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
       expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
       expect(updatedLocation.isActive).to.be.true
       expect(updatedLocation.firmwareStateMachine).to.be.false
@@ -97,8 +91,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
       chai.assert.equal(updatedLocation.stillnessTimer, this.goodRequest.stillnessTimer)
       chai.assert.equal(updatedLocation.initialTimer, this.goodRequest.initialTimer)
-      chai.assert.equal(updatedLocation.reminderTimer, this.goodRequest.reminderTimer)
-      chai.assert.equal(updatedLocation.fallbackTimer, this.goodRequest.fallbackTimer)
     })
   })
 
@@ -115,15 +107,11 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         radarCoreID: '   new_radar_core ',
         radarType: '   Innosent   ',
         responderPhoneNumber: ' +12223334567   ',
-        fallbackPhones: '   +12223334444,   +13334445678    ',
-        heartbeatPhones: ' +15556667890, +16667778901 ',
         twilioPhone: '    +11112223456    ',
         movementThreshold: '    15    ',
         durationTimer: ' 90   ',
         stillnessTimer: '   10   ',
         initialTimer: ' 9856 ',
-        reminderTimer: '  567849  ',
-        fallbackTimer: '   234567   ',
         alertApiKey: '  newApiKey   ',
         isActive: '    true     ',
         firmwareStateMachine: ' false ',
@@ -144,8 +132,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID.trim())
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID.trim())
       expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType.trim())
-      expect(updatedLocation.fallbackNumbers).to.eql(this.goodRequest.fallbackPhones.split(',').map(phone => phone.trim()))
-      expect(updatedLocation.heartbeatAlertRecipients).to.eql(this.goodRequest.heartbeatPhones.split(',').map(phone => phone.trim()))
       expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone.trim())
       expect(updatedLocation.isActive).to.be.true
       expect(updatedLocation.firmwareStateMachine).to.be.false
@@ -155,8 +141,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer.trim())
       chai.assert.equal(updatedLocation.stillnessTimer, this.goodRequest.stillnessTimer.trim())
       chai.assert.equal(updatedLocation.initialTimer, this.goodRequest.initialTimer.trim())
-      chai.assert.equal(updatedLocation.reminderTimer, this.goodRequest.reminderTimer.trim())
-      chai.assert.equal(updatedLocation.fallbackTimer, this.goodRequest.fallbackTimer.trim())
     })
   })
 
@@ -173,15 +157,11 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         radarCoreID: 'new_radar_core',
         radarType: 'Innosent',
         responderPhoneNumber: '+12223334567',
-        fallbackPhones: '+12223334444,+13334445678',
-        heartbeatPhones: '+15556667890,+16667778901',
         twilioPhone: '+11112223456',
         movementThreshold: 15,
         durationTimer: 90,
         stillnessTimer: 10,
         initialTimer: 9856,
-        reminderTimer: 567849,
-        fallbackTimer: 234567,
         alertApiKey: 'newApiKey',
         isActive: 'false',
         firmwareStateMachine: 'false',
@@ -202,8 +182,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID)
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
       expect(updatedLocation.radarType).to.equal(this.goodRequest.radarType)
-      expect(updatedLocation.fallbackNumbers.join(',')).to.equal(this.goodRequest.fallbackPhones)
-      expect(updatedLocation.heartbeatAlertRecipients.join(',')).to.equal(this.goodRequest.heartbeatPhones)
       expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
       expect(updatedLocation.isActive).to.be.false
       expect(updatedLocation.firmwareStateMachine).to.be.false
@@ -213,8 +191,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
       chai.assert.equal(updatedLocation.stillnessTimer, this.goodRequest.stillnessTimer)
       chai.assert.equal(updatedLocation.initialTimer, this.goodRequest.initialTimer)
-      chai.assert.equal(updatedLocation.reminderTimer, this.goodRequest.reminderTimer)
-      chai.assert.equal(updatedLocation.fallbackTimer, this.goodRequest.fallbackTimer)
     })
   })
 
@@ -232,15 +208,11 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         radarCoreID: 'new_radar_core',
         radarType: 'Innosent',
         responderPhoneNumber: '+12223334567',
-        fallbackPhones: '+12223334444,+13334445678',
-        heartbeatPhones: '+15556667890,+16667778901',
         twilioPhone: '+11112223456',
         movementThreshold: 15,
         durationTimer: 90,
         stillnessTimer: 10,
         initialTimer: 9856,
-        reminderTimer: 567849,
-        fallbackTimer: 234567,
         alertApiKey: 'newApiKey',
         isActive: 'true',
         firmwareStateMachine: 'false',
@@ -279,15 +251,11 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         radarCoreID: '',
         radarType: '',
         responderPhoneNumber: '',
-        fallbackPhones: '',
-        heartbeatPhones: '',
         twilioPhone: '',
         movementThreshold: '',
         durationTimer: '',
         stillnessTimer: '',
         initialTimer: '',
-        reminderTimer: '',
-        fallbackTimer: '',
         alertApiKey: '',
         isActive: '',
         clientId: '',
@@ -306,7 +274,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -338,7 +306,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),fallbackPhones (Invalid value),heartbeatPhones (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),reminderTimer (Invalid value),fallbackTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
   })

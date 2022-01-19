@@ -2,10 +2,9 @@
 const pg = require('pg')
 
 // In-house dependencies
-const { CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const { CHATBOT_STATE, Client, helpers } = require('brave-alert-lib')
 const Session = require('../Session')
 const Location = require('../Location')
-const Client = require('../Client')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -25,50 +24,51 @@ pool.on('error', err => {
 })
 
 async function beginTransaction() {
-  const client = await pool.connect()
-  await client.query('BEGIN')
-  await client.query('LOCK TABLE sessions, locations, migrations')
-  return client
-}
+  let pgClient = null
 
-async function commitTransaction(client) {
-  await client.query('COMMIT')
-  client.release()
-}
-
-async function rollbackTransaction(client) {
   try {
-    await client.query('ROLLBACK')
+    pgClient = await pool.connect()
+    await pgClient.query('BEGIN')
+
+    await pgClient.query('LOCK TABLE clients, notifications, sessions, locations, migrations')
   } catch (e) {
-    helpers.logError(`Error running the rollbackTransaction query: ${e}`)
+    helpers.logError(`Error running the beginTransaction query: ${e}`)
+    if (pgClient) {
+      try {
+        await this.rollbackTransaction(pgClient)
+      } catch (err) {
+        helpers.logError(`beginTransaction: Error rolling back the errored transaction: ${err}`)
+      }
+    }
+  }
+
+  return pgClient
+}
+
+async function commitTransaction(pgClient) {
+  try {
+    await pgClient.query('COMMIT')
+  } catch (e) {
+    helpers.logError(`Error running the commitTransaction query: ${e}`)
   } finally {
     try {
-      client.release()
+      pgClient.release()
     } catch (err) {
-      helpers.logError(`rollbackTransaction: Error releasing client: ${err}`)
+      helpers.logError(`commitTransaction: Error releasing client: ${err}`)
     }
   }
 }
 
-async function runQuery(functionName, queryString, queryParams, clientParam) {
-  let client = clientParam
-  const transactionMode = client !== undefined
-
+async function rollbackTransaction(pgClient) {
   try {
-    if (!transactionMode) {
-      client = await pool.connect()
-    }
-
-    return await client.query(queryString, queryParams)
+    await pgClient.query('ROLLBACK')
   } catch (e) {
-    helpers.logError(`Error running the ${functionName} query: ${e}`)
+    helpers.logError(`Error running the rollbackTransaction query: ${e}`)
   } finally {
-    if (!transactionMode) {
-      try {
-        client.release()
-      } catch (err) {
-        helpers.logError(`${functionName}: Error releasing client: ${err}`)
-      }
+    try {
+      pgClient.release()
+    } catch (err) {
+      helpers.logError(`rollbackTransaction: Error releasing client: ${err}`)
     }
   }
 }
@@ -80,12 +80,12 @@ function createSessionFromRow(r) {
 
 function createClientFromRow(r) {
   // prettier-ignore
-  return new Client(r.id, r.display_name, r.from_phone_number, r.responder_phone_number, r.responder_push_id, r.alert_api_key, r.created_at, r.updated_at)
+  return new Client(r.id, r.display_name, r.responder_phone_number, r.responder_push_id, r.alert_api_key, r.reminder_timeout, r.fallback_phone_numbers, r.from_phone_number, r.fallback_timeout, r.heartbeat_phone_numbers, r.incident_categories, r.is_active, r.created_at, r.updated_at)
 }
 
-async function createLocationFromRow(r, clientParam) {
+async function createLocationFromRow(r, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'createLocationFromRow',
       `
       SELECT *
@@ -94,7 +94,8 @@ async function createLocationFromRow(r, clientParam) {
       LIMIT 1
       `,
       [r.client_id],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined || results.rows.length === 0) {
@@ -105,13 +106,13 @@ async function createLocationFromRow(r, clientParam) {
     const client = createClientFromRow(results.rows[0])
 
     // prettier-ignore
-    return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.heartbeat_alert_recipients, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.reminder_timer, r.fallback_timer, r.twilio_number, r.fallback_phonenumbers, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
+    return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.twilio_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function getDataForExport(clientParam) {
+async function getDataForExport(pgClient) {
   try {
     const results = await helpers.runQuery(
       'getDataForExport',
@@ -136,7 +137,7 @@ async function getDataForExport(clientParam) {
       `,
       [],
       pool,
-      clientParam,
+      pgClient,
     )
 
     return results.rows
@@ -145,9 +146,17 @@ async function getDataForExport(clientParam) {
   }
 }
 
-async function getCurrentTime(clientParam) {
+async function getCurrentTime(pgClient) {
   try {
-    const results = await runQuery('getCurrentTime', 'SELECT NOW()', [], clientParam)
+    const results = await helpers.runQuery(
+      'getCurrentTime',
+      `
+      SELECT NOW()
+      `,
+      [],
+      pool,
+      pgClient,
+    )
 
     return results.rows[0].now
   } catch (err) {
@@ -156,13 +165,20 @@ async function getCurrentTime(clientParam) {
 }
 
 // Gets the most recent session data in the table for a specified location
-async function getMostRecentSession(locationid, clientParam) {
+async function getMostRecentSession(locationid, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getMostRecentSession',
-      'SELECT * FROM sessions WHERE locationid = $1 ORDER BY created_at DESC LIMIT 1',
+      `
+      SELECT *
+      FROM sessions
+      WHERE locationid = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+      `,
       [locationid],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined || results.rows.length === 0) {
@@ -176,9 +192,19 @@ async function getMostRecentSession(locationid, clientParam) {
 }
 
 // Gets session with a specific SessionID
-async function getSessionWithSessionId(id, clientParam) {
+async function getSessionWithSessionId(id, pgClient) {
   try {
-    const results = await runQuery('getSessionWithSessionId', 'SELECT * FROM sessions WHERE id = $1', [id], clientParam)
+    const results = await helpers.runQuery(
+      'getSessionWithSessionId',
+      `
+      SELECT *
+      FROM sessions
+      WHERE id = $1
+      `,
+      [id],
+      pool,
+      pgClient,
+    )
 
     if (results === undefined || results.rows.length === 0) {
       return null
@@ -190,7 +216,7 @@ async function getSessionWithSessionId(id, clientParam) {
   }
 }
 
-async function getSessionWithSessionIdAndAlertApiKey(sessionId, alertApiKey, clientParam) {
+async function getSessionWithSessionIdAndAlertApiKey(sessionId, alertApiKey, pgClient) {
   try {
     const results = await helpers.runQuery(
       'getSessionWithSessionIdAndAlertApiKey',
@@ -204,7 +230,7 @@ async function getSessionWithSessionIdAndAlertApiKey(sessionId, alertApiKey, cli
       `,
       [sessionId, alertApiKey],
       pool,
-      clientParam,
+      pgClient,
     )
 
     if (results === undefined || results.rows.length === 0) {
@@ -217,9 +243,9 @@ async function getSessionWithSessionIdAndAlertApiKey(sessionId, alertApiKey, cli
   }
 }
 
-async function getClientWithClientId(id, clientParam) {
+async function getClientWithClientId(id, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getSessionWithSessionId',
       `
       SELECT *
@@ -227,7 +253,8 @@ async function getClientWithClientId(id, clientParam) {
       WHERE id = $1
       `,
       [id],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined || results.rows.length === 0) {
@@ -241,13 +268,21 @@ async function getClientWithClientId(id, clientParam) {
 }
 
 // Gets the last session data in the table for a specified phone number
-async function getMostRecentSessionPhone(twilioNumber, clientParam) {
+async function getMostRecentSessionPhone(twilioNumber, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getMostRecentSessionPhone',
-      'SELECT s.* FROM sessions AS s LEFT JOIN locations AS l ON s.locationid = l.locationid WHERE l.twilio_number = $1 ORDER BY s.created_at DESC LIMIT 1',
+      `
+      SELECT s.*
+      FROM sessions AS s
+      LEFT JOIN locations AS l ON s.locationid = l.locationid
+      WHERE l.twilio_number = $1
+      ORDER BY s.created_at DESC
+      LIMIT 1
+      `,
       [twilioNumber],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined || results.rows.length === 0) {
@@ -260,13 +295,20 @@ async function getMostRecentSessionPhone(twilioNumber, clientParam) {
   }
 }
 
-async function getHistoryOfSessions(locationid, clientParam) {
+async function getHistoryOfSessions(locationid, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getHistoryOfSessions',
-      'SELECT * FROM sessions WHERE locationid = $1 ORDER BY created_at DESC LIMIT 200',
+      `
+      SELECT *
+      FROM sessions
+      WHERE locationid = $1
+      ORDER BY created_at DESC
+      LIMIT 200
+      `,
       [locationid],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined) {
@@ -279,13 +321,23 @@ async function getHistoryOfSessions(locationid, clientParam) {
   }
 }
 
-async function getUnrespondedSessionWithLocationId(locationid, clientParam) {
+async function getUnrespondedSessionWithLocationId(locationid, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getUnrespondedSessionWithLocationId',
-      'SELECT * FROM sessions WHERE locationid = $1 AND chatbot_state != $2 AND chatbot_state != $3 AND chatbot_state != $4 ORDER BY created_at DESC LIMIT 1',
+      `
+      SELECT *
+      FROM sessions
+      WHERE locationid = $1
+      AND chatbot_state != $2
+      AND chatbot_state != $3
+      AND chatbot_state != $4 
+      ORDER BY created_at DESC 
+      LIMIT 1
+      `,
       [locationid, CHATBOT_STATE.WAITING_FOR_CATEGORY, CHATBOT_STATE.WAITING_FOR_DETAILS, CHATBOT_STATE.COMPLETED],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined || results.rows.length === 0) {
@@ -298,13 +350,19 @@ async function getUnrespondedSessionWithLocationId(locationid, clientParam) {
   }
 }
 
-async function getAllSessionsFromLocation(locationid, clientParam) {
+async function getAllSessionsFromLocation(locationid, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getAllSessionsFromLocation',
-      'SELECT * FROM sessions WHERE locationid = $1 order by created_at desc',
+      `
+      SELECT *
+      FROM sessions
+      WHERE locationid = $1
+      ORDER BY created_at DESC
+      `,
       [locationid],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (!results) {
@@ -318,13 +376,17 @@ async function getAllSessionsFromLocation(locationid, clientParam) {
 }
 
 // Creates a new session for a specific location
-async function createSession(locationid, phoneNumber, alertType, clientParam) {
+async function createSession(locationid, phoneNumber, alertType, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'createSession',
-      'INSERT INTO sessions(locationid, phone_number, alert_type, chatbot_state) VALUES ($1, $2, $3, $4) RETURNING *',
+      `
+      INSERT INTO sessions(locationid, phone_number, alert_type, chatbot_state)
+      VALUES ($1, $2, $3, $4) RETURNING *
+      `,
       [locationid, phoneNumber, alertType, CHATBOT_STATE.STARTED],
-      clientParam,
+      pool,
+      pgClient,
     )
     return createSessionFromRow(results.rows[0])
   } catch (err) {
@@ -332,7 +394,7 @@ async function createSession(locationid, phoneNumber, alertType, clientParam) {
   }
 }
 
-async function updateSentAlerts(locationid, sentalerts, clientParam) {
+async function updateSentAlerts(locationid, sentalerts, pgClient) {
   try {
     const query = sentalerts
       ? `
@@ -348,34 +410,39 @@ async function updateSentAlerts(locationid, sentalerts, clientParam) {
         RETURNING *
       `
 
-    const results = await helpers.runQuery('updateSentAlerts', query, [locationid], pool, clientParam)
+    const results = await helpers.runQuery('updateSentAlerts', query, [locationid], pool, pgClient)
 
     if (results === undefined) {
       return null
     }
 
-    return await createLocationFromRow(results.rows[0], clientParam)
+    return await createLocationFromRow(results.rows[0], pgClient)
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function updateLowBatteryAlertTime(locationid, clientParam) {
+async function updateLowBatteryAlertTime(locationid, pgClient) {
   try {
-    await runQuery(
+    await helpers.runQuery(
       'updateLowBatteryAlertTime',
-      'UPDATE locations SET sent_low_battery_alert_at = NOW() WHERE locationid = $1',
+      `
+      UPDATE locations
+      SET sent_low_battery_alert_at = NOW()
+      WHERE locationid = $1
+      `,
       [locationid],
-      clientParam,
+      pool,
+      pgClient,
     )
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function saveSession(session, clientParam) {
+async function saveSession(session, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'saveSessionSelect',
       `
       SELECT *
@@ -384,15 +451,20 @@ async function saveSession(session, clientParam) {
       LIMIT 1
       `,
       [session.id],
-      clientParam,
+      pool,
+      pgClient,
     )
     if (results === undefined || results.rows === undefined || results.rows.length === 0) {
       throw new Error("Tried to save a session that doesn't exist yet. Use createSession() instead.")
     }
 
-    await runQuery(
+    await helpers.runQuery(
       'saveSessionUpdate',
-      'UPDATE sessions SET locationid = $1, state = $2, phone_number = $3, notes = $4, incident_type = $5, chatbot_state = $6, alert_type = $7, responded_at = $8 where id = $9',
+      `
+      UPDATE sessions
+      SET locationid = $1, state = $2, phone_number = $3, notes = $4, incident_type = $5, chatbot_state = $6, alert_type = $7, responded_at = $8
+      WHERE id = $9
+      `,
       [
         session.locationid,
         session.state,
@@ -404,19 +476,20 @@ async function saveSession(session, clientParam) {
         session.respondedAt,
         session.id,
       ],
-      clientParam,
+      pool,
+      pgClient,
     )
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function getActiveAlertsByAlertApiKey(alertApiKey, maxTimeAgoInMillis, clientParam) {
+async function getActiveAlertsByAlertApiKey(alertApiKey, maxTimeAgoInMillis, pgClient) {
   try {
     const results = await helpers.runQuery(
       'getActiveAlertsByAlertApiKey',
       `
-      SELECT s.id, s.chatbot_state, l.display_name, s.alert_type, s.created_at
+      SELECT s.id, s.chatbot_state, l.display_name, s.alert_type, s.created_at, c.incident_categories
       FROM sessions AS s
       LEFT JOIN locations AS l ON l.locationid = s.locationid
       LEFT JOIN clients AS c ON l.client_id = c.id
@@ -429,7 +502,7 @@ async function getActiveAlertsByAlertApiKey(alertApiKey, maxTimeAgoInMillis, cli
       `,
       [alertApiKey, CHATBOT_STATE.COMPLETED, maxTimeAgoInMillis],
       pool,
-      clientParam,
+      pgClient,
     )
 
     return results.rows
@@ -438,10 +511,10 @@ async function getActiveAlertsByAlertApiKey(alertApiKey, maxTimeAgoInMillis, cli
   }
 }
 
-async function getHistoricAlertsByAlertApiKey(alertApiKey, maxHistoricAlerts, maxTimeAgoInMillis, clientParam) {
+async function getHistoricAlertsByAlertApiKey(alertApiKey, maxHistoricAlerts, maxTimeAgoInMillis, pgClient) {
   try {
     // Historic Alerts are those with status "Completed" or that were last updated longer ago than the SESSION_RESET_TIMEOUT
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getHistoricAlertsByAlertApiKey',
       `
       SELECT s.id, l.display_name, s.incident_type, s.alert_type, s.created_at, s.responded_at
@@ -457,7 +530,8 @@ async function getHistoricAlertsByAlertApiKey(alertApiKey, maxHistoricAlerts, ma
       LIMIT $4
       `,
       [alertApiKey, CHATBOT_STATE.COMPLETED, maxTimeAgoInMillis, maxHistoricAlerts],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined) {
@@ -471,23 +545,33 @@ async function getHistoricAlertsByAlertApiKey(alertApiKey, maxHistoricAlerts, ma
 }
 
 // Retrieves the data from the locations table for a given location
-async function getLocationData(locationid, clientParam) {
+async function getLocationData(locationid, pgClient) {
   try {
-    const results = await runQuery('getLocationData', 'SELECT * FROM locations WHERE locationid = $1', [locationid], clientParam)
+    const results = await helpers.runQuery(
+      'getLocationData',
+      `
+      SELECT *
+      FROM locations
+      WHERE locationid = $1
+      `,
+      [locationid],
+      pool,
+      pgClient,
+    )
 
     if (results === undefined || results.rows.length === 0) {
       return null
     }
 
-    return await createLocationFromRow(results.rows[0], clientParam)
+    return await createLocationFromRow(results.rows[0], pgClient)
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function getLocationsFromAlertApiKey(alertApiKey, clientParam) {
+async function getLocationsFromAlertApiKey(alertApiKey, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getLocationsFromAlertApiKey',
       `
       SELECT l.*
@@ -496,7 +580,8 @@ async function getLocationsFromAlertApiKey(alertApiKey, clientParam) {
       WHERE c.alert_api_key = $1
       `,
       [alertApiKey],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined) {
@@ -504,35 +589,42 @@ async function getLocationsFromAlertApiKey(alertApiKey, clientParam) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
+    return await Promise.all(results.rows.map(r => createLocationFromRow(r, pgClient)))
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
 // Retrieves the locationid corresponding to a particle device coreID
-async function getLocationFromParticleCoreID(coreID, clientParam) {
+async function getLocationFromParticleCoreID(coreID, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getLocationFromParticleCoreID',
-      'SELECT * FROM locations WHERE door_particlecoreid = $1 OR radar_particlecoreid = $1 OR siren_particle_id = $1',
+      `
+      SELECT *
+      FROM locations
+      WHERE door_particlecoreid = $1
+      OR radar_particlecoreid = $1
+      OR siren_particle_id = $1
+      `,
       [coreID],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined || results.rows.length === 0) {
       return null
     }
 
-    return await createLocationFromRow(results.rows[0], clientParam)
+    return await createLocationFromRow(results.rows[0], pgClient)
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function getLocationsFromClientId(clientId, clientParam) {
+async function getLocationsFromClientId(clientId, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getLocationsFromClientId',
       `
       SELECT *
@@ -541,7 +633,8 @@ async function getLocationsFromClientId(clientId, clientParam) {
       ORDER BY display_name
       `,
       [clientId],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined) {
@@ -549,54 +642,65 @@ async function getLocationsFromClientId(clientId, clientParam) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
+    return await Promise.all(results.rows.map(r => createLocationFromRow(r, pgClient)))
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function getActiveServerStateMachineLocations(clientParam) {
+async function getActiveServerStateMachineLocations(pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getActiveServerStateMachineLocations',
-      'SELECT * FROM locations WHERE is_active AND firmware_state_machine = false',
+      `
+      SELECT *
+      FROM locations
+      WHERE is_active
+      AND firmware_state_machine = false
+      `,
       [],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
+    return await Promise.all(results.rows.map(r => createLocationFromRow(r, pgClient)))
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function getActiveFirmwareStateMachineLocations(clientParam) {
+async function getActiveFirmwareStateMachineLocations(pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getActiveFirmwareStateMachineLocations',
-      'SELECT * FROM locations WHERE is_active AND firmware_state_machine',
+      `
+      SELECT *
+      FROM locations
+      WHERE is_active
+      AND firmware_state_machine
+      `,
       [],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
+    return await Promise.all(results.rows.map(r => createLocationFromRow(r, pgClient)))
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-// Retrieves the locations table
-async function getLocations(clientParam) {
+async function getLocations(pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getLocations',
       `
       SELECT l.*
@@ -605,22 +709,23 @@ async function getLocations(clientParam) {
       ORDER BY c.display_name, l.display_name
       `,
       [],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createLocationFromRow(r, clientParam)))
+    return await Promise.all(results.rows.map(r => createLocationFromRow(r, pgClient)))
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function getClients(clientParam) {
+async function getClients(pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'getClients',
       `
       SELECT *
@@ -628,14 +733,15 @@ async function getClients(clientParam) {
       ORDER BY display_name
       `,
       [],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createClientFromRow(r, clientParam)))
+    return await Promise.all(results.rows.map(r => createClientFromRow(r, pgClient)))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -643,9 +749,24 @@ async function getClients(clientParam) {
 
 // Updates the locations table entry for a specific location with the new data
 // eslint-disable-next-line prettier/prettier
-async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, fallbackNumbers, heartbeatAlertRecipients, twilioNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, reminderTimer, fallbackTimer, isActive, firmwareStateMachine, locationid, clientId, clientParam) {
+async function updateLocation(
+  displayName,
+  doorCoreId,
+  radarCoreId,
+  radarType,
+  twilioNumber,
+  movementThreshold,
+  durationTimer,
+  stillnessTimer,
+  initialTimer,
+  isActive,
+  firmwareStateMachine,
+  locationid,
+  clientId,
+  pgClient,
+) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'updateLocation',
       `
       UPDATE locations
@@ -654,19 +775,15 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, f
         door_particlecoreid = $2,
         radar_particlecoreid = $3,
         radar_type = $4,
-        fallback_phonenumbers = $5,
-        heartbeat_alert_recipients = $6,
-        twilio_number = $7,
-        movement_threshold = $8,
-        duration_timer = $9,
-        stillness_timer = $10,
-        initial_timer = $11,
-        reminder_timer = $12,
-        fallback_timer = $13,
-        is_active = $14,
-        firmware_state_machine = $15,
-        client_id = $16
-      WHERE locationid = $17
+        twilio_number = $5,
+        movement_threshold = $6,
+        duration_timer = $7,
+        stillness_timer = $8,
+        initial_timer = $9,
+        is_active = $10,
+        firmware_state_machine = $11,
+        client_id = $12
+      WHERE locationid = $13
       RETURNING *
       `,
       [
@@ -674,21 +791,18 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, f
         doorCoreId,
         radarCoreId,
         radarType,
-        fallbackNumbers,
-        heartbeatAlertRecipients,
         twilioNumber,
         movementThreshold,
         durationTimer,
         stillnessTimer,
         initialTimer,
-        reminderTimer,
-        fallbackTimer,
         isActive,
         firmwareStateMachine,
         clientId,
         locationid,
       ],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined || results.rows.length === 0) {
@@ -696,15 +810,15 @@ async function updateLocation(displayName, doorCoreId, radarCoreId, radarType, f
     }
 
     helpers.log(`Location '${locationid}' successfully updated`)
-    return await createLocationFromRow(results.rows[0], clientParam)
+    return await createLocationFromRow(results.rows[0], pgClient)
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function updateClient(displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey, id, clientParam) {
+async function updateClient(displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey, id, pgClient) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'updateClient',
       `
       UPDATE clients
@@ -713,7 +827,8 @@ async function updateClient(displayName, fromPhoneNumber, responderPhoneNumber, 
       RETURNING *
       `,
       [displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey, id],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     if (results === undefined || results.rows.length === 0) {
@@ -722,7 +837,7 @@ async function updateClient(displayName, fromPhoneNumber, responderPhoneNumber, 
 
     helpers.log(`Client '${displayName}' successfully updated`)
 
-    return await createClientFromRow(results.rows[0], clientParam)
+    return await createClientFromRow(results.rows[0], pgClient)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -730,10 +845,13 @@ async function updateClient(displayName, fromPhoneNumber, responderPhoneNumber, 
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, twilioNumber, firmwareStateMachine, clientId, clientParam) {
+async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, twilioNumber, firmwareStateMachine, clientId, pgClient) {
   try {
-    await runQuery('createLocationFromBrowserForm',
-      'INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, twilio_number, firmware_state_machine, client_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+    await helpers.runQuery('createLocationFromBrowserForm',
+      `
+      INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, twilio_number, firmware_state_machine, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `,
       [
         locationid,
         displayName,
@@ -744,7 +862,8 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
         firmwareStateMachine,
         clientId,
       ],
-      clientParam,
+      pool,
+      pgClient,
     )
 
     helpers.log(`New location inserted into Database: ${locationid}`)
@@ -755,13 +874,31 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
 
 // Adds a location table entry
 // eslint-disable-next-line prettier/prettier
-async function createLocation(locationid, movementThreshold, stillnessTimer, durationTimer, reminderTimer, initialTimer, sentVitalsAlertAt, heartbeatAlertRecipients, twilioNumber, fallbackNumbers, fallbackTimer, displayName, doorCoreId, radarCoreId, radarType, isActive, firmwareStateMachine, sirenParticleId, sentLowBatteryAlertAt, clientId, clientParam) {
+async function createLocation(
+  locationid,
+  movementThreshold,
+  stillnessTimer,
+  durationTimer,
+  initialTimer,
+  sentVitalsAlertAt,
+  twilioNumber,
+  displayName,
+  doorCoreId,
+  radarCoreId,
+  radarType,
+  isActive,
+  firmwareStateMachine,
+  sirenParticleId,
+  sentLowBatteryAlertAt,
+  clientId,
+  pgClient,
+) {
   try {
     const results = await helpers.runQuery(
       'createLocation',
       `
-      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, reminder_timer, initial_timer, sent_vitals_alert_at, heartbeat_alert_recipients, twilio_number, fallback_phonenumbers, fallback_timer, display_name, door_particlecoreid, radar_particlecoreid, radar_type, is_active, firmware_state_machine, siren_particle_id, sent_low_battery_alert_at, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, twilio_number, display_name, door_particlecoreid, radar_particlecoreid, radar_type, is_active, firmware_state_machine, siren_particle_id, sent_low_battery_alert_at, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
       `,
       [
@@ -769,13 +906,9 @@ async function createLocation(locationid, movementThreshold, stillnessTimer, dur
         movementThreshold,
         stillnessTimer,
         durationTimer,
-        reminderTimer,
         initialTimer,
         sentVitalsAlertAt,
-        heartbeatAlertRecipients,
         twilioNumber,
-        fallbackNumbers,
-        fallbackTimer,
         displayName,
         doorCoreId,
         radarCoreId,
@@ -787,7 +920,7 @@ async function createLocation(locationid, movementThreshold, stillnessTimer, dur
         clientId,
       ],
       pool,
-      clientParam,
+      pgClient,
     )
 
     return createLocationFromRow(results.rows[0])
@@ -796,25 +929,54 @@ async function createLocation(locationid, movementThreshold, stillnessTimer, dur
   }
 }
 
-async function createClient(displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey, clientParam) {
+async function createClient(
+  displayName,
+  responderPhoneNumber,
+  responderPushId,
+  alertApiKey,
+  reminderTimeout,
+  fallbackPhoneNumbers,
+  fromPhoneNumber,
+  fallbackTimeout,
+  heartbeatPhoneNumbers,
+  incidentCategories,
+  isActive,
+  pgClient,
+) {
   try {
-    const results = await runQuery(
+    const results = await helpers.runQuery(
       'createClient',
       `
-      INSERT INTO clients(display_name, from_phone_number, responder_phone_number, responder_push_id, alert_api_key)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO clients (display_name, responder_phone_number, responder_push_id, alert_api_key, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
       `,
-      [displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey],
-      clientParam,
+      [
+        displayName,
+        responderPhoneNumber,
+        responderPushId,
+        alertApiKey,
+        reminderTimeout,
+        fallbackPhoneNumbers,
+        fromPhoneNumber,
+        fallbackTimeout,
+        heartbeatPhoneNumbers,
+        incidentCategories,
+        isActive,
+      ],
+      pool,
+      pgClient,
     )
+
     return createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.log(err.toString())
   }
+
+  return null
 }
 
-async function getNewNotificationsCountByAlertApiKey(alertApiKey, clientParam) {
+async function getNewNotificationsCountByAlertApiKey(alertApiKey, pgClient) {
   try {
     const { rows } = await helpers.runQuery(
       'getNewNotificationsCountByAlertApiKey',
@@ -827,7 +989,7 @@ async function getNewNotificationsCountByAlertApiKey(alertApiKey, clientParam) {
       `,
       [alertApiKey],
       pool,
-      clientParam,
+      pgClient,
     )
 
     return parseInt(rows[0].count, 10)
@@ -836,120 +998,167 @@ async function getNewNotificationsCountByAlertApiKey(alertApiKey, clientParam) {
   }
 }
 
-async function createNotification(clientId, subject, body, isAcknowledged, clientParam) {
+async function createNotification(clientId, subject, body, isAcknowledged, pgClient) {
   try {
     await helpers.runQuery(
       'createNotification',
-      'INSERT INTO notifications (client_id, subject, body, is_acknowledged) VALUES ($1, $2, $3, $4)',
+      `
+      INSERT INTO notifications (client_id, subject, body, is_acknowledged)
+      VALUES ($1, $2, $3, $4)
+      `,
       [clientId, subject, body, isAcknowledged],
       pool,
-      clientParam,
+      pgClient,
     )
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function clearNotifications(clientParam) {
+async function clearNotifications(pgClient) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear notifications table outside of a test environment!')
     return
   }
 
   try {
-    await helpers.runQuery('clearNotifications', 'DELETE FROM notifications', [], pool, clientParam)
+    await helpers.runQuery(
+      'clearNotifications',
+      `DELETE FROM notifications
+      `,
+      [],
+      pool,
+      pgClient,
+    )
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function clearSessions(clientParam) {
+async function clearSessions(pgClient) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear sessions database outside of a test environment!')
     return
   }
 
   try {
-    await runQuery('clearSessions', 'DELETE FROM sessions', [], clientParam)
+    await helpers.runQuery(
+      'clearSessions',
+      `
+      DELETE FROM sessions
+      `,
+      [],
+      pool,
+      pgClient,
+    )
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function clearSessionsFromLocation(locationid, clientParam) {
+async function clearSessionsFromLocation(locationid, pgClient) {
   try {
-    await runQuery('clearSessionsFromLocation', 'DELETE FROM sessions where locationid = $1', [locationid], clientParam)
+    await helpers.runQuery(
+      'clearSessionsFromLocation',
+      `
+      DELETE FROM sessions
+      WHERE locationid = $1
+      `,
+      [locationid],
+      pool,
+      pgClient,
+    )
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function clearLocations(clientParam) {
+async function clearLocations(pgClient) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear locations table outside of a test environment!')
     return
   }
 
   try {
-    await runQuery('clearLocations', 'DELETE FROM locations', [], clientParam)
+    await helpers.runQuery(
+      'clearLocations',
+      `
+      DELETE FROM locations
+      `,
+      [],
+      pool,
+      pgClient,
+    )
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function clearLocation(locationid, clientParam) {
+async function clearLocation(locationid, pgClient) {
   try {
-    await runQuery('clearLocation', 'DELETE FROM locations where locationid = $1', [locationid], clientParam)
+    await helpers.runQuery(
+      'clearLocation',
+      `
+      DELETE FROM locations
+      WHERE locationid = $1
+      `,
+      [locationid],
+      pool,
+      pgClient,
+    )
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function clearClients(clientParam) {
+async function clearClients(pgClient) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear clients table outside of a test environment!')
     return
   }
 
   try {
-    await runQuery(
+    await helpers.runQuery(
       'clearClients',
       `
-      DELETE FROM clients`,
+      DELETE FROM clients
+      `,
       [],
-      clientParam,
+      pool,
+      pgClient,
     )
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function clearClientWithDisplayName(displayName, clientParam) {
+async function clearClientWithDisplayName(displayName, pgClient) {
   try {
-    await runQuery(
+    await helpers.runQuery(
       'clearClientWithDisplayName',
       `
       DELETE FROM clients
       WHERE display_name = $1
       `,
       [displayName],
-      clientParam,
+      pool,
+      pgClient,
     )
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-async function clearTables(clientParam) {
+async function clearTables(pgClient) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear tables outside of a test environment!')
     return
   }
 
-  await clearSessions(clientParam)
-  await clearNotifications(clientParam)
-  await clearLocations(clientParam)
-  await clearClients(clientParam)
+  await clearSessions(pgClient)
+  await clearNotifications(pgClient)
+  await clearLocations(pgClient)
+  await clearClients(pgClient)
 }
 
 async function close() {

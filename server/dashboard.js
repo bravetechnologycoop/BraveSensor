@@ -368,7 +368,20 @@ async function submitNewClient(req, res) {
       const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
       const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
 
-      const newClient = await db.createClient(data.displayName, data.fromPhoneNumber, newResponderPhone, newResponderPushId, newAlertApiKey)
+      // TODO update this once the New Client Page is updated
+      const newClient = await db.createClient(
+        data.displayName,
+        newResponderPhone,
+        newResponderPushId,
+        newAlertApiKey,
+        120,
+        [],
+        data.fromPhoneNumber,
+        240,
+        [],
+        [],
+        false,
+      )
 
       res.redirect(`/clients/${newClient.id}`)
     } else {
@@ -496,15 +509,11 @@ const validateEditLocation = Validator.body([
   'doorCoreID',
   'radarCoreID',
   'radarType',
-  'fallbackPhones',
-  'heartbeatPhones',
   'twilioPhone',
   'movementThreshold',
   'durationTimer',
   'stillnessTimer',
   'initialTimer',
-  'reminderTimer',
-  'fallbackTimer',
   'isActive',
   'firmwareStateMachine',
   'clientId',
@@ -538,15 +547,11 @@ async function submitEditLocation(req, res) {
         data.doorCoreID,
         data.radarCoreID,
         data.radarType,
-        data.fallbackPhones.split(',').map(phone => phone.trim()),
-        data.heartbeatPhones.split(',').map(phone => phone.trim()),
         data.twilioPhone,
         data.movementThreshold,
         data.durationTimer,
         data.stillnessTimer,
         data.initialTimer,
-        data.reminderTimer,
-        data.fallbackTimer,
         data.isActive === 'true',
         data.firmwareStateMachine === 'true',
         data.locationid,

@@ -1,12 +1,12 @@
 // Third-party dependencies
 const { expect } = require('chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
-const { ALERT_TYPE, CHATBOT_STATE, helpers } = require('brave-alert-lib')
 
 // In-house dependencies
+const { ALERT_TYPE, CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const Session = require('../../../Session')
-const { clientFactory, locationFactory } = require('../../../testingHelpers')
+const { locationDBFactory } = require('../../../testingHelpers')
 
 describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
   beforeEach(async () => {
@@ -20,8 +20,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
   describe('if there are no locations with the given Alert API Key', () => {
     beforeEach(async () => {
       // Insert a single location that has a single session that doesn't match the Alert API Key that we ask for
-      const client = await clientFactory(db)
-      const location = await locationFactory(db, {
+      const client = await factories.clientDBFactory(db)
+      const location = await locationDBFactory(db, {
         clientId: client.id,
       })
       const session = await db.createSession(location.locationid, 'phoneNumber', ALERT_TYPE.SENSOR_DURATION)
@@ -39,8 +39,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
   describe('if there are no sessions for the installation with the given Alert API Key', () => {
     beforeEach(async () => {
       // Insert a single client with a single location that has a single session that doesn't match the Alert API Key that we ask for
-      const client = await clientFactory(db, { alertApiKey: 'not our API key' })
-      const location = await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { alertApiKey: 'not our API key' })
+      const location = await locationDBFactory(db, {
         clientId: client.id,
       })
       const session = await db.createSession(location.locationid, 'phoneNumber', ALERT_TYPE.SENSOR_DURATION)
@@ -49,8 +49,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
 
       // Insert a single client with a single location with no sessions that matches the Alert API Key that we ask for
       this.alertApiKey = 'alertApiKey'
-      const client2 = await clientFactory(db, { displayName: 'some other name', alertApiKey: this.alertApiKey })
-      await locationFactory(db, {
+      const client2 = await factories.clientDBFactory(db, { displayName: 'some other name', alertApiKey: this.alertApiKey })
+      await locationDBFactory(db, {
         locationid: 'differentLocationId',
         clientId: client2.id,
       })
@@ -69,8 +69,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       this.alertApiKey = 'alertApiKey'
       this.displayName = 'displayName'
       const phonenumber = 'phonenumber'
-      const client = await clientFactory(db, { responderPhoneNumber: phonenumber, alertApiKey: this.alertApiKey })
-      const location = await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { responderPhoneNumber: phonenumber, alertApiKey: this.alertApiKey })
+      const location = await locationDBFactory(db, {
         displayName: this.displayName,
         clientId: client.id,
       })
@@ -116,8 +116,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     beforeEach(async () => {
       // Insert a single location and more than maxHistoricAlerts sessions
       this.alertApiKey = 'alertApiKey'
-      const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
-      const location = await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { alertApiKey: this.alertApiKey })
+      const location = await locationDBFactory(db, {
         clientId: client.id,
       })
 
@@ -146,8 +146,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     beforeEach(async () => {
       // Insert a single location and maxHistoricAlerts sessions
       this.alertApiKey = 'alertApiKey'
-      const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
-      const location = await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { alertApiKey: this.alertApiKey })
+      const location = await locationDBFactory(db, {
         clientId: client.id,
       })
 
@@ -178,8 +178,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
     beforeEach(async () => {
       // Insert a single location and one session
       this.alertApiKey = 'alertApiKey'
-      const client = await clientFactory(db, { alertApiKey: this.alertApiKey })
-      const location = await locationFactory(db, {
+      const client = await factories.clientDBFactory(db, { alertApiKey: this.alertApiKey })
+      const location = await locationDBFactory(db, {
         clientId: client.id,
       })
 

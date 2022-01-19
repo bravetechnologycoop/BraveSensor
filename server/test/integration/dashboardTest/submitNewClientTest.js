@@ -6,10 +6,9 @@ const sinonChai = require('sinon-chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const { factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { clientFactory } = require('../../../testingHelpers')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -413,7 +412,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
   describe('for an otherwise valid request that contains an already existing displayName', () => {
     beforeEach(async () => {
-      this.existingClient = await clientFactory(db)
+      this.existingClient = await factories.clientDBFactory(db)
 
       await this.agent.post('/login').send({
         username: helpers.getEnvVar('WEB_USERNAME'),
