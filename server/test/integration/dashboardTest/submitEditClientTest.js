@@ -48,12 +48,24 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.newResponderPhoneNumber = '+18885554444'
       this.newResponderPushId = 'myPushId'
       this.newAlertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
+      this.isActive = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
         responderPhoneNumber: this.newResponderPhoneNumber,
         responderPushId: this.newResponderPushId,
         alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -72,12 +84,24 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         responderPhoneNumber: updatedClient.responderPhoneNumber,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
+        fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: updatedClient.heartbeatPhoneNumbers,
+        incidentCategories: updatedClient.incidentCategories,
+        reminderTimeout: updatedClient.reminderTimeout,
+        fallbackTimeout: updatedClient.fallbackTimeout,
+        isActive: updatedClient.isActive,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
         responderPhoneNumber: this.newResponderPhoneNumber,
         responderPushId: this.newResponderPushId,
         alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
+        incidentCategories: this.incidentCategories,
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       })
     })
   })
@@ -94,12 +118,24 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.newResponderPhoneNumber = '   +18885554444      '
       this.newResponderPushId = '     myPushId     '
       this.newAlertApiKey = '  myApiKey  '
+      this.fallbackPhoneNumbers = ['  +1  ', ' +2 ', '  +3  ']
+      this.heartbeatPhoneNumbers = ['   +4  ', '  +5 ']
+      this.incidentCategories = ['   Cat1  ', ' Cat2   ']
+      this.reminderTimeout = '   5   '
+      this.fallbackTimeout = '   10  '
+      this.isActive = '   true   '
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
         responderPhoneNumber: this.newResponderPhoneNumber,
         responderPushId: this.newResponderPushId,
         alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -118,12 +154,24 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         responderPhoneNumber: updatedClient.responderPhoneNumber,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
+        fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: updatedClient.heartbeatPhoneNumbers,
+        incidentCategories: updatedClient.incidentCategories,
+        reminderTimeout: updatedClient.reminderTimeout,
+        fallbackTimeout: updatedClient.fallbackTimeout,
+        isActive: updatedClient.isActive,
       }).to.eql({
         displayName: this.newDisplayname.trim(),
         fromPhoneNumber: this.newFromPhoneNumber.trim(),
         responderPhoneNumber: this.newResponderPhoneNumber.trim(),
         responderPushId: this.newResponderPushId.trim(),
         alertApiKey: this.newAlertApiKey.trim(),
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.map(number => number.trim()),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.map(phone => phone.trim()),
+        incidentCategories: this.incidentCategories.map(category => category.trim()),
+        reminderTimeout: parseInt(this.reminderTimeout.trim(), 10),
+        fallbackTimeout: parseInt(this.fallbackTimeout.trim(), 10),
+        isActive: this.isActive.trim() === 'true',
       })
     })
   })
@@ -138,6 +186,12 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         responderPhoneNumber: '+12223334444',
         responderPushId: 'myResponderPushId',
         alertApiKey: 'myAlertApiKey',
+        fallbackPhoneNumbers: '+4,+5',
+        heartbeatPhoneNumbers: '+1,+2,+3',
+        incidentCategories: 'Cat1,Cat2',
+        reminderTimeout: 5,
+        fallbackTimeout: 10,
+        isActive: 'true',
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(goodRequest)
@@ -169,6 +223,12 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         responderPhoneNumber: this.existingClient.responderPhoneNumber,
         responderPushId: this.existingClient.responderPushId,
         alertApiKey: this.existingClient.alertApiKey,
+        fallbackPhoneNumbers: this.existingClient.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.existingClient.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.existingClient.incidentCategories.join(','),
+        reminderTimeout: this.existingClient.reminderTimeout,
+        fallbackTimeout: this.existingClient.fallbackTimeout,
+        isActive: this.existingClient.isActive,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -187,12 +247,24 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         responderPhoneNumber: updatedClient.responderPhoneNumber,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
+        fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: updatedClient.heartbeatPhoneNumbers,
+        incidentCategories: updatedClient.incidentCategories,
+        reminderTimeout: updatedClient.reminderTimeout,
+        fallbackTimeout: updatedClient.fallbackTimeout,
+        isActive: updatedClient.isActive,
       }).to.eql({
         displayName: this.existingClient.displayName,
         fromPhoneNumber: this.existingClient.fromPhoneNumber,
         responderPhoneNumber: this.existingClient.responderPhoneNumber,
         responderPushId: this.existingClient.responderPushId,
         alertApiKey: this.existingClient.alertApiKey,
+        fallbackPhoneNumbers: this.existingClient.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: this.existingClient.heartbeatPhoneNumbers,
+        incidentCategories: this.existingClient.incidentCategories,
+        reminderTimeout: this.existingClient.reminderTimeout,
+        fallbackTimeout: this.existingClient.fallbackTimeout,
+        isActive: this.existingClient.isActive,
       })
     })
   })
@@ -208,11 +280,23 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.newFromPhoneNumber = '+17549553216'
       this.newResponderPushId = 'myPushId'
       this.newAlertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
+      this.isActive = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
         responderPushId: this.newResponderPushId,
         alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -231,12 +315,24 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         responderPhoneNumber: updatedClient.responderPhoneNumber,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
+        fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: updatedClient.heartbeatPhoneNumbers,
+        incidentCategories: updatedClient.incidentCategories,
+        reminderTimeout: updatedClient.reminderTimeout,
+        fallbackTimeout: updatedClient.fallbackTimeout,
+        isActive: updatedClient.isActive,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
         responderPhoneNumber: null,
         responderPushId: this.newResponderPushId,
         alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
+        incidentCategories: this.incidentCategories,
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       })
     })
   })
@@ -252,11 +348,23 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.newFromPhoneNumber = '+17549553216'
       this.newResponderPhoneNumber = '+18885554444'
       this.newResponderPushId = 'myPushId'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
+      this.isActive = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
         responderPhoneNumber: this.newResponderPhoneNumber,
         responderPushId: this.newResponderPushId,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -275,17 +383,29 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         responderPhoneNumber: updatedClient.responderPhoneNumber,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
+        fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: updatedClient.heartbeatPhoneNumbers,
+        incidentCategories: updatedClient.incidentCategories,
+        reminderTimeout: updatedClient.reminderTimeout,
+        fallbackTimeout: updatedClient.fallbackTimeout,
+        isActive: updatedClient.isActive,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
         responderPhoneNumber: this.newResponderPhoneNumber,
         responderPushId: this.newResponderPushId,
         alertApiKey: null,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
+        incidentCategories: this.incidentCategories,
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       })
     })
   })
 
-  describe('for a request that contains valie non-empty fields but with no responderPushId', () => {
+  describe('for a request that contains valid non-empty fields but with no responderPushId', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
         username: helpers.getEnvVar('WEB_USERNAME'),
@@ -296,11 +416,23 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.newFromPhoneNumber = '+17549553216'
       this.newResponderPhoneNumber = '+18885554444'
       this.newAlertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
+      this.isActive = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
         responderPhoneNumber: this.newResponderPhoneNumber,
         alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -319,12 +451,24 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         responderPhoneNumber: updatedClient.responderPhoneNumber,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
+        fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: updatedClient.heartbeatPhoneNumbers,
+        incidentCategories: updatedClient.incidentCategories,
+        reminderTimeout: updatedClient.reminderTimeout,
+        fallbackTimeout: updatedClient.fallbackTimeout,
+        isActive: updatedClient.isActive,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
         responderPhoneNumber: this.newResponderPhoneNumber,
         responderPushId: null,
         alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
+        incidentCategories: this.incidentCategories,
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       })
     })
   })
@@ -339,10 +483,22 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.newDisplayname = 'New Display Name'
       this.newFromPhoneNumber = '+17549553216'
       this.newAlertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
+      this.isActive = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
         alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -378,6 +534,12 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         responderPhoneNumber: '',
         responderPushId: '',
         alertApiKey: '',
+        fallbackPhoneNumbers: '',
+        heartbeatPhoneNumbers: '',
+        incidentCategories: '',
+        reminderTimeout: '',
+        fallbackTimeout: '',
+        isActive: '',
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(badRequest)
@@ -395,7 +557,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fromPhoneNumber (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))`,
+        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),isActive (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))`,
       )
     })
   })
@@ -422,7 +584,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fromPhoneNumber (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))`,
+        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),isActive (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))`,
       )
     })
   })
@@ -439,12 +601,24 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         displayName: this.otherClientName,
       })
 
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
+      this.isActive = true
       const duplicateDisplayNameRequest = {
         displayName: this.otherClientName,
         fromPhoneNumber: '+17549553216',
         responderPhoneNumber: '+18885554444',
         responderPushId: 'mypushid',
         alertApiKey: 'myapikey',
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(duplicateDisplayNameRequest)
@@ -458,6 +632,110 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(`Client Display Name already exists: ${this.otherClientName}`)
+    })
+  })
+
+  describe('for an otherwise valid request that contains a negative reminderTimeout and fallbackTimeout', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.newDisplayname = 'New Display Name'
+      this.newFromPhoneNumber = '+17549553216'
+      this.newResponderPhoneNumber = '+18885554444'
+      this.newResponderPushId = 'myPushId'
+      this.newAlertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = -5
+      this.fallbackTimeout = -10
+      this.isActive = true
+      this.goodRequest = {
+        displayName: this.newDisplayname,
+        fromPhoneNumber: this.newFromPhoneNumber,
+        responderPhoneNumber: this.newResponderPhoneNumber,
+        responderPushId: this.newResponderPushId,
+        alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
+      }
+
+      this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
+    })
+
+    it('should return 400', () => {
+      expect(this.response).to.have.status(400)
+    })
+
+    it('should not update the client in the database', async () => {
+      const updatedClient = await db.getClientWithClientId(this.existingClient.id)
+
+      expect(updatedClient).to.eql(this.existingClient)
+    })
+
+    it('should log the error', () => {
+      expect(helpers.log).to.have.been.calledWith(
+        `Bad request to /clients/${this.existingClient.id}: reminderTimeout (Invalid value),fallbackTimeout (Invalid value)`,
+      )
+    })
+  })
+
+  describe('for an otherwise valid request that contains a non-integer reminderTimeout and fallbackTimeout', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.newDisplayname = 'New Display Name'
+      this.newFromPhoneNumber = '+17549553216'
+      this.newResponderPhoneNumber = '+18885554444'
+      this.newResponderPushId = 'myPushId'
+      this.newAlertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 'abc'
+      this.fallbackTimeout = 10.6
+      this.isActive = true
+      this.goodRequest = {
+        displayName: this.newDisplayname,
+        fromPhoneNumber: this.newFromPhoneNumber,
+        responderPhoneNumber: this.newResponderPhoneNumber,
+        responderPushId: this.newResponderPushId,
+        alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isActive: this.isActive,
+      }
+
+      this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
+    })
+
+    it('should return 400', () => {
+      expect(this.response).to.have.status(400)
+    })
+
+    it('should not update the client in the database', async () => {
+      const updatedClient = await db.getClientWithClientId(this.existingClient.id)
+
+      expect(updatedClient).to.eql(this.existingClient)
+    })
+
+    it('should log the error', () => {
+      expect(helpers.log).to.have.been.calledWith(
+        `Bad request to /clients/${this.existingClient.id}: reminderTimeout (Invalid value),fallbackTimeout (Invalid value)`,
+      )
     })
   })
 })

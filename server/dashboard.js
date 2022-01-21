@@ -23,47 +23,6 @@ const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/new
 const updateClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateClient.mst`, 'utf-8')
 const updateLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateLocation.mst`, 'utf-8')
 
-async function generateCalculatedTimeDifferenceString(timeToCompare) {
-  const daySecs = 24 * 60 * 60
-  const hourSecs = 60 * 60
-  const minSecs = 60
-  let returnString = ''
-  let numDays = 0
-  let numHours = 0
-  let numMins = 0
-  const currentTime = await db.getCurrentTime()
-
-  let diffSecs = (currentTime - timeToCompare) / 1000
-
-  if (diffSecs >= daySecs) {
-    numDays = Math.floor(diffSecs / daySecs)
-    diffSecs %= daySecs
-  }
-  returnString += `${numDays} ${numDays === 1 ? 'day, ' : 'days, '}`
-
-  if (diffSecs >= hourSecs) {
-    numHours = Math.floor(diffSecs / hourSecs)
-    diffSecs %= hourSecs
-  }
-  returnString += `${numHours} ${numHours === 1 ? 'hour, ' : 'hours, '}`
-
-  if (diffSecs >= minSecs) {
-    numMins = Math.floor(diffSecs / minSecs)
-  }
-  returnString += `${numMins} ${numMins === 1 ? 'minute' : 'minutes'}`
-
-  if (numDays + numHours === 0) {
-    diffSecs %= minSecs
-    const numSecs = Math.floor(diffSecs)
-
-    returnString += `, ${numSecs} ${numSecs === 1 ? 'second' : 'seconds'}`
-  }
-
-  returnString += ' ago'
-
-  return returnString
-}
-
 function getAlertTypeDisplayName(alertType) {
   let displayName = ''
   if (alertType === ALERT_TYPE.SENSOR_DURATION) {
@@ -168,7 +127,7 @@ async function renderDashboardPage(req, res) {
       const recentSession = await db.getMostRecentSession(location.locationid)
       if (recentSession !== null) {
         const sessionCreatedAt = Date.parse(recentSession.createdAt)
-        const timeSinceLastSession = await generateCalculatedTimeDifferenceString(sessionCreatedAt)
+        const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
         location.sessionStart = timeSinceLastSession
       }
     }
@@ -317,7 +276,7 @@ async function renderClientDetailsPage(req, res) {
       const recentSession = await db.getMostRecentSession(location.locationid)
       if (recentSession !== null) {
         const sessionCreatedAt = Date.parse(recentSession.createdAt)
-        const timeSinceLastSession = await generateCalculatedTimeDifferenceString(sessionCreatedAt)
+        const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
         location.sessionStart = timeSinceLastSession
       }
     }
@@ -338,7 +297,8 @@ async function renderClientDetailsPage(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'fromPhoneNumber']).trim().notEmpty(),
+  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'heartbeatPhoneNumbers', 'incidentCategories']).trim().notEmpty(),
+  Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
   Validator.oneOf([Validator.body(['responderPhoneNumber']).trim().notEmpty(), Validator.body(['alertApiKey', 'responderPushId']).trim().notEmpty()]),
 ]
 
@@ -368,18 +328,17 @@ async function submitNewClient(req, res) {
       const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
       const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
 
-      // TODO update this once the New Client Page is updated
       const newClient = await db.createClient(
         data.displayName,
         newResponderPhone,
         newResponderPushId,
         newAlertApiKey,
-        120,
-        [],
+        data.reminderTimeout,
+        data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()),
         data.fromPhoneNumber,
-        240,
-        [],
-        [],
+        data.fallbackTimeout,
+        data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim()),
+        data.incidentCategories.split(',').map(category => category.trim()),
         false,
       )
 
@@ -396,7 +355,10 @@ async function submitNewClient(req, res) {
 }
 
 const validateEditClient = [
-  Validator.body(['displayName', 'fromPhoneNumber']).trim().notEmpty(),
+  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'heartbeatPhoneNumbers', 'incidentCategories', 'isActive'])
+    .trim()
+    .notEmpty(),
+  Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
   Validator.oneOf([Validator.body(['responderPhoneNumber']).trim().notEmpty(), Validator.body(['alertApiKey', 'responderPushId']).trim().notEmpty()]),
 ]
 
@@ -426,7 +388,20 @@ async function submitEditClient(req, res) {
       const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
       const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
 
-      await db.updateClient(data.displayName, data.fromPhoneNumber, newResponderPhone, newResponderPushId, newAlertApiKey, req.params.id)
+      await db.updateClient(
+        data.displayName,
+        data.fromPhoneNumber,
+        newResponderPhone,
+        newResponderPushId,
+        newAlertApiKey,
+        data.reminderTimeout,
+        data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()),
+        data.fallbackTimeout,
+        data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim()),
+        data.incidentCategories.split(',').map(category => category.trim()),
+        data.isActive,
+        req.params.id,
+      )
 
       res.redirect(`/clients/${req.params.id}`)
     } else {

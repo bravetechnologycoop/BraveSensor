@@ -46,12 +46,22 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.responderPhoneNumber = '+16665553333'
       this.responderPushId = 'pushId'
       this.alertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
         responderPhoneNumber: this.responderPhoneNumber,
         responderPushId: this.responderPushId,
         alertApiKey: this.alertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -72,6 +82,12 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             responderPhoneNumber: client.responderPhoneNumber,
             responderPushId: client.responderPushId,
             alertApiKey: client.alertApiKey,
+            fallbackPhoneNumbers: client.fallbackPhoneNumbers,
+            heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
+            incidentCategories: client.incidentCategories,
+            reminderTimeout: client.reminderTimeout,
+            fallbackTimeout: client.fallbackTimeout,
+            isActive: client.isActive,
           }
         }),
       ).to.eql([
@@ -81,6 +97,12 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           responderPhoneNumber: this.responderPhoneNumber,
           responderPushId: this.responderPushId,
           alertApiKey: this.alertApiKey,
+          fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+          heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
+          incidentCategories: this.incidentCategories,
+          reminderTimeout: this.reminderTimeout,
+          fallbackTimeout: this.fallbackTimeout,
+          isActive: false,
         },
       ])
     })
@@ -98,12 +120,22 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.responderPhoneNumber = ' +16665553333 '
       this.responderPushId = '  pushId  '
       this.alertApiKey = '   myApiKey  '
+      this.fallbackPhoneNumbers = ['  +1  ', ' +2 ', '   +3   ']
+      this.heartbeatPhoneNumbers = [' +4 ', '  +5  ']
+      this.incidentCategories = ['   Cat1 ', '    Cat2   ']
+      this.reminderTimeout = '   5   '
+      this.fallbackTimeout = ' 10 '
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
         responderPhoneNumber: this.responderPhoneNumber,
         responderPushId: this.responderPushId,
         alertApiKey: this.alertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -124,6 +156,12 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             responderPhoneNumber: client.responderPhoneNumber,
             responderPushId: client.responderPushId,
             alertApiKey: client.alertApiKey,
+            fallbackPhoneNumbers: client.fallbackPhoneNumbers,
+            heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
+            incidentCategories: client.incidentCategories,
+            reminderTimeout: client.reminderTimeout,
+            fallbackTimeout: client.fallbackTimeout,
+            isActive: client.isActive,
           }
         }),
       ).to.eql([
@@ -133,6 +171,12 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           responderPhoneNumber: this.responderPhoneNumber.trim(),
           responderPushId: this.responderPushId.trim(),
           alertApiKey: this.alertApiKey.trim(),
+          fallbackPhoneNumbers: this.fallbackPhoneNumbers.map(phone => phone.trim()),
+          heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.map(phone => phone.trim()),
+          incidentCategories: this.incidentCategories.map(category => category.trim()),
+          reminderTimeout: parseInt(this.reminderTimeout.trim(), 10),
+          fallbackTimeout: parseInt(this.fallbackTimeout.trim(), 10),
+          isActive: false,
         },
       ])
     })
@@ -148,6 +192,11 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         responderPhoneNumber: '+12223334444',
         responderPushId: 'myResponderPushId',
         alertApiKey: 'myAlertApiKey',
+        fallbackPhoneNumbers: '+12223334444',
+        heartbeatPhoneNumbers: '+17772223333,+19995554444',
+        incidentCategories: 'Cat1,Cat2',
+        reminderTimeout: 5,
+        fallbackTimeout: 10,
       }
 
       this.response = await chai.request(server).post('/clients').send(goodRequest)
@@ -177,11 +226,21 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.fromPhoneNumber = '+19998887777'
       this.responderPushId = 'pushId'
       this.alertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
         responderPushId: this.responderPushId,
         alertApiKey: this.alertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -202,6 +261,12 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             responderPhoneNumber: client.responderPhoneNumber,
             responderPushId: client.responderPushId,
             alertApiKey: client.alertApiKey,
+            fallbackPhoneNumbers: client.fallbackPhoneNumbers,
+            heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
+            incidentCategories: client.incidentCategories,
+            reminderTimeout: client.reminderTimeout,
+            fallbackTimeout: client.fallbackTimeout,
+            isActive: client.isActive,
           }
         }),
       ).to.eql([
@@ -211,6 +276,12 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           responderPhoneNumber: null,
           responderPushId: this.responderPushId,
           alertApiKey: this.alertApiKey,
+          fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+          heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
+          incidentCategories: this.incidentCategories,
+          reminderTimeout: this.reminderTimeout,
+          fallbackTimeout: this.fallbackTimeout,
+          isActive: false,
         },
       ])
     })
@@ -227,11 +298,21 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.fromPhoneNumber = '+19998887777'
       this.responderPhoneNumber = '+16665553333'
       this.alertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
         responderPhoneNumber: this.responderPhoneNumber,
         alertApiKey: this.alertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -252,6 +333,12 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             responderPhoneNumber: client.responderPhoneNumber,
             responderPushId: client.responderPushId,
             alertApiKey: client.alertApiKey,
+            fallbackPhoneNumbers: client.fallbackPhoneNumbers,
+            heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
+            incidentCategories: client.incidentCategories,
+            reminderTimeout: client.reminderTimeout,
+            fallbackTimeout: client.fallbackTimeout,
+            isActive: client.isActive,
           }
         }),
       ).to.eql([
@@ -261,6 +348,12 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           responderPhoneNumber: this.responderPhoneNumber,
           responderPushId: null,
           alertApiKey: this.alertApiKey,
+          fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+          heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
+          incidentCategories: this.incidentCategories,
+          reminderTimeout: this.reminderTimeout,
+          fallbackTimeout: this.fallbackTimeout,
+          isActive: false,
         },
       ])
     })
@@ -277,11 +370,21 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.fromPhoneNumber = '+19998887777'
       this.responderPhoneNumber = '+16665553333'
       this.responderPushId = 'pushId'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
         responderPhoneNumber: this.responderPhoneNumber,
         responderPushId: this.responderPushId,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -302,6 +405,12 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             responderPhoneNumber: client.responderPhoneNumber,
             responderPushId: client.responderPushId,
             alertApiKey: client.alertApiKey,
+            fallbackPhoneNumbers: client.fallbackPhoneNumbers,
+            heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
+            incidentCategories: client.incidentCategories,
+            reminderTimeout: client.reminderTimeout,
+            fallbackTimeout: client.fallbackTimeout,
+            isActive: client.isActive,
           }
         }),
       ).to.eql([
@@ -311,6 +420,12 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           responderPhoneNumber: this.responderPhoneNumber,
           responderPushId: this.responderPushId,
           alertApiKey: null,
+          fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+          heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
+          incidentCategories: this.incidentCategories,
+          reminderTimeout: this.reminderTimeout,
+          fallbackTimeout: this.fallbackTimeout,
+          isActive: false,
         },
       ])
     })
@@ -327,10 +442,20 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.fromPhoneNumber = '+19998887777'
       this.responderPushId = 'pushId'
       this.alertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
         alertApiKey: this.alertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -361,6 +486,14 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const badRequest = {
         displayName: '',
         fromPhoneNumber: '',
+        responderPhoneNumber: '',
+        responderPushId: '',
+        alertApiKey: '',
+        fallbackPhoneNumbers: '',
+        heartbeatPhoneNumbers: '',
+        incidentCategories: '',
+        reminderTimeout: '',
+        fallbackTimeout: '',
       }
 
       this.response = await this.agent.post('/clients').send(badRequest)
@@ -378,7 +511,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fromPhoneNumber (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))',
+        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))',
       )
     })
   })
@@ -405,7 +538,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fromPhoneNumber (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))',
+        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))',
       )
     })
   })
@@ -425,6 +558,11 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         responderPhoneNumber: '+19995552222',
         responderPushId: 'mypushid',
         alertApiKey: 'myapikey',
+        fallbackPhoneNumbers: '+1,+2,+3',
+        heartbeatPhoneNumbers: '+4,+5',
+        incidentCategories: 'Cat1,Cat2',
+        reminderTimeout: 5,
+        fallbackTimeout: 10,
       }
 
       this.response = await this.agent.post('/clients').send(duplicateDisplayNameRequest)
@@ -442,6 +580,86 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(`Client Display Name already exists: ${this.existingClient.displayName}`)
+    })
+  })
+
+  describe('for an otherwise valid request that contains a negative reminderTimeout and negative fallbackTimout', () => {
+    beforeEach(async () => {
+      this.existingClient = await factories.clientDBFactory(db)
+
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      const duplicateDisplayNameRequest = {
+        displayName: 'myNewclient',
+        fromPhoneNumber: '+14445556666',
+        responderPhoneNumber: '+19995552222',
+        responderPushId: 'mypushid',
+        alertApiKey: 'myapikey',
+        fallbackPhoneNumbers: '+1,+2,+3',
+        heartbeatPhoneNumbers: '+4,+5',
+        incidentCategories: 'Cat1,Cat2',
+        reminderTimeout: -5,
+        fallbackTimeout: -10,
+      }
+
+      this.response = await this.agent.post('/clients').send(duplicateDisplayNameRequest)
+    })
+
+    it('should return 400', () => {
+      expect(this.response).to.have.status(400)
+    })
+
+    it('should not create a new client in the database', async () => {
+      const clients = await db.getClients()
+
+      expect(clients.map(client => client.id)).to.eql([this.existingClient.id])
+    })
+
+    it('should log the error', () => {
+      expect(helpers.log).to.have.been.calledWith('Bad request to /clients: reminderTimeout (Invalid value),fallbackTimeout (Invalid value)')
+    })
+  })
+
+  describe('for an otherwise valid request that contains a non-integer reminderTimeout and fallbackTimeout', () => {
+    beforeEach(async () => {
+      this.existingClient = await factories.clientDBFactory(db)
+
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      const duplicateDisplayNameRequest = {
+        displayName: 'myNewclient',
+        fromPhoneNumber: '+14445556666',
+        responderPhoneNumber: '+19995552222',
+        responderPushId: 'mypushid',
+        alertApiKey: 'myapikey',
+        fallbackPhoneNumbers: '+1,+2,+3',
+        heartbeatPhoneNumbers: '+4,+5',
+        incidentCategories: 'Cat1,Cat2',
+        reminderTimeout: 'abc',
+        fallbackTimeout: 10.5,
+      }
+
+      this.response = await this.agent.post('/clients').send(duplicateDisplayNameRequest)
+    })
+
+    it('should return 400', () => {
+      expect(this.response).to.have.status(400)
+    })
+
+    it('should not create a new client in the database', async () => {
+      const clients = await db.getClients()
+
+      expect(clients.map(client => client.id)).to.eql([this.existingClient.id])
+    })
+
+    it('should log the error', () => {
+      expect(helpers.log).to.have.been.calledWith('Bad request to /clients: reminderTimeout (Invalid value),fallbackTimeout (Invalid value)')
     })
   })
 })

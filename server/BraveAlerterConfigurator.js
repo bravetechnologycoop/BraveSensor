@@ -87,8 +87,8 @@ class BraveAlerterConfigurator {
         }
 
         if (alertSession.incidentCategoryKey) {
-          const location = await db.getLocationData(session.locationid)
-          session.incidentType = location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey) - 1]
+          const location = await db.getLocationData(session.locationid, pgClient)
+          session.incidentType = location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
         }
 
         if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
@@ -163,20 +163,20 @@ class BraveAlerterConfigurator {
     return count
   }
 
-  getReturnMessage(fromAlertState, toAlertState) {
+  getReturnMessage(fromAlertState, toAlertState, incidentCategories) {
     let returnMessage
 
     switch (fromAlertState) {
       case CHATBOT_STATE.STARTED:
       case CHATBOT_STATE.WAITING_FOR_REPLY:
-        returnMessage =
-          'Please respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above'
+        returnMessage = `Please respond with the number corresponding to the incident. \n${this.createResponseStringFromIncidentCategories(
+          incidentCategories,
+        )}`
         break
 
       case CHATBOT_STATE.WAITING_FOR_CATEGORY:
         if (toAlertState === CHATBOT_STATE.WAITING_FOR_CATEGORY) {
-          returnMessage =
-            'Invalid category, please try again\n\nPlease respond with the number corresponding to the incident. \n1: No One Inside\n2: Person Responded\n3: Overdose\n4: None of the Above'
+          returnMessage = "Sorry, the incident type wasn't recognized. Please try again."
         } else if (toAlertState === CHATBOT_STATE.COMPLETED) {
           returnMessage = 'Thank you!'
         }
@@ -202,6 +202,15 @@ class BraveAlerterConfigurator {
     }
 
     return incidentCategoryKeys
+  }
+
+  createResponseStringFromIncidentCategories(categories) {
+    function reducer(accumulator, currentValue, currentIndex) {
+      // Incident categories in Sensors are always 1-indexed
+      return `${accumulator}${currentIndex + 1} - ${currentValue}\n`
+    }
+
+    return categories.reduce(reducer, '')
   }
 }
 

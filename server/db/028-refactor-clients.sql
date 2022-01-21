@@ -90,6 +90,12 @@ BEGIN
         ALTER TABLE locations
         DROP COLUMN fallback_timer;
 
+        -- Change initial_timer default from being expressed in milliseconds to seconds
+        -- To reduce incorrect location initialization
+        ALTER TABLE locations
+        ALTER COLUMN initial_timer
+        SET DEFAULT '15';
+
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file
         INSERT INTO migrations (id)
         VALUES (migrationId);
