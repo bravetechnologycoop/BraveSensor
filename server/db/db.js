@@ -816,17 +816,44 @@ async function updateLocation(
   }
 }
 
-async function updateClient(displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey, id, pgClient) {
+async function updateClient(
+  displayName,
+  fromPhoneNumber,
+  responderPhoneNumber,
+  responderPushId,
+  alertApiKey,
+  reminderTimeout,
+  fallbackPhoneNumbers,
+  fallbackTimeout,
+  heartbeatPhoneNumbers,
+  incidentCategories,
+  isActive,
+  clientId,
+  pgClient,
+) {
   try {
     const results = await helpers.runQuery(
       'updateClient',
       `
       UPDATE clients
-      SET display_name = $1, from_phone_number = $2, responder_phone_number = $3, responder_push_id = $4, alert_api_key = $5
-      WHERE id = $6
+      SET display_name = $1, from_phone_number = $2, responder_phone_number = $3, responder_push_id = $4, alert_api_key = $5, reminder_timeout = $6, fallback_phone_numbers = $7, fallback_timeout = $8, heartbeat_phone_numbers = $9, incident_categories = $10, is_active = $11
+      WHERE id = $12
       RETURNING *
       `,
-      [displayName, fromPhoneNumber, responderPhoneNumber, responderPushId, alertApiKey, id],
+      [
+        displayName,
+        fromPhoneNumber,
+        responderPhoneNumber,
+        responderPushId,
+        alertApiKey,
+        reminderTimeout,
+        fallbackPhoneNumbers,
+        fallbackTimeout,
+        heartbeatPhoneNumbers,
+        incidentCategories,
+        isActive,
+        clientId,
+      ],
       pool,
       pgClient,
     )

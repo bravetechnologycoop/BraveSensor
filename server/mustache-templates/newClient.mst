@@ -28,13 +28,6 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="fromPhoneNumber" class="col-sm-3 col-form-label">From Phone Number:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="fromPhoneNumber" value="+1" required pattern="[+][1]\d{10}">
-                        <small id="phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="responderPhoneNumber" class="col-sm-3 col-form-label">Responder Phone Number:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="responderPhoneNumber" value="+1" pattern="[+][1]\d{10}">
@@ -55,7 +48,48 @@
                         <small id="alertApiKeyHelp" class="form-text text-muted">Must provide either "Responder Phone Number" or ("Responder Push ID" and "Alert App API Key")</small>
                     </div>
                 </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="fallbackPhoneNumbers" class="col-sm-3 col-form-label">Fallback Phone Numbers:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="fallbackPhoneNumbers" value="{{fallbackPhoneNumbers}}" required pattern="[+][1]\d{10}([,][+][1]\d{10})*">
+                        <small id="fallbackPhoneNumbersHelp" class="form-text text-muted">Each phone number has +1 in front and separated by commas with no dashes or spaces, please (eg. +14445556789,+12223334444,+11231231234)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="fromPhoneNumber" class="col-sm-3 col-form-label">From Phone Number:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="fromPhoneNumber" value="+1" required pattern="[+][1]\d{10}">
+                        <small id="phoneHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="heartbeatPhoneNumbers" class="col-sm-3 col-form-label">Heartbeat Phone Numbers:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="heartbeatPhoneNumbers" value="{{heartbeatPhoneNumbers}}" required pattern="[+][1]\d{10}([,][+][1]\d{10})*">
+                        <small id="heartbeatPhoneNumbersHelp" class="form-text text-muted">Each phone number has +1 in front and separated by commas with no dashes or spaces, please (eg. +14445556789,+12223334444,+11231231234)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="incidentCategories" class="col-sm-3 col-form-label">Incident Categories:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="incidentCategories" value="{{incidentCategories}}" required>
+                        <small id="incidentCategoriesHelp" class="form-text text-muted">Each incident category is separated by commas with no quotes, please (eg. No One Inside,Person responded,Overdose,None of the above)</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="reminderTimeout" class="col-sm-3 col-form-label">Reminder Message Timeout (secs):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="reminderTimeout" placeholder="Reminder Message Timeout (secs)" value="{{reminderTimeout}}" required>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="fallbackTimeout" class="col-sm-3 col-form-label">Fallback Message Timeout (secs):</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="fallbackTimeout" placeholder="Fallback Message Timeout (secs)" value="{{fallbackTimeout}}" required>
+                    </div>
+                </div>
                 <br>
+                <p><em>*** Remember: New Clients are set to INACTIVE ***</em></p>
                 <button type="submit" class="btn btn-primary btn-large">Submit</button>
               </form>
         </div>

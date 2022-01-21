@@ -65,20 +65,6 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="fallbackPhones" class="col-sm-3 col-form-label">Fallback Phone Numbers:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="fallbackPhones" value="{{fallbackNumbers}}" required pattern="[+][1]\d{10}([,][+][1]\d{10})*">
-                        <small id="fallbackPhonesHelp" class="form-text text-muted">Each phone number has +1 in front and separated by commas with no dashes or spaces, please (eg. +14445556789,+12223334444,+11231231234)</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="heartbeatPhone" class="col-sm-3 col-form-label">Heartbeat Phone Numbers:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="heartbeatPhones" value="{{heartbeatAlertRecipients}}" required pattern="[+][1]\d{10}([,][+][1]\d{10})*">
-                        <small id="heartbeatPhoneHelp" class="form-text text-muted">Each phone number has +1 in front and separated by commas with no dashes or spaces, please (eg. +14445556789,+12223334444,+11231231234)</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="twilioPhone" class="col-sm-3 col-form-label">Twilio Phone Number:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="twilioPhone" value="{{twilioNumber}}" required pattern="[+][1]\d{10}">
@@ -104,21 +90,9 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="initialTimer" class="col-sm-3 col-form-label">Initial Timer (ms):</label>
+                    <label for="initialTimer" class="col-sm-3 col-form-label">Initial Timer (secs):</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="initialTimer" placeholder="Initial Timer (seconds)" value="{{initialTimer}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="reminderTimer" class="col-sm-3 col-form-label">Reminder Timer (ms):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="reminderTimer" placeholder="Reminder Timer (milliseconds)" value="{{reminderTimer}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="fallbackTimer" class="col-sm-3 col-form-label">Fallback Message Timer (ms):</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="fallbackTimer" placeholder="Fallback Message Timer (milliseconds)" value="{{fallbackTimer}}" required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">

@@ -109,7 +109,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
     const client = factories.clientFactory({ incidentCategories: ['No One Inside', 'Overdose', 'Other'] })
     const location = locationFactory({
-      client: client,
+      client,
     })
     sandbox.stub(db, 'getLocationData').returns(location)
     sandbox.stub(db, 'getSessionWithSessionId').returns(createTestSession({ id: sessionId, locationid: location.locationid }))
