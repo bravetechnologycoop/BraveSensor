@@ -71,6 +71,9 @@ jobs:
       language: cpp
       script:
         - cd ../firmware/boron-ins-fsm/test && g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
+    - stage: 'particle-accelerator tests'
+      script:
+        - npm run lint
     # If all the test stage passes, then pushes the Docker container to DO
     - stage: 'push container'
       script:
