@@ -5,8 +5,7 @@ or a badge with the iccid if a valid iccid is returned.
  */
 
 import { Badge } from 'react-bootstrap'
-import PropTypes from 'prop-types';
-import DeviceIDStatus from './DeviceIDStatus';
+import PropTypes from 'prop-types'
 
 /**
  * Checks that the iccid is valid based on a regex expression (starts with

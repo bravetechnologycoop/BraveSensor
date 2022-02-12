@@ -1,7 +1,7 @@
 import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
-import { useState } from 'react';
+import { useState } from 'react'
 import TokenContext from './utilities/TokenContext'
 import LoginContext from './utilities/LoginContext'
 import LoginView from './views/LoginView'

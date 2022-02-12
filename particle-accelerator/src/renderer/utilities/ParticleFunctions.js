@@ -87,7 +87,7 @@ async function getProducts(token) {
  */
 async function getDeviceInfo(serialNum, token) {
   try {
-    const deviceData = await particle.lookupSerialNumber({ serialNumber: serialNum, auth: token})
+    const deviceData = await particle.lookupSerialNumber({ serialNumber: serialNum, auth: token })
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const { device_id } = deviceData.body
     const { iccid } = deviceData.body
