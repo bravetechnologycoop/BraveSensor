@@ -31,13 +31,13 @@ function LoginForm() {
   async function handleSubmit(evt) {
     changeLoginState('waiting')
     evt.preventDefault()
-    const tempToken = await login(email, password)
+    const token = await login(email, password)
 
-    if (tempToken !== null) {
+    if (token !== null) {
       setEmail('')
       setPassword('')
       changeLoginState('true')
-      changeToken(tempToken)
+      changeToken(token)
     } else {
       changeLoginState('passwordincorrect')
     }

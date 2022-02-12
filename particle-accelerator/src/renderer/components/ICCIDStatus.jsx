@@ -5,6 +5,8 @@ or a badge with the iccid if a valid iccid is returned.
  */
 
 import { Badge } from 'react-bootstrap'
+import PropTypes from 'prop-types';
+import DeviceIDStatus from './DeviceIDStatus';
 
 /**
  * Checks that the iccid is valid based on a regex expression (starts with
@@ -26,7 +28,6 @@ function checkValidICCID(iccid) {
  *                    device.
  */
 function ICCIDStatus(props) {
-  // eslint-disable-next-line react/prop-types
   const { iccid } = props
   if (iccid === 'idle') {
     return <Badge bg="secondary">Waiting</Badge>
@@ -37,7 +38,15 @@ function ICCIDStatus(props) {
   if (checkValidICCID(iccid)) {
     return <Badge bg="success">{iccid}</Badge>
   }
-  return <Badge bg="danger">Error in Acquiring Device ID</Badge>
+  return <Badge bg="danger">Error in Acquiring ICCID</Badge>
+}
+
+ICCIDStatus.propTypes = {
+  iccid: PropTypes.string,
+}
+
+ICCIDStatus.defaultProps = {
+  iccid: '',
 }
 
 export default ICCIDStatus

@@ -32,15 +32,15 @@ export default class ActivationAttempt {
   timeStamp
 
   constructor(serialNumber, deviceName, productID, deviceID, iccid, country, SIMActivationStatus, namingStatus, totalStatus) {
-    this.serialNumber = copy(serialNumber)
-    this.deviceName = copy(deviceName)
-    this.deviceID = copy(deviceID)
-    this.productID = copy(productID)
-    this.iccid = copy(iccid)
-    this.country = copy(country)
-    this.SIMActivationStatus = copy(SIMActivationStatus)
-    this.namingStatus = copy(namingStatus)
-    this.totalStatus = copy(totalStatus)
+    this.serialNumber = (serialNumber)
+    this.deviceName = (deviceName)
+    this.deviceID = (deviceID)
+    this.productID = (productID)
+    this.iccid = (iccid)
+    this.country = (country)
+    this.SIMActivationStatus = (SIMActivationStatus)
+    this.namingStatus = (namingStatus)
+    this.totalStatus = (totalStatus)
     this.timeStamp = new Date()
   }
 }

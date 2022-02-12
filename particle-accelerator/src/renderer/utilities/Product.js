@@ -1,6 +1,8 @@
 /**
  * Product: class for defining Product objects retrieved from the Particle API
  * Abstraction for representing product families in a Particle account.
+ * Details on the various platform IDs can be found at:
+ * https://github.com/particle-iot/device-os/blob/develop/hal/shared/platforms.h
  */
 export default class Product {
   name

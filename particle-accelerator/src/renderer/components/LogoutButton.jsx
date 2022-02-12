@@ -19,11 +19,7 @@ function LogoutButton() {
     setLoginState(newState)
   }
 
-  let disabledStatus = true
-
-  if (token !== null) {
-    disabledStatus = false
-  }
+  const disabledStatus = token === null
 
   return (
     <div>

@@ -1,4 +1,5 @@
 import { Badge } from 'react-bootstrap'
+import PropTypes from 'prop-types'
 
 /**
  * StatusBadge: React component for displaying the current status of a process.
@@ -13,7 +14,6 @@ import { Badge } from 'react-bootstrap'
  *    - else -> Red "Error"
  */
 function StatusBadge(props) {
-  // eslint-disable-next-line react/prop-types
   const { status } = props
   if (status === 'idle') {
     return <Badge bg="secondary">Waiting</Badge>
@@ -25,6 +25,14 @@ function StatusBadge(props) {
     return <Badge bg="success">Success</Badge>
   }
   return <Badge bg="danger">Error</Badge>
+}
+
+StatusBadge.propTypes = {
+  status: PropTypes.string,
+}
+
+StatusBadge.defaultProps = {
+  status: '',
 }
 
 export default StatusBadge

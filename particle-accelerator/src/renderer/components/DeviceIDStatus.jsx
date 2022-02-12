@@ -5,6 +5,7 @@ a badge with the DeviceID if a valid DeviceID is returned.
  */
 
 import { Badge } from 'react-bootstrap'
+import PropTypes from 'prop-types'
 
 /**
  * Checks that the deviceID is valid based on a regex expression (contains
@@ -12,7 +13,7 @@ import { Badge } from 'react-bootstrap'
  * @param deviceID
  * @return true if the deviceID is valid, false if not.
  */
-async function checkValidDeviceID(deviceID) {
+function checkValidDeviceID(deviceID) {
   const regex = /^[0-9|a-f]{24}$/
   return regex.test(deviceID)
 }
@@ -26,7 +27,6 @@ async function checkValidDeviceID(deviceID) {
  *                    device.
  */
 function DeviceIDStatus(props) {
-  // eslint-disable-next-line react/prop-types
   const { deviceID } = props
   if (deviceID === 'idle') {
     return <Badge bg="secondary">Waiting</Badge>
@@ -38,6 +38,14 @@ function DeviceIDStatus(props) {
     return <Badge bg="success">{deviceID}</Badge>
   }
   return <Badge bg="danger">Error in Acquiring Device ID</Badge>
+}
+
+DeviceIDStatus.propTypes = {
+  deviceID: PropTypes.string,
+}
+
+DeviceIDStatus.defaultProps = {
+  deviceID: '',
 }
 
 export default DeviceIDStatus

@@ -6,8 +6,7 @@ import { createContext } from 'react'
  */
 const tokenContext = createContext({
   token: null,
-  // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
-  setToken: newToken => {},
+  setToken: () => {},
 })
 
 export default tokenContext

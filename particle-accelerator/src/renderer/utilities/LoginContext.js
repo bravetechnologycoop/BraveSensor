@@ -6,8 +6,7 @@ import { createContext } from 'react'
  * */
 const loginContext = createContext({
   loginState: 'false',
-  // eslint-disable-next-line no-unused-vars,@typescript-eslint/no-unused-vars
-  setLoginState: newLoginState => {},
+  setLoginState: () => {},
 })
 
 export default loginContext

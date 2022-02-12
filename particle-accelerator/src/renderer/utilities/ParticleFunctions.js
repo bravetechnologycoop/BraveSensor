@@ -2,8 +2,6 @@
 Library of functions which interact with the particle api to return/modify data.
  */
 // eslint-disable-next-line import/no-import-module-exports
-import axios from 'axios'
-// eslint-disable-next-line import/no-import-module-exports
 import Product from './Product'
 
 const Particle = require('particle-api-js')
@@ -25,7 +23,7 @@ async function login(username, password) {
     token = loginData.body.access_token
     return token
   } catch (err) {
-    // console.error('Error in acquiring token: ', err)
+    console.error('Error in acquiring token: ', err)
     return null
   }
 }
@@ -50,7 +48,7 @@ async function getDisplayName(token) {
     const lastName = response.body.account_info.last_name
     return firstName.concat(' ', lastName)
   } catch (err) {
-    // console.error('Error in acquiring display name: ', err)
+    console.error('Error in acquiring display name: ', err)
     return 'Fatal error. Please relaunch the accelerator'
   }
 }
@@ -89,15 +87,15 @@ async function getProducts(token) {
  */
 async function getDeviceInfo(serialNum, token) {
   try {
-    const deviceData = await axios.get(`https://api.particle.io/v1/serial_numbers/${serialNum}?access_token=${token}`)
+    const deviceData = await particle.lookupSerialNumber({ serialNumber: serialNum, auth: token})
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    const { device_id } = deviceData.data
-    const { iccid } = deviceData.data
+    const { device_id } = deviceData.body
+    const { iccid } = deviceData.body
     const deviceID = device_id
     return { deviceID, iccid }
   } catch (err) {
-    // console.error('Error in acquiring device information: ', err)
-    return 'Error'
+    console.error('Error in acquiring device information: ', err)
+    return 'error'
   }
 }
 
@@ -121,7 +119,7 @@ async function activateDeviceSIM(iccid, country, product, token) {
     })
     return true
   } catch (err) {
-    // console.error('error in sim deactivation: ', err)
+    console.error('error in sim activation: ', err)
     return false
   }
 }
@@ -147,7 +145,7 @@ async function changeDeviceName(deviceID, product, newName, token) {
     })
     return true
   } catch (err) {
-    // console.error('Error in device rename: ', err)
+    console.error('Error in device rename: ', err)
     return false
   }
 }
@@ -184,7 +182,7 @@ async function verifyDeviceRegistration(deviceID, name, product, iccid, serialNu
     const checkDevice = filtered.pop()
     return !(checkDevice.id !== deviceID || checkDevice.name !== name || checkDevice.iccid !== iccid || checkDevice.serial_number !== serialNumber)
   } catch (err) {
-    // console.error('Error in device verification: ', err)
+    console.error('Error in device verification: ', err)
     return false
   }
 }
