@@ -1,8 +1,8 @@
-import { useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import { Badge, Card } from 'react-bootstrap'
-import TokenContext from '../utilities/TokenContext'
+import PropTypes from 'prop-types'
 
 import ActivationAttempt from '../utilities/ActivationAttempt'
 import WelcomeText from '../components/WelcomeText'
@@ -69,8 +69,8 @@ const styles = {
  *                2. Device activation statuses
  *                3. Device activation log.
  */
-function ActivatorView() {
-  const { token } = useContext(TokenContext)
+function ActivatorView(props) {
+  const { token, changeToken, changeLoginState } = props
 
   const blankActivationArray = []
 
@@ -204,7 +204,7 @@ function ActivatorView() {
     <div style={{ padding: '10px' }}>
       <div style={{ textAlign: 'center' }}>
         <h2>
-          <WelcomeText /> <LogoutButton />
+          <WelcomeText token={token} /> <LogoutButton token={token} changeToken={changeToken} changeLoginState={changeLoginState}/>
         </h2>
       </div>
 
@@ -369,6 +369,18 @@ function ActivatorView() {
       </div>
     </div>
   )
+}
+
+ActivatorView.propTypes = {
+  token: PropTypes.string,
+  changeToken: PropTypes.func,
+  changeLoginState: PropTypes.func,
+}
+
+ActivatorView.defaultProps = {
+  token: '',
+  changeToken: () => {},
+  changeLoginState: () => {},
 }
 
 export default ActivatorView

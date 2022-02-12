@@ -1,8 +1,7 @@
 import Form from 'react-bootstrap/Form'
 import { useContext, useState } from 'react'
 import Button from 'react-bootstrap/Button'
-import TokenContext from '../utilities/TokenContext'
-import LoginContext from '../utilities/LoginContext'
+import PropTypes from 'prop-types';
 
 const ParticleFunctions = require('../utilities/ParticleFunctions')
 
@@ -14,19 +13,11 @@ const { login } = ParticleFunctions
  * username and email and acquires a token if the login is successful.
  * @modifies the global token variable and the global loginState variable.
  */
-function LoginForm() {
+function LoginForm(props) {
+  const { changeToken, changeLoginState } = props
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-
-  const { setToken } = useContext(TokenContext)
-  function changeToken(newToken) {
-    setToken(newToken)
-  }
-
-  const { setLoginState } = useContext(LoginContext)
-  function changeLoginState(newState) {
-    setLoginState(newState)
-  }
 
   async function handleSubmit(evt) {
     changeLoginState('waiting')
@@ -60,6 +51,16 @@ function LoginForm() {
       </Button>
     </Form>
   )
+}
+
+LoginForm.propTypes = {
+  changeToken: PropTypes.func,
+  changeLoginState: PropTypes.func,
+}
+
+LoginForm.defaultProps = {
+  changeToken: () => {},
+  changeLoginState: () => {},
 }
 
 export default LoginForm

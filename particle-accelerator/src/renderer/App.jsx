@@ -2,37 +2,27 @@ import './App.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 import { useState } from 'react'
-import TokenContext from './utilities/TokenContext'
-import LoginContext from './utilities/LoginContext'
 import LoginView from './views/LoginView'
 import ActivatorView from './views/ActivatorView'
 
 export default function App() {
-  const [token, setToken] = useState(null)
+  const [token, setToken] = useState('')
   const [loginState, setLoginState] = useState('false')
 
-  if (token === null) {
+  function changeToken(newToken) {
+    setToken(newToken)
+  }
+
+  function changeLoginState(newState) {
+    setLoginState(newState)
+  }
+
+  if (token === '') {
     return (
-      <div>
-        {/* eslint-disable-next-line react/jsx-no-constructed-context-values */}
-        <LoginContext.Provider value={{ loginState, setLoginState }}>
-          {/* eslint-disable-next-line react/jsx-no-constructed-context-values */}
-          <TokenContext.Provider value={{ token, setToken }}>
-            <LoginView />
-          </TokenContext.Provider>
-        </LoginContext.Provider>
-      </div>
+      // eslint-disable-next-line react/jsx-no-bind
+      <LoginView token={token} changeToken={changeToken} loginState={loginState} changeLoginState={changeLoginState} />
     )
   }
-  return (
-    <div>
-      {/* eslint-disable-next-line react/jsx-no-constructed-context-values */}
-      <LoginContext.Provider value={{ loginState, setLoginState }}>
-        {/* eslint-disable-next-line react/jsx-no-constructed-context-values */}
-        <TokenContext.Provider value={{ token, setToken }}>
-          <ActivatorView />
-        </TokenContext.Provider>
-      </LoginContext.Provider>
-    </div>
-  )
+  // eslint-disable-next-line react/jsx-no-bind
+  return <ActivatorView token={token} changeToken={changeToken} changeLoginState={changeLoginState} />
 }

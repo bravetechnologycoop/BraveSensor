@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react'
-import TokenContext from '../utilities/TokenContext'
+import PropTypes from 'prop-types'
 
 const ParticleFunctions = require('../utilities/ParticleFunctions')
 
@@ -8,8 +8,8 @@ const { getDisplayName } = ParticleFunctions
 /**
  * WelcomeText: React Component for displaying the user's name or company name.
  */
-export default function WelcomeText() {
-  const { token } = useContext(TokenContext)
+function WelcomeText(props) {
+  const { token } = props
 
   const [displayName, setDisplayName] = useState('')
 
@@ -24,3 +24,13 @@ export default function WelcomeText() {
 
   return <>Welcome{displayName}</>
 }
+
+WelcomeText.propTypes = {
+  token: PropTypes.string,
+}
+
+WelcomeText.defaultProps = {
+  token: '',
+}
+
+export default WelcomeText

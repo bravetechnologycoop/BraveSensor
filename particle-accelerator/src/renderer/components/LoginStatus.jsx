@@ -1,14 +1,13 @@
 import { Badge } from 'react-bootstrap'
-import { useContext } from 'react'
-import LoginContext from '../utilities/LoginContext'
+import PropTypes from 'prop-types'
 
 /**
  * LoginStatus: React component for displaying the current login state of the
  * application. Outputs a badge based on the value of the loginState context
  * hook.
  */
-function LoginStatus() {
-  const { loginState } = useContext(LoginContext)
+function LoginStatus(props) {
+  const { loginState } = props
 
   if (loginState === 'waiting') {
     return (
@@ -44,6 +43,14 @@ function LoginStatus() {
       </h4>
     </div>
   )
+}
+
+LoginStatus.propTypes = {
+  loginState: PropTypes.string,
+}
+
+LoginStatus.defaultProps = {
+  loginState: '',
 }
 
 export default LoginStatus
