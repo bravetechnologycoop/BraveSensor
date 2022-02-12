@@ -1,11 +1,21 @@
 # Particle Accelerator
 
-The Particle Accelerator is an Electron and React based application for the rapid provisioning and activation of 
+The Particle Accelerator (PA) is an Electron and React based application for the rapid provisioning and activation of 
 cellular-enabled Particle devices for organizations. It is mostly written in TypeScript and is based off of 
 electron-react-boilerplate. The majority of the functions are made possible by the Particle Node API and the UI uses the
 React-Bootstrap library.
 
+## Installation
+
+To get the Particle Accelerator on your machine, there are two possible ways. 
+
+1. Download the latest uploaded `.dmg` or `.exe` files from the Brave Google Drive.
+2. Clone this repository onto your machine, `cd particle-accelerator` and then run `npm run package`. The corresponding
+    executables and installers should be built in the `release/build` folder. If you are creating a new executable which
+    does not exist yet on the Brave Google Drive, please upload it. 
+
 ## Usage and Mechanisms
+(Open the Particle Accelerator executable)
 1. Log into your Particle account.
 2. Scan the code on the Particle Device to obtain its serial number and input it into the form.
 3. Select a new name for the Particle device for identification on the Particle console.
@@ -24,16 +34,14 @@ another device, or attempt the activation again.
     search mode (flashing green light).
 
 ## Known Faults
-* The serial number field is guarded by a 15-character limit to safeguard against bad entries and the fact that scanning
+- The serial number field is guarded by a 15-character limit to safeguard against bad entries and the fact that scanning
   the barcode outputs two different numbers, for which the first 15 characters are the only relevant ones.
-* The window upon launch should be larger for a cleaner user interface.
-* The program works only for devices destined to a product family.
+- The window upon launch should be larger for a cleaner user interface.
+- The program works only for devices destined to a product family.
+- The barcode scanner sends a return character to the keyboard at the end of scanning, causing the fields to submit.
 
 ## Roadmap
-* Fix window sizing
-* Implement a How-To
-* Allow functionality for non-product users
-* Permanently store activation logs on the program
-
-## Versions
-### Current: v1.0
+- Fix window sizing
+- Implement a How-To
+- Allow functionality for non-product users
+- Permanently store activation logs on the program
