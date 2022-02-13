@@ -1,7 +1,7 @@
 import Form from 'react-bootstrap/Form'
-import { useContext, useState } from 'react'
+import { useState } from 'react'
 import Button from 'react-bootstrap/Button'
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types'
 
 const ParticleFunctions = require('../utilities/ParticleFunctions')
 

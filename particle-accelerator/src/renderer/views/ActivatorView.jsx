@@ -204,7 +204,7 @@ function ActivatorView(props) {
     <div style={{ padding: '10px' }}>
       <div style={{ textAlign: 'center' }}>
         <h2>
-          <WelcomeText token={token} /> <LogoutButton token={token} changeToken={changeToken} changeLoginState={changeLoginState}/>
+          <WelcomeText token={token} /> <LogoutButton token={token} changeToken={changeToken} changeLoginState={changeLoginState} />
         </h2>
       </div>
 
