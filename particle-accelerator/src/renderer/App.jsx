@@ -7,7 +7,7 @@ import ActivatorView from './views/ActivatorView'
 
 export default function App() {
   const [token, setToken] = useState('')
-  const [loginState, setLoginState] = useState('false');
+  const [loginState, setLoginState] = useState('false')
 
   function changeToken(newToken) {
     setToken(newToken)

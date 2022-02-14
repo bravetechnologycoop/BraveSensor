@@ -75,9 +75,7 @@ jobs:
       script:
         - cd ../particle-accelerator
         - npm run lint
-        - npm run build:main
-        - npm run build:renderer
-        - jest
+        - npm run test
     # If all the test stage passes, then pushes the Docker container to DO
     - stage: 'push container'
       script:
