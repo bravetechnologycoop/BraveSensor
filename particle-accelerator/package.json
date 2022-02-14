@@ -87,16 +87,11 @@
     },
     "extraResources": [
       "./assets/**"
-    ],
-    "publish": {
-      "provider": "github",
-      "owner": "electron-react-boilerplate",
-      "repo": "electron-react-boilerplate"
-    }
+    ]
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/electron-react-boilerplate/electron-react-boilerplate.git"
+    "url": "git+https://github.com/bravetechnologycoop/BraveSensor.git"
   },
   "author": {
     "name": "Reese Critchlow",
@@ -157,7 +152,7 @@
     "electron-notarize": "^1.1.1",
     "electron-packager": "^15.4.0",
     "electron-rebuild": "^3.2.5",
-    "eslint": "^8.8.0",
+    "eslint": "^8.9.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-brave": "https://github.com/bravetechnologycoop/eslint-config-brave.git#v1.0.0",
     "eslint-config-erb": "^4.0.3",
@@ -167,6 +162,7 @@
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-jest": "^25.3.2",
     "eslint-plugin-jsx-a11y": "^6.5.1",
+    "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0",
