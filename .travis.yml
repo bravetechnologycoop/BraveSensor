@@ -5,11 +5,11 @@ node_js: 'node' # node version specified in .nvmrc
 
 # install dependencies
 install:
-  - cd server
+  - cd particle-accelerator
+  - npm ci
+  - cd ../server
   - npm ci
   - npm install pg@latest
-  - cd ../particle-accelerator
-  - npm ci
 
 # install Redis
 services:
