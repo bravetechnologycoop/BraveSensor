@@ -8,6 +8,8 @@ install:
   - cd server
   - npm ci
   - npm install pg@latest
+  - cd ../particle-accelerator
+  - npm ci
 
 # install Redis
 services:
@@ -73,7 +75,9 @@ jobs:
         - cd ../firmware/boron-ins-fsm/test && g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
     - stage: 'particle-accelerator test'
       script:
-        - cd ../particle-accelerator && npm run lint && npm run test
+        - cd ../particle-accelerator
+        - npm run lint
+        - npm run test
     # If all the test stage passes, then pushes the Docker container to DO
     - stage: 'push container'
       script:
