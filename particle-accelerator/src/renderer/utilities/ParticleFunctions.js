@@ -187,6 +187,17 @@ async function verifyDeviceRegistration(deviceID, name, product, iccid, serialNu
   }
 }
 
+async function getDeviceDetails(serialNumber, product, token) {
+  try {
+    const response = await particle.lookupSerialNumber({ serialNumber, auth: token })
+    const deviceID = response.body.device_id
+    const info = await particle.getDevice({ deviceId: deviceID, auth: token, product })
+    return info.body
+  } catch {
+    return null
+  }
+}
+
 module.exports = {
   getDisplayName,
   login,
@@ -195,4 +206,5 @@ module.exports = {
   activateDeviceSIM,
   changeDeviceName,
   verifyDeviceRegistration,
+  getDeviceDetails,
 }

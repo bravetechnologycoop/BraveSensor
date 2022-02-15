@@ -4,6 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import { useState } from 'react'
 import LoginView from './views/LoginView'
 import ActivatorView from './views/ActivatorView'
+import MainView from './views/MainView';
 
 export default function App() {
   const [token, setToken] = useState('')
@@ -24,5 +25,5 @@ export default function App() {
     )
   }
   // eslint-disable-next-line react/jsx-no-bind
-  return <ActivatorView token={token} changeToken={changeToken} changeLoginState={changeLoginState} />
+  return <MainView token={token} changeToken={changeToken} changeLoginState={changeLoginState} />
 }
