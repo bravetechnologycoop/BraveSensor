@@ -154,6 +154,7 @@
     "electron-rebuild": "^3.2.5",
     "eslint": "^8.9.0",
     "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-brave": "https://github.com/bravetechnologycoop/eslint-config-brave.git#v1.0.0",
     "eslint-config-erb": "^4.0.3",
     "eslint-import-resolver-typescript": "^2.5.0",
     "eslint-import-resolver-webpack": "^0.13.2",
