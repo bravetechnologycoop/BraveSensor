@@ -23,6 +23,23 @@ pool.on('error', err => {
   helpers.logError(`unexpected database error: ${err.toString()}`)
 })
 
+function createSessionFromRow(r) {
+  // prettier-ignore
+  return new Session(r.id, r.locationid, r.phone_number, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_type, r.notes, r.responded_at)
+}
+
+function createClientFromRow(r) {
+  // prettier-ignore
+  return new Client(r.id, r.display_name, r.responder_phone_number, r.responder_push_id, r.alert_api_key, r.reminder_timeout, r.fallback_phone_numbers, r.from_phone_number, r.fallback_timeout, r.heartbeat_phone_numbers, r.incident_categories, r.is_active, r.created_at, r.updated_at)
+}
+
+function createLocationFromRow(r, allClients) {
+  const client = allClients.filter(c => c.id === r.client_id)[0]
+
+  // prettier-ignore
+  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.twilio_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
+}
+
 async function beginTransaction() {
   let pgClient = null
 
@@ -73,40 +90,25 @@ async function rollbackTransaction(pgClient) {
   }
 }
 
-function createSessionFromRow(r) {
-  // prettier-ignore
-  return new Session(r.id, r.locationid, r.phone_number, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_type, r.notes, r.responded_at)
-}
-
-function createClientFromRow(r) {
-  // prettier-ignore
-  return new Client(r.id, r.display_name, r.responder_phone_number, r.responder_push_id, r.alert_api_key, r.reminder_timeout, r.fallback_phone_numbers, r.from_phone_number, r.fallback_timeout, r.heartbeat_phone_numbers, r.incident_categories, r.is_active, r.created_at, r.updated_at)
-}
-
-async function createLocationFromRow(r, pgClient) {
+async function getClients(pgClient) {
   try {
     const results = await helpers.runQuery(
-      'createLocationFromRow',
+      'getClients',
       `
       SELECT *
       FROM clients
-      WHERE id = $1
-      LIMIT 1
+      ORDER BY display_name
       `,
-      [r.client_id],
+      [],
       pool,
       pgClient,
     )
 
-    if (results === undefined || results.rows.length === 0) {
-      helpers.logError(`Missing client with id: ${r.client_id}`)
+    if (results === undefined) {
       return null
     }
 
-    const client = createClientFromRow(results.rows[0])
-
-    // prettier-ignore
-    return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.twilio_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
+    return await Promise.all(results.rows.map(r => createClientFromRow(r, pgClient)))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -416,7 +418,8 @@ async function updateSentAlerts(locationid, sentalerts, pgClient) {
       return null
     }
 
-    return await createLocationFromRow(results.rows[0], pgClient)
+    const allClients = await getClients(pgClient)
+    return createLocationFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -563,7 +566,8 @@ async function getLocationData(locationid, pgClient) {
       return null
     }
 
-    return await createLocationFromRow(results.rows[0], pgClient)
+    const allClients = await getClients(pgClient)
+    return createLocationFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -589,7 +593,8 @@ async function getLocationsFromAlertApiKey(alertApiKey, pgClient) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createLocationFromRow(r, pgClient)))
+    const allClients = await getClients(pgClient)
+    return results.rows.map(r => createLocationFromRow(r, allClients))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -616,7 +621,8 @@ async function getLocationFromParticleCoreID(coreID, pgClient) {
       return null
     }
 
-    return await createLocationFromRow(results.rows[0], pgClient)
+    const allClients = await getClients(pgClient)
+    return createLocationFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -642,7 +648,8 @@ async function getLocationsFromClientId(clientId, pgClient) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createLocationFromRow(r, pgClient)))
+    const allClients = await getClients(pgClient)
+    return results.rows.map(r => createLocationFromRow(r, allClients))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -667,7 +674,8 @@ async function getActiveServerStateMachineLocations(pgClient) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createLocationFromRow(r, pgClient)))
+    const allClients = await getClients(pgClient)
+    return results.rows.map(r => createLocationFromRow(r, allClients))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -692,7 +700,8 @@ async function getActiveFirmwareStateMachineLocations(pgClient) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createLocationFromRow(r, pgClient)))
+    const allClients = await getClients(pgClient)
+    return results.rows.map(r => createLocationFromRow(r, allClients))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -717,31 +726,8 @@ async function getLocations(pgClient) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createLocationFromRow(r, pgClient)))
-  } catch (err) {
-    helpers.log(err.toString())
-  }
-}
-
-async function getClients(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getClients',
-      `
-      SELECT *
-      FROM clients
-      ORDER BY display_name
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    return await Promise.all(results.rows.map(r => createClientFromRow(r, pgClient)))
+    const allClients = await getClients(pgClient)
+    return results.rows.map(r => createLocationFromRow(r, allClients))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -810,7 +796,8 @@ async function updateLocation(
     }
 
     helpers.log(`Location '${locationid}' successfully updated`)
-    return await createLocationFromRow(results.rows[0], pgClient)
+    const allClients = await getClients(pgClient)
+    return createLocationFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -950,7 +937,8 @@ async function createLocation(
       pgClient,
     )
 
-    return createLocationFromRow(results.rows[0])
+    const allClients = await getClients(pgClient)
+    return createLocationFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
