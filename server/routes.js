@@ -21,7 +21,6 @@ function configureRoutes(app) {
   app.post('/locations/:locationId', dashboard.validateEditLocation, dashboard.submitEditLocation)
   app.post('/login', dashboard.submitLogin)
 
-  app.post('/api/devicevitals', vitals.validateDeviceVitals, vitals.handleDeviceVitals)
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
   app.post('/api/sirenAddressed', siren.validateSirenAddressed, siren.handleSirenAddressed)
   app.post('/api/sirenEscalated', siren.validateSirenEscalated, siren.handleSirenEscalated)
