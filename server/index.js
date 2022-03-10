@@ -129,7 +129,7 @@ app.post('/api/xethru', Validator.body(['coreid', 'state', 'rpm', 'mov_f', 'mov_
       } else {
         await redis.addXeThruSensorData(location.locationid, state, rpm, distance, mov_f, mov_s)
 
-        if (location.isActive && location.sentVitalsAlertAt === null) {
+        if (location.client.isActive && location.isActive && location.sentVitalsAlertAt === null) {
           await StateMachine.getNextState(location, handleAlert)
         }
         res.status(200).json('OK')
@@ -180,7 +180,7 @@ app.post(
 
           await redis.addInnosentRadarSensorData(location.locationid, inPhase, quadrature)
 
-          if (location.isActive && location.sentVitalsAlertAt === null) {
+          if (location.client.isActive && location.isActive && location.sentVitalsAlertAt === null) {
             await StateMachine.getNextState(location, handleAlert)
           }
 
@@ -224,7 +224,7 @@ app.post('/api/sensorEvent', Validator.body(['coreid', 'event']).exists(), async
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
         response.status(200).json(errorMessage)
       } else {
-        if (location.isActive) {
+        if (location.client.isActive && location.isActive) {
           await handleAlert(location, alertType)
         }
         response.status(200).json('OK')
@@ -276,7 +276,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
           helpers.logSentry(`Received an IM21 tamper alarm for ${locationid}`)
         }
 
-        if (location.isActive && location.sentVitalsAlertAt === null) {
+        if (location.client.isActive && location.isActive && location.sentVitalsAlertAt === null) {
           await StateMachine.getNextState(location, handleAlert)
         }
         await db.commitTransaction(pgClient)

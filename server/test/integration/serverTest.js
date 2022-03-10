@@ -536,6 +536,63 @@ describe('Brave Sensor server', () => {
     })
   })
 
+  describe('POST request radar and door events with XeThru radar and mock im21 door sensor for an inactive Client', () => {
+    beforeEach(async () => {
+      const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber, isActive: false })
+      await locationDBFactory(db, {
+        locationid: testLocation1Id,
+        movementThreshold: MOVEMENT_THRESHOLD,
+        doorCoreId: door_coreID,
+        radarCoreId: radar_coreID,
+        radarType: RADAR_TYPE.XETHRU,
+        firmwareStateMachine: false,
+        isActive: true,
+        clientId: client.id,
+      })
+
+      await im21Door(door_coreID, im21door.createClosedSignal())
+      sandbox.spy(StateMachine, 'getNextState')
+    })
+
+    it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
+      const response = await chai
+        .request(server)
+        .post('/api/door')
+        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
+      expect(response).to.have.status(200)
+    })
+
+    it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
+      const response = await chai
+        .request(server)
+        .post('/api/devicevitals')
+        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
+      expect(response).to.have.status(400)
+    })
+
+    it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
+      for (let i = 0; i < 5; i += 1) {
+        await xeThruSilence(radar_coreID)
+      }
+      const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
+      expect(radarRows.length).to.equal(5)
+      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+      expect(sessions.length).to.equal(0)
+      expect(StateMachine.getNextState).to.not.be.called
+    })
+
+    it('radar data showing movement should be saved to redis, but should not trigger a session', async () => {
+      for (let i = 0; i < 15; i += 1) {
+        await xeThruMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
+      }
+      const radarRows = await redis.getXethruStream(testLocation1Id, '+', '-')
+      expect(radarRows.length).to.equal(15)
+      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+      expect(sessions.length).to.equal(0)
+      expect(StateMachine.getNextState).to.not.be.called
+    })
+  })
+
   describe('POST request radar and door events with INS radar and mock im21 door sensor for an active Location', () => {
     beforeEach(async () => {
       const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })

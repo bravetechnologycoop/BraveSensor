@@ -35,7 +35,7 @@
                             <th scope="row"><a href="/clients/{{id}}">{{displayName}}</a></th>
                             <td></td>
                             <td></td>
-                            <td></td>
+                            <td>{{^isActive}}[INACTIVE]{{/isActive}}</td>
                         </tr>
                         {{#locations}}
                             <tr class="table-data">

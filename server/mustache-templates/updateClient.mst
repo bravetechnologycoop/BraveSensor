@@ -95,7 +95,7 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="isActive" class="col-sm-3 col-form-label">Is this Location active?</label>
+                    <label for="isActive" class="col-sm-3 col-form-label">Is this Client active?</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="isActive" value="{{isActive}}" required pattern="(true|false)">
                         <small id="isActiveHelp" class="form-text text-muted">"true" or "false"</small>
