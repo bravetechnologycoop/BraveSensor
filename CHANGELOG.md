@@ -15,6 +15,10 @@ the code was deployed.
 
 - Added missing rows to the `clients` table and started using them.
 
+### Removed
+
+- Unused device health endpoint (api/devicevitals).
+
 ### Security
 
 - Updated dependencies.

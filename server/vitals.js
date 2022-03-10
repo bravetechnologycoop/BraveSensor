@@ -152,51 +152,6 @@ async function sendLowBatteryAlert(location, client) {
   }
 }
 
-const validateDeviceVitals = [
-  Validator.body(['coreid', 'data']).exists(),
-  Validator.check('data')
-    .custom(dataString => {
-      const data = JSON.parse(dataString)
-
-      const signalStrength = ((((data || {}).device || {}).network || {}).signal || {}).strength
-      const disconnects = ((((data || {}).device || {}).cloud || {}).connection || {}).disconnects
-
-      return signalStrength !== undefined && disconnects !== undefined
-    })
-    .withMessage('error in schema, check for missing field'),
-]
-
-async function handleDeviceVitals(req, res) {
-  try {
-    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
-
-    if (validationErrors.isEmpty()) {
-      const coreId = req.body.coreid
-      const location = await db.getLocationFromParticleCoreID(coreId)
-
-      if (!location) {
-        const errorMessage = `Bad request to ${req.path}: no location matches the coreID ${coreId}`
-        helpers.logError(errorMessage)
-        res.status(400).json(errorMessage)
-      } else {
-        const data = JSON.parse(req.body.data)
-        const signalStrength = data.device.network.signal.strength
-        const cloudDisconnects = data.device.cloud.connection.disconnects
-
-        redis.addVitals(location.locationid, signalStrength, cloudDisconnects)
-        res.status(200).json('OK')
-      }
-    } else {
-      const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
-      helpers.logError(errorMessage)
-      res.status(400).send(errorMessage)
-    }
-  } catch (err) {
-    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
-    res.status(500).send()
-  }
-}
-
 const validateHeartbeat = Validator.body(['coreid', 'data']).exists()
 
 async function handleHeartbeat(req, res) {
@@ -258,10 +213,8 @@ async function handleHeartbeat(req, res) {
 
 module.exports = {
   checkHeartbeat,
-  handleDeviceVitals,
   handleHeartbeat,
   sendLowBatteryAlert,
   setupVitals,
-  validateDeviceVitals,
   validateHeartbeat,
 }

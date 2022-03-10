@@ -112,10 +112,6 @@ async function addIM21DoorSensorData(locationid, doorSignal, control) {
   }
 }
 
-async function addVitals(locationid, signalStrength, cloudDisconnects) {
-  client.xadd(`vitals:${locationid}`, 'MAXLEN', '~', '10000', '*', 'strength', signalStrength, 'cloudDisc', cloudDisconnects)
-}
-
 // ignore comments included to allow arguments to be split across lines in pairs
 // prettier-ignore
 /* eslint-disable function-call-argument-newline */
@@ -216,7 +212,6 @@ module.exports = {
   addEdgeDeviceHeartbeat,
   addIM21DoorSensorData,
   addInnosentRadarSensorData,
-  addVitals,
   addStateMachineData,
   addXeThruSensorData,
   clearKeys,

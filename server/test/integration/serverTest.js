@@ -398,14 +398,6 @@ describe('Brave Sensor server', () => {
       expect(response).to.have.status(200)
     })
 
-    it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
-      const response = await chai
-        .request(server)
-        .post('/api/devicevitals')
-        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(400)
-    })
-
     it('should call sendSingleAlert if door sends low battery signal', async () => {
       await im21Door(door_coreID, im21door.createOpenLowBatterySignal())
       expect(braveAlerter.sendSingleAlert).to.be.called
@@ -505,14 +497,6 @@ describe('Brave Sensor server', () => {
       expect(response).to.have.status(200)
     })
 
-    it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
-      const response = await chai
-        .request(server)
-        .post('/api/devicevitals')
-        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(400)
-    })
-
     it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
       for (let i = 0; i < 5; i += 1) {
         await xeThruSilence(radar_coreID)
@@ -560,14 +544,6 @@ describe('Brave Sensor server', () => {
         .post('/api/door')
         .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
       expect(response).to.have.status(200)
-    })
-
-    it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
-      const response = await chai
-        .request(server)
-        .post('/api/devicevitals')
-        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(400)
     })
 
     it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
@@ -618,14 +594,6 @@ describe('Brave Sensor server', () => {
         .post('/api/door')
         .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
       expect(response).to.have.status(200)
-    })
-
-    it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
-      const response = await chai
-        .request(server)
-        .post('/api/devicevitals')
-        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(400)
     })
 
     it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
@@ -715,14 +683,6 @@ describe('Brave Sensor server', () => {
       expect(response).to.have.status(200)
     })
 
-    it('should return 400 to a device vitals signal with an unregistered coreID', async () => {
-      const response = await chai
-        .request(server)
-        .post('/api/devicevitals')
-        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(400)
-    })
-
     it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
       for (let i = 0; i < 5; i += 1) {
         await innosentSilence(radar_coreID)
@@ -785,78 +745,6 @@ describe('Brave Sensor server', () => {
 
         const response = await chai.request(server).post('/api/door').send(badRequest)
         expect(response).to.have.status(200)
-      })
-    })
-
-    describe('api/devicevitals endpoint', () => {
-      beforeEach(async () => {
-        const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-        await locationDBFactory(db, {
-          locationid: testLocation1Id,
-          doorCoreId: door_coreID,
-          radarType: RADAR_TYPE.XETHRU,
-          firmwareStateMachine: false,
-          clientId: client.id,
-        })
-        await im21Door(door_coreID, im21door.createClosedSignal())
-      })
-
-      it('should return 200 for a valid request', async () => {
-        const goodRequest = {
-          coreid: door_coreID,
-          data: `{"device":{"network":{"signal":{"at":"Wi-Fi","strength":100,"strength_units":"%","strengthv":-47,"strengthv_units":"dBm","strengthv_type":"RSSI","quality":100,"quality_units":"%","qualityv":43,"qualityv_units":"dB","qualityv_type":"SNR"}},"cloud":{"connection":{"status":"connected","error":17,"attempts":1,"disconnects":9,"disconnect_reason":"error"},"coap":{"transmit":1305228,"retransmit":1721,"unack":0,"round_trip":1001},"publish":{"rate_limited":0}},"system":{"uptime":1298620,"memory":{"used":95000,"total":160488}}},"service":{"device":{"status":"ok"},"cloud":{"uptime":94305,"publish":{"sent":93201}},"coap":{"round_trip":1327}}}`,
-        }
-
-        const response = await chai.request(server).post('/api/devicevitals').send(goodRequest)
-        expect(response).to.have.status(200)
-      })
-
-      it('should return 400 for a request that does not contain coreid', async () => {
-        const badRequest = {
-          data: `{"device":{"network":{"signal":{"at":"Wi-Fi","strength":100,"strength_units":"%","strengthv":-47,"strengthv_units":"dBm","strengthv_type":"RSSI","quality":100,"quality_units":"%","qualityv":43,"qualityv_units":"dB","qualityv_type":"SNR"}},"cloud":{"connection":{"status":"connected","error":17,"attempts":1,"disconnects":9,"disconnect_reason":"error"},"coap":{"transmit":1305228,"retransmit":1721,"unack":0,"round_trip":1001},"publish":{"rate_limited":0}},"system":{"uptime":1298620,"memory":{"used":95000,"total":160488}}},"service":{"device":{"status":"ok"},"cloud":{"uptime":94305,"publish":{"sent":93201}},"coap":{"round_trip":1327}}}`,
-        }
-
-        const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
-        expect(response).to.have.status(400)
-      })
-
-      it('should return 400 for a request that does not contain data', async () => {
-        const badRequest = {
-          coreid: door_coreID,
-        }
-
-        const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
-        expect(response).to.have.status(400)
-      })
-
-      it('should return 400 for a request that contains a valid coreid and a totally invalid data field', async () => {
-        const badRequest = {
-          coreid: door_coreID,
-          data: `{"uselessField":"useless"}`,
-        }
-
-        const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
-        expect(response).to.have.status(400)
-      })
-
-      it('should return 400 for a request that contains a valid coreid and an invalid data field missing signal strength', async () => {
-        const badRequest = {
-          coreid: door_coreID,
-          data: `{"device":{"network":{"signal":{"at":"Wi-Fi","strength_units":"%","strengthv":-47,"strengthv_units":"dBm","strengthv_type":"RSSI","quality":100,"quality_units":"%","qualityv":43,"qualityv_units":"dB","qualityv_type":"SNR"}},"cloud":{"connection":{"status":"connected","error":17,"attempts":1,"disconnects":9,"disconnect_reason":"error"},"coap":{"transmit":1305228,"retransmit":1721,"unack":0,"round_trip":1001},"publish":{"rate_limited":0}},"system":{"uptime":1298620,"memory":{"used":95000,"total":160488}}},"service":{"device":{"status":"ok"},"cloud":{"uptime":94305,"publish":{"sent":93201}},"coap":{"round_trip":1327}}}`,
-        }
-
-        const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
-        expect(response).to.have.status(400)
-      })
-
-      it('should return 400 for a request that contains a valid coreid and an invalid data field missing device disconnects', async () => {
-        const badRequest = {
-          coreid: door_coreID,
-          data: `{{"device":{"network":{"signal":{"at":"Wi-Fi","strength":100,"strength_units":"%","strengthv":-47,"strengthv_units":"dBm","strengthv_type":"RSSI","quality":100,"quality_units":"%","qualityv":43,"qualityv_units":"dB","qualityv_type":"SNR"}},"cloud":{"connection":{"status":"connected","error":17,"attempts":1,"disconnect_reason":"error"},"coap":{"transmit":1305228,"retransmit":1721,"unack":0,"round_trip":1001},"publish":{"rate_limited":0}},"system":{"uptime":1298620,"memory":{"used":95000,"total":160488}}},"service":{"device":{"status":"ok"},"cloud":{"uptime":94305,"publish":{"sent":93201}},"coap":{"round_trip":1327}}}`,
-        }
-
-        const response = await chai.request(server).post('/api/devicevitals').send(badRequest)
-        expect(response).to.have.status(400)
       })
     })
   })
