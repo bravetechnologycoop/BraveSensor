@@ -4,7 +4,6 @@ const { fill } = require('lodash')
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
 const Location = require('./Location')
-const RADAR_TYPE = require('./RadarTypeEnum')
 
 function getRandomInt(minValue, maxValue) {
   const min = Math.ceil(minValue)
@@ -26,11 +25,6 @@ function randomXethruStream(fastmin, fastmax, slowmin, slowmax, length) {
   return array
 }
 
-function randomInnosentStream(min, max, length) {
-  const array = fill(Array(length), { inPhase: getRandomInt(min, max) })
-  return array
-}
-
 async function locationDBFactory(db, overrides = {}) {
   // prettier-ignore
   const location = await db.createLocation(
@@ -44,7 +38,6 @@ async function locationDBFactory(db, overrides = {}) {
     overrides.displayName !== undefined ? overrides.displayName : 'fakeLocationName',
     overrides.doorCoreId !== undefined ? overrides.doorCoreId : 'fakeDoorParticleId',
     overrides.radarCoreId !== undefined ? overrides.radarCoreId : 'fakeRadarParticleId',
-    overrides.radarType !== undefined ? overrides.radarType : RADAR_TYPE.INNOSENT,
     overrides.isActive !== undefined ? overrides.isActive : true,
     overrides.firmwareStateMachine !== undefined ? overrides.firmwareStateMachine : true,
     overrides.sirenParticleId !== undefined ? overrides.sirenParticleId : 'fakeSirenParticleId',
@@ -66,7 +59,6 @@ function locationFactory(overrides = {}) {
     overrides.sentVitalsAlertAt !== undefined ? overrides.sentVitalsAlertAt : null,
     overrides.doorCoreId !== undefined ? overrides.doorCoreId : 'fakeDoorParticleId',
     overrides.radarCoreId !== undefined ? overrides.radarCoreId : 'fakeRadarParticleId',
-    overrides.radarType !== undefined ? overrides.radarType : RADAR_TYPE.INNOSENT,
     overrides.twilioNumber !== undefined ? overrides.twilioNumber : '+17775559999',
     overrides.initialTimer !== undefined ? overrides.initialTimer : 1,
     overrides.isActive !== undefined ? overrides.isActive : true,
@@ -105,5 +97,4 @@ module.exports = {
   locationFactory,
   printRandomIntArray,
   randomXethruStream,
-  randomInnosentStream,
 }

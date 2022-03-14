@@ -18,6 +18,8 @@ the code was deployed.
 ### Removed
 
 - Unused device health endpoint (api/devicevitals).
+- Unused INS radar data endpoint (api/innosent).
+- `radar_type` column in `locations` table.
 
 ### Security
 

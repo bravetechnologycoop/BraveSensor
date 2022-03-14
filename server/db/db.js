@@ -37,7 +37,7 @@ function createLocationFromRow(r, allClients) {
   const client = allClients.filter(c => c.id === r.client_id)[0]
 
   // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.radar_type, r.twilio_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
+  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.twilio_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
 }
 
 async function beginTransaction() {
@@ -124,7 +124,11 @@ async function getDataForExport(pgClient) {
         c.display_name AS "Client Name",
         l.locationid AS "Sensor ID",
         l.display_name AS "Sensor Name",
-        l.radar_type AS "Radar Type",
+        CASE
+          WHEN firmware_state_machine
+          THEN 'Innosent'
+          ELSE 'XeThru' 
+        END AS "Radar Type",
         l.is_active AS "Active?",
         s.id AS "Session ID",
         TO_CHAR(s.created_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Start",
@@ -739,7 +743,6 @@ async function updateLocation(
   displayName,
   doorCoreId,
   radarCoreId,
-  radarType,
   twilioNumber,
   movementThreshold,
   durationTimer,
@@ -760,23 +763,21 @@ async function updateLocation(
         display_name = $1,
         door_particlecoreid = $2,
         radar_particlecoreid = $3,
-        radar_type = $4,
-        twilio_number = $5,
-        movement_threshold = $6,
-        duration_timer = $7,
-        stillness_timer = $8,
-        initial_timer = $9,
-        is_active = $10,
-        firmware_state_machine = $11,
-        client_id = $12
-      WHERE locationid = $13
+        twilio_number = $4,
+        movement_threshold = $5,
+        duration_timer = $6,
+        stillness_timer = $7,
+        initial_timer = $8,
+        is_active = $9,
+        firmware_state_machine = $10,
+        client_id = $11
+      WHERE locationid = $12
       RETURNING *
       `,
       [
         displayName,
         doorCoreId,
         radarCoreId,
-        radarType,
         twilioNumber,
         movementThreshold,
         durationTimer,
@@ -859,19 +860,18 @@ async function updateClient(
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, radarType, twilioNumber, firmwareStateMachine, clientId, pgClient) {
+async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, twilioNumber, firmwareStateMachine, clientId, pgClient) {
   try {
     await helpers.runQuery('createLocationFromBrowserForm',
       `
-      INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, radar_type, twilio_number, firmware_state_machine, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, twilio_number, firmware_state_machine, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       `,
       [
         locationid,
         displayName,
         doorCoreId,
         radarCoreId,
-        radarType,
         twilioNumber,
         firmwareStateMachine,
         clientId,
@@ -887,7 +887,6 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
 }
 
 // Adds a location table entry
-// eslint-disable-next-line prettier/prettier
 async function createLocation(
   locationid,
   movementThreshold,
@@ -899,7 +898,6 @@ async function createLocation(
   displayName,
   doorCoreId,
   radarCoreId,
-  radarType,
   isActive,
   firmwareStateMachine,
   sirenParticleId,
@@ -911,8 +909,8 @@ async function createLocation(
     const results = await helpers.runQuery(
       'createLocation',
       `
-      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, twilio_number, display_name, door_particlecoreid, radar_particlecoreid, radar_type, is_active, firmware_state_machine, siren_particle_id, sent_low_battery_alert_at, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, twilio_number, display_name, door_particlecoreid, radar_particlecoreid, is_active, firmware_state_machine, siren_particle_id, sent_low_battery_alert_at, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
       `,
       [
@@ -926,7 +924,6 @@ async function createLocation(
         displayName,
         doorCoreId,
         radarCoreId,
-        radarType,
         isActive,
         firmwareStateMachine,
         sirenParticleId,

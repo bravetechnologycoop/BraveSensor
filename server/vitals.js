@@ -5,7 +5,6 @@ const Validator = require('express-validator')
 const { helpers } = require('brave-alert-lib')
 const redis = require('./db/redis')
 const db = require('./db/db')
-const RADAR_TYPE = require('./RadarTypeEnum')
 
 let braveAlerter
 
@@ -53,13 +52,8 @@ async function checkHeartbeat() {
     let latestDoor
 
     try {
-      if (location.radarType === RADAR_TYPE.XETHRU) {
-        const xeThruData = await redis.getLatestXeThruSensorData(location.locationid)
-        latestRadar = convertToSeconds(xeThruData.timestamp)
-      } else if (location.radarType === RADAR_TYPE.INNOSENT) {
-        const innosentData = await redis.getLatestInnosentSensorData(location.locationid)
-        latestRadar = convertToSeconds(innosentData.timestamp)
-      }
+      const xeThruData = await redis.getLatestXeThruSensorData(location.locationid)
+      latestRadar = convertToSeconds(xeThruData.timestamp)
       const doorData = await redis.getLatestDoorSensorData(location.locationid)
       latestDoor = convertToSeconds(doorData.timestamp)
       const redisTime = await redis.getCurrentTimeinSeconds()

@@ -6,7 +6,6 @@ const { helpers } = require('brave-alert-lib')
 const DoorData = require('./DoorData')
 const StateData = require('./StateData')
 const XeThruData = require('./XeThruData')
-const InnosentData = require('./InnosentData')
 
 const SESSIONSTATE_DOOR = require('../SessionStateDoorEnum')
 const HeartbeatData = require('./HeartbeatData')
@@ -46,12 +45,6 @@ async function getXethruWindow(locationID, startTime, endTime, windowLength) {
 async function getXethruStream(locationID, startTime, endTime) {
   const rows = await client.xrevrange(`xethru:${locationID}`, startTime, endTime)
   const radarStream = rows.map(entry => new XeThruData(entry))
-  return radarStream
-}
-
-async function getInnosentStream(locationID, startTime, endTime) {
-  const rows = await client.xrevrange(`innosent:${locationID}`, startTime, endTime)
-  const radarStream = rows.map(entry => new InnosentData(entry))
   return radarStream
 }
 
@@ -148,36 +141,6 @@ function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
 }
 /* eslint-enable function-call-argument-newline */
 
-async function addInnosentRadarSensorData(locationid, inPhase, quadrature) {
-  try {
-    const inPhaseArray = inPhase.split(',')
-    const quadratureArray = quadrature.split(',')
-    const pipeline = client.pipeline()
-    for (let i = 0; i < inPhaseArray.length; i += 1) {
-      pipeline.xadd(`innosent:${locationid}`, '*', 'inPhase', inPhaseArray[i], 'quadrature', quadratureArray[i])
-    }
-    await pipeline.exec()
-  } catch (error) {
-    helpers.logError(`Error adding Innosent radar sensor data: ${error.toString()}`)
-  }
-}
-
-async function getInnosentWindow(locationID, startTime, endTime, windowLength) {
-  const rows = await client.xrevrange(`innosent:${locationID}`, startTime, endTime, 'count', windowLength)
-  const radarStream = rows.map(entry => new InnosentData(entry))
-  return radarStream
-}
-
-async function getInnosentTimeWindow(locationID, windowSize) {
-  const windowSizeinMilliseconds = windowSize * 1000
-  const currentTime = await getCurrentTimeinMilliseconds()
-  const startTime = currentTime - windowSizeinMilliseconds
-
-  const rows = await client.xrevrange(`innosent:${locationID}`, '+', startTime)
-  const radarStream = rows.map(entry => new InnosentData(entry))
-  return radarStream
-}
-
 async function getXethruTimeWindow(locationID, windowSize) {
   const windowSizeinMilliseconds = windowSize * 1000
   const currentTime = await getCurrentTimeinMilliseconds()
@@ -186,11 +149,6 @@ async function getXethruTimeWindow(locationID, windowSize) {
   const rows = await client.xrevrange(`xethru:${locationID}`, '+', startTime)
   const radarStream = rows.map(entry => new XeThruData(entry))
   return radarStream
-}
-
-async function getLatestInnosentSensorData(locationid) {
-  const singleItem = await getInnosentWindow(locationid, '+', '-', 1)
-  return singleItem[0]
 }
 
 async function addStateMachineData(state, locationid) {
@@ -211,7 +169,6 @@ async function getLatestXeThruSensorData(locationid) {
 module.exports = {
   addEdgeDeviceHeartbeat,
   addIM21DoorSensorData,
-  addInnosentRadarSensorData,
   addStateMachineData,
   addXeThruSensorData,
   clearKeys,
@@ -219,9 +176,6 @@ module.exports = {
   disconnect,
   getCurrentTimeinSeconds,
   getCurrentTimeinMilliseconds,
-  getInnosentWindow,
-  getInnosentStream,
-  getInnosentTimeWindow,
   getXethruTimeWindow,
   getXethruWindow,
   getXethruStream,
@@ -231,5 +185,4 @@ module.exports = {
   getLatestHeartbeat,
   getLatestXeThruSensorData,
   getLatestState,
-  getLatestInnosentSensorData,
 }

@@ -4,7 +4,6 @@ const axios = require('axios').default
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
 const { getRandomArbitrary, getRandomInt } = require('./testingHelpers')
-const RADAR_TYPE = require('./RadarTypeEnum')
 const XETHRU_STATE = require('./SessionStateXethruEnum')
 const SENSOR_EVENT = require('./SensorEventEnum')
 const im21door = require('./im21door')
@@ -29,12 +28,12 @@ async function teardown() {
   }
 }
 
-async function setup(recipientPhoneNumber, twilioPhoneNumber, type) {
+async function setup(recipientPhoneNumber, twilioPhoneNumber, firmwareStateMachine) {
   try {
     await axios.post('/smokeTest/setup', {
       recipientNumber: recipientPhoneNumber,
       twilioNumber: twilioPhoneNumber,
-      radarType: type,
+      firmwareStateMachine,
     })
   } catch (e) {
     helpers.log(e)
@@ -103,7 +102,7 @@ async function smokeTest(recipientPhoneNumber, twilioPhoneNumber) {
   try {
     helpers.log('Running XeThru Server-side State Machine Smoke Tests')
     await teardown()
-    await setup(recipientPhoneNumber, twilioPhoneNumber, RADAR_TYPE.XETHRU)
+    await setup(recipientPhoneNumber, twilioPhoneNumber, false)
     for (let i = 0; i < 15; i += 1) {
       await xeThruMovement(radar_coreID, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
     }
@@ -130,7 +129,7 @@ async function smokeTest(recipientPhoneNumber, twilioPhoneNumber) {
   try {
     helpers.log('Running INS Firmware State Machine Smoke Tests')
     await teardown()
-    await setup(recipientPhoneNumber, twilioPhoneNumber, RADAR_TYPE.INNOSENT)
+    await setup(recipientPhoneNumber, twilioPhoneNumber, true)
     await stillnessEvent(radar_coreID)
     await helpers.sleep(70000)
   } catch (error) {

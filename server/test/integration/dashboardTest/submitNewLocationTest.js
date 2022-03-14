@@ -48,7 +48,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.displayName = 'locationName'
       this.doorCoreId = 'door_coreID'
       this.radarCoreId = 'radar_coreID'
-      this.radarType = 'XeThru'
       this.twilioNumber = '+15005550006'
       this.firmwareStateMachine = false
       const goodRequest = {
@@ -56,7 +55,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         displayName: this.displayName,
         doorCoreID: this.doorCoreId,
         radarCoreID: this.radarCoreId,
-        radarType: this.radarType,
         twilioPhone: this.twilioNumber,
         firmwareStateMachine: this.firmwareStateMachine.toString(),
         clientId: this.client.id,
@@ -77,7 +75,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         displayName: newLocation.displayName,
         doorCoreId: newLocation.doorCoreId,
         radarCoreId: newLocation.radarCoreId,
-        radarType: newLocation.radarType,
         twilioNumber: newLocation.twilioNumber,
         firmwareStateMachine: newLocation.firmwareStateMachine,
         clientId: newLocation.client.id,
@@ -86,7 +83,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         displayName: this.displayName,
         doorCoreId: this.doorCoreId,
         radarCoreId: this.radarCoreId,
-        radarType: this.radarType,
         twilioNumber: this.twilioNumber,
         firmwareStateMachine: this.firmwareStateMachine,
         clientId: this.client.id,
@@ -105,7 +101,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.displayName = '  locationName  '
       this.doorCoreId = '   door_coreID   '
       this.radarCoreId = '    radar_coreID    '
-      this.radarType = '  XeThru  '
       this.twilioNumber = '   +15005550006    '
       this.firmwareStateMachine = false
       const goodRequest = {
@@ -113,7 +108,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         displayName: this.displayName,
         doorCoreID: this.doorCoreId,
         radarCoreID: this.radarCoreId,
-        radarType: this.radarType,
         twilioPhone: this.twilioNumber,
         firmwareStateMachine: `  ${this.firmwareStateMachine.toString()} `,
         clientId: `  ${this.client.id}   `,
@@ -134,7 +128,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         displayName: newLocation.displayName,
         doorCoreId: newLocation.doorCoreId,
         radarCoreId: newLocation.radarCoreId,
-        radarType: newLocation.radarType,
         twilioNumber: newLocation.twilioNumber,
         firmwareStateMachine: newLocation.firmwareStateMachine,
         clientId: newLocation.client.id,
@@ -143,7 +136,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         displayName: this.displayName.trim(),
         doorCoreId: this.doorCoreId.trim(),
         radarCoreId: this.radarCoreId.trim(),
-        radarType: this.radarType.trim(),
         twilioNumber: this.twilioNumber.trim(),
         firmwareStateMachine: this.firmwareStateMachine,
         clientId: this.client.id.trim(),
@@ -166,7 +158,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         displayName: 'locationName',
         doorCoreID: 'door_coreID',
         radarCoreID: 'radar_coreID',
-        radarType: 'XeThru',
         twilioPhone: '+15005550006',
         firmwareStateMachine: 'false',
         clientId: this.clientId,
@@ -197,7 +188,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         displayName: 'locationName',
         doorCoreID: 'door_coreID',
         radarCoreID: 'radar_coreID',
-        radarType: 'XeThru',
         twilioPhone: '+15005550006',
         firmwareStateMachine: 'false',
         clientId: '91ddc8f7-c2e7-490e-bfe9-3d2880a76108',
@@ -233,7 +223,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         displayName: '',
         doorCoreID: '',
         radarCoreID: '',
-        radarType: '',
         twilioPhone: '',
         firmwareStateMachine: '',
         clientId: '',
@@ -252,7 +241,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -279,7 +268,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),radarType (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -304,7 +293,6 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         displayName: 'locationName',
         doorCoreID: 'door_coreID',
         radarCoreID: 'radar_coreID',
-        radarType: 'XeThru',
         twilioPhone: '+15005550006',
         firmwareStateMachine: 'false',
         clientId: this.client.id,
