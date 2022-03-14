@@ -18,7 +18,6 @@ const routes = require('./routes')
 const dashboard = require('./dashboard')
 const siren = require('./siren')
 const vitals = require('./vitals')
-const RADAR_TYPE = require('./RadarTypeEnum')
 
 // Start Express App
 const app = express()
@@ -148,59 +147,6 @@ app.post('/api/xethru', Validator.body(['coreid', 'state', 'rpm', 'mov_f', 'mov_
   }
 })
 
-app.post(
-  '/api/innosent',
-  Validator.body(['coreid', 'data']).exists(),
-  Validator.check('data')
-    .custom(dataString => {
-      const data = JSON.parse(dataString)
-
-      const inPhase = (data || {}).inPhase
-      const quadrature = (data || {}).quadrature
-
-      return inPhase !== undefined && quadrature !== undefined
-    })
-    .withMessage('missing radar values, check for firmware or device integration errors'),
-  async (request, response) => {
-    try {
-      const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
-
-      if (validationErrors.isEmpty()) {
-        const coreId = request.body.coreid
-        const location = await db.getLocationFromParticleCoreID(coreId)
-        if (!location) {
-          const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
-          helpers.logError(errorMessage)
-          // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-          response.status(200).json(errorMessage)
-        } else {
-          const data = JSON.parse(request.body.data)
-          const inPhase = data.inPhase
-          const quadrature = data.quadrature
-
-          await redis.addInnosentRadarSensorData(location.locationid, inPhase, quadrature)
-
-          if (location.client.isActive && location.isActive && location.sentVitalsAlertAt === null) {
-            await StateMachine.getNextState(location, handleAlert)
-          }
-
-          response.status(200).json('OK')
-        }
-      } else {
-        const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
-        helpers.logError(errorMessage)
-        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-        response.status(200).json(errorMessage)
-      }
-    } catch (err) {
-      const errorMessage = `Error calling ${request.path}: ${err.toString()}`
-      helpers.logError(errorMessage)
-      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-      response.status(200).json(errorMessage)
-    }
-  },
-)
-
 app.post('/api/sensorEvent', Validator.body(['coreid', 'event']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
@@ -305,7 +251,7 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
 })
 
 app.post('/smokeTest/setup', async (request, response) => {
-  const { recipientNumber, twilioNumber, radarType } = request.body
+  const { recipientNumber, twilioNumber, firmwareStateMachine } = request.body
   try {
     const client = await factories.clientDBFactory(db, {
       displayName: 'SmokeTestClient',
@@ -329,9 +275,8 @@ app.post('/smokeTest/setup', async (request, response) => {
       'SmokeTestLocation',
       'door_coreID',
       'radar_coreID',
-      radarType,
       true,
-      radarType === RADAR_TYPE.INNOSENT,
+      firmwareStateMachine,
       null,
       '2021-03-09T19:37:28.176Z',
       client.id,

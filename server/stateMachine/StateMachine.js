@@ -15,11 +15,7 @@ async function getNextState(location, handleAlert) {
     } else {
       state = stateData.state
     }
-    const movementOverThreshold = await stateMachineHelpers.movementAverageOverThreshold(
-      location.radarType,
-      location.locationid,
-      location.movementThreshold,
-    )
+    const movementOverThreshold = await stateMachineHelpers.movementAverageOverThreshold(location.locationid, location.movementThreshold)
 
     switch (state) {
       case STATE.IDLE:

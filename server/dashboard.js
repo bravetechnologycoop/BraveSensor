@@ -211,13 +211,6 @@ async function renderLocationEditPage(req, res) {
     const clients = await db.getClients()
     const currentLocation = await db.getLocationData(req.params.locationId)
 
-    // for the dropdown in the edit screen so it does not display duplicate options
-    if (currentLocation.radarType === 'XeThru') {
-      currentLocation.otherType = 'Innosent'
-    } else {
-      currentLocation.otherType = 'XeThru'
-    }
-
     const viewParams = {
       currentLocation,
       clients: clients.map(client => {
@@ -420,7 +413,6 @@ const validateNewLocation = Validator.body([
   'displayName',
   'doorCoreID',
   'radarCoreID',
-  'radarType',
   'twilioPhone',
   'firmwareStateMachine',
   'clientId',
@@ -461,7 +453,6 @@ async function submitNewLocation(req, res) {
         data.displayName,
         data.doorCoreID,
         data.radarCoreID,
-        data.radarType,
         data.twilioPhone,
         data.firmwareStateMachine,
         data.clientId,
@@ -483,7 +474,6 @@ const validateEditLocation = Validator.body([
   'displayName',
   'doorCoreID',
   'radarCoreID',
-  'radarType',
   'twilioPhone',
   'movementThreshold',
   'durationTimer',
@@ -521,7 +511,6 @@ async function submitEditLocation(req, res) {
         data.displayName,
         data.doorCoreID,
         data.radarCoreID,
-        data.radarType,
         data.twilioPhone,
         data.movementThreshold,
         data.durationTimer,

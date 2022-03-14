@@ -10,7 +10,6 @@ const { ALERT_TYPE, factories, helpers } = require('brave-alert-lib')
 const imports = require('../../index')
 const siren = require('../../siren')
 const im21door = require('../../im21door')
-const RADAR_TYPE = require('../../RadarTypeEnum')
 
 const db = imports.db
 const redis = imports.redis
@@ -21,7 +20,7 @@ const XETHRU_STATE = require('../../SessionStateXethruEnum')
 const SENSOR_EVENT = require('../../SensorEventEnum')
 
 const MOVEMENT_THRESHOLD = 40
-const { firmwareAlert, getRandomArbitrary, getRandomInt, printRandomIntArray, locationDBFactory } = require('../../testingHelpers')
+const { firmwareAlert, getRandomArbitrary, getRandomInt, locationDBFactory } = require('../../testingHelpers')
 const STATE = require('../../stateMachine/SessionStateEnum')
 
 chai.use(chaiHttp)
@@ -35,42 +34,6 @@ const testLocation1PhoneNumber = '+15005550006'
 const door_coreID = 'door_particlecoreid1'
 const radar_coreID = 'radar_particlecoreid1'
 const firstLowBatteryAlert = '2021-03-09T19:37:28.176Z'
-
-async function innosentMovement(coreID, min, max) {
-  try {
-    await chai
-      .request(server)
-      .post('/api/innosent')
-      .send({
-        name: 'Radar',
-        data: `{ "inPhase": "${printRandomIntArray(min, max, 15)}", "quadrature": "${printRandomIntArray(min, max, 15)}"}`,
-        ttl: 60,
-        published_at: '2021-03-09T19:37:28.176Z',
-        coreid: coreID,
-      })
-    await helpers.sleep(50)
-  } catch (e) {
-    helpers.log(e)
-  }
-}
-
-async function innosentSilence(coreID) {
-  try {
-    await chai
-      .request(server)
-      .post('/api/innosent')
-      .send({
-        name: 'Radar',
-        data: `{ "inPhase": "${printRandomIntArray(0, 0, 15)}", "quadrature": "${printRandomIntArray(0, 0, 15)}"}`,
-        ttl: 60,
-        published_at: '2021-03-09T19:37:28.176Z',
-        coreid: coreID,
-      })
-    await helpers.sleep(50)
-  } catch (e) {
-    helpers.log(e)
-  }
-}
 
 async function xeThruSilence(coreID) {
   try {
@@ -377,7 +340,6 @@ describe('Brave Sensor server', () => {
         movementThreshold: MOVEMENT_THRESHOLD,
         doorCoreId: door_coreID,
         radarCoreId: radar_coreID,
-        radarType: RADAR_TYPE.XETHRU,
         isActive: true,
         firmwareStateMachine: false,
         sentLowBatteryAlertAt: firstLowBatteryAlert,
@@ -479,7 +441,6 @@ describe('Brave Sensor server', () => {
         movementThreshold: MOVEMENT_THRESHOLD,
         doorCoreId: door_coreID,
         radarCoreId: radar_coreID,
-        radarType: RADAR_TYPE.XETHRU,
         firmwareStateMachine: false,
         isActive: false,
         clientId: client.id,
@@ -528,7 +489,6 @@ describe('Brave Sensor server', () => {
         movementThreshold: MOVEMENT_THRESHOLD,
         doorCoreId: door_coreID,
         radarCoreId: radar_coreID,
-        radarType: RADAR_TYPE.XETHRU,
         firmwareStateMachine: false,
         isActive: true,
         clientId: client.id,
@@ -569,141 +529,6 @@ describe('Brave Sensor server', () => {
     })
   })
 
-  describe('POST request radar and door events with INS radar and mock im21 door sensor for an active Location', () => {
-    beforeEach(async () => {
-      const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await locationDBFactory(db, {
-        locationid: testLocation1Id,
-        movementThreshold: MOVEMENT_THRESHOLD,
-        doorCoreId: door_coreID,
-        radarCoreId: radar_coreID,
-        radarType: RADAR_TYPE.INNOSENT,
-        isActive: true,
-        clientId: client.id,
-      })
-
-      await im21Door(door_coreID, im21door.createClosedSignal())
-      sandbox.spy(StateMachine, 'getNextState')
-      sandbox.stub(braveAlerter, 'startAlertSession')
-      sandbox.stub(braveAlerter, 'sendSingleAlert')
-    })
-
-    it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
-      const response = await chai
-        .request(server)
-        .post('/api/door')
-        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(200)
-    })
-
-    it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
-      for (let i = 0; i < 5; i += 1) {
-        await innosentSilence(radar_coreID)
-      }
-      const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(75)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(0)
-    })
-
-    it('radar data showing movement for longer than the initial timer, with the door closed, should be saved to redis, and result in a transition to to the DURATION_TIMER state', async () => {
-      for (let i = 0; i < 20; i += 1) {
-        await innosentMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
-      }
-      const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(300)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(0)
-      const latestState = await redis.getLatestState(testLocation1Id)
-      expect(latestState.state).to.equal(STATE.DURATION_TIMER)
-    })
-
-    it('radar data showing movement for longer than the initial timer, with the door closed, radar data should be saved to redis, and result in a transition to to the DURATION_TIMER state, door opening should return it to idle', async () => {
-      for (let i = 0; i < 20; i += 1) {
-        await innosentMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
-      }
-      await im21Door(door_coreID, im21door.createOpenSignal())
-      const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(300)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(0)
-      const latestState = await redis.getLatestState(testLocation1Id)
-      expect(latestState.state).to.equal(STATE.IDLE)
-    })
-
-    it('radar data showing movement should start a Duration timer, and cessation of movement without the door opening should start a Stillness timer and trigger a Stillness alert', async () => {
-      for (let i = 0; i < 20; i += 1) {
-        await innosentMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
-      }
-      for (let i = 0; i < 40; i += 1) {
-        await innosentSilence(radar_coreID)
-      }
-      const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(900)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(1)
-      const session = sessions[0]
-      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
-    })
-
-    it('radar data showing movement should trigger a session, if movement persists without a door opening for longer than the duration threshold, it should trigger an alert', async () => {
-      for (let i = 0; i < 80; i += 1) {
-        await innosentMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
-      }
-      const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(1200)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(1)
-      const session = sessions[0]
-      expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
-    })
-  })
-
-  describe('POST request radar and door events with INS radar and mock im21 door sensor for an inactive Location', () => {
-    beforeEach(async () => {
-      const client = await factories.clientDBFactory(db, { responderPhoneNumber: testLocation1PhoneNumber })
-      await locationDBFactory(db, {
-        locationid: testLocation1Id,
-        movementThreshold: MOVEMENT_THRESHOLD,
-        doorCoreId: door_coreID,
-        radarCoreId: radar_coreID,
-        radarType: RADAR_TYPE.INNOSENT,
-        firmwareStateMachine: false,
-        clientId: client.id,
-      })
-
-      await im21Door(door_coreID, im21door.createClosedSignal())
-    })
-
-    it('should return 200 to a im21 door signal with an unregistered coreID', async () => {
-      const response = await chai
-        .request(server)
-        .post('/api/door')
-        .send({ coreid: 'unregisteredID', data: { data: 'closed', control: 'AA' } })
-      expect(response).to.have.status(200)
-    })
-
-    it('radar data with no movement should be saved to redis, but should not trigger a session', async () => {
-      for (let i = 0; i < 5; i += 1) {
-        await innosentSilence(radar_coreID)
-      }
-      const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(75)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(0)
-    })
-
-    it('radar data showing movement should be saved to redis, but should not trigger a session', async () => {
-      for (let i = 0; i < 15; i += 1) {
-        await innosentMovement(radar_coreID, getRandomInt(MOVEMENT_THRESHOLD + 1, 100), getRandomInt(MOVEMENT_THRESHOLD + 1, 100))
-      }
-      const radarRows = await redis.getInnosentStream(testLocation1Id, '+', '-')
-      expect(radarRows.length).to.equal(225)
-      const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
-      expect(sessions.length).to.equal(0)
-    })
-  })
-
   describe('Express validation of API and form endpoints', () => {
     describe('/api/door endpoint', () => {
       beforeEach(async () => {
@@ -711,7 +536,6 @@ describe('Brave Sensor server', () => {
         await locationDBFactory(db, {
           locationid: testLocation1Id,
           doorCoreId: door_coreID,
-          radarType: RADAR_TYPE.XETHRU,
           firmwareStateMachine: false,
           clientId: client.id,
         })

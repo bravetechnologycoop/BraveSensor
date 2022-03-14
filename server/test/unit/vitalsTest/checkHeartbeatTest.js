@@ -9,7 +9,6 @@ const rewire = require('rewire')
 const { helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const redis = require('../../../db/redis')
-const RADAR_TYPE = require('../../../RadarTypeEnum')
 const { locationFactory } = require('../../../testingHelpers')
 
 const vitals = rewire('../../../vitals')
@@ -59,15 +58,13 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     sandbox.restore()
   })
 
-  describe('when a XeThru device with a server-side state machine and no existing alerts notices that the latest radar message was longer than the threshold', () => {
+  describe('when a device with a server-side state machine and no existing alerts notices that the latest radar message was longer than the threshold', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({ firmwareStateMachine: false, isActive: true, radarType: RADAR_TYPE.XETHRU, sentVitalsAlertAt: null })
+      this.testLocation = locationFactory({ firmwareStateMachine: false, isActive: true, sentVitalsAlertAt: null })
       sandbox.stub(db, 'getActiveServerStateMachineLocations').returns([this.testLocation])
       sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([])
 
       sandbox.stub(redis, 'getLatestXeThruSensorData').returns({ timestamp: excessiveRadarTimestamp })
-
-      sandbox.stub(redis, 'getLatestInnosentSensorData').throws('should not have called redis.getLatestInnosentSensorData')
 
       sandbox.stub(redis, 'getLatestDoorSensorData').returns({ timestamp: notExcessiveDoorTimestamp })
 
@@ -101,15 +98,13 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
   })
 
-  describe('when a XeThru device with a server-side state machine and no existing alerts notices that the latest door message was longer than the threshold', () => {
+  describe('when a device with a server-side state machine and no existing alerts notices that the latest door message was longer than the threshold', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({ firmwareStateMachine: false, isActive: true, radarType: RADAR_TYPE.XETHRU, sentVitalsAlertAt: null })
+      this.testLocation = locationFactory({ firmwareStateMachine: false, isActive: true, sentVitalsAlertAt: null })
       sandbox.stub(db, 'getActiveServerStateMachineLocations').returns([this.testLocation])
       sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([])
 
       sandbox.stub(redis, 'getLatestXeThruSensorData').returns({ timestamp: notExcessiveRadarTimestamp })
-
-      sandbox.stub(redis, 'getLatestInnosentSensorData').throws('should not have called redis.getLatestInnosentSensorData')
 
       sandbox.stub(redis, 'getLatestDoorSensorData').returns({ timestamp: excessiveDoorTimestamp })
 
@@ -143,20 +138,17 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
   })
 
-  describe('when a XeThru device with a server-side state machine and an existing alert is no longer exceeding the door or radar thresholds', () => {
+  describe('when a device with a server-side state machine and an existing alert is no longer exceeding the door or radar thresholds', () => {
     beforeEach(async () => {
       this.testLocation = locationFactory({
         firmwareStateMachine: false,
         isActive: true,
-        radarType: RADAR_TYPE.XETHRU,
         sentVitalsAlertAt: new Date('2020-10-10T10:10:10.000Z'),
       })
       sandbox.stub(db, 'getActiveServerStateMachineLocations').returns([this.testLocation])
       sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([])
 
       sandbox.stub(redis, 'getLatestXeThruSensorData').returns({ timestamp: notExcessiveRadarTimestamp })
-
-      sandbox.stub(redis, 'getLatestInnosentSensorData').throws('should not have called redis.getLatestInnosentSensorData')
 
       sandbox.stub(redis, 'getLatestDoorSensorData').returns({ timestamp: notExcessiveDoorTimestamp })
 
@@ -190,20 +182,17 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
   })
 
-  describe('when a XeThru device with a server-side state machine and an existing alert is still exceeding the door or radar threshold but it has not yet exceeded the subsequent vitals threshold', () => {
+  describe('when a device with a server-side state machine and an existing alert is still exceeding the door or radar threshold but it has not yet exceeded the subsequent vitals threshold', () => {
     beforeEach(async () => {
       this.testLocation = locationFactory({
         firmwareStateMachine: false,
         isActive: true,
-        radarType: RADAR_TYPE.XETHRU,
         sentVitalsAlertAt: new Date(),
       })
       sandbox.stub(db, 'getActiveServerStateMachineLocations').returns([this.testLocation])
       sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([])
 
       sandbox.stub(redis, 'getLatestXeThruSensorData').returns({ timestamp: excessiveRadarTimestamp })
-
-      sandbox.stub(redis, 'getLatestInnosentSensorData').throws('should not have called redis.getLatestInnosentSensorData')
 
       sandbox.stub(redis, 'getLatestDoorSensorData').returns({ timestamp: notExcessiveDoorTimestamp })
 
@@ -237,20 +226,17 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
   })
 
-  describe('when a Xethru device with a server-side state machine and an existing alert is still exceeding the door or radar threshold and has exceeded the subsequent vitals threshold', () => {
+  describe('when a device with a server-side state machine and an existing alert is still exceeding the door or radar threshold and has exceeded the subsequent vitals threshold', () => {
     beforeEach(async () => {
       this.testLocation = locationFactory({
         firmwareStateMachine: false,
         isActive: true,
-        radarType: RADAR_TYPE.XETHRU,
         sentVitalsAlertAt: new Date('2019-10-10'),
       })
       sandbox.stub(db, 'getActiveServerStateMachineLocations').returns([this.testLocation])
       sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([])
 
       sandbox.stub(redis, 'getLatestXeThruSensorData').returns({ timestamp: excessiveRadarTimestamp })
-
-      sandbox.stub(redis, 'getLatestInnosentSensorData').throws('should not have called redis.getLatestInnosentSensorData')
 
       sandbox.stub(redis, 'getLatestDoorSensorData').returns({ timestamp: notExcessiveDoorTimestamp })
 
@@ -283,57 +269,13 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
   })
 
-  describe('when a INS device with a server-side state machine and no existing alerts notices that the latest radar message was longer than the threshold', () => {
+  describe('when a device with a firmware state machine and no existing alerts notices that the latest radar message was longer than the threshold', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({ firmwareStateMachine: false, isActive: true, radarType: RADAR_TYPE.INNOSENT, sentVitalsAlertAt: null })
-      sandbox.stub(db, 'getActiveServerStateMachineLocations').returns([this.testLocation])
-      sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([])
-
-      sandbox.stub(redis, 'getLatestXeThruSensorData').throws('should not have called redis.getLatestXeThruSensorData')
-
-      sandbox.stub(redis, 'getLatestInnosentSensorData').returns({ timestamp: excessiveRadarTimestamp })
-
-      sandbox.stub(redis, 'getLatestDoorSensorData').returns({ timestamp: notExcessiveDoorTimestamp })
-
-      sandbox.stub(redis, 'getLatestHeartbeat').throws('should not have called redis.getLatestHeartbeat')
-
-      await vitals.checkHeartbeat()
-    })
-
-    it('should send a radar disconnection message to Sentry', () => {
-      expect(helpers.logSentry).to.have.been.calledOnceWithExactly(`Radar sensor down at ${this.testLocation.locationid}`)
-    })
-
-    it('should send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(this.testLocation.locationid, this.testLocation.displayName)
-    })
-
-    it('should not send any disconnection reminder messages to the client', () => {
-      expect(this.sendDisconnectionReminderStub).to.not.be.called
-    })
-
-    it('should not send any reconnection messages to the client', () => {
-      expect(this.sendReconnectionMessageStub).to.not.be.called
-    })
-
-    it('should update the sentVitalsAlertAt to the current time', () => {
-      expect(db.updateSentAlerts).to.be.calledOnceWithExactly(this.testLocation.locationid, true)
-    })
-
-    it('should not log any errors', () => {
-      expect(helpers.logError).to.not.be.called
-    })
-  })
-
-  describe('when a INS device with a firmware state machine and no existing alerts notices that the latest radar message was longer than the threshold', () => {
-    beforeEach(async () => {
-      this.testLocation = locationFactory({ firmwareStateMachine: true, isActive: true, radarType: RADAR_TYPE.INNOSENT, sentVitalsAlertAt: null })
+      this.testLocation = locationFactory({ firmwareStateMachine: true, isActive: true, sentVitalsAlertAt: null })
       sandbox.stub(db, 'getActiveServerStateMachineLocations').returns([])
       sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
 
       sandbox.stub(redis, 'getLatestXeThruSensorData').throws('should not have called redis.getLatestXeThruSensorData')
-
-      sandbox.stub(redis, 'getLatestInnosentSensorData').throws('should not have called redis.getLatestInnosentSensorData')
 
       sandbox.stub(redis, 'getLatestDoorSensorData').throws('should not have called redis.getLatestDoorSensorData')
 
@@ -367,20 +309,17 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
   })
 
-  describe('when a INS device with a firmware state machine and an existing alert is no longer exceeding radar thresholds', () => {
+  describe('when a device with a firmware state machine and an existing alert is no longer exceeding radar thresholds', () => {
     beforeEach(async () => {
       this.testLocation = locationFactory({
         firmwareStateMachine: true,
         isActive: true,
-        radarType: RADAR_TYPE.INNOSENT,
         sentVitalsAlertAt: new Date('2020-10-10T10:10:10.000Z'),
       })
       sandbox.stub(db, 'getActiveServerStateMachineLocations').returns([])
       sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
 
       sandbox.stub(redis, 'getLatestXeThruSensorData').throws('should not have called redis.getLatestXeThruSensorData')
-
-      sandbox.stub(redis, 'getLatestInnosentSensorData').throws('should not have called redis.getLatestInnosentSensorData')
 
       sandbox.stub(redis, 'getLatestDoorSensorData').throws('should not have called redis.getLatestDoorSensorData')
 
@@ -414,20 +353,17 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
   })
 
-  describe('when a INS device with a firmware state machine and an existing alert is still exceeding the radar threshold but it has not yet exceeded the subsequent vitals threshold', () => {
+  describe('when a device with a firmware state machine and an existing alert is still exceeding the radar threshold but it has not yet exceeded the subsequent vitals threshold', () => {
     beforeEach(async () => {
       this.testLocation = locationFactory({
         firmwareStateMachine: true,
         isActive: true,
-        radarType: RADAR_TYPE.INNOSENT,
         sentVitalsAlertAt: new Date(),
       })
       sandbox.stub(db, 'getActiveServerStateMachineLocations').returns([])
       sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
 
       sandbox.stub(redis, 'getLatestXeThruSensorData').throws('should not have called redis.getLatestXeThruSensorData')
-
-      sandbox.stub(redis, 'getLatestInnosentSensorData').throws('should not have called redis.getLatestInnosentSensorData')
 
       sandbox.stub(redis, 'getLatestDoorSensorData').throws('should not have called redis.getLatestDoorSensorData')
 
@@ -461,20 +397,17 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
   })
 
-  describe('when a Xethru device with a server-side state machine and an existing alert is still exceeding the radar threshold and has exceeded the subsequent vitals threshold', () => {
+  describe('when a device with a firmware side state machine and an existing alert is still exceeding the radar threshold and has exceeded the subsequent vitals threshold', () => {
     beforeEach(async () => {
       this.testLocation = locationFactory({
         firmwareStateMachine: true,
         isActive: true,
-        radarType: RADAR_TYPE.INNOSENT,
         sentVitalsAlertAt: new Date('2019-10-10'),
       })
       sandbox.stub(db, 'getActiveServerStateMachineLocations').returns([])
       sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
 
       sandbox.stub(redis, 'getLatestXeThruSensorData').throws('should not have called redis.getLatestXeThruSensorData')
-
-      sandbox.stub(redis, 'getLatestInnosentSensorData').throws('should not have called redis.getLatestInnosentSensorData')
 
       sandbox.stub(redis, 'getLatestDoorSensorData').throws('should not have called redis.getLatestDoorSensorData')
 
