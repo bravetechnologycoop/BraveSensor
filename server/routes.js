@@ -7,13 +7,15 @@ function configureRoutes(app) {
   app.get('/clients/new', dashboard.sessionChecker, dashboard.renderNewClientPage) // Must be configured before /clients/:id
   app.get('/clients/:id', dashboard.sessionChecker, dashboard.renderClientDetailsPage)
   app.get('/clients/:id/edit', dashboard.sessionChecker, dashboard.renderClientEditPage)
+  app.get('/clients/:id/vitals', dashboard.sessionChecker, dashboard.renderClientVitalsPage)
   app.get('/dashboard', dashboard.sessionChecker, dashboard.renderDashboardPage)
+  app.get('/export-data', dashboard.sessionChecker, dashboard.downloadCsv)
   app.get('/locations/new', dashboard.sessionChecker, dashboard.renderNewLocationPage)
   app.get('/locations/:locationId', dashboard.sessionChecker, dashboard.renderLocationDetailsPage)
   app.get('/locations/:locationId/edit', dashboard.sessionChecker, dashboard.renderLocationEditPage)
   app.get('/login', dashboard.renderLoginPage)
   app.get('/logout', dashboard.submitLogout)
-  app.get('/export-data', dashboard.sessionChecker, dashboard.downloadCsv)
+  app.get('/vitals', dashboard.sessionChecker, dashboard.renderVitalsPage)
 
   app.post('/clients', dashboard.validateNewClient, dashboard.submitNewClient)
   app.post('/clients/:id', dashboard.validateEditClient, dashboard.submitEditClient)

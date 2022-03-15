@@ -8,7 +8,6 @@ const StateData = require('./StateData')
 const XeThruData = require('./XeThruData')
 
 const SESSIONSTATE_DOOR = require('../SessionStateDoorEnum')
-const HeartbeatData = require('./HeartbeatData')
 
 let client
 
@@ -108,27 +107,6 @@ async function addIM21DoorSensorData(locationid, doorSignal, control) {
 // ignore comments included to allow arguments to be split across lines in pairs
 // prettier-ignore
 /* eslint-disable function-call-argument-newline */
-async function addEdgeDeviceHeartbeat(locationid, doorMissedMessagesCount, doorLowBatteryFlag, doorTimeSinceLastHeartbeat, resetReason, stateTransitionsArray) {
-  client.xadd(
-    `heartbeat:${locationid}`, 'MAXLEN', '~', '10000', '*',
-    'doorMissedMessagesCount', doorMissedMessagesCount,
-    'doorLowBatteryFlag', doorLowBatteryFlag,
-    'doorTimeSinceLastHeartbeat', doorTimeSinceLastHeartbeat,
-    'resetReason', resetReason,
-    'stateTransitionsArray', JSON.stringify(stateTransitionsArray)
-  )
-}
-
-async function getLatestHeartbeat(locationid) {
-  const rows = await client.xrevrange(`heartbeat:${locationid}`, '+', '-', 'count', 1)
-  if (!rows || rows.length === 0) {
-    return null
-  }
-  return new HeartbeatData(rows[0])
-}
-// ignore comments included to allow arguments to be split across lines in pairs
-// prettier-ignore
-/* eslint-disable function-call-argument-newline */
 function addXeThruSensorData(locationid, state, rpm, distance, mov_f, mov_s) {
   client.xadd(
     `xethru:${locationid}`, 'MAXLEN', '~', '604800', '*',
@@ -167,7 +145,6 @@ async function getLatestXeThruSensorData(locationid) {
 }
 
 module.exports = {
-  addEdgeDeviceHeartbeat,
   addIM21DoorSensorData,
   addStateMachineData,
   addXeThruSensorData,
@@ -182,7 +159,6 @@ module.exports = {
   getStates,
   getStatesWindow,
   getLatestDoorSensorData,
-  getLatestHeartbeat,
   getLatestXeThruSensorData,
   getLatestState,
 }

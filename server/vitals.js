@@ -1,5 +1,8 @@
+/* eslint-disable no-continue */
+
 // Third-party dependencies
 const Validator = require('express-validator')
+const { DateTime } = require('luxon')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
@@ -7,6 +10,13 @@ const redis = require('./db/redis')
 const db = require('./db/db')
 
 let braveAlerter
+
+// Expects JS Date objects and returns an int
+function differenceInSeconds(date1, date2) {
+  const dateTime1 = DateTime.fromJSDate(date1)
+  const dateTime2 = DateTime.fromJSDate(date2)
+  return dateTime1.diff(dateTime2, 'seconds').seconds
+}
 
 function setupVitals(braveAlerterObj) {
   braveAlerter = braveAlerterObj
@@ -46,25 +56,31 @@ async function sendReconnectionMessage(locationid, displayName) {
 
 // Heartbeat Helper Functions
 async function checkHeartbeat() {
+  const doorThresholdSeconds = helpers.getEnvVar('DOOR_THRESHOLD_SECONDS')
+  const radarThresholdSeconds = helpers.getEnvVar('RADAR_THRESHOLD_SECONDS')
+  const subsequentVitalsAlertThresholdSeconds = helpers.getEnvVar('SUBSEQUENT_VITALS_ALERT_THRESHOLD')
+
+  const currentDBTime = await db.getCurrentTime()
+
   const backendStateMachineLocations = await db.getActiveServerStateMachineLocations()
   for (const location of backendStateMachineLocations) {
-    let latestRadar
-    let latestDoor
+    if (!location.client.isActive || !location.isActive) {
+      continue
+    }
 
     try {
       const xeThruData = await redis.getLatestXeThruSensorData(location.locationid)
-      latestRadar = convertToSeconds(xeThruData.timestamp)
+      const latestRadar = convertToSeconds(xeThruData.timestamp)
       const doorData = await redis.getLatestDoorSensorData(location.locationid)
-      latestDoor = convertToSeconds(doorData.timestamp)
-      const redisTime = await redis.getCurrentTimeinSeconds()
-      const radarDelay = redisTime - latestRadar
-      const doorDelay = redisTime - latestDoor
+      const latestDoor = convertToSeconds(doorData.timestamp)
+      const currentRedisTime = await redis.getCurrentTimeinSeconds()
+      const radarDelay = currentRedisTime - latestRadar
+      const doorDelay = currentRedisTime - latestDoor
 
-      const doorHeartbeatExceeded = doorDelay > helpers.getEnvVar('DOOR_THRESHOLD_SECONDS')
-      const radarHeartbeatExceeded = radarDelay > helpers.getEnvVar('RADAR_THRESHOLD_SECONDS')
+      const doorHeartbeatExceeded = doorDelay > doorThresholdSeconds
+      const radarHeartbeatExceeded = radarDelay > radarThresholdSeconds
 
       if (doorHeartbeatExceeded || radarHeartbeatExceeded) {
-        const dbTime = await db.getCurrentTime()
         if (location.sentVitalsAlertAt === null) {
           if (doorHeartbeatExceeded) {
             helpers.logSentry(`Door sensor down at ${location.locationid}`)
@@ -74,7 +90,7 @@ async function checkHeartbeat() {
           }
           await db.updateSentAlerts(location.locationid, true)
           sendDisconnectionMessage(location.locationid, location.displayName)
-        } else if (dbTime - location.sentVitalsAlertAt > helpers.getEnvVar('SUBSEQUENT_VITALS_ALERT_THRESHOLD') * 1000) {
+        } else if (currentDBTime - location.sentVitalsAlertAt > subsequentVitalsAlertThresholdSeconds * 1000) {
           await db.updateSentAlerts(location.locationid, true)
           sendDisconnectionReminder(location.locationid, location.displayName)
         }
@@ -90,29 +106,36 @@ async function checkHeartbeat() {
 
   const firmwareStateMachineLocations = await db.getActiveFirmwareStateMachineLocations()
   for (const location of firmwareStateMachineLocations) {
+    if (!location.client.isActive || !location.isActive) {
+      continue
+    }
+
     try {
-      const latestHeartbeat = await redis.getLatestHeartbeat(location.locationid)
+      const sensorsVital = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
 
-      if (latestHeartbeat) {
-        const heartbeatTimestamp = convertToSeconds(latestHeartbeat.timestamp)
+      if (sensorsVital) {
+        const radarDelayInSeconds = differenceInSeconds(currentDBTime, sensorsVital.createdAt)
+        const doorDelayInSeconds = differenceInSeconds(currentDBTime, sensorsVital.doorLastSeenAt)
 
-        const redisTime = await redis.getCurrentTimeinSeconds()
-        const delay = redisTime - heartbeatTimestamp
+        const radarHeartbeatExceeded = radarDelayInSeconds > radarThresholdSeconds
+        const doorHeartbeatExceeded = doorDelayInSeconds > doorThresholdSeconds
 
-        const heartbeatExceeded = delay > helpers.getEnvVar('RADAR_THRESHOLD_SECONDS')
-
-        if (heartbeatExceeded) {
-          const dbTime = await db.getCurrentTime()
+        if (doorHeartbeatExceeded || radarHeartbeatExceeded) {
           if (location.sentVitalsAlertAt === null) {
-            helpers.logSentry(`System disconnected at ${location.locationid}`)
+            if (doorHeartbeatExceeded) {
+              helpers.logSentry(`Door sensor down at ${location.locationid}`)
+            }
+            if (radarHeartbeatExceeded) {
+              helpers.logSentry(`Radar sensor down at ${location.locationid}`)
+            }
             await db.updateSentAlerts(location.locationid, true)
             sendDisconnectionMessage(location.locationid, location.displayName)
-          } else if (dbTime - location.sentVitalsAlertAt > helpers.getEnvVar('SUBSEQUENT_VITALS_ALERT_THRESHOLD') * 1000) {
+          } else if (currentDBTime - location.sentVitalsAlertAt > subsequentVitalsAlertThresholdSeconds * 1000) {
             await db.updateSentAlerts(location.locationid, true)
             sendDisconnectionReminder(location.locationid, location.displayName)
           }
         } else if (location.sentVitalsAlertAt !== null) {
-          helpers.logSentry(`${location.locationid} reconnected after reason: ${latestHeartbeat.resetReason}`)
+          helpers.logSentry(`${location.locationid} reconnected after reason: ${sensorsVital.resetReason}`)
           await db.updateSentAlerts(location.locationid, false)
           sendReconnectionMessage(location.locationid, location.displayName)
         }
@@ -135,14 +158,18 @@ function convertStateArrayToObject(stateTransition) {
 }
 
 // Sends a low battery alert if the time since the last alert is null or greater than the timeout
-async function sendLowBatteryAlert(location, client) {
-  const currentTime = await db.getCurrentTime(client)
+async function sendLowBatteryAlert(location, pgClient) {
+  const currentTime = await db.getCurrentTime(pgClient)
   const timeoutInMillis = parseInt(helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT'), 10) * 1000
 
-  if (location.sentLowBatteryAlertAt === null || currentTime - location.sentLowBatteryAlertAt >= timeoutInMillis) {
+  if (
+    location.isActive &&
+    location.client.isActive &&
+    (location.sentLowBatteryAlertAt === null || currentTime - location.sentLowBatteryAlertAt >= timeoutInMillis)
+  ) {
     helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
-    await sendSingleAlert(location.locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`, client)
-    await db.updateLowBatteryAlertTime(location.locationid, client)
+    await sendSingleAlert(location.locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`, pgClient)
+    await db.updateLowBatteryAlertTime(location.locationid, pgClient)
   }
 }
 
@@ -164,22 +191,28 @@ async function handleHeartbeat(req, res) {
         await db.commitTransaction(pgClient)
         res.status(200).json(errorMessage)
       } else {
+        const currentDbTime = await db.getCurrentTime(pgClient)
+
         const message = JSON.parse(req.body.data)
         const doorMissedMessagesCount = message.doorMissedMsg
         const doorLowBatteryFlag = message.doorLowBatt
-        const doorTimeSinceLastHeartbeat = message.doorLastHeartbeat
+        const doorTimeSinceLastHeartbeat = new Date(currentDbTime)
+        doorTimeSinceLastHeartbeat.setMilliseconds(currentDbTime.getMilliseconds() - message.doorLastHeartbeat)
         const resetReason = message.resetReason
         const stateTransitionsArray = message.states.map(convertStateArrayToObject)
+
         if (doorLowBatteryFlag) {
           await sendLowBatteryAlert(location, pgClient)
         }
-        await redis.addEdgeDeviceHeartbeat(
+
+        await db.logSensorsVital(
           location.locationid,
           doorMissedMessagesCount,
           doorLowBatteryFlag,
           doorTimeSinceLastHeartbeat,
           resetReason,
           stateTransitionsArray,
+          pgClient,
         )
         await db.commitTransaction(pgClient)
         res.status(200).json('OK')
