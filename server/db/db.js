@@ -5,6 +5,7 @@ const pg = require('pg')
 const { CHATBOT_STATE, Client, helpers } = require('brave-alert-lib')
 const Session = require('../Session')
 const Location = require('../Location')
+const SensorsVital = require('../SensorsVital')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -38,6 +39,13 @@ function createLocationFromRow(r, allClients) {
 
   // prettier-ignore
   return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.twilio_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
+}
+
+function createSensorsVitalFromRow(r, allLocations) {
+  const location = allLocations.filter(l => l.locationid === r.locationid)[0]
+
+  // prettier-ignore
+  return new SensorsVital(r.id, r.missed_door_messages, r.is_door_battery_low, r.door_last_seen_at, r.reset_reason, r.state_transitions, r.created_at, location)
 }
 
 async function beginTransaction() {
@@ -1010,6 +1018,119 @@ async function getNewNotificationsCountByAlertApiKey(alertApiKey, pgClient) {
   }
 }
 
+async function getRecentSensorsVitals(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getRecentSensorsVitals',
+      `
+      SELECT a.*
+      FROM (
+        SELECT DISTINCT ON (l.display_name) sv.*
+        FROM sensors_vitals AS sv
+        LEFT JOIN locations AS l ON l.locationid = sv.locationid
+        ORDER BY l.display_name, sv.created_at DESC
+      ) AS a
+      ORDER BY a.created_at
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results !== undefined && results.rows.length > 0) {
+      const allLocations = await getLocations(pgClient)
+      return results.rows.map(r => createSensorsVitalFromRow(r, allLocations))
+    }
+  } catch (err) {
+    helpers.logError(err.toString())
+  }
+
+  return []
+}
+
+async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getRecentSensorsVitals',
+      `
+      SELECT a.*
+      FROM (
+        SELECT DISTINCT ON (l.display_name) sv.*
+        FROM sensors_vitals AS sv
+        LEFT JOIN locations AS l ON l.locationid = sv.locationid
+        WHERE l.client_id = $1
+        ORDER BY l.display_name, sv.created_at DESC
+      ) AS a
+      ORDER BY a.created_at
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results !== undefined && results.rows.length > 0) {
+      const allLocations = await getLocations(pgClient)
+      return results.rows.map(r => createSensorsVitalFromRow(r, allLocations))
+    }
+  } catch (err) {
+    helpers.logError(err.toString())
+  }
+
+  return []
+}
+
+async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getMostRecentSensorsVitalWithLocationid',
+      `
+      SELECT *
+      FROM sensors_vitals
+      WHERE locationid = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+      `,
+      [locationid],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    const allLocations = await getLocations(pgClient)
+    return createSensorsVitalFromRow(results.rows[0], allLocations)
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function logSensorsVital(locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'logSensorsVital',
+      `
+      INSERT INTO sensors_vitals (locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+      `,
+      [locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions],
+      pool,
+      pgClient,
+    )
+
+    if (results.rows.length > 0) {
+      const allLocations = await getLocations(pgClient)
+      return createSensorsVitalFromRow(results.rows[0], allLocations)
+    }
+  } catch (err) {
+    helpers.logError(err.toString())
+  }
+
+  return null
+}
+
 async function createNotification(clientId, subject, body, isAcknowledged, pgClient) {
   try {
     await helpers.runQuery(
@@ -1019,6 +1140,26 @@ async function createNotification(clientId, subject, body, isAcknowledged, pgCli
       VALUES ($1, $2, $3, $4)
       `,
       [clientId, subject, body, isAcknowledged],
+      pool,
+      pgClient,
+    )
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function clearSensorsVitals(pgClient) {
+  if (!helpers.isTestEnvironment()) {
+    helpers.log('warning - tried to clear sensors vitals table outside of a test environment!')
+    return
+  }
+
+  try {
+    await helpers.runQuery(
+      'clearSensorsVitals',
+      `DELETE FROM sensors_vitals
+        `,
+      [],
       pool,
       pgClient,
     )
@@ -1167,6 +1308,7 @@ async function clearTables(pgClient) {
     return
   }
 
+  await clearSensorsVitals(pgClient)
   await clearSessions(pgClient)
   await clearNotifications(pgClient)
   await clearLocations(pgClient)
@@ -1178,47 +1320,52 @@ async function close() {
 }
 
 module.exports = {
-  getMostRecentSession,
-  getSessionWithSessionId,
-  getSessionWithSessionIdAndAlertApiKey,
-  getHistoryOfSessions,
-  getActiveAlertsByAlertApiKey,
-  getHistoricAlertsByAlertApiKey,
-  getUnrespondedSessionWithLocationId,
-  createSession,
-  saveSession,
-  getDataForExport,
-  getMostRecentSessionPhone,
-  getLocationFromParticleCoreID,
-  getLocationsFromAlertApiKey,
-  getLocationsFromClientId,
-  getLocationData,
-  getActiveServerStateMachineLocations,
-  getActiveFirmwareStateMachineLocations,
-  getLocations,
-  updateLocation,
-  createLocation,
+  beginTransaction,
+  clearClientWithDisplayName,
+  clearClients,
   clearLocation,
-  updateSentAlerts,
+  clearLocations,
+  clearNotifications,
+  clearSensorsVitals,
   clearSessions,
   clearSessionsFromLocation,
-  clearLocations,
-  createClient,
-  clearClients,
-  clearClientWithDisplayName,
   clearTables,
-  getClients,
-  getClientWithClientId,
-  updateClient,
   close,
-  getAllSessionsFromLocation,
-  beginTransaction,
   commitTransaction,
-  rollbackTransaction,
-  getCurrentTime,
+  createClient,
+  createLocation,
   createLocationFromBrowserForm,
-  updateLowBatteryAlertTime,
-  clearNotifications,
   createNotification,
+  createSession,
+  getActiveAlertsByAlertApiKey,
+  getActiveFirmwareStateMachineLocations,
+  getActiveServerStateMachineLocations,
+  getAllSessionsFromLocation,
+  getClientWithClientId,
+  getClients,
+  getCurrentTime,
+  getDataForExport,
+  getHistoricAlertsByAlertApiKey,
+  getHistoryOfSessions,
+  getLocationData,
+  getLocationFromParticleCoreID,
+  getLocations,
+  getLocationsFromAlertApiKey,
+  getLocationsFromClientId,
+  getMostRecentSensorsVitalWithLocationid,
+  getMostRecentSession,
+  getMostRecentSessionPhone,
   getNewNotificationsCountByAlertApiKey,
+  getRecentSensorsVitals,
+  getRecentSensorsVitalsWithClientId,
+  getSessionWithSessionId,
+  getSessionWithSessionIdAndAlertApiKey,
+  getUnrespondedSessionWithLocationId,
+  logSensorsVital,
+  rollbackTransaction,
+  saveSession,
+  updateClient,
+  updateLocation,
+  updateLowBatteryAlertTime,
+  updateSentAlerts,
 }

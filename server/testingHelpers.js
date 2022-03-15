@@ -4,6 +4,7 @@ const { fill } = require('lodash')
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
 const Location = require('./Location')
+const SensorsVital = require('./SensorsVital')
 
 function getRandomInt(minValue, maxValue) {
   const min = Math.ceil(minValue)
@@ -71,6 +72,20 @@ function locationFactory(overrides = {}) {
   )
 }
 
+function sensorsVitalFactory(overrides = {}) {
+  // prettier-ignore
+  return new SensorsVital(
+    overrides.id !== undefined ? overrides.id : 'sensorsVitalId',
+    overrides.missedDoorMessages !== undefined ? overrides.missedDoorMessages : 0,
+    overrides.isDoorBatteryLow !== undefined ? overrides.isDoorBatteryLow : false,
+    overrides.doorLastSeenAt !== undefined ? overrides.doorLastSeenAt : '2021-05-05T19:37:28.176Z',
+    overrides.resetReason !== undefined ? overrides.resetReason : 'NONE',
+    overrides.stateTransitions !== undefined ? overrides.stateTransitions : '[]',
+    overrides.createdAt !== undefined ? overrides.createdAt : '2021-05-05T19:37:50.176Z',
+    overrides.location !== undefined ? overrides.location : locationFactory(),
+  )
+}
+
 // Sends chai as a parameter so I don't need to include it as a regular dependency in package.json
 async function firmwareAlert(chai, server, coreID, sensorEvent) {
   let response
@@ -97,4 +112,5 @@ module.exports = {
   locationFactory,
   printRandomIntArray,
   randomXethruStream,
+  sensorsVitalFactory,
 }

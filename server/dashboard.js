@@ -12,6 +12,7 @@ const { ALERT_TYPE } = require('brave-alert-lib')
 const db = require('./db/db')
 
 const clientPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientPage.mst`, 'utf-8')
+const clientVitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientVitals.mst`, 'utf-8')
 const landingCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/landingCSSPartial.mst`, 'utf-8')
 const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/landingPage.mst`, 'utf-8')
 const locationsCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationsCSSPartial.mst`, 'utf-8')
@@ -22,6 +23,7 @@ const newClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newCl
 const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newLocation.mst`, 'utf-8')
 const updateClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateClient.mst`, 'utf-8')
 const updateLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateLocation.mst`, 'utf-8')
+const vitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/vitals.mst`, 'utf-8')
 
 function getAlertTypeDisplayName(alertType) {
   let displayName = ''
@@ -88,6 +90,75 @@ async function submitLogout(req, res) {
     res.redirect('/')
   } else {
     res.redirect('/login')
+  }
+}
+
+async function renderVitalsPage(req, res) {
+  try {
+    const clients = await db.getClients()
+
+    const viewParams = {
+      sensors: [],
+      clients,
+      currentDateTime: helpers.formatDateTimeForDashboard(await db.getCurrentTime()),
+    }
+
+    const sensorsVitals = await db.getRecentSensorsVitals()
+    for (const sensorsVital of sensorsVitals) {
+      viewParams.sensors.push({
+        clientName: sensorsVital.location.client.displayName,
+        displayName: sensorsVital.location.displayName,
+        sensorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.createdAt),
+        sensorLastSeenAgo: await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db),
+        doorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt),
+        doorLastSeenAgo: await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db),
+        isDoorBatteryLow: sensorsVital.isDoorBatteryLow,
+        isActive: sensorsVital.location.client.isActive && sensorsVital.location.isActive,
+      })
+    }
+
+    res.send(Mustache.render(vitalsTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
+  } catch (err) {
+    helpers.logError(err)
+    res.status(500).send()
+  }
+}
+
+async function renderClientVitalsPage(req, res) {
+  try {
+    const allClients = await db.getClients()
+    const currentClient = allClients.filter(client => client.id === req.params.id)[0]
+
+    const viewParams = {
+      sensors: [],
+      clients: allClients,
+      currentDateTime: helpers.formatDateTimeForDashboard(await db.getCurrentTime()),
+    }
+
+    if (currentClient !== undefined) {
+      viewParams.currentClientName = currentClient.displayName
+      viewParams.currentClientId = currentClient.id
+
+      const sensorsVitals = await db.getRecentSensorsVitalsWithClientId(currentClient.id)
+      for (const sensorsVital of sensorsVitals) {
+        viewParams.sensors.push({
+          displayName: sensorsVital.location.displayName,
+          sensorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.createdAt),
+          sensorLastSeenAgo: await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db),
+          doorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt),
+          doorLastSeenAgo: await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db),
+          isDoorBatteryLow: sensorsVital.isDoorBatteryLow,
+          isActive: currentClient.isActive && sensorsVital.location.isActive,
+        })
+      }
+    } else {
+      viewParams.viewMessage = 'No client to display'
+    }
+
+    res.send(Mustache.render(clientVitalsTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
+  } catch (err) {
+    helpers.logError(err)
+    res.status(500).send()
   }
 }
 
@@ -551,12 +622,14 @@ module.exports = {
   redirectToHomePage,
   renderClientDetailsPage,
   renderClientEditPage,
+  renderClientVitalsPage,
   renderDashboardPage,
   renderLocationDetailsPage,
   renderLocationEditPage,
   renderLoginPage,
   renderNewClientPage,
   renderNewLocationPage,
+  renderVitalsPage,
   sessionChecker,
   setupDashboardSessions,
   submitEditClient,

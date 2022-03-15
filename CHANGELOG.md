@@ -14,6 +14,9 @@ the code was deployed.
 ### Added
 
 - Proxy endpoints to ClickUp's API (CU-21ghk0x).
+- Client Vitals pages to the Dashboard (CU-mmzh6b).
+- Vitals page to the Dashboard (CU-mmzh6b).
+- Automatic text message when the Boron door sensor has been offline for more than the threshold (CU-1d42h1g).
 
 ### Changed
 

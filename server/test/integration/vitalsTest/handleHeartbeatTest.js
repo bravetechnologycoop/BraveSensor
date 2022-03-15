@@ -7,7 +7,7 @@ const sinon = require('sinon')
 
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
-const { braveAlerter, db, redis, server } = require('../../../index')
+const { braveAlerter, db, server } = require('../../../index')
 const { locationDBFactory } = require('../../../testingHelpers')
 
 chai.use(chaiHttp)
@@ -46,7 +46,6 @@ async function lowBatteryHeartbeat(coreId) {
 describe('siren.js integration tests: handleHeartbeat', () => {
   describe('POST request heartbeat events with mock INS Firmware State Machine when battery level is normal', () => {
     beforeEach(async () => {
-      await redis.clearKeys()
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
@@ -61,11 +60,10 @@ describe('siren.js integration tests: handleHeartbeat', () => {
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.spy(helpers, 'logSentry')
-      sandbox.stub(redis, 'addEdgeDeviceHeartbeat')
+      sandbox.stub(db, 'logSensorsVital')
     })
 
     afterEach(async () => {
-      await redis.clearKeys()
       await db.clearTables()
       sandbox.restore()
     })
@@ -84,9 +82,9 @@ describe('siren.js integration tests: handleHeartbeat', () => {
       expect(response).to.have.status(200)
     })
 
-    it('should call addEdgeDeviceHeartbeat', async () => {
+    it('should call logSensorsVital', async () => {
       await normalHeartbeat(radar_coreID)
-      expect(redis.addEdgeDeviceHeartbeat).to.be.calledOnce
+      expect(db.logSensorsVital).to.be.calledOnce
     })
 
     it('should not call logSentry', async () => {
@@ -109,7 +107,6 @@ describe('siren.js integration tests: handleHeartbeat', () => {
 
   describe('POST request heartbeat events with mock INS Firmware State Machine when battery level is low', () => {
     beforeEach(async () => {
-      await redis.clearKeys()
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
@@ -125,11 +122,10 @@ describe('siren.js integration tests: handleHeartbeat', () => {
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.spy(helpers, 'logSentry')
-      sandbox.stub(redis, 'addEdgeDeviceHeartbeat')
+      sandbox.stub(db, 'logSensorsVital')
     })
 
     afterEach(async () => {
-      await redis.clearKeys()
       await db.clearTables()
       sandbox.restore()
     })
@@ -148,9 +144,9 @@ describe('siren.js integration tests: handleHeartbeat', () => {
       expect(response).to.have.status(200)
     })
 
-    it('should call addEdgeDeviceHeartbeat', async () => {
+    it('should call logSensorsVital', async () => {
       await normalHeartbeat(radar_coreID)
-      expect(redis.addEdgeDeviceHeartbeat).to.be.called
+      expect(db.logSensorsVital).to.be.called
     })
 
     it('should update sentLowBatteryAlertAt if the period since the last alert is greater than the timeout', async () => {
