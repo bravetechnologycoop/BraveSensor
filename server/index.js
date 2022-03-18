@@ -4,6 +4,7 @@ const fs = require('fs')
 const https = require('https')
 const cors = require('cors')
 const Validator = require('express-validator')
+const { createProxyMiddleware } = require('http-proxy-middleware')
 
 // In-house dependencies
 const { ALERT_TYPE, factories, helpers } = require('brave-alert-lib')
@@ -19,23 +20,40 @@ const dashboard = require('./dashboard')
 const siren = require('./siren')
 const vitals = require('./vitals')
 
-// Start Express App
-const app = express()
-
 // Open Redis connection
 redis.connect()
 
 // Configure braveAlerter
 const braveAlerter = new BraveAlerterConfigurator().createBraveAlerter()
 
+// Start Express App
+const app = express()
+
+// Configure and add ClickUp API proxy
+// Ref: https://github.com/chimurai/http-proxy-middleware/blob/master/examples/express/index.js
+const jsonPlaceholderProxy = createProxyMiddleware({
+  target: 'https://api.clickup.com',
+  changeOrigin: true,
+  secure: false,
+  logLevel: 'warn',
+  pathRewrite: { '^/clickupapi': '/api' },
+})
+app.use('/clickupapi', jsonPlaceholderProxy)
+
 // Body Parser Middleware
-app.use(express.json())
+app.use(express.json()) // http-proxy-middleware stops working if this middleware is added before it (ref: https://github.com/chimurai/http-proxy-middleware/issues/458#issuecomment-718919866)
 app.use(express.urlencoded({ extended: true })) // Set to true to allow the body to contain any type of value
 
 // Cors Middleware (Cross Origin Resource Sharing)
 app.use(cors())
 
 dashboard.setupDashboardSessions(app)
+
+// Add routes
+routes.configureRoutes(app)
+
+// Add BraveAlerter's routes ( /alert/* )
+app.use(braveAlerter.getRouter())
 
 siren.setupSiren(braveAlerter)
 
@@ -105,12 +123,6 @@ async function handleAlert(location, alertType) {
     }
   }
 }
-
-// Add routes
-routes.configureRoutes(app)
-
-// Add BraveAlerter's routes ( /alert/* )
-app.use(braveAlerter.getRouter())
 
 // Handler for incoming XeThru POST requests
 app.post('/api/xethru', Validator.body(['coreid', 'state', 'rpm', 'mov_f', 'mov_s']).exists(), async (req, res) => {

@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Proxy endpoints to ClickUp's API (CU-21ghk0x).
+
 ### Changed
 
 - Added missing rows to the `clients` table and started using them.
