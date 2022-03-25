@@ -55,6 +55,40 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessage', () => {
     expect(returnMessage).to.equal('Thank you')
   })
 
+  it('should get message when NAMING_STARTED => NAMING_STARTED', () => {
+    const returnMessage = this.alertStateMachine.getReturnMessage(
+      CHATBOT_STATE.NAMING_STARTED,
+      CHATBOT_STATE.NAMING_STARTED,
+      ['Cat0', 'Cat1'],
+      'funNewName',
+    )
+    expect(returnMessage).to.equal(
+      'Sorry, that name is invalid.\n\nTo give your Sensor a name now, please reply with the name.\nTo give your Sensor a name later, please reply with "Later".',
+    )
+  })
+
+  it('should get message when NAMING_STARTED => NAMING_POSTPONED', () => {
+    const returnMessage = this.alertStateMachine.getReturnMessage(
+      CHATBOT_STATE.NAMING_STARTED,
+      CHATBOT_STATE.NAMING_POSTPONED,
+      ['Cat0', 'Cat1'],
+      'funNewName',
+    )
+    expect(returnMessage).to.equal('No problem. You will be asked to name this Brave Sensor again next time it triggers.')
+  })
+
+  it('should get message when NAMING_STARTED => NAMING_COMPLETED', () => {
+    const returnMessage = this.alertStateMachine.getReturnMessage(
+      CHATBOT_STATE.NAMING_STARTED,
+      CHATBOT_STATE.NAMING_COMPLETED,
+      ['Cat0', 'Cat1'],
+      'funNewName',
+    )
+    expect(returnMessage).to.equal(
+      'Great! This Brave Sensor is now called "funNewName".\nTo change this name, please email clientsupport@brave.coop.\n\nWe recommend that you save this phone number as a contact with the same name.',
+    )
+  })
+
   it('should get default message if given something funky', () => {
     const returnMessage = this.alertStateMachine.getReturnMessage('something funky', CHATBOT_STATE.COMPLETED, ['Cat0', 'Cat1'])
 

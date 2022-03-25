@@ -163,10 +163,21 @@ class BraveAlerterConfigurator {
     return count
   }
 
-  getReturnMessage(fromAlertState, toAlertState, incidentCategories) {
+  getReturnMessage(fromAlertState, toAlertState, incidentCategories, deviceName) {
     let returnMessage
 
     switch (fromAlertState) {
+      case CHATBOT_STATE.NAMING_STARTED:
+        if (toAlertState === CHATBOT_STATE.NAMING_POSTPONED) {
+          returnMessage = 'No problem. You will be asked to name this Brave Sensor again next time it triggers.'
+        } else if (toAlertState === CHATBOT_STATE.NAMING_STARTED) {
+          returnMessage =
+            'Sorry, that name is invalid.\n\nTo give your Sensor a name now, please reply with the name.\nTo give your Sensor a name later, please reply with "Later".'
+        } else if (toAlertState === CHATBOT_STATE.NAMING_COMPLETED) {
+          returnMessage = `Great! This Brave Sensor is now called "${deviceName}".\nTo change this name, please email clientsupport@brave.coop.\n\nWe recommend that you save this phone number as a contact with the same name.`
+        }
+        break
+
       case CHATBOT_STATE.STARTED:
       case CHATBOT_STATE.WAITING_FOR_REPLY:
         returnMessage = `Please respond with the number corresponding to the incident. \n${this.createResponseStringFromIncidentCategories(
