@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [5.0.0] - 2022-04-18
+
 ### Added
 
 - Proxy endpoints to ClickUp's API (CU-21ghk0x).
@@ -315,7 +317,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.5.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v5.0.0...HEAD
+[5.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.5.0...v5.0.0
 [4.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.4.0...v4.5.0
 [4.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.3.0...v4.4.0
 [4.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.2.0...v4.3.0
