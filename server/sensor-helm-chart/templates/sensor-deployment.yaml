@@ -39,6 +39,11 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: TWILIO_TOKEN
+          - name: TWILIO_MESSAGING_SERVICE_SID
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: TWILIO_MESSAGING_SERVICE_SID
           - name: WEB_USERNAME
             valueFrom:
               secretKeyRef:
@@ -149,6 +154,42 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: SUBSEQUENT_VITALS_ALERT_THRESHOLD
+
+          - name: CLICKUP_TEAM_NAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: CLICKUP_TEAM_NAME
+          - name: CLICKUP_TEAM_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: CLICKUP_TEAM_ID
+          - name: PA_API_KEY_PRIMARY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: PA_API_KEY_PRIMARY
+          - name: PA_API_KEY_SECONDARY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: PA_API_KEY_SECONDARY
+          - name: PA_PASSWORD_PRIMARY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: PA_PASSWORD_PRIMARY
+          - name: PA_PASSWORD_SECONDARY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: PA_PASSWORD_SECONDARY
+          - name: DOMAIN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: DOMAIN
           - name: ENVIRONMENT
             value: {{ include "sensor.fullname" . | quote }}
           - name: RELEASE

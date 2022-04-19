@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Endpoints for use by PA (CU-21ghk0x).
+
 ### Security
 
 - Updated dependencies.

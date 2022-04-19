@@ -870,10 +870,11 @@ async function updateClient(
 // prettier-ignore
 async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, twilioNumber, firmwareStateMachine, clientId, pgClient) {
   try {
-    await helpers.runQuery('createLocationFromBrowserForm',
+    const results = await helpers.runQuery('createLocationFromBrowserForm',
       `
       INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, twilio_number, firmware_state_machine, client_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
       `,
       [
         locationid,
@@ -888,7 +889,14 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
       pgClient,
     )
 
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+    
     helpers.log(`New location inserted into Database: ${locationid}`)
+
+    const allClients = await getClients(pgClient)
+    return createLocationFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
