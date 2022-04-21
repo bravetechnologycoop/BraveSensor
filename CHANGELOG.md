@@ -15,6 +15,10 @@ the code was deployed.
 
 - Endpoints for use by PA (CU-21ghk0x).
 
+## Changed
+
+- Upgraded to Node 16 (CU-28na1cx).
+
 ### Security
 
 - Updated dependencies.

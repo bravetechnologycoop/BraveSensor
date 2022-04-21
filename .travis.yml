@@ -1,7 +1,7 @@
 dist: xenial
 
 language: node_js
-node_js: 'node' # node version specified in .nvmrc
+# node_js: node version specified in .nvmrc
 
 # install dependencies
 install:
