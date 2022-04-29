@@ -11,6 +11,11 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- Changed antenna source on the Boron to use internal antenna instead of the external antenna (CU-28kqh3y).
+- Increased BLE scan results to 25 from 10 previously (CU-28uxgq6).
+
 ## [5.0.0] - 2022-04-18
 
 ### Added
