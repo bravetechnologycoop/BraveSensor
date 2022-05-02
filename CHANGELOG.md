@@ -18,6 +18,8 @@ the code was deployed.
 ## Changed
 
 - Upgraded to Node 16 (CU-28na1cx).
+- Changed antenna source on the Boron to use internal antenna instead of the external antenna (CU-28kqh3y).
+- Increased BLE scan results to 25 from 10 previously (CU-28uxgq6).
 
 ### Security
 
