@@ -143,7 +143,7 @@ void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorDat
 //**********threads*****************
 void threadBLEScanner(void *param) {
   
-  const unsigned int SCAN_RESULT_MAX = 10;
+  const unsigned int SCAN_RESULT_MAX = 25;
   BleScanResult scanResults[SCAN_RESULT_MAX];
   doorData scanThreadDoorData;
   unsigned char doorAdvertisingData[BLE_MAX_ADV_DATA_LEN]; 
