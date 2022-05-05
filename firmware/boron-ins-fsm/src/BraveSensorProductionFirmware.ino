@@ -12,7 +12,7 @@
 
 #define DEBUG_LEVEL LOG_LEVEL_INFO
 #define BRAVE_FIRMWARE_VERSION 50100 //see versioning notes in the readme
-#define BRAVE_PRODUCT_ID 14807 //14807 = beta units, 15054 = production units
+#define BRAVE_PRODUCT_ID 14807 //14807 = beta units, 15479 = production units
 
 PRODUCT_ID(BRAVE_PRODUCT_ID); //you get this number off the particle console, see readme for instructions
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION); //must be an int, see versioning notes above
