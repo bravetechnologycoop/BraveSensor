@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [5.1.0] - 2022-05-05
+
 ### Added
 
 - Endpoints for use by PA (CU-21ghk0x).
@@ -331,7 +333,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v5.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v5.1.0...HEAD
+[5.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v5.0.0...v5.1.0
 [5.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.5.0...v5.0.0
 [4.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.4.0...v4.5.0
 [4.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.3.0...v4.4.0
