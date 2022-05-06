@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor.svg?branch=main)](https://travis-ci.com/bravetechnologycoop/BraveSensor)
 
-# How to release a new version of BraveSensor Server
+# How to release a new version of BraveSensor Server and Firmware
 
 ## 1. Update git to reflect the new release
 
@@ -56,55 +56,157 @@ then create it from the correct `.env` file (for example, on the Sensors Admin s
 
 `kubectl create secret generic <your-secret-name> --from-env-file=<path-to-env-file>`
 
-## 4. Deploy changes to the Kubernetes Cluster
+## 4. Deploy and run the smoke tests on Staging
 
 We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us to deploy different instances of the application corresponding to dev, staging, and production environments as different 'releases'. Before updating production, we run smoke tests to verify that there's nothing obviously wrong with a release candidate.
-
-### Deploy and run the smoke tests on Staging
 
 1. Run `ssh brave@sensors-admin.brave.coop`
 
 1. cd into the `~/BraveSensor/server` directory and run `git checkout production && git pull origin production` to get the latest version of the helm chart
 
-1. Run the command `helm upgrade staging --set secretName=sensor-staging --set image.tag=<your new container tag> ~/BraveSensor/server/sensor-helm-chart` to deploy the latest version to staging
+1. Run the command `helm upgrade staging --set secretName=sensor-staging ~/BraveSensor/server/sensor-helm-chart` to deploy the latest version to staging
 
 1. Run the smoke test script as described [below](#running-smoke-tests-on-the-kubernetes-cluster)
 
 1. Verify that the deployment shows the expected behavior before proceeding
 
-### Update production
+## 5. Deploy the firmware changes and run a test on the BetaTest Borons
 
-1. If you determined that the database changes require downtime:
+1. on your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
 
-   1. Send a notification to all the responder phones informing them of the downtime
+1. run `git checkout production && git pull origin production` to get the latest version of the the code
+
+1. click Target --> "Configure for device" and type `2.0.0` to choose the OS and then `boron` to choose the device
+
+1. click Compile --> "Local Compile"
+
+1. copy the generated `/target/2.0.0/boron/boron-ins-fsm.bin` file somewhere to keep for reference. Rename to `v<version number>\_dev.bin` (for example `v50100_dev.bin`)
+
+1. in your browser navigate to Particle Console --> Sandbox --> BetaTest Borons --> Firmware
+
+   1. Upload the firmware: Click "Upload", fill in the following, and click "Upload":
+
+      - Version number = <version number>
+
+      - Title = v<version number> <envrionment>
+
+      - Description - <leave blank>
+
+      - Drag and drop or upload the generated `.bin` file
+
+1. Go to Devices
+
+   1. open a device that is online and click "Edit"
+
+   1. In the firmware dropdown, select the newly uploaded firmware, check the box "Flash now", and click "Save"
+
+1. Go back to Firmware
+
+   1. Hover over your new version, click on "Release firmware", fill in the following, and click "Next"
+
+      1. Release target = "Product default" to deploy to all Beta Borons
+
+      1. Select "Intelligent"
+
+   1. Read, verify, check the box, and click "Release this firmware"
+
+1. Trigger a test alert using a real BetaTest Boron device
+
+## 6. Update production server
+
+1. If you determined that this deployment's changes require downtime:
+
+   1. Send a notification to all the responder phones informing them of the downtime. For example: "Notice: Your Brave Sensor System is down for maintenance. During this time, you may not receive bathroom alerts. You will receive another text message when everything is back online. Thank you for your patience. Have a nice day!"
 
    1. Take the production server offline `helm uninstall production`
 
 1. Update the production DB and secrets, as necessary
 
-1. Run the command `helm upgrade production ~/BraveSensor/server/sensor-helm-chart`
+1. If the deployment's changes did _not_ require downtime,
 
-1. If you determined that the database changes require downtime:
+   1. run the command `helm upgrade production ~/BraveSensor/server/sensor-helm-chart`.
 
-   1. Send a notification to all the responder phones informing them that everything is back online
+   Otherwise
+
+   1. run the command `helm install production ~/BraveSensor/server/sensor-helm-chart`.
+
+   1. Send a notification to all the responder phones informing them that everything is back online. For example: "Notice: Your Brave Sensor System is now back online and functioning normally. Thank you!"
+
+## 7. Update production firmware
+
+1. on your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
+
+1. run `git checkout production && git pull origin production` to get the latest version of the the code
+
+1. in `BraveSensorProductionFirmware.ino`, change `BRAVE_PRODUCT_ID` to the ID of the "Production Sensor Devices" project (`15479`) [NOTE: do NOT commit this change]
+
+1. click Target --> "Configure for device" and type `2.0.0` to choose the OS and then `boron` to choose the device
+
+1. click Compile --> "Local Compile"
+
+1. copy the generated `/target/2.0.0/boron/boron-ins-fsm.bin` file somewhere to keep for reference. Rename to `v<version number>\_production.bin` (for example `v50100_production.bin`)
+
+1. in your browser navigate to Particle Console --> Brave Technology Coop --> Production Sensor Devices --> Firmware
+
+   1. Upload the firmware: Click "Upload", fill in the following, and click "Upload":
+
+      - Version number = <version number>
+
+      - Title = v<version number> <envrionment>
+
+      - Description - <leave blank>
+
+      - Drag and drop or upload the generated `.bin` file
+
+1. Go to Devices
+
+   1. open a test device that is online and click "Edit"
+
+   1. In the firmware dropdown, select the newly uploaded firmware, check the box "Flash now", and click "Save"
+
+1. Go back to Firmware
+
+   1. Hover over your new version, click on "Release firmware", fill in the following, and click "Next"
+
+      1. Release target = "Product default" (or a set of groups, if doing a staged rollout) to deploy to all production Borons
+
+      1. Select "Intelligent"
+
+   1. Read, verify, check the box, and click "Release this firmware"
+
+## 8. Celebrate
 
 1. Post a message to the `#sensor-aa-general` Slack channel letting everyone know that the deployment is finished and list the changes in this deployment from the `CHANGELOG`
 
 # Deploying to the staging or development environment
 
-1. Run `ssh brave@sensors-admin.brave.coop`
-
 #### To deploy to staging
 
+1. Run `ssh brave@sensors-admin.brave.coop`
+1. Run the command `helm install staging --set secretName=sensor-staging --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
+
+#### To redeploy to staging
+
+1. Run `ssh brave@sensors-admin.brave.coop`
 1. Run the command `helm upgrade staging --set secretName=sensor-staging --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
 
 #### To deploy to development
 
+1. Run `ssh brave@sensors-admin.brave.coop`
+1. Run the command `helm intsall dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
+
+#### To redeploy to development
+
+1. Run `ssh brave@sensors-admin.brave.coop`
 1. Run the command `helm upgrade dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
 
-# Build and push a new container manually
+# Buliding and pushing containers to the Container Registry
 
-Note that a new container is built and pushed automatically by Travis each time there is a successful build.
+Our Docker containers are stored on a Digital Ocean Container Registry. Every time Travis finishes the `push container` job, a container (with that code named with the first 7 digits of the git hash) will be available in the registry. When deploying to production, we always want to use one of these Travis-generated versions.
+
+## Build and push a new container manually
+
+Sometimes during development and debugging, it is useful to build and push new container images manually because this is much faster than waiting for Travis. Containers generated this way should not be used in production deployments.
 
 1. Install Docker locally (https://docs.docker.com/get-docker/ and, if you are running Linux,
    https://docs.docker.com/engine/install/linux-postinstall/)
@@ -117,7 +219,7 @@ Note that a new container is built and pushed automatically by Travis each time 
    ./build.sh
    ```
 
-## Running Smoke Tests on the Kubernetes Cluster
+# Running Smoke Tests on the Kubernetes Cluster
 
 Once a build is deployed to the cluster, you can test basic aspects of its functionality by running the `smoketest.js` script on your local machine in the `BraveSensor/server` directory. The script takes three parameters, a url for a deployment, a recipient phone number, and a Twilio number.:
 
@@ -130,7 +232,7 @@ The twilio number must have its SMS webhook pointing at the server you're runnin
 The script will take a few minutes to conclude. The expected behavior is for a location to be created, and a session which results from a 'Stillness' alert to the phone number provided for a XeThru + Server-side State Machine sensor and then a second time for an INS + Firmware State Machine sensor.
 
 You can get further details about the behaviour of the build by watching logs for the application with:
-`kubectl logs -f --timestamps deployment/staging-sensor-server`
+`kubectl logs -f --timestamps deploy/<env>-sensor-server`
 and by watching the behavior of redis with:
 `kubectl exec deploy/redis-dev redis-cli monitor`
 
@@ -171,7 +273,7 @@ Unit tests are written using the [Mocha](https://mochajs.org/) JS test framework
 To run the tests locally:
 
 ```
-npm install
+npm ci
 npm run test
 ```
 
@@ -217,8 +319,7 @@ To ssh onto the `sensors-admin` server
 ssh brave@sensors-admin.brave.coop
 ```
 
-The `sudo` password is on 1Password --> ODetect Credentials --> Login - sensors-admin
-(cluster management) server.
+The `sudo` password is on 1Password --> Brave Sensor Credentials --> Sensors Admin server.
 
 ## Adding public keys to the admin server
 
@@ -232,11 +333,11 @@ Access is restricted to machines whose public key has been added to the server's
 
 If you get the error
 
-```error: You must be logged in to the server (Unauthorized)```
+`error: You must be logged in to the server (Unauthorized)`
 
 when you try to run any `kubectl` or `helm` commands. It's possible that your `doctl` access token has expired or was deleted. To see if that's the case, in run
 
-```doctl auth init```
+`doctl auth init`
 
 You will know that this is the case, if you get a response like this:
 
@@ -256,7 +357,7 @@ To fix this problem:
 
    `doctl auth init --access-token <new access token>`
 
-3. Open up the Cluster in Digital Ocean and navigate to Step 2 of the Getting Started Guide (https://cloud.digitalocean.com/kubernetes/clusters/565044a4-6b9d-4f08-859b-c42a6272a038?showGettingStarted=true&i=c5171f). Copy and paste the "Automated" command that looks like 
+3. Open up the Cluster in Digital Ocean and navigate to Step 2 of the Getting Started Guide (https://cloud.digitalocean.com/kubernetes/clusters/565044a4-6b9d-4f08-859b-c42a6272a038?showGettingStarted=true&i=c5171f). Copy and paste the "Automated" command that looks like
 
    `doctl kubernetes cluster kubeconfig save <guid>`
 
@@ -278,7 +379,7 @@ To access a database shell
 
 1. Log in to Digital Ocean
 
-1. Navigate to Databases --> odetect-db-jul-22-backup
+1. Navigate to Databases --> `odetect-db-jul-22-backup`
 
 1. In the Connection Details box:
 
