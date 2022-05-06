@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Indexes on `sessions.locationid` and `sensors_vitals.locationid` (CU-2atyr1z).
+
 ### Fixed
 
 - Added `sensors_vitals` to the list of tables that is locked during a DB transaction (CU-2atyr1z).
