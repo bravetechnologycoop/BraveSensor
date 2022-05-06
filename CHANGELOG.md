@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Fixed
+
+- Added `sensors_vitals` to the list of tables that is locked during a DB transaction (CU-2atyr1z).
+
 ## [5.1.0] - 2022-05-05
 
 ### Added
