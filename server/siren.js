@@ -114,7 +114,7 @@ async function handleSirenEscalated(req, res) {
 
         const session = await db.getUnrespondedSessionWithLocationId(location.locationid, pgClient)
         if (session) {
-          const alertMessage = `There is an unresponded siren. Please check on the bathroom at ${location.displayName}.`
+          const alertMessage = `There is an unresponded siren. Please check on ${location.displayName}.`
           for (const fallbackPhoneNumber of location.client.fallbackPhoneNumbers) {
             await braveAlerter.sendSingleAlert(fallbackPhoneNumber, location.client.fromPhoneNumber, alertMessage)
           }

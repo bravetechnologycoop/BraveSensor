@@ -106,7 +106,7 @@ describe('siren.js integration tests: handleSirenEscalated', () => {
       expect(braveAlerter.sendSingleAlert).to.be.calledWithExactly(
         this.fallbackNumber,
         this.fromPhoneNumber,
-        `There is an unresponded siren. Please check on the bathroom at ${this.locationName}.`,
+        `There is an unresponded siren. Please check on ${this.locationName}.`,
       )
     })
 
