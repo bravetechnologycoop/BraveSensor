@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Link to the door sensor battery replacement video in the low battery alert (CU-25e7zqf).
+
 ### Changed
 
 - Chatbot text messages no longer assume that the Sensor is installed in a bathroom (CU-271q62d).

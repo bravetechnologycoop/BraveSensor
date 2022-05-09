@@ -168,7 +168,11 @@ async function sendLowBatteryAlert(location, pgClient) {
     (location.sentLowBatteryAlertAt === null || currentTime - location.sentLowBatteryAlertAt >= timeoutInMillis)
   ) {
     helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
-    await sendSingleAlert(location.locationid, `The battery for the ${location.displayName} door sensor is low, and needs replacing.`, pgClient)
+    await sendSingleAlert(
+      location.locationid,
+      `The battery for the ${location.displayName} door sensor is low, and needs replacing.\n\nTo watch a video showing how to replace the battery, go to https://bit.ly/sensor-battery`,
+      pgClient,
+    )
     await db.updateLowBatteryAlertTime(location.locationid, pgClient)
   }
 }
