@@ -19,6 +19,10 @@ the code was deployed.
 
 - Chatbot text messages no longer assume that the Sensor is installed in a bathroom (CU-271q62d).
 
+### Removed
+
+- Auto-refresh from Vitals Dashboard pages (CU-2atyr1z).
+
 ## [5.2.0] - 2022-05-09
 
 ### Added
