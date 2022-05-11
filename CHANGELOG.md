@@ -14,6 +14,7 @@ the code was deployed.
 ### Added
 
 - Link to the door sensor battery replacement video in the low battery alert (CU-25e7zqf).
+- Sensors Vitals cache table of only the most recent heartbeat from each locationid (CU-2atyr1z).
 
 ### Changed
 

@@ -55,7 +55,7 @@ async function beginTransaction() {
     pgClient = await pool.connect()
     await pgClient.query('BEGIN')
 
-    await pgClient.query('LOCK TABLE clients, notifications, sessions, locations, sensors_vitals')
+    await pgClient.query('LOCK TABLE clients, notifications, sessions, locations, sensors_vitals, sensors_vitals_cache')
   } catch (e) {
     helpers.logError(`Error running the beginTransaction query: ${e}`)
     if (pgClient) {
@@ -1031,14 +1031,9 @@ async function getRecentSensorsVitals(pgClient) {
     const results = await helpers.runQuery(
       'getRecentSensorsVitals',
       `
-      SELECT a.*
-      FROM (
-        SELECT DISTINCT ON (l.display_name) sv.*
-        FROM sensors_vitals AS sv
-        LEFT JOIN locations AS l ON l.locationid = sv.locationid
-        ORDER BY l.display_name, sv.created_at DESC
-      ) AS a
-      ORDER BY a.created_at
+      SELECT *
+      FROM sensors_vitals_cache
+      ORDER BY created_at
       `,
       [],
       pool,
@@ -1059,17 +1054,13 @@ async function getRecentSensorsVitals(pgClient) {
 async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getRecentSensorsVitals',
+      'getRecentSensorsVitalsWithClientId',
       `
-      SELECT a.*
-      FROM (
-        SELECT DISTINCT ON (l.display_name) sv.*
-        FROM sensors_vitals AS sv
-        LEFT JOIN locations AS l ON l.locationid = sv.locationid
-        WHERE l.client_id = $1
-        ORDER BY l.display_name, sv.created_at DESC
-      ) AS a
-      ORDER BY a.created_at
+      SELECT sv.*
+      FROM sensors_vitals_cache sv
+      LEFT JOIN locations l on sv.locationid = l.locationid
+      WHERE l.client_id = $1
+      ORDER BY sv.created_at
       `,
       [clientId],
       pool,
@@ -1093,7 +1084,7 @@ async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
       'getMostRecentSensorsVitalWithLocationid',
       `
       SELECT *
-      FROM sensors_vitals
+      FROM sensors_vitals_cache
       WHERE locationid = $1
       ORDER BY created_at DESC
       LIMIT 1
@@ -1117,7 +1108,7 @@ async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
 async function logSensorsVital(locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'logSensorsVital',
+      'logSensorsVitalLog',
       `
       INSERT INTO sensors_vitals (locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions)
       VALUES ($1, $2, $3, $4, $5, $6)
@@ -1166,6 +1157,26 @@ async function clearSensorsVitals(pgClient) {
     await helpers.runQuery(
       'clearSensorsVitals',
       `DELETE FROM sensors_vitals
+        `,
+      [],
+      pool,
+      pgClient,
+    )
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function clearSensorsVitalsCache(pgClient) {
+  if (!helpers.isTestEnvironment()) {
+    helpers.log('warning - tried to clear sensors vitals cache table outside of a test environment!')
+    return
+  }
+
+  try {
+    await helpers.runQuery(
+      'clearSensorsVitalsCache',
+      `DELETE FROM sensors_vitals_cache
         `,
       [],
       pool,
@@ -1316,6 +1327,7 @@ async function clearTables(pgClient) {
     return
   }
 
+  await clearSensorsVitalsCache(pgClient)
   await clearSensorsVitals(pgClient)
   await clearSessions(pgClient)
   await clearNotifications(pgClient)
@@ -1335,6 +1347,7 @@ module.exports = {
   clearLocations,
   clearNotifications,
   clearSensorsVitals,
+  clearSensorsVitalsCache,
   clearSessions,
   clearSessionsFromLocation,
   clearTables,
