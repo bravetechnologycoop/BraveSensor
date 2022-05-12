@@ -49,10 +49,18 @@ function createSensorsVitalFromRow(r, allLocations) {
 }
 
 async function beginTransaction() {
+  if (helpers.isDbLogging()) {
+    helpers.log('STARTED: beginTransaction')
+  }
+
   let pgClient = null
 
   try {
     pgClient = await pool.connect()
+    if (helpers.isDbLogging()) {
+      helpers.log('CONNECTED: beginTransaction')
+    }
+
     await pgClient.query('BEGIN')
 
     await pgClient.query('LOCK TABLE clients, notifications, sessions, locations, sensors_vitals, sensors_vitals_cache')
@@ -65,12 +73,20 @@ async function beginTransaction() {
         helpers.logError(`beginTransaction: Error rolling back the errored transaction: ${err}`)
       }
     }
+  } finally {
+    if (helpers.isDbLogging()) {
+      helpers.log('COMPLETED: beginTransaction')
+    }
   }
 
   return pgClient
 }
 
 async function commitTransaction(pgClient) {
+  if (helpers.isDbLogging()) {
+    helpers.log('STARTED: commitTransaction')
+  }
+
   try {
     await pgClient.query('COMMIT')
   } catch (e) {
@@ -81,10 +97,18 @@ async function commitTransaction(pgClient) {
     } catch (err) {
       helpers.logError(`commitTransaction: Error releasing client: ${err}`)
     }
+
+    if (helpers.isDbLogging()) {
+      helpers.log('COMPLETED: commitTransaction')
+    }
   }
 }
 
 async function rollbackTransaction(pgClient) {
+  if (helpers.isDbLogging()) {
+    helpers.log('STARTED: rollbackTransaction')
+  }
+
   try {
     await pgClient.query('ROLLBACK')
   } catch (e) {
@@ -94,6 +118,10 @@ async function rollbackTransaction(pgClient) {
       pgClient.release()
     } catch (err) {
       helpers.logError(`rollbackTransaction: Error releasing client: ${err}`)
+    }
+
+    if (helpers.isDbLogging()) {
+      helpers.log('COMPLETED: rollbackTransaction')
     }
   }
 }
@@ -1108,7 +1136,7 @@ async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
 async function logSensorsVital(locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'logSensorsVitalLog',
+      'logSensorsVital',
       `
       INSERT INTO sensors_vitals (locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions)
       VALUES ($1, $2, $3, $4, $5, $6)

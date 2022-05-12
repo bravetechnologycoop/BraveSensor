@@ -185,6 +185,11 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: PA_PASSWORD_SECONDARY
+          - name: IS_DB_LOGGING
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: IS_DB_LOGGING
           - name: DOMAIN
             valueFrom:
               secretKeyRef:
