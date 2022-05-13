@@ -15,3 +15,6 @@ target/
 workspaceconfig.code-workspace
 
 ConsoleTests
+
+#ignore generated files
+src/BraveSensorProductionFirmware.cpp

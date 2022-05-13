@@ -170,20 +170,11 @@ void writeToINS3331(unsigned char function_code){
 unsigned char calculateChecksum(unsigned char myArray[], int arrayLength){
 
   unsigned char checksum = 0x00;
-
-  switch(arrayLength){
-    case 14:
-      for(int i = 1; i <= 11; i++){
-        checksum = checksum + myArray[i];
-      }
-      break; 
-    case 15:
-      for(int i = 2; i <= 12; i++){
-        checksum = checksum + myArray[i];
-      }
-      break; 
-  } //end switch
-
+  
+  for(int i = 2; i <= 12; i++){
+    checksum = checksum + myArray[i];
+  }
+  
   return checksum;
 
 }
