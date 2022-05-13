@@ -21,6 +21,7 @@ the code was deployed.
 ### Changed
 
 - Chatbot text messages no longer assume that the Sensor is installed in a bathroom (CU-271q62d).
+- Sensors Vitals pages now show sensors which have never sent a heartbeat message.
 
 ### Removed
 

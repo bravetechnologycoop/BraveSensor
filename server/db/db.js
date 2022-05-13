@@ -1059,8 +1059,9 @@ async function getRecentSensorsVitals(pgClient) {
     const results = await helpers.runQuery(
       'getRecentSensorsVitals',
       `
-      SELECT *
-      FROM sensors_vitals_cache
+      SELECT l.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at
+      FROM locations l
+      LEFT JOIN sensors_vitals_cache sv on l.locationid = sv.locationid
       ORDER BY created_at
       `,
       [],
@@ -1084,9 +1085,9 @@ async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
     const results = await helpers.runQuery(
       'getRecentSensorsVitalsWithClientId',
       `
-      SELECT sv.*
-      FROM sensors_vitals_cache sv
-      LEFT JOIN locations l on sv.locationid = l.locationid
+      SELECT l.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at
+      FROM locations l
+      LEFT JOIN sensors_vitals_cache sv on sv.locationid = l.locationid
       WHERE l.client_id = $1
       ORDER BY sv.created_at
       `,

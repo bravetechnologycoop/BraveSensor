@@ -108,11 +108,13 @@ async function renderVitalsPage(req, res) {
       viewParams.sensors.push({
         client: sensorsVital.location.client,
         location: sensorsVital.location,
-        sensorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.createdAt),
-        sensorLastSeenAgo: await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db),
-        doorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt),
-        doorLastSeenAgo: await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db),
-        isDoorBatteryLow: sensorsVital.isDoorBatteryLow,
+        sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
+        sensorLastSeenAgo:
+          sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
+        doorLastSeenAt: sensorsVital.doorLastSeenAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt) : 'Never',
+        doorLastSeenAgo:
+          sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
+        isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
         isActive: sensorsVital.location.client.isActive && sensorsVital.location.isActive,
       })
     }
@@ -143,11 +145,13 @@ async function renderClientVitalsPage(req, res) {
       for (const sensorsVital of sensorsVitals) {
         viewParams.sensors.push({
           location: sensorsVital.location,
-          sensorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.createdAt),
-          sensorLastSeenAgo: await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db),
-          doorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt),
-          doorLastSeenAgo: await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db),
-          isDoorBatteryLow: sensorsVital.isDoorBatteryLow,
+          sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
+          sensorLastSeenAgo:
+            sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
+          doorLastSeenAt: sensorsVital.doorLastSeenAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt) : 'Never',
+          doorLastSeenAgo:
+            sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
+          isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
           isActive: currentClient.isActive && sensorsVital.location.isActive,
         })
       }

@@ -46,7 +46,7 @@
                     <tbody>
                         {{#sensors}}
                             <tr class="table-data">
-                                <td><a href="/locations/{{location.locationid}}">{{location.displayName}}</a></td>
+                                <th scope="row"><a href="/locations/{{location.locationid}}">{{location.displayName}}</a></th>
                                 <td data-toggle="tooltip" data-placement="top" title="{{sensorLastSeenAt}}">{{sensorLastSeenAgo}}</td>
                                 <td data-toggle="tooltip" data-placement="top" title="{{doorLastSeenAt}}">{{doorLastSeenAgo}}</td>
                                 <td>{{isDoorBatteryLow}}</td>
