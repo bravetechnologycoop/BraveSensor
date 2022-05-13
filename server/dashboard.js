@@ -106,8 +106,8 @@ async function renderVitalsPage(req, res) {
     const sensorsVitals = await db.getRecentSensorsVitals()
     for (const sensorsVital of sensorsVitals) {
       viewParams.sensors.push({
-        clientName: sensorsVital.location.client.displayName,
-        displayName: sensorsVital.location.displayName,
+        client: sensorsVital.location.client,
+        location: sensorsVital.location,
         sensorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.createdAt),
         sensorLastSeenAgo: await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db),
         doorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt),
@@ -142,7 +142,7 @@ async function renderClientVitalsPage(req, res) {
       const sensorsVitals = await db.getRecentSensorsVitalsWithClientId(currentClient.id)
       for (const sensorsVital of sensorsVitals) {
         viewParams.sensors.push({
-          displayName: sensorsVital.location.displayName,
+          location: sensorsVital.location,
           sensorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.createdAt),
           sensorLastSeenAgo: await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db),
           doorLastSeenAt: helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt),
