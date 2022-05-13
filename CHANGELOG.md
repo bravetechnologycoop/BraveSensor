@@ -29,6 +29,7 @@ the code was deployed.
 - Sensors Vitals cache table of only the most recent heartbeat from each locationid (CU-2atyr1z).
 - Ability to turn on/off DB debug logs (CU-2atyr1z).
 - Links on the Vitals the Client Vitals page to the Client and Location pages.
+- Updated to Device OS 3.3.0 to use `BLE.scanwithfilter()` for door sensor scanning (CU-2bffw4q)
 
 ### Changed
 
@@ -36,8 +37,6 @@ the code was deployed.
 - Sensors Vitals pages now show sensors which have never sent a heartbeat message.
 
 ### Removed
-
-- Auto-refresh from Vitals Dashboard pages (CU-2atyr1z).
 
 ## [5.2.0] - 2022-05-09
 

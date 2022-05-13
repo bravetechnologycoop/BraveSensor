@@ -143,10 +143,12 @@ void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorDat
 //**********threads*****************
 void threadBLEScanner(void *param) {
   
-  const unsigned int SCAN_RESULT_MAX = 25;
-  BleScanResult scanResults[SCAN_RESULT_MAX];
   doorData scanThreadDoorData;
   unsigned char doorAdvertisingData[BLE_MAX_ADV_DATA_LEN]; 
+  unsigned long lastTestPublish = 0;
+  char debugMessage[622] = ""; 
+  BleScanFilter filter; 
+  // filter.deviceName("iSensor"); 
   
   //setting scan timeout (how long scan runs for) to 50ms = 5 centiseconds
   //using millis() to measure, timeout(1) = 13-14 ms. timout(5) = 53-54ms
@@ -155,7 +157,7 @@ void threadBLEScanner(void *param) {
   while(true){
     //filter has to be remade each time, as globalDoorId (from eeprom) is usually read while this thread is already in while loop
     BleScanFilter filter; 
-    char address[sizeof("B8:7C:6F:5C:23:49")]; 
+    char address[18]; 
     sprintf(address, "B8:7C:6F:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
     filter.deviceName("iSensor ").address(address); 
 
@@ -163,7 +165,7 @@ void threadBLEScanner(void *param) {
     Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter); 
     
     //loop over all devices found in the BLE scan
-    for (auto scanResult : scanResults) {
+    for (BleScanResult scanResult : scanResults) {
 
       //place advertising data in doorAdvertisingData buffer array
       scanResult.advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN);
