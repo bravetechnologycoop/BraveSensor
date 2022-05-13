@@ -16,6 +16,7 @@ the code was deployed.
 - Link to the door sensor battery replacement video in the low battery alert (CU-25e7zqf).
 - Sensors Vitals cache table of only the most recent heartbeat from each locationid (CU-2atyr1z).
 - Ability to turn on/off DB debug logs (CU-2atyr1z).
+- Links on the Vitals the Client Vitals page to the Client and Location pages.
 
 ### Changed
 
