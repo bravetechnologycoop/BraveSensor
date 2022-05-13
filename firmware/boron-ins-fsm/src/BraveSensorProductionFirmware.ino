@@ -11,7 +11,11 @@
 #include "tpl5010watchdog.h"
 
 #define DEBUG_LEVEL LOG_LEVEL_INFO
+<<<<<<< HEAD
 #define BRAVE_FIRMWARE_VERSION 50300 //see versioning notes in the readme
+=======
+#define BRAVE_FIRMWARE_VERSION 50204 //see versioning notes in the readme
+>>>>>>> 23ff350 (updated code to work with device os 3.3.0)
 #define BRAVE_PRODUCT_ID 14807 //14807 = beta units, 15479 = production units
 
 PRODUCT_ID(BRAVE_PRODUCT_ID); //you get this number off the particle console, see readme for instructions

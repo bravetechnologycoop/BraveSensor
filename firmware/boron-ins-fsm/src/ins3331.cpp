@@ -176,10 +176,12 @@ unsigned char calculateChecksum(unsigned char myArray[], int arrayLength){
       for(int i = 1; i <= 11; i++){
         checksum = checksum + myArray[i];
       }
+      break; 
     case 15:
       for(int i = 2; i <= 12; i++){
         checksum = checksum + myArray[i];
       }
+      break; 
   } //end switch
 
   return checksum;

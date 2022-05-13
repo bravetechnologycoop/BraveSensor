@@ -160,7 +160,7 @@ void threadBLEScanner(void *param) {
     for (int i = 0; i < count; i++) {
 
       //place advertising data in doorAdvertisingData buffer array
-      scanResults[i].advertisingData.get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN);
+      scanResults[i].advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN);
 
       //Log.warn("outside of if, dooradvertisingdata[1, 2, 3] = 0x%02X, 0x%02X, 0x%02X", doorAdvertisingData[1], doorAdvertisingData[2], doorAdvertisingData[3]);
       //Log.warn("outside of if, globalDoorID 1,2,3 = 0x%02X, 0x%02X, 0x%02X", globalDoorID.byte1, globalDoorID.byte2, globalDoorID.byte3);
