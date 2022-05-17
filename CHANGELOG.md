@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [5.3.0] - 2022-05-17
+
 ### Added
 
 - Link to the door sensor battery replacement video in the low battery alert (CU-25e7zqf).
@@ -359,7 +361,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v5.2.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v5.3.0...HEAD
+[5.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v5.2.0...v5.3.0
 [5.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v5.1.0...v5.2.0
 [5.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v5.0.0...v5.1.0
 [5.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v4.5.0...v5.0.0
