@@ -153,30 +153,23 @@ void threadBLEScanner(void *param) {
   BLE.setScanTimeout(5);
 
   while(true){
+    //filter has to be remade each time, as globalDoorId (from eeprom) is usually read while this thread is already in while loop
+    BleScanFilter filter; 
+    char address[sizeof("B8:7C:6F:5C:23:49")]; 
+    sprintf(address, "B8:7C:6F:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
+    filter.deviceName("iSensor ").address(address); 
 
-    int count = BLE.scan(scanResults, SCAN_RESULT_MAX);
-
+    //scanning for door sensors of correct id
+    Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter); 
+    
     //loop over all devices found in the BLE scan
-    for (int i = 0; i < count; i++) {
+    for (auto scanResult : scanResults) {
 
       //place advertising data in doorAdvertisingData buffer array
-      scanResults[i].advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN);
-
-      //Log.warn("outside of if, dooradvertisingdata[1, 2, 3] = 0x%02X, 0x%02X, 0x%02X", doorAdvertisingData[1], doorAdvertisingData[2], doorAdvertisingData[3]);
-      //Log.warn("outside of if, globalDoorID 1,2,3 = 0x%02X, 0x%02X, 0x%02X", globalDoorID.byte1, globalDoorID.byte2, globalDoorID.byte3);
-
-      //if advertising data contains door sensor's device ID, extract door status and dump it in the queue
-      if(doorAdvertisingData[1] == globalDoorID.byte1 && doorAdvertisingData[2] == globalDoorID.byte2 && doorAdvertisingData[3] == globalDoorID.byte3){
-
-        //Log.warn("inside if, dooradvertisingdata[1, 2, 3] = 0x%02X, 0x%02X, 0x%02X", doorAdvertisingData[1], doorAdvertisingData[2], doorAdvertisingData[3]);
-        //Log.warn("inside if, dooradvertisingdata[4, 5] = 0x%02X, 0x%02X", doorAdvertisingData[4], doorAdvertisingData[5]);
-
-        scanThreadDoorData.doorStatus = doorAdvertisingData[5];
-        scanThreadDoorData.controlByte = doorAdvertisingData[6];
-
-        os_queue_put(bleQueue, (void *)&scanThreadDoorData, 0, 0);
-
-      }//endif
+      scanResult.advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN);
+      scanThreadDoorData.doorStatus = doorAdvertisingData[5];
+      scanThreadDoorData.controlByte = doorAdvertisingData[6];
+      os_queue_put(bleQueue, (void *)&scanThreadDoorData, 0, 0); 
     }//endfor
 
     os_thread_yield();
