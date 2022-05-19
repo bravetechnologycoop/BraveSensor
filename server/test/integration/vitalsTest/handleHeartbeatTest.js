@@ -43,7 +43,7 @@ async function lowBatteryHeartbeat(coreId) {
   }
 }
 
-describe('siren.js integration tests: handleHeartbeat', () => {
+describe('vitals.js integration tests: handleHeartbeat', () => {
   describe('POST request heartbeat events with mock INS Firmware State Machine when battery level is normal', () => {
     beforeEach(async () => {
       await db.clearTables()

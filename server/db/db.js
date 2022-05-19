@@ -38,7 +38,7 @@ function createLocationFromRow(r, allClients) {
   const client = allClients.filter(c => c.id === r.client_id)[0]
 
   // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.twilio_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.siren_particle_id, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
+  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.twilio_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
 }
 
 function createSensorsVitalFromRow(r, allLocations) {
@@ -650,7 +650,6 @@ async function getLocationFromParticleCoreID(coreID, pgClient) {
       FROM locations
       WHERE door_particlecoreid = $1
       OR radar_particlecoreid = $1
-      OR siren_particle_id = $1
       `,
       [coreID],
       pool,
@@ -944,7 +943,6 @@ async function createLocation(
   radarCoreId,
   isActive,
   firmwareStateMachine,
-  sirenParticleId,
   sentLowBatteryAlertAt,
   clientId,
   pgClient,
@@ -953,8 +951,8 @@ async function createLocation(
     const results = await helpers.runQuery(
       'createLocation',
       `
-      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, twilio_number, display_name, door_particlecoreid, radar_particlecoreid, is_active, firmware_state_machine, siren_particle_id, sent_low_battery_alert_at, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, twilio_number, display_name, door_particlecoreid, radar_particlecoreid, is_active, firmware_state_machine, sent_low_battery_alert_at, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
       `,
       [
@@ -970,7 +968,6 @@ async function createLocation(
         radarCoreId,
         isActive,
         firmwareStateMachine,
-        sirenParticleId,
         sentLowBatteryAlertAt,
         clientId,
       ],

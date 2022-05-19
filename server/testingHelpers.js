@@ -41,7 +41,6 @@ async function locationDBFactory(db, overrides = {}) {
     overrides.radarCoreId !== undefined ? overrides.radarCoreId : 'fakeRadarParticleId',
     overrides.isActive !== undefined ? overrides.isActive : true,
     overrides.firmwareStateMachine !== undefined ? overrides.firmwareStateMachine : true,
-    overrides.sirenParticleId !== undefined ? overrides.sirenParticleId : 'fakeSirenParticleId',
     overrides.sentLowBatteryAlertAt !== undefined ? overrides.sentLowBatteryAlertAt : '2021-03-09T19:37:28.176Z',
     overrides.clientId !== undefined ? overrides.clientId : 'fakeClientId',
   )
@@ -64,7 +63,6 @@ function locationFactory(overrides = {}) {
     overrides.initialTimer !== undefined ? overrides.initialTimer : 1,
     overrides.isActive !== undefined ? overrides.isActive : true,
     overrides.firmwareStateMachine !== undefined ? overrides.firmwareStateMachine : true,
-    overrides.sirenParticleId !== undefined ? overrides.sirenParticleId : 'fakeSirenParticleId',
     overrides.sentLowBatteryAlertAt !== undefined ? overrides.sentLowBatteryAlertAt : '2021-03-09T19:37:28.176Z',
     overrides.createdAt !== undefined ? overrides.createdAt : '2021-05-05T19:37:28.176Z',
     overrides.updatedAt !== undefined ? overrides.updatedAt : '2021-06-07T03:19:30.832Z',

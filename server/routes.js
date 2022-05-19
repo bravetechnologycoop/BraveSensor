@@ -2,7 +2,6 @@
 const { clickUpHelpers } = require('brave-alert-lib')
 const dashboard = require('./dashboard')
 const pa = require('./pa')
-const siren = require('./siren')
 const vitals = require('./vitals')
 
 function configureRoutes(app) {
@@ -27,8 +26,6 @@ function configureRoutes(app) {
   app.post('/login', dashboard.submitLogin)
 
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
-  app.post('/api/sirenAddressed', siren.validateSirenAddressed, siren.handleSirenAddressed)
-  app.post('/api/sirenEscalated', siren.validateSirenEscalated, siren.handleSirenEscalated)
 
   app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, clickUpHelpers.clickUpChecker, pa.handleCreateSensorLocation)
   app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, clickUpHelpers.clickUpChecker, pa.handleGetSensorClients)
