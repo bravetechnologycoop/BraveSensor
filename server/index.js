@@ -17,7 +17,6 @@ const im21door = require('./im21door')
 const DOOR_STATE = require('./SessionStateDoorEnum')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
-const siren = require('./siren')
 const vitals = require('./vitals')
 
 // Open Redis connection
@@ -55,8 +54,6 @@ routes.configureRoutes(app)
 // Add BraveAlerter's routes ( /alert/* )
 app.use(braveAlerter.getRouter())
 
-siren.setupSiren(braveAlerter)
-
 vitals.setupVitals(braveAlerter)
 
 async function handleAlert(location, alertType) {
@@ -77,40 +74,33 @@ async function handleAlert(location, alertType) {
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
       const newSession = await db.createSession(location.locationid, location.client.responderPhoneNumber, alertType, pgClient)
 
-      if (location.sirenParticleId !== null) {
-        await siren.startSiren(location.sirenParticleId)
-      } else {
-        const alertInfo = {
-          sessionId: newSession.id,
-          toPhoneNumber: location.client.responderPhoneNumber,
-          fromPhoneNumber: location.twilioNumber,
-          responderPushId: location.client.responderPushId,
-          deviceName: location.displayName,
-          alertType: newSession.alertType,
-          message: `This is a ${alertTypeDisplayName} alert. Please check on ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
-          reminderTimeoutMillis: location.client.reminderTimeout * 1000,
-          fallbackTimeoutMillis: location.client.fallbackTimeout * 1000,
-          reminderMessage: `This is a reminder to check on ${location.displayName}`,
-          fallbackMessage: `An alert to check on ${location.displayName} was not responded to. Please check on it`,
-          fallbackToPhoneNumbers: location.client.fallbackPhoneNumbers,
-          fallbackFromPhoneNumber: location.client.fromPhoneNumber,
-        }
-        braveAlerter.startAlertSession(alertInfo)
+      const alertInfo = {
+        sessionId: newSession.id,
+        toPhoneNumber: location.client.responderPhoneNumber,
+        fromPhoneNumber: location.twilioNumber,
+        responderPushId: location.client.responderPushId,
+        deviceName: location.displayName,
+        alertType: newSession.alertType,
+        message: `This is a ${alertTypeDisplayName} alert. Please check on ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
+        reminderTimeoutMillis: location.client.reminderTimeout * 1000,
+        fallbackTimeoutMillis: location.client.fallbackTimeout * 1000,
+        reminderMessage: `This is a reminder to check on ${location.displayName}`,
+        fallbackMessage: `An alert to check on ${location.displayName} was not responded to. Please check on it`,
+        fallbackToPhoneNumbers: location.client.fallbackPhoneNumbers,
+        fallbackFromPhoneNumber: location.client.fromPhoneNumber,
       }
+      braveAlerter.startAlertSession(alertInfo)
     } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
       db.saveSession(currentSession, pgClient) // update updatedAt
-      if (location.sirenParticleId !== null) {
-        await siren.startSiren(location.sirenParticleId)
-      } else {
-        braveAlerter.sendAlertSessionUpdate(
-          currentSession.id,
-          location.client.repsonderPushId,
-          location.client.responderPhoneNumber,
-          location.twilioNumber,
-          `An additional ${alertTypeDisplayName} alert was generated at ${location.displayName}`,
-          `${alertTypeDisplayName} Alert:\n${location.displayName}`,
-        )
-      }
+
+      braveAlerter.sendAlertSessionUpdate(
+        currentSession.id,
+        location.client.repsonderPushId,
+        location.client.responderPhoneNumber,
+        location.twilioNumber,
+        `An additional ${alertTypeDisplayName} alert was generated at ${location.displayName}`,
+        `${alertTypeDisplayName} Alert:\n${location.displayName}`,
+      )
     }
     await db.commitTransaction(pgClient)
   } catch (e) {
@@ -289,7 +279,6 @@ app.post('/smokeTest/setup', async (request, response) => {
       'radar_coreID',
       true,
       firmwareStateMachine,
-      null,
       '2021-03-09T19:37:28.176Z',
       client.id,
     )

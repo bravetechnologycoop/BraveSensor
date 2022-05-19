@@ -12,7 +12,6 @@ class Location {
     initialTimer,
     isActive,
     firmwareStateMachine,
-    sirenParticleId,
     sentLowBatteryAlertAt,
     createdAt,
     updatedAt,
@@ -30,7 +29,6 @@ class Location {
     this.initialTimer = initialTimer
     this.isActive = isActive
     this.firmwareStateMachine = firmwareStateMachine
-    this.sirenParticleId = sirenParticleId
     this.sentLowBatteryAlertAt = sentLowBatteryAlertAt
     this.createdAt = createdAt
     this.updatedAt = updatedAt

@@ -433,7 +433,7 @@ Follow [these instructions](https://www.digitalocean.com/community/tutorials/how
 
 # Particle API access
 
-The Brave Siren functions use the Particle API to trigger the Siren when a `DURATION` or `STILLNESS` event occurs. This requires the access token (`PARTICLE_ACCESS_TOKEN`) for an API user with permission to call functions in the product group (`PARTICLE_PRODUCT_GROUP`).
+The Brave Siren functions used the Particle API to trigger the Siren when a `DURATION` or `STILLNESS` event occurs. This requires the access token (`PARTICLE_ACCESS_TOKEN`) for an API user with permission to call functions in the product group (`PARTICLE_PRODUCT_GROUP`). This may be useful again in the future for interacting with Particle.
 
 To generate this token:
 
