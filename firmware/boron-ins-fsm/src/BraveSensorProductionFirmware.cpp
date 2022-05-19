@@ -1,3 +1,8 @@
+/******************************************************/
+//       THIS IS A GENERATED FILE - DO NOT EDIT       //
+/******************************************************/
+
+#line 1 "/Users/peterscholtens/Desktop/BraveSensor/firmware/boron-ins-fsm/src/BraveSensorProductionFirmware.ino"
 /*
  * Brave firmware state machine for single Boron
  * written by Heidi Fedorak, Apr 2021
@@ -10,6 +15,9 @@
 #include "consoleFunctions.h"
 #include "tpl5010watchdog.h"
 
+void setup();
+void loop();
+#line 13 "/Users/peterscholtens/Desktop/BraveSensor/firmware/boron-ins-fsm/src/BraveSensorProductionFirmware.ino"
 #define DEBUG_LEVEL LOG_LEVEL_INFO
 #define BRAVE_FIRMWARE_VERSION 50400 //see versioning notes in the readme
 #define BRAVE_PRODUCT_ID 14807 //14807 = beta units, 15479 = production units
