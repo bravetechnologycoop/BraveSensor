@@ -26,8 +26,8 @@ function convertToSeconds(milliseconds) {
   return Math.floor(milliseconds / 1000)
 }
 
-async function sendSingleAlert(locationid, message, client) {
-  const location = await db.getLocationData(locationid, client)
+async function sendSingleAlert(locationid, message, pgClient) {
+  const location = await db.getLocationData(locationid, pgClient)
 
   await braveAlerter.sendSingleAlert(location.client.responderPhoneNumber, location.client.fromPhoneNumber, message)
 
@@ -158,22 +158,38 @@ function convertStateArrayToObject(stateTransition) {
 }
 
 // Sends a low battery alert if the time since the last alert is null or greater than the timeout
-async function sendLowBatteryAlert(location, pgClient) {
-  const currentTime = await db.getCurrentTime(pgClient)
-  const timeoutInMillis = parseInt(helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT'), 10) * 1000
+async function sendLowBatteryAlert(locationid) {
+  let pgClient
+  try {
+    const currentTime = await db.getCurrentTime()
+    const timeoutInMillis = parseInt(helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT'), 10) * 1000
 
-  if (
-    location.isActive &&
-    location.client.isActive &&
-    (location.sentLowBatteryAlertAt === null || currentTime - location.sentLowBatteryAlertAt >= timeoutInMillis)
-  ) {
-    helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
-    await sendSingleAlert(
-      location.locationid,
-      `The battery for the ${location.displayName} door sensor is low, and needs replacing.\n\nTo watch a video showing how to replace the battery, go to https://bit.ly/sensor-battery`,
-      pgClient,
-    )
-    await db.updateLowBatteryAlertTime(location.locationid, pgClient)
+    pgClient = await db.beginTransaction()
+    const location = await db.getLocationData(locationid, pgClient)
+
+    if (
+      location.isActive &&
+      location.client.isActive &&
+      (location.sentLowBatteryAlertAt === null || currentTime - location.sentLowBatteryAlertAt >= timeoutInMillis)
+    ) {
+      helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
+      await sendSingleAlert(
+        location.locationid,
+        `The battery for the ${location.displayName} door sensor is low, and needs replacing.\n\nTo watch a video showing how to replace the battery, go to https://bit.ly/sensor-battery`,
+        pgClient,
+      )
+      await db.updateLowBatteryAlertTime(location.locationid, pgClient)
+    }
+
+    await db.commitTransaction(pgClient)
+  } catch (e) {
+    try {
+      await db.rollbackTransaction(pgClient)
+      helpers.logError(`handleAlert: Rolled back transaction because of error: ${e}`)
+    } catch (error) {
+      // Do nothing
+      helpers.logError(`handleAlert: Error rolling back transaction: ${error} Rollback attempted because of error: ${e}`)
+    }
   }
 }
 
@@ -203,7 +219,7 @@ async function handleHeartbeat(req, res) {
         const stateTransitionsArray = message.states.map(convertStateArrayToObject)
 
         if (doorLowBatteryFlag) {
-          await sendLowBatteryAlert(location)
+          await sendLowBatteryAlert(location.locationid)
         }
 
         await db.logSensorsVital(
