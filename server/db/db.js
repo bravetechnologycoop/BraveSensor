@@ -1115,8 +1115,6 @@ async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
       SELECT *
       FROM sensors_vitals_cache
       WHERE locationid = $1
-      ORDER BY created_at DESC
-      LIMIT 1
       `,
       [locationid],
       pool,
