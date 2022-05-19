@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Removed
+
+- Transaction when handling incoming Boron heartbeat messages (CU-2atyr1z).
+
 ## [5.3.0] - 2022-05-17
 
 ### Added
