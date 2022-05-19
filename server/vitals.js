@@ -180,22 +180,19 @@ async function sendLowBatteryAlert(location, pgClient) {
 const validateHeartbeat = Validator.body(['coreid', 'data']).exists()
 
 async function handleHeartbeat(req, res) {
-  let pgClient
   try {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
-      pgClient = await db.beginTransaction()
       const coreId = req.body.coreid
-      const location = await db.getLocationFromParticleCoreID(coreId, pgClient)
+      const location = await db.getLocationFromParticleCoreID(coreId)
       if (!location) {
         const errorMessage = `Bad request to ${req.path}: no location matches the coreID ${coreId}`
         helpers.logError(errorMessage)
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-        await db.commitTransaction(pgClient)
         res.status(200).json(errorMessage)
       } else {
-        const currentDbTime = await db.getCurrentTime(pgClient)
+        const currentDbTime = await db.getCurrentTime()
 
         const message = JSON.parse(req.body.data)
         const doorMissedMessagesCount = message.doorMissedMsg
@@ -206,7 +203,7 @@ async function handleHeartbeat(req, res) {
         const stateTransitionsArray = message.states.map(convertStateArrayToObject)
 
         if (doorLowBatteryFlag) {
-          await sendLowBatteryAlert(location, pgClient)
+          await sendLowBatteryAlert(location)
         }
 
         await db.logSensorsVital(
@@ -216,9 +213,7 @@ async function handleHeartbeat(req, res) {
           doorTimeSinceLastHeartbeat,
           resetReason,
           stateTransitionsArray,
-          pgClient,
         )
-        await db.commitTransaction(pgClient)
         res.status(200).json('OK')
       }
     } else {
@@ -228,13 +223,6 @@ async function handleHeartbeat(req, res) {
       res.status(200).json(errorMessage)
     }
   } catch (err) {
-    try {
-      await db.rollbackTransaction(pgClient)
-      helpers.logError(`POST to /api/heartbeat: Rolled back transaction because of error: ${err}`)
-    } catch (error) {
-      // Do nothing
-      helpers.logError(`POST to /api/heartbeat: Error rolling back transaction: ${error} Rollback attempted because of error: ${error}`)
-    }
     const errorMessage = `Error calling ${req.path}: ${err.toString()}`
     helpers.logError(errorMessage)
     // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
