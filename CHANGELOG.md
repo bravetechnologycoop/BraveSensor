@@ -14,6 +14,7 @@ the code was deployed.
 ### Removed
 
 - Transaction when handling incoming Boron heartbeat messages (CU-2atyr1z).
+- Transaction when handling incoming Argon door messages (CU-2atyr1z).
 - Brave Siren product (CU-289wcj9).
 
 ## [5.3.0] - 2022-05-17
