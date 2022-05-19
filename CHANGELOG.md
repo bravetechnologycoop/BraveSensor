@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- Email address to contact if the clients are having troubles reconnecting their sensor.
+
 ### Removed
 
 - Transaction when handling incoming Boron heartbeat messages (CU-2atyr1z).

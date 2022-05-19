@@ -39,14 +39,14 @@ async function sendSingleAlert(locationid, message, pgClient) {
 async function sendDisconnectionMessage(locationid, displayName) {
   await sendSingleAlert(
     locationid,
-    `The Brave Sensor at ${displayName} (${locationid}) has disconnected. \nPlease press the reset buttons on either side of the sensor box.\nIf you do not receive a reconnection message shortly after pressing both reset buttons, contact your network administrator.\nYou can also email contact@brave.coop for further support.`,
+    `The Brave Sensor at ${displayName} (${locationid}) has disconnected. \nPlease press the reset buttons on either side of the sensor box.\nIf you do not receive a reconnection message shortly after pressing both reset buttons, contact your network administrator.\nYou can also email clientsupport@brave.coop for further support.`,
   )
 }
 
 async function sendDisconnectionReminder(locationid, displayName) {
   await sendSingleAlert(
     locationid,
-    `The Brave Sensor at ${displayName} (${locationid}) is still disconnected. \nPlease press the reset buttons on either side of the sensor box.\nIf you do not receive a reconnection message shortly after pressing both reset buttons, contact your network administrator.\nYou can also email contact@brave.coop for further support.`,
+    `The Brave Sensor at ${displayName} (${locationid}) is still disconnected. \nPlease press the reset buttons on either side of the sensor box.\nIf you do not receive a reconnection message shortly after pressing both reset buttons, contact your network administrator.\nYou can also email clientsupport@brave.coop for further support.`,
   )
 }
 
