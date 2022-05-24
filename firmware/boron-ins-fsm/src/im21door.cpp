@@ -118,7 +118,7 @@ doorData checkIM21(){
 
 } //end checkIM21()
 
-void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData){
+void logndPublishDoorDAata(doorData previousDoorData, doorData currentDoorData){
 
   char doorPublishBuffer[128];
 
