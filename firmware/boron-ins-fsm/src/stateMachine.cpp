@@ -77,7 +77,7 @@ void initializeStateMachineConsts(){
 
 
 void state0_idle(){
-  System.enableUpdates();
+  System.enableReset();
 
   //scan inputs
   doorData checkDoor;
@@ -118,7 +118,7 @@ void state0_idle(){
 }
 
 void state1_15sCountdown(){
-  System.disableUpdates();
+  System.disableReset();
 
   //scan inputs
   doorData checkDoor;
