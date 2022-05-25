@@ -2,7 +2,7 @@
 //       THIS IS A GENERATED FILE - DO NOT EDIT       //
 /******************************************************/
 
-#line 1 "/Users/peterscholtens/Desktop/BraveSensor/firmware/boron-ins-fsm/src/BraveSensorProductionFirmware.ino"
+#line 1 "c:/Users/SampathSatti/Documents/Brave/BraveSensor/firmware/boron-ins-fsm/src/BraveSensorProductionFirmware.ino"
 /*
  * Brave firmware state machine for single Boron
  * written by Heidi Fedorak, Apr 2021
@@ -17,10 +17,10 @@
 
 void setup();
 void loop();
-#line 13 "/Users/peterscholtens/Desktop/BraveSensor/firmware/boron-ins-fsm/src/BraveSensorProductionFirmware.ino"
+#line 13 "c:/Users/SampathSatti/Documents/Brave/BraveSensor/firmware/boron-ins-fsm/src/BraveSensorProductionFirmware.ino"
 #define DEBUG_LEVEL LOG_LEVEL_INFO
-#define BRAVE_FIRMWARE_VERSION 50400 //see versioning notes in the readme
-#define BRAVE_PRODUCT_ID 14807 //14807 = beta units, 15479 = production units
+#define BRAVE_FIRMWARE_VERSION 50002 //see versioning notes in the readme
+#define BRAVE_PRODUCT_ID 14807 //14807 = beta units, 15054 = production units
 
 PRODUCT_ID(BRAVE_PRODUCT_ID); //you get this number off the particle console, see readme for instructions
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION); //must be an int, see versioning notes above
