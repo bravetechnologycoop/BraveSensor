@@ -77,7 +77,9 @@ void initializeStateMachineConsts(){
 
 
 void state0_idle(){
-  System.enableReset();
+  if(millis()-doorHeartbeatReceived > NINE_MINS){
+    System.enableReset();
+  }
 
   //scan inputs
   doorData checkDoor;
