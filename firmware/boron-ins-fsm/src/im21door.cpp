@@ -57,7 +57,7 @@ doorData checkIM21(){
   static int initialDoorDataFlag = 1;
   static doorData previousDoorData = {0x00, 0x00, 0};
   static doorData currentDoorData = {0x00, 0x00, 0};
-  static doorData returnDoorData = {0x00, 0x00, 0};
+  static doorData returnDoorData = {0x99, 0x99, 0};
 
   //BLE scanner is set fast enough to load duplicate advertising data packets
   //each time IM21 transmits a door event. Filter out the duplicates and publish
@@ -118,7 +118,7 @@ doorData checkIM21(){
 
 } //end checkIM21()
 
-void logndPublishDoorDAata(doorData previousDoorData, doorData currentDoorData){
+void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData){
 
   char doorPublishBuffer[128];
 
