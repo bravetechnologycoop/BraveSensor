@@ -12,14 +12,16 @@ the code was deployed.
 ## [Unreleased]
 
 ### Changed
-
 - Email address to contact if the clients are having troubles reconnecting their sensor.
 
 ### Removed
-
 - Transaction when handling incoming Boron heartbeat messages (CU-2atyr1z).
 - Transaction when handling incoming Argon door messages (CU-2atyr1z).
 - Brave Siren product (CU-289wcj9).
+- Updated to Device OS 3.3.0 for improved BLE methods (CU-2bffw4q). 
+
+### Added
+- Changed door sensor scanning to use filters (CU-2bffw4q). 
 
 ## [5.3.0] - 2022-05-17
 
@@ -29,7 +31,6 @@ the code was deployed.
 - Sensors Vitals cache table of only the most recent heartbeat from each locationid (CU-2atyr1z).
 - Ability to turn on/off DB debug logs (CU-2atyr1z).
 - Links on the Vitals the Client Vitals page to the Client and Location pages.
-- Updated to Device OS 3.3.0 to use `BLE.scanwithfilter()` for door sensor scanning (CU-2bffw4q)
 
 ### Changed
 
@@ -37,6 +38,8 @@ the code was deployed.
 - Sensors Vitals pages now show sensors which have never sent a heartbeat message.
 
 ### Removed
+
+- Auto-refresh from Vitals Dashboard pages (CU-2atyr1z).
 
 ## [5.2.0] - 2022-05-09
 
