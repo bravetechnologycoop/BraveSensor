@@ -11,6 +11,9 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+- Delay for the OTA reset, so to not reset while in session (CU-1tdbg9r).
+
 ## [5.3.0] - 2022-05-17
 
 ### Added
