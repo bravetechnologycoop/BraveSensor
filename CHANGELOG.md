@@ -22,6 +22,7 @@ the code was deployed.
 
 ### Added
 - Changed door sensor scanning to use filters (CU-2bffw4q). 
+- Delay for the OTA reset, so to not reset while in session (CU-1tdbg9r).
 
 ## [5.3.0] - 2022-05-17
 
