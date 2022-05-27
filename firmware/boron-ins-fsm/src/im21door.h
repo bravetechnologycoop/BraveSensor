@@ -1,20 +1,6 @@
 /*
  * Brave firmware state machine for single Boron
  * written by Heidi Fedorak, Apr 2021
- * 
- * 
- * IM21 door sensor status byte can be one of:
- * 
- * 0x00 - closed
- * 0x04 - closed + low battery
- * 0x08 - closed + heartbeat
- * 0x0C - closed + heartbeat + low battery
-
- * 0x02 - open
- * 0x06 - open + low battery
- * 0x0A - open + heartbeat
- * 0x0E - open + heartbeat + low battery 
- * 
  */
 
 #ifndef IM21DOOR_H

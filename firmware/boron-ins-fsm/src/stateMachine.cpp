@@ -8,6 +8,7 @@
 #include "im21door.h"
 #include "ins3331.h"
 #include "flashAddresses.h"
+#include "debugFlags.h"
 #include <queue>
 
 //define and initialize state machine pointer

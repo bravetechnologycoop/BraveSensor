@@ -6,6 +6,7 @@
 #include "Particle.h"
 #include "im21door.h"
 #include "flashAddresses.h"
+#include "debugFlags.h"
 
 //define global variables so they are allocated in memory
 //initialize door ID to agreed upon intial value
@@ -69,7 +70,7 @@ doorData checkIM21(){
     // Checks if the 2nd bit (counting from 0) of doorStatus is 1
     // read as: doorLowBatteryFlag is true if doorStatus AND 0b0100 is not 0b0000
     doorLowBatteryFlag = (currentDoorData.doorStatus & (1 << 2)) != 0;
-
+    
     // Checks if the 3rd bit of doorStatus is 1
     if ((currentDoorData.doorStatus & (1 << 3)) != 0){
       doorHeartbeatReceived = millis();
@@ -162,13 +163,32 @@ void threadBLEScanner(void *param) {
     
     //loop over all devices found in the BLE scan
     for (BleScanResult scanResult : scanResults) {
-
       //place advertising data in doorAdvertisingData buffer array
+      // Door heartbeat message: 
+      // dooradvertisingdata[0] (1 byte): Firmware Version
+      // dooradvertisingdata[1-3] (3 bytes): Last 3 bytes of door sensor address
+      // dooradvertisingdata[4] (1 byte): Type ID (door sensor, thermometer, smoke detector, etc.)
+      // dooradvertisingdata[5] (1 byte): Event Data
+        // bit[3]: heartbeat?
+        // bit[2]: low battery?
+        // bit[1]: door open?
+        // bit[0]: tamper alarm?
+      // dooradvertisingdata[6] (1 byte): Control Data
+      // More info: https://drive.google.com/file/d/1ZbnHi7uA_xMWVIiMbQjZlbT3OOoykbr4/view?usp=sharing        
       scanResult.advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN);
       
       //extract door status and dump it in the queue
       scanThreadDoorData.doorStatus = doorAdvertisingData[5];
       scanThreadDoorData.controlByte = doorAdvertisingData[6];
+
+      if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0 && stateMachineDebugFlag) { //
+        //from particle docs, max length of publish is 622 chars, I am assuming this includes null char
+        char debugMessage[622] = "";
+        for (int i = 0; i < BLE_MAX_ADV_DATA_LEN; i++) {
+          snprintf(debugMessage + strlen(debugMessage), sizeof(debugMessage), "%02X ", doorAdvertisingData[i]); 
+        }
+        Particle.publish("Door Heartbeat Received", debugMessage, PRIVATE); 
+      }     
       os_queue_put(bleQueue, (void *)&scanThreadDoorData, 0, 0); 
     }//endfor
 
