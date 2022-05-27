@@ -32,11 +32,13 @@ the code was deployed.
 - Sensors Vitals cache table of only the most recent heartbeat from each locationid (CU-2atyr1z).
 - Ability to turn on/off DB debug logs (CU-2atyr1z).
 - Links on the Vitals the Client Vitals page to the Client and Location pages.
+- If debug flag is on, logging of raw door sensor data (CU-2chv6je)
 
 ### Changed
 
 - Chatbot text messages no longer assume that the Sensor is installed in a bathroom (CU-271q62d).
 - Sensors Vitals pages now show sensors which have never sent a heartbeat message.
+- Debug log flag now global (CU-2chv6je)
 
 ### Removed
 
