@@ -76,11 +76,11 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. run `git checkout production && git pull origin production` to get the latest version of the the code
 
-1. click Target --> "Configure for device" and type `2.0.0` to choose the OS and then `boron` to choose the device
+1. click Target --> "Configure for device" and type `3.3.0` to choose the OS and then `boron` to choose the device
 
 1. click Compile --> "Local Compile"
 
-1. copy the generated `/target/2.0.0/boron/boron-ins-fsm.bin` file somewhere to keep for reference. Rename to `v<version number>_dev.bin` (for example `v50100_dev.bin`)
+1. copy the generated `/target/3.3.0/boron/boron-ins-fsm.bin` file somewhere to keep for reference. Rename to `v<version number>_dev.bin` (for example `v50100_dev.bin`)
 
 1. in your browser navigate to Particle Console --> Sandbox --> BetaTest Borons --> Firmware
 
@@ -140,11 +140,11 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. in `BraveSensorProductionFirmware.ino`, change `BRAVE_PRODUCT_ID` to the ID of the "Production Sensor Devices" project (`15479`) [NOTE: do NOT commit this change]
 
-1. click Target --> "Configure for device" and type `2.0.0` to choose the OS and then `boron` to choose the device
+1. click Target --> "Configure for device" and type `3.3.0` to choose the OS and then `boron` to choose the device
 
 1. click Compile --> "Local Compile"
 
-1. copy the generated `/target/2.0.0/boron/boron-ins-fsm.bin` file somewhere to keep for reference. Rename to `v<version number>_production.bin` (for example `v50100_production.bin`)
+1. copy the generated `/target/3.3.0/boron/boron-ins-fsm.bin` file somewhere to keep for reference. Rename to `v<version number>_production.bin` (for example `v50100_production.bin`)
 
 1. in your browser navigate to Particle Console --> Brave Technology Coop --> Production Sensor Devices --> Firmware
 
