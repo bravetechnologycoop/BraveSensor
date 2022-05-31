@@ -77,6 +77,11 @@ void initializeStateMachineConsts(){
 
 
 void state0_idle(){
+  if(millis()-doorHeartbeatReceived > DEVICE_RESET_THRESHOLD){
+    System.enableReset();
+  } else {
+    System.disableReset();
+  }
 
   //scan inputs
   doorData checkDoor;
@@ -117,7 +122,7 @@ void state0_idle(){
 }
 
 void state1_15sCountdown(){
-
+  System.disableReset();
   //scan inputs
   doorData checkDoor;
   filteredINSData checkINS;
