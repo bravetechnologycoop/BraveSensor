@@ -76,6 +76,8 @@ void initializeStateMachineConsts(){
 void state0_idle(){
   if(millis()-doorHeartbeatReceived > DEVICE_RESET_THRESHOLD){
     System.enableReset();
+  } else {
+    System.disableReset();
   }
 
   //scan inputs
