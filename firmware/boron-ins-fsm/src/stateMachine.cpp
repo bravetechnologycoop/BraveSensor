@@ -73,11 +73,8 @@ void initializeStateMachineConsts(){
 
 }
 
-
-
-
 void state0_idle(){
-  if(millis()-doorHeartbeatReceived > NINE_MINS){
+  if(millis()-doorHeartbeatReceived > DEVICE_RESET_THRESHOLD){
     System.enableReset();
   }
 
