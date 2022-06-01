@@ -365,8 +365,7 @@ const char *resetReasonString(int resetReason)
 void getHeartbeat(){
 
     static unsigned long lastHeartbeatPublish = 0;
-    if((millis()-lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL){
-      
+    if((millis()-lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL || lastHeartbeatPublish == 0){
       //from particle docs, max length of publish is 622 chars, I am assuming this includes null char
       char heartbeatMessage[622] = {0};
       JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage)-1);
