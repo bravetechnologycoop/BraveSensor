@@ -16,6 +16,7 @@ int missedDoorEventCount = 0;
 bool doorLowBatteryFlag = false;
 bool doorHeartbeatFlag = false;
 unsigned long doorHeartbeatReceived = millis();
+unsigned long doorLastMessage = millis();
 
 //**********setup()******************
 
@@ -71,7 +72,10 @@ doorData checkIM21(){
     // Checks if the 2nd bit (counting from 0) of doorStatus is 1
     // read as: doorLowBatteryFlag is true if doorStatus AND 0b0100 is not 0b0000
     doorLowBatteryFlag = (currentDoorData.doorStatus & (1 << 2)) != 0;
-    
+
+    //record the time a IM21 message was received
+    doorLastMessage = millis();
+
     // Checks if the 3rd bit of doorStatus is 1
     if ((currentDoorData.doorStatus & (1 << 3)) != 0){
       doorHeartbeatReceived = millis();

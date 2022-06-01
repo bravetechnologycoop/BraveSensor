@@ -381,6 +381,9 @@ void getHeartbeat(){
         //logs time in millis since last heartbeat was received
         writer.name("doorLastHeartbeat").value((unsigned int) (millis() - doorHeartbeatReceived));
 
+        //logs time in millis since last IM21 message was received
+        writer.name("doorLastMessage").value((unsigned int) (millis() - doorLastMessage));
+
         //logs the reason of the last reset    
         writer.name("resetReason").value(resetReasonString(resetReason));
         //subsequent heartbeats will not display reset reason

@@ -49,6 +49,7 @@ extern int missedDoorEventCount;
 extern bool doorLowBatteryFlag;
 extern bool doorHeartbeatFlag;
 extern unsigned long doorHeartbeatReceived;
+extern unsigned long doorLastMessage;
 
 //setup() functions
 void setupIM21(void);
