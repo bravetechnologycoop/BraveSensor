@@ -14,6 +14,7 @@ IM21DoorID globalDoorID = {0xAA, 0xAA, 0xAA};
 os_queue_t bleQueue;
 int missedDoorEventCount = 0;
 bool doorLowBatteryFlag = false;
+bool doorHeartbeatFlag = false;
 unsigned long doorHeartbeatReceived = millis();
 
 //**********setup()******************
@@ -74,6 +75,7 @@ doorData checkIM21(){
     // Checks if the 3rd bit of doorStatus is 1
     if ((currentDoorData.doorStatus & (1 << 3)) != 0){
       doorHeartbeatReceived = millis();
+      doorHeartbeatFlag = true;
     }
     //if this is the first door event received after firmware bootup, publish
     if(initialDoorDataFlag){
