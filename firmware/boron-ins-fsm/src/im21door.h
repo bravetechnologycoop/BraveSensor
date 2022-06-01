@@ -47,6 +47,7 @@ extern IM21DoorID globalDoorID;
 //used in getHeartbeat()
 extern int missedDoorEventCount;
 extern bool doorLowBatteryFlag;
+extern bool doorHeartbeatFlag;
 extern unsigned long doorHeartbeatReceived;
 
 //setup() functions
