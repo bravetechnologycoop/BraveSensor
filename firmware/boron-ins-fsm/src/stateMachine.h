@@ -23,8 +23,11 @@
 #define DEBUG_PUBLISH_INTERVAL 1500  //ms
 #define SM_HEARTBEAT_INTERVAL 660000  //ms = 11 min
 #define DEVICE_RESET_THRESHOLD 540000  //ms = 9 min
-
 #define HEARTBEAT_STATES_CUTOFF 603 // = 622 - 17 (max length of sub state array) - 2 (length of closing brackets)
+
+//Restricts heartbeat to being published once instead of 3 times from the 3 IM21 broadcasts
+#define HEARTBEAT_PUBLISH_DELAY 1000  //ms = 1 sec
+
 
 //heartbeat signals have been added. Although heartbeat signals don't
 //represent a change in door status, they will reflect the current

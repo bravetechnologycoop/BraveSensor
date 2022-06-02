@@ -365,7 +365,7 @@ const char *resetReasonString(int resetReason)
 void getHeartbeat(){
 
     static unsigned long lastHeartbeatPublish = 0;
-    if((millis()-lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL || lastHeartbeatPublish == 0 || (doorHeartbeatFlag && millis()-doorHeartbeatReceived >= 1000)){
+    if((millis()-lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL || lastHeartbeatPublish == 0 || (doorHeartbeatFlag && millis()-doorHeartbeatReceived >= HEARTBEAT_PUBLISH_DELAY)){
       doorHeartbeatFlag = false;
       //from particle docs, max length of publish is 622 chars, I am assuming this includes null char
       char heartbeatMessage[622] = {0};
