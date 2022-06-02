@@ -74,9 +74,6 @@ void initializeStateMachineConsts(){
 
 }
 
-
-
-
 void state0_idle(){
   if(millis()-doorHeartbeatReceived > DEVICE_RESET_THRESHOLD){
     System.enableReset();
@@ -365,7 +362,7 @@ const char *resetReasonString(int resetReason)
 void getHeartbeat(){
 
     static unsigned long lastHeartbeatPublish = 0;
-    if((millis()-lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL || lastHeartbeatPublish == 0 || (doorHeartbeatFlag && millis()-doorHeartbeatReceived >= HEARTBEAT_PUBLISH_DELAY)){
+    if((millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL || lastHeartbeatPublish == 0 || (doorHeartbeatReceivedFlag && millis() - doorHeartbeatReceived >= HEARTBEAT_PUBLISH_DELAY)){
       //from particle docs, max length of publish is 622 chars, I am assuming this includes null char
       char heartbeatMessage[622] = {0};
       JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage)-1);
@@ -377,11 +374,9 @@ void getHeartbeat(){
         //logs whether door sensor is low battery
         writer.name("doorLowBatt").value(doorLowBatteryFlag);
         
-        //logs time in millis since last heartbeat was received
-        writer.name("doorLastHeartbeat").value((unsigned int) (millis() - doorHeartbeatReceived));
-
-        //logs time in millis since last IM21 message was received
-        writer.name("doorLastMessage").value((unsigned int) (millis() - doorLastMessage));
+        //logs time in millis since last IM21 message was received, the particle name is a bit misleading
+        //but we have left it because the server uses "doorLastHeartbeat" to check if the IM21 sensor has disconnected
+        writer.name("doorLastHeartbeat").value((unsigned int) (millis() - doorLastMessage));
 
         //logs the reason of the last reset    
         writer.name("resetReason").value(resetReasonString(resetReason));
@@ -413,7 +408,7 @@ void getHeartbeat(){
       if ((millis()-lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL || lastHeartbeatPublish == 0){
         lastHeartbeatPublish = millis();
       }
-      doorHeartbeatFlag = false;
+      doorHeartbeatReceivedFlag = false;
     }
 
     
