@@ -11,6 +11,9 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+- Boron Sensor heartbeat optimizations, to improve debugging and door connectivity (CU-24qak6k).
+
 ## [6.0.0] - 2022-06-09
 
 ### Changed
