@@ -73,6 +73,12 @@ doorData checkIM21(){
     // read as: doorLowBatteryFlag is true if doorStatus AND 0b0100 is not 0b0000
     doorLowBatteryFlag = (currentDoorData.doorStatus & (1 << 2)) != 0;
 
+    // After a certain thereshold, the next door message received will trigger a boron heartbeat
+    if (millis() - doorLastMessage >= MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD){
+      doorLastMessage = millis();
+      doorHeartbeatReceivedFlag = true;
+    }
+
     //record the time a IM21 message was received
     doorLastMessage = millis();
 
