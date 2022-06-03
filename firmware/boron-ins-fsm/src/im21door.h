@@ -24,7 +24,7 @@
 #define HEARTBEAT_AND_OPEN 0x0A  
 
 //any door message after this threshold will trigger an instant boron heartbeat
-#define MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD 900000 //ms = 15 min
+#define MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD 540000 //ms = 9 min
 
 //************************global typedef aliases*********************************
 typedef struct doorData {
