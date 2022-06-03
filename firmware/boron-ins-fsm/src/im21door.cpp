@@ -75,7 +75,6 @@ doorData checkIM21(){
 
     // After a certain thereshold, the next door message received will trigger a boron heartbeat
     if (millis() - doorLastMessage >= MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD){
-      doorLastMessage = millis();
       doorHeartbeatReceivedFlag = true;
     }
 
