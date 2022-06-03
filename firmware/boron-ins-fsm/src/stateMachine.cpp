@@ -410,9 +410,7 @@ void getHeartbeat(){
       writer.endObject(); // end heartbeat message
       Particle.publish("Heartbeat", heartbeatMessage, PRIVATE);
       Log.warn(heartbeatMessage);
-      if ((millis()-lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL || lastHeartbeatPublish == 0){
-        lastHeartbeatPublish = millis();
-      }
+      lastHeartbeatPublish = millis();
       doorMessageReceivedFlag = false;
     }
 
