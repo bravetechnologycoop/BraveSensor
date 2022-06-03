@@ -364,10 +364,10 @@ void getHeartbeat(){
     static unsigned long lastHeartbeatPublish = 0;
     // 1st "if condition" is so that the boron publishes a heartbeat every SM_HEARTBEAT_INTERVAL = 11min
     // 2nd "if condition" is so that the boron publishes a heartbeat on startup
-    // 3rd "if condition" is so that the boron publishes a heartbeat, when the doorHeartbeatReceivedFlag is true. 
+    // 3rd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true. 
     //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 beacuase IM21 broadcast 3 messages
-    //     The doorHeartbeatReceivedFlag is set to true when a IM21 heartbeat is received or after a certain threshold any IM21 message is received
-    if((millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL || lastHeartbeatPublish == 0 || (doorHeartbeatReceivedFlag && millis() - doorHeartbeatReceived >= HEARTBEAT_PUBLISH_DELAY)){
+    //     The doorMessageReceivedFlag is set to true when a IM21 heartbeat is received or after a certain threshold any IM21 message is received
+    if((millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL || lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && millis() - doorHeartbeatReceived >= HEARTBEAT_PUBLISH_DELAY)){
       //from particle docs, max length of publish is 622 chars, I am assuming this includes null char
       char heartbeatMessage[622] = {0};
       JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage)-1);
@@ -413,7 +413,7 @@ void getHeartbeat(){
       if ((millis()-lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL || lastHeartbeatPublish == 0){
         lastHeartbeatPublish = millis();
       }
-      doorHeartbeatReceivedFlag = false;
+      doorMessageReceivedFlag = false;
     }
 
     

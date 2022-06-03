@@ -14,7 +14,7 @@ IM21DoorID globalDoorID = {0xAA, 0xAA, 0xAA};
 os_queue_t bleQueue;
 int missedDoorEventCount = 0;
 bool doorLowBatteryFlag = false;
-bool doorHeartbeatReceivedFlag = false;
+bool doorMessageReceivedFlag = false;
 unsigned long doorHeartbeatReceived = millis();
 unsigned long doorLastMessage = millis();
 
@@ -75,7 +75,7 @@ doorData checkIM21(){
 
     // After a certain thereshold, the next door message received will trigger a boron heartbeat
     if (millis() - doorLastMessage >= MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD){
-      doorHeartbeatReceivedFlag = true;
+      doorMessageReceivedFlag = true;
     }
 
     //record the time a IM21 message was received
@@ -84,7 +84,6 @@ doorData checkIM21(){
     // Checks if the 3rd bit of doorStatus is 1
     if ((currentDoorData.doorStatus & (1 << 3)) != 0){
       doorHeartbeatReceived = millis();
-      doorHeartbeatReceivedFlag = true;
     }
     //if this is the first door event received after firmware bootup, publish
     if(initialDoorDataFlag){
