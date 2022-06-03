@@ -50,7 +50,7 @@ extern IM21DoorID globalDoorID;
 //used in getHeartbeat()
 extern int missedDoorEventCount;
 extern bool doorLowBatteryFlag;
-extern bool doorHeartbeatReceivedFlag;
+extern bool doorMessageReceivedFlag;
 extern unsigned long doorHeartbeatReceived;
 extern unsigned long doorLastMessage;
 
