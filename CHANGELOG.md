@@ -11,18 +11,25 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [6.0.0] - 2022-06-09
+
 ### Changed
+
 - Email address to contact if the clients are having troubles reconnecting their sensor.
+- Debug log flag now global (CU-2chv6je).
+- Updated to Device OS 3.3.0 for improved BLE methods (CU-2bffw4q).
 
 ### Removed
+
 - Transaction when handling incoming Boron heartbeat messages (CU-2atyr1z).
 - Transaction when handling incoming Argon door messages (CU-2atyr1z).
 - Brave Siren product (CU-289wcj9).
-- Updated to Device OS 3.3.0 for improved BLE methods (CU-2bffw4q). 
 
 ### Added
-- Changed door sensor scanning to use filters (CU-2bffw4q). 
+
+- Changed door sensor scanning to use filters (CU-2bffw4q).
 - Delay for the OTA reset, so to not reset while in session (CU-1tdbg9r).
+- If debug flag is on, logging of raw door sensor data (CU-2chv6je).
 
 ## [5.3.0] - 2022-05-17
 
@@ -32,13 +39,11 @@ the code was deployed.
 - Sensors Vitals cache table of only the most recent heartbeat from each locationid (CU-2atyr1z).
 - Ability to turn on/off DB debug logs (CU-2atyr1z).
 - Links on the Vitals the Client Vitals page to the Client and Location pages.
-- If debug flag is on, logging of raw door sensor data (CU-2chv6je)
 
 ### Changed
 
 - Chatbot text messages no longer assume that the Sensor is installed in a bathroom (CU-271q62d).
 - Sensors Vitals pages now show sensors which have never sent a heartbeat message.
-- Debug log flag now global (CU-2chv6je)
 
 ### Removed
 
