@@ -6,7 +6,7 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { ALERT_TYPE, AlertSession, CHATBOT_STATE, factories } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
-const { locationDBFactory } = require('../../../testingHelpers')
+const { locationDBFactory, sessionDBFactory } = require('../../../testingHelpers')
 
 describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessionIdAndAlertApiKey', () => {
   beforeEach(async () => {
@@ -34,10 +34,13 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
     })
 
     // Insert a session for that location in the DB
-    this.session = await db.createSession(location.locationid, this.expectedLocationPhoneNumber, ALERT_TYPE.SENSOR_DURATION)
-    this.session.chatbotState = this.expectedChatbotState
-    this.session.incidentType = this.expectedIncidentType
-    await db.saveSession(this.session)
+    this.session = await sessionDBFactory(db, {
+      locationid: location.locationid,
+      phoneNumber: this.expectedLocationPhoneNumber,
+      alertType: ALERT_TYPE.SENSOR_DURATION,
+      chatbotState: this.expectedChatbotState,
+      incidentType: this.expectedIncidentType,
+    })
   })
 
   afterEach(async () => {

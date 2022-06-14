@@ -418,15 +418,16 @@ async function getAllSessionsFromLocation(locationid, pgClient) {
 }
 
 // Creates a new session for a specific location
-async function createSession(locationid, phoneNumber, alertType, pgClient) {
+async function createSession(locationid, phoneNumber, notes, incidentType, chatbotState, alertType, respondedAt, pgClient) {
   try {
     const results = await helpers.runQuery(
       'createSession',
       `
-      INSERT INTO sessions(locationid, phone_number, alert_type, chatbot_state)
-      VALUES ($1, $2, $3, $4) RETURNING *
+      INSERT INTO sessions(locationid, phone_number, notes, incident_type, chatbot_state, alert_type, responded_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
       `,
-      [locationid, phoneNumber, alertType, CHATBOT_STATE.STARTED],
+      [locationid, phoneNumber, notes, incidentType, chatbotState, alertType, respondedAt],
       pool,
       pgClient,
     )

@@ -71,6 +71,21 @@ function locationFactory(overrides = {}) {
   )
 }
 
+async function sessionDBFactory(db, overrides = {}) {
+  // prettier-ignore
+  const session = await db.createSession(
+    overrides.locationid !== undefined ? overrides.locationid : 'myLocation',
+    overrides.phoneNumber !== undefined ? overrides.phoneNumber : '+15557773333',
+    overrides.notes !== undefined ? overrides.notes : null,
+    overrides.incidentType !== undefined ? overrides.incidentType : null,
+    overrides.chatbotState !== undefined ? overrides.chatbotState : CHATBOT_STATE.STARTED,
+    overrides.alertType !== undefined ? overrides.alertType : ALERT_TYPE.SENSOR_DURATION,
+    overrides.respondedAt !== undefined ? overrides.respondedAt : null,
+  )
+
+  return session
+}
+
 function sessionFactory(overrides = {}) {
   // prettier-ignore
   return new Session(
@@ -128,5 +143,6 @@ module.exports = {
   printRandomIntArray,
   randomXethruStream,
   sensorsVitalFactory,
+  sessionDBFactory,
   sessionFactory,
 }

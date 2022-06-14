@@ -5,8 +5,7 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 // In-house dependencies
 const { ALERT_TYPE, CHATBOT_STATE, factories } = require('brave-alert-lib')
 const db = require('../../../db/db')
-const Session = require('../../../Session')
-const { locationDBFactory } = require('../../../testingHelpers')
+const { locationDBFactory, sessionDBFactory } = require('../../../testingHelpers')
 
 describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
   beforeEach(async () => {
@@ -24,9 +23,11 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
       const location = await locationDBFactory(db, {
         clientId: client.id,
       })
-      const session = await db.createSession(location.locationid, 'phoneNumber', ALERT_TYPE.SENSOR_DURATION)
-      session.chatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
-      await db.saveSession(session)
+      await sessionDBFactory(db, {
+        locationid: location.locationid,
+        alertType: ALERT_TYPE.SENSOR_DURATION,
+        chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
+      })
     })
 
     it('should return an empty array', async () => {
@@ -43,9 +44,11 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
       const location = await locationDBFactory(db, {
         clientId: client.id,
       })
-      const session = await db.createSession(location.locationid, 'phoneNumber', ALERT_TYPE.SENSOR_DURATION)
-      session.chatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
-      await db.saveSession(session)
+      await sessionDBFactory(db, {
+        locationid: location.locationid,
+        alertType: ALERT_TYPE.SENSOR_DURATION,
+        chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
+      })
 
       // Insert a single client with a single location with no sessions that matches the Alert API Key that we ask for
       this.alertApiKey = 'alertApiKey'
@@ -83,24 +86,14 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
       })
 
       // Insert a single session for that API key
-      this.incidentType = 'Overdose'
-      this.respondedAt = new Date('2021-01-20T06:20:19.000Z')
       this.alertType = ALERT_TYPE.SENSOR_DURATION
-      this.session = await db.createSession(locationid, phonenumber, this.alertType)
-      await db.saveSession(
-        new Session(
-          this.session.id,
-          this.session.locationid,
-          this.session.phoneNumber,
-          this.session.chatbotState,
-          this.session.alertType,
-          this.session.createdAt,
-          this.session.updatedAt,
-          this.incidentType,
-          this.session.notes,
-          this.respondedAt,
-        ),
-      )
+      this.session = await sessionDBFactory(db, {
+        locationid,
+        phoneNumber: phonenumber,
+        alertType: this.alertType,
+        incidentType: 'Overdose',
+        respondedAt: new Date('2021-01-20T06:20:19.000Z'),
+      })
     })
 
     it('should return an array with one object with the correct values in it', async () => {
@@ -130,7 +123,10 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
         clientId: client.id,
       })
 
-      this.session = await db.createSession(locationid, 'phonenumber1', ALERT_TYPE.SENSOR_DURATION)
+      this.session = await sessionDBFactory(db, {
+        locationid,
+        alertType: ALERT_TYPE.SENSOR_DURATION,
+      })
     })
 
     it('and it is COMPLETED, should not return it', async () => {
@@ -215,7 +211,10 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
         clientId: client.id,
       })
 
-      this.session = await db.createSession(locationid, 'phonenumber1', ALERT_TYPE.SENSOR_DURATION)
+      this.session = await sessionDBFactory(db, {
+        locationid,
+        alertType: ALERT_TYPE.SENSOR_DURATION,
+      })
     })
 
     it('and it is COMPLETED, should not return it', async () => {
