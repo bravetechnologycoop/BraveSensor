@@ -25,7 +25,7 @@ class BraveAlerterConfigurator {
     const alertSession = new AlertSession(
       session.id,
       session.chatbotState,
-      session.incidentType,
+      session.incidentCategory,
       undefined,
       `An alert to check on the washroom at ${location.displayName} was not responded to. Please check on it`,
       location.client.responderPhoneNumber,
@@ -88,7 +88,7 @@ class BraveAlerterConfigurator {
 
         if (alertSession.incidentCategoryKey) {
           const location = await db.getLocationData(session.locationid, pgClient)
-          session.incidentType = location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
+          session.incidentCategory = location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
         }
 
         if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
@@ -142,7 +142,7 @@ class BraveAlerterConfigurator {
   }
 
   createHistoricAlertFromRow(row) {
-    return new HistoricAlert(row.id, row.display_name, row.incident_type, row.alert_type, null, row.created_at, row.responded_at)
+    return new HistoricAlert(row.id, row.display_name, row.incident_category, row.alert_type, null, row.created_at, row.responded_at)
   }
 
   // Historic Alerts are those with status "Completed" or that were last updated longer ago than the SESSION_RESET_THRESHOLD

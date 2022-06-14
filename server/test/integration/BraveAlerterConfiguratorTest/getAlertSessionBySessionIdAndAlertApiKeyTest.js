@@ -13,7 +13,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
     await db.clearTables()
 
     this.expectedChatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
-    this.expectedIncidentType = 'No One Inside'
+    this.expectedIncidentCategory = 'No One Inside'
     this.expectedLocationDisplayName = 'TEST LOCATION'
     this.expectedLocationPhoneNumber = '+17772225555'
     this.expectedTwilioPhoneNumber = '+3336661234'
@@ -36,10 +36,9 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
     // Insert a session for that location in the DB
     this.session = await sessionDBFactory(db, {
       locationid: location.locationid,
-      phoneNumber: this.expectedLocationPhoneNumber,
       alertType: ALERT_TYPE.SENSOR_DURATION,
       chatbotState: this.expectedChatbotState,
-      incidentType: this.expectedIncidentType,
+      incidentCategory: this.expectedIncidentCategory,
     })
   })
 
@@ -54,7 +53,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
     const expectedAlertSession = new AlertSession(
       this.session.id,
       this.expectedChatbotState,
-      this.expectedIncidentType,
+      this.expectedIncidentCategory,
       undefined,
       `An alert to check on the washroom at ${this.expectedLocationDisplayName} was not responded to. Please check on it`,
       this.expectedLocationPhoneNumber,

@@ -105,7 +105,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
       id: sessionId,
       locationid: location.locationid,
       chatbotState: CHATBOT_STATE.COMPLETED,
-      incidentType: 'No One Inside',
+      incidentCategory: 'No One Inside',
     })
 
     expect(db.saveSession).to.be.calledWith(expectedSession, sandbox.any)

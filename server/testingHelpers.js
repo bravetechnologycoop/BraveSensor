@@ -75,9 +75,7 @@ async function sessionDBFactory(db, overrides = {}) {
   // prettier-ignore
   const session = await db.createSession(
     overrides.locationid !== undefined ? overrides.locationid : 'myLocation',
-    overrides.phoneNumber !== undefined ? overrides.phoneNumber : '+15557773333',
-    overrides.notes !== undefined ? overrides.notes : null,
-    overrides.incidentType !== undefined ? overrides.incidentType : null,
+    overrides.incidentCategory !== undefined ? overrides.incidentCategory : null,
     overrides.chatbotState !== undefined ? overrides.chatbotState : CHATBOT_STATE.STARTED,
     overrides.alertType !== undefined ? overrides.alertType : ALERT_TYPE.SENSOR_DURATION,
     overrides.respondedAt !== undefined ? overrides.respondedAt : null,
@@ -91,13 +89,11 @@ function sessionFactory(overrides = {}) {
   return new Session(
     overrides.id !== undefined ? overrides.id : 'd91593b4-25ce-11ec-9621-0242ac130002',
     overrides.locationid !== undefined ? overrides.locationid : 'myLocation',
-    overrides.phoneNumber !== undefined ? overrides.phoneNumber : '+15557773333',
     overrides.chatbotState !== undefined ? overrides.chatbotState : CHATBOT_STATE.COMPLETED,
     overrides.alertType !== undefined ? overrides.alertType : ALERT_TYPE.SENSOR_STILLNESS,
     overrides.createdAt !== undefined ? overrides.createdAt : new Date('2021-10-05T20:20:20.000Z'),
     overrides.updatedAt !== undefined ? overrides.updatedAt : new Date('2021-10-05T20:20:55.000Z'),
-    overrides.incidentType !== undefined ? overrides.incidentType : 'Overdose',
-    overrides.notes !== undefined ? overrides.notes : null,
+    overrides.incidentCategory !== undefined ? overrides.incidentCategory : 'Overdose',
     overrides.respondedAt !== undefined ? overrides.respondedAt : new Date('2021-10-05T20:20:33.000Z'),
   )
 }
