@@ -7,7 +7,7 @@ const Validator = require('express-validator')
 const { createProxyMiddleware } = require('http-proxy-middleware')
 
 // In-house dependencies
-const { ALERT_TYPE, factories, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
 const redis = require('./db/redis')
 const db = require('./db/db')
 const StateMachine = require('./stateMachine/StateMachine')
@@ -72,7 +72,16 @@ async function handleAlert(location, alertType) {
     const currentTime = await db.getCurrentTime(pgClient)
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
-      const newSession = await db.createSession(location.locationid, location.client.responderPhoneNumber, alertType, pgClient)
+      const newSession = await db.createSession(
+        location.locationid,
+        location.client.responderPhoneNumber,
+        undefined,
+        undefined,
+        CHATBOT_STATE.STARTED,
+        alertType,
+        undefined,
+        pgClient,
+      )
 
       const alertInfo = {
         sessionId: newSession.id,
