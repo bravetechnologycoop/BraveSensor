@@ -266,7 +266,7 @@ async function renderLocationDetailsPage(req, res) {
         createdAt,
         updatedAt,
         notes: recentSession.notes,
-        incidentType: recentSession.incidentType,
+        incidentCategory: recentSession.incidentCategory,
         id: recentSession.id,
         chatbotState: recentSession.chatbotState,
         alertType: getAlertTypeDisplayName(recentSession.alertType),

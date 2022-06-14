@@ -11,7 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated `sessions` table to better match the shared DB schema (CU-x1d6mq).
+
 ### Added
+
 - Boron Sensor heartbeat optimizations, to improve debugging and door connectivity (CU-24qak6k).
 - More Door Sensor addresses to the BLE filter (CU-2f1x56y). 
 

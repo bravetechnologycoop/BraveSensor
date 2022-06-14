@@ -31,9 +31,8 @@
                             <th scope="col">Updated At</th>
                             <th scope="col">Responded At</th>
                             <th scope="col">Chatbot State</th>
-                            <th scope="col">Incident Type</th>
+                            <th scope="col">Incident Category</th>
                             <th scope="col">Alert Type</th>
-                            <th scope="col">Notes</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -44,9 +43,8 @@
                                 <td>{{updatedAt}}</td>
                                 <td>{{respondedAt}}</td>
                                 <td>{{chatbotState}}</td>
-                                <td>{{incidentType}}</td>
+                                <td>{{incidentCategory}}</td>
                                 <td>{{alertType}}</td>
-                                <td>{{notes}}</td>
                             </tr>
                         {{/recentSessions}}
                     </tbody>

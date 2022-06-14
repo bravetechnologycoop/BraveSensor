@@ -31,7 +31,7 @@ describe('BraveAlerterConfigurator.js unit tests: getHistoricAlertsByAlertApiKey
     const results = {
       id: 'id',
       display_name: 'displayName',
-      incident_type: 'incidentType',
+      incident_category: 'incidentType',
       alert_type: ALERT_TYPE.SENSOR_DURATION,
       created_at: new Date('2020-01-20T10:10:10.000Z'),
       responded_at: new Date('2020-01-20T10:12:40.000Z'),
@@ -41,7 +41,15 @@ describe('BraveAlerterConfigurator.js unit tests: getHistoricAlertsByAlertApiKey
     const historicAlerts = await this.braveAlerter.getHistoricAlertsByAlertApiKey('alertApiKey', 'maxHistoricAlerts')
 
     expect(historicAlerts).to.eql([
-      new HistoricAlert(results.id, results.display_name, results.incident_type, results.alert_type, null, results.created_at, results.responded_at),
+      new HistoricAlert(
+        results.id,
+        results.display_name,
+        results.incident_category,
+        results.alert_type,
+        null,
+        results.created_at,
+        results.responded_at,
+      ),
     ])
   })
 
@@ -49,7 +57,7 @@ describe('BraveAlerterConfigurator.js unit tests: getHistoricAlertsByAlertApiKey
     const results1 = {
       id: 'id1',
       display_name: 'displayName1',
-      incident_type: 'incidentType1',
+      incident_category: 'incidentType1',
       alert_type: ALERT_TYPE.SENSOR_DURATION,
       created_at: new Date('2020-01-20T10:10:10.000Z'),
       responded_at: new Date('2020-01-20T10:12:40.000Z'),
@@ -57,7 +65,7 @@ describe('BraveAlerterConfigurator.js unit tests: getHistoricAlertsByAlertApiKey
     const results2 = {
       id: 'id2',
       display_name: 'displayName2',
-      incident_type: 'incidentType2',
+      incident_category: 'incidentType2',
       alert_type: ALERT_TYPE.SENSOR_STILLNESS,
       created_at: new Date('2019-02-20T09:10:10.000Z'),
       responded_at: new Date('2019-02-20T09:12:40.000Z'),
@@ -70,7 +78,7 @@ describe('BraveAlerterConfigurator.js unit tests: getHistoricAlertsByAlertApiKey
       new HistoricAlert(
         results1.id,
         results1.display_name,
-        results1.incident_type,
+        results1.incident_category,
         results1.alert_type,
         null,
         results1.created_at,
@@ -79,7 +87,7 @@ describe('BraveAlerterConfigurator.js unit tests: getHistoricAlertsByAlertApiKey
       new HistoricAlert(
         results2.id,
         results2.display_name,
-        results2.incident_type,
+        results2.incident_category,
         results2.alert_type,
         null,
         results2.created_at,

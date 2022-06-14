@@ -89,9 +89,8 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
       this.alertType = ALERT_TYPE.SENSOR_DURATION
       this.session = await sessionDBFactory(db, {
         locationid,
-        phoneNumber: phonenumber,
         alertType: this.alertType,
-        incidentType: 'Overdose',
+        incidentCategory: 'Overdose',
         respondedAt: new Date('2021-01-20T06:20:19.000Z'),
       })
     })

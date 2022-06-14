@@ -26,7 +26,7 @@ pool.on('error', err => {
 
 function createSessionFromRow(r) {
   // prettier-ignore
-  return new Session(r.id, r.locationid, r.phone_number, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_type, r.notes, r.responded_at)
+  return new Session(r.id, r.locationid, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_category, r.responded_at)
 }
 
 function createClientFromRow(r) {
@@ -170,7 +170,7 @@ async function getDataForExport(pgClient) {
         TO_CHAR(s.created_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Start",
         TO_CHAR(s.responded_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Responded At",
         TO_CHAR(s.updated_at, 'yyyy-MM-dd HH24:mi:ss') AS "Last Session Activity",
-        s.incident_type AS "Session Incident Type",
+        s.incident_category AS "Session Incident Type",
         s.chatbot_state AS "Session State",
         s.alert_type As "Alert Type"
       FROM sessions s
@@ -373,11 +373,10 @@ async function getUnrespondedSessionWithLocationId(locationid, pgClient) {
       WHERE locationid = $1
       AND chatbot_state != $2
       AND chatbot_state != $3
-      AND chatbot_state != $4 
       ORDER BY created_at DESC 
       LIMIT 1
       `,
-      [locationid, CHATBOT_STATE.WAITING_FOR_CATEGORY, CHATBOT_STATE.WAITING_FOR_DETAILS, CHATBOT_STATE.COMPLETED],
+      [locationid, CHATBOT_STATE.WAITING_FOR_CATEGORY, CHATBOT_STATE.COMPLETED],
       pool,
       pgClient,
     )
@@ -418,16 +417,16 @@ async function getAllSessionsFromLocation(locationid, pgClient) {
 }
 
 // Creates a new session for a specific location
-async function createSession(locationid, phoneNumber, notes, incidentType, chatbotState, alertType, respondedAt, pgClient) {
+async function createSession(locationid, incidentCategory, chatbotState, alertType, respondedAt, pgClient) {
   try {
     const results = await helpers.runQuery(
       'createSession',
       `
-      INSERT INTO sessions(locationid, phone_number, notes, incident_type, chatbot_state, alert_type, responded_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, responded_at)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
       `,
-      [locationid, phoneNumber, notes, incidentType, chatbotState, alertType, respondedAt],
+      [locationid, incidentCategory, chatbotState, alertType, respondedAt],
       pool,
       pgClient,
     )
@@ -506,20 +505,10 @@ async function saveSession(session, pgClient) {
       'saveSessionUpdate',
       `
       UPDATE sessions
-      SET locationid = $1, state = $2, phone_number = $3, notes = $4, incident_type = $5, chatbot_state = $6, alert_type = $7, responded_at = $8
-      WHERE id = $9
+      SET locationid = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5
+      WHERE id = $6
       `,
-      [
-        session.locationid,
-        session.state,
-        session.phoneNumber,
-        session.notes,
-        session.incidentType,
-        session.chatbotState,
-        session.alertType,
-        session.respondedAt,
-        session.id,
-      ],
+      [session.locationid, session.incidentCategory, session.chatbotState, session.alertType, session.respondedAt, session.id],
       pool,
       pgClient,
     )
@@ -561,7 +550,7 @@ async function getHistoricAlertsByAlertApiKey(alertApiKey, maxHistoricAlerts, ma
     const results = await helpers.runQuery(
       'getHistoricAlertsByAlertApiKey',
       `
-      SELECT s.id, l.display_name, s.incident_type, s.alert_type, s.created_at, s.responded_at
+      SELECT s.id, l.display_name, s.incident_category, s.alert_type, s.created_at, s.responded_at
       FROM sessions AS s
       LEFT JOIN locations AS l ON s.locationid = l.locationid
       LEFT JOIN clients as c ON l.client_id = c.id

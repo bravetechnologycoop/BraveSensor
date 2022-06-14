@@ -79,14 +79,13 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       })
 
       // Insert a single session for that API key)
-      this.incidentType = ALERT_TYPE.SENSOR_DURATION
+      this.incidentCategory = ALERT_TYPE.SENSOR_DURATION
       this.respondedAt = new Date('2021-01-20T06:20:19.000Z')
       this.alertType = ALERT_TYPE.SENSOR_DURATION
       this.session = await sessionDBFactory(db, {
         locationid: location.locationid,
-        phoneNumber: phonenumber,
         alertType: this.alertType,
-        incidentType: this.incidentType,
+        incidentCategory: this.incidentCategory,
         respondedAt: this.respondedAt,
       })
     })
@@ -98,7 +97,7 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         {
           id: this.session.id,
           display_name: this.displayName,
-          incident_type: this.incidentType,
+          incident_category: this.incidentCategory,
           alert_type: this.alertType,
           created_at: this.session.createdAt,
           responded_at: this.respondedAt,
@@ -116,15 +115,15 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
         clientId: client.id,
       })
 
-      this.session1 = await sessionDBFactory(db, { locationid: location.locationid, phoneNumber: 'phonenumber1' })
+      this.session1 = await sessionDBFactory(db, { locationid: location.locationid })
       await helpers.sleep(1) // sleep to make sure that these have created_at values at least one millisecond apart
-      this.session2 = await sessionDBFactory(db, { locationid: location.locationid, phoneNumber: 'phonenumber2' })
+      this.session2 = await sessionDBFactory(db, { locationid: location.locationid })
       await helpers.sleep(1)
-      this.session3 = await sessionDBFactory(db, { locationid: location.locationid, phoneNumber: 'phonenumber3' })
+      this.session3 = await sessionDBFactory(db, { locationid: location.locationid })
       await helpers.sleep(1)
-      this.session4 = await sessionDBFactory(db, { locationid: location.locationid, phoneNumber: 'phonenumber4' })
+      this.session4 = await sessionDBFactory(db, { locationid: location.locationid })
       await helpers.sleep(1)
-      this.session5 = await sessionDBFactory(db, { locationid: location.locationid, phoneNumber: 'phonenumber5' })
+      this.session5 = await sessionDBFactory(db, { locationid: location.locationid })
       await helpers.sleep(1)
     })
 
@@ -149,15 +148,15 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       this.maxTimeAgoInMillis = 1000
 
       // Incompleted sessions older than `this.maxTimeAgoInMillis` should be returned
-      this.session1 = await sessionDBFactory(db, { locationid: location.locationid, phoneNumber: 'phonenumber1' })
-      this.session2 = await sessionDBFactory(db, { locationid: location.locationid, phoneNumber: 'phonenumber2' })
+      this.session1 = await sessionDBFactory(db, { locationid: location.locationid })
+      this.session2 = await sessionDBFactory(db, { locationid: location.locationid })
 
       await helpers.sleep(this.maxTimeAgoInMillis + 1)
 
       // Inncompleted sessions more recent than `this.maxTimeAgoInMillis` should not be returned
-      this.session3 = await sessionDBFactory(db, { locationid: location.locationid, phoneNumber: 'phonenumber3' })
-      this.session4 = await sessionDBFactory(db, { locationid: location.locationid, phoneNumber: 'phonenumber4' })
-      this.session5 = await sessionDBFactory(db, { locationid: location.locationid, phoneNumber: 'phonenumber5' })
+      this.session3 = await sessionDBFactory(db, { locationid: location.locationid })
+      this.session4 = await sessionDBFactory(db, { locationid: location.locationid })
+      this.session5 = await sessionDBFactory(db, { locationid: location.locationid })
     })
 
     it('should return only the matches', async () => {

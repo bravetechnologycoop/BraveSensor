@@ -75,8 +75,6 @@ async function handleAlert(location, alertType) {
       const newSession = await db.createSession(
         location.locationid,
         location.client.responderPhoneNumber,
-        undefined,
-        undefined,
         CHATBOT_STATE.STARTED,
         alertType,
         undefined,
