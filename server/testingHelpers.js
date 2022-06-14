@@ -2,8 +2,9 @@
 const { fill } = require('lodash')
 
 // In-house dependencies
-const { factories, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
 const Location = require('./Location')
+const Session = require('./Session')
 const SensorsVital = require('./SensorsVital')
 
 function getRandomInt(minValue, maxValue) {
@@ -70,6 +71,22 @@ function locationFactory(overrides = {}) {
   )
 }
 
+function sessionFactory(overrides = {}) {
+  // prettier-ignore
+  return new Session(
+    overrides.id !== undefined ? overrides.id : 'd91593b4-25ce-11ec-9621-0242ac130002',
+    overrides.locationid !== undefined ? overrides.locationid : 'myLocation',
+    overrides.phoneNumber !== undefined ? overrides.phoneNumber : '+15557773333',
+    overrides.chatbotState !== undefined ? overrides.chatbotState : CHATBOT_STATE.COMPLETED,
+    overrides.alertType !== undefined ? overrides.alertType : ALERT_TYPE.SENSOR_STILLNESS,
+    overrides.createdAt !== undefined ? overrides.createdAt : new Date('2021-10-05T20:20:20.000Z'),
+    overrides.updatedAt !== undefined ? overrides.updatedAt : new Date('2021-10-05T20:20:55.000Z'),
+    overrides.incidentType !== undefined ? overrides.incidentType : 'Overdose',
+    overrides.notes !== undefined ? overrides.notes : null,
+    overrides.respondedAt !== undefined ? overrides.respondedAt : new Date('2021-10-05T20:20:33.000Z'),
+  )
+}
+
 function sensorsVitalFactory(overrides = {}) {
   // prettier-ignore
   return new SensorsVital(
@@ -111,4 +128,5 @@ module.exports = {
   printRandomIntArray,
   randomXethruStream,
   sensorsVitalFactory,
+  sessionFactory,
 }
