@@ -1,0 +1,20 @@
+#ignore files that may contain sensitive client information
+SetupFiles/
+setupFirmware.h
+
+#ignore vscode settings
+.vscode/
+
+#ignore Argon binary files
+target/
+
+#ignore my logs
+*.log
+
+#ignore PlatformIO config files
+workspaceconfig.code-workspace
+
+ConsoleTests
+
+#ignore generated files
+src/BraveSensorProductionFirmware.cpp
