@@ -1,5 +1,5 @@
 class Session {
-  constructor(id, locationid, chatbotState, alertType, createdAt, updatedAt, incidentCategory, respondedAt) {
+  constructor(id, locationid, chatbotState, alertType, createdAt, updatedAt, incidentCategory, respondedAt, respondedByPhoneNumber) {
     this.id = id
     this.locationid = locationid
     this.chatbotState = chatbotState
@@ -8,6 +8,7 @@ class Session {
     this.updatedAt = updatedAt
     this.incidentCategory = incidentCategory
     this.respondedAt = respondedAt
+    this.respondedByPhoneNumber = respondedByPhoneNumber
   }
 }
 

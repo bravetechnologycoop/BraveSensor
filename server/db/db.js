@@ -26,7 +26,7 @@ pool.on('error', err => {
 
 function createSessionFromRow(r) {
   // prettier-ignore
-  return new Session(r.id, r.locationid, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_category, r.responded_at)
+  return new Session(r.id, r.locationid, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number)
 }
 
 function createClientFromRow(r) {
@@ -172,7 +172,8 @@ async function getDataForExport(pgClient) {
         TO_CHAR(s.updated_at, 'yyyy-MM-dd HH24:mi:ss') AS "Last Session Activity",
         s.incident_category AS "Session Incident Type",
         s.chatbot_state AS "Session State",
-        s.alert_type As "Alert Type"
+        s.alert_type As "Alert Type",
+        s.responded_by_phone_number AS "Session Responded By"
       FROM sessions s
         LEFT JOIN locations l ON s.locationid = l.locationid
         LEFT JOIN clients c on l.client_id = c.id
@@ -417,16 +418,16 @@ async function getAllSessionsFromLocation(locationid, pgClient) {
 }
 
 // Creates a new session for a specific location
-async function createSession(locationid, incidentCategory, chatbotState, alertType, respondedAt, pgClient) {
+async function createSession(locationid, incidentCategory, chatbotState, alertType, respondedAt, respondedByPhoneNumber, pgClient) {
   try {
     const results = await helpers.runQuery(
       'createSession',
       `
-      INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, responded_at)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, responded_at, responded_by_phone_number)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
       `,
-      [locationid, incidentCategory, chatbotState, alertType, respondedAt],
+      [locationid, incidentCategory, chatbotState, alertType, respondedAt, respondedByPhoneNumber],
       pool,
       pgClient,
     )
@@ -505,10 +506,18 @@ async function saveSession(session, pgClient) {
       'saveSessionUpdate',
       `
       UPDATE sessions
-      SET locationid = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5
-      WHERE id = $6
+      SET locationid = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5, responded_by_phone_number = $6
+      WHERE id = $7
       `,
-      [session.locationid, session.incidentCategory, session.chatbotState, session.alertType, session.respondedAt, session.id],
+      [
+        session.locationid,
+        session.incidentCategory,
+        session.chatbotState,
+        session.alertType,
+        session.respondedAt,
+        session.respondedByPhoneNumber,
+        session.id,
+      ],
       pool,
       pgClient,
     )

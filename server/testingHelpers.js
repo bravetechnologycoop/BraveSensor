@@ -79,6 +79,7 @@ async function sessionDBFactory(db, overrides = {}) {
     overrides.chatbotState !== undefined ? overrides.chatbotState : CHATBOT_STATE.STARTED,
     overrides.alertType !== undefined ? overrides.alertType : ALERT_TYPE.SENSOR_DURATION,
     overrides.respondedAt !== undefined ? overrides.respondedAt : null,
+    overrides.respondedByPhoneNumber !== undefined ? overrides.respondedByPhoneNumber : null,
   )
 
   return session
@@ -95,6 +96,7 @@ function sessionFactory(overrides = {}) {
     overrides.updatedAt !== undefined ? overrides.updatedAt : new Date('2021-10-05T20:20:55.000Z'),
     overrides.incidentCategory !== undefined ? overrides.incidentCategory : 'Overdose',
     overrides.respondedAt !== undefined ? overrides.respondedAt : new Date('2021-10-05T20:20:33.000Z'),
+    overrides.respondedByPhoneNumber !== undefined ? overrides.respondedByPhoneNumber : '+17778886666',
   )
 }
 
