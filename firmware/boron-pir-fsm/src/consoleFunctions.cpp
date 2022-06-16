@@ -24,7 +24,7 @@ void setupConsoleFunctions(){
   Particle.function("Change_Initial_Timer", initial_timer_set); 
   Particle.function("Change_Duration_Timer", duration_timer_set);     
   Particle.function("Change_Stillness_Timer", stillness_timer_set);  
-  Particle.function("Change_INS_Threshold", ins_threshold_set);
+  Particle.function("Change_PIR_Threshold", pir_threshold_set);
   Particle.function("Turn_Debugging_Publishes_On_Off", toggle_debugging_publishes);   
   Particle.function("Change_IM21_Door_ID", im21_door_id_set); 
 
@@ -185,7 +185,7 @@ int stillness_timer_set(String input){
 }
 
 //returns threshold if valid input is given, otherwise returns -1
-int ins_threshold_set(String input){
+int pir_threshold_set(String input){
 
   int returnFlag = -1;
 
@@ -193,8 +193,8 @@ int ins_threshold_set(String input){
 
   //if e, echo the current threshold
   if(*holder == 'e'){
-    EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
-    returnFlag = ins_threshold;
+    EEPROM.get(ADDR_PIR_THRESHOLD, pir_threshold);
+    returnFlag = pir_threshold;
   }
   //else parse new threshold
   else {
@@ -208,9 +208,9 @@ int ins_threshold_set(String input){
       returnFlag = -1;
     }
     else {
-      EEPROM.put(ADDR_INS_THRESHOLD, threshold);
-      ins_threshold = threshold;
-      returnFlag = ins_threshold;
+      EEPROM.put(ADDR_PIR_THRESHOLD, threshold);
+      pir_threshold = threshold;
+      returnFlag = pir_threshold;
     }
   }
 

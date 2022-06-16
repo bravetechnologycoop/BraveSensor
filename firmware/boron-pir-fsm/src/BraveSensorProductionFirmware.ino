@@ -5,7 +5,7 @@
 
 #include "Particle.h"
 #include "im21door.h"
-#include "ins3331.h"
+#include "smpir.h"
 #include "stateMachine.h"
 #include "consoleFunctions.h"
 #include "tpl5010watchdog.h"
@@ -26,7 +26,7 @@ void setup() {
   // use internal antenna on Boron for BLE
   BLE.selectAntenna(BleAntennaType::INTERNAL);
   setupIM21();
-  setupINS3331();
+  setupSMPIR();
   setupConsoleFunctions();
   setupStateMachine();
   setupWatchdog();
@@ -54,12 +54,14 @@ void loop() {
     //BLE.selectAntenna(BleAntennaType::EXTERNAL);  
     initializeStateMachineConsts();
     initializeDoorID();
-    startINSSerial();
+    startPIRSerial();
     initialized = true; 
   }
 
   //do every time loop() is called
   if (initialized) {
+    // Serial.print(" AS: ");
+    // Serial.println(checkSMPIR());
     stateHandler();
     getHeartbeat();
   }

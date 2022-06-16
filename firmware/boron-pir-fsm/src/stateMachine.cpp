@@ -6,7 +6,7 @@
 #include "Particle.h"
 #include "stateMachine.h"
 #include "im21door.h"
-#include "ins3331.h"
+#include "smpir.h"
 #include "flashAddresses.h"
 #include "debugFlags.h"
 #include <queue>
@@ -19,7 +19,7 @@ unsigned long state1_timer;
 unsigned long state2_duration_timer;
 unsigned long state3_stillness_timer;
 //initialize constants to sensible default values
-unsigned long ins_threshold = INS_THRESHOLD;
+unsigned long pir_threshold = PIR_THRESHOLD;
 unsigned long state1_max_time = STATE1_MAX_TIME;
 unsigned long state2_max_duration = STATE2_MAX_DURATION;
 unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
@@ -55,7 +55,7 @@ void initializeStateMachineConsts(){
   Log.info("state machine constants flag is 0x%04X", initializeConstsFlag);
 
   if(initializeConstsFlag != INITIALIZE_STATE_MACHINE_CONSTS_FLAG){
-    EEPROM.put(ADDR_INS_THRESHOLD, ins_threshold);
+    EEPROM.put(ADDR_PIR_THRESHOLD, pir_threshold);
     EEPROM.put(ADDR_STATE1_MAX_TIME, state1_max_time);
     EEPROM.put(ADDR_STATE2_MAX_DURATION, state2_max_duration);
     EEPROM.put(ADDR_STATE3_MAX_STILLNES_TIME, state3_max_stillness_time);
@@ -64,7 +64,7 @@ void initializeStateMachineConsts(){
     Log.info("State machine constants were written to flash on bootup.");
   }
   else{
-    EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
+    EEPROM.get(ADDR_PIR_THRESHOLD, pir_threshold);
     EEPROM.get(ADDR_STATE1_MAX_TIME, state1_max_time);
     EEPROM.get(ADDR_STATE2_MAX_DURATION, state2_max_duration);
     EEPROM.get(ADDR_STATE3_MAX_STILLNES_TIME, state3_max_stillness_time);
@@ -83,12 +83,12 @@ void state0_idle(){
 
   //scan inputs
   doorData checkDoor;
-  filteredINSData checkINS;
+  float checkPIR;
   //this returns the previous door event value until a new door event is received
   //on code boot up it initializes to returning 0x99
   checkDoor = checkIM21();
-  //this returns 0.0 if the INS has no new data to transmit
-  checkINS = checkINS3331();
+
+  checkPIR = checkSMPIR();
 
   //do stuff in the state
   digitalWrite(D2,LOW);
@@ -97,15 +97,15 @@ void state0_idle(){
   digitalWrite(D5,LOW);
 
 
-  Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f",checkDoor.doorStatus, checkINS.iAverage);
+  Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f",checkDoor.doorStatus, checkPIR);
   //default timer to 0 when state doesn't have a timer
-  publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, 0); 
+  publishDebugMessage(0, checkDoor.doorStatus, checkPIR, 0); 
 
   //fix outputs and state exit conditions accordingly
-  if(((unsigned long)checkINS.iAverage > ins_threshold) && isDoorClosed(checkDoor.doorStatus)){
+  if(((unsigned long)checkPIR > pir_threshold) && isDoorClosed(checkDoor.doorStatus)){
 
     Log.warn("In state 0, door closed and seeing movement, heading to state 1");
-    publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(0, 1, checkDoor.doorStatus, checkPIR);
     saveStateChange(0, 0);
     //zero the state 1 timer
     state1_timer = millis();
@@ -123,24 +123,23 @@ void state1_15sCountdown(){
   System.disableReset();
   //scan inputs
   doorData checkDoor;
-  filteredINSData checkINS;
+  float checkPIR;
   //this returns the previous door event value until a new door event is received
   //on code boot up it initializes to returning 0x99
   checkDoor = checkIM21();
-  //this returns 0.0 if the INS has no new data to transmit
-  checkINS = checkINS3331();
+  checkPIR = checkSMPIR();
+
 
   //do stuff in the state
   digitalWrite(D2,HIGH);
-  Log.info("You are in state 1, 15s countdown: Door status, iAverage, timer = 0x%02X, %f, %ld",checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
-  publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, (millis()-state1_timer));  
+  Log.info("You are in state 1, 15s countdown: Door status, iAverage, timer = 0x%02X, %f, %ld",checkDoor.doorStatus, checkPIR, (millis() - state1_timer));
+  publishDebugMessage(1, checkDoor.doorStatus, checkPIR, (millis()-state1_timer));  
 
 
   //fix outputs and state exit conditions accordingly
-  if((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold){
-
+  if((unsigned long)checkPIR > 0 && (unsigned long)checkPIR < pir_threshold){
     Log.warn("no movement, you're going back to state 0 from state 1");
-    publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(1, 0, checkDoor.doorStatus, checkPIR);
     saveStateChange(1, 1);
     stateHandler = state0_idle;
 
@@ -148,7 +147,7 @@ void state1_15sCountdown(){
   else if(isDoorOpen(checkDoor.doorStatus)){
 
     Log.warn("door was opened, you're going back to state 0 from state 1");
-    publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(1, 0, checkDoor.doorStatus, checkPIR);
     saveStateChange(1, 2);
     stateHandler = state0_idle;
 
@@ -156,7 +155,7 @@ void state1_15sCountdown(){
   else if( millis() - state1_timer >= state1_max_time){
 
     Log.warn("door closed && motion for > Xs, going to state 2 from state1");
-    publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(1, 2, checkDoor.doorStatus, checkPIR);
     saveStateChange(1, 3);
     //zero the duration timer
     state2_duration_timer = millis();
@@ -178,23 +177,22 @@ void state2_duration(){
 
   //scan inputs
   doorData checkDoor;
-  filteredINSData checkINS;
+  float checkPIR;
   //this returns the previous door event value until a new door event is received
   //on code boot up it initializes to returning 0x99
   checkDoor = checkIM21();
-  //this returns 0.0 if the INS has no new data to transmit
-  checkINS = checkINS3331();
+  checkPIR = checkSMPIR();
 
   //do stuff in the state
   digitalWrite(D3,HIGH);
-  Log.info("You are in state 2, duration: Door status, iAverage, timer = 0x%02X, %f, %ld",checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer)); 
-  publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis()-state2_duration_timer));  
+  Log.info("You are in state 2, duration: Door status, iAverage, timer = 0x%02X, %f, %ld",checkDoor.doorStatus, checkPIR, (millis() - state2_duration_timer)); 
+  publishDebugMessage(2, checkDoor.doorStatus, checkPIR, (millis()-state2_duration_timer));  
 
   //fix outputs and state exit conditions accordingly
-  if((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold){
+  if((unsigned long)checkPIR> 0 && (unsigned long)checkPIR < pir_threshold){
 
     Log.warn("Seeing stillness, going to state3_stillness from state2_duration");
-    publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(2, 3, checkDoor.doorStatus, checkPIR);
     saveStateChange(2, 1);
     //zero the stillness timer
     state3_stillness_timer = millis();
@@ -205,7 +203,7 @@ void state2_duration(){
   else if(isDoorOpen(checkDoor.doorStatus)){
 
     Log.warn("Door opened, session over, going to idle from state2_duration");
-    publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(2, 0, checkDoor.doorStatus, checkPIR);
     saveStateChange(2, 2);
     stateHandler = state0_idle;
 
@@ -213,7 +211,7 @@ void state2_duration(){
   else if(millis() - state2_duration_timer >= state2_max_duration){
 
     Log.warn("See duration alert, going from state2_duration to idle after alert publish");
-    publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(2, 0, checkDoor.doorStatus, checkPIR);
     saveStateChange(2, 4);
     Log.error("Duration Alert!!");
     Particle.publish("Duration Alert", "duration alert", PRIVATE);
@@ -232,23 +230,22 @@ void state3_stillness(){
 
   //scan inputs
   doorData checkDoor;
-  filteredINSData checkINS;
+  float checkPIR;
   //this returns the previous door event value until a new door event is received
   //on code boot up it initializes to returning 0x99
   checkDoor = checkIM21();
-  //this returns 0.0 if the INS has no new data to transmit
-  checkINS = checkINS3331();
+  checkPIR = checkSMPIR();
 
   //do stuff in the state
   digitalWrite(D4,HIGH);
-  Log.info("You are in state 3, stillness: Door status, iAverage, timer = 0x%02X, %f, %ld",checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
-  publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis()-state3_stillness_timer));   
+  Log.info("You are in state 3, stillness: Door status, iAverage, timer = 0x%02X, %f, %ld",checkDoor.doorStatus, checkPIR, (millis() - state3_stillness_timer));
+  publishDebugMessage(3, checkDoor.doorStatus, checkPIR, (millis()-state3_stillness_timer));   
 
   //fix outputs and state exit conditions accordingly
-  if((unsigned long)checkINS.iAverage > ins_threshold){
+  if((unsigned long)checkPIR > pir_threshold){
 
     Log.warn("motion spotted again, going from state3_stillness to state2_duration");
-    publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(3, 2, checkDoor.doorStatus, checkPIR);
     saveStateChange(3, 0);
     //go back to state 2, duration
     stateHandler = state2_duration;
@@ -257,7 +254,7 @@ void state3_stillness(){
   else if(isDoorOpen(checkDoor.doorStatus)){
 
     Log.warn("door opened, session over, going from state3_stillness to idle");
-    publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(3, 0, checkDoor.doorStatus, checkPIR);
     saveStateChange(3, 2);
     stateHandler = state0_idle;
 
@@ -265,7 +262,7 @@ void state3_stillness(){
   else if(millis() - state2_duration_timer >= state2_max_duration){
 
     Log.warn("See duration alert, going from state3 to idle after alert publish");
-    publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(3, 0, checkDoor.doorStatus, checkPIR);
     saveStateChange(3, 4);
     Log.error("Duration Alert!!");
     Particle.publish("Duration Alert", "duration alert", PRIVATE);
@@ -274,7 +271,7 @@ void state3_stillness(){
   else if(millis() - state3_stillness_timer >= state3_max_stillness_time){
 
     Log.warn("stillness alert, going from state3 to idle after publish");
-    publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
+    publishStateTransition(3, 0, checkDoor.doorStatus, checkPIR);
     saveStateChange(3, 5);
     Log.error("Stillness Alert!!");
     Particle.publish("Stillness Alert", "stillness alert!!!", PRIVATE);
@@ -288,21 +285,21 @@ void state3_stillness(){
 
 } //end state3_stillness
 
-void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue){
+void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float PIRValue){
 
     if(stateMachineDebugFlag){
 
       //from particle docs, max length of publish is 622 chars, I am assuming this includes null char
       char stateTransition[622];
       snprintf(stateTransition, sizeof(stateTransition), 
-              "{\"prev_state\":\"%d\", \"next_state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\"}", prevState, nextState, doorStatus, INSValue); 
+              "{\"prev_state\":\"%d\", \"next_state\":\"%d\", \"door_status\":\"0x%02X\", \"PIR_val\":\"%f\"}", prevState, nextState, doorStatus, PIRValue); 
       Particle.publish("State Transition", stateTransition, PRIVATE);
 
     }
 
 }
 
-void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, unsigned long timer){
+void publishDebugMessage(int state, unsigned char doorStatus, float PIRValue, unsigned long timer){
 
     static unsigned long lastDebugPublish = 0;
 
@@ -311,7 +308,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
       //from particle docs, max length of publish is 622 chars, I am assuming this includes null char
       char debugMessage[622];
       snprintf(debugMessage, sizeof(debugMessage), 
-              "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"timer_status\":\"%ld\"}", state, doorStatus, INSValue, timer); 
+              "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"PIR_val\":\"%f\", \"timer_status\":\"%ld\"}", state, doorStatus, PIRValue, timer); 
       Particle.publish("Debug Message", debugMessage, PRIVATE);
       lastDebugPublish = millis();
 
