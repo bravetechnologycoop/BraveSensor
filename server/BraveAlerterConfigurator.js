@@ -14,7 +14,6 @@ class BraveAlerterConfigurator {
       this.getActiveAlertsByAlertApiKey.bind(this),
       this.getHistoricAlertsByAlertApiKey.bind(this),
       this.getNewNotificationsCountByAlertApiKey.bind(this),
-      false,
       this.getReturnMessage.bind(this),
     )
   }
@@ -26,8 +25,6 @@ class BraveAlerterConfigurator {
       session.id,
       session.chatbotState,
       session.incidentCategory,
-      undefined,
-      `An alert to check on the washroom at ${location.displayName} was not responded to. Please check on it`,
       location.client.responderPhoneNumber,
       this.createIncidentCategoryKeys(location.client.incidentCategories),
       location.client.incidentCategories,

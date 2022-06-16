@@ -265,7 +265,6 @@ async function renderLocationDetailsPage(req, res) {
       viewParams.recentSessions.push({
         createdAt,
         updatedAt,
-        notes: recentSession.notes,
         incidentCategory: recentSession.incidentCategory,
         id: recentSession.id,
         chatbotState: recentSession.chatbotState,

@@ -51,8 +51,6 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
       this.session.id,
       this.expectedChatbotState,
       this.expectedIncidentCategory,
-      undefined,
-      `An alert to check on the washroom at ${this.expectedLocationDisplayName} was not responded to. Please check on it`,
       this.expectedLocationPhoneNumber,
       this.expectedIncidentCategoryKeys,
       this.expectedIncidentCategories,
