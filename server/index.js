@@ -78,6 +78,7 @@ async function handleAlert(location, alertType) {
         CHATBOT_STATE.STARTED,
         alertType,
         undefined,
+        undefined,
         pgClient,
       )
 

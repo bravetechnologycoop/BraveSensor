@@ -182,6 +182,7 @@ async function downloadCsv(req, res) {
     'Session Incident Type',
     'Session State',
     'Alert Type',
+    'Session Responded By',
   ]
 
   const csvParser = new Parser({ fields })
