@@ -167,6 +167,8 @@ void threadBLEScanner(void *param) {
     char address[18]; 
     sprintf(address, "B8:7C:6F:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
     filter.deviceName("iSensor ").address(address); 
+    sprintf(address, "8C:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
+    filter.address(address); 
 
     //scanning for door sensors of correct device id
     Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter); 
