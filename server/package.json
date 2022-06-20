@@ -8,7 +8,8 @@
     "test": "NODE_ENV=test mocha --timeout 10000 --require \"test/mochaFixtures.js\" \"test/**/*.js\"",
     "integrationtest": "NODE_ENV=test mocha --timeout 10000 --require \"test/mochaFixtures.js\" \"test/integration/**/*.js\"",
     "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/unit/**/*.js\"",
-    "smoketest": "node -e 'require(\"./smokeTest.js\")'"
+    "smoketest": "node -e 'require(\"./smokeTest.js\")'",
+    "test-coverage": "nyc --reporter=html --reporter=text npm test"
   },
   "eslintIgnore": [
     "Public/*",
@@ -53,6 +54,7 @@
     "eslint-plugin-react": "^7.21.5",
     "eslint-plugin-react-hooks": "^1.7.0",
     "mocha": "^9.2.1",
+    "nyc": "^15.1.0",
     "prettier": "^2.3.2",
     "rewire": "^6.0.0",
     "sinon": "^9.2.4",

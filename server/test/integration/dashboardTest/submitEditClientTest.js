@@ -81,7 +81,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       expect({
         displayName: updatedClient.displayName,
         fromPhoneNumber: updatedClient.fromPhoneNumber,
-        responderPhoneNumber: updatedClient.responderPhoneNumber,
+        responderPhoneNumbers: updatedClient.responderPhoneNumbers,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
         fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
@@ -93,7 +93,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
-        responderPhoneNumber: this.newResponderPhoneNumber,
+        responderPhoneNumbers: [this.newResponderPhoneNumber],
         responderPushId: this.newResponderPushId,
         alertApiKey: this.newAlertApiKey,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers,
@@ -151,7 +151,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       expect({
         displayName: updatedClient.displayName,
         fromPhoneNumber: updatedClient.fromPhoneNumber,
-        responderPhoneNumber: updatedClient.responderPhoneNumber,
+        responderPhoneNumbers: updatedClient.responderPhoneNumbers,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
         fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
@@ -163,7 +163,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       }).to.eql({
         displayName: this.newDisplayname.trim(),
         fromPhoneNumber: this.newFromPhoneNumber.trim(),
-        responderPhoneNumber: this.newResponderPhoneNumber.trim(),
+        responderPhoneNumbers: [this.newResponderPhoneNumber.trim()],
         responderPushId: this.newResponderPushId.trim(),
         alertApiKey: this.newAlertApiKey.trim(),
         fallbackPhoneNumbers: this.fallbackPhoneNumbers.map(number => number.trim()),
@@ -220,7 +220,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.goodRequest = {
         displayName: this.existingClient.displayName,
         fromPhoneNumber: this.existingClient.fromPhoneNumber,
-        responderPhoneNumber: this.existingClient.responderPhoneNumber,
+        responderPhoneNumber: this.existingClient.responderPhoneNumbers[0],
         responderPushId: this.existingClient.responderPushId,
         alertApiKey: this.existingClient.alertApiKey,
         fallbackPhoneNumbers: this.existingClient.fallbackPhoneNumbers.join(','),
@@ -244,7 +244,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       expect({
         displayName: updatedClient.displayName,
         fromPhoneNumber: updatedClient.fromPhoneNumber,
-        responderPhoneNumber: updatedClient.responderPhoneNumber,
+        responderPhoneNumbers: updatedClient.responderPhoneNumbers,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
         fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
@@ -256,7 +256,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       }).to.eql({
         displayName: this.existingClient.displayName,
         fromPhoneNumber: this.existingClient.fromPhoneNumber,
-        responderPhoneNumber: this.existingClient.responderPhoneNumber,
+        responderPhoneNumbers: this.existingClient.responderPhoneNumbers,
         responderPushId: this.existingClient.responderPushId,
         alertApiKey: this.existingClient.alertApiKey,
         fallbackPhoneNumbers: this.existingClient.fallbackPhoneNumbers,
@@ -312,7 +312,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       expect({
         displayName: updatedClient.displayName,
         fromPhoneNumber: updatedClient.fromPhoneNumber,
-        responderPhoneNumber: updatedClient.responderPhoneNumber,
+        responderPhoneNumbers: updatedClient.responderPhoneNumbers,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
         fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
@@ -324,7 +324,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
-        responderPhoneNumber: null,
+        responderPhoneNumbers: null,
         responderPushId: this.newResponderPushId,
         alertApiKey: this.newAlertApiKey,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers,
@@ -380,7 +380,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       expect({
         displayName: updatedClient.displayName,
         fromPhoneNumber: updatedClient.fromPhoneNumber,
-        responderPhoneNumber: updatedClient.responderPhoneNumber,
+        responderPhoneNumbers: updatedClient.responderPhoneNumbers,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
         fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
@@ -392,7 +392,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
-        responderPhoneNumber: this.newResponderPhoneNumber,
+        responderPhoneNumbers: [this.newResponderPhoneNumber],
         responderPushId: this.newResponderPushId,
         alertApiKey: null,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers,
@@ -448,7 +448,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       expect({
         displayName: updatedClient.displayName,
         fromPhoneNumber: updatedClient.fromPhoneNumber,
-        responderPhoneNumber: updatedClient.responderPhoneNumber,
+        responderPhoneNumbers: updatedClient.responderPhoneNumbers,
         responderPushId: updatedClient.responderPushId,
         alertApiKey: updatedClient.alertApiKey,
         fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
@@ -460,7 +460,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
-        responderPhoneNumber: this.newResponderPhoneNumber,
+        responderPhoneNumbers: [this.newResponderPhoneNumber],
         responderPushId: null,
         alertApiKey: this.newAlertApiKey,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers,
