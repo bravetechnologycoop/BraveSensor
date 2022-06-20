@@ -76,6 +76,6 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToRespondedByP
       'Cat1',
     ])
 
-    expect(returnMessage).to.equal('Error: No active chatbot found')
+    expect(returnMessage).to.equal('Error: No active session found')
   })
 })

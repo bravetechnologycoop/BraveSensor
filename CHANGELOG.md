@@ -14,6 +14,7 @@ the code was deployed.
 ### Changed
 
 - Updated `sessions` table to better match the shared DB schema (CU-x1d6mq).
+- Allow multiple Responder Phones per Client (CU-2dm6x2j).
 
 ### Added
 

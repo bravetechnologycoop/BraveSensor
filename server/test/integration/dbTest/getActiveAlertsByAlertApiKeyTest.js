@@ -73,9 +73,9 @@ describe('db.js integration tests: getActiveAlertsByAlertApiKey', () => {
       this.displayName = 'displayName'
       this.incidentCategories = ['No One Inside', 'Person responded', 'None of the above']
       const locationid = 'locationid'
-      const phonenumber = 'phonenumber'
+      const phonenumbers = ['phonenumber']
       const client = await factories.clientDBFactory(db, {
-        responderPhoneNumber: phonenumber,
+        responderPhoneNumbers: phonenumbers,
         alertApiKey: this.alertApiKey,
         incidentCategories: this.incidentCategories,
       })

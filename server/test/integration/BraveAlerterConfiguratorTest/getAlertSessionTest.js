@@ -15,18 +15,18 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
     this.expectedChatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
     this.expectedIncidentCategory = 'No One Inside'
     this.expectedLocationDisplayName = 'TEST LOCATION'
-    this.expectedLocationPhoneNumber = '+17772225555'
+    this.expectedRespondedByPhoneNumber = '+17772225555'
     this.expectedIncidentCategoryKeys = ['1', '2', '3']
     this.expectedIncidentCategories = ['No One Inside', 'Person responded', 'None of the above']
 
     // Insert a location in the DB
     const client = await factories.clientDBFactory(db, {
-      responderPhoneNumber: this.expectedLocationPhoneNumber,
+      responderPhoneNumbers: [this.expectedRespondedByPhoneNumber],
       incidentCategories: this.expectedIncidentCategories,
     })
     const location = await locationDBFactory(db, {
       displayName: this.expectedLocationDisplayName,
-      twilioNumber: this.expectedLocationPhoneNumber,
+      twilioNumber: this.expectedRespondedByPhoneNumber,
       clientId: client.id,
     })
 
@@ -36,7 +36,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
       alertType: ALERT_TYPE.SENSOR_DURATION,
       chatbotState: this.expectedChatbotState,
       incidentCategory: this.expectedIncidentCategory,
-      respondedByPhoneNumber: this.expectedLocationPhoneNumber,
+      respondedByPhoneNumber: this.expectedRespondedByPhoneNumber,
     })
   })
 
@@ -51,9 +51,9 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
     const expectedAlertSession = new AlertSession(
       this.session.id,
       this.expectedChatbotState,
-      this.expectedLocationPhoneNumber,
+      this.expectedRespondedByPhoneNumber,
       this.expectedIncidentCategory,
-      [this.expectedLocationPhoneNumber],
+      [this.expectedRespondedByPhoneNumber],
       this.expectedIncidentCategoryKeys,
       this.expectedIncidentCategories,
     )
