@@ -18,7 +18,8 @@ the code was deployed.
 ### Added
 
 - Boron Sensor heartbeat optimizations, to improve debugging and door connectivity (CU-24qak6k).
-- More Door Sensor addresses to the BLE filter (CU-2f1x56y). 
+- More Door Sensor addresses to the BLE filter (CU-2f1x56y).
+- Track the responsible Responder Phone for each session (CU-2dm6x2j).
 
 ## [6.0.0] - 2022-06-09
 

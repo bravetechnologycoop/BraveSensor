@@ -14,7 +14,8 @@ class BraveAlerterConfigurator {
       this.getActiveAlertsByAlertApiKey.bind(this),
       this.getHistoricAlertsByAlertApiKey.bind(this),
       this.getNewNotificationsCountByAlertApiKey.bind(this),
-      this.getReturnMessage.bind(this),
+      this.getReturnMessageToRespondedByPhoneNumber.bind(this),
+      this.getReturnMessageToOtherResponderPhoneNumbers.bind(this),
     )
   }
 
@@ -24,8 +25,9 @@ class BraveAlerterConfigurator {
     const alertSession = new AlertSession(
       session.id,
       session.chatbotState,
+      session.respondedByPhoneNumber,
       session.incidentCategory,
-      location.client.responderPhoneNumber,
+      location.client.responderPhoneNumbers,
       this.createIncidentCategoryKeys(location.client.incidentCategories),
       location.client.incidentCategories,
     )
@@ -69,6 +71,7 @@ class BraveAlerterConfigurator {
     }
 
     let pgClient
+    let session
 
     try {
       pgClient = await db.beginTransaction()
@@ -76,23 +79,31 @@ class BraveAlerterConfigurator {
         helpers.logError(`alertSessionChangedCallback: Error starting transaction`)
         return
       }
-      const session = await db.getSessionWithSessionId(alertSession.sessionId, pgClient)
+      session = await db.getSessionWithSessionId(alertSession.sessionId, pgClient)
 
       if (session) {
-        if (alertSession.alertState) {
-          session.chatbotState = alertSession.alertState
+        // If this is not a OneSignal session (i.e. we are given a respondedByPhoneNumber) and the session has no respondedByPhoneNumber, then this is the first SMS response, so assign it as the session's respondedByPhoneNumber
+        if (alertSession.respondedByPhoneNumber !== undefined && session.respondedByPhoneNumber === null) {
+          session.respondedByPhoneNumber = alertSession.respondedByPhoneNumber
         }
 
-        if (alertSession.incidentCategoryKey) {
-          const location = await db.getLocationData(session.locationid, pgClient)
-          session.incidentCategory = location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
-        }
+        // If this is a OneSignal session (i.e. it isn't given the respondedByPhoneNumber) or if the SMS came from the session's respondedByPhoneNumber
+        if (alertSession.respondedByPhoneNumber === undefined || alertSession.respondedByPhoneNumber === session.respondedByPhoneNumber) {
+          if (alertSession.alertState) {
+            session.chatbotState = alertSession.alertState
+          }
 
-        if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
-          session.respondedAt = await db.getCurrentTime(pgClient)
-        }
+          if (alertSession.incidentCategoryKey) {
+            const location = await db.getLocationData(session.locationid, pgClient)
+            session.incidentCategory = location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
+          }
 
-        await db.saveSession(session, pgClient)
+          if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
+            session.respondedAt = await db.getCurrentTime(pgClient)
+          }
+
+          await db.saveSession(session, pgClient)
+        }
       } else {
         helpers.logError(`alertSessionChangedCallback was called for a non-existent session: ${alertSession.sessionId}`)
       }
@@ -107,6 +118,8 @@ class BraveAlerterConfigurator {
         helpers.logError(`alertSessionChangedCallback: Error rolling back transaction: ${e}`)
       }
     }
+
+    return session.respondedByPhoneNumber
   }
 
   async getLocationByAlertApiKey(alertApiKey) {
@@ -160,7 +173,7 @@ class BraveAlerterConfigurator {
     return count
   }
 
-  getReturnMessage(fromAlertState, toAlertState, incidentCategories) {
+  getReturnMessageToRespondedByPhoneNumber(fromAlertState, toAlertState, incidentCategories) {
     let returnMessage
 
     switch (fromAlertState) {
@@ -175,12 +188,45 @@ class BraveAlerterConfigurator {
         if (toAlertState === CHATBOT_STATE.WAITING_FOR_CATEGORY) {
           returnMessage = "Sorry, the incident type wasn't recognized. Please try again."
         } else if (toAlertState === CHATBOT_STATE.COMPLETED) {
-          returnMessage = 'Thank you!'
+          returnMessage = `Thank you! This session is now complete. (You don't need to respond to this message.)`
         }
         break
 
       case CHATBOT_STATE.COMPLETED:
         returnMessage = 'Thank you'
+        break
+
+      default:
+        returnMessage = 'Error: No active chatbot found'
+        break
+    }
+
+    return returnMessage
+  }
+
+  getReturnMessageToOtherResponderPhoneNumbers(fromAlertState, toAlertState, selectedIncidentCategory) {
+    let returnMessage
+
+    switch (fromAlertState) {
+      case CHATBOT_STATE.STARTED:
+      case CHATBOT_STATE.WAITING_FOR_REPLY:
+        if (toAlertState === CHATBOT_STATE.WAITING_FOR_CATEGORY) {
+          returnMessage = `Another Responder has acknowledged this request. (You don't need to respond to this message.)`
+        } else {
+          returnMessage = null
+        }
+        break
+
+      case CHATBOT_STATE.WAITING_FOR_CATEGORY:
+        if (toAlertState === CHATBOT_STATE.WAITING_FOR_CATEGORY) {
+          returnMessage = null
+        } else if (toAlertState === CHATBOT_STATE.COMPLETED) {
+          returnMessage = `The incident was categorized as ${selectedIncidentCategory}.\n\nThank you. This session is now complete. (You don't need to respond to this message.)`
+        }
+        break
+
+      case CHATBOT_STATE.COMPLETED:
+        returnMessage = null
         break
 
       default:

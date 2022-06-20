@@ -79,7 +79,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           return {
             displayName: client.displayName,
             fromPhoneNumber: client.fromPhoneNumber,
-            responderPhoneNumber: client.responderPhoneNumber,
+            responderPhoneNumbers: client.responderPhoneNumbers,
             responderPushId: client.responderPushId,
             alertApiKey: client.alertApiKey,
             fallbackPhoneNumbers: client.fallbackPhoneNumbers,
@@ -94,7 +94,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         {
           displayName: this.displayName,
           fromPhoneNumber: this.fromPhoneNumber,
-          responderPhoneNumber: this.responderPhoneNumber,
+          responderPhoneNumbers: [this.responderPhoneNumber],
           responderPushId: this.responderPushId,
           alertApiKey: this.alertApiKey,
           fallbackPhoneNumbers: this.fallbackPhoneNumbers,
@@ -153,7 +153,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           return {
             displayName: client.displayName,
             fromPhoneNumber: client.fromPhoneNumber,
-            responderPhoneNumber: client.responderPhoneNumber,
+            responderPhoneNumbers: client.responderPhoneNumbers,
             responderPushId: client.responderPushId,
             alertApiKey: client.alertApiKey,
             fallbackPhoneNumbers: client.fallbackPhoneNumbers,
@@ -168,7 +168,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         {
           displayName: this.displayName.trim(),
           fromPhoneNumber: this.fromPhoneNumber.trim(),
-          responderPhoneNumber: this.responderPhoneNumber.trim(),
+          responderPhoneNumbers: [this.responderPhoneNumber.trim()],
           responderPushId: this.responderPushId.trim(),
           alertApiKey: this.alertApiKey.trim(),
           fallbackPhoneNumbers: this.fallbackPhoneNumbers.map(phone => phone.trim()),
@@ -258,7 +258,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           return {
             displayName: client.displayName,
             fromPhoneNumber: client.fromPhoneNumber,
-            responderPhoneNumber: client.responderPhoneNumber,
+            responderPhoneNumbers: client.responderPhoneNumbers,
             responderPushId: client.responderPushId,
             alertApiKey: client.alertApiKey,
             fallbackPhoneNumbers: client.fallbackPhoneNumbers,
@@ -273,7 +273,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         {
           displayName: this.displayName,
           fromPhoneNumber: this.fromPhoneNumber,
-          responderPhoneNumber: null,
+          responderPhoneNumbers: null,
           responderPushId: this.responderPushId,
           alertApiKey: this.alertApiKey,
           fallbackPhoneNumbers: this.fallbackPhoneNumbers,
@@ -330,7 +330,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           return {
             displayName: client.displayName,
             fromPhoneNumber: client.fromPhoneNumber,
-            responderPhoneNumber: client.responderPhoneNumber,
+            responderPhoneNumbers: client.responderPhoneNumbers,
             responderPushId: client.responderPushId,
             alertApiKey: client.alertApiKey,
             fallbackPhoneNumbers: client.fallbackPhoneNumbers,
@@ -345,7 +345,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         {
           displayName: this.displayName,
           fromPhoneNumber: this.fromPhoneNumber,
-          responderPhoneNumber: this.responderPhoneNumber,
+          responderPhoneNumbers: [this.responderPhoneNumber],
           responderPushId: null,
           alertApiKey: this.alertApiKey,
           fallbackPhoneNumbers: this.fallbackPhoneNumbers,
@@ -402,7 +402,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           return {
             displayName: client.displayName,
             fromPhoneNumber: client.fromPhoneNumber,
-            responderPhoneNumber: client.responderPhoneNumber,
+            responderPhoneNumbers: client.responderPhoneNumbers,
             responderPushId: client.responderPushId,
             alertApiKey: client.alertApiKey,
             fallbackPhoneNumbers: client.fallbackPhoneNumbers,
@@ -417,7 +417,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         {
           displayName: this.displayName,
           fromPhoneNumber: this.fromPhoneNumber,
-          responderPhoneNumber: this.responderPhoneNumber,
+          responderPhoneNumbers: [this.responderPhoneNumber],
           responderPushId: this.responderPushId,
           alertApiKey: null,
           fallbackPhoneNumbers: this.fallbackPhoneNumbers,

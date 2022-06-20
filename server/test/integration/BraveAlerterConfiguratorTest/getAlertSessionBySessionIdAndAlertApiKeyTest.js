@@ -39,6 +39,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
       alertType: ALERT_TYPE.SENSOR_DURATION,
       chatbotState: this.expectedChatbotState,
       incidentCategory: this.expectedIncidentCategory,
+      respondedByPhoneNumber: this.expectedLocationPhoneNumber,
     })
   })
 
@@ -53,8 +54,9 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
     const expectedAlertSession = new AlertSession(
       this.session.id,
       this.expectedChatbotState,
-      this.expectedIncidentCategory,
       this.expectedLocationPhoneNumber,
+      this.expectedIncidentCategory,
+      [this.expectedLocationPhoneNumber],
       this.expectedIncidentCategoryKeys,
       this.expectedIncidentCategories,
     )

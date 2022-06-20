@@ -10,6 +10,7 @@ const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
 const redis = require('../../../db/redis')
 const { locationFactory, sessionFactory } = require('../../../testingHelpers')
+const { newResponderPushId, newResponderPhoneNumber } = require('../../integration/dashboardTest/submitEditClientTest')
 
 // Configure Chai
 use(sinonChai)
@@ -57,16 +58,22 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     expect(db.saveSession).to.be.calledWith(expectedSession, sandbox.any)
   })
 
-  it('if given alertState WAITING_FOR_CATEGORY and it has not already been responded to should update alertState and respondedAt', async () => {
+  it('if given alertState WAITING_FOR_CATEGORY and it has not already been responded to should update alertState, respondedByPhoneNumber, and respondedAt', async () => {
     const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
-    sandbox.stub(db, 'getSessionWithSessionId').returns(sessionFactory({ id: sessionId, respondedAt: null }))
+    const newRespondedByPhoneNumber = '+18887774444'
+    sandbox.stub(db, 'getSessionWithSessionId').returns(sessionFactory({ id: sessionId, respondedAt: null, respondedByPhoneNumber: null }))
 
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
-    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY))
+    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY, newRespondedByPhoneNumber))
 
     const expectedSession = sessionFactory(
-      sessionFactory({ id: sessionId, chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY, respondedAt: this.testCurrentTime }),
+      sessionFactory({
+        id: sessionId,
+        chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
+        respondedAt: this.testCurrentTime,
+        respondedByPhoneNumber: newRespondedByPhoneNumber,
+      }),
     )
 
     expect(db.saveSession).to.be.calledWith(expectedSession, sandbox.any)
@@ -75,39 +82,85 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
   it('if given alertState WAITING_FOR_CATEGORY and it has already been responded to should update alertState but not update respondedAt', async () => {
     const testRespondedAtTime = new Date('2010-06-06T06:06:06.000Z')
     const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
-    sandbox.stub(db, 'getSessionWithSessionId').returns(sessionFactory({ id: sessionId, respondedAt: testRespondedAtTime }))
+    const oldRespondedByPhoneNumber = '+13332224444'
+    sandbox
+      .stub(db, 'getSessionWithSessionId')
+      .returns(sessionFactory({ id: sessionId, respondedAt: testRespondedAtTime, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
 
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
-    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY))
+    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY, oldRespondedByPhoneNumber))
 
     const expectedSession = sessionFactory(
-      sessionFactory({ id: sessionId, chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY, respondedAt: testRespondedAtTime }),
+      sessionFactory({
+        id: sessionId,
+        chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
+        respondedAt: testRespondedAtTime,
+        respondedByPhoneNumber: oldRespondedByPhoneNumber,
+      }),
     )
 
     expect(db.saveSession).to.be.calledWith(expectedSession, sandbox.any)
   })
 
+  it('if given alertState WAITING_FOR_CATEGORY and it has already been responded to by a different responderPhoneNumber not update anything', async () => {
+    const testRespondedAtTime = new Date('2010-06-06T06:06:06.000Z')
+    const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
+    const oldRespondedByPhoneNumber = '+13332224444'
+    sandbox
+      .stub(db, 'getSessionWithSessionId')
+      .returns(sessionFactory({ id: sessionId, respondedAt: testRespondedAtTime, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
+
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
+    const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
+    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY, 'any other responderPhoneNumber'))
+
+    expect(db.saveSession).not.to.be.called
+  })
+
   it('if given alertState COMPLETED and categoryKey should update alertState and category', async () => {
     const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
+    const oldRespondedByPhoneNumber = '+13332224444'
     const client = factories.clientFactory({ incidentCategories: ['No One Inside', 'Overdose', 'Other'] })
     const location = locationFactory({
       client,
     })
     sandbox.stub(db, 'getLocationData').returns(location)
-    sandbox.stub(db, 'getSessionWithSessionId').returns(sessionFactory({ id: sessionId, locationid: location.locationid }))
+    sandbox
+      .stub(db, 'getSessionWithSessionId')
+      .returns(sessionFactory({ id: sessionId, locationid: location.locationid, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
 
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
-    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.COMPLETED, '1'))
+    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.COMPLETED, oldRespondedByPhoneNumber, '1'))
 
     const expectedSession = sessionFactory({
       id: sessionId,
       locationid: location.locationid,
       chatbotState: CHATBOT_STATE.COMPLETED,
       incidentCategory: 'No One Inside',
+      respondedByPhoneNumber: oldRespondedByPhoneNumber,
     })
 
     expect(db.saveSession).to.be.calledWith(expectedSession, sandbox.any)
+  })
+
+  it('if given alertState COMPLETED and categoryKey by a different responderPhoneNumber should not update anything', async () => {
+    const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
+    const oldRespondedByPhoneNumber = '+13332224444'
+    const client = factories.clientFactory({ incidentCategories: ['No One Inside', 'Overdose', 'Other'] })
+    const location = locationFactory({
+      client,
+    })
+    sandbox.stub(db, 'getLocationData').returns(location)
+    sandbox
+      .stub(db, 'getSessionWithSessionId')
+      .returns(sessionFactory({ id: sessionId, locationid: location.locationid, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
+
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
+    const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
+    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.COMPLETED, 'any other responderPhoneNumber', '1'))
+
+    expect(db.saveSession).not.to.be.called
   })
 })
