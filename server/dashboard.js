@@ -258,7 +258,6 @@ async function renderLocationDetailsPage(req, res) {
       currentLocation,
     }
 
-    // commented out keys were not shown on the old frontend but have been included in case that changes
     for (const recentSession of recentSessions) {
       const createdAt = recentSession.createdAt
       const updatedAt = recentSession.updatedAt
@@ -271,6 +270,7 @@ async function renderLocationDetailsPage(req, res) {
         chatbotState: recentSession.chatbotState,
         alertType: getAlertTypeDisplayName(recentSession.alertType),
         respondedAt: recentSession.respondedAt,
+        respondedByPhoneNumber: recentSession.respondedByPhoneNumber,
       })
     }
 
@@ -367,7 +367,10 @@ async function renderClientDetailsPage(req, res) {
 const validateNewClient = [
   Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'heartbeatPhoneNumbers', 'incidentCategories']).trim().notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
-  Validator.oneOf([Validator.body(['responderPhoneNumber']).trim().notEmpty(), Validator.body(['alertApiKey', 'responderPushId']).trim().notEmpty()]),
+  Validator.oneOf([
+    Validator.body(['responderPhoneNumbers']).trim().notEmpty(),
+    Validator.body(['alertApiKey', 'responderPushId']).trim().notEmpty(),
+  ]),
 ]
 
 async function submitNewClient(req, res) {
@@ -392,13 +395,16 @@ async function submitNewClient(req, res) {
         }
       }
 
-      const newResponderPhone = data.responderPhoneNumber && data.responderPhoneNumber.trim() !== '' ? data.responderPhoneNumber : null
+      const newResponderPhoneNumbers =
+        data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== ''
+          ? data.responderPhoneNumbers.split(',').map(phone => phone.trim())
+          : null
       const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
       const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
 
       const newClient = await db.createClient(
         data.displayName,
-        newResponderPhone,
+        newResponderPhoneNumbers,
         newResponderPushId,
         newAlertApiKey,
         data.reminderTimeout,
@@ -427,7 +433,10 @@ const validateEditClient = [
     .trim()
     .notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
-  Validator.oneOf([Validator.body(['responderPhoneNumber']).trim().notEmpty(), Validator.body(['alertApiKey', 'responderPushId']).trim().notEmpty()]),
+  Validator.oneOf([
+    Validator.body(['responderPhoneNumbers']).trim().notEmpty(),
+    Validator.body(['alertApiKey', 'responderPushId']).trim().notEmpty(),
+  ]),
 ]
 
 async function submitEditClient(req, res) {
@@ -452,14 +461,17 @@ async function submitEditClient(req, res) {
         }
       }
 
-      const newResponderPhone = data.responderPhoneNumber && data.responderPhoneNumber.trim() !== '' ? data.responderPhoneNumber : null
+      const newResponderPhoneNumbers =
+        data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== ''
+          ? data.responderPhoneNumbers.split(',').map(phone => phone.trim())
+          : null
       const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
       const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
 
       await db.updateClient(
         data.displayName,
         data.fromPhoneNumber,
-        newResponderPhone,
+        newResponderPhoneNumbers,
         newResponderPushId,
         newAlertApiKey,
         data.reminderTimeout,

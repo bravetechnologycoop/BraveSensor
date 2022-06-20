@@ -31,7 +31,7 @@ function createSessionFromRow(r) {
 
 function createClientFromRow(r) {
   // prettier-ignore
-  return new Client(r.id, r.display_name, r.responder_phone_number ? [r.responder_phone_number] : null, r.responder_push_id, r.alert_api_key, r.reminder_timeout, r.fallback_phone_numbers, r.from_phone_number, r.fallback_timeout, r.heartbeat_phone_numbers, r.incident_categories, r.is_active, r.created_at, r.updated_at)
+  return new Client(r.id, r.display_name, r.responder_phone_numbers, r.responder_push_id, r.alert_api_key, r.reminder_timeout, r.fallback_phone_numbers, r.from_phone_number, r.fallback_timeout, r.heartbeat_phone_numbers, r.incident_categories, r.is_active, r.created_at, r.updated_at)
 }
 
 function createLocationFromRow(r, allClients) {
@@ -841,7 +841,7 @@ async function updateLocation(
 async function updateClient(
   displayName,
   fromPhoneNumber,
-  responderPhoneNumber,
+  responderPhoneNumbers,
   responderPushId,
   alertApiKey,
   reminderTimeout,
@@ -858,14 +858,14 @@ async function updateClient(
       'updateClient',
       `
       UPDATE clients
-      SET display_name = $1, from_phone_number = $2, responder_phone_number = $3, responder_push_id = $4, alert_api_key = $5, reminder_timeout = $6, fallback_phone_numbers = $7, fallback_timeout = $8, heartbeat_phone_numbers = $9, incident_categories = $10, is_active = $11
+      SET display_name = $1, from_phone_number = $2, responder_phone_numbers = $3, responder_push_id = $4, alert_api_key = $5, reminder_timeout = $6, fallback_phone_numbers = $7, fallback_timeout = $8, heartbeat_phone_numbers = $9, incident_categories = $10, is_active = $11
       WHERE id = $12
       RETURNING *
       `,
       [
         displayName,
         fromPhoneNumber,
-        responderPhoneNumber,
+        responderPhoneNumbers,
         responderPushId,
         alertApiKey,
         reminderTimeout,
@@ -983,7 +983,7 @@ async function createLocation(
 
 async function createClient(
   displayName,
-  responderPhoneNumber,
+  responderPhoneNumbers,
   responderPushId,
   alertApiKey,
   reminderTimeout,
@@ -999,13 +999,13 @@ async function createClient(
     const results = await helpers.runQuery(
       'createClient',
       `
-      INSERT INTO clients (display_name, responder_phone_number, responder_push_id, alert_api_key, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_active)
+      INSERT INTO clients (display_name, responder_phone_numbers, responder_push_id, alert_api_key, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_active)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
       `,
       [
         displayName,
-        responderPhoneNumber,
+        responderPhoneNumbers,
         responderPushId,
         alertApiKey,
         reminderTimeout,

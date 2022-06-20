@@ -72,19 +72,11 @@ async function handleAlert(location, alertType) {
     const currentTime = await db.getCurrentTime(pgClient)
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
-      const newSession = await db.createSession(
-        location.locationid,
-        location.client.responderPhoneNumber,
-        CHATBOT_STATE.STARTED,
-        alertType,
-        undefined,
-        undefined,
-        pgClient,
-      )
+      const newSession = await db.createSession(location.locationid, undefined, CHATBOT_STATE.STARTED, alertType, undefined, undefined, pgClient)
 
       const alertInfo = {
         sessionId: newSession.id,
-        toPhoneNumber: location.client.responderPhoneNumber,
+        toPhoneNumbers: location.client.responderPhoneNumbers,
         fromPhoneNumber: location.twilioNumber,
         responderPushId: location.client.responderPushId,
         deviceName: location.displayName,
@@ -93,7 +85,7 @@ async function handleAlert(location, alertType) {
         reminderTimeoutMillis: location.client.reminderTimeout * 1000,
         fallbackTimeoutMillis: location.client.fallbackTimeout * 1000,
         reminderMessage: `This is a reminder to check on ${location.displayName}`,
-        fallbackMessage: `An alert to check on ${location.displayName} was not responded to. Please check on it`,
+        fallbackMessage: `An alert to check on ${location.displayName} was not responded to. Please check on it.`,
         fallbackToPhoneNumbers: location.client.fallbackPhoneNumbers,
         fallbackFromPhoneNumber: location.client.fromPhoneNumber,
       }
@@ -104,7 +96,7 @@ async function handleAlert(location, alertType) {
       braveAlerter.sendAlertSessionUpdate(
         currentSession.id,
         location.client.repsonderPushId,
-        location.client.responderPhoneNumber,
+        location.client.responderPhoneNumbers,
         location.twilioNumber,
         `An additional ${alertTypeDisplayName} alert was generated at ${location.displayName}`,
         `${alertTypeDisplayName} Alert:\n${location.displayName}`,
@@ -253,7 +245,7 @@ app.post('/smokeTest/setup', async (request, response) => {
   try {
     const client = await factories.clientDBFactory(db, {
       displayName: 'SmokeTestClient',
-      responderPhoneNumber: recipientNumber,
+      responderPhoneNumbers: [recipientNumber],
       fromPhoneNumber: twilioNumber,
       alertApiKey: 'alertApiKey',
       responderPushId: null,

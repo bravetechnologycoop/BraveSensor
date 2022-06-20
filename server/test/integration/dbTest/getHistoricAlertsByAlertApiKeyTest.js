@@ -71,8 +71,8 @@ describe('db.js integration tests: getHistoricAlertsByAlertApiKey', () => {
       // Insert a single location
       this.alertApiKey = 'alertApiKey'
       this.displayName = 'displayName'
-      const phonenumber = 'phonenumber'
-      const client = await factories.clientDBFactory(db, { responderPhoneNumber: phonenumber, alertApiKey: this.alertApiKey })
+      const phonenumbers = ['phonenumber']
+      const client = await factories.clientDBFactory(db, { responderPhoneNumbers: phonenumbers, alertApiKey: this.alertApiKey })
       const location = await locationDBFactory(db, {
         displayName: this.displayName,
         clientId: client.id,

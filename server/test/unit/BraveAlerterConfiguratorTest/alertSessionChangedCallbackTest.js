@@ -10,7 +10,6 @@ const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
 const redis = require('../../../db/redis')
 const { locationFactory, sessionFactory } = require('../../../testingHelpers')
-const { newResponderPushId, newResponderPhoneNumber } = require('../../integration/dashboardTest/submitEditClientTest')
 
 // Configure Chai
 use(sinonChai)

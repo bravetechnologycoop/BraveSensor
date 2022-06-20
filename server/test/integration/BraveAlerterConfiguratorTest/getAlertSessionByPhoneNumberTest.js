@@ -22,7 +22,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
 
     // Insert a location in the DB
     const client = await factories.clientDBFactory(db, {
-      responderPhoneNumber: this.expectedRespondedByPhoneNumber,
+      responderPhoneNumbers: [this.expectedRespondedByPhoneNumber],
       incidentCategories: this.expectedIncidentCategories,
     })
     const location = await locationDBFactory(db, {

@@ -70,6 +70,6 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToOtherRespond
   it('should get default message if given something funky', () => {
     const returnMessage = this.alertStateMachine.getReturnMessageToOtherResponderPhoneNumbers('something funky', CHATBOT_STATE.COMPLETED, ['Cat0'])
 
-    expect(returnMessage).to.equal('Error: No active chatbot found')
+    expect(returnMessage).to.equal('Error: No active session found')
   })
 })

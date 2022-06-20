@@ -43,7 +43,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
       this.displayName = 'myNewClient'
       this.fromPhoneNumber = '+19998887777'
-      this.responderPhoneNumber = '+16665553333'
+      this.responderPhoneNumbers = ['+16665553333']
       this.responderPushId = 'pushId'
       this.alertApiKey = 'myApiKey'
       this.fallbackPhoneNumbers = ['+1', '+2', '+3']
@@ -54,7 +54,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
-        responderPhoneNumber: this.responderPhoneNumber,
+        responderPhoneNumbers: this.responderPhoneNumbers.join(','),
         responderPushId: this.responderPushId,
         alertApiKey: this.alertApiKey,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
@@ -94,7 +94,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         {
           displayName: this.displayName,
           fromPhoneNumber: this.fromPhoneNumber,
-          responderPhoneNumbers: [this.responderPhoneNumber],
+          responderPhoneNumbers: this.responderPhoneNumbers,
           responderPushId: this.responderPushId,
           alertApiKey: this.alertApiKey,
           fallbackPhoneNumbers: this.fallbackPhoneNumbers,
@@ -117,7 +117,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
       this.displayName = ' myNewClient  '
       this.fromPhoneNumber = '  +19998887777  '
-      this.responderPhoneNumber = ' +16665553333 '
+      this.responderPhoneNumbers = [' +16665553333 ']
       this.responderPushId = '  pushId  '
       this.alertApiKey = '   myApiKey  '
       this.fallbackPhoneNumbers = ['  +1  ', ' +2 ', '   +3   ']
@@ -128,7 +128,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
-        responderPhoneNumber: this.responderPhoneNumber,
+        responderPhoneNumbers: this.responderPhoneNumbers.join(','),
         responderPushId: this.responderPushId,
         alertApiKey: this.alertApiKey,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
@@ -168,7 +168,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         {
           displayName: this.displayName.trim(),
           fromPhoneNumber: this.fromPhoneNumber.trim(),
-          responderPhoneNumbers: [this.responderPhoneNumber.trim()],
+          responderPhoneNumbers: this.responderPhoneNumbers.map(phone => phone.trim()),
           responderPushId: this.responderPushId.trim(),
           alertApiKey: this.alertApiKey.trim(),
           fallbackPhoneNumbers: this.fallbackPhoneNumbers.map(phone => phone.trim()),
@@ -189,7 +189,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const goodRequest = {
         displayName: 'testDisplayName',
         fromPhoneNumber: '+17778889999',
-        responderPhoneNumber: '+12223334444',
+        responderPhoneNumbers: '+12223334444',
         responderPushId: 'myResponderPushId',
         alertApiKey: 'myAlertApiKey',
         fallbackPhoneNumbers: '+12223334444',
@@ -215,7 +215,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
   })
 
-  describe('for a request that contains valid non-empty fields but with no responderPhoneNumber', () => {
+  describe('for a request that contains valid non-empty fields but with no responderPhoneNumbers', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
         username: helpers.getEnvVar('WEB_USERNAME'),
@@ -296,7 +296,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
       this.displayName = 'myNewClient'
       this.fromPhoneNumber = '+19998887777'
-      this.responderPhoneNumber = '+16665553333'
+      this.responderPhoneNumbers = ['+16665553333']
       this.alertApiKey = 'myApiKey'
       this.fallbackPhoneNumbers = ['+1', '+2', '+3']
       this.heartbeatPhoneNumbers = ['+4', '+5']
@@ -306,7 +306,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
-        responderPhoneNumber: this.responderPhoneNumber,
+        responderPhoneNumbers: this.responderPhoneNumbers.join(','),
         alertApiKey: this.alertApiKey,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
         heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
@@ -345,7 +345,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         {
           displayName: this.displayName,
           fromPhoneNumber: this.fromPhoneNumber,
-          responderPhoneNumbers: [this.responderPhoneNumber],
+          responderPhoneNumbers: this.responderPhoneNumbers,
           responderPushId: null,
           alertApiKey: this.alertApiKey,
           fallbackPhoneNumbers: this.fallbackPhoneNumbers,
@@ -368,7 +368,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
       this.displayName = 'myNewClient'
       this.fromPhoneNumber = '+19998887777'
-      this.responderPhoneNumber = '+16665553333'
+      this.responderPhoneNumbers = ['+16665553333']
       this.responderPushId = 'pushId'
       this.fallbackPhoneNumbers = ['+1', '+2', '+3']
       this.heartbeatPhoneNumbers = ['+4', '+5']
@@ -378,7 +378,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
-        responderPhoneNumber: this.responderPhoneNumber,
+        responderPhoneNumbers: this.responderPhoneNumbers.join(','),
         responderPushId: this.responderPushId,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
         heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
@@ -417,7 +417,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         {
           displayName: this.displayName,
           fromPhoneNumber: this.fromPhoneNumber,
-          responderPhoneNumbers: [this.responderPhoneNumber],
+          responderPhoneNumbers: this.responderPhoneNumbers,
           responderPushId: this.responderPushId,
           alertApiKey: null,
           fallbackPhoneNumbers: this.fallbackPhoneNumbers,
@@ -431,7 +431,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
   })
 
-  describe('for a request that contains valid non-empty fields but with no responderPhoneNumber and no responderPushId', () => {
+  describe('for a request that contains valid non-empty fields but with no responderPhoneNumbers and no responderPushId', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
         username: helpers.getEnvVar('WEB_USERNAME'),
@@ -472,7 +472,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
 
     it('should log the error', () => {
-      expect(helpers.log).to.have.been.calledWith('Bad request to /clients: responderPhoneNumber/responderPushId (Invalid value(s))')
+      expect(helpers.log).to.have.been.calledWith('Bad request to /clients: responderPhoneNumbers/responderPushId (Invalid value(s))')
     })
   })
 
@@ -486,7 +486,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const badRequest = {
         displayName: '',
         fromPhoneNumber: '',
-        responderPhoneNumber: '',
+        responderPhoneNumbers: '',
         responderPushId: '',
         alertApiKey: '',
         fallbackPhoneNumbers: '',
@@ -511,7 +511,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))',
+        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
       )
     })
   })
@@ -538,7 +538,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumber/alertApiKey/responderPushId (Invalid value(s))',
+        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
       )
     })
   })
@@ -555,7 +555,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const duplicateDisplayNameRequest = {
         displayName: this.existingClient.displayName,
         fromPhoneNumber: '+14445556666',
-        responderPhoneNumber: '+19995552222',
+        responderPhoneNumbers: ['+19995552222'],
         responderPushId: 'mypushid',
         alertApiKey: 'myapikey',
         fallbackPhoneNumbers: '+1,+2,+3',
@@ -595,7 +595,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const duplicateDisplayNameRequest = {
         displayName: 'myNewclient',
         fromPhoneNumber: '+14445556666',
-        responderPhoneNumber: '+19995552222',
+        responderPhoneNumbers: ['+19995552222'],
         responderPushId: 'mypushid',
         alertApiKey: 'myapikey',
         fallbackPhoneNumbers: '+1,+2,+3',
@@ -635,7 +635,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const duplicateDisplayNameRequest = {
         displayName: 'myNewclient',
         fromPhoneNumber: '+14445556666',
-        responderPhoneNumber: '+19995552222',
+        responderPhoneNumbers: ['+19995552222'],
         responderPushId: 'mypushid',
         alertApiKey: 'myapikey',
         fallbackPhoneNumbers: '+1,+2,+3',

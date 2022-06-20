@@ -29,7 +29,9 @@ function convertToSeconds(milliseconds) {
 async function sendSingleAlert(locationid, message, pgClient) {
   const location = await db.getLocationData(locationid, pgClient)
 
-  await braveAlerter.sendSingleAlert(location.client.responderPhoneNumber, location.client.fromPhoneNumber, message)
+  location.client.responderPhoneNumbers.forEach(async responderPhoneNumber => {
+    await braveAlerter.sendSingleAlert(responderPhoneNumber, location.client.fromPhoneNumber, message)
+  })
 
   location.client.heartbeatPhoneNumbers.forEach(async heartbeatAlertRecipient => {
     await braveAlerter.sendSingleAlert(heartbeatAlertRecipient, location.client.fromPhoneNumber, message)

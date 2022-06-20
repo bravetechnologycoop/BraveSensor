@@ -197,7 +197,7 @@ class BraveAlerterConfigurator {
         break
 
       default:
-        returnMessage = 'Error: No active chatbot found'
+        returnMessage = 'Error: No active session found'
         break
     }
 
@@ -230,7 +230,7 @@ class BraveAlerterConfigurator {
         break
 
       default:
-        returnMessage = 'Error: No active chatbot found'
+        returnMessage = 'Error: No active session found'
         break
     }
 
