@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Console function to enable developers to force reset and bypass DEVICE_RESET_THRESHOLD (CU-2e5adgd).
+
 ## [6.1.0] - 2022-06-27
 
 ### Changed

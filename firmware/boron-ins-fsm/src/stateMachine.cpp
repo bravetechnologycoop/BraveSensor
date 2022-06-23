@@ -26,7 +26,7 @@ unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
 //except this one, we don't want to take the chance that random memory
 //contents will initialize this to "on"
 bool stateMachineDebugFlag = false;
-int resetReason = System.resetReason();;
+int resetReason = System.resetReason();
 
 std::queue<int> stateQueue;
 std::queue<int> reasonQueue;
