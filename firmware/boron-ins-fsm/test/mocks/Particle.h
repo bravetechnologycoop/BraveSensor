@@ -6,6 +6,7 @@
 #include <functional>
 #include "../../inc/spark_wiring_string.h"
 
+String fullPublishString;
 enum PublishFlag
 {
     PUBLIC,
@@ -36,7 +37,8 @@ public:
                  char const* const szData,
                  int const flags)
     {
-        printf("Particle.Publish: '%s' = '%s' (flags: 0x%02x)", szEventName, szData, flags);
+        printf("Particle.Publish: '%s' = '%s' (flags: 0x%02x)\n", szEventName, szData, flags);
+        fullPublishString = String(szEventName) + String(szData);
         return true;
     }
 
@@ -45,5 +47,5 @@ public:
 
     }
 };
-
+extern String fullPublishString;
 extern MockParticle Particle;

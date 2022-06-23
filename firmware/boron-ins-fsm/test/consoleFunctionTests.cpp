@@ -346,3 +346,29 @@ SCENARIO( "Set INS Threshold", "[ins threshold]" ) {
         }
     }
 }
+
+SCENARIO( "Force_Reset", "[force reset]" ) {
+
+    GIVEN( "Any possible scenario" ) {
+        resetWasCalled = false;
+        fullPublishString = "";
+        WHEN( "the function is called with 1" ) {
+            int returnVal = force_reset("1");
+
+            THEN( "returnValue should be 1 and resetWasCalled should be true" ) {
+                REQUIRE( returnVal == 1 );
+                REQUIRE( resetWasCalled == true );
+                REQUIRE( fullPublishString == "YOU SHALL NOT PANIC!!Reset has begun so ignore the future particle message about failure to call force_reset()");
+            }
+        }
+
+        WHEN( "the function is not called with 1" ) {
+            int returnVal = force_reset("invalid Value");
+
+            THEN( "the return value should be -1 and resetWasCalled should be false" ) {
+                REQUIRE( returnVal == -1 );
+                REQUIRE( resetWasCalled == false );
+            }
+        }
+    }
+}

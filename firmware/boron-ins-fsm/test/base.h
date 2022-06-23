@@ -7,12 +7,14 @@
 // Mocks
 #include "mocks/eeprom.h"
 #include "mocks/Particle.h"
+#include "mocks/System.h"
 #include "../inc/spark_wiring_string.h"
 #include "../inc/spark_wiring_string.cpp"
 #include "../src/im21door.h"
 
 MockEEPROM EEPROM;
 MockParticle Particle;
+MockSystem System;
 
 bool stateMachineDebugFlag;
 long unsigned state1_max_time;
