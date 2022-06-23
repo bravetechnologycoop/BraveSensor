@@ -28,6 +28,7 @@
      - [ins_threshold_set(String)](<#ins_threshold_set(String)>)
      - [toggle_debugging_publishes(String)](#toggle_debugging_publishesString)
      - [im21_door_id_set(String)](#im21_door_id_setString)
+     - [force_reset(String)](#force_resetString)
    - [State Machine Published Messages](#state-machine-published-messages)
      - [Stillness Alert](#stillness-alert)
      - [Heartbeat Message](#heartbeat-message)
@@ -388,6 +389,21 @@ The IM21 door sensors each have a sticker on them with their door IDs. On the bo
 - 1 - if door ID parsed and written to flash
 - 1 - if door ID echoed to the cloud
 - -1 - if bad input was received and door ID was neither parsed or echoed to the cloud
+
+### **force_reset(String)**
+
+**Description:**
+
+Use this console function to force the boron to reset. Useful for development and testing as OTA updates with version > 6.0.0 require that the last IM21 heart has been over DEVICE_RESET_THRESHOLD milliseconds ago before it resets to the new firmware.
+
+**Argument(s):**
+
+1. Enter 1 to reset
+
+**Return(s):**
+
+- Nothing if 1 is entered, but does send a message to the particle console to warn about particle's future failed to call message
+- -1 - when bad data is entered
 
 ## State Machine Published Messages
 
