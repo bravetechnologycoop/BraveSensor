@@ -67,6 +67,7 @@ filteredINSData checkINS3331(){
 
   } //end queue if
 
+  Serial.printlnf("Iaver: %f   Qaver: %f", returnINSData.iAverage, returnINSData.qAverage);
   return returnINSData;
 
 } //end checkINS3331()
