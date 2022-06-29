@@ -179,7 +179,7 @@ class BraveAlerterConfigurator {
     switch (fromAlertState) {
       case CHATBOT_STATE.STARTED:
       case CHATBOT_STATE.WAITING_FOR_REPLY:
-        returnMessage = `Please respond with the number corresponding to the incident. \n${this.createResponseStringFromIncidentCategories(
+        returnMessage = `Once you have responded, please reply with the number that best describes the incident:\n${this.createResponseStringFromIncidentCategories(
           incidentCategories,
         )}`
         break
