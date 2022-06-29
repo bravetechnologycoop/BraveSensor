@@ -14,6 +14,7 @@ the code was deployed.
 ### Changed
 
 - Request for incident category text message to imply that they don't need to respond immediately.
+- Production deployment instructions in the README.
 
 ### Added
 

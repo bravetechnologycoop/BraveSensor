@@ -2,9 +2,46 @@
 
 [![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor.svg?branch=main)](https://travis-ci.com/bravetechnologycoop/BraveSensor)
 
+# Table of Contents
+
+1. [How to release a new version of BraveSensor Server and Firmware](#how-to-release-a-new-version-of-bravesensor-server-and-firmware)
+   1. [Update git to reflect the new release](#1-update-git-to-reflect-the-new-release)
+   1. [Update the Staging database](#2-update-the-staging-database)
+   1. [Update the Staging secrets](#3-update-the-staging-secrets)
+      - [Creating a secret from a .env file](#creating-a-secret-from-a-env-file)
+   1. [Deploy the firmware changes and run a test on the BetaTest Borons](#4-deploy-the-firmware-changes-and-run-a-test-on-the-betatest-borons)
+   1. [Deploy and run the smoke tests on Staging](#5-deploy-and-run-the-smoke-tests-on-staging)
+   1. [Update production firmware](#6-update-production-firmware)
+   1. [Update production server](#7-update-production-server)
+   1. [Celebrate](#8-celebrate)
+1. [Deploying to the staging or development environment](#deploying-to-the-staging-or-development-environment)
+1. [Buliding and pushing containers to the Container Registry](#buliding-and-pushing-containers-to-the-container-registry)
+1. [Running Smoke Tests on the Kubernetes Cluster](#running-smoke-tests-on-the-kubernetes-cluster)
+1. [Local Development](#local-development)
+   - [Dependencies](#dependencies)
+   - [Environment Variables](#environment-variables)
+   - [Altering a secret's schema](#altering-a-secrets-schema)
+   - [Database Setup](#database-setup)
+   - [Tests](#tests)
+   - [How to add or change an encrypted Travis environment variable](#how-to-add-or-change-an-encrypted-travis-environment-variable)
+1. [Sensors Admin Server](#sensors-admin-server)
+   - [Adding public keys to the admin server](#adding-public-keys-to-the-admin-server)
+   - [Toublehooting authentication error](#toublehooting-authentication-error)
+1. [Interacting with the Managed Database](#interacting-with-the-managed-database)
+   - [Connecting to a database](#connecting-to-a-database)
+   - [Adding a new Database migration script](#adding-a-new-database-migration-script)
+   - [Deploying the migration scripts](#deploying-the-migration-scripts)
+   - [Viewing which migration scripts have been run and when](#viewing-which-migration-scripts-have-been-run-and-when)
+1. [Cluster Migration and Setup](#cluster-migration-and-setup)
+   - [Setting up networking for a new cluster](#setting-up-networking-for-a-new-cluster)
+   - [Setting up redis on a new cluster](#setting-up-redis-on-a-new-cluster)
+1. [Particle API access](#particle-api-access)
+
 # How to release a new version of BraveSensor Server and Firmware
 
 ## 1. Update git to reflect the new release
+
+1. send a message to the `#sensor-aa-general` Slack channel letting everyone know that you are doing a deployment and, if necessary, to expect some downtime.
 
 1. on your local machine, in the `BraveSensor` repository:
 
@@ -56,21 +93,7 @@ then create it from the correct `.env` file (for example, on the Sensors Admin s
 
 `kubectl create secret generic <your-secret-name> --from-env-file=<path-to-env-file>`
 
-## 4. Deploy and run the smoke tests on Staging
-
-We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us to deploy different instances of the application corresponding to dev, staging, and production environments as different 'releases'. Before updating production, we run smoke tests to verify that there's nothing obviously wrong with a release candidate.
-
-1. Run `ssh brave@sensors-admin.brave.coop`
-
-1. cd into the `~/BraveSensor/server` directory and run `git checkout production && git pull origin production` to get the latest version of the helm chart
-
-1. Run the command `helm upgrade staging --set secretName=sensor-staging ~/BraveSensor/server/sensor-helm-chart` to deploy the latest version to staging
-
-1. Run the smoke test script as described [below](#running-smoke-tests-on-the-kubernetes-cluster)
-
-1. Verify that the deployment shows the expected behavior before proceeding
-
-## 5. Deploy the firmware changes and run a test on the BetaTest Borons
+## 4. Deploy the firmware changes and run a test on the BetaTest Borons
 
 1. on your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
 
@@ -78,7 +101,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. click Target --> "Configure for device" and type `3.3.0` to choose the OS and then `boron` to choose the device
 
-1. click Compile --> "Local Compile"
+1. click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
 
 1. copy the generated `/target/3.3.0/boron/boron-ins-fsm.bin` file somewhere to keep for reference. Rename to `v<version number>_dev.bin` (for example `v50100_dev.bin`)
 
@@ -112,27 +135,35 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. Trigger a test alert using a real BetaTest Boron device
 
-## 6. Update production server
+## 5. Deploy and run the smoke tests on Staging
+
+We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us to deploy different instances of the application corresponding to dev, staging, and production environments as different 'releases'. Before updating production, we run smoke tests to verify that there's nothing obviously wrong with a release candidate.
+
+1. Run `ssh brave@sensors-admin.brave.coop`
+
+1. cd into the `~/BraveSensor/server` directory and run `git checkout production && git pull origin production` to get the latest version of the helm chart
+
+1. Run the command `helm upgrade staging --set secretName=sensor-staging ~/BraveSensor/server/sensor-helm-chart` to deploy the latest version to staging
+
+1. Run the smoke test script as described [below](#running-smoke-tests-on-the-kubernetes-cluster)
+
+1. Verify that the deployment shows the expected behavior before proceeding
+
+## 6. Update production firmware
 
 1. If you determined that this deployment's changes require downtime:
 
-   1. Send a notification to all the responder phones informing them of the downtime. For example: "Notice: Your Brave Sensor System is down for maintenance. During this time, you may not receive bathroom alerts. You will receive another text message when everything is back online. Thank you for your patience. Have a nice day!"
+   1. send a text message to all of the Responder phones letting them know that you are doing some routine maintenance, there will be downtime, and that you will notify them when everything is back to normal again.
 
-   1. Take the production server offline `helm uninstall production`
+      1. verify that all the active Sensor clients are in the the Twilio Studio Flow "Sensor deployment started notification". Make any necessary updates and Publish
 
-1. Update the production DB and secrets, as necessary
+      1. use the Flow by hitting the designated `POST` endpoint with
 
-1. If the deployment's changes did _not_ require downtime,
-
-   1. run the command `helm upgrade production ~/BraveSensor/server/sensor-helm-chart`.
-
-   Otherwise
-
-   1. run the command `helm install production ~/BraveSensor/server/sensor-helm-chart`.
-
-   1. Send a notification to all the responder phones informing them that everything is back online. For example: "Notice: Your Brave Sensor System is now back online and functioning normally. Thank you!"
-
-## 7. Update production firmware
+         - Basic auth username = Twilio account SID
+         - Basic auth password = Twilio auth token
+         - form-data Body
+         - To: The phone number to send the final confirmation text to (i.e. your phone number)
+         - From: Any number in the format +12223334444 (we don't use this number for anything, but Twilio will complain if it's missing or incorrectly formatted)
 
 1. on your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
 
@@ -142,7 +173,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. click Target --> "Configure for device" and type `3.3.0` to choose the OS and then `boron` to choose the device
 
-1. click Compile --> "Local Compile"
+1. click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
 
 1. copy the generated `/target/3.3.0/boron/boron-ins-fsm.bin` file somewhere to keep for reference. Rename to `v<version number>_production.bin` (for example `v50100_production.bin`)
 
@@ -173,6 +204,32 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
       1. Select "Intelligent"
 
    1. Read, verify, check the box, and click "Release this firmware"
+
+## 7. Update production server
+
+1. If you determined that this deployment's changes require downtime, take the production server offline `helm uninstall production`
+
+1. Update the production DB and secrets, as necessary
+
+1. If the deployment's changes did _not_ require downtime,
+
+   1. run the command `helm upgrade production ~/BraveSensor/server/sensor-helm-chart`.
+
+   Otherwise
+
+   1. run the command `helm install production ~/BraveSensor/server/sensor-helm-chart`.
+
+   1. send a text message to all of the Responder phones letting them know that everything is back to normal
+
+      1. verify that all the active Sensor clients are in the the Twilio Studio Flow "Sensor deployment completed notification". Make any necessary updates and Publish
+
+      1. use the Flow by hitting the designated `POST` endpoint with
+
+         - Basic auth username = Twilio account SID
+         - Basic auth password = Twilio auth token
+         - form-data Body
+         - To: The phone number to send the final confirmation text to (i.e. your phone number)
+         - From: Any number in the format +12223334444 (we don't use this number for anything, but Twilio will complain if it's missing or incorrectly formatted)
 
 ## 8. Celebrate
 
