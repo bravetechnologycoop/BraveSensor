@@ -19,7 +19,7 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToRespondedByP
       'Cat1',
     ])
 
-    expect(returnMessage).to.equal('Please respond with the number corresponding to the incident. \n1 - Cat0\n2 - Cat1\n')
+    expect(returnMessage).to.equal('Once you have responded, please reply with the number that best describes the incident:\n1 - Cat0\n2 - Cat1\n')
   })
 
   it('should get message when STARTED => WAITING_FOR_CATEGORY', () => {
@@ -28,7 +28,7 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToRespondedByP
       'Cat1',
     ])
 
-    expect(returnMessage).to.equal('Please respond with the number corresponding to the incident. \n1 - Cat0\n2 - Cat1\n')
+    expect(returnMessage).to.equal('Once you have responded, please reply with the number that best describes the incident:\n1 - Cat0\n2 - Cat1\n')
   })
 
   it('should get message when WAITING_FOR_REPLY => WAITING_FOR_CATEGORY', () => {
@@ -38,7 +38,7 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToRespondedByP
       ['Cat0', 'Cat1'],
     )
 
-    expect(returnMessage).to.equal('Please respond with the number corresponding to the incident. \n1 - Cat0\n2 - Cat1\n')
+    expect(returnMessage).to.equal('Once you have responded, please reply with the number that best describes the incident:\n1 - Cat0\n2 - Cat1\n')
   })
 
   it('should get message when WAITING_FOR_CATEGORY => WAITING_FOR_CATEGORY', () => {
