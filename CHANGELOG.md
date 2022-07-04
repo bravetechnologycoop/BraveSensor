@@ -19,6 +19,7 @@ the code was deployed.
 ### Added
 
 - Console function to enable developers to force reset and bypass DEVICE_RESET_THRESHOLD (CU-2e5adgd).
+- The ability to use different language chatbot messages (CU-2dtutrx).
 
 ## [6.1.0] - 2022-06-27
 

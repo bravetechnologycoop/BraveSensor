@@ -31,7 +31,7 @@ function createSessionFromRow(r) {
 
 function createClientFromRow(r) {
   // prettier-ignore
-  return new Client(r.id, r.display_name, r.responder_phone_numbers, r.responder_push_id, r.alert_api_key, r.reminder_timeout, r.fallback_phone_numbers, r.from_phone_number, r.fallback_timeout, r.heartbeat_phone_numbers, r.incident_categories, r.is_active, r.created_at, r.updated_at)
+  return new Client(r.id, r.display_name, r.responder_phone_numbers, r.responder_push_id, r.alert_api_key, r.reminder_timeout, r.fallback_phone_numbers, r.from_phone_number, r.fallback_timeout, r.heartbeat_phone_numbers, r.incident_categories, r.is_active, r.language, r.created_at, r.updated_at)
 }
 
 function createLocationFromRow(r, allClients) {
@@ -993,14 +993,15 @@ async function createClient(
   heartbeatPhoneNumbers,
   incidentCategories,
   isActive,
+  language,
   pgClient,
 ) {
   try {
     const results = await helpers.runQuery(
       'createClient',
       `
-      INSERT INTO clients (display_name, responder_phone_numbers, responder_push_id, alert_api_key, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_active)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      INSERT INTO clients (display_name, responder_phone_numbers, responder_push_id, alert_api_key, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_active, language)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
       `,
       [
@@ -1015,6 +1016,7 @@ async function createClient(
         heartbeatPhoneNumbers,
         incidentCategories,
         isActive,
+        language,
       ],
       pool,
       pgClient,

@@ -20,12 +20,14 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
     this.expectedIncidentCategoryKeys = ['1', '2', '3']
     this.expectedIncidentCategories = ['No One Inside', 'Person responded', 'None of the above']
     this.alertApiKey = 'myAlertApiKey'
+    this.expectedLanguage = 'de'
 
     // Insert a location in the DB
     const client = await factories.clientDBFactory(db, {
       responderPhoneNumbers: [this.expectedRespondedByPhoneNumber],
       alertApiKey: this.alertApiKey,
       incidentCategories: this.expectedIncidentCategories,
+      language: this.expectedLanguage,
     })
     const location = await locationDBFactory(db, {
       twilioNumber: this.expectedTwilioPhoneNumber,
@@ -59,6 +61,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
       [this.expectedRespondedByPhoneNumber],
       this.expectedIncidentCategoryKeys,
       this.expectedIncidentCategories,
+      this.expectedLanguage,
     )
 
     expect(actualAlertSession).to.eql(expectedAlertSession)

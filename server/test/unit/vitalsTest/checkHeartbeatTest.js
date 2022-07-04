@@ -82,7 +82,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
 
     it('should send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(this.testLocation.locationid, this.testLocation.displayName)
+      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(
+        this.testLocation.locationid,
+        this.testLocation.displayName,
+        this.testLocation.client.language,
+      )
     })
 
     it('should not send any disconnection reminder messages to the client', () => {
@@ -203,7 +207,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
 
     it('should send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(this.testLocation.locationid, this.testLocation.displayName)
+      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(
+        this.testLocation.locationid,
+        this.testLocation.displayName,
+        this.testLocation.client.language,
+      )
     })
 
     it('should not send any disconnection reminder messages to the client', () => {
@@ -255,7 +263,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
 
     it('should send a reconnection messages to the client', () => {
-      expect(this.sendReconnectionMessageStub).to.be.calledOnceWithExactly(this.testLocation.locationid, this.testLocation.displayName)
+      expect(this.sendReconnectionMessageStub).to.be.calledOnceWithExactly(
+        this.testLocation.locationid,
+        this.testLocation.displayName,
+        this.testLocation.client.language,
+      )
     })
 
     it('should clear the sentVitalsAlertAt', () => {
@@ -338,7 +350,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
 
     it('should send a disconnection reminder message to the client', () => {
-      expect(this.sendDisconnectionReminderStub).to.be.calledOnceWithExactly(this.testLocation.locationid, this.testLocation.displayName)
+      expect(this.sendDisconnectionReminderStub).to.be.calledOnceWithExactly(
+        this.testLocation.locationid,
+        this.testLocation.displayName,
+        this.testLocation.client.language,
+      )
     })
 
     it('should not send any reconnection messages to the client', () => {
@@ -376,7 +392,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
 
     it('should send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(this.testLocation.locationid, this.testLocation.displayName)
+      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(
+        this.testLocation.locationid,
+        this.testLocation.displayName,
+        this.testLocation.client.language,
+      )
     })
 
     it('should not send any disconnection reminder messages to the client', () => {
@@ -503,7 +523,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
 
     it('should send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(this.testLocation.locationid, this.testLocation.displayName)
+      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(
+        this.testLocation.locationid,
+        this.testLocation.displayName,
+        this.testLocation.client.language,
+      )
     })
 
     it('should not send any disconnection reminder messages to the client', () => {
@@ -557,7 +581,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
 
     it('should send a reconnection messages to the client', () => {
-      expect(this.sendReconnectionMessageStub).to.be.calledOnceWithExactly(this.testLocation.locationid, this.testLocation.displayName)
+      expect(this.sendReconnectionMessageStub).to.be.calledOnceWithExactly(
+        this.testLocation.locationid,
+        this.testLocation.displayName,
+        this.testLocation.client.language,
+      )
     })
 
     it('should clear the sentVitalsAlertAt', () => {
@@ -643,7 +671,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
 
     it('should send a disconnection reminder message to the client', () => {
-      expect(this.sendDisconnectionReminderStub).to.be.calledOnceWithExactly(this.testLocation.locationid, this.testLocation.displayName)
+      expect(this.sendDisconnectionReminderStub).to.be.calledOnceWithExactly(
+        this.testLocation.locationid,
+        this.testLocation.displayName,
+        this.testLocation.client.language,
+      )
     })
 
     it('should not send any reconnection messages to the client', () => {
