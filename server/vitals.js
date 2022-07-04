@@ -3,6 +3,7 @@
 // Third-party dependencies
 const Validator = require('express-validator')
 const { DateTime } = require('luxon')
+const { t } = require('i18next')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
@@ -38,22 +39,38 @@ async function sendSingleAlert(locationid, message, pgClient) {
   })
 }
 
-async function sendDisconnectionMessage(locationid, displayName) {
+async function sendDisconnectionMessage(locationid, displayName, language) {
   await sendSingleAlert(
     locationid,
-    `The Brave Sensor at ${displayName} (${locationid}) has disconnected. \nPlease press the reset buttons on either side of the sensor box.\nIf you do not receive a reconnection message shortly after pressing both reset buttons, contact your network administrator.\nYou can also email clientsupport@brave.coop for further support.`,
+    t('sensorDisconnectionInitial', {
+      lng: language,
+      deviceDisplayName: displayName,
+      locationid,
+    }),
   )
 }
 
-async function sendDisconnectionReminder(locationid, displayName) {
+async function sendDisconnectionReminder(locationid, displayName, language) {
   await sendSingleAlert(
     locationid,
-    `The Brave Sensor at ${displayName} (${locationid}) is still disconnected. \nPlease press the reset buttons on either side of the sensor box.\nIf you do not receive a reconnection message shortly after pressing both reset buttons, contact your network administrator.\nYou can also email clientsupport@brave.coop for further support.`,
+    t('sensorDisconnectionReminder', {
+      lng: language,
+      deviceDisplayName: displayName,
+      locationid,
+      language,
+    }),
   )
 }
 
-async function sendReconnectionMessage(locationid, displayName) {
-  await sendSingleAlert(locationid, `The Brave Sensor at ${displayName} (${locationid}) has been reconnected.`)
+async function sendReconnectionMessage(locationid, displayName, language) {
+  await sendSingleAlert(
+    locationid,
+    t('sensorReconnection', {
+      lng: language,
+      deviceDisplayName: displayName,
+      locationid,
+    }),
+  )
 }
 
 // Heartbeat Helper Functions
@@ -91,15 +108,15 @@ async function checkHeartbeat() {
             helpers.logSentry(`Radar sensor down at ${location.locationid}`)
           }
           await db.updateSentAlerts(location.locationid, true)
-          sendDisconnectionMessage(location.locationid, location.displayName)
+          sendDisconnectionMessage(location.locationid, location.displayName, location.client.language)
         } else if (currentDBTime - location.sentVitalsAlertAt > subsequentVitalsAlertThresholdSeconds * 1000) {
           await db.updateSentAlerts(location.locationid, true)
-          sendDisconnectionReminder(location.locationid, location.displayName)
+          sendDisconnectionReminder(location.locationid, location.displayName, location.client.language)
         }
       } else if (location.sentVitalsAlertAt !== null) {
         helpers.logSentry(`${location.locationid} reconnected`)
         await db.updateSentAlerts(location.locationid, false)
-        sendReconnectionMessage(location.locationid, location.displayName)
+        sendReconnectionMessage(location.locationid, location.displayName, location.client.language)
       }
     } catch (err) {
       helpers.logError(`Error checking heartbeat: ${err.toString()}`)
@@ -131,15 +148,15 @@ async function checkHeartbeat() {
               helpers.logSentry(`Radar sensor down at ${location.locationid}`)
             }
             await db.updateSentAlerts(location.locationid, true)
-            sendDisconnectionMessage(location.locationid, location.displayName)
+            sendDisconnectionMessage(location.locationid, location.displayName, location.client.language)
           } else if (currentDBTime - location.sentVitalsAlertAt > subsequentVitalsAlertThresholdSeconds * 1000) {
             await db.updateSentAlerts(location.locationid, true)
-            sendDisconnectionReminder(location.locationid, location.displayName)
+            sendDisconnectionReminder(location.locationid, location.displayName, location.client.language)
           }
         } else if (location.sentVitalsAlertAt !== null) {
           helpers.logSentry(`${location.locationid} reconnected after reason: ${sensorsVital.resetReason}`)
           await db.updateSentAlerts(location.locationid, false)
-          sendReconnectionMessage(location.locationid, location.displayName)
+          sendReconnectionMessage(location.locationid, location.displayName, location.client.language)
         }
       }
     } catch (err) {
@@ -177,7 +194,10 @@ async function sendLowBatteryAlert(locationid) {
       helpers.logSentry(`Received a low battery alert for ${location.locationid}`)
       await sendSingleAlert(
         location.locationid,
-        `The battery for the ${location.displayName} door sensor is low, and needs replacing.\n\nTo watch a video showing how to replace the battery, go to https://bit.ly/sensor-battery`,
+        t('sensorLowBatteryInitial', {
+          lng: location.client.language,
+          deviceDisplayName: location.displayName,
+        }),
         pgClient,
       )
       await db.updateLowBatteryAlertTime(location.locationid, pgClient)

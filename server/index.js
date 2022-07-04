@@ -5,6 +5,7 @@ const https = require('https')
 const cors = require('cors')
 const Validator = require('express-validator')
 const { createProxyMiddleware } = require('http-proxy-middleware')
+const { t } = require('i18next')
 
 // In-house dependencies
 const { ALERT_TYPE, CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
@@ -18,6 +19,10 @@ const DOOR_STATE = require('./SessionStateDoorEnum')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
 const vitals = require('./vitals')
+const i18nextHelpers = require('./i18nextHelpers')
+
+// Configure internationalization
+i18nextHelpers.setup()
 
 // Open Redis connection
 redis.connect()
@@ -70,24 +75,25 @@ async function handleAlert(location, alertType) {
     }
     const currentSession = await db.getUnrespondedSessionWithLocationId(location.locationid, pgClient)
     const currentTime = await db.getCurrentTime(pgClient)
+    const client = location.client
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
       const newSession = await db.createSession(location.locationid, undefined, CHATBOT_STATE.STARTED, alertType, undefined, undefined, pgClient)
 
       const alertInfo = {
         sessionId: newSession.id,
-        toPhoneNumbers: location.client.responderPhoneNumbers,
+        toPhoneNumbers: client.responderPhoneNumbers,
         fromPhoneNumber: location.twilioNumber,
-        responderPushId: location.client.responderPushId,
+        responderPushId: client.responderPushId,
         deviceName: location.displayName,
         alertType: newSession.alertType,
-        message: `This is a ${alertTypeDisplayName} alert. Please check on ${location.displayName}. Please respond with 'ok' once you have checked on it.`,
-        reminderTimeoutMillis: location.client.reminderTimeout * 1000,
-        fallbackTimeoutMillis: location.client.fallbackTimeout * 1000,
-        reminderMessage: `This is a reminder to check on ${location.displayName}`,
-        fallbackMessage: `An alert to check on ${location.displayName} was not responded to. Please check on it.`,
-        fallbackToPhoneNumbers: location.client.fallbackPhoneNumbers,
-        fallbackFromPhoneNumber: location.client.fromPhoneNumber,
+        message: t('alertStart', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
+        reminderTimeoutMillis: client.reminderTimeout * 1000,
+        fallbackTimeoutMillis: client.fallbackTimeout * 1000,
+        reminderMessage: t('alertReminder', { lng: client.language, deviceDisplayName: location.displayName }),
+        fallbackMessage: t('alertFallback', { lng: client.language, deviceDisplayName: location.displayName }),
+        fallbackToPhoneNumbers: client.fallbackPhoneNumbers,
+        fallbackFromPhoneNumber: client.fromPhoneNumber,
       }
       braveAlerter.startAlertSession(alertInfo)
     } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
@@ -95,10 +101,10 @@ async function handleAlert(location, alertType) {
 
       braveAlerter.sendAlertSessionUpdate(
         currentSession.id,
-        location.client.repsonderPushId,
-        location.client.responderPhoneNumbers,
+        client.repsonderPushId,
+        client.responderPhoneNumbers,
         location.twilioNumber,
-        `An additional ${alertTypeDisplayName} alert was generated at ${location.displayName}`,
+        t('alertAdditionalAlert', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
         `${alertTypeDisplayName} Alert:\n${location.displayName}`,
       )
     }

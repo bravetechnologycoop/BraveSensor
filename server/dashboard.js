@@ -414,6 +414,7 @@ async function submitNewClient(req, res) {
         data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim()),
         data.incidentCategories.split(',').map(category => category.trim()),
         false,
+        'en',
       )
 
       res.redirect(`/clients/${newClient.id}`)
