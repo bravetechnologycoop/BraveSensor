@@ -18,11 +18,13 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
     this.expectedRespondedByPhoneNumber = '+17772225555'
     this.expectedIncidentCategoryKeys = ['1', '2', '3']
     this.expectedIncidentCategories = ['No One Inside', 'Person responded', 'None of the above']
+    this.expectedLanguage = 'de'
 
     // Insert a location in the DB
     const client = await factories.clientDBFactory(db, {
       responderPhoneNumbers: [this.expectedRespondedByPhoneNumber],
       incidentCategories: this.expectedIncidentCategories,
+      language: this.expectedLanguage,
     })
     const location = await locationDBFactory(db, {
       displayName: this.expectedLocationDisplayName,
@@ -56,6 +58,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
       [this.expectedRespondedByPhoneNumber],
       this.expectedIncidentCategoryKeys,
       this.expectedIncidentCategories,
+      this.expectedLanguage,
     )
 
     expect(actualAlertSession).to.eql(expectedAlertSession)
