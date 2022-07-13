@@ -58,10 +58,7 @@ void loop() {
     initialized = true; 
   }
 
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
   //do every time loop() is called
   if (initialized) {
     // Serial.print(" AS: ");
