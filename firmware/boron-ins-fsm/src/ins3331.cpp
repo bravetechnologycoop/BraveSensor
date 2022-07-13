@@ -64,7 +64,7 @@ filteredINSData checkINS3331(){
       returnINSData.timestamp = millis();
       //Log.info("iAverage = %f, qAverage = %f", returnINSData.iAverage, returnINSData.qAverage); 
     } 
-
+    Serial.printf("Iaverage: %f  Qaverage: %f\n", returnINSData.iAverage, returnINSData.qAverage);
   } //end queue if
 
   return returnINSData;
