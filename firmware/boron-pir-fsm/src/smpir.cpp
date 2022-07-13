@@ -18,7 +18,7 @@ void setupSMPIR(){
 
 //in the future, checkSMPIR() will become a thread
 float checkSMPIR(){
-  Serial.printlnf("Analog: %ld   Digital: %ld", analogRead(pirAPin), digitalRead(pirAPin));
+  Serial.printlnf("Digital: %ld   Analog: %ld", digitalRead(pirAPin), analogRead(pirAPin));
 
   return pirAverage;
 } //end checkSMPIR()
