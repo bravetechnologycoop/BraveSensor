@@ -173,10 +173,14 @@ async function getDataForExport(pgClient) {
         s.incident_category AS "Session Incident Type",
         s.chatbot_state AS "Session State",
         s.alert_type As "Alert Type",
-        s.responded_by_phone_number AS "Session Responded By"
+        s.responded_by_phone_number AS "Session Responded By",
+        x.country AS "Country",
+        x.country_subdivision AS "Country Subdivision",
+        x.building_type AS "Building Type"
       FROM sessions s
         LEFT JOIN locations l ON s.locationid = l.locationid
         LEFT JOIN clients c on l.client_id = c.id
+        LEFT JOIN clients_extension x on x.client_id = c.id
       `,
       [],
       pool,
@@ -1316,6 +1320,16 @@ async function clearClients(pgClient) {
 
   try {
     await helpers.runQuery(
+      'clearClientsExtension',
+      `
+      DELETE FROM clients_extension
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    await helpers.runQuery(
       'clearClients',
       `
       DELETE FROM clients
@@ -1331,6 +1345,21 @@ async function clearClients(pgClient) {
 
 async function clearClientWithDisplayName(displayName, pgClient) {
   try {
+    await helpers.runQuery(
+      'clearClientWithDisplayNameClientExtension',
+      `
+      DELETE FROM clients_extension
+      WHERE client_id = (
+        SELECT id
+        FROM clients
+        WHERE display_name = $1
+      )
+      `,
+      [displayName],
+      pool,
+      pgClient,
+    )
+
     await helpers.runQuery(
       'clearClientWithDisplayName',
       `
