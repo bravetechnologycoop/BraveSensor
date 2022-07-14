@@ -20,6 +20,7 @@ the code was deployed.
 
 - Console function to enable developers to force reset and bypass DEVICE_RESET_THRESHOLD (CU-2e5adgd).
 - The ability to use different language chatbot messages (CU-2dtutrx).
+- Country, Country Subdivision, and Building Type columns to the CSV Export (CU-2c6crcn).
 
 ## [6.1.0] - 2022-06-27
 
