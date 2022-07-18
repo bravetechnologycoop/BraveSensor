@@ -212,10 +212,10 @@ async function getCurrentTime(pgClient) {
 }
 
 // Gets the most recent session data in the table for a specified location
-async function getMostRecentSession(locationid, pgClient) {
+async function getMostRecentSessionWithLocationid(locationid, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getMostRecentSession',
+      'getMostRecentSessionWithLocationid',
       `
       SELECT *
       FROM sessions
@@ -315,19 +315,21 @@ async function getClientWithClientId(id, pgClient) {
 }
 
 // Gets the last session data in the table for a specified phone number
-async function getMostRecentSessionPhone(twilioNumber, pgClient) {
+async function getMostRecentSessionWithPhoneNumbers(devicePhoneNumber, responderPhoneNumber, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getMostRecentSessionPhone',
+      'getMostRecentSessionWithPhoneNumbers',
       `
       SELECT s.*
       FROM sessions AS s
       LEFT JOIN locations AS l ON s.locationid = l.locationid
+      LEFT JOIN clients AS c ON l.client_id = c.id
       WHERE l.twilio_number = $1
+      AND $2 = ANY(c.responder_phone_numbers)
       ORDER BY s.created_at DESC
       LIMIT 1
       `,
-      [twilioNumber],
+      [devicePhoneNumber, responderPhoneNumber],
       pool,
       pgClient,
     )
@@ -1428,8 +1430,8 @@ module.exports = {
   getLocationsFromAlertApiKey,
   getLocationsFromClientId,
   getMostRecentSensorsVitalWithLocationid,
-  getMostRecentSession,
-  getMostRecentSessionPhone,
+  getMostRecentSessionWithLocationid,
+  getMostRecentSessionWithPhoneNumbers,
   getNewNotificationsCountByAlertApiKey,
   getRecentSensorsVitals,
   getRecentSensorsVitalsWithClientId,
