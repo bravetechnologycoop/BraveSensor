@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- Allow Twilio numbers to be shared across clients (CU-2fk3y8a).
+
 ## [6.2.0] - 2022-07-21
 
 ### Changed

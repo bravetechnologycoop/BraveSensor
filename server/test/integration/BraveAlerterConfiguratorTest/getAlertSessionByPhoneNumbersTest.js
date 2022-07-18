@@ -8,7 +8,7 @@ const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
 const { locationDBFactory, sessionDBFactory } = require('../../../testingHelpers')
 
-describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneNumber', () => {
+describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneNumbers', () => {
   beforeEach(async () => {
     await db.clearTables()
 
@@ -18,12 +18,12 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
     this.expectedTwilioPhoneNumber = '+3336661234'
     this.expectedIncidentCategoryKeys = ['1', '2', '3']
     this.expectedIncidentCategories = ['No One Inside', 'Person responded', 'None of the above']
-    this.expectedRespondedByPhoneNumber = '+19995558888'
+    this.expectedRespondedByPhoneNumbers = ['+19995558888', '+15428884444']
     this.expectedLanguage = 'de'
 
     // Insert a location in the DB
     const client = await factories.clientDBFactory(db, {
-      responderPhoneNumbers: [this.expectedRespondedByPhoneNumber],
+      responderPhoneNumbers: this.expectedRespondedByPhoneNumbers,
       incidentCategories: this.expectedIncidentCategories,
       language: this.expectedLanguage,
     })
@@ -39,7 +39,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
       alertType: ALERT_TYPE.SENSOR_DURATION,
       chatbotState: this.expectedChatbotState,
       incidentCategory: this.expectedIncidentCategory,
-      respondedByPhoneNumber: this.expectedRespondedByPhoneNumber,
+      respondedByPhoneNumber: this.expectedRespondedByPhoneNumbers[0],
     })
   })
 
@@ -47,21 +47,44 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
     await db.clearTables()
   })
 
-  it('should create a new AlertSession with expected values from the sessions and locations DB tables', async () => {
+  it('when given a matching set of phone numbers, should create a new AlertSession with expected values from the sessions and locations DB tables', async () => {
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
-    const actualAlertSession = await braveAlerterConfigurator.getAlertSessionByPhoneNumber(this.expectedTwilioPhoneNumber)
+    const actualAlertSession = await braveAlerterConfigurator.getAlertSessionByPhoneNumbers(
+      this.expectedTwilioPhoneNumber,
+      this.expectedRespondedByPhoneNumbers[1],
+    )
 
     const expectedAlertSession = new AlertSession(
       this.session.id,
       this.expectedChatbotState,
-      this.expectedRespondedByPhoneNumber,
+      this.expectedRespondedByPhoneNumbers[0],
       this.expectedIncidentCategory,
-      [this.expectedRespondedByPhoneNumber],
+      this.expectedRespondedByPhoneNumbers,
       this.expectedIncidentCategoryKeys,
       this.expectedIncidentCategories,
       this.expectedLanguage,
     )
 
     expect(actualAlertSession).to.eql(expectedAlertSession)
+  })
+
+  it('when given a matching devicePhoneNumber but mismatched responderPhoneNumber, should return null', async () => {
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
+    const actualAlertSession = await braveAlerterConfigurator.getAlertSessionByPhoneNumbers(
+      this.expectedTwilioPhoneNumber,
+      'notAResponderPhoneNumber',
+    )
+
+    expect(actualAlertSession).to.be.null
+  })
+
+  it('when given a matching responderPhoneNumber but mismatched devicePhoneNumber, should return null', async () => {
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
+    const actualAlertSession = await braveAlerterConfigurator.getAlertSessionByPhoneNumbers(
+      'notTheDevicePhoneNumber',
+      this.expectedRespondedByPhoneNumbers[1],
+    )
+
+    expect(actualAlertSession).to.be.null
   })
 })

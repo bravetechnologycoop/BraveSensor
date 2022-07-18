@@ -203,7 +203,7 @@ async function renderDashboardPage(req, res) {
     const allLocations = await db.getLocations()
 
     for (const location of allLocations) {
-      const recentSession = await db.getMostRecentSession(location.locationid)
+      const recentSession = await db.getMostRecentSessionWithLocationid(location.locationid)
       if (recentSession !== null) {
         const sessionCreatedAt = Date.parse(recentSession.createdAt)
         const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
@@ -344,7 +344,7 @@ async function renderClientDetailsPage(req, res) {
     const locations = await db.getLocationsFromClientId(currentClient.id)
 
     for (const location of locations) {
-      const recentSession = await db.getMostRecentSession(location.locationid)
+      const recentSession = await db.getMostRecentSessionWithLocationid(location.locationid)
       if (recentSession !== null) {
         const sessionCreatedAt = Date.parse(recentSession.createdAt)
         const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
