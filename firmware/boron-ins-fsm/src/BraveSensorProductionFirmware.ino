@@ -31,8 +31,6 @@ void setup() {
   setupStateMachine();
   setupWatchdog();
 
-
-
   Particle.publishVitals(900);  //15 minutes
   
 }
@@ -51,18 +49,23 @@ void loop() {
   //do once
   if(!initialized && Particle.connected()){ 
     // use external antenna on Boron
-    //BLE.selectAntenna(BleAntennaType::EXTERNAL);  
+    BLE.selectAntenna(BleAntennaType::EXTERNAL);  
     initializeStateMachineConsts();
     initializeDoorID();
     startINSSerial();
     initialized = true; 
   }
-
-  //do every time loop() is called
+  // //do every time loop() is called
   if (initialized) {
     stateHandler();
     getHeartbeat();
   }
+  
+
+  // if(SerialRadar.available()){
+  //   byte c = SerialRadar.read();
+  //   Serial.println(c);
+  // }
 
 
 }

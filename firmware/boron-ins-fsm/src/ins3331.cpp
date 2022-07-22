@@ -75,7 +75,7 @@ filteredINSData checkINS3331(){
 //*********************************threads***************************************
 void threadINSReader(void *param) {
 
-  static signed char receiveBuffer[14];
+  static signed char receiveBuffer[12];
   static int receiveBufferIndex;
   signed char iHighByte;
   signed char iLowByte;
@@ -91,7 +91,7 @@ void threadINSReader(void *param) {
 
       unsigned char c = SerialRadar.read();
 
-      if(c == START_DELIMITER) receiveBufferIndex = 0;
+      if(c == 0x55) receiveBufferIndex = 0;
 
       receiveBuffer[receiveBufferIndex] = c;
 
@@ -101,13 +101,13 @@ void threadINSReader(void *param) {
 
       //if c = frame end deliminator = 0x16, frame has completed transmission 
       //so break and put the raw I and Q bytes in a queue
-      if(c == END_DELIMITER) {
+      if(receiveBufferIndex ==  12) {
 
         //extract i and q in byte form
-        iHighByte = receiveBuffer[7];
-        iLowByte = receiveBuffer[8];
-        qHighByte = receiveBuffer[9];
-        qLowByte = receiveBuffer[10];
+        iHighByte = receiveBuffer[5];
+        iLowByte = receiveBuffer[6];
+        qHighByte = receiveBuffer[7];
+        qLowByte = receiveBuffer[8];
 
 /*        Log.info("iHigh = 0x%02X", receiveBuffer[7]);
         Log.info("iLow = 0x%02X", receiveBuffer[8]);
@@ -140,7 +140,7 @@ void threadINSReader(void *param) {
 //loop() functions and sub-functions 
 void startINSSerial(){
 
-	SerialRadar.begin(38400, SERIAL_8N1);
+	SerialRadar.begin(9600, SERIAL_8N1);
   writeToINS3331(APPLICATION_STOP);
   //give module time to stop sending data
   delay(100);
