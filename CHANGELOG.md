@@ -15,10 +15,11 @@ the code was deployed.
 
 - Allow Twilio numbers to be shared across clients (CU-2fk3y8a).
 - Updated disconnection message and reminder to be accurate for the Boron enclosures (CU-2kwa2zz).
+- Improve Twilio number purchasing error messages.
 
 ### Removed
 
-- Sentry logs when a is heartbeat received with an unknown Particle Core ID (CU-2ju4ky8).
+- Sentry logs when a heartbeat is received with an unknown Particle Core ID (CU-2ju4ky8).
 
 ## [6.2.0] - 2022-07-21
 
