@@ -15,6 +15,10 @@ the code was deployed.
 
 - Allow Twilio numbers to be shared across clients (CU-2fk3y8a).
 
+### Removed
+
+- Sentry logs when a is heartbeat received with an unknown Particle Core ID (CU-2ju4ky8).
+
 ## [6.2.0] - 2022-07-21
 
 ### Changed
