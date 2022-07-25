@@ -226,7 +226,7 @@ async function handleHeartbeat(req, res) {
       const location = await db.getLocationFromParticleCoreID(coreId)
       if (!location) {
         const errorMessage = `Bad request to ${req.path}: no location matches the coreID ${coreId}`
-        helpers.logError(errorMessage)
+        helpers.log(errorMessage)
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
         res.status(200).json(errorMessage)
       } else {
