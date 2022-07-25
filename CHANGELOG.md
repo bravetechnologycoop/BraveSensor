@@ -14,6 +14,7 @@ the code was deployed.
 ### Changed
 
 - Allow Twilio numbers to be shared across clients (CU-2fk3y8a).
+- Updated disconnection message and reminder to be accurate for the Boron enclosures (CU-2kwa2zz).
 
 ## [6.2.0] - 2022-07-21
 
