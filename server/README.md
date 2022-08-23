@@ -197,6 +197,8 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
    1. In the firmware dropdown, select the newly uploaded firmware, check the box "Flash now", and click "Save"
 
+   1. After you see the Boron receive the `spark/flash/status` `success` message, force the Boron to restart by sending "1" to the `Force_Reset` cloud function to start using the latest firmware. Note that this will produce an error, this is expected, please ignore.
+
 1. Go back to Firmware
 
    1. Hover over your new version, click on "Release firmware", fill in the following, and click "Next"

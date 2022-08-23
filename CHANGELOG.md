@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- Production deployment instructions in the README.
+
 ## [6.3.0] - 2022-08-22
 
 ### Changed
