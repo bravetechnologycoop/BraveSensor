@@ -6,17 +6,19 @@
 extern "C" {
 #endif
 
-//convert long to string
-char *ltoa(long N, char *str, int base);
+namespace string_convert 
+{
+    //convert long to string
+    char *ltoa(long N, char *str, int base);
 
-//convert unsigned long to string
-char* ultoa(unsigned long a, char* buffer, int radix, char pad=1);
+    //convert unsigned long to string
+    char* ultoa(unsigned long a, char* buffer, int radix, char pad=1);
 
-//convert unsigned int to string
-char* utoa(unsigned a, char* buffer, int radix);
+    //convert unsigned int to string
+    char* utoa(unsigned a, char* buffer, int radix);
 
-char* itoa(int a, char* buffer, int radix);
-
+    char* itoa(int a, char* buffer, int radix);
+}
 
 
 

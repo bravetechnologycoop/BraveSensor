@@ -14,6 +14,7 @@ the code was deployed.
 ### Changed
 
 - Production deployment instructions in the README.
+- Created string_convert namespace for string_convert.cpp functions.
 
 ## [6.3.0] - 2022-08-22
 
