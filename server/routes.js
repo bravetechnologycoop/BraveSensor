@@ -1,5 +1,6 @@
 // In-house dependencies
 const { clickUpHelpers } = require('brave-alert-lib')
+const api = require('./api')
 const dashboard = require('./dashboard')
 const pa = require('./pa')
 const vitals = require('./vitals')
@@ -30,6 +31,21 @@ function configureRoutes(app) {
   app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, clickUpHelpers.clickUpChecker, pa.handleCreateSensorLocation)
   app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, clickUpHelpers.clickUpChecker, pa.handleGetSensorClients)
   app.post('/pa/sensor-twilio-number', pa.validateSensorTwilioNumber, clickUpHelpers.clickUpChecker, pa.handleSensorTwilioNumber)
+
+  // Future plan is to have a proper REST API for our resources
+  app.get('/api/clients', api.authorize, api.getAllClients)
+  app.get('/api/clients/:clientId', api.authorize, api.getClientByClientId)
+  app.get('/api/clients/:clientId/sessions', api.authorize, api.getSessionsByClientId)
+  app.get('/api/clients/:clientId/vitals', api.authorize, api.getVitalsByClient)
+  app.get('/api/sensors/:sensorId', api.authorize, clickUpHelpers.clickUpChecker, api.getSensorBySensorId)
+  app.get('/api/sensors/:sensorId/sessions', api.authorize, api.getSessionsBySensorId)
+  app.get('/api/vitals', api.authorize, api.getVitals)
+
+  app.post('/api/clients/new', api.authorize, api.validateAddClient, api.addClient)
+  app.post('/api/sensors/new', api.authorize, api.validateAddSensor, api.addSensor)
+
+  app.post('/api/clients/:clientId', api.authorize, api.validateUpdateClient, api.updateClient)
+  app.post('/api/sensors/:sensorId', api.authorize, api.validateUpdateSensor, api.updateSensor)
 
   // TODO add the other routes
 }
