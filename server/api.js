@@ -2,19 +2,8 @@
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
 const db = require('./db/db')
 const particleHelpers = require('./particleHelpers')
-
-const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
-
-const authorize = Validator.body('braveKey').custom((value, { res }) => {
-  if (paApiKeys.indexOf(value) < 0) {
-    res.status(401).send({ status: 'error' })
-  } else {
-    return true
-  }
-})
 
 async function getAllClients(req, res) {
   // TODO real implementation
@@ -37,23 +26,33 @@ async function getVitalsByClient(req, res) {
 }
 
 async function getSensorBySensorId(req, res) {
-  const { sensorId } = req.param
+  console.log(`***TKD parameters: ${JSON.stringify(req.params)}`)
+  const { sensorId } = req.params
   const sensor = await db.getLocationData(sensorId)
+  console.log(`***TKD sensor from DB: ${JSON.stringify(sensor)}`)
   if (!sensor) {
+    console.log(`***TKD No matching sensor: ${sensorId}`)
     // No sensor with that ID in the DB
     res.status(400).send({ status: 'error' })
   } else {
     sensor.clients = await db.getClients()
+    console.log(`***TKD clients: ${JSON.stringify(sensor.clients)}`)
 
     const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
+    console.log(`***TKD deviceDetails from Particle: ${JSON.stringify(deviceDetails)}`)
     if (deviceDetails && deviceDetails.online) {
       try {
         sensor.isOnline = true
         sensor.actualMovementThreshold = await particleHelpers.getMovementThreshold(sensor.radarCoreId)
+        console.log(`***TKD sensor.actualMovementThreshold: ${sensor.actualMovementThreshold}`)
         sensor.actualInitialTimer = await particleHelpers.getInitialTimer(sensor.radarCoreId)
+        console.log(`***TKD sensor.actualInitialTimer: ${sensor.actualInitialTimer}`)
         sensor.actualDurationTimer = await particleHelpers.getDurationTimer(sensor.radarCoreId)
+        console.log(`***TKD sensor.actualDurationTimer: ${sensor.actualDurationTimer}`)
         sensor.actualStillnessTimer = await particleHelpers.getStillnessTimer(sensor.radarCoreId)
+        console.log(`***TKD sensor.actualStillnessTimer: ${sensor.actualStillnessTimer}`)
         sensor.actualDoorId = await particleHelpers.getDoorId(sensor.radarCoreId)
+        console.log(`***TKD sensor.actualDoorId: ${sensor.actualDoorId}`)
       } catch (e) {
         // Something went wrong in fetching the actual Particle data
         sensor.isOnlne = false
@@ -65,6 +64,7 @@ async function getSensorBySensorId(req, res) {
       }
     }
 
+    console.log(`***TKD returning sensor: ${JSON.stringify(sensor)}`)
     res.status(200).send({ status: 'success', body: sensor })
   }
 }
@@ -114,7 +114,6 @@ async function updateSensor(req, res) {
 module.exports = {
   addClient,
   addSensor,
-  authorize,
   getAllClients,
   getClientByClientId,
   getSensorBySensorId,
