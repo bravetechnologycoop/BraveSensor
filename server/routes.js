@@ -28,9 +28,9 @@ function configureRoutes(app) {
 
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
 
-  app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, clickUpHelpers.clickUpCheckerFromBody, pa.handleCreateSensorLocation)
-  app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, clickUpHelpers.clickUpCheckerFromBody, pa.handleGetSensorClients)
-  app.post('/pa/sensor-twilio-number', pa.validateSensorTwilioNumber, clickUpHelpers.clickUpCheckerFromBody, pa.handleSensorTwilioNumber)
+  app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, clickUpHelpers.clickUpChecker, pa.handleCreateSensorLocation)
+  app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, clickUpHelpers.clickUpChecker, pa.handleGetSensorClients)
+  app.post('/pa/sensor-twilio-number', pa.validateSensorTwilioNumber, clickUpHelpers.clickUpChecker, pa.handleSensorTwilioNumber)
 
   // Future plan is to have a proper REST API for our resources
   // TODO add authorization to all of these
