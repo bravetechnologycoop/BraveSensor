@@ -15,7 +15,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
     this.expectedChatbotState = CHATBOT_STATE.WAITING_FOR_CATEGORY
     this.expectedIncidentCategory = 'No One Inside'
     this.expectedLocationDisplayName = 'TEST LOCATION'
-    this.expectedTwilioPhoneNumber = '+3336661234'
+    this.expectedSensorPhoneNumber = '+3336661234'
     this.expectedIncidentCategoryKeys = ['1', '2', '3']
     this.expectedIncidentCategories = ['No One Inside', 'Person responded', 'None of the above']
     this.expectedRespondedByPhoneNumbers = ['+19995558888', '+15428884444']
@@ -28,7 +28,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
       language: this.expectedLanguage,
     })
     const location = await locationDBFactory(db, {
-      twilioNumber: this.expectedTwilioPhoneNumber,
+      phoneNumber: this.expectedSensorPhoneNumber,
       displayName: this.expectedLocationDisplayName,
       clientId: client.id,
     })
@@ -50,7 +50,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
   it('when given a matching set of phone numbers, should create a new AlertSession with expected values from the sessions and locations DB tables', async () => {
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const actualAlertSession = await braveAlerterConfigurator.getAlertSessionByPhoneNumbers(
-      this.expectedTwilioPhoneNumber,
+      this.expectedSensorPhoneNumber,
       this.expectedRespondedByPhoneNumbers[1],
     )
 
@@ -71,7 +71,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
   it('when given a matching devicePhoneNumber but mismatched responderPhoneNumber, should return null', async () => {
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const actualAlertSession = await braveAlerterConfigurator.getAlertSessionByPhoneNumbers(
-      this.expectedTwilioPhoneNumber,
+      this.expectedSensorPhoneNumber,
       'notAResponderPhoneNumber',
     )
 

@@ -83,7 +83,7 @@ async function handleAlert(location, alertType) {
       const alertInfo = {
         sessionId: newSession.id,
         toPhoneNumbers: client.responderPhoneNumbers,
-        fromPhoneNumber: location.twilioNumber,
+        fromPhoneNumber: location.phoneNumber,
         responderPushId: client.responderPushId,
         deviceName: location.displayName,
         alertType: newSession.alertType,
@@ -103,7 +103,7 @@ async function handleAlert(location, alertType) {
         currentSession.id,
         client.repsonderPushId,
         client.responderPhoneNumbers,
-        location.twilioNumber,
+        location.phoneNumber,
         t('alertAdditionalAlert', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
         `${alertTypeDisplayName} Alert:\n${location.displayName}`,
       )
@@ -247,12 +247,12 @@ app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (reques
 })
 
 app.post('/smokeTest/setup', async (request, response) => {
-  const { recipientNumber, twilioNumber, firmwareStateMachine } = request.body
+  const { recipientNumber, phoneNumber, firmwareStateMachine } = request.body
   try {
     const client = await factories.clientDBFactory(db, {
       displayName: 'SmokeTestClient',
       responderPhoneNumbers: [recipientNumber],
-      fromPhoneNumber: twilioNumber,
+      fromPhoneNumber: phoneNumber,
       alertApiKey: 'alertApiKey',
       responderPushId: null,
       reminderTimeout: 30,
@@ -267,7 +267,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       150,
       3,
       null,
-      twilioNumber,
+      phoneNumber,
       'SmokeTestLocation',
       'door_coreID',
       'radar_coreID',

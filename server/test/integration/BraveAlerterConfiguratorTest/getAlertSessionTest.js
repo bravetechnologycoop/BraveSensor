@@ -28,7 +28,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSession', () =>
     })
     const location = await locationDBFactory(db, {
       displayName: this.expectedLocationDisplayName,
-      twilioNumber: this.expectedRespondedByPhoneNumber,
+      phoneNumber: this.expectedRespondedByPhoneNumber,
       clientId: client.id,
     })
 

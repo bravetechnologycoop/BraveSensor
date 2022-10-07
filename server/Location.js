@@ -8,7 +8,7 @@ class Location {
     sentVitalsAlertAt,
     doorCoreId,
     radarCoreId,
-    twilioNumber,
+    phoneNumber,
     initialTimer,
     isActive,
     firmwareStateMachine,
@@ -25,7 +25,7 @@ class Location {
     this.sentVitalsAlertAt = sentVitalsAlertAt
     this.doorCoreId = doorCoreId
     this.radarCoreId = radarCoreId
-    this.twilioNumber = twilioNumber
+    this.phoneNumber = phoneNumber
     this.initialTimer = initialTimer
     this.isActive = isActive
     this.firmwareStateMachine = firmwareStateMachine

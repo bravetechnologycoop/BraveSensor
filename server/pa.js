@@ -31,7 +31,7 @@ async function handleCreateSensorLocation(req, res) {
     const locationID = req.body.locationID
     const displayName = req.body.displayName
     const particleDeviceID = req.body.particleDeviceID
-    const twilioNumber = req.body.twilioNumber
+    const phoneNumber = req.body.twilioNumber
     const stateMachineBool = req.body.stateMachineBool
     const clientID = req.body.clientID
 
@@ -42,7 +42,7 @@ async function handleCreateSensorLocation(req, res) {
           displayName,
           particleDeviceID,
           particleDeviceID,
-          twilioNumber,
+          phoneNumber,
           stateMachineBool,
           clientID,
         )

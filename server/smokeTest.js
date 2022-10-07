@@ -15,7 +15,7 @@ const radar_coreID = 'radar_coreID'
 
 const destinationURL = process.argv[1]
 const recipientNumber = process.argv[2]
-const twilioNumber = process.argv[3]
+const phoneNumber = process.argv[3]
 
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
 axios.defaults.baseURL = destinationURL
@@ -28,11 +28,11 @@ async function teardown() {
   }
 }
 
-async function setup(recipientPhoneNumber, twilioPhoneNumber, firmwareStateMachine) {
+async function setup(recipientPhoneNumber, sensorPhoneNumber, firmwareStateMachine) {
   try {
     await axios.post('/smokeTest/setup', {
       recipientNumber: recipientPhoneNumber,
-      twilioNumber: twilioPhoneNumber,
+      phoneNumber: sensorPhoneNumber,
       firmwareStateMachine,
     })
   } catch (e) {
@@ -97,12 +97,12 @@ async function stillnessEvent(coreID) {
   }
 }
 
-async function smokeTest(recipientPhoneNumber, twilioPhoneNumber) {
+async function smokeTest(recipientPhoneNumber, sensorPhoneNumber) {
   helpers.log('Smoke testing - please do not terminate this script before it finishes running')
   try {
     helpers.log('Running XeThru Server-side State Machine Smoke Tests')
     await teardown()
-    await setup(recipientPhoneNumber, twilioPhoneNumber, false)
+    await setup(recipientPhoneNumber, sensorPhoneNumber, false)
     for (let i = 0; i < 15; i += 1) {
       await xeThruMovement(radar_coreID, getRandomInt(MOV_THRESHOLD + 1, 100), getRandomInt(MOV_THRESHOLD + 1, 100))
     }
@@ -129,7 +129,7 @@ async function smokeTest(recipientPhoneNumber, twilioPhoneNumber) {
   try {
     helpers.log('Running INS Firmware State Machine Smoke Tests')
     await teardown()
-    await setup(recipientPhoneNumber, twilioPhoneNumber, true)
+    await setup(recipientPhoneNumber, sensorPhoneNumber, true)
     await stillnessEvent(radar_coreID)
     await helpers.sleep(70000)
   } catch (error) {
@@ -139,4 +139,4 @@ async function smokeTest(recipientPhoneNumber, twilioPhoneNumber) {
   }
 }
 
-smokeTest(recipientNumber, twilioNumber)
+smokeTest(recipientNumber, phoneNumber)
