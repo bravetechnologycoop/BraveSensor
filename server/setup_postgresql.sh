@@ -38,3 +38,4 @@ sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DAT
 sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE -v "ON_ERROR_STOP=1" --set=sslmode=require -f ./db/037-add-client-language.sql
 sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE -v "ON_ERROR_STOP=1" --set=sslmode=require -f ./db/038-add-client-extension-table.sql
 sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE -v "ON_ERROR_STOP=1" --set=sslmode=require -f ./db/039-alter-locations-phone-number.sql
+sudo PGPASSWORD=$PG_PASSWORD psql -U $PG_USER -h $PG_HOST -p $PG_PORT -d $PG_DATABASE -v "ON_ERROR_STOP=1" --set=sslmode=require -f ./db/040-alter-locations.sql

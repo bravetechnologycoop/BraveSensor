@@ -13,6 +13,7 @@ class Location {
     isActive,
     firmwareStateMachine,
     sentLowBatteryAlertAt,
+    doorId,
     createdAt,
     updatedAt,
     client,
@@ -30,6 +31,7 @@ class Location {
     this.isActive = isActive
     this.firmwareStateMachine = firmwareStateMachine
     this.sentLowBatteryAlertAt = sentLowBatteryAlertAt
+    this.doorId = doorId
     this.createdAt = createdAt
     this.updatedAt = updatedAt
     this.client = client

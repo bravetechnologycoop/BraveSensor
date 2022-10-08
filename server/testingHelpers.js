@@ -32,7 +32,7 @@ async function locationDBFactory(db, overrides = {}) {
   const location = await db.createLocation(
     overrides.locationid !== undefined ? overrides.locationid : 'fakeLocationid',
     overrides.movementThreshold !== undefined ? overrides.movementThreshold : 40,
-    overrides.stillnessTimer !== undefined ? overrides.stillnessTimer : 1.5,
+    overrides.stillnessTimer !== undefined ? overrides.stillnessTimer : 2,
     overrides.durationTimer !== undefined ? overrides.durationTimer : 3,
     overrides.initialTimer !== undefined ? overrides.initialTimer : 1,
     overrides.sentVitalsAlertAt !== undefined ? overrides.sentVitalsAlertAt : null,
@@ -43,6 +43,7 @@ async function locationDBFactory(db, overrides = {}) {
     overrides.isActive !== undefined ? overrides.isActive : true,
     overrides.firmwareStateMachine !== undefined ? overrides.firmwareStateMachine : true,
     overrides.sentLowBatteryAlertAt !== undefined ? overrides.sentLowBatteryAlertAt : '2021-03-09T19:37:28.176Z',
+    overrides.doorId !== undefined ? overrides.doorId : 'F6E5D4',
     overrides.clientId !== undefined ? overrides.clientId : 'fakeClientId',
   )
 
@@ -65,6 +66,7 @@ function locationFactory(overrides = {}) {
     overrides.isActive !== undefined ? overrides.isActive : true,
     overrides.firmwareStateMachine !== undefined ? overrides.firmwareStateMachine : true,
     overrides.sentLowBatteryAlertAt !== undefined ? overrides.sentLowBatteryAlertAt : '2021-03-09T19:37:28.176Z',
+    overrides.doorId !== undefined ? overrides.doorId : 'A1B2C3',
     overrides.createdAt !== undefined ? overrides.createdAt : '2021-05-05T19:37:28.176Z',
     overrides.updatedAt !== undefined ? overrides.updatedAt : '2021-06-07T03:19:30.832Z',
     overrides.client !== undefined ? overrides.client : factories.clientFactory(),
