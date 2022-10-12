@@ -47,6 +47,7 @@ function configureRoutes(app) {
 
   app.post('/api/clients/:clientId', api.validateUpdateClient, api.updateClient)
   app.post('/api/sensors/:sensorId', api.validateUpdateSensor, api.updateSensor)
+  app.post('/api/sensors/:sensorId/revert', api.revertSensor)
   app.post('/api/sensors/:sensorId/test', api.testSensor)
 
   // TODO add the other routes

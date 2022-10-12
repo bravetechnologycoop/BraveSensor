@@ -168,6 +168,44 @@ async function testSensor(req, res) {
   }
 }
 
+async function revertSensor(req, res) {
+  const { sensorId } = req.params
+
+  try {
+    // Get data from the DB
+    const sensor = await db.getLocationData(sensorId)
+
+    if (!sensor) {
+      // No sensor with that ID in the DB
+      res.status(400).send({ status: 'error' })
+    } else {
+      // Get data from Particle
+      const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
+      if (deviceDetails && deviceDetails.online) {
+        const promises = [
+          particleHelpers.setInitialTimer(sensor.initialTimer.toString(10), sensor.radarCoreId),
+          particleHelpers.setDurationTimer(sensor.durationTimer.toString(10), sensor.radarCoreId),
+          particleHelpers.setStillnessTimer(sensor.stillnessTimer.toString(10), sensor.radarCoreId),
+          particleHelpers.setDebugMode('0', sensor.radarCoreId),
+        ]
+
+        await Promise.all(promises)
+      }
+
+      const sensorToReturn = await assembleSensor(sensorId)
+      if (sensorToReturn === null) {
+        // No Sensor with that ID in the DB
+        res.status(400).send({ status: 'error' })
+      } else {
+        // Return Sensor's latest data
+        res.status(200).send({ status: 'success', body: sensorToReturn })
+      }
+    }
+  } catch (e) {
+    res.status(500).send({ status: 'error' })
+  }
+}
+
 module.exports = {
   addClient,
   addSensor,
@@ -179,6 +217,7 @@ module.exports = {
   getSessionsBySensorId,
   getVitals,
   getVitalsByClient,
+  revertSensor,
   testSensor,
   updateClient,
   updateSensor,
