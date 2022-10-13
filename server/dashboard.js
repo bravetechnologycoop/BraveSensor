@@ -22,7 +22,6 @@ const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.m
 const newClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newClient.mst`, 'utf-8')
 const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newLocation.mst`, 'utf-8')
 const updateClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateClient.mst`, 'utf-8')
-const updateLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateLocation.mst`, 'utf-8')
 const vitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/vitals.mst`, 'utf-8')
 
 function getAlertTypeDisplayName(alertType) {
@@ -284,28 +283,6 @@ async function renderLocationDetailsPage(req, res) {
   }
 }
 
-async function renderLocationEditPage(req, res) {
-  try {
-    const clients = await db.getClients()
-    const currentLocation = await db.getLocationData(req.params.locationId)
-
-    const viewParams = {
-      currentLocation,
-      clients: clients.map(client => {
-        return {
-          ...client,
-          selected: client.id === currentLocation.client.id,
-        }
-      }),
-    }
-
-    res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
-  } catch (err) {
-    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
-    res.status(500).send()
-  }
-}
-
 async function renderNewClientPage(req, res) {
   try {
     // Needed for the navigation bar
@@ -561,70 +538,6 @@ async function submitNewLocation(req, res) {
   }
 }
 
-const validateEditLocation = Validator.body([
-  'displayName',
-  'doorCoreID',
-  'radarCoreID',
-  'phoneNumber',
-  'movementThreshold',
-  'durationTimer',
-  'stillnessTimer',
-  'initialTimer',
-  'isActive',
-  'firmwareStateMachine',
-  'clientId',
-])
-  .trim()
-  .notEmpty()
-
-async function submitEditLocation(req, res) {
-  try {
-    if (!req.session.user || !req.cookies.user_sid) {
-      helpers.logError('Unauthorized')
-      res.status(401).send()
-      return
-    }
-
-    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
-
-    if (validationErrors.isEmpty()) {
-      const data = req.body
-      data.locationid = req.params.locationId
-
-      const client = await db.getClientWithClientId(data.clientId)
-      if (client === null) {
-        const errorMessage = `Client ID '${data.clientId}' does not exist`
-        helpers.log(errorMessage)
-        return res.status(400).send(errorMessage)
-      }
-
-      await db.updateLocation(
-        data.displayName,
-        data.doorCoreID,
-        data.radarCoreID,
-        data.phoneNumber,
-        data.movementThreshold,
-        data.durationTimer,
-        data.stillnessTimer,
-        data.initialTimer,
-        data.isActive === 'true',
-        data.firmwareStateMachine === 'true',
-        data.locationid,
-        data.clientId,
-      )
-
-      res.redirect(`/locations/${data.locationid}`)
-    } else {
-      const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
-      helpers.log(errorMessage)
-      res.status(400).send(errorMessage)
-    }
-  } catch (err) {
-    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
-    res.status(500).send()
-  }
-}
-
 async function submitLogin(req, res) {
   const username = req.body.username
   const password = req.body.password
@@ -645,7 +558,6 @@ module.exports = {
   renderClientVitalsPage,
   renderDashboardPage,
   renderLocationDetailsPage,
-  renderLocationEditPage,
   renderLoginPage,
   renderNewClientPage,
   renderNewLocationPage,
@@ -653,13 +565,11 @@ module.exports = {
   sessionChecker,
   setupDashboardSessions,
   submitEditClient,
-  submitEditLocation,
   submitLogin,
   submitLogout,
   submitNewClient,
   submitNewLocation,
   validateEditClient,
   validateNewClient,
-  validateEditLocation,
   validateNewLocation,
 }
