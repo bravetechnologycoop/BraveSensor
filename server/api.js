@@ -8,13 +8,13 @@ const particleHelpers = require('./particleHelpers')
 
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
 
-const authorize = Validator.body('braveKey').custom((value, { res }) => {
-  if (paApiKeys.indexOf(value) < 0) {
+async function authorize(req, res, next) {
+  if (paApiKeys.indexOf(req.body.braveKey) < 0) {
     res.status(401).send({ status: 'error' })
   } else {
-    return true
+    return next()
   }
-})
+}
 
 async function getAllClients(req, res) {
   // TODO real implementation
@@ -130,10 +130,20 @@ async function updateSensor(req, res) {
   res.status(200).send({ status: 'success', body: {} })
 }
 
+const validateTestSensor = Validator.param(['sensorId']).notEmpty()
+
 async function testSensor(req, res) {
   const { sensorId } = req.params
 
   try {
+    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+    if (!validationErrors.isEmpty()) {
+      const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
+      helpers.log(errorMessage)
+      res.status(400).send()
+      return
+    }
+
     // Get data from the DB
     const sensor = await db.getLocationData(sensorId)
 
@@ -167,6 +177,8 @@ async function testSensor(req, res) {
     res.status(500).send({ status: 'error' })
   }
 }
+
+const validateRevertSensor = Validator.param(['sensorId']).notEmpty()
 
 async function revertSensor(req, res) {
   const { sensorId } = req.params
@@ -223,6 +235,8 @@ module.exports = {
   updateSensor,
   validateAddClient,
   validateAddSensor,
+  validateRevertSensor,
+  validateTestSensor,
   validateUpdateClient,
   validateUpdateSensor,
 }
