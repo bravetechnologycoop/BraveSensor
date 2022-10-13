@@ -42,6 +42,10 @@ async function getMovementThreshold(deviceId) {
   return echoCloudFunction('Change_INS_Threshold', deviceId)
 }
 
+async function setMovementThreshold(movementThreshold, deviceId) {
+  return callCloudFunction('Change_INS_Threshold', movementThreshold, deviceId)
+}
+
 async function getInitialTimer(deviceId) {
   return echoCloudFunction('Change_Initial_Timer', deviceId)
 }
@@ -86,5 +90,6 @@ module.exports = {
   setDebugMode,
   setDurationTimer,
   setInitialTimer,
+  setMovementThreshold,
   setStillnessTimer,
 }

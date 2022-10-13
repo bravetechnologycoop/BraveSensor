@@ -44,7 +44,7 @@ function configureRoutes(app) {
   app.post('/api/sensors/new', api.validateAddSensor, api.addSensor)
 
   app.post('/api/clients/:clientId', api.validateUpdateClient, api.updateClient)
-  app.post('/api/sensors/:sensorId', api.validateUpdateSensor, api.updateSensor)
+  app.post('/api/sensors/:sensorId', clickUpHelpers.clickUpChecker, api.authorize, api.validateUpdateSensor, api.updateSensor)
   app.post('/api/sensors/:sensorId/revert', clickUpHelpers.clickUpChecker, api.authorize, api.validateRevertSensor, api.revertSensor)
   app.post('/api/sensors/:sensorId/test', clickUpHelpers.clickUpChecker, api.authorize, api.validateTestSensor, api.testSensor)
 

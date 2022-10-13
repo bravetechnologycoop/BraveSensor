@@ -122,27 +122,98 @@ async function updateClient(req, res) {
   res.status(200).send({ status: 'success', body: {} })
 }
 
-// TODO real implementation
-const validateUpdateSensor = Validator.body()
+const validateUpdateSensor = [
+  Validator.param(['sensorId']).notEmpty(),
+  Validator.body([
+    'movementThreshold',
+    'durationTimer',
+    'stillnessTimer',
+    'phoneNumber',
+    'initialTimer',
+    'displayName',
+    'radarCoreId',
+    'isActive',
+    'clientId',
+  ])
+    .trim()
+    .notEmpty(),
+]
 
 async function updateSensor(req, res) {
-  // TODO real implementation
-  res.status(200).send({ status: 'success', body: {} })
+  try {
+    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+    if (!validationErrors.isEmpty()) {
+      res.status(400).send({ status: 'error' })
+      return
+    }
+
+    const { sensorId } = req.params
+    const { displayName, movementThreshold, durationTimer, stillnessTimer, radarCoreId, phoneNumber, initialTimer, isActive, clientId } = req.body
+
+    // Get data from the DB
+    const sensor = await db.getLocationData(sensorId)
+    if (!sensor) {
+      // No sensor with that ID in the DB
+      res.status(400).send({ status: 'error' })
+      return
+    }
+
+    // Get data from Particle
+    const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
+    if (deviceDetails && deviceDetails.online) {
+      // Update Particle
+      const promises = [
+        particleHelpers.setMovementThreshold(movementThreshold, sensor.radarCoreId),
+        particleHelpers.setInitialTimer(initialTimer, sensor.radarCoreId),
+        particleHelpers.setDurationTimer(durationTimer, sensor.radarCoreId),
+        particleHelpers.setStillnessTimer(stillnessTimer, sensor.radarCoreId),
+        // TODO add Door ID
+      ]
+
+      await Promise.all(promises)
+    }
+
+    // Update DB
+    await db.updateLocation(
+      displayName,
+      radarCoreId,
+      radarCoreId,
+      phoneNumber,
+      movementThreshold,
+      durationTimer,
+      stillnessTimer,
+      initialTimer,
+      isActive,
+      true, // Assume it's always firmwareStateMachine
+      sensorId,
+      clientId,
+    )
+
+    const sensorToReturn = await assembleSensor(sensorId)
+    if (sensorToReturn === null) {
+      // No Sensor with that ID in the DB
+      res.status(400).send({ status: 'error' })
+      return
+    }
+
+    // Return Sensor's latest data
+    res.status(200).send({ status: 'success', body: sensorToReturn })
+  } catch (e) {
+    res.status(500).send({ status: 'error' })
+  }
 }
 
 const validateTestSensor = Validator.param(['sensorId']).notEmpty()
 
 async function testSensor(req, res) {
-  const { sensorId } = req.params
-
   try {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
     if (!validationErrors.isEmpty()) {
-      const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
-      helpers.log(errorMessage)
-      res.status(400).send()
+      res.status(400).send({ status: 'error' })
       return
     }
+
+    const { sensorId } = req.params
 
     // Get data from the DB
     const sensor = await db.getLocationData(sensorId)
@@ -150,29 +221,31 @@ async function testSensor(req, res) {
     if (!sensor) {
       // No sensor with that ID in the DB
       res.status(400).send({ status: 'error' })
-    } else {
-      // Get data from Particle
-      const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
-      if (deviceDetails && deviceDetails.online) {
-        const promises = [
-          particleHelpers.setInitialTimer('5', sensor.radarCoreId),
-          particleHelpers.setDurationTimer('10', sensor.radarCoreId),
-          particleHelpers.setStillnessTimer('10', sensor.radarCoreId),
-          particleHelpers.setDebugMode('1', sensor.radarCoreId),
-        ]
-
-        await Promise.all(promises)
-      }
-
-      const sensorToReturn = await assembleSensor(sensorId)
-      if (sensorToReturn === null) {
-        // No Sensor with that ID in the DB
-        res.status(400).send({ status: 'error' })
-      } else {
-        // Return Sensor's latest data
-        res.status(200).send({ status: 'success', body: sensorToReturn })
-      }
+      return
     }
+
+    // Get data from Particle
+    const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
+    if (deviceDetails && deviceDetails.online) {
+      const promises = [
+        particleHelpers.setInitialTimer('5', sensor.radarCoreId),
+        particleHelpers.setDurationTimer('10', sensor.radarCoreId),
+        particleHelpers.setStillnessTimer('10', sensor.radarCoreId),
+        particleHelpers.setDebugMode('1', sensor.radarCoreId),
+      ]
+
+      await Promise.all(promises)
+    }
+
+    const sensorToReturn = await assembleSensor(sensorId)
+    if (sensorToReturn === null) {
+      // No Sensor with that ID in the DB
+      res.status(400).send({ status: 'error' })
+      return
+    }
+
+    // Return Sensor's latest data
+    res.status(200).send({ status: 'success', body: sensorToReturn })
   } catch (e) {
     res.status(500).send({ status: 'error' })
   }
@@ -181,38 +254,46 @@ async function testSensor(req, res) {
 const validateRevertSensor = Validator.param(['sensorId']).notEmpty()
 
 async function revertSensor(req, res) {
-  const { sensorId } = req.params
-
   try {
+    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+    if (!validationErrors.isEmpty()) {
+      res.status(400).send({ status: 'error' })
+      return
+    }
+
+    const { sensorId } = req.params
+
     // Get data from the DB
     const sensor = await db.getLocationData(sensorId)
 
     if (!sensor) {
       // No sensor with that ID in the DB
       res.status(400).send({ status: 'error' })
-    } else {
-      // Get data from Particle
-      const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
-      if (deviceDetails && deviceDetails.online) {
-        const promises = [
-          particleHelpers.setInitialTimer(sensor.initialTimer.toString(10), sensor.radarCoreId),
-          particleHelpers.setDurationTimer(sensor.durationTimer.toString(10), sensor.radarCoreId),
-          particleHelpers.setStillnessTimer(sensor.stillnessTimer.toString(10), sensor.radarCoreId),
-          particleHelpers.setDebugMode('0', sensor.radarCoreId),
-        ]
-
-        await Promise.all(promises)
-      }
-
-      const sensorToReturn = await assembleSensor(sensorId)
-      if (sensorToReturn === null) {
-        // No Sensor with that ID in the DB
-        res.status(400).send({ status: 'error' })
-      } else {
-        // Return Sensor's latest data
-        res.status(200).send({ status: 'success', body: sensorToReturn })
-      }
+      return
     }
+
+    // Get data from Particle
+    const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
+    if (deviceDetails && deviceDetails.online) {
+      const promises = [
+        particleHelpers.setInitialTimer(sensor.initialTimer.toString(10), sensor.radarCoreId),
+        particleHelpers.setDurationTimer(sensor.durationTimer.toString(10), sensor.radarCoreId),
+        particleHelpers.setStillnessTimer(sensor.stillnessTimer.toString(10), sensor.radarCoreId),
+        particleHelpers.setDebugMode('0', sensor.radarCoreId),
+      ]
+
+      await Promise.all(promises)
+    }
+
+    const sensorToReturn = await assembleSensor(sensorId)
+    if (sensorToReturn === null) {
+      // No Sensor with that ID in the DB
+      res.status(400).send({ status: 'error' })
+      return
+    }
+
+    // Return Sensor's latest data
+    res.status(200).send({ status: 'success', body: sensorToReturn })
   } catch (e) {
     res.status(500).send({ status: 'error' })
   }
