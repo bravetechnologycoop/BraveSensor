@@ -8,6 +8,13 @@ const particleHelpers = require('./particleHelpers')
 
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
 
+const TEST_MODE = {
+  INITIAL_TIMER: 5,
+  DURATION_TIMER: 10,
+  STILLNESS_TIMER: 10,
+  IS_IN_DEBUG_MODE: 1,
+}
+
 async function authorize(req, res, next) {
   if (paApiKeys.indexOf(req.body.braveKey) < 0) {
     res.status(401).send({ status: 'error' })
@@ -62,6 +69,11 @@ async function assembleSensor(sensorId) {
       sensor.actualStillnessTimer = await particleHelpers.getStillnessTimer(sensor.radarCoreId)
       await helpers.sleep(1000) // To avoid throttling by Particle
       sensor.actualDoorId = await particleHelpers.getDoorId(sensor.radarCoreId)
+
+      sensor.isInTestMode =
+        sensor.actualInitialTimer === TEST_MODE.INITIAL_TIMER &&
+        sensor.actualDurationTimer === TEST_MODE.DURATION_TIMER &&
+        sensor.actualStillnessTimer === TEST_MODE.STILLNESS_TIMER
     } catch (e) {
       // Something went wrong in fetching the actual Particle data
       sensor.isOnlne = false
@@ -71,6 +83,8 @@ async function assembleSensor(sensorId) {
       sensor.actualStillnessTimer = undefined
       sensor.actualDoorId = undefined
     }
+  } else {
+    sensor.isOnline = false
   }
 
   return sensor
@@ -250,13 +264,13 @@ async function testSensor(req, res) {
     const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
     if (deviceDetails && deviceDetails.online) {
       await helpers.sleep(1000) // To avoid throttling by Particle
-      await particleHelpers.setInitialTimer('5', sensor.radarCoreId)
+      await particleHelpers.setInitialTimer(TEST_MODE.INITIAL_TIMER.toString(10), sensor.radarCoreId)
       await helpers.sleep(1000) // To avoid throttling by Particle
-      await particleHelpers.setDurationTimer('10', sensor.radarCoreId)
+      await particleHelpers.setDurationTimer(TEST_MODE.DURATION_TIMER.toString(10), sensor.radarCoreId)
       await helpers.sleep(1000) // To avoid throttling by Particle
-      await particleHelpers.setStillnessTimer('10', sensor.radarCoreId)
+      await particleHelpers.setStillnessTimer(TEST_MODE.STILLNESS_TIMER.toString(10), sensor.radarCoreId)
       await helpers.sleep(1000) // To avoid throttling by Particle
-      await particleHelpers.setDebugMode('1', sensor.radarCoreId)
+      await particleHelpers.setDebugMode(TEST_MODE.IS_IN_DEBUG_MODE.toString(10), sensor.radarCoreId)
     }
 
     const sensorToReturn = await assembleSensor(sensorId)
