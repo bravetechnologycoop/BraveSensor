@@ -38,7 +38,7 @@ function createLocationFromRow(r, allClients) {
   const client = allClients.filter(c => c.id === r.client_id)[0]
 
   // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.phone_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.sent_low_battery_alert_at, r.door_id, r.created_at, r.updated_at, client)
+  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.phone_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.sent_low_battery_alert_at, r.door_id, r.is_in_debug_mode, r.created_at, r.updated_at, client)
 }
 
 function createSensorsVitalFromRow(r, allLocations) {
@@ -778,7 +778,6 @@ async function getLocations(pgClient) {
 }
 
 // Updates the locations table entry for a specific location with the new data
-// eslint-disable-next-line prettier/prettier
 async function updateLocation(
   displayName,
   doorCoreId,
@@ -790,6 +789,7 @@ async function updateLocation(
   initialTimer,
   isActive,
   firmwareStateMachine,
+  isInDebugMode,
   locationid,
   clientId,
   pgClient,
@@ -810,8 +810,9 @@ async function updateLocation(
         initial_timer = $8,
         is_active = $9,
         firmware_state_machine = $10,
-        client_id = $11
-      WHERE locationid = $12
+        is_in_debug_mode = $11,
+        client_id = $12
+      WHERE locationid = $13
       RETURNING *
       `,
       [
@@ -825,6 +826,7 @@ async function updateLocation(
         initialTimer,
         isActive,
         firmwareStateMachine,
+        isInDebugMode,
         clientId,
         locationid,
       ],
@@ -904,8 +906,8 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
   try {
     const results = await helpers.runQuery('createLocationFromBrowserForm',
       `
-      INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, phone_number, firmware_state_machine, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, phone_number, firmware_state_machine, is_in_debug_mode, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
       `,
       [
@@ -915,6 +917,7 @@ async function createLocationFromBrowserForm(locationid, displayName, doorCoreId
         radarCoreId,
         phoneNumber,
         firmwareStateMachine,
+        false,
         clientId,
       ],
       pool,
@@ -950,6 +953,7 @@ async function createLocation(
   firmwareStateMachine,
   sentLowBatteryAlertAt,
   doorId,
+  isInDebugMode,
   clientId,
   pgClient,
 ) {
@@ -957,8 +961,8 @@ async function createLocation(
     const results = await helpers.runQuery(
       'createLocation',
       `
-      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, phone_number, display_name, door_particlecoreid, radar_particlecoreid, is_active, firmware_state_machine, sent_low_battery_alert_at, door_id, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, phone_number, display_name, door_particlecoreid, radar_particlecoreid, is_active, firmware_state_machine, sent_low_battery_alert_at, door_id, is_in_debug_mode, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
       `,
       [
@@ -976,6 +980,7 @@ async function createLocation(
         firmwareStateMachine,
         sentLowBatteryAlertAt,
         doorId,
+        isInDebugMode,
         clientId,
       ],
       pool,

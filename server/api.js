@@ -184,7 +184,18 @@ async function updateSensor(req, res) {
     }
 
     const { sensorId } = req.params
-    const { displayName, movementThreshold, durationTimer, stillnessTimer, radarCoreId, phoneNumber, initialTimer, isActive, clientId } = req.body
+    const {
+      displayName,
+      movementThreshold,
+      durationTimer,
+      stillnessTimer,
+      radarCoreId,
+      phoneNumber,
+      initialTimer,
+      isActive,
+      isInDebugMode,
+      clientId,
+    } = req.body
 
     // Get data from the DB
     const sensor = await db.getLocationData(sensorId)
@@ -206,6 +217,8 @@ async function updateSensor(req, res) {
       await particleHelpers.setDurationTimer(durationTimer, sensor.radarCoreId)
       await helpers.sleep(1000) // To avoid throttling by Particle
       await particleHelpers.setStillnessTimer(stillnessTimer, sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setDebugMode(isInDebugMode ? '1' : '0', sensor.radarCoreId)
       // TODO add Door ID
     }
 
@@ -221,6 +234,7 @@ async function updateSensor(req, res) {
       initialTimer,
       isActive,
       true, // Assume it's always firmwareStateMachine
+      isInDebugMode,
       sensorId,
       clientId,
     )
@@ -318,7 +332,7 @@ async function revertSensor(req, res) {
       await helpers.sleep(1000) // To avoid throttling by Particle
       await particleHelpers.setStillnessTimer(sensor.stillnessTimer.toString(10), sensor.radarCoreId)
       await helpers.sleep(1000) // To avoid throttling by Particle
-      await particleHelpers.setDebugMode('0', sensor.radarCoreId)
+      await particleHelpers.setDebugMode(sensor.isInDebugMode ? '1' : '0', sensor.radarCoreId)
     }
 
     const sensorToReturn = await assembleSensor(sensorId)

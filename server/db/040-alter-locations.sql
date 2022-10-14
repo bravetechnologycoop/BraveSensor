@@ -92,6 +92,14 @@ BEGIN
         -- Add column for the door ID
         ALTER TABLE locations
         ADD COLUMN IF NOT EXISTS door_id TEXT;
+
+        -- Add column for the debug mode and fill it in with false values
+        ALTER TABLE locations
+        ADD COLUMN IF NOT EXISTS is_in_debug_mode BOOLEAN NOT NULL DEFAULT 'f';
+
+        ALTER TABLE locations
+        ALTER COLUMN is_in_debug_mode
+        DROP DEFAULT;
         
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file
         INSERT INTO migrations (id)
