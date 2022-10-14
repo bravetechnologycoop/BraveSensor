@@ -52,10 +52,15 @@ async function assembleSensor(sensorId) {
   if (deviceDetails && deviceDetails.online) {
     try {
       sensor.isOnline = true
+      await helpers.sleep(1000) // To avoid throttling by Particle
       sensor.actualMovementThreshold = await particleHelpers.getMovementThreshold(sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
       sensor.actualInitialTimer = await particleHelpers.getInitialTimer(sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
       sensor.actualDurationTimer = await particleHelpers.getDurationTimer(sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
       sensor.actualStillnessTimer = await particleHelpers.getStillnessTimer(sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
       sensor.actualDoorId = await particleHelpers.getDoorId(sensor.radarCoreId)
     } catch (e) {
       // Something went wrong in fetching the actual Particle data
@@ -179,15 +184,15 @@ async function updateSensor(req, res) {
     const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
     if (deviceDetails && deviceDetails.online) {
       // Update Particle
-      const promises = [
-        particleHelpers.setMovementThreshold(movementThreshold, sensor.radarCoreId),
-        particleHelpers.setInitialTimer(initialTimer, sensor.radarCoreId),
-        particleHelpers.setDurationTimer(durationTimer, sensor.radarCoreId),
-        particleHelpers.setStillnessTimer(stillnessTimer, sensor.radarCoreId),
-        // TODO add Door ID
-      ]
-
-      await Promise.all(promises)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setMovementThreshold(movementThreshold, sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setInitialTimer(initialTimer, sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setDurationTimer(durationTimer, sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setStillnessTimer(stillnessTimer, sensor.radarCoreId)
+      // TODO add Door ID
     }
 
     // Update DB
@@ -244,14 +249,14 @@ async function testSensor(req, res) {
     // Get data from Particle
     const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
     if (deviceDetails && deviceDetails.online) {
-      const promises = [
-        particleHelpers.setInitialTimer('5', sensor.radarCoreId),
-        particleHelpers.setDurationTimer('10', sensor.radarCoreId),
-        particleHelpers.setStillnessTimer('10', sensor.radarCoreId),
-        particleHelpers.setDebugMode('1', sensor.radarCoreId),
-      ]
-
-      await Promise.all(promises)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setInitialTimer('5', sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setDurationTimer('10', sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setStillnessTimer('10', sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setDebugMode('1', sensor.radarCoreId)
     }
 
     const sensorToReturn = await assembleSensor(sensorId)
@@ -292,14 +297,14 @@ async function revertSensor(req, res) {
     // Get data from Particle
     const deviceDetails = await particleHelpers.getDeviceDetailsByDeviceId(sensor.radarCoreId)
     if (deviceDetails && deviceDetails.online) {
-      const promises = [
-        particleHelpers.setInitialTimer(sensor.initialTimer.toString(10), sensor.radarCoreId),
-        particleHelpers.setDurationTimer(sensor.durationTimer.toString(10), sensor.radarCoreId),
-        particleHelpers.setStillnessTimer(sensor.stillnessTimer.toString(10), sensor.radarCoreId),
-        particleHelpers.setDebugMode('0', sensor.radarCoreId),
-      ]
-
-      await Promise.all(promises)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setInitialTimer(sensor.initialTimer.toString(10), sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setDurationTimer(sensor.durationTimer.toString(10), sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setStillnessTimer(sensor.stillnessTimer.toString(10), sensor.radarCoreId)
+      await helpers.sleep(1000) // To avoid throttling by Particle
+      await particleHelpers.setDebugMode('0', sensor.radarCoreId)
     }
 
     const sensorToReturn = await assembleSensor(sensorId)
