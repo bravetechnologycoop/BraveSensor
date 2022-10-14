@@ -36,6 +36,7 @@ function configureRoutes(app) {
   app.get('/api/clients/:clientId', api.getClientByClientId)
   app.get('/api/clients/:clientId/sessions', api.getSessionsByClientId)
   app.get('/api/clients/:clientId/vitals', api.getVitalsByClient)
+  app.get('/api/sensors', api.getAllSensors)
   app.get('/api/sensors/:sensorId', api.getSensorBySensorId)
   app.get('/api/sensors/:sensorId/sessions', api.getSessionsBySensorId)
   app.get('/api/vitals', api.getVitals)

@@ -71,6 +71,23 @@ async function assembleSensor(sensorId) {
   return sensor
 }
 
+async function getAllSensors(req, res) {
+  try {
+    // Get data from the DB
+    const locations = await db.getLocations()
+
+    if (locations === null) {
+      // No sensor with that ID in the DB
+      res.status(400).send({ status: 'error' })
+      return
+    }
+
+    res.status(200).send({ status: 'success', body: locations })
+  } catch (e) {
+    res.status(500).send({ status: 'error' })
+  }
+}
+
 async function getSensorBySensorId(req, res) {
   const { sensorId } = req.params
 
@@ -304,6 +321,7 @@ module.exports = {
   addSensor,
   authorize,
   getAllClients,
+  getAllSensors,
   getClientByClientId,
   getSensorBySensorId,
   getSessionsByClientId,
