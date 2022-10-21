@@ -11,9 +11,6 @@ target/
 #ignore my logs
 *.log
 
-# ignore compiled exe files
-*.exe
-
 #ignore PlatformIO config files
 workspaceconfig.code-workspace
 
