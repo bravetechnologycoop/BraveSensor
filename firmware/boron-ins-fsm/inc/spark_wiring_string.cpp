@@ -59,11 +59,11 @@ void dtoa (double val, unsigned char prec, char *sout) {
     unsigned long first = (unsigned long)(fixed / scale);
     unsigned long second = (unsigned long)(fixed % scale);
 
-    ultoa(first, sout, 10, 1);
+    string_convert::ultoa(first, sout, 10, 1);
     if (prec) {
         sout += strlen(sout);
         *sout++ = '.';
-        ultoa(second, sout, 10, prec);
+        string_convert::ultoa(second, sout, 10, prec);
     }
 }
 
@@ -116,7 +116,7 @@ String::String(unsigned char value, unsigned char base)
 {
 	init();
 	char buf[9];
-	utoa(value, buf, base);
+	string_convert::utoa(value, buf, base);
 	*this = buf;
 }
 
@@ -124,7 +124,7 @@ String::String(int value, unsigned char base)
 {
 	init();
 	char buf[34];
-	itoa(value, buf, base);
+	string_convert::itoa(value, buf, base);
 	*this = buf;
 }
 
@@ -132,7 +132,7 @@ String::String(unsigned int value, unsigned char base)
 {
 	init();
 	char buf[33];
-	utoa(value, buf, base);
+	string_convert::utoa(value, buf, base);
 	*this = buf;
 }
 
@@ -140,7 +140,7 @@ String::String(long value, unsigned char base)
 {
 	init();
 	char buf[34];
-	ltoa(value, buf, base);
+	string_convert::ltoa(value, buf, base);
 	*this = buf;
 }
 
@@ -148,7 +148,7 @@ String::String(unsigned long value, unsigned char base)
 {
 	init();
 	char buf[33];
-	ultoa(value, buf, base);
+	string_convert::ultoa(value, buf, base);
 	*this = buf;
 }
 
@@ -335,35 +335,35 @@ unsigned char String::concat(char c)
 unsigned char String::concat(unsigned char num)
 {
 	char buf[4];
-	itoa(num, buf, 10);
+	string_convert::itoa(num, buf, 10);
 	return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(int num)
 {
 	char buf[7];
-	itoa(num, buf, 10);
+	string_convert::itoa(num, buf, 10);
 	return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(unsigned int num)
 {
 	char buf[6];
-	utoa(num, buf, 10);
+	string_convert::utoa(num, buf, 10);
 	return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(long num)
 {
 	char buf[12];
-	ltoa(num, buf, 10);
+	string_convert::ltoa(num, buf, 10);
 	return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(unsigned long num)
 {
 	char buf[11];
-	ultoa(num, buf, DEC);
+	string_convert::ultoa(num, buf, DEC);
 	return concat(buf, strlen(buf));
 }
 
