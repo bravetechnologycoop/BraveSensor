@@ -48,7 +48,7 @@ SCENARIO( "Turn_Debugging_Publishes_On_Off", "[toggle debug flag]" ) {
         WHEN("The function is called with 'e'") {
             int returnVal = toggle_debugging_publishes("e");   
 
-            THEN("The function should return false") {
+            THEN("TThe function should return whether debugging publishes are turned on, in this case, false") {
                 REQUIRE(returnVal == 0);
             }
         }
@@ -96,8 +96,8 @@ SCENARIO( "Turn_Debugging_Publishes_On_Off", "[toggle debug flag]" ) {
         WHEN("The function is called with 'e'") {
             int returnVal = toggle_debugging_publishes("e");   
 
-            THEN("The function should return true") {
-                REQUIRE(returnVal == 1);
+            THEN("The function should return whether debugging publishes are turned on, in this case, true") {
+                REQUIRE(returnVal == true);
             }
         }
     }
