@@ -14,6 +14,8 @@ the code was deployed.
 ### Changed
 
 - Production deployment instructions in the README.
+- Created string_convert namespace for string_convert.cpp functions.
+- Added echo functionality for toggle debugging publishes cloud function, as well as unit tests for the echo functionality.
 
 ## [6.3.0] - 2022-08-22
 
