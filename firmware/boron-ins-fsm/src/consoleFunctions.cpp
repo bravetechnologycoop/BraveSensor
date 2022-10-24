@@ -224,7 +224,7 @@ int ins_threshold_set(String input){
 // command is a long string with all the config values
 int im21_door_id_set(String command) { 
   char buffer[64];
-  IM21DoorID doorID; 
+  IM21DoorID doorIDHolder; 
 
   if(isValidIM21Id(command) == false){
     return -1;
@@ -235,12 +235,12 @@ int im21_door_id_set(String command) {
 
   //if echo, publish current door ID
   if(*checkForEcho == 'e'){  
-    EEPROM.get(ADDR_IM21_DOORID,doorID.byte1);  
-    EEPROM.get((ADDR_IM21_DOORID+1),doorID.byte2);  
-    EEPROM.get((ADDR_IM21_DOORID+2),doorID.byte3);  
+    EEPROM.get(ADDR_IM21_DOORID, doorIDHolder.byte1);  
+    EEPROM.get((ADDR_IM21_DOORID+1), doorIDHolder.byte2);  
+    EEPROM.get((ADDR_IM21_DOORID+2), doorIDHolder.byte3);  
 
     snprintf(buffer, sizeof(buffer), "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}", 
-            doorID.byte1,doorID.byte2,doorID.byte3); 
+            doorIDHolder.byte1, doorIDHolder.byte2, doorIDHolder.byte3); 
     Particle.publish("Current Door Sensor ID: ",buffer, PRIVATE);
   } 
   else //else not echo, so we have a new door ID to parse
@@ -260,17 +260,17 @@ int im21_door_id_set(String command) {
     globalDoorID.byte1 = (uint8_t)strtol(byteholder3,NULL,16);
 
     //write new global door ID to flash
-    EEPROM.put(ADDR_IM21_DOORID,globalDoorID.byte1);  
-    EEPROM.put((ADDR_IM21_DOORID+1),globalDoorID.byte2);  
-    EEPROM.put((ADDR_IM21_DOORID+2),globalDoorID.byte3);  
+    EEPROM.put(ADDR_IM21_DOORID, globalDoorID.byte1);  
+    EEPROM.put((ADDR_IM21_DOORID+1), globalDoorID.byte2);  
+    EEPROM.put((ADDR_IM21_DOORID+2), globalDoorID.byte3);  
   
   } //end if-else
 
   // convert door ID to decimal for return value
   // get the door ID
-  EEPROM.get(ADDR_IM21_DOORID, doorID.byte1);
-  EEPROM.get((ADDR_IM21_DOORID + 1), doorID.byte2);
-  EEPROM.get((ADDR_IM21_DOORID + 2), doorID.byte3);
+  EEPROM.get(ADDR_IM21_DOORID, doorIDHolder.byte1);
+  EEPROM.get((ADDR_IM21_DOORID + 1), doorIDHolder.byte2);
+  EEPROM.get((ADDR_IM21_DOORID + 2), doorIDHolder.byte3);
 
   // put door ID in buffer
   snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorID.byte1, doorID.byte2, doorID.byte3);
