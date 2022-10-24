@@ -220,8 +220,11 @@ int ins_threshold_set(String input){
 
 
 
-//particle console function to get/set door sensor ID
-int im21_door_id_set(String command) { // command is a long string with all the config values
+// particle console function to get/set door sensor ID
+// command is a long string with all the config values
+int im21_door_id_set(String command) { 
+  char buffer[64];
+  IM21DoorID doorID; 
 
   if(isValidIM21Id(command) == false){
     return -1;
@@ -231,16 +234,13 @@ int im21_door_id_set(String command) { // command is a long string with all the 
   const char* checkForEcho = command.c_str();
 
   //if echo, publish current door ID
-  if(*checkForEcho == 'e'){
+  if(*checkForEcho == 'e'){  
+    EEPROM.get(ADDR_IM21_DOORID,doorID.byte1);  
+    EEPROM.get((ADDR_IM21_DOORID+1),doorID.byte2);  
+    EEPROM.get((ADDR_IM21_DOORID+2),doorID.byte3);  
 
-    IM21DoorID holder;   
-    EEPROM.get(ADDR_IM21_DOORID,holder.byte1);  
-    EEPROM.get((ADDR_IM21_DOORID+1),holder.byte2);  
-    EEPROM.get((ADDR_IM21_DOORID+2),holder.byte3);  
-
-    char buffer[64];
     snprintf(buffer, sizeof(buffer), "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}", 
-            holder.byte1,holder.byte2,holder.byte3); 
+            doorID.byte1,doorID.byte2,doorID.byte3); 
     Particle.publish("Current Door Sensor ID: ",buffer, PRIVATE);
   } 
   else //else not echo, so we have a new door ID to parse
@@ -266,8 +266,17 @@ int im21_door_id_set(String command) { // command is a long string with all the 
   
   } //end if-else
 
-  return 1;
+  // convert door ID to decimal for return value
+  // get the door ID
+  EEPROM.get(ADDR_IM21_DOORID, doorID.byte1);
+  EEPROM.get((ADDR_IM21_DOORID + 1), doorID.byte2);
+  EEPROM.get((ADDR_IM21_DOORID + 2), doorID.byte3);
 
+  // put door ID in buffer
+  snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorID.byte1, doorID.byte2, doorID.byte3);
+
+  // return as int
+  return (int)strtol(buffer, NULL, 16);
 }
 
 int force_reset(String command){

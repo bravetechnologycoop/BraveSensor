@@ -91,24 +91,25 @@ SCENARIO( "Change_IM21_Door_ID", "[change door id]" ) {
 
     GIVEN( "A default global door id" ) {
         globalDoorID.byte1 = (uint8_t)strtol("AA",NULL,16);
-        globalDoorID.byte1 = (uint8_t)strtol("AA",NULL,16);
-        globalDoorID.byte1 = (uint8_t)strtol("AA",NULL,16);
-
-        WHEN( "the function is called with e" ) {
-            int returnVal = im21_door_id_set("e");
-
-            THEN( "should return 1" ) {
-                REQUIRE( returnVal == 1);
-            }
-        }
+        globalDoorID.byte2 = (uint8_t)strtol("AA",NULL,16);
+        globalDoorID.byte3 = (uint8_t)strtol("AA",NULL,16);
 
         WHEN( "the function is called with a valid door ID" ) {
             int returnVal = im21_door_id_set("EF,CD,AB");
 
-            THEN( "should return 1" ) {
-                REQUIRE( returnVal == 1);
+            THEN( "The function should return the door ID converted to a decimal number" ) {
+                REQUIRE( returnVal == 11259375);
             }
             //Was unable to test the assignment to the variables, byte1, byte2, and byte3 are all 0 despite the same code working on the Boron
+        }
+
+        WHEN( "the function is called with e" ) {
+            im21_door_id_set("EF,CD,AB");
+            int returnVal = im21_door_id_set("e");
+
+            THEN( "The function should return the door ID that was previously set") {
+                REQUIRE( returnVal == 11259375);
+            }
         }
 
         WHEN( "the function is called with an empty string" ) {
@@ -134,6 +135,7 @@ SCENARIO( "Set Initial Timer", "[initial timer]" ) {
         state1_max_time = 10000;
 
         WHEN( "the function is called with 'e'" ) {
+            initial_timer_set("10");
             int returnFlag = initial_timer_set("e");
 
             THEN("the initial timer value should remain the same" ) {
@@ -187,6 +189,7 @@ SCENARIO( "Set Duration Timer", "[duration timer]" ) {
 
     GIVEN( "A starting initial timer of 10 milliseconds" ) {
         state2_max_duration = 10000;
+        EEPROM.put(ADDR_STATE2_MAX_DURATION, state2_max_duration);
 
         WHEN( "the function is called with 'e'" ) {
             int returnFlag = duration_timer_set("e");
@@ -243,6 +246,7 @@ SCENARIO( "Set Stillness Timer", "[stillness timer]" ) {
         state3_max_stillness_time = 10000;
 
         WHEN( "the function is called with 'e'" ) {
+            stillness_timer_set("10");
             int returnFlag = stillness_timer_set("e");
 
             THEN("the initial timer value should remain the same" ) {
@@ -298,6 +302,7 @@ SCENARIO( "Set INS Threshold", "[ins threshold]" ) {
             ins_threshold = 10;
 
         WHEN( "the function is called with 'e'" ) {
+            ins_threshold_set("10");
             int returnFlag = ins_threshold_set("e");
 
             THEN("the initial timer value should remain the same" ) {
