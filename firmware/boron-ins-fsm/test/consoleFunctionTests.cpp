@@ -100,7 +100,6 @@ SCENARIO( "Change_IM21_Door_ID", "[change door id]" ) {
             THEN( "The function should return the door ID converted to a decimal number" ) {
                 REQUIRE( returnVal == 11259375);
             }
-            //Was unable to test the assignment to the variables, byte1, byte2, and byte3 are all 0 despite the same code working on the Boron
         }
 
         WHEN( "the function is called with e" ) {
@@ -133,9 +132,9 @@ SCENARIO( "Change_IM21_Door_ID", "[change door id]" ) {
 SCENARIO( "Set Initial Timer", "[initial timer]" ) {
     GIVEN( "A starting initial timer of 10 milliseconds" ) {
         state1_max_time = 10000;
+        initial_timer_set("10");
 
         WHEN( "the function is called with 'e'" ) {
-            initial_timer_set("10");
             int returnFlag = initial_timer_set("e");
 
             THEN("the initial timer value should remain the same" ) {
@@ -189,7 +188,7 @@ SCENARIO( "Set Duration Timer", "[duration timer]" ) {
 
     GIVEN( "A starting initial timer of 10 milliseconds" ) {
         state2_max_duration = 10000;
-        EEPROM.put(ADDR_STATE2_MAX_DURATION, state2_max_duration);
+        duration_timer_set("10");
 
         WHEN( "the function is called with 'e'" ) {
             int returnFlag = duration_timer_set("e");
@@ -244,9 +243,9 @@ SCENARIO( "Set Duration Timer", "[duration timer]" ) {
 SCENARIO( "Set Stillness Timer", "[stillness timer]" ) {
     GIVEN( "A starting stillness timer of 10 milliseconds" ) {
         state3_max_stillness_time = 10000;
+        stillness_timer_set("10");
 
         WHEN( "the function is called with 'e'" ) {
-            stillness_timer_set("10");
             int returnFlag = stillness_timer_set("e");
 
             THEN("the initial timer value should remain the same" ) {
@@ -299,10 +298,10 @@ SCENARIO( "Set Stillness Timer", "[stillness timer]" ) {
 SCENARIO( "Set INS Threshold", "[ins threshold]" ) {
 
     GIVEN( "A starting initial threshold of 10" ) {
-            ins_threshold = 10;
+        ins_threshold = 10;
+        ins_threshold_set("10");
 
         WHEN( "the function is called with 'e'" ) {
-            ins_threshold_set("10");
             int returnFlag = ins_threshold_set("e");
 
             THEN("the initial timer value should remain the same" ) {
