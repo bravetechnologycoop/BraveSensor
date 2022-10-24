@@ -273,7 +273,7 @@ int im21_door_id_set(String command) {
   EEPROM.get((ADDR_IM21_DOORID + 2), doorIDHolder.byte3);
 
   // put door ID in buffer
-  snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorID.byte1, doorID.byte2, doorID.byte3);
+  snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorIDHolder.byte1, doorIDHolder.byte2, doorIDHolder.byte3);
 
   // return as int
   return (int)strtol(buffer, NULL, 16);
