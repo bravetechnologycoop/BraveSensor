@@ -164,15 +164,17 @@ void threadBLEScanner(void *param) {
   while(true){
     //filter has to be remade each time, as globalDoorId (from eeprom) is usually read while this thread is already in while loop
     BleScanFilter filter; 
-    char address[18]; 
+    char address[18];
     sprintf(address, "B8:7C:6F:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
-    filter.deviceName("iSensor ").address(address); 
+    filter.deviceName("iSensor ").address(address);
     sprintf(address, "8C:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
-    filter.address(address); 
+    filter.address(address);
+    sprintf(address, "AC:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
+    filter.address(address);
 
-    //scanning for door sensors of correct device id
-    Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter); 
-    
+    // scanning for IM24 door sensors of correct device ID
+    Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter);
+
     //loop over all devices found in the BLE scan
     for (BleScanResult scanResult : scanResults) {
       //place advertising data in doorAdvertisingData buffer array
