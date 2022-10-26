@@ -57,7 +57,7 @@ int toggle_debugging_publishes(String command){
 
   // if e, echo whether debug publishes are on
   if (*holder == 'e') {
-    returnFlag = stateMachineDebugFlag;
+    returnFlag = (int)stateMachineDebugFlag;
   }
   else if(*(holder+1) != 0){
     //any string longer than 1 char is invalid input, so
