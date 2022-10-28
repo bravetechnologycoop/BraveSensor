@@ -242,6 +242,9 @@ int im21_door_id_set(String command) {
     snprintf(buffer, sizeof(buffer), "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}", 
             doorIDHolder.byte1, doorIDHolder.byte2, doorIDHolder.byte3); 
     Particle.publish("Current Door Sensor ID: ",buffer, PRIVATE);
+
+    // put door ID in buffer for return value
+    snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorIDHolder.byte1, doorIDHolder.byte2, doorIDHolder.byte3);
   } 
   else //else not echo, so we have a new door ID to parse
   {
@@ -262,18 +265,12 @@ int im21_door_id_set(String command) {
     //write new global door ID to flash
     EEPROM.put(ADDR_IM21_DOORID, globalDoorID.byte1);  
     EEPROM.put((ADDR_IM21_DOORID+1), globalDoorID.byte2);  
-    EEPROM.put((ADDR_IM21_DOORID+2), globalDoorID.byte3);  
+    EEPROM.put((ADDR_IM21_DOORID+2), globalDoorID.byte3); 
+
+    // put door ID in buffer for return value
+    snprintf(buffer, sizeof(buffer), "%02X%02X%02X", globalDoorID.byte1, globalDoorID.byte2, globalDoorID.byte3);
   
   } //end if-else
-
-  // convert door ID to decimal for return value
-  // get the door ID
-  EEPROM.get(ADDR_IM21_DOORID, doorIDHolder.byte1);
-  EEPROM.get((ADDR_IM21_DOORID + 1), doorIDHolder.byte2);
-  EEPROM.get((ADDR_IM21_DOORID + 2), doorIDHolder.byte3);
-
-  // put door ID in buffer
-  snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorIDHolder.byte1, doorIDHolder.byte2, doorIDHolder.byte3);
 
   // return as int
   return (int)strtol(buffer, NULL, 16);
