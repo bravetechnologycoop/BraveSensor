@@ -163,13 +163,14 @@ void threadBLEScanner(void *param) {
 
   while(true){
     // filter has to be remade each time, as globalDoorId (from eeprom) is usually read while this thread is already in while loop
-    // add device IDs for both IM21 and IM24 door sensors to the filter
     BleScanFilter filter; 
     char address[18];
+    // add device IDs for IM21 to the filter
     sprintf(address, "B8:7C:6F:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
     filter.deviceName("iSensor ").address(address);
     sprintf(address, "8C:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
     filter.address(address);
+    // add device ID for IM24 to the filter
     sprintf(address, "AC:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
     filter.address(address);
 
