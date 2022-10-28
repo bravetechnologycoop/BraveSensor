@@ -162,7 +162,8 @@ void threadBLEScanner(void *param) {
   BLE.setScanTimeout(5);
 
   while(true){
-    //filter has to be remade each time, as globalDoorId (from eeprom) is usually read while this thread is already in while loop
+    // filter has to be remade each time, as globalDoorId (from eeprom) is usually read while this thread is already in while loop
+    // add device IDs for both IM21 and IM24 door sensors to the filter
     BleScanFilter filter; 
     char address[18];
     sprintf(address, "B8:7C:6F:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
@@ -172,12 +173,12 @@ void threadBLEScanner(void *param) {
     sprintf(address, "AC:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1); 
     filter.address(address);
 
-    // scanning for IM24 door sensors of correct device ID
+    // scanning for IM21 and IM24 door sensors of correct device ID
     Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter);
 
-    //loop over all devices found in the BLE scan
+    // loop over all devices found in the BLE scan
     for (BleScanResult scanResult : scanResults) {
-      //place advertising data in doorAdvertisingData buffer array
+      // place advertising data in doorAdvertisingData buffer array
       // Door heartbeat message: 
       // dooradvertisingdata[0] (1 byte): Firmware Version
       // dooradvertisingdata[1-3] (3 bytes): Last 3 bytes of door sensor address
