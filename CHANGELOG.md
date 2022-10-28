@@ -15,7 +15,7 @@ the code was deployed.
 
 - Production deployment instructions in the README.
 - Created string_convert namespace for string_convert.cpp functions.
-- Modified im21_door_id_set function to return the current door ID, converted to a decimal number.
+- Modified im21_door_id_set function to return the current door ID, converted to a decimal number (CU-3455bc0).
 
 ## [6.3.0] - 2022-08-22
 
