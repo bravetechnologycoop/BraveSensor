@@ -102,7 +102,7 @@ void state0_idle(){
   publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, 0); 
 
   //fix outputs and state exit conditions accordingly
-  if(((unsigned long)checkINS.iAverage > ins_threshold) && isDoorClosed(checkDoor.doorStatus)){
+  if(((unsigned long)checkINS.iAverage > ins_threshold) && !isDoorOpen(checkDoor.doorStatus)){
 
     Log.warn("In state 0, door closed and seeing movement, heading to state 1");
     publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
@@ -413,7 +413,14 @@ void getHeartbeat(){
       lastHeartbeatPublish = millis();
       doorMessageReceivedFlag = false;
     }
+}
 
-    
+// door sensor utility functions
 
+// Return whether the door is open or closed, according to the IM door sensor.
+//
+// Parameters: The IM door sensor door status (byte 5 of the door sensor advertising data).
+// Returns: 1 if the door is open, 0 if the door is closed. 
+int isDoorOpen(int doorStatus) {
+    return ((doorStatus & 0x02) == 0x02);
 }

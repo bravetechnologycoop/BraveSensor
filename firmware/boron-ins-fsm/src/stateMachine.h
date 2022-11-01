@@ -28,13 +28,6 @@
 //Restricts heartbeat to being published once instead of 3 times from the 3 IM21 broadcasts
 #define HEARTBEAT_PUBLISH_DELAY 1000  //ms = 1 sec
 
-
-//heartbeat signals have been added. Although heartbeat signals don't
-//represent a change in door status, they will reflect the current
-//status of the door sensor. 
-#define isDoorOpen(X)  (X == 0x02 || X == 0x06 || X == 0x0A || X == 0x0E)
-#define isDoorClosed(X)  (X == 0x00 || X == 0x04 || X == 0x08 || X == 0x0C)
-
 //setup() functions
 void setupStateMachine();
 
@@ -51,6 +44,9 @@ void state3_stillness();
 void publishDebugMessage(int, unsigned char, float, unsigned long);
 void publishStateTransition(int, int, unsigned char, float);
 void saveStateChange(int, int);
+
+// door sensor utility functions
+int isDoorOpenOrClosed(int doorStatus);
 
 //threads
 void heartbeatTimerThread(void *param);
