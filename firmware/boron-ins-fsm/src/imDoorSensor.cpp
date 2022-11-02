@@ -4,13 +4,13 @@
 */
 
 #include "Particle.h"
-#include "im21door.h"
+#include "imDoorSensor.h"
 #include "flashAddresses.h"
 #include "debugFlags.h"
 
 //define global variables so they are allocated in memory
 //initialize door ID to agreed upon intial value
-IM21DoorID globalDoorID = {0xAA, 0xAA, 0xAA};
+IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
 os_queue_t bleQueue;
 int missedDoorEventCount = 0;
 bool doorLowBatteryFlag = false;
@@ -20,7 +20,7 @@ unsigned long doorLastMessage = millis();
 
 //**********setup()******************
 
-void setupIM21(){
+void setupIM(){
 
 	// Create a queue. Each element is an unsigned char, there are 25 elements. Last parameter is always 0.
 	os_queue_create(&bleQueue, sizeof(doorData), 25, 0);
@@ -41,29 +41,29 @@ void initializeDoorID(){
   Log.info("door ID flag is 0x%04X",initializeDoorIDFlag);
 
   if(initializeDoorIDFlag != INITIALIZE_DOOR_ID_FLAG){
-    EEPROM.put(ADDR_IM21_DOORID, DOORID_BYTE1);
-    EEPROM.put((ADDR_IM21_DOORID+1), DOORID_BYTE2);
-    EEPROM.put((ADDR_IM21_DOORID+2), DOORID_BYTE3);
+    EEPROM.put(ADDR_IM_DOORID, DOORID_BYTE1);
+    EEPROM.put((ADDR_IM_DOORID+1), DOORID_BYTE2);
+    EEPROM.put((ADDR_IM_DOORID+2), DOORID_BYTE3);
     initializeDoorIDFlag = INITIALIZE_DOOR_ID_FLAG;
     EEPROM.put(ADDR_INITIALIZE_DOOR_ID_FLAG, initializeDoorIDFlag);
     Log.info("Door ID was written to flash on bootup.");
   }
   else{
-    EEPROM.get(ADDR_IM21_DOORID, globalDoorID.byte1);
-    EEPROM.get((ADDR_IM21_DOORID+1), globalDoorID.byte2);
-    EEPROM.get((ADDR_IM21_DOORID+2), globalDoorID.byte3);
+    EEPROM.get(ADDR_IM_DOORID, globalDoorID.byte1);
+    EEPROM.get((ADDR_IM_DOORID+1), globalDoorID.byte2);
+    EEPROM.get((ADDR_IM_DOORID+2), globalDoorID.byte3);
     Log.info("Door ID was read from flash on bootup.");
   }
 }
 
-doorData checkIM21(){
+doorData checkIM(){
   static int initialDoorDataFlag = 1;
   static doorData previousDoorData = {0x00, 0x00, 0};
   static doorData currentDoorData = {0x00, 0x00, 0};
   static doorData returnDoorData = {0x99, 0x99, 0};
 
-  //BLE scanner is set fast enough to load duplicate advertising data packets
-  //each time IM21 transmits a door event. Filter out the duplicates and publish
+  // BLE scanner is set fast enough to load duplicate advertising data packets
+  // Every time the IM Door Sensor transmits a door event, filter out the duplicates and publish
   if (os_queue_take(bleQueue, &currentDoorData, 0, 0) == 0) {
 
     //Log.warn("raw door sensor output - control:  prev, current: 0x%02X, 0x%02X", previousDoorData.controlByte, currentDoorData.controlByte);
@@ -78,7 +78,7 @@ doorData checkIM21(){
       doorMessageReceivedFlag = true;
     }
 
-    //record the time a IM21 message was received
+    // Record the time an IM Door Sensor message was received
     doorLastMessage = millis();
 
     // Checks if the 3rd bit of doorStatus is 1
@@ -127,7 +127,7 @@ doorData checkIM21(){
 
   return returnDoorData;
 
-} //end checkIM21()
+} //end checkIM()
 
 void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData){
 
@@ -135,7 +135,7 @@ void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData){
 
   sprintf(doorPublishBuffer, "{ \"deviceid\": \"%02X:%02X:%02X\", \"data\": \"%02X\", \"control\": \"%02X\" }", 
           globalDoorID.byte1, globalDoorID.byte2, globalDoorID.byte3, currentDoorData.doorStatus, currentDoorData.controlByte);
-  Particle.publish("IM21 Data", doorPublishBuffer, PRIVATE);
+  Particle.publish("IM Door Sensor Data", doorPublishBuffer, PRIVATE);
   Log.warn("published, 0x%02X", currentDoorData.controlByte);
 
 }
@@ -146,8 +146,8 @@ void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorDat
 
   sprintf(doorPublishBuffer, "{ \"deviceid\": \"%02X:%02X:%02X\", \"prev_control_byte\": \"%02X\", \"curr_control_byte\": \"%02X\" }", 
           globalDoorID.byte1, globalDoorID.byte2, globalDoorID.byte3, previousDoorData.controlByte, currentDoorData.controlByte);
-  Particle.publish("IM21 Warning", doorPublishBuffer, PRIVATE);
-  Log.warn("published IM21 warning, prev door byte = 0x%02X, curr door byte = 0x%02X",previousDoorData.controlByte, currentDoorData.controlByte);
+  Particle.publish("IM Door Sensor Warning", doorPublishBuffer, PRIVATE);
+  Log.warn("Published IM Door Sensor warning, prev door byte = 0x%02X, curr door byte = 0x%02X",previousDoorData.controlByte, currentDoorData.controlByte);
 
 }
 

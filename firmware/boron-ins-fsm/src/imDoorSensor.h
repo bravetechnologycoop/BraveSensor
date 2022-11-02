@@ -3,8 +3,8 @@
  * written by Heidi Fedorak, Apr 2021
  */
 
-#ifndef IM21DOOR_H
-#define IM21DOOR_H
+#ifndef IM_DOOR_H
+#define IM_DOOR_H
 
 //*************************global macro defines**********************************
 //ascii table goes up to 7F, so pick something greater than that 
@@ -34,18 +34,18 @@ typedef struct doorData {
 } doorData;
 
 
-typedef struct IM21DoorID {
+typedef struct IMDoorID {
     unsigned char byte1;
     unsigned char byte2;
     unsigned char byte3;
-} IM21DoorID;
+} IMDoorID;
 
 //************************global variable declarations***************************
 //extern os_queue_t bleQueue;
 extern os_queue_t bleHeartbeatQueue;
 
 //needs to be global because it is used in setup(), loop(), and console function
-extern IM21DoorID globalDoorID;
+extern IMDoorID globalDoorID;
 
 //used in getHeartbeat()
 extern int missedDoorEventCount;
@@ -55,11 +55,11 @@ extern unsigned long doorHeartbeatReceived;
 extern unsigned long doorLastMessage;
 
 //setup() functions
-void setupIM21(void);
+void setupIM(void);
 
 //loop() functions
 void initializeDoorID(void);
-doorData checkIM21(void);
+doorData checkIM(void);
 void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorData);
 void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData);
 

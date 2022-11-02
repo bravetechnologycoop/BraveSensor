@@ -10,7 +10,7 @@
 #include "mocks/System.h"
 #include "../inc/spark_wiring_string.h"
 #include "../inc/spark_wiring_string.cpp"
-#include "../src/im21door.h"
+#include "../src/imDoorSensor.h"
 
 MockEEPROM EEPROM;
 MockParticle Particle;
@@ -21,4 +21,4 @@ long unsigned state1_max_time;
 long unsigned state2_max_duration;
 long unsigned state3_max_stillness_time;
 long unsigned ins_threshold;
-IM21DoorID globalDoorID;
+IMDoorID globalDoorID;

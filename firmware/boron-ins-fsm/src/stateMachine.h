@@ -25,7 +25,7 @@
 #define DEVICE_RESET_THRESHOLD 540000  //ms = 9 min
 #define HEARTBEAT_STATES_CUTOFF 603 // = 622 - 17 (max length of sub state array) - 2 (length of closing brackets)
 
-//Restricts heartbeat to being published once instead of 3 times from the 3 IM21 broadcasts
+// Restricts heartbeat to being published once instead of 3 times from the 3 IM Door Sensor broadcasts
 #define HEARTBEAT_PUBLISH_DELAY 1000  //ms = 1 sec
 
 //setup() functions

@@ -4,7 +4,7 @@
 */
 
 #include "Particle.h"
-#include "im21door.h"
+#include "imDoorSensor.h"
 #include "ins3331.h"
 #include "stateMachine.h"
 #include "consoleFunctions.h"
@@ -25,7 +25,7 @@ void setup() {
 
   // use internal antenna on Boron for BLE
   BLE.selectAntenna(BleAntennaType::INTERNAL);
-  setupIM21();
+  setupIM();
   setupINS3331();
   setupConsoleFunctions();
   setupStateMachine();

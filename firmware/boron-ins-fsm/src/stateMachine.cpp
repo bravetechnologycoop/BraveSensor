@@ -5,7 +5,7 @@
 
 #include "Particle.h"
 #include "stateMachine.h"
-#include "im21door.h"
+#include "imDoorSensor.h"
 #include "ins3331.h"
 #include "flashAddresses.h"
 #include "debugFlags.h"
@@ -86,7 +86,7 @@ void state0_idle(){
   filteredINSData checkINS;
   //this returns the previous door event value until a new door event is received
   //on code boot up it initializes to returning 0x99
-  checkDoor = checkIM21();
+  checkDoor = checkIM();
   //this returns 0.0 if the INS has no new data to transmit
   checkINS = checkINS3331();
 
@@ -126,7 +126,7 @@ void state1_15sCountdown(){
   filteredINSData checkINS;
   //this returns the previous door event value until a new door event is received
   //on code boot up it initializes to returning 0x99
-  checkDoor = checkIM21();
+  checkDoor = checkIM();
   //this returns 0.0 if the INS has no new data to transmit
   checkINS = checkINS3331();
 
@@ -181,7 +181,7 @@ void state2_duration(){
   filteredINSData checkINS;
   //this returns the previous door event value until a new door event is received
   //on code boot up it initializes to returning 0x99
-  checkDoor = checkIM21();
+  checkDoor = checkIM();
   //this returns 0.0 if the INS has no new data to transmit
   checkINS = checkINS3331();
 
@@ -235,7 +235,7 @@ void state3_stillness(){
   filteredINSData checkINS;
   //this returns the previous door event value until a new door event is received
   //on code boot up it initializes to returning 0x99
-  checkDoor = checkIM21();
+  checkDoor = checkIM();
   //this returns 0.0 if the INS has no new data to transmit
   checkINS = checkINS3331();
 
@@ -364,8 +364,8 @@ void getHeartbeat(){
     static unsigned long lastHeartbeatPublish = 0;
     // 1st "if condition" is so that the boron publishes a heartbeat on startup
     // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true. 
-    //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 beacuase IM21 broadcast 3 messages
-    //     The doorMessageReceivedFlag is set to true when a any IM21 message is received but only after a certain threshold
+    //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 because the IM Door Sensor broadcasts 3 messages
+    //     The doorMessageReceivedFlag is set to true when any IM Door Sensor message is received, but only after a certain threshold
     // 3rd "if condition" is true only if a heartbeat hasnt been published in the last SM_HEARTBEAT_INTERVAL
     if(lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && millis() - doorHeartbeatReceived >= HEARTBEAT_PUBLISH_DELAY) || (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL){
       //from particle docs, max length of publish is 622 chars, I am assuming this includes null char
@@ -379,8 +379,8 @@ void getHeartbeat(){
         //logs whether door sensor is low battery
         writer.name("doorLowBatt").value(doorLowBatteryFlag);
         
-        //logs time in millis since last IM21 message was received, the particle name is a bit misleading
-        //but we have left it because the server uses "doorLastHeartbeat" to check if the IM21 sensor has disconnected
+        // logs time in milliseconds since last IM Door Sensor message was received
+        // the particle name is a bit misleading, remains this way because the server uses "doorLastHeartbeat" to check if the IM Door Sensor sensor has disconnected
         writer.name("doorLastHeartbeat").value((unsigned int) (millis() - doorLastMessage));
 
         //logs the reason of the last reset    
