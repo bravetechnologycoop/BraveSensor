@@ -1,18 +1,8 @@
 #define CATCH_CONFIG_MAIN
 #include "base.h"
-
-// INS3331 Functions
-unsigned char calculateChecksum(unsigned char myArray[], int arrayLength)
-{
-    unsigned char checksum = 0x00;
-
-    for (int i = 2; i <= 12; i++)
-    {
-        checksum = checksum + myArray[i];
-    }
-
-    return checksum;
-}
+#include "../src/ins3331.cpp"
+#include "../src/ins3331.h"
+#include "../src/flashAddresses.h"
 
 // Test Cases
 SCENARIO("The correct checksum is returned by calculateChecksum()")
