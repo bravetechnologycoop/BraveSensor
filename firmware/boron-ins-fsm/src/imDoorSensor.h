@@ -10,13 +10,13 @@
 //ascii table goes up to 7F, so pick something greater than that 
 //which is also unlikely to be part of a door ID or a threshold/timer const
 #define INITIALIZE_DOOR_ID_FLAG 0x8888
+#define INITIAL_DOOR_STATUS 0x99
 
 //initial (default) values for door ID, can be changed via console function
 //or by writing something other than 0x8888 to the above flag in flash
 #define DOORID_BYTE1 0xAA
 #define DOORID_BYTE2 0xAA
 #define DOORID_BYTE3 0xAA
-
 
 #define CLOSED 0x00
 #define OPEN 0x02

@@ -60,7 +60,7 @@ doorData checkIM(){
   static int initialDoorDataFlag = 1;
   static doorData previousDoorData = {0x00, 0x00, 0};
   static doorData currentDoorData = {0x00, 0x00, 0};
-  static doorData returnDoorData = {0x99, 0x99, 0};
+  static doorData returnDoorData = {INITIAL_DOOR_STATUS, INITIAL_DOOR_STATUS, 0};
 
   // BLE scanner is set fast enough to load duplicate advertising data packets
   // Every time the IM Door Sensor transmits a door event, filter out the duplicates and publish
@@ -226,10 +226,10 @@ int isDoorOpen(int doorStatus) {
 
 
 // Return whether the door status is unknown, according to the IM door sensor.
-// The door status is considered unknown when it is equal to 0x99, which occurs upon initial startup.
+// The door status is considered unknown when it is equal to INITIAL_DOOR_STATUS, which occurs upon initial startup.
 //
 // Parameters: The IM door sensor door status (byte 5 of the door sensor advertising data).
-// Returns: 1 if the door status is unknown (0x99), 0 if the door status is known (not 0x99). 
+// Returns: 1 if the door status is unknown, 0 if the door status is known. 
 int isDoorStatusUnknown(int doorStatus) {
-    return (doorStatus == 0x99);
+    return (doorStatus == INITIAL_DOOR_STATUS);
 }

@@ -85,7 +85,7 @@ void state0_idle(){
   doorData checkDoor;
   filteredINSData checkINS;
   //this returns the previous door event value until a new door event is received
-  //on code boot up it initializes to returning 0x99
+  //on code boot up it initializes to returning INITIAL_DOOR_STATUS
   checkDoor = checkIM();
   //this returns 0.0 if the INS has no new data to transmit
   checkINS = checkINS3331();
@@ -126,7 +126,7 @@ void state1_15sCountdown(){
   doorData checkDoor;
   filteredINSData checkINS;
   //this returns the previous door event value until a new door event is received
-  //on code boot up it initializes to returning 0x99
+  //on code boot up it initializes to returning INITIAL_DOOR_STATUS
   checkDoor = checkIM();
   //this returns 0.0 if the INS has no new data to transmit
   checkINS = checkINS3331();
@@ -181,7 +181,7 @@ void state2_duration(){
   doorData checkDoor;
   filteredINSData checkINS;
   //this returns the previous door event value until a new door event is received
-  //on code boot up it initializes to returning 0x99
+  //on code boot up it initializes to returning INITIAL_DOOR_STATUS
   checkDoor = checkIM();
   //this returns 0.0 if the INS has no new data to transmit
   checkINS = checkINS3331();
@@ -235,7 +235,7 @@ void state3_stillness(){
   doorData checkDoor;
   filteredINSData checkINS;
   //this returns the previous door event value until a new door event is received
-  //on code boot up it initializes to returning 0x99
+  //on code boot up it initializes to returning INITIAL_DOOR_STATUS
   checkDoor = checkIM();
   //this returns 0.0 if the INS has no new data to transmit
   checkINS = checkINS3331();
