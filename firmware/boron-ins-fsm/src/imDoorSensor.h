@@ -66,5 +66,7 @@ void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData);
 //threads
 void threadBLEScanner(void *param);
 
+/*    Door Sensor Utility Functions    */
+int isDoorOpen(int doorStatus);
 
 #endif

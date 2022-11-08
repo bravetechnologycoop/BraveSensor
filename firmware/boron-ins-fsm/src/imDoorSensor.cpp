@@ -213,3 +213,13 @@ void threadBLEScanner(void *param) {
   }//endwhile
 
 }//end threadBLEScanner
+
+/*    Door Sensor Utility Functions    */
+
+// Return whether the door is open or closed, according to the IM door sensor.
+//
+// Parameters: The IM door sensor door status (byte 5 of the door sensor advertising data).
+// Returns: 1 if the door is open, 0 if the door is closed. 
+int isDoorOpen(int doorStatus) {
+    return ((doorStatus & 0x02) >> 1);
+}
