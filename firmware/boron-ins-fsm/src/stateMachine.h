@@ -46,7 +46,7 @@ void publishStateTransition(int, int, unsigned char, float);
 void saveStateChange(int, int);
 
 // door sensor utility functions
-int isDoorOpenOrClosed(int doorStatus);
+int isDoorOpen(int doorStatus);
 
 //threads
 void heartbeatTimerThread(void *param);
