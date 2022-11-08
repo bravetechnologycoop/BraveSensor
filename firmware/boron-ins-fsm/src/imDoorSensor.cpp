@@ -223,3 +223,13 @@ void threadBLEScanner(void *param) {
 int isDoorOpen(int doorStatus) {
     return ((doorStatus & 0x02) >> 1);
 }
+
+
+// Return whether the door status is unknown, according to the IM door sensor.
+// The door status is considered unknown when it is equal to 0x99, which occurs upon initial startup.
+//
+// Parameters: The IM door sensor door status (byte 5 of the door sensor advertising data).
+// Returns: 1 if the door status is unknown (0x99), 0 if the door status is known (not 0x99). 
+int isDoorStatusUnknown(int doorStatus) {
+    return (doorStatus == 0x99);
+}

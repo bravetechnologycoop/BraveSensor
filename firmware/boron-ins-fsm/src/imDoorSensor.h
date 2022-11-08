@@ -68,5 +68,6 @@ void threadBLEScanner(void *param);
 
 /*    Door Sensor Utility Functions    */
 int isDoorOpen(int doorStatus);
+int isDoorStatusUnknown(int doorStatus);
 
 #endif
