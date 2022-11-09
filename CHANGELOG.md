@@ -16,6 +16,10 @@ the code was deployed.
 - Production deployment instructions in the README.
 - Created string_convert namespace for string_convert.cpp functions.
 
+### Added
+
+- Ability to scan for and receive advertising data from IM24 door sensors (CU-3644bwf).
+
 ## [6.3.0] - 2022-08-22
 
 ### Changed
