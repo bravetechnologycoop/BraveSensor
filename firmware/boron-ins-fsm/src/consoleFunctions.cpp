@@ -16,7 +16,7 @@
 #include "consoleFunctions.h"
 #include "flashAddresses.h"
 #include "stateMachine.h"
-#include "im21door.h"
+#include "imDoorSensor.h"
 
 void setupConsoleFunctions(){
 
