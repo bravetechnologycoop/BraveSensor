@@ -16,7 +16,7 @@
 #include "consoleFunctions.h"
 #include "flashAddresses.h"
 #include "stateMachine.h"
-#include "im21door.h"
+#include "imDoorSensor.h"
 
 void setupConsoleFunctions(){
 
@@ -233,10 +233,10 @@ int im21_door_id_set(String command) { // command is a long string with all the 
   //if echo, publish current door ID
   if(*checkForEcho == 'e'){
 
-    IM21DoorID holder;   
-    EEPROM.get(ADDR_IM21_DOORID,holder.byte1);  
-    EEPROM.get((ADDR_IM21_DOORID+1),holder.byte2);  
-    EEPROM.get((ADDR_IM21_DOORID+2),holder.byte3);  
+    IMDoorID holder;   
+    EEPROM.get(ADDR_IM_DOORID,holder.byte1);  
+    EEPROM.get((ADDR_IM_DOORID+1),holder.byte2);  
+    EEPROM.get((ADDR_IM_DOORID+2),holder.byte3);  
 
     char buffer[64];
     snprintf(buffer, sizeof(buffer), "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}", 
@@ -260,9 +260,9 @@ int im21_door_id_set(String command) { // command is a long string with all the 
     globalDoorID.byte1 = (uint8_t)strtol(byteholder3,NULL,16);
 
     //write new global door ID to flash
-    EEPROM.put(ADDR_IM21_DOORID,globalDoorID.byte1);  
-    EEPROM.put((ADDR_IM21_DOORID+1),globalDoorID.byte2);  
-    EEPROM.put((ADDR_IM21_DOORID+2),globalDoorID.byte3);  
+    EEPROM.put(ADDR_IM_DOORID,globalDoorID.byte1);  
+    EEPROM.put((ADDR_IM_DOORID+1),globalDoorID.byte2);  
+    EEPROM.put((ADDR_IM_DOORID+2),globalDoorID.byte3);  
   
   } //end if-else
 
