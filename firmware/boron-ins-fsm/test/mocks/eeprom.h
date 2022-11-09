@@ -31,7 +31,7 @@ public:
     template <typename T>
     void put(int const _address, T const& _data)
     {
-        if (_address + sizeof(data) < BORON_EEPROM_SIZE) {
+        if (_address + sizeof(_data) < BORON_EEPROM_SIZE) {
             memcpy(mockMemory + _address, &_data, sizeof(_data));
         }
     }
