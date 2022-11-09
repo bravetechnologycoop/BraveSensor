@@ -23,13 +23,17 @@ public:
     template <typename T>
     void get(int const _address, T& data)
     {
-        memcpy(&data, mockMemory + _address, sizeof(data));
+        if (_address + sizeof(data) < BORON_EEPROM_SIZE) {
+            memcpy(&data, mockMemory + _address, sizeof(data));
+        }
     }
 
     template <typename T>
     void put(int const _address, T const& _data)
     {
-        memcpy(mockMemory + _address, &_data, sizeof(_data));
+        if (_address + sizeof(data) < BORON_EEPROM_SIZE) {
+            memcpy(mockMemory + _address, &_data, sizeof(_data));
+        }
     }
 };
 
