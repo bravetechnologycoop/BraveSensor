@@ -4,14 +4,14 @@
 */
 
 #include "Particle.h"
-#include "im21door.h"
+#include "imDoorSensor.h"
 #include "ins3331.h"
 #include "stateMachine.h"
 #include "consoleFunctions.h"
 #include "tpl5010watchdog.h"
 
 #define DEBUG_LEVEL LOG_LEVEL_INFO
-#define BRAVE_FIRMWARE_VERSION 60300 //see versioning notes in the readme
+#define BRAVE_FIRMWARE_VERSION 60400 //see versioning notes in the readme
 #define BRAVE_PRODUCT_ID 14807 //14807 = beta units, 15479 = production units
 
 PRODUCT_ID(BRAVE_PRODUCT_ID); //you get this number off the particle console, see readme for instructions
@@ -25,7 +25,7 @@ void setup() {
 
   // use internal antenna on Boron for BLE
   BLE.selectAntenna(BleAntennaType::INTERNAL);
-  setupIM21();
+  setupIM();
   setupINS3331();
   setupConsoleFunctions();
   setupStateMachine();

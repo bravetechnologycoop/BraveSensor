@@ -11,6 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Echo functionality for toggle debugging publishes cloud function (CU-3zybq3y).
+
+## [6.4.0] - 2022-11-08
+
 ### Changed
 
 - Production deployment instructions in the README.
@@ -18,7 +24,7 @@ the code was deployed.
 
 ### Added
 
-- Echo functionality for toggle debugging publishes cloud function (CU-3zybq3y).
+- Ability to scan for and receive advertising data from IM24 door sensors (CU-3644bwf).
 
 ## [6.3.0] - 2022-08-22
 
@@ -428,7 +434,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.3.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.4.0...HEAD
+[6.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.3.0...v6.4.0
 [6.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.2.0...v6.3.0
 [6.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.1.0...v6.2.0
 [6.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.0.0...v6.1.0
