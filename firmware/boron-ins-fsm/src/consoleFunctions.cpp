@@ -56,12 +56,13 @@ int toggle_debugging_publishes(String command){
   const char* holder = command.c_str();
 
   // if e, echo whether debug publishes are on
-  if (*holder == 'e') {
-    returnFlag = (int)stateMachineDebugFlag;
-  }
-  else if(*(holder+1) != 0){
+
+  if(*(holder+1) != 0){
     //any string longer than 1 char is invalid input, so
     returnFlag = -1;
+  }
+  else if (*holder == 'e') {
+    returnFlag = (int)stateMachineDebugFlag;
   }
   else if(*holder == '0'){
     stateMachineDebugFlag = false;
