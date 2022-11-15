@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Echo functionality for toggle debugging publishes cloud function (CU-3zybq3y).
+
 ## [6.4.0] - 2022-11-08
 
 ### Changed
