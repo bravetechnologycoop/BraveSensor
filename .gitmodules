@@ -1,3 +1,0 @@
-[submodule "firmware/boron-ins-fsm/test/UnitTestLib"]
-	path = firmware/boron-ins-fsm/test/UnitTestLib
-	url = https://github.com/rickkas7/UnitTestLib
