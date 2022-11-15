@@ -55,12 +55,11 @@ int toggle_debugging_publishes(String command){
   //entering 0 vs entering bad input. So convert to char and use ascii table
   const char* holder = command.c_str();
 
-  // if e, echo whether debug publishes are on
-
   if(*(holder+1) != 0){
     //any string longer than 1 char is invalid input, so
     returnFlag = -1;
   }
+  // if e, echo whether debug publishes are on
   else if (*holder == 'e') {
     returnFlag = (int)stateMachineDebugFlag;
   }
