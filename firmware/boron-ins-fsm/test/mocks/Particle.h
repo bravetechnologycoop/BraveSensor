@@ -9,8 +9,6 @@
 #include "../../inc/spark_wiring_string.h"
 #include "helper.h"
 
-#define MOCK_BLE_STRING_SIZE 32
-
 uint32_t millis();
 
 String fullPublishString;
@@ -28,13 +26,6 @@ struct os_queue_t
 
 struct BleScanResult
 {
-};
-
-struct BleScanFilter
-{
-    char* deviceName;
-    char* address;
-    char* advertisingData;
 };
 
 class MockParticle
@@ -112,6 +103,23 @@ public:
     }
 };
 extern MockBLE BLE;
+
+class MockBleScanFilter
+{
+public:
+    char* deviceName;
+    char* address;
+
+public:
+    void deviceName(char* deviceName) {
+        this->deviceName = deviceName;
+    }
+
+    void address(char* address) {
+        this->address = address;
+    }
+};
+extern MockBleScanFilter BleScanFilter;
 
 uint32_t millis() {
     struct timespec ts;
