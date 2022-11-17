@@ -24,12 +24,10 @@ enum PublishFlag
 
 struct os_queue_t
 {
-
 };
 
 struct BleScanResult
 {
-
 };
 
 struct BleScanFilter
@@ -86,26 +84,14 @@ public:
 
 public:
     void warn(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
-        /*va_list ap;
-        va_start(ap, fmt);
-        vprintf(LOG_LEVEL_WARN, fmt, ap);
-        va_end(ap);*/
         printf("LOG.WARN\n");
     } 
 
     void error(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
-        /*va_list ap;
-        va_start(ap, fmt);
-        vprintf(LOG_LEVEL_ERROR, fmt, ap);
-        va_end(ap);*/
         printf("LOG.ERROR\n");
     }
 
     void info(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
-        /*va_list ap;
-        va_start(ap, fmt);
-        vprintf(LOG_LEVEL_INFO, fmt, ap);
-        va_end(ap);*/
         printf("LOG.INFO\n");
     }
 };
@@ -122,7 +108,7 @@ public:
 
 public:
     int setScanTimeout(uint16_t timeout) const {
-        return 1;
+        return 0;
     }
 };
 extern MockBLE BLE;
