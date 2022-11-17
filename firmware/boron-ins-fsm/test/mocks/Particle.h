@@ -101,6 +101,10 @@ public:
     int setScanTimeout(uint16_t timeout) const {
         return 0;
     }
+
+    int scanWithFilter(MockBleScanFilter filter) {
+        return 0;
+    }
 };
 extern MockBLE BLE;
 
@@ -119,7 +123,7 @@ public:
         this->address = address;
     }
 };
-extern MockBleScanFilter BleScanFilter;
+extern MockBleScanFilter filter;
 
 uint32_t millis() {
     struct timespec ts;
