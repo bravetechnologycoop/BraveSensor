@@ -8,6 +8,8 @@
 #include "mocks/eeprom.h"
 #include "mocks/Particle.h"
 #include "mocks/System.h"
+#include "mocks/os_queue_t.h"
+
 #include "../inc/spark_wiring_string.h"
 #include "../inc/spark_wiring_string.cpp"
 #include "../src/imDoorSensor.h"
