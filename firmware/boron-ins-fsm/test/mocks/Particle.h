@@ -92,6 +92,23 @@ typedef enum BleAdvertisingDataType {
     MANUFACTURER_SPECIFIC_DATA
 } BleAdvertisingDataType;
 
+class MockBleScanFilter
+{
+public:
+    char* selfDeviceName;
+    char* selfAddress;
+
+public:
+    void deviceName(char* deviceName) {
+        this->selfDeviceName = deviceName;
+    }
+
+    void address(char* address) {
+        this->selfAddress = address;
+    }
+};
+extern MockBleScanFilter filter;
+
 class MockBLE
 {
 public:
@@ -107,23 +124,6 @@ public:
     }
 };
 extern MockBLE BLE;
-
-class MockBleScanFilter
-{
-public:
-    char* deviceName;
-    char* address;
-
-public:
-    void deviceName(char* deviceName) {
-        this->deviceName = deviceName;
-    }
-
-    void address(char* address) {
-        this->address = address;
-    }
-};
-extern MockBleScanFilter filter;
 
 uint32_t millis() {
     struct timespec ts;
