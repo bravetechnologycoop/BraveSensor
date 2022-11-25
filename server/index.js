@@ -9,13 +9,9 @@ const { t } = require('i18next')
 
 // In-house dependencies
 const { ALERT_TYPE, CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
-const redis = require('./db/redis')
 const db = require('./db/db')
-const StateMachine = require('./stateMachine/StateMachine')
 const SENSOR_EVENT = require('./SensorEventEnum')
 const BraveAlerterConfigurator = require('./BraveAlerterConfigurator')
-const im21door = require('./im21door')
-const DOOR_STATE = require('./SessionStateDoorEnum')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
 const vitals = require('./vitals')
@@ -23,9 +19,6 @@ const i18nextHelpers = require('./i18nextHelpers')
 
 // Configure internationalization
 i18nextHelpers.setup()
-
-// Open Redis connection
-redis.connect()
 
 // Configure braveAlerter
 const braveAlerter = new BraveAlerterConfigurator().createBraveAlerter()
@@ -120,41 +113,6 @@ async function handleAlert(location, alertType) {
   }
 }
 
-// Handler for incoming XeThru POST requests
-app.post('/api/xethru', Validator.body(['coreid', 'state', 'rpm', 'mov_f', 'mov_s']).exists(), async (req, res) => {
-  try {
-    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
-
-    if (validationErrors.isEmpty()) {
-      const { coreid, state, rpm, distance, mov_f, mov_s } = req.body
-      const location = await db.getLocationFromParticleCoreID(coreid)
-      if (!location) {
-        const errorMessage = `Bad request to ${req.path}: no location matches the coreID ${coreid}`
-        helpers.logError(errorMessage)
-        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-        res.status(200).json(errorMessage)
-      } else {
-        await redis.addXeThruSensorData(location.locationid, state, rpm, distance, mov_f, mov_s)
-
-        if (location.client.isActive && location.isActive && location.sentVitalsAlertAt === null) {
-          await StateMachine.getNextState(location, handleAlert)
-        }
-        res.status(200).json('OK')
-      }
-    } else {
-      const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
-      helpers.logError(errorMessage)
-      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-      res.status(200).json(errorMessage)
-    }
-  } catch (err) {
-    const errorMessage = `Error calling ${req.path}: ${err.toString()}`
-    helpers.logError(errorMessage)
-    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-    res.status(200).json(errorMessage)
-  }
-})
-
 app.post('/api/sensorEvent', Validator.body(['coreid', 'event']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
@@ -197,57 +155,8 @@ app.post('/api/sensorEvent', Validator.body(['coreid', 'event']).exists(), async
   }
 })
 
-app.post('/api/door', Validator.body(['coreid', 'data']).exists(), async (request, response) => {
-  try {
-    const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
-
-    if (validationErrors.isEmpty()) {
-      const coreId = request.body.coreid
-      const location = await db.getLocationFromParticleCoreID(coreId)
-
-      if (!location) {
-        const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
-        helpers.logError(errorMessage)
-        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-        response.status(200).json(errorMessage)
-      } else {
-        const locationid = location.locationid
-        const message = JSON.parse(request.body.data)
-        const signal = message.data
-        const control = message.control
-
-        const doorSignal = im21door.isOpen(signal) ? DOOR_STATE.OPEN : DOOR_STATE.CLOSED
-        await redis.addIM21DoorSensorData(locationid, doorSignal, control)
-
-        if (im21door.isLowBattery(signal)) {
-          await vitals.sendLowBatteryAlert(location.locationid)
-        }
-
-        if (im21door.isTampered(signal)) {
-          helpers.logSentry(`Received an IM21 tamper alarm for ${locationid}`)
-        }
-
-        if (location.client.isActive && location.isActive && location.sentVitalsAlertAt === null) {
-          await StateMachine.getNextState(location, handleAlert)
-        }
-        response.status(200).json('OK')
-      }
-    } else {
-      const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
-      helpers.logError(errorMessage)
-      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-      response.status(200).json(errorMessage)
-    }
-  } catch (err) {
-    const errorMessage = `Error calling ${request.path}: ${err.toString()}`
-    helpers.logError(errorMessage)
-    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-    response.status(200).json(errorMessage)
-  }
-})
-
 app.post('/smokeTest/setup', async (request, response) => {
-  const { recipientNumber, twilioNumber, firmwareStateMachine } = request.body
+  const { recipientNumber, twilioNumber } = request.body
   try {
     const client = await factories.clientDBFactory(db, {
       displayName: 'SmokeTestClient',
@@ -269,14 +178,11 @@ app.post('/smokeTest/setup', async (request, response) => {
       null,
       twilioNumber,
       'SmokeTestLocation',
-      'door_coreID',
       'radar_coreID',
       true,
-      firmwareStateMachine,
       '2021-03-09T19:37:28.176Z',
       client.id,
     )
-    await redis.addIM21DoorSensorData('SmokeTestLocation', 'closed')
     response.status(200).send()
   } catch (error) {
     helpers.logError(`Smoke test setup error: ${error}`)
@@ -313,5 +219,4 @@ if (helpers.isTestEnvironment()) {
 module.exports.server = server
 module.exports.db = db
 module.exports.routes = routes
-module.exports.redis = redis
 module.exports.braveAlerter = braveAlerter

@@ -22,12 +22,11 @@ async function teardown() {
   }
 }
 
-async function setup(recipientPhoneNumber, twilioPhoneNumber, firmwareStateMachine) {
+async function setup(recipientPhoneNumber, twilioPhoneNumber) {
   try {
     await axios.post('/smokeTest/setup', {
       recipientNumber: recipientPhoneNumber,
       twilioNumber: twilioPhoneNumber,
-      firmwareStateMachine,
     })
   } catch (e) {
     helpers.log(e)
