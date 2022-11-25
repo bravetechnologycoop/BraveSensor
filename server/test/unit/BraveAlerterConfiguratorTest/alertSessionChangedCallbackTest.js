@@ -8,7 +8,6 @@ const sinonChai = require('sinon-chai')
 const { AlertSession, CHATBOT_STATE, factories } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
-const redis = require('../../../db/redis')
 const { locationFactory, sessionFactory } = require('../../../testingHelpers')
 
 // Configure Chai
@@ -24,7 +23,6 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     sandbox.stub(db, 'saveSession')
     sandbox.stub(db, 'commitTransaction')
     sandbox.stub(db, 'getCurrentTime').returns(this.testCurrentTime)
-    sandbox.stub(redis, 'addStateMachineData')
   })
 
   afterEach(() => {

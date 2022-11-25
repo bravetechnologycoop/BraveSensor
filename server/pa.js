@@ -15,7 +15,6 @@ const validateCreateSensorLocation = Validator.body([
   'displayName',
   'particleDeviceID',
   'twilioNumber',
-  'stateMachineBool',
   'clientID',
   'clickupToken',
 ])
@@ -32,20 +31,11 @@ async function handleCreateSensorLocation(req, res) {
     const displayName = req.body.displayName
     const particleDeviceID = req.body.particleDeviceID
     const twilioNumber = req.body.twilioNumber
-    const stateMachineBool = req.body.stateMachineBool
     const clientID = req.body.clientID
 
     if (paApiKeys.includes(braveAPIKey) && paPasswords.includes(password)) {
       try {
-        const results = await db.createLocationFromBrowserForm(
-          locationID,
-          displayName,
-          particleDeviceID,
-          particleDeviceID,
-          twilioNumber,
-          stateMachineBool,
-          clientID,
-        )
+        const results = await db.createLocationFromBrowserForm(locationID, displayName, particleDeviceID, twilioNumber, clientID)
 
         if (results === null) {
           res.status(400).send({ message: 'Error in database insert' })

@@ -6,12 +6,10 @@ class Location {
     durationTimer,
     stillnessTimer,
     sentVitalsAlertAt,
-    doorCoreId,
     radarCoreId,
     twilioNumber,
     initialTimer,
     isActive,
-    firmwareStateMachine,
     sentLowBatteryAlertAt,
     createdAt,
     updatedAt,
@@ -23,12 +21,10 @@ class Location {
     this.durationTimer = durationTimer
     this.stillnessTimer = stillnessTimer
     this.sentVitalsAlertAt = sentVitalsAlertAt
-    this.doorCoreId = doorCoreId
     this.radarCoreId = radarCoreId
     this.twilioNumber = twilioNumber
     this.initialTimer = initialTimer
     this.isActive = isActive
-    this.firmwareStateMachine = firmwareStateMachine
     this.sentLowBatteryAlertAt = sentLowBatteryAlertAt
     this.createdAt = createdAt
     this.updatedAt = updatedAt

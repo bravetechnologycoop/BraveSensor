@@ -499,17 +499,7 @@ async function submitEditClient(req, res) {
   }
 }
 
-const validateNewLocation = Validator.body([
-  'locationid',
-  'displayName',
-  'doorCoreID',
-  'radarCoreID',
-  'twilioPhone',
-  'firmwareStateMachine',
-  'clientId',
-])
-  .trim()
-  .notEmpty()
+const validateNewLocation = Validator.body(['locationid', 'displayName', 'radarCoreID', 'twilioPhone', 'clientId']).trim().notEmpty()
 
 async function submitNewLocation(req, res) {
   try {
@@ -539,15 +529,7 @@ async function submitNewLocation(req, res) {
         return res.status(400).send(errorMessage)
       }
 
-      await db.createLocationFromBrowserForm(
-        data.locationid,
-        data.displayName,
-        data.doorCoreID,
-        data.radarCoreID,
-        data.twilioPhone,
-        data.firmwareStateMachine,
-        data.clientId,
-      )
+      await db.createLocationFromBrowserForm(data.locationid, data.displayName, data.radarCoreID, data.twilioPhone, data.clientId)
 
       res.redirect(`/locations/${data.locationid}`)
     } else {
@@ -563,7 +545,6 @@ async function submitNewLocation(req, res) {
 
 const validateEditLocation = Validator.body([
   'displayName',
-  'doorCoreID',
   'radarCoreID',
   'twilioPhone',
   'movementThreshold',
@@ -571,7 +552,6 @@ const validateEditLocation = Validator.body([
   'stillnessTimer',
   'initialTimer',
   'isActive',
-  'firmwareStateMachine',
   'clientId',
 ])
   .trim()
@@ -600,7 +580,6 @@ async function submitEditLocation(req, res) {
 
       await db.updateLocation(
         data.displayName,
-        data.doorCoreID,
         data.radarCoreID,
         data.twilioPhone,
         data.movementThreshold,
@@ -608,7 +587,6 @@ async function submitEditLocation(req, res) {
         data.stillnessTimer,
         data.initialTimer,
         data.isActive === 'true',
-        data.firmwareStateMachine === 'true',
         data.locationid,
         data.clientId,
       )

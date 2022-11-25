@@ -34,7 +34,6 @@
    - [Viewing which migration scripts have been run and when](#viewing-which-migration-scripts-have-been-run-and-when)
 1. [Cluster Migration and Setup](#cluster-migration-and-setup)
    - [Setting up networking for a new cluster](#setting-up-networking-for-a-new-cluster)
-   - [Setting up redis on a new cluster](#setting-up-redis-on-a-new-cluster)
 1. [Particle API access](#particle-api-access)
 
 # How to release a new version of BraveSensor Server and Firmware
@@ -294,19 +293,15 @@ The script will take a few minutes to conclude. The expected behavior is for a l
 
 You can get further details about the behaviour of the build by watching logs for the application with:
 `kubectl logs -f --timestamps deploy/<env>-sensor-server`
-and by watching the behavior of redis with:
-`kubectl exec deploy/redis-dev redis-cli monitor`
 
 # Local Development
 
 ## Dependencies
 
-1. Dowload and install [redis version 6](https://redis.io/download)
 1. Download and install [PostgreSQL version 12](https://www.postgresql.org/download/)
 
 Alternately, you have the option of installing these dependencies as docker containers
 
-1. Redis: https://hub.docker.com/_/redis
 1. PostgreSQL: https://hub.docker.com/_/postgres
 
 ## Environment Variables
@@ -319,7 +314,7 @@ If there are changes to the schema of the environment variables (like the additi
 
 ## Database Setup
 
-You will need to populate the `.env` file with connection parameters for both redis and Postgresql. If you are using a local database you will also need to setup the database schema.
+You will need to populate the `.env` file with connection parameters for Postgresql. If you are using a local database you will also need to setup the database schema.
 
 To do this, cd into the `BraveSensor/server` directory and run the following command
 
@@ -485,12 +480,6 @@ This strategy assumes that each migration script in the `db` directory has a u
 ## Setting up networking for a new cluster
 
 Follow [these instructions](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nginx-ingress-on-digitalocean-kubernetes-using-helm) from digital ocean if you are setting up a new cluster. After installing cert-manager and Nginx Ingress Controller, you can use the `prod_issuer.yaml` and `sensor-ingress.yaml` to set up certificate management and ingress respectively.
-
-## Setting up redis on a new cluster
-
-1. From a shell with kubectl access to the cluster, cd into `BraveSensor/server` repository and run `kubectl apply -f manifests/redis_storage.yaml`
-2. Install redis from the bitnami/redis chart by running `helm install <environment name>-sensor-redis bitnami/redis --namespace redis --set persistence.storageClass=redis-storage --set usePassword=false --set cluster.enabled=false`
-3. Run `kubectl get svc --namespace=redis` to get the IP of your new redis instance to use as an environment variable
 
 # Particle API access
 
