@@ -15,6 +15,10 @@ the code was deployed.
 
 - Echo functionality for toggle debugging publishes cloud function (CU-3zybq3y).
 
+### Removed
+
+- XeThru + SSM smoke test (CU-m0we0t).
+
 ## [6.4.0] - 2022-11-08
 
 ### Changed
