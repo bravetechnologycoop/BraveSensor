@@ -2,6 +2,11 @@
 Used in millis() mock function for Windows
 */
 
+#ifndef HELPER_H
+#define HELPER_H
+
+#ifdef _WIN32
+
 #include <time.h>
 #include <windows.h>
 
@@ -38,3 +43,6 @@ int clock_gettime_monotonic(struct timespec *tv)
 
     return 0;
 }
+
+#endif  // ifdef _WIN32
+#endif  // ifndef HELPER_H
