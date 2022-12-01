@@ -8,8 +8,13 @@
 
 #include "../../inc/spark_wiring_string.h"
 #include "helper.h"
+#include "mock_serial.h"
+#include "mock_thread.h"
+//#include "spark_wiring_ble.h"
+//#include "spark_wiring_vector.h"
 
 uint32_t millis();
+void delay(unsigned long ms);
 
 String fullPublishString;
 enum PublishFlag
@@ -20,13 +25,8 @@ enum PublishFlag
     WITH_ACK
 };
 
-struct os_queue_t
-{
-};
-
-struct BleScanResult
-{
-};
+// Fake structs
+struct os_queue_t {};
 
 class MockParticle
 {
@@ -88,47 +88,15 @@ public:
 };
 extern MockLogger Log;
 
-typedef enum BleAdvertisingDataType {
-    MANUFACTURER_SPECIFIC_DATA
-} BleAdvertisingDataType;
-
-class MockBleScanFilter
-{
-public:
-    char* selfDeviceName;
-    char* selfAddress;
-
-public:
-    void deviceName(char* deviceName) {
-        this->selfDeviceName = deviceName;
-    }
-
-    void address(char* address) {
-        this->selfAddress = address;
-    }
-};
-extern MockBleScanFilter filter;
-
-class MockBLE
-{
-public:
-    MockBLE() {}
-
-public:
-    int setScanTimeout(uint16_t timeout) const {
-        return 0;
-    }
-
-    int scanWithFilter(MockBleScanFilter filter) {
-        return 0;
-    }
-};
-extern MockBLE BLE;
-
+// This function only works on Linux
 uint32_t millis() {
     struct timespec ts;
 
-    clock_gettime_monotonic(&ts);
+    clock_gettime(CLOCK_MONOTONIC, &ts);
 
     return (uint32_t) (uint64_t)(ts.tv_nsec / 1000000) + ((uint64_t)ts.tv_sec * 1000ull);
+}
+
+void delay(unsigned long ms) {
+    return;
 }

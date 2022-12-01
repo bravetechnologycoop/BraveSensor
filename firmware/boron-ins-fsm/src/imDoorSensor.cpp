@@ -175,7 +175,7 @@ void threadBLEScanner(void *param) {
     filter.address(address);
 
     // scanning for IM21 and IM24 door sensors of correct device ID
-    Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter);
+    spark::Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter);
 
     // loop over all devices found in the BLE scan
     for (BleScanResult scanResult : scanResults) {

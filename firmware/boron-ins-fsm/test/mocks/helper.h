@@ -1,3 +1,7 @@
+/*
+Used in millis() mock function for Windows
+*/
+
 #include <time.h>
 #include <windows.h>
 
