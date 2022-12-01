@@ -62,7 +62,7 @@ jobs:
       language: cpp
       script:
         - cd firmware/boron-ins-fsm/test && g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
-        - cd firmware/boron-ins-fsm/test && g++ -std=c++11 -I../inc -I./ -I./mocks -o ins3331Tests ins3331Tests.cpp -lstdc++ -lm && ./ins3331Tests -s
+        - g++ -std=c++11 -I../inc -I./ -I./mocks -o ins3331Tests ins3331Tests.cpp -lstdc++ -lm && ./ins3331Tests -s
     # If all the test stage passes, then pushes the Docker container to DO
     - stage: 'push container'
       language: node_js
