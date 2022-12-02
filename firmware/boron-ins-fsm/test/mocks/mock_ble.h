@@ -4,27 +4,25 @@
 
 #pragma once
 
-#include "spark_wiring_vector.h"
-
-#define BLE_GAP_ADV_SET_DATA_SIZE_MAX   (31)   /**< Maximum data length for an advertising set.
+#define BLE_GAP_ADV_SET_DATA_SIZE_MAX   (31)   //< Maximum data length for an advertising set.
 #define BLE_MAX_ADV_DATA_LEN            BLE_GAP_ADV_SET_DATA_SIZE_MAX
 
 typedef enum BleAdvertisingDataType {
     MANUFACTURER_SPECIFIC_DATA
 } BleAdvertisingDataType;
 
-class MockBleAddress {
+class BleAddress {
 public:
-    MockBleAddress();
+    BleAddress();
 
-    const MockBleAddress get() const {
+    const BleAddress get() const {
         return *this;
     }
 };
 
-class MockBleAdvertisingData {
+class BleAdvertisingData {
 public:
-    const MockBleAdvertisingData get(BleAdvertisingDataType bleAdvertisingDataType, uint8_t* advertisingData, int maxLength) const {
+    const BleAdvertisingData get(BleAdvertisingDataType bleAdvertisingDataType, uint8_t* advertisingData, int maxLength) const {
         return *this;
     }
 };
@@ -32,17 +30,17 @@ public:
 class BleScanResult
 {
 public:
-    MockBleAddress address_;
-    MockBleAdvertisingData advertisingData_;
+    BleAddress address_;
+    BleAdvertisingData advertisingData_;
 
 public:
-    const MockBleAddress address() const {
-        MockBleAddress fakeAddress;
+    const BleAddress address() const {
+        BleAddress fakeAddress;
         return fakeAddress;
     }
 
-    const MockBleAdvertisingData advertisingData() const {
-        MockBleAdvertisingData fakeAdvertisingData;
+    const BleAdvertisingData advertisingData() const {
+        BleAdvertisingData fakeAdvertisingData;
         return fakeAdvertisingData;
     }
 };
@@ -76,11 +74,7 @@ public:
     int setScanTimeout(uint16_t timeout) const {
         return 0;
     }
-/*
-    int scanWithFilter(MockBleScanFilter filter) {
-        return 0;
-    }
-*/
+
     spark::Vector<BleScanResult> scanWithFilter(const BleScanFilter& filter) {
         spark::Vector<BleScanResult> mockScanResults;
         return mockScanResults;
