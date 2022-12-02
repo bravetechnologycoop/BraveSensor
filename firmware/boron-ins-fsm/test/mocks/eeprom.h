@@ -8,10 +8,11 @@ The Boron has 4096 bytes of emulated EEPROM.
 
 #define BORON_EEPROM_SIZE 4096
 
-uint8_t *mockMemory = new uint8_t[BORON_EEPROM_SIZE];
-
 class MockEEPROM
 {
+private:
+    uint8_t *mockMemory = new uint8_t[BORON_EEPROM_SIZE];
+    
 public:
     MockEEPROM()
     {
@@ -21,18 +22,13 @@ public:
     template <typename T>
     void get(int const _address, T& data)
     {
-        if ((_address + sizeof(data)) < BORON_EEPROM_SIZE) {
-            memcpy(&data, mockMemory + _address, sizeof(data));
-        }
+        memcpy(&data, mockMemory + _address, sizeof(data));
     }
 
     template <typename T>
     void put(int const _address, T const& _data)
     {
-        if ((_address + sizeof(_data)) < BORON_EEPROM_SIZE) {
-            memcpy(mockMemory + _address, &_data, sizeof(_data));
-        }
+        memcpy(mockMemory + _address, &_data, sizeof(_data));
     }
 };
-
 extern MockEEPROM EEPROM;
