@@ -42,15 +42,11 @@ private:
     int8_t rssi_;
 
 public:
-    const BleAddress address() const {
-        //BleAddress fakeAddress;
-        //return fakeAddress;
+    const BleAddress address() const {;
         return address_;
     }
 
     const BleAdvertisingData advertisingData() const {
-        //BleAdvertisingData fakeAdvertisingData;
-        //return fakeAdvertisingData;
         return advertisingData_;
     }
 };
@@ -58,7 +54,7 @@ public:
 // Fake class for BleScanFilter
 class BleScanFilter
 {
-public:
+private:
     char* deviceNames_;
     char* addresses_;
 
@@ -76,6 +72,7 @@ public:
     }
 };
 
+// Fake class for BLE
 class MockBLE
 {
 public:
