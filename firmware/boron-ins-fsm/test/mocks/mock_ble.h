@@ -1,5 +1,5 @@
 /*
- * Mock implementation for BLE functions
+ * Mock implementation for BLE functions and classes
  */
 
 #pragma once
@@ -10,11 +10,11 @@
 #include "../inc/spark_wiring_vector.h"
 
 // Defines fake BleAdvertisingDataType values
-typedef enum BleAdvertisingDataType {
+enum class BleAdvertisingDataType : uint8_t {
     MANUFACTURER_SPECIFIC_DATA
-} BleAdvertisingDataType;
+};
 
-// Fake class for  object
+// Fake class for BleAddress object
 class BleAddress {
 public:
     BleAddress();
@@ -35,19 +35,23 @@ public:
 // Fake class for BleScanResult object
 class BleScanResult
 {
-public:
+private:
     BleAddress address_;
     BleAdvertisingData advertisingData_;
+    BleAdvertisingData scanResponse_;
+    int8_t rssi_;
 
 public:
     const BleAddress address() const {
-        BleAddress fakeAddress;
-        return fakeAddress;
+        //BleAddress fakeAddress;
+        //return fakeAddress;
+        return address_;
     }
 
     const BleAdvertisingData advertisingData() const {
-        BleAdvertisingData fakeAdvertisingData;
-        return fakeAdvertisingData;
+        //BleAdvertisingData fakeAdvertisingData;
+        //return fakeAdvertisingData;
+        return advertisingData_;
     }
 };
 
