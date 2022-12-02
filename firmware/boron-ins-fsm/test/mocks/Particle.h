@@ -1,6 +1,8 @@
 /*
- * Mock implementations for Particle.h library functions
- * 
+ * Mock implementations for Particle.h library functions.
+ 
+ * The mock implementations are necessary so that unit tests
+ * can be compiled using GCC and run automatically in Travis.
  */
 
 #pragma once
