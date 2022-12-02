@@ -63,7 +63,7 @@ jobs:
       script:
         - cd firmware/boron-ins-fsm/test && g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
         - g++ -std=c++11 -I../inc -I./ -I./mocks -I../lib/CircularBuffer/src -o ins3331Tests ins3331Tests.cpp -lstdc++ -lm && ./ins3331Tests -s
-        - g++ -std=c++11 -I../inc -I./ -I./mocks -I./UnitTestLib -o DoorSensorTests imDoorSensorTests.cpp -lstdc++ -lm && ./imDoorSensorTests -s
+        - g++ -std=c++11 -I../inc -I./ -I./mocks -I./UnitTestLib -o DoorSensorTests imDoorSensorTests.cpp -lstdc++ -lm && ./DoorSensorTests -s
     # If all the test stage passes, then pushes the Docker container to DO
     - stage: 'push container'
       language: node_js
