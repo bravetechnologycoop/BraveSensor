@@ -1,5 +1,4 @@
-#ifndef MOCK_THREAD_H
-#define MOCK_THREAD_H
+#pragma once
 
 struct os_thread_fn_t {};
 
@@ -11,5 +10,3 @@ public:
 public:
     Thread(const char* name, void (*)(void*)) {}
 };
-
-#endif

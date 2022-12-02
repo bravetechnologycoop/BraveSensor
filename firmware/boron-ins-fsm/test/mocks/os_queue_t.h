@@ -1,12 +1,10 @@
-#ifndef MOCK_OS_QUEUE_T_H
-#define MOCK_OS_QUEUE_T_H
+#pragma once
 
 #include "Particle.h"
 #include <stdint.h>
 
 typedef uint32_t system_tick_t;
 
-//typedef void*os_queue_t;
 typedef int os_result_t;
 
 int os_queue_create(os_queue_t* queue, size_t item_size, size_t item_count, void* reserved);
@@ -30,6 +28,3 @@ int os_queue_put(os_queue_t queue, const void* item, system_tick_t delay, void* 
 os_result_t os_thread_yield(void) {
     return 0;
 }
-
-
-#endif

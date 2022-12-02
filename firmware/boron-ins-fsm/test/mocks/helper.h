@@ -1,10 +1,11 @@
 /*
-Used in millis() mock function for Windows
-*/
+ * Contains port of Linux function clock_gettime(CLOCK_MONOTONIC)
+ * To be used in millis() mock function for Windows machines
+ */
 
-#ifndef HELPER_H
-#define HELPER_H
+#pragma once
 
+// Only compile if OS is Windows
 #ifdef _WIN32
 
 #include <time.h>
@@ -45,4 +46,3 @@ int clock_gettime_monotonic(struct timespec *tv)
 }
 
 #endif  // ifdef _WIN32
-#endif  // ifndef HELPER_H

@@ -1,9 +1,8 @@
 /*
-Fake implementation for Serial functions
-*/
+ * Mock implementation for Serial functions
+ */
 
-#ifndef MOCK_SERIAL_H
-#define MOCK_SERIAL_H
+#pragma once
 
 #define Serial 0
 #define Serial1 __fetch_mock_global_Serial1()
@@ -42,5 +41,3 @@ MockUSARTSerial __fetch_mock_global_Serial1() {
 
     return serial1;
 }
-
-#endif

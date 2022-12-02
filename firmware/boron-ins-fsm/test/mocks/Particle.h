@@ -1,4 +1,10 @@
+/*
+ * Mock implementations for Particle.h library functions
+ * 
+ */
+
 #pragma once
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,8 +16,6 @@
 #include "helper.h"
 #include "mock_serial.h"
 #include "mock_thread.h"
-//#include "spark_wiring_ble.h"
-//#include "spark_wiring_vector.h"
 
 uint32_t millis();
 void delay(unsigned long ms);

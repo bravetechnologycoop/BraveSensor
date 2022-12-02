@@ -1,28 +1,30 @@
-#ifndef MOCK_SPARK_WIRING_BLE_H
-#define MOCK_SPARK_WIRING_BLE_H
+/*
+ * Mock implementation for BLE functions
+ */
+
+#pragma once
 
 #include "spark_wiring_vector.h"
 
-#define BLE_MAX_ADV_DATA_LEN 128
+#define BLE_GAP_ADV_SET_DATA_SIZE_MAX   (31)   /**< Maximum data length for an advertising set.
+#define BLE_MAX_ADV_DATA_LEN            BLE_GAP_ADV_SET_DATA_SIZE_MAX
 
 typedef enum BleAdvertisingDataType {
     MANUFACTURER_SPECIFIC_DATA
 } BleAdvertisingDataType;
 
-class BleAddress {
+class MockBleAddress {
 public:
-    BleAddress();
+    MockBleAddress();
 
-    const BleAddress get() const {
+    const MockBleAddress get() const {
         return *this;
     }
 };
 
-class BleAdvertisingData {
+class MockBleAdvertisingData {
 public:
-    //BleAdvertisingData();
-
-    const BleAdvertisingData get(BleAdvertisingDataType bleAdvertisingDataType, uint8_t* advertisingData, int maxLength) const {
+    const MockBleAdvertisingData get(BleAdvertisingDataType bleAdvertisingDataType, uint8_t* advertisingData, int maxLength) const {
         return *this;
     }
 };
@@ -30,17 +32,17 @@ public:
 class BleScanResult
 {
 public:
-    BleAddress address_;
-    BleAdvertisingData advertisingData_;
+    MockBleAddress address_;
+    MockBleAdvertisingData advertisingData_;
 
 public:
-    const BleAddress address() const {
-        BleAddress fakeAddress;
+    const MockBleAddress address() const {
+        MockBleAddress fakeAddress;
         return fakeAddress;
     }
 
-    const BleAdvertisingData advertisingData() const {
-        BleAdvertisingData fakeAdvertisingData;
+    const MockBleAdvertisingData advertisingData() const {
+        MockBleAdvertisingData fakeAdvertisingData;
         return fakeAdvertisingData;
     }
 };
@@ -86,5 +88,3 @@ public:
 
 };
 extern MockBLE BLE;
-
-#endif
