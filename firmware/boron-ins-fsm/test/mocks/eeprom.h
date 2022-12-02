@@ -12,7 +12,7 @@ class MockEEPROM
 {
 private:
     uint8_t *mockMemory = new uint8_t[BORON_EEPROM_SIZE];
-    
+
 public:
     MockEEPROM()
     {
