@@ -274,12 +274,12 @@ void state3_stillness(){
   }
   else if(millis() - state3_stillness_timer >= state3_max_stillness_time){
 
-    Log.warn("stillness alert, going from state3 to idle after publish");
-    publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
+    Log.warn("stillness alert, going from state3 to state2 after publish");
+    publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
     saveStateChange(3, 5);
     Log.error("Stillness Alert!!");
     Particle.publish("Stillness Alert", "stillness alert!!!", PRIVATE);
-    stateHandler = state0_idle;
+    stateHandler = state2_duration;
   }
   else {
     //if we don't meet the exit conditions above, we remain here
