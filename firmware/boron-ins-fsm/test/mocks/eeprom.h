@@ -8,11 +8,10 @@ The Boron has 4096 bytes of emulated EEPROM.
 
 #define BORON_EEPROM_SIZE 4096
 
+static uint8_t mockMemory[BORON_EEPROM_SIZE];
+
 class MockEEPROM
 {
-private:
-    uint8_t *mockMemory = new uint8_t[BORON_EEPROM_SIZE];
-
 public:
     MockEEPROM()
     {
