@@ -32,3 +32,4 @@ long unsigned state2_max_duration;
 long unsigned state3_max_stillness_time;
 long unsigned ins_threshold;
 IMDoorID globalDoorID;
+uint8_t mockMemory[BORON_EEPROM_SIZE];
