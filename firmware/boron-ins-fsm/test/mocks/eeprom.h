@@ -13,8 +13,10 @@ static uint8_t mockMemory[BORON_EEPROM_SIZE];
 class MockEEPROM
 {
 public:
-    MockEEPROM()
-    {
+    MockEEPROM() {
+        for (int i = 0; i < BORON_EEPROM_SIZE; i++) {
+            mockMemory[i] = 255;
+        }
     }
 
 public:
