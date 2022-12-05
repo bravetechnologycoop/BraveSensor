@@ -1,6 +1,7 @@
 /*
  * Contains port of Linux function clock_gettime(CLOCK_MONOTONIC)
  * To be used in millis() mock function for Windows machines
+ * Code taken from StackOverflow: https://stackoverflow.com/questions/5404277/porting-clock-gettime-to-windows
  */
 
 #pragma once
