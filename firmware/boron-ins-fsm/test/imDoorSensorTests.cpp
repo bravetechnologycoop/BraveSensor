@@ -22,7 +22,7 @@ SCENARIO("isDoorOpen", "[isDoorOpen]") {
 
         WHEN("The function is called with the door status indicating closed") {
 
-            THEN("The function should return 1") {
+            THEN("The function should return 0") {
                 for (int i = 0; i < NUMBER_OF_DOOR_STATUS_TEST_CASES; ++i) {
                     REQUIRE(isDoorOpen(doorStatusClosed[i]) == 0);
                 }
@@ -30,4 +30,30 @@ SCENARIO("isDoorOpen", "[isDoorOpen]") {
         }
     }
 
+}
+
+SCENARIO("isDoorStatusUnknown", "[isDoorStatusUnknown]") {
+    GIVEN("An unknown door status") {
+        int doorStatus = INITIAL_DOOR_STATUS;
+
+        WHEN("The function is called with the initial status") {
+
+            THEN("The function should return 1") {
+                REQUIRE(isDoorStatusUnknown(doorStatus) == 1);
+            }
+        }
+    }
+
+    GIVEN("A variety of known door statuses") {
+        int doorStatus[NUMBER_OF_DOOR_STATUS_TEST_CASES] = { 0x00, 0x02, 0x06, 0x07, 0x0A, 0x0B, 0x0E, 0x0F };
+
+        WHEN("The function is called with the known status") {
+
+            THEN("The function should return 0") {
+                for (int i = 0; i < NUMBER_OF_DOOR_STATUS_TEST_CASES; ++i) {
+                    REQUIRE(isDoorStatusUnknown(doorStatus[i]) == 0);
+                }
+            }
+        }
+    }
 }
