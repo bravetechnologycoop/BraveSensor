@@ -6,7 +6,7 @@
 
 // Mocks
 #include "mocks/mock_eeprom.h"
-#include "mocks/mock_Particle.h"
+#include "mocks/Particle.h"
 #include "mocks/mock_System.h"
 #include "mocks/mock_os_queue_t.h"
 #include "mocks/mock_ble.h"

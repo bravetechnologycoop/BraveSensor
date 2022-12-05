@@ -11,6 +11,5 @@ class Thread
 public:
     Thread() {}
 
-public:
     Thread(const char* name, void (*)(void*)) {}
 };
