@@ -4,7 +4,6 @@
 #include "../src/ins3331.h"
 #include "../src/flashAddresses.h"
 
-// Test Cases
 SCENARIO("The correct checksum is returned by calculateChecksum()")
 {
     GIVEN("The buffer is populated with zeros")
@@ -15,7 +14,9 @@ SCENARIO("The correct checksum is returned by calculateChecksum()")
         {
             int checksum = calculateChecksum(buffer, 15);
 
-            THEN("Checksum should be equal to 0") { REQUIRE(checksum == 0); }
+            THEN("Checksum should be equal to 0") { 
+                REQUIRE(checksum == 0); 
+            }
         }
     }
     GIVEN("The buffer is populated with ones")
@@ -27,7 +28,9 @@ SCENARIO("The correct checksum is returned by calculateChecksum()")
         {
             int checksum = calculateChecksum(buffer, 15);
 
-            THEN("Checksum should be equal to 11") { REQUIRE(checksum == 11); }
+            THEN("Checksum should be equal to 11") { 
+                REQUIRE(checksum == 11); 
+            }
         }
     }
     GIVEN("The buffer is populated with zeros and ones")
@@ -38,7 +41,9 @@ SCENARIO("The correct checksum is returned by calculateChecksum()")
         {
             int checksum = calculateChecksum(buffer, 15);
 
-            THEN("Checksum should be equal to 5") { REQUIRE(checksum == 5); }
+            THEN("Checksum should be equal to 5") { 
+                REQUIRE(checksum == 5); 
+            }
         }
     }
 }
