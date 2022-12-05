@@ -22,7 +22,9 @@ SCENARIO("The correct checksum is returned by calculateChecksum()")
     GIVEN("The buffer is populated with ones")
     {
         unsigned char buffer[15];
-        for (int i = 0; i < 15; ++i) buffer[i] = 1;
+        for (int i = 0; i < 15; ++i) {
+            buffer[i] = 1;
+        }
 
         WHEN("The function is called")
         {
