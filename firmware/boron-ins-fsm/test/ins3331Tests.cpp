@@ -35,7 +35,7 @@ SCENARIO("The correct checksum is returned by calculateChecksum()")
             }
         }
     }
-    GIVEN("The buffer is populated with zeros and ones")
+    GIVEN("The buffer is populated with alternating zeros and ones, starting with zero")
     {
         unsigned char buffer[15] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0};
 
