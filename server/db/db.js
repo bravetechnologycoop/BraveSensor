@@ -38,7 +38,7 @@ function createLocationFromRow(r, allClients) {
   const client = allClients.filter(c => c.id === r.client_id)[0]
 
   // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.door_particlecoreid, r.radar_particlecoreid, r.twilio_number, r.initial_timer, r.is_active, r.firmware_state_machine, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
+  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.radar_particlecoreid, r.twilio_number, r.initial_timer, r.is_active, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
 }
 
 function createSensorsVitalFromRow(r, allLocations) {
@@ -160,11 +160,7 @@ async function getDataForExport(pgClient) {
         c.display_name AS "Client Name",
         l.locationid AS "Sensor ID",
         l.display_name AS "Sensor Name",
-        CASE
-          WHEN firmware_state_machine
-          THEN 'Innosent'
-          ELSE 'XeThru' 
-        END AS "Radar Type",
+        NULL AS "Radar Type",
         l.is_active AS "Active?",
         s.id AS "Session ID",
         TO_CHAR(s.created_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Start",
@@ -653,8 +649,7 @@ async function getLocationFromParticleCoreID(coreID, pgClient) {
       `
       SELECT *
       FROM locations
-      WHERE door_particlecoreid = $1
-      OR radar_particlecoreid = $1
+      WHERE radar_particlecoreid = $1
       `,
       [coreID],
       pool,
@@ -699,32 +694,6 @@ async function getLocationsFromClientId(clientId, pgClient) {
   }
 }
 
-async function getActiveServerStateMachineLocations(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getActiveServerStateMachineLocations',
-      `
-      SELECT *
-      FROM locations
-      WHERE is_active
-      AND firmware_state_machine = false
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return results.rows.map(r => createLocationFromRow(r, allClients))
-  } catch (err) {
-    helpers.log(err.toString())
-  }
-}
-
 async function getActiveFirmwareStateMachineLocations(pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -733,7 +702,6 @@ async function getActiveFirmwareStateMachineLocations(pgClient) {
       SELECT *
       FROM locations
       WHERE is_active
-      AND firmware_state_machine
       `,
       [],
       pool,
@@ -781,7 +749,6 @@ async function getLocations(pgClient) {
 // eslint-disable-next-line prettier/prettier
 async function updateLocation(
   displayName,
-  doorCoreId,
   radarCoreId,
   twilioNumber,
   movementThreshold,
@@ -789,7 +756,6 @@ async function updateLocation(
   stillnessTimer,
   initialTimer,
   isActive,
-  firmwareStateMachine,
   locationid,
   clientId,
   pgClient,
@@ -801,33 +767,18 @@ async function updateLocation(
       UPDATE locations
       SET
         display_name = $1,
-        door_particlecoreid = $2,
-        radar_particlecoreid = $3,
-        twilio_number = $4,
-        movement_threshold = $5,
-        duration_timer = $6,
-        stillness_timer = $7,
-        initial_timer = $8,
-        is_active = $9,
-        firmware_state_machine = $10,
-        client_id = $11
-      WHERE locationid = $12
+        radar_particlecoreid = $2,
+        twilio_number = $3,
+        movement_threshold = $4,
+        duration_timer = $5,
+        stillness_timer = $6,
+        initial_timer = $7,
+        is_active = $8,
+        client_id = $9
+      WHERE locationid = $10
       RETURNING *
       `,
-      [
-        displayName,
-        doorCoreId,
-        radarCoreId,
-        twilioNumber,
-        movementThreshold,
-        durationTimer,
-        stillnessTimer,
-        initialTimer,
-        isActive,
-        firmwareStateMachine,
-        clientId,
-        locationid,
-      ],
+      [displayName, radarCoreId, twilioNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, isActive, clientId, locationid],
       pool,
       pgClient,
     )
@@ -900,21 +851,19 @@ async function updateClient(
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, doorCoreId, radarCoreId, twilioNumber, firmwareStateMachine, clientId, pgClient) {
+async function createLocationFromBrowserForm(locationid, displayName, radarCoreId, twilioNumber, clientId, pgClient) {
   try {
     const results = await helpers.runQuery('createLocationFromBrowserForm',
       `
-      INSERT INTO locations(locationid, display_name, door_particlecoreid, radar_particlecoreid, twilio_number, firmware_state_machine, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO locations(locationid, display_name, radar_particlecoreid, twilio_number, client_id)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
       `,
       [
         locationid,
         displayName,
-        doorCoreId,
         radarCoreId,
         twilioNumber,
-        firmwareStateMachine,
         clientId,
       ],
       pool,
@@ -944,10 +893,8 @@ async function createLocation(
   sentVitalsAlertAt,
   twilioNumber,
   displayName,
-  doorCoreId,
   radarCoreId,
   isActive,
-  firmwareStateMachine,
   sentLowBatteryAlertAt,
   clientId,
   pgClient,
@@ -956,8 +903,8 @@ async function createLocation(
     const results = await helpers.runQuery(
       'createLocation',
       `
-      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, twilio_number, display_name, door_particlecoreid, radar_particlecoreid, is_active, firmware_state_machine, sent_low_battery_alert_at, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, twilio_number, display_name, radar_particlecoreid, is_active, sent_low_battery_alert_at, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
       `,
       [
@@ -969,10 +916,8 @@ async function createLocation(
         sentVitalsAlertAt,
         twilioNumber,
         displayName,
-        doorCoreId,
         radarCoreId,
         isActive,
-        firmwareStateMachine,
         sentLowBatteryAlertAt,
         clientId,
       ],
@@ -1416,7 +1361,6 @@ module.exports = {
   createSession,
   getActiveAlertsByAlertApiKey,
   getActiveFirmwareStateMachineLocations,
-  getActiveServerStateMachineLocations,
   getAllSessionsFromLocation,
   getClientWithClientId,
   getClients,

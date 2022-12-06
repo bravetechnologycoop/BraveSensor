@@ -48,7 +48,6 @@ bool isValidIM21Id(String input) {
 }
 
 int toggle_debugging_publishes(String command){
-
   //default to invalid input
   int returnFlag = -1;
 
@@ -59,6 +58,10 @@ int toggle_debugging_publishes(String command){
   if(*(holder+1) != 0){
     //any string longer than 1 char is invalid input, so
     returnFlag = -1;
+  }
+  // if e, echo whether debug publishes are on
+  else if (*holder == 'e') {
+    returnFlag = (int)stateMachineDebugFlag;
   }
   else if(*holder == '0'){
     stateMachineDebugFlag = false;
