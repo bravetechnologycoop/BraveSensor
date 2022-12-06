@@ -15,6 +15,7 @@ SCENARIO("isDoorOpen", "[isDoorOpen]") {
 
             THEN("The function should return 1") {
                 for (int i = 0; i < NUMBER_OF_DOOR_STATUS_TEST_CASES; ++i) {
+                    INFO("Running door status open, test case " << i);
                     REQUIRE(isDoorOpen(doorStatusOpen[i]) == 1);
                 }
             }
@@ -24,12 +25,12 @@ SCENARIO("isDoorOpen", "[isDoorOpen]") {
 
             THEN("The function should return 0") {
                 for (int i = 0; i < NUMBER_OF_DOOR_STATUS_TEST_CASES; ++i) {
+                    INFO("Running door status closed, test case " << i);
                     REQUIRE(isDoorOpen(doorStatusClosed[i]) == 0);
                 }
             }
         }
     }
-
 }
 
 SCENARIO("isDoorStatusUnknown", "[isDoorStatusUnknown]") {
@@ -51,6 +52,7 @@ SCENARIO("isDoorStatusUnknown", "[isDoorStatusUnknown]") {
 
             THEN("The function should return 0") {
                 for (int i = 0; i < NUMBER_OF_DOOR_STATUS_TEST_CASES; ++i) {
+                    INFO("Running door status known, test case " << i);
                     REQUIRE(isDoorStatusUnknown(doorStatus[i]) == 0);
                 }
             }
