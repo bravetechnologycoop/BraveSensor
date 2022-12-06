@@ -5,7 +5,7 @@
 #include <iostream>
 
 // Mocks
-#include "mocks/eeprom.h"
+#include "mocks/mock_eeprom.h"
 #include "mocks/Particle.h"
 #include "mocks/System.h"
 #include "mocks/os_queue_t.h"
