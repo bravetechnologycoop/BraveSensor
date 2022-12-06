@@ -20,6 +20,11 @@ the code was deployed.
 - Mock header files allowing unit tests to be compiled (CU-2y84mrc).
 - Unit tests for some IM door sensor functions.
 - Unit tests for some INS3331 functions.
+- Echo functionality for toggle debugging publishes cloud function (CU-3zybq3y).
+
+### Removed
+
+- XeThru + SSM smoke test (CU-m0we0t).
 
 ## [6.4.0] - 2022-11-08
 
