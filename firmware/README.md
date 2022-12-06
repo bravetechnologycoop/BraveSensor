@@ -37,7 +37,8 @@
      - [Current Door Sensor ID](#current-door-sensor-id)
      - [IM21 Warning](#im21-warning)
      - [spark/device/diagnostics/update](#spark/device/diagnostics/update)
-6. [v3.2 Argon INS Firmware](#v3.2-argon-ins-firmware)
+6. [Boron Firmware Unit Tests] (#boron-firmware-unit-tests)
+7. [v3.2 Argon INS Firmware](#v3.2-argon-ins-firmware)
    - [Setting up an Argon to use v3.2](#setting-up-an-argon-to-use-v32)
    - [Argon INS Console Functions](#argon-ins-console-functions)
    - [Argon INS Published Messages](#argon-ins-published-messages)
@@ -109,7 +110,7 @@ This is the current long term stable release of the Brave Sensor Firmware.
 2. Add the device to the Production group on the Products section of the console.
    Or betatest group
 3. Open the directory `BraveSensor/firmware/boron-ins-fsm` in VSCode
-4. Make sure VSCode is set to flash to the correct device (Boron), correct version of the device OS (v2.0.1), and correct target device name (you named it in step 1 above
+4. Make sure VSCode is set to flash to the correct device (Boron), correct version of the device OS (v3.3.0), and correct target device name (you named it in step 1 above
 5. Run "Clean Application & DeviceOS (local)"
 6. Press F1 - type clean, command should appear, select and hit enter
    Run "Flash Application & DeviceOS (local):
@@ -623,6 +624,20 @@ Be aware: this means that notification a door event is missed won't be published
   }
 }
 ```
+
+# Boron Firmware Unit Tests
+
+All unit tests for the Boron firmware are located in the `/test` folder. The unit tests use the Catch2 framework (https://github.com/catchorg/Catch2). 
+
+To compile the unit tests using gcc, you must include the mock header files located in `/test/mocks`, which contain fake implementations of Particle functions.
+
+You must also include the header files located in the `/inc` folder. These header files are copied from the Particle toolchain and contain real implementations of Particle functions.
+
+If you need to include additional Particle header files, they can be located at `/<local user>/.particle/toolchains/deviceOS/<firmware version>/wiring` after installing the local toolchain for <firmware version> using the Particle Workbench VSCode extension.
+
+It is suggested that upon upgrading the Boron firmware version, the files in the `/inc` folder are also updated to the latest version. 
+
+To compile and run the unit tests, see the .travis.yml file for the most up to date command. 
 
 # v3.2 Argon INS Firmware
 
