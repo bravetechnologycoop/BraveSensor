@@ -1,5 +1,5 @@
 /*
- * Mock implementation for os queue functions and classes
+ * Mock implementation for time/tick functions
  */
 
 #pragma once
