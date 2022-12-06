@@ -37,7 +37,7 @@
      - [Current Door Sensor ID](#current-door-sensor-id)
      - [IM21 Warning](#im21-warning)
      - [spark/device/diagnostics/update](#spark/device/diagnostics/update)
-6. [Boron Firmware Unit Tests] (#boron-firmware-unit-tests)
+6. [Boron Firmware Unit Tests](#boron-firmware-unit-tests)
 7. [v3.2 Argon INS Firmware](#v3.2-argon-ins-firmware)
    - [Setting up an Argon to use v3.2](#setting-up-an-argon-to-use-v32)
    - [Argon INS Console Functions](#argon-ins-console-functions)
