@@ -218,8 +218,6 @@ int ins_threshold_set(String input){
 
 }
 
-
-
 // particle console function to get/set door sensor ID
 // command is a long string with all the config values
 int im21_door_id_set(String command) { 

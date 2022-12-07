@@ -4,6 +4,8 @@
 #include "../src/consoleFunctions.h"
 #include "../src/flashAddresses.h"
 
+IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
+
 SCENARIO( "Turn_Debugging_Publishes_On_Off", "[toggle debug flag]" ) {
 
     GIVEN( "A false debug flag" ) {
@@ -90,9 +92,6 @@ SCENARIO( "Turn_Debugging_Publishes_On_Off", "[toggle debug flag]" ) {
 SCENARIO( "Change_IM21_Door_ID", "[change door id]" ) {
 
     GIVEN( "A default global door id" ) {
-        globalDoorID.byte1 = (uint8_t)strtol("AA",NULL,16);
-        globalDoorID.byte2 = (uint8_t)strtol("AA",NULL,16);
-        globalDoorID.byte3 = (uint8_t)strtol("AA",NULL,16);
 
         WHEN( "The function is called with e and a valid door ID was previously set" ) {
             printf("%i\n", im21_door_id_set("56,34,12"));
