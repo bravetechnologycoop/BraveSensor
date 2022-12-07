@@ -252,12 +252,12 @@ int im21_door_id_set(String command) {
     const char* byteholder3;
     int split1 = command.indexOf(',');
     byteholder1 = command.substring(0,split1).c_str();
-    globalDoorID.byte3 = (uint8_t)strtol(byteholder1,NULL,16); printf("%c\n", (uint8_t)strtol(byteholder1,NULL,16));
+    globalDoorID.byte3 = (uint8_t)strtol(byteholder1,NULL,16); printf("%02X\n", byteholder1);
     int split2 = command.indexOf(',', split1+1);
     byteholder2 = command.substring(split1+1,split2).c_str();
-    globalDoorID.byte2 = (uint8_t)strtol(byteholder2,NULL,16); printf("%c\n", (uint8_t)strtol(byteholder2,NULL,16));
+    globalDoorID.byte2 = (uint8_t)strtol(byteholder2,NULL,16); printf("%02X\n", byteholder2);
     int split3 = command.indexOf(',', split2+1);
-    byteholder3 = command.substring(split2+1,split3).c_str(); printf("%c\n", (uint8_t)strtol(byteholder3,NULL,16));
+    byteholder3 = command.substring(split2+1,split3).c_str(); printf("%02X\n", byteholder3);
     globalDoorID.byte1 = (uint8_t)strtol(byteholder3,NULL,16);
 
     //write new global door ID to flash
