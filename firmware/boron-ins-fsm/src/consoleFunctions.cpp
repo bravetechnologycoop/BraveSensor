@@ -224,6 +224,8 @@ int im21_door_id_set(String command) {
   char buffer[64];
   IMDoorID doorIDHolder; 
 
+  printf("%s", command.c_str());
+
   if(isValidIM21Id(command) == false){
     return -1;
   }
