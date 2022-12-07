@@ -252,18 +252,18 @@ int im21_door_id_set(String command) {
     const char* byteholder3;
     int split1 = command.indexOf(',');
     byteholder1 = command.substring(0,split1).c_str();
-    globalDoorID.byte3 = (uint8_t)strtol(byteholder1,NULL,16); printf("%i\n", (uint8_t)strtol(byteholder1,NULL,16));
+    globalDoorID.byte3 = (uint8_t)strtol(byteholder1,NULL,16); printf("%c\n", (uint8_t)strtol(byteholder1,NULL,16));
     int split2 = command.indexOf(',', split1+1);
     byteholder2 = command.substring(split1+1,split2).c_str();
-    globalDoorID.byte2 = (uint8_t)strtol(byteholder2,NULL,16); printf("%i\n", (uint8_t)strtol(byteholder2,NULL,16));
+    globalDoorID.byte2 = (uint8_t)strtol(byteholder2,NULL,16); printf("%c\n", (uint8_t)strtol(byteholder2,NULL,16));
     int split3 = command.indexOf(',', split2+1);
-    byteholder3 = command.substring(split2+1,split3).c_str(); printf("%i\n", (uint8_t)strtol(byteholder3,NULL,16));
+    byteholder3 = command.substring(split2+1,split3).c_str(); printf("%c\n", (uint8_t)strtol(byteholder3,NULL,16));
     globalDoorID.byte1 = (uint8_t)strtol(byteholder3,NULL,16);
 
     //write new global door ID to flash
-    EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);   printf("globalDoorID.byte1 %i\n", globalDoorID.byte1);
-    EEPROM.put((ADDR_IM_DOORID+1), globalDoorID.byte2);  printf("globalDoorID.byte2 %i\n", globalDoorID.byte2);
-    EEPROM.put((ADDR_IM_DOORID+2), globalDoorID.byte3);  printf("globalDoorID.byte3 %i\n", globalDoorID.byte3);
+    EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);   printf("globalDoorID.byte1 %02X\n", globalDoorID.byte1);
+    EEPROM.put((ADDR_IM_DOORID+1), globalDoorID.byte2);  printf("globalDoorID.byte2 %02X\n", globalDoorID.byte2);
+    EEPROM.put((ADDR_IM_DOORID+2), globalDoorID.byte3);  printf("globalDoorID.byte3 %02X\n", globalDoorID.byte3);
 
     // put door ID in buffer for return value
     snprintf(buffer, sizeof(buffer), "%02X%02X%02X", globalDoorID.byte1, globalDoorID.byte2, globalDoorID.byte3);
