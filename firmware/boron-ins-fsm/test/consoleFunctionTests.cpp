@@ -95,7 +95,7 @@ SCENARIO( "Change_IM21_Door_ID", "[change door id]" ) {
         globalDoorID.byte3 = (uint8_t)strtol("AA",NULL,16);
 
         WHEN( "The function is called with e and a valid door ID was previously set" ) {
-            im21_door_id_set("56,34,12");
+            printf("%i\n", im21_door_id_set("56,34,12"));
             int returnVal = im21_door_id_set("e");
 
             THEN( "The function should return the door ID that was previously set" ) {
