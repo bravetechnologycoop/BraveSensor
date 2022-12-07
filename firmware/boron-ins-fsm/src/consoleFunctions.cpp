@@ -251,12 +251,12 @@ int im21_door_id_set(String command) {
     const char* byteholder2;
     const char* byteholder3;
     int split1 = command.indexOf(','); printf("%s", command.c_str());
-    byteholder1 = command.substring(0, split1).c_str(); printf("%s", byteholder1);
+    byteholder1 = command.substring(0, split1).c_str(); //printf("%s", byteholder1);
     globalDoorID.byte3 = (uint8_t)strtol(byteholder1, NULL, 16);
-    int split2 = command.indexOf(',', split1 + 1); printf("%s", byteholder2);
+    int split2 = command.indexOf(',', split1 + 1); //printf("%s", byteholder2);
     byteholder2 = command.substring(split1 + 1, split2).c_str();
     globalDoorID.byte2 = (uint8_t)strtol(byteholder2, NULL, 16);
-    int split3 = command.indexOf(',', split2 +1 ); printf("%s", byteholder3);
+    int split3 = command.indexOf(',', split2 +1 ); //printf("%s", byteholder3);
     byteholder3 = command.substring(split2 + 1, split3).c_str();
     globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);
 
