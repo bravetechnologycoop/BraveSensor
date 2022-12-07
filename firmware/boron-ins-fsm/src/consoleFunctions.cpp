@@ -229,7 +229,7 @@ int im21_door_id_set(String command) {
   }
 
   //get pointer to user-entered string
-  const char* checkForEcho = command.c_str();
+  const char* checkForEcho = command.c_str(); printf("%s\n", command);
 
   //if echo, publish current door ID
   if(*checkForEcho == 'e'){  
@@ -247,7 +247,7 @@ int im21_door_id_set(String command) {
   else //else not echo, so we have a new door ID to parse
   {
     //parse input string and update global door ID 
-    const char* byteholder1;
+    /*const char* byteholder1;
     const char* byteholder2;
     const char* byteholder3;
     int split1 = command.indexOf(','); 
@@ -258,7 +258,7 @@ int im21_door_id_set(String command) {
     globalDoorID.byte2 = (uint8_t)strtol(byteholder2, NULL, 16);
     int split3 = command.indexOf(',', split2 +1 );
     byteholder3 = command.substring(split2 + 1, split3).c_str(); printf("%s\n", byteholder3);
-    globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);
+    globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);*/
 
     //write new global door ID to flash
     EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);
