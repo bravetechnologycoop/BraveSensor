@@ -92,7 +92,7 @@ SCENARIO( "Turn_Debugging_Publishes_On_Off", "[toggle debug flag]" ) {
 SCENARIO( "Change_IM21_Door_ID", "[change door id]" ) {
 
     GIVEN( "A default global door id" ) {
-printf("test\n");
+
         WHEN( "The function is called with e and a valid door ID was previously set" ) {
             im21_door_id_set("56,34,12");
             int returnVal = im21_door_id_set("e");
