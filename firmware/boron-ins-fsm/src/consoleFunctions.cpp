@@ -250,6 +250,7 @@ int im21_door_id_set(String command) {
     const char* byteholder1;
     const char* byteholder2;
     const char* byteholder3;
+    printf("%s\n", command.c_str());
     int split1 = command.indexOf(','); 
     byteholder1 = command.substring(0, split1).c_str(); printf("%s\n", byteholder1);
     globalDoorID.byte3 = (uint8_t)strtol(byteholder1, NULL, 16);
