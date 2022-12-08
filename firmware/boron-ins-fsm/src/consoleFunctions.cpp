@@ -246,20 +246,33 @@ int im21_door_id_set(String command) {
   } 
   else //else not echo, so we have a new door ID to parse
   {
+    char* byte_holder[3];
+    char* command_c_string = std::strcpy(command_c_string, command.c_str());
+    char* token = std::strtok(command_c_string, ",");
+    int counter = 0;
+
     //parse input string and update global door ID 
-    const char* byteholder1;
+    /*const char* byteholder1;
     const char* byteholder2;
     const char* byteholder3;
-    printf("%s\n", command.c_str());
     int split1 = command.indexOf(','); 
-    byteholder1 = command.substring(0, split1).c_str(); printf("%s\n", byteholder1);
+    byteholder1 = command.substring(0, split1).c_str();
     globalDoorID.byte3 = (uint8_t)strtol(byteholder1, NULL, 16);
     int split2 = command.indexOf(',', split1 + 1);
-    byteholder2 = command.substring(split1 + 1, split2).c_str(); printf("%s\n", byteholder2);
+    byteholder2 = command.substring(split1 + 1, split2).c_str();
     globalDoorID.byte2 = (uint8_t)strtol(byteholder2, NULL, 16);
     int split3 = command.indexOf(',', split2 + 1);
-    byteholder3 = command.substring(split2 + 1, split3).c_str(); printf("%s\n", byteholder3);
-    globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);
+    byteholder3 = command.substring(split2 + 1, split3).c_str();
+    globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);*/
+
+    while (token != NULL) {
+      byte_holder[counter++] = token;
+      token = std::strtok(NULL, ",");
+    }
+
+    globalDoorID.byte3 = (uint8_t)strtol(byte_holder[0], NULL, 16);
+    globalDoorID.byte2 = (uint8_t)strtol(byte_holder[1], NULL, 16);
+    globalDoorID.byte1 = (uint8_t)strtol(byte_holder[2], NULL, 16);
 
     //write new global door ID to flash
     EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);
