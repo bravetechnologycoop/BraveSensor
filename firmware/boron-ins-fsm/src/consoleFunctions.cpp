@@ -229,7 +229,7 @@ int im21_door_id_set(String command) {
   }
 
   //get pointer to user-entered string
-  const char* checkForEcho = command.c_str(); printf("%s\n", command);
+  const char* checkForEcho = command.c_str();
 
   //if echo, publish current door ID
   if(*checkForEcho == 'e'){  
@@ -239,7 +239,7 @@ int im21_door_id_set(String command) {
 
     snprintf(buffer, sizeof(buffer), "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}", 
             doorIDHolder.byte1, doorIDHolder.byte2, doorIDHolder.byte3); 
-    Particle.publish("Current Door Sensor ID: ",buffer, PRIVATE);
+    Particle.publish("Current Door Sensor ID: ", buffer, PRIVATE);
 
     // put door ID in buffer for return value
     snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorIDHolder.byte1, doorIDHolder.byte2, doorIDHolder.byte3);
@@ -247,7 +247,7 @@ int im21_door_id_set(String command) {
   else //else not echo, so we have a new door ID to parse
   {
     //parse input string and update global door ID 
-    /*const char* byteholder1;
+    const char* byteholder1;
     const char* byteholder2;
     const char* byteholder3;
     int split1 = command.indexOf(','); 
@@ -256,9 +256,9 @@ int im21_door_id_set(String command) {
     int split2 = command.indexOf(',', split1 + 1);
     byteholder2 = command.substring(split1 + 1, split2).c_str(); printf("%s\n", byteholder2);
     globalDoorID.byte2 = (uint8_t)strtol(byteholder2, NULL, 16);
-    int split3 = command.indexOf(',', split2 +1 );
+    int split3 = command.indexOf(',', split2 + 1);
     byteholder3 = command.substring(split2 + 1, split3).c_str(); printf("%s\n", byteholder3);
-    globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);*/
+    globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);
 
     //write new global door ID to flash
     EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);
