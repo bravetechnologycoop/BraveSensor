@@ -48,7 +48,6 @@ bool isValidIM21Id(String input) {
 }
 
 int toggle_debugging_publishes(String command){
-
   //default to invalid input
   int returnFlag = -1;
 
@@ -59,6 +58,10 @@ int toggle_debugging_publishes(String command){
   if(*(holder+1) != 0){
     //any string longer than 1 char is invalid input, so
     returnFlag = -1;
+  }
+  // if e, echo whether debug publishes are on
+  else if (*holder == 'e') {
+    returnFlag = (int)stateMachineDebugFlag;
   }
   else if(*holder == '0'){
     stateMachineDebugFlag = false;
@@ -228,14 +231,14 @@ int im21_door_id_set(String command) {
     return -1;
   }
 
-  //get pointer to user-entered string
+  // get pointer to user-entered string
   const char* checkForEcho = command.c_str();
 
-  //if echo, publish current door ID
+  // if echo, publish current door ID
   if(*checkForEcho == 'e'){  
     EEPROM.get(ADDR_IM_DOORID, doorIDHolder.byte1);  
-    EEPROM.get((ADDR_IM_DOORID+1), doorIDHolder.byte2);  
-    EEPROM.get((ADDR_IM_DOORID+2), doorIDHolder.byte3);  
+    EEPROM.get((ADDR_IM_DOORID + 1), doorIDHolder.byte2);  
+    EEPROM.get((ADDR_IM_DOORID + 2), doorIDHolder.byte3);  
 
     snprintf(buffer, sizeof(buffer), "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}", 
             doorIDHolder.byte1, doorIDHolder.byte2, doorIDHolder.byte3); 
@@ -244,47 +247,36 @@ int im21_door_id_set(String command) {
     // put door ID in buffer for return value
     snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorIDHolder.byte1, doorIDHolder.byte2, doorIDHolder.byte3);
   } 
-  else //else not echo, so we have a new door ID to parse
+  else // else not echo, so we have a new door ID to parse
   {
-    /*char* byte_holder[4];
-    char* command_c_string = std::strcpy(command_c_string, command.c_str());
-    char* token = std::strtok(command_c_string, ",");
-    int counter = 0;*/
+    // parse input string and update global door ID 
+    char* byteholder1;
+    char* byteholder2;
+    char* byteholder3;
 
-    //parse input string and update global door ID 
-    const char* byteholder1;
-    const char* byteholder2;
-    const char* byteholder3;
-    int split1 = command.indexOf(','); 
-    byteholder1 = command.substring(0, split1).c_str();
-    globalDoorID.byte3 = (uint8_t)strtol(byteholder1, NULL, 16);
+    int split1 = command.indexOf(',');                                // get index of first comma to delimit input
+    byteholder1 = strdup(command.substring(0, split1).c_str());       // get first byte of input and copy to holder variable
+    globalDoorID.byte3 = (uint8_t)strtol(byteholder1, NULL, 16);      // convert it to hex and set the third byte of the door ID
+
     int split2 = command.indexOf(',', split1 + 1);
-    byteholder2 = command.substring(split1 + 1, split2).c_str();
+    byteholder2 = strdup(command.substring(split1 + 1, split2).c_str());
     globalDoorID.byte2 = (uint8_t)strtol(byteholder2, NULL, 16);
+
     int split3 = command.indexOf(',', split2 + 1);
-    byteholder3 = command.substring(split2 + 1, split3).c_str();
+    byteholder3 = strdup(command.substring(split2 + 1, split3).c_str());
     globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);
-
-    /*while (token != NULL) {
-      byte_holder[counter++] = token;
-      token = std::strtok(NULL, ",");
-    }
-
-    globalDoorID.byte3 = (uint8_t)strtol(byte_holder[0], NULL, 16);
-    globalDoorID.byte2 = (uint8_t)strtol(byte_holder[1], NULL, 16);
-    globalDoorID.byte1 = (uint8_t)strtol(byte_holder[2], NULL, 16);*/
 
     //write new global door ID to flash
     EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);
-    EEPROM.put((ADDR_IM_DOORID+1), globalDoorID.byte2);
-    EEPROM.put((ADDR_IM_DOORID+2), globalDoorID.byte3);
+    EEPROM.put((ADDR_IM_DOORID + 1), globalDoorID.byte2);
+    EEPROM.put((ADDR_IM_DOORID + 2), globalDoorID.byte3);
 
     // put door ID in buffer for return value
     snprintf(buffer, sizeof(buffer), "%02X%02X%02X", globalDoorID.byte1, globalDoorID.byte2, globalDoorID.byte3);
   
-  } //end if-else
+  } // end if-else
 
-  // return as int
+  // return door ID as int
   return (int)strtol(buffer, NULL, 16);
 }
 

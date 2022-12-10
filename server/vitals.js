@@ -7,7 +7,6 @@ const { t } = require('i18next')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
-const redis = require('./db/redis')
 const db = require('./db/db')
 
 let braveAlerter
@@ -21,10 +20,6 @@ function differenceInSeconds(date1, date2) {
 
 function setupVitals(braveAlerterObj) {
   braveAlerter = braveAlerterObj
-}
-
-function convertToSeconds(milliseconds) {
-  return Math.floor(milliseconds / 1000)
 }
 
 async function sendSingleAlert(locationid, message, pgClient) {
@@ -80,48 +75,6 @@ async function checkHeartbeat() {
   const subsequentVitalsAlertThresholdSeconds = helpers.getEnvVar('SUBSEQUENT_VITALS_ALERT_THRESHOLD')
 
   const currentDBTime = await db.getCurrentTime()
-
-  const backendStateMachineLocations = await db.getActiveServerStateMachineLocations()
-  for (const location of backendStateMachineLocations) {
-    if (!location.client.isActive || !location.isActive) {
-      continue
-    }
-
-    try {
-      const xeThruData = await redis.getLatestXeThruSensorData(location.locationid)
-      const latestRadar = convertToSeconds(xeThruData.timestamp)
-      const doorData = await redis.getLatestDoorSensorData(location.locationid)
-      const latestDoor = convertToSeconds(doorData.timestamp)
-      const currentRedisTime = await redis.getCurrentTimeinSeconds()
-      const radarDelay = currentRedisTime - latestRadar
-      const doorDelay = currentRedisTime - latestDoor
-
-      const doorHeartbeatExceeded = doorDelay > doorThresholdSeconds
-      const radarHeartbeatExceeded = radarDelay > radarThresholdSeconds
-
-      if (doorHeartbeatExceeded || radarHeartbeatExceeded) {
-        if (location.sentVitalsAlertAt === null) {
-          if (doorHeartbeatExceeded) {
-            helpers.logSentry(`Door sensor down at ${location.locationid}`)
-          }
-          if (radarHeartbeatExceeded) {
-            helpers.logSentry(`Radar sensor down at ${location.locationid}`)
-          }
-          await db.updateSentAlerts(location.locationid, true)
-          sendDisconnectionMessage(location.locationid, location.displayName, location.client.language)
-        } else if (currentDBTime - location.sentVitalsAlertAt > subsequentVitalsAlertThresholdSeconds * 1000) {
-          await db.updateSentAlerts(location.locationid, true)
-          sendDisconnectionReminder(location.locationid, location.displayName, location.client.language)
-        }
-      } else if (location.sentVitalsAlertAt !== null) {
-        helpers.logSentry(`${location.locationid} reconnected`)
-        await db.updateSentAlerts(location.locationid, false)
-        sendReconnectionMessage(location.locationid, location.displayName, location.client.language)
-      }
-    } catch (err) {
-      helpers.logError(`Error checking heartbeat: ${err.toString()}`)
-    }
-  }
 
   const firmwareStateMachineLocations = await db.getActiveFirmwareStateMachineLocations()
   for (const location of firmwareStateMachineLocations) {

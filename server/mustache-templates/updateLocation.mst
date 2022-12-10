@@ -44,12 +44,6 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="doorCoreID" class="col-sm-3 col-form-label">Door Particle Core ID:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="doorCoreID" placeholder="Door Particle Core ID" value="{{doorCoreId}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="radarCoreID" class="col-sm-3 col-form-label">Radar Particle Core ID:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="radarCoreID" placeholder="Radar Particle Core ID" value="{{radarCoreId}}" required>
@@ -91,13 +85,6 @@
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="isActive" value="{{isActive}}" required pattern="(true|false)">
                         <small id="isActiveHelp" class="form-text text-muted">"true" or "false"</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="firmwareStateMachine" class="col-sm-3 col-form-label">Does this Location use a firmware state machine?</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="firmwareStateMachine" value="{{firmwareStateMachine}}" required pattern="(true|false)">
-                        <small id="firmwareStateMachineHelp" class="form-text text-muted">"true" or "false"</small>
                     </div>
                 </div>
                 <br>

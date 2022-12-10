@@ -52,8 +52,6 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await locationDBFactory(db, {
         locationid: testLocation1Id,
         radarCoreId: radar_coreID,
-        doorCoreId: radar_coreID,
-        firmwareStateMachine: true,
         clientId: client.id,
       })
 
@@ -113,8 +111,6 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await locationDBFactory(db, {
         locationid: testLocation1Id,
         radarCoreId: radar_coreID,
-        doorCoreId: radar_coreID,
-        firmwareStateMachine: true,
         sentLowBatteryAlertAt: firstLowBatteryAlert,
         clientId: client.id,
       })

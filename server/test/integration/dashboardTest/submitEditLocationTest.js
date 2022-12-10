@@ -53,7 +53,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       this.goodRequest = {
         displayName: 'New Name',
-        doorCoreID: 'new_door_core',
         radarCoreID: 'new_radar_core',
         twilioPhone: '+11112223456',
         movementThreshold: 15,
@@ -62,7 +61,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         initialTimer: 9856,
         alertApiKey: 'newApiKey',
         isActive: 'true',
-        firmwareStateMachine: 'false',
         clientId: this.client.id,
       }
 
@@ -77,11 +75,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
 
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
-      expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID)
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
       expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
       expect(updatedLocation.isActive).to.be.true
-      expect(updatedLocation.firmwareStateMachine).to.be.false
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
       chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
@@ -100,7 +96,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       this.goodRequest = {
         displayName: ' New Name ',
-        doorCoreID: '  new_door_core  ',
         radarCoreID: '   new_radar_core ',
         twilioPhone: '    +11112223456    ',
         movementThreshold: '    15    ',
@@ -109,7 +104,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         initialTimer: ' 9856 ',
         alertApiKey: '  newApiKey   ',
         isActive: '    true     ',
-        firmwareStateMachine: ' false ',
         clientId: `   ${this.client.id}   `,
       }
 
@@ -124,11 +118,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
 
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName.trim())
-      expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID.trim())
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID.trim())
       expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone.trim())
       expect(updatedLocation.isActive).to.be.true
-      expect(updatedLocation.firmwareStateMachine).to.be.false
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId.trim())
 
       chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold.trim())
@@ -147,7 +139,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       this.goodRequest = {
         displayName: 'New Name',
-        doorCoreID: 'new_door_core',
         radarCoreID: 'new_radar_core',
         twilioPhone: '+11112223456',
         movementThreshold: 15,
@@ -156,7 +147,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         initialTimer: 9856,
         alertApiKey: 'newApiKey',
         isActive: 'false',
-        firmwareStateMachine: 'false',
         clientId: this.client.id,
       }
 
@@ -171,11 +161,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
 
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
-      expect(updatedLocation.doorCoreId).to.equal(this.goodRequest.doorCoreID)
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
       expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
       expect(updatedLocation.isActive).to.be.false
-      expect(updatedLocation.firmwareStateMachine).to.be.false
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
       chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
@@ -195,7 +183,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       this.clientId = '8244c552-6753-4713-bbb6-07ad1c7fb8f8'
       this.goodRequest = {
         displayName: 'New Name',
-        doorCoreID: 'new_door_core',
         radarCoreID: 'new_radar_core',
         twilioPhone: '+11112223456',
         movementThreshold: 15,
@@ -204,7 +191,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         initialTimer: 9856,
         alertApiKey: 'newApiKey',
         isActive: 'true',
-        firmwareStateMachine: 'false',
         clientId: this.clientId,
       }
 
@@ -236,7 +222,6 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       const badRequest = {
         displayName: '',
-        doorCoreID: '',
         radarCoreID: '',
         twilioPhone: '',
         movementThreshold: '',
@@ -261,7 +246,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -293,7 +278,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),clientId (Invalid value)`,
       )
     })
   })

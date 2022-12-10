@@ -17,15 +17,22 @@ public:
     MockEEPROM() {}
 
     template <typename T>
-    void get(int const _address, T& data)
-    {
+    void get(int const _address, T& data) {
+        if (_address >= BORON_EEPROM_SIZE) {
+            return;
+        }
+
         memcpy(&data, mockMemory + _address, sizeof(data));
     }
 
     template <typename T>
-    void put(int const _address, T const& _data)
-    {
+    void put(int const _address, T const& _data) {
+        if (_address >= BORON_EEPROM_SIZE) {
+            return;
+        }
+
         memcpy(mockMemory + _address, &_data, sizeof(_data));
     }
 };
+
 extern MockEEPROM EEPROM;
