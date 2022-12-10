@@ -4,6 +4,9 @@
 #include "../src/consoleFunctions.h"
 #include "../src/flashAddresses.h"
 
+// Define globalDoorID only for console function tests
+IMDoorID globalDoorID;
+
 SCENARIO( "Turn_Debugging_Publishes_On_Off", "[toggle debug flag]" ) {
 
     GIVEN( "A false debug flag" ) {
