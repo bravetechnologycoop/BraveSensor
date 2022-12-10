@@ -1,7 +1,7 @@
 /*
-Mock EEPROM memory for Particle Boron
-Reference: https://docs.particle.io/reference/device-os/api/eeprom/eeprom/
-The Boron has 4096 bytes of emulated EEPROM.
+ * Mock EEPROM memory for Particle Boron
+ * Reference: https://docs.particle.io/reference/device-os/api/eeprom/eeprom/
+ * The Boron has 4096 bytes of emulated EEPROM.
 */
 
 #pragma once
