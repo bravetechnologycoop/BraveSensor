@@ -4,6 +4,9 @@
 #include "../src/consoleFunctions.h"
 #include "../src/flashAddresses.h"
 
+// Define globalDoorID only for console function tests
+IMDoorID globalDoorID;
+
 SCENARIO( "Turn_Debugging_Publishes_On_Off", "[toggle debug flag]" ) {
 
     GIVEN( "A false debug flag" ) {
@@ -44,6 +47,14 @@ SCENARIO( "Turn_Debugging_Publishes_On_Off", "[toggle debug flag]" ) {
                 REQUIRE( returnVal == -1 );
             }
         }
+
+        WHEN("The function is called with 'e'") {
+            int returnVal = toggle_debugging_publishes("e");   
+
+            THEN("The function should return whether debugging publishes are turned on, in this case, false") {
+                REQUIRE(returnVal == 0);
+            }
+        }
     }
 
     GIVEN( "A true debug flag" ) {
@@ -82,6 +93,14 @@ SCENARIO( "Turn_Debugging_Publishes_On_Off", "[toggle debug flag]" ) {
 
             THEN( "the return value should be -1" ) {
                 REQUIRE( returnVal == -1 );
+            }
+        }
+
+        WHEN("The function is called with 'e'") {
+            int returnVal = toggle_debugging_publishes("e");   
+
+            THEN("The function should return whether debugging publishes are turned on, in this case, true") {
+                REQUIRE(returnVal == 1);
             }
         }
     }

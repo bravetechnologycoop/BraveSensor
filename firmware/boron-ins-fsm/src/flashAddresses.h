@@ -26,9 +26,9 @@
 #define ADDR_STATE2_MAX_DURATION 12		
 #define ADDR_STATE3_MAX_STILLNES_TIME 16
 
-//im21 door sensor ID
+// IM Door Sensor ID
 //struct with three unsigned chars (uint8_t)
-#define ADDR_IM21_DOORID 20	
+#define ADDR_IM_DOORID 20	
 
 //next available address is 20 + 3 = 23
 

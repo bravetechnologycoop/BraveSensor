@@ -46,17 +46,13 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
       this.locationid = 'unusedID'
       this.displayName = 'locationName'
-      this.doorCoreId = 'door_coreID'
       this.radarCoreId = 'radar_coreID'
       this.twilioNumber = '+15005550006'
-      this.firmwareStateMachine = false
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
-        doorCoreID: this.doorCoreId,
         radarCoreID: this.radarCoreId,
         twilioPhone: this.twilioNumber,
-        firmwareStateMachine: this.firmwareStateMachine.toString(),
         clientId: this.client.id,
       }
 
@@ -73,18 +69,14 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       expect({
         locationid: newLocation.locationid,
         displayName: newLocation.displayName,
-        doorCoreId: newLocation.doorCoreId,
         radarCoreId: newLocation.radarCoreId,
         twilioNumber: newLocation.twilioNumber,
-        firmwareStateMachine: newLocation.firmwareStateMachine,
         clientId: newLocation.client.id,
       }).to.eql({
         locationid: this.locationid,
         displayName: this.displayName,
-        doorCoreId: this.doorCoreId,
         radarCoreId: this.radarCoreId,
         twilioNumber: this.twilioNumber,
-        firmwareStateMachine: this.firmwareStateMachine,
         clientId: this.client.id,
       })
     })
@@ -99,17 +91,13 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
       this.locationid = ' unusedID '
       this.displayName = '  locationName  '
-      this.doorCoreId = '   door_coreID   '
       this.radarCoreId = '    radar_coreID    '
       this.twilioNumber = '   +15005550006    '
-      this.firmwareStateMachine = false
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
-        doorCoreID: this.doorCoreId,
         radarCoreID: this.radarCoreId,
         twilioPhone: this.twilioNumber,
-        firmwareStateMachine: `  ${this.firmwareStateMachine.toString()} `,
         clientId: `  ${this.client.id}   `,
       }
 
@@ -126,18 +114,14 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       expect({
         locationid: newLocation.locationid,
         displayName: newLocation.displayName,
-        doorCoreId: newLocation.doorCoreId,
         radarCoreId: newLocation.radarCoreId,
         twilioNumber: newLocation.twilioNumber,
-        firmwareStateMachine: newLocation.firmwareStateMachine,
         clientId: newLocation.client.id,
       }).to.eql({
         locationid: this.locationid.trim(),
         displayName: this.displayName.trim(),
-        doorCoreId: this.doorCoreId.trim(),
         radarCoreId: this.radarCoreId.trim(),
         twilioNumber: this.twilioNumber.trim(),
-        firmwareStateMachine: this.firmwareStateMachine,
         clientId: this.client.id.trim(),
       })
     })
@@ -156,10 +140,8 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       const goodRequest = {
         locationid: 'unusedID',
         displayName: 'locationName',
-        doorCoreID: 'door_coreID',
         radarCoreID: 'radar_coreID',
         twilioPhone: '+15005550006',
-        firmwareStateMachine: 'false',
         clientId: this.clientId,
       }
 
@@ -186,10 +168,8 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       const goodRequest = {
         locationid: 'unusedID',
         displayName: 'locationName',
-        doorCoreID: 'door_coreID',
         radarCoreID: 'radar_coreID',
         twilioPhone: '+15005550006',
-        firmwareStateMachine: 'false',
         clientId: '91ddc8f7-c2e7-490e-bfe9-3d2880a76108',
       }
 
@@ -221,10 +201,8 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       const badRequest = {
         locationid: '',
         displayName: '',
-        doorCoreID: '',
         radarCoreID: '',
         twilioPhone: '',
-        firmwareStateMachine: '',
         clientId: '',
       }
 
@@ -241,7 +219,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -268,7 +246,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),doorCoreID (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),firmwareStateMachine (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -291,10 +269,8 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       const duplicateLocationRequest = {
         locationid: this.locationid,
         displayName: 'locationName',
-        doorCoreID: 'door_coreID',
         radarCoreID: 'radar_coreID',
         twilioPhone: '+15005550006',
-        firmwareStateMachine: 'false',
         clientId: this.client.id,
       }
 

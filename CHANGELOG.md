@@ -13,8 +13,29 @@ the code was deployed.
 
 ### Changed
 
+- Travis CI to run new unit tests as a part of the build process. 
+
+### Added
+
+- Mock header files allowing unit tests to be compiled (CU-2y84mrc).
+- Unit tests for some IM door sensor functions.
+- Unit tests for some INS3331 functions.
+- Echo functionality for toggle debugging publishes cloud function (CU-3zybq3y).
+
+### Removed
+
+- XeThru + SSM smoke test (CU-m0we0t).
+
+## [6.4.0] - 2022-11-08
+
+### Changed
+
 - Production deployment instructions in the README.
 - Created string_convert namespace for string_convert.cpp functions.
+
+### Added
+
+- Ability to scan for and receive advertising data from IM24 door sensors (CU-3644bwf).
 
 ## [6.3.0] - 2022-08-22
 
@@ -424,7 +445,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.3.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.4.0...HEAD
+[6.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.3.0...v6.4.0
 [6.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.2.0...v6.3.0
 [6.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.1.0...v6.2.0
 [6.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.0.0...v6.1.0
