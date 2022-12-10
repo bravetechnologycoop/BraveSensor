@@ -4,17 +4,7 @@
  */
 
 #include "stateMachine.h"
-<<<<<<< HEAD
-
-#include <queue>
-
-#include "Particle.h"
-#include "debugFlags.h"
-#include "flashAddresses.h"
-#include "im21door.h"
-=======
 #include "imDoorSensor.h"
->>>>>>> 779f92df87eb9ef6fef4af4f56c80ed4f493b3bb
 #include "ins3331.h"
 
 // define and initialize state machine pointer
@@ -84,17 +74,10 @@ void state0_idle() {
   // scan inputs
   doorData checkDoor;
   filteredINSData checkINS;
-<<<<<<< HEAD
   // this returns the previous door event value until a new door event is
   // received on code boot up it initializes to returning 0x99
   checkDoor = checkIM21();
   // this returns 0.0 if the INS has no new data to transmit
-=======
-  //this returns the previous door event value until a new door event is received
-  //on code boot up it initializes to returning INITIAL_DOOR_STATUS
-  checkDoor = checkIM();
-  //this returns 0.0 if the INS has no new data to transmit
->>>>>>> 779f92df87eb9ef6fef4af4f56c80ed4f493b3bb
   checkINS = checkINS3331();
 
   // do stuff in the state
@@ -103,20 +86,10 @@ void state0_idle() {
   digitalWrite(D4, LOW);
   digitalWrite(D5, LOW);
 
-<<<<<<< HEAD
   Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f",
            checkDoor.doorStatus, checkINS.iAverage);
   // default timer to 0 when state doesn't have a timer
   publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, 0);
-=======
-  Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f",checkDoor.doorStatus, checkINS.iAverage);
-  //default timer to 0 when state doesn't have a timer
-  publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, 0); 
-
-  //fix outputs and state exit conditions accordingly
-  if(((unsigned long)checkINS.iAverage > ins_threshold) && !isDoorOpen(checkDoor.doorStatus)
-      && !isDoorStatusUnknown(checkDoor.doorStatus)) {
->>>>>>> 779f92df87eb9ef6fef4af4f56c80ed4f493b3bb
 
   // fix outputs and state exit conditions accordingly
   if (((unsigned long)checkINS.iAverage > ins_threshold) &&
@@ -139,17 +112,10 @@ void state1_15sCountdown() {
   // scan inputs
   doorData checkDoor;
   filteredINSData checkINS;
-<<<<<<< HEAD
   // this returns the previous door event value until a new door event is
   // received on code boot up it initializes to returning 0x99
   checkDoor = checkIM21();
   // this returns 0.0 if the INS has no new data to transmit
-=======
-  //this returns the previous door event value until a new door event is received
-  //on code boot up it initializes to returning INITIAL_DOOR_STATUS
-  checkDoor = checkIM();
-  //this returns 0.0 if the INS has no new data to transmit
->>>>>>> 779f92df87eb9ef6fef4af4f56c80ed4f493b3bb
   checkINS = checkINS3331();
 
   // do stuff in the state
@@ -194,17 +160,10 @@ void state2_duration() {
   // scan inputs
   doorData checkDoor;
   filteredINSData checkINS;
-<<<<<<< HEAD
   // this returns the previous door event value until a new door event is
   // received on code boot up it initializes to returning 0x99
   checkDoor = checkIM21();
   // this returns 0.0 if the INS has no new data to transmit
-=======
-  //this returns the previous door event value until a new door event is received
-  //on code boot up it initializes to returning INITIAL_DOOR_STATUS
-  checkDoor = checkIM();
-  //this returns 0.0 if the INS has no new data to transmit
->>>>>>> 779f92df87eb9ef6fef4af4f56c80ed4f493b3bb
   checkINS = checkINS3331();
 
   // do stuff in the state
@@ -255,17 +214,10 @@ void state3_stillness() {
   // scan inputs
   doorData checkDoor;
   filteredINSData checkINS;
-<<<<<<< HEAD
   // this returns the previous door event value until a new door event is
   // received on code boot up it initializes to returning 0x99
   checkDoor = checkIM21();
   // this returns 0.0 if the INS has no new data to transmit
-=======
-  //this returns the previous door event value until a new door event is received
-  //on code boot up it initializes to returning INITIAL_DOOR_STATUS
-  checkDoor = checkIM();
-  //this returns 0.0 if the INS has no new data to transmit
->>>>>>> 779f92df87eb9ef6fef4af4f56c80ed4f493b3bb
   checkINS = checkINS3331();
 
   // do stuff in the state
@@ -398,76 +350,6 @@ const char *resetReasonString(int resetReason) {
   }
 }
 
-<<<<<<< HEAD
-void getHeartbeat() {
-  static unsigned long lastHeartbeatPublish = 0;
-  // 1st "if condition" is so that the boron publishes a heartbeat on startup
-  // 2nd "if condition" is so that the boron publishes a heartbeat, when the
-  // doorMessageReceivedFlag is true.
-  //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat
-  //     publish to 1 instead of 3 beacuase IM21 broadcast 3 messages The
-  //     doorMessageReceivedFlag is set to true when a any IM21 message is
-  //     received but only after a certain threshold
-  // 3rd "if condition" is true only if a heartbeat hasnt been published in the
-  // last SM_HEARTBEAT_INTERVAL
-  if (lastHeartbeatPublish == 0 ||
-      (doorMessageReceivedFlag &&
-       millis() - doorHeartbeatReceived >= HEARTBEAT_PUBLISH_DELAY) ||
-      (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) {
-    // from particle docs, max length of publish is 622 chars, I am assuming
-    // this includes null char
-    char heartbeatMessage[622] = {0};
-    JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
-    writer.beginObject();
-    // logs number of instances of missed door events since last heartbeat
-    writer.name("doorMissedMsg").value(missedDoorEventCount);
-    missedDoorEventCount = 0;
-
-    // logs whether door sensor is low battery
-    writer.name("doorLowBatt").value(doorLowBatteryFlag);
-
-    // logs time in millis since last IM21 message was received, the particle
-    // name is a bit misleading but we have left it because the server uses
-    // "doorLastHeartbeat" to check if the IM21 sensor has disconnected
-    writer.name("doorLastHeartbeat")
-        .value((unsigned int)(millis() - doorLastMessage));
-
-    // logs the reason of the last reset
-    writer.name("resetReason").value(resetReasonString(resetReason));
-    // subsequent heartbeats will not display reset reason
-    resetReason = RESET_REASON_NONE;
-
-    // logs each state, reason of transitioning away, and time spent in state
-    // (ms)
-    writer.name("states").beginArray();
-    int numStates = stateQueue.size();
-    for (int i = 0; i < numStates; i++) {
-      // If heartbeat message is near full, break, report rest of states in next
-      // heartbeat
-      if (writer.dataSize() >= HEARTBEAT_STATES_CUTOFF) {
-        Log.warn(
-            "Heartbeat message full, remaining states will be reported next "
-            "heartbeat");
-        break;
-      }
-      writer.beginArray()
-          .value(stateQueue.front())
-          .value(reasonQueue.front())
-          .value((unsigned int)timeQueue.front())
-          .endArray();
-      stateQueue.pop();
-      reasonQueue.pop();
-      timeQueue.pop();
-    }                    // end states queue for
-    writer.endArray();   // end states array
-    writer.endObject();  // end heartbeat message
-    Particle.publish("Heartbeat", heartbeatMessage, PRIVATE);
-    Log.warn(heartbeatMessage);
-    lastHeartbeatPublish = millis();
-    doorMessageReceivedFlag = false;
-  }
-}
-=======
 void getHeartbeat(){
 
     static unsigned long lastHeartbeatPublish = 0;
@@ -523,4 +405,3 @@ void getHeartbeat(){
       doorMessageReceivedFlag = false;
     }
 }
->>>>>>> 779f92df87eb9ef6fef4af4f56c80ed4f493b3bb
