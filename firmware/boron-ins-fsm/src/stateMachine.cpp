@@ -27,6 +27,8 @@ unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
 //contents will initialize this to "on"
 bool stateMachineDebugFlag = false;
 int resetReason = System.resetReason();
+// record whether a duration alert has been sent within the same session
+bool hasDurationAlertBeenSent;
 
 std::queue<int> stateQueue;
 std::queue<int> reasonQueue;
@@ -44,6 +46,8 @@ void setupStateMachine(){
   //default to not publishing debug logs
   stateMachineDebugFlag = 0;
 
+  // default to no duration alert sent
+  hasDurationAlertBeenSent = 0;
 }
 
 void initializeStateMachineConsts(){
@@ -208,16 +212,18 @@ void state2_duration(){
     Log.warn("Door opened, session over, going to idle from state2_duration");
     publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
     saveStateChange(2, 2);
+    hasDurationAlertBeenSent = 0; // session is over, so reset flag
     stateHandler = state0_idle;
-
   }
-  else if(millis() - state2_duration_timer >= state2_max_duration){
+  else if((millis() - state2_duration_timer >= state2_max_duration)
+          && !hasDurationAlertBeenSent){
 
     Log.warn("See duration alert, going from state2_duration to idle after alert publish");
     publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
     saveStateChange(2, 4);
     Log.error("Duration Alert!!");
     Particle.publish("Duration Alert", "duration alert", PRIVATE);
+    hasDurationAlertBeenSent = 1; // a duration alert has been sent, so do not send another one
     stateHandler = state2_duration;
   }
   else {
@@ -260,16 +266,18 @@ void state3_stillness(){
     Log.warn("door opened, session over, going from state3_stillness to idle");
     publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
     saveStateChange(3, 2);
+    hasDurationAlertBeenSent = 0; // session is over, so reset flag
     stateHandler = state0_idle;
-
   }
-  else if(millis() - state2_duration_timer >= state2_max_duration){
+  else if((millis() - state2_duration_timer >= state2_max_duration)
+          && !hasDurationAlertBeenSent){
 
     Log.warn("See duration alert, going from state3 to idle after alert publish");
     publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
     saveStateChange(3, 4);
     Log.error("Duration Alert!!");
     Particle.publish("Duration Alert", "duration alert", PRIVATE);
+    hasDurationAlertBeenSent = 1; // a duration alert has been sent, so do not send another one
     stateHandler = state2_duration;
   }
   else if(millis() - state3_stillness_timer >= state3_max_stillness_time){
