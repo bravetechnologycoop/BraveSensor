@@ -218,7 +218,7 @@ void state2_duration(){
     saveStateChange(2, 4);
     Log.error("Duration Alert!!");
     Particle.publish("Duration Alert", "duration alert", PRIVATE);
-    stateHandler = state0_idle;
+    stateHandler = state2_duration;
   }
   else {
     //if we don't meet the exit conditions above hang out here
@@ -270,7 +270,7 @@ void state3_stillness(){
     saveStateChange(3, 4);
     Log.error("Duration Alert!!");
     Particle.publish("Duration Alert", "duration alert", PRIVATE);
-    stateHandler = state0_idle;
+    stateHandler = state2_duration;
   }
   else if(millis() - state3_stillness_timer >= state3_max_stillness_time){
 
@@ -279,7 +279,7 @@ void state3_stillness(){
     saveStateChange(3, 5);
     Log.error("Stillness Alert!!");
     Particle.publish("Stillness Alert", "stillness alert!!!", PRIVATE);
-    stateHandler = state2_duration;
+    stateHandler = state3_stillness;
   }
   else {
     //if we don't meet the exit conditions above, we remain here
