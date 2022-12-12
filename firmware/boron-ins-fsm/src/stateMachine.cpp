@@ -279,6 +279,7 @@ void state3_stillness(){
     saveStateChange(3, 5);
     Log.error("Stillness Alert!!");
     Particle.publish("Stillness Alert", "stillness alert!!!", PRIVATE);
+    state3_stillness_timer = millis();  // reset the stillness timer
     stateHandler = state3_stillness;
   }
   else {
