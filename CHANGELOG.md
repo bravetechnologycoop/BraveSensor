@@ -14,6 +14,8 @@ the code was deployed.
 ### Changed
 
 - Travis CI to run new unit tests as a part of the build process. 
+- Sensor state machine to reset stillness timer and transition back to stillness state after receiving a stillness alert (CU-39w5av5).
+- Sensor state machine to transition back to duration state after receiving a duration alert (CU-39w5av5).
 
 ### Added
 
