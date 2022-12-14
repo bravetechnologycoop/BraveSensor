@@ -7,7 +7,7 @@
 #pragma once
 
 #define BORON_EEPROM_SIZE 4096
-#define BYTES_PER_ELEMENT 8
+#define BYTES_PER_ELEMENT 4
 
 class MockEEPROM
 {
