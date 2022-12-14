@@ -54,6 +54,12 @@ From version 4.2.0 onwards, we will use the following: For any given server vers
 - `v4.10.5` => `41005`
 - `v11.6.12` => `110612`
 
+From version 7.0.0 onwards, we will use the following: For any given server version `AA.BB.C`, the firmware version will be `AABBC`. Since the firmware version is stored in a uint16_t, the previous versioning schema would overflow. Some examples:
+
+- `v4.2.0` => `4020`
+- `v4.10.5` => `4105`
+- `v11.6.12` => assumed to never reach two-digit patch version
+
 # Particle Project Structure
 
 Every Particle project is composed of 3 important elements.
