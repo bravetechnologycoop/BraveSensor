@@ -19,15 +19,15 @@
 #define ADDR_INITIALIZE_SM_CONSTS_FLAG 0  // uint16_t = 2 bytes
 #define ADDR_INITIALIZE_DOOR_ID_FLAG 2    // uint16_t = 2 bytes
 
-// state machine constants
-// these addresses store unsigned long variables, so allocate 8 bytes
+//state machine constants
+//all are uint32_t so 4 bytes each
 #define ADDR_INS_THRESHOLD 4   	  		    	
-#define ADDR_STATE1_MAX_TIME 12			        	
-#define ADDR_STATE2_MAX_DURATION 20		
-#define ADDR_STATE3_MAX_STILLNES_TIME 28
+#define ADDR_STATE1_MAX_TIME 8			        	
+#define ADDR_STATE2_MAX_DURATION 12		
+#define ADDR_STATE3_MAX_STILLNES_TIME 16
 
 // IM Door Sensor ID
-// struct with three unsigned chars (uint8_t)
-#define ADDR_IM_DOORID 36	
+//struct with three unsigned chars (uint8_t)
+#define ADDR_IM_DOORID 20
 
 #endif

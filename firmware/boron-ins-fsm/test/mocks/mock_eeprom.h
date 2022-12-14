@@ -7,11 +7,12 @@
 #pragma once
 
 #define BORON_EEPROM_SIZE 4096
+#define BYTES_PER_ELEMENT 16
 
 class MockEEPROM
 {
 private:
-    uint8_t mockMemory[BORON_EEPROM_SIZE];
+    uint8_t mockMemory[BORON_EEPROM_SIZE * BYTES_PER_ELEMENT];
 
 public:
     MockEEPROM() {}
@@ -22,7 +23,7 @@ public:
             return;
         }
 
-        memcpy(&data, mockMemory + _address, sizeof(data));
+        memcpy(&data, mockMemory + (_address * BYTES_PER_ELEMENT), BYTES_PER_ELEMENT);
     }
 
     template <typename T>
@@ -31,7 +32,7 @@ public:
             return;
         }
 
-        memcpy(mockMemory + _address, &_data, sizeof(_data));
+        memcpy(mockMemory + (_address * BYTES_PER_ELEMENT), &_data, BYTES_PER_ELEMENT);
     }
 };
 
