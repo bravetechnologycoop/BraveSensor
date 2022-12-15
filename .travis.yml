@@ -62,6 +62,7 @@ jobs:
       language: python
       script:
         - cd firmware/boron-ins-fsm && git diff -U0 --no-color --relative HEAD^ | clang-format-diff.py -p1 -i
+    - stage: 'firmware tests'
       language: cpp
       script:
         - cd test && g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
