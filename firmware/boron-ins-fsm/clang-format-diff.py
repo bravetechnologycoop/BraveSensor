@@ -54,6 +54,8 @@ def main():
                       'Mozilla, WebKit)')
   parser.add_argument('-binary', default='clang-format',
                       help='location of binary to use for clang-format')
+  parser.add_argument('-Werror', default=False,
+                      help='if set, changes formatting warnings to errors')
   args = parser.parse_args()
 
   # Extract changed lines for each file.
