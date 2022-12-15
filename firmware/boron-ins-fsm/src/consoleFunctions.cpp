@@ -155,14 +155,13 @@ int duration_timer_set(String input)
 }
 
 // returns stillness timer length if valid input is given, otherwise returns -1
-int stillness_timer_set(String input)
-{
+int stillness_timer_set(String input) {
     int returnFlag = -1;
 
-    const char* holder = input.c_str();
+const char* holder = input.c_str();
 
     // if e, echo the current threshold
-    if (*holder == 'e') {
+if (*holder == 'e') {
         EEPROM.get(ADDR_STATE3_MAX_STILLNES_TIME, state3_max_stillness_time);
         returnFlag = state3_max_stillness_time / 1000;
     }
