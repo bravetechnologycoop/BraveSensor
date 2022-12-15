@@ -61,7 +61,7 @@ jobs:
     - stage: 'code formatting'
       language: python
       script:
-        - cd firmware/boron-ins-fsm && git diff -U0 --no-color --relative HEAD^ | clang-format-diff.py -p1 -i
+        - cd firmware/boron-ins-fsm && git diff -U0 --no-color --relative HEAD^ | python clang-format-diff.py -p1 -i
     - stage: 'firmware tests'
       language: cpp
       script:
