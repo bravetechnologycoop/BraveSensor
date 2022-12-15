@@ -58,10 +58,10 @@ jobs:
         - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then npx audit-ci --config ./audit-ci.json; fi
         - npm run lint
         - sudo env "PATH=$PATH" npm test
-    - stage: 'code formatting'
+    - stage: 'code formatting checks'
       language: python
       script:
-        - cd firmware/boron-ins-fsm && git diff -U0 --no-color --relative HEAD^ | python clang-format-diff.py -p1 -Werror -dry-run
+        - cd firmware/boron-ins-fsm && python clang-format-check.py
     - stage: 'firmware tests'
       language: cpp
       script:
