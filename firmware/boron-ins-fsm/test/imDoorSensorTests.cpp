@@ -1,8 +1,8 @@
 #define CATCH_CONFIG_MAIN
+#include "base.h"
 #include "../src/flashAddresses.h"
 #include "../src/imDoorSensor.cpp"
 #include "../src/imDoorSensor.h"
-#include "base.h"
 
 #define NUMBER_OF_DOOR_STATUS_TEST_CASES 8
 
