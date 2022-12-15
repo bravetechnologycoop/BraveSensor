@@ -19,8 +19,7 @@
 #include "imDoorSensor.h"
 #include "stateMachine.h"
 
-void setupConsoleFunctions()
-{
+void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
     Particle.function("Force_Reset", force_reset);
     Particle.function("Turn_Debugging_Publishes_On_Off",
@@ -32,16 +31,14 @@ void setupConsoleFunctions()
     Particle.function("Change_IM21_Door_ID", im21_door_id_set);
 }
 
-bool isValidIM21Id(String input)
-{
+bool isValidIM21Id(String input) {
     if (input.equals("")) {
         return false;
     }
 
     if (input.equals("e")) {
         return true;
-    }
-    else {
+    } else {
         if (!(input.length() == 8)) {
             return false;
         }
@@ -50,8 +47,7 @@ bool isValidIM21Id(String input)
     return true;
 }
 
-int toggle_debugging_publishes(String command)
-{
+int toggle_debugging_publishes(String command) {
     // default to invalid input
     int returnFlag = -1;
 
@@ -66,16 +62,13 @@ int toggle_debugging_publishes(String command)
     // if e, echo whether debug publishes are on
     else if (*holder == 'e') {
         returnFlag = (int)stateMachineDebugFlag;
-    }
-    else if (*holder == '0') {
+    } else if (*holder == '0') {
         stateMachineDebugFlag = false;
         returnFlag = 0;
-    }
-    else if (*holder == '1') {
+    } else if (*holder == '1') {
         stateMachineDebugFlag = true;
         returnFlag = 1;
-    }
-    else {
+    } else {
         // anything else is bad input so
         returnFlag = -1;
     }
@@ -84,8 +77,7 @@ int toggle_debugging_publishes(String command)
 }
 
 // returns initial timer length if valid input is given, otherwise returns -1
-int initial_timer_set(String input)
-{
+int initial_timer_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
@@ -105,11 +97,9 @@ int initial_timer_set(String input)
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
-        }
-        else if (timeout < 0) {
+        } else if (timeout < 0) {
             returnFlag = -1;
-        }
-        else {
+        } else {
             EEPROM.put(ADDR_STATE1_MAX_TIME, timeout);
             state1_max_time = timeout;
             returnFlag = state1_max_time / 1000;
@@ -119,8 +109,7 @@ int initial_timer_set(String input)
 }
 
 // returns duration if valid input is given, otherwise returns -1
-int duration_timer_set(String input)
-{
+int duration_timer_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
@@ -140,11 +129,9 @@ int duration_timer_set(String input)
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
-        }
-        else if (timeout < 0) {
+        } else if (timeout < 0) {
             returnFlag = -1;
-        }
-        else {
+        } else {
             EEPROM.put(ADDR_STATE2_MAX_DURATION, timeout);
             state2_max_duration = timeout;
             returnFlag = state2_max_duration / 1000;
@@ -158,10 +145,10 @@ int duration_timer_set(String input)
 int stillness_timer_set(String input) {
     int returnFlag = -1;
 
-const char* holder = input.c_str();
+    const char* holder = input.c_str();
 
     // if e, echo the current threshold
-if (*holder == 'e') {
+    if (*holder == 'e') {
         EEPROM.get(ADDR_STATE3_MAX_STILLNES_TIME, state3_max_stillness_time);
         returnFlag = state3_max_stillness_time / 1000;
     }
@@ -175,11 +162,9 @@ if (*holder == 'e') {
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
-        }
-        else if (timeout < 0) {
+        } else if (timeout < 0) {
             returnFlag = -1;
-        }
-        else {
+        } else {
             EEPROM.put(ADDR_STATE3_MAX_STILLNES_TIME, timeout);
             state3_max_stillness_time = timeout;
             returnFlag = state3_max_stillness_time / 1000;
@@ -190,8 +175,7 @@ if (*holder == 'e') {
 }
 
 // returns threshold if valid input is given, otherwise returns -1
-int ins_threshold_set(String input)
-{
+int ins_threshold_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
@@ -209,11 +193,9 @@ int ins_threshold_set(String input)
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
-        }
-        else if (threshold < 0) {
+        } else if (threshold < 0) {
             returnFlag = -1;
-        }
-        else {
+        } else {
             EEPROM.put(ADDR_INS_THRESHOLD, threshold);
             ins_threshold = threshold;
             returnFlag = ins_threshold;
@@ -224,8 +206,7 @@ int ins_threshold_set(String input)
 }
 
 // particle console function to get/set door sensor ID
-int im21_door_id_set(String command)
-{  // command is a long string with all the config values
+int im21_door_id_set(String command) {  // command is a long string with all the config values
 
     if (isValidIM21Id(command) == false) {
         return -1;
@@ -246,8 +227,7 @@ int im21_door_id_set(String command)
                  "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}",
                  holder.byte1, holder.byte2, holder.byte3);
         Particle.publish("Current Door Sensor ID: ", buffer, PRIVATE);
-    }
-    else  // else not echo, so we have a new door ID to parse
+    } else  // else not echo, so we have a new door ID to parse
     {
         // parse input string and update global door ID
         const char* byteholder1;
@@ -273,8 +253,7 @@ int im21_door_id_set(String command)
     return 1;
 }
 
-int force_reset(String command)
-{
+int force_reset(String command) {
     // default to invalid input
     int returnFlag = -1;
 
@@ -285,8 +264,7 @@ int force_reset(String command)
     if (*(holder + 1) != 0) {
         // any string longer than 1 char is invalid input, so
         returnFlag = -1;
-    }
-    else if (*holder == '1') {
+    } else if (*holder == '1') {
         returnFlag = 1;
         bool msg_sent =
             Particle.publish("YOU SHALL NOT PANIC!!",
@@ -296,8 +274,7 @@ int force_reset(String command)
         if (msg_sent) {
             System.reset();
         }
-    }
-    else {
+    } else {
         // anything else is bad input so
         returnFlag = -1;
     }

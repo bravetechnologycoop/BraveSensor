@@ -12,39 +12,31 @@
 os_queue_t insQueue;
 
 // setup function & subfunctions
-void setupINS3331()
-{
-    // Create a queue. Each element is an unsigned char, there are 25 elements.
-    // Last parameter is always 0.
+void setupINS3331() {
+    // Create a queue. Each element is an unsigned char, there are 25 elements. Last parameter is always 0.
     os_queue_create(&insQueue, sizeof(rawINSData), 128, 0);
     // Create the thread
     new Thread("readINSThread", threadINSReader);
 }
 
 // in the future, checkINS3331() will become a thread
-filteredINSData checkINS3331()
-{
+filteredINSData checkINS3331() {
     rawINSData dataToParse;
     static CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> iBuffer, qBuffer;
     static float iSum = 0;
     static float qSum = 0;
     static filteredINSData returnINSData = {0, 0, 0};
 
-    // os_queue_take returns 0 on success, so if we get a value, dump it to
-    // circular buffer
-    if (os_queue_take(insQueue, &dataToParse, 0, 0) == 0)
-    {
+    // os_queue_take returns 0 on success, so if we get a value, dump it to circular buffer
+    if (os_queue_take(insQueue, &dataToParse, 0, 0) == 0) {
         // add absolute values to circular buffer for the rolling average
-        // since push() adds to the tail, adding beyond capacity causes the
-        // element at head to be overwritten and lost
+        // since push() adds to the tail, adding beyond capacity causes the element at head to be overwritten and lost
         iBuffer.push(abs(dataToParse.inPhase));
         qBuffer.push(abs(dataToParse.quadrature));
 
         // compute average of the first n data points by computing the full sum
-        if (iBuffer.size() == MOVING_AVERAGE_SAMPLE_SIZE)
-        {
-            for (int i = 0; i < MOVING_AVERAGE_SAMPLE_SIZE; i++)
-            {
+        if (iBuffer.size() == MOVING_AVERAGE_SAMPLE_SIZE) {
+            for (int i = 0; i < MOVING_AVERAGE_SAMPLE_SIZE; i++) {
                 iSum += iBuffer[i];
                 qSum += qBuffer[i];
             }
@@ -53,24 +45,19 @@ filteredINSData checkINS3331()
         }
 
         // compute subsequent averages by using sum = sum - oldVal + newVal
-        // note buffer size must be at least one greater than sample size to
-        // retain oldVal
-        if (iBuffer.size() == MOVING_AVERAGE_BUFFER_SIZE)
-        {
+        // note buffer size must be at least one greater than sample size to retain oldVal
+        if (iBuffer.size() == MOVING_AVERAGE_BUFFER_SIZE) {
             /*for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
-              Log.info("iBuf[%d], qBuf[%d]: %d,   %d",
-            i,i,iBuffer[i],qBuffer[i]);
+              Log.info("iBuf[%d], qBuf[%d]: %d,   %d", i,i,iBuffer[i],qBuffer[i]);
             }
             */
             iSum = iSum - iBuffer[0] + iBuffer[MOVING_AVERAGE_BUFFER_SIZE - 1];
             qSum = qSum - qBuffer[0] + qBuffer[MOVING_AVERAGE_BUFFER_SIZE - 1];
             returnINSData.iAverage = iSum / MOVING_AVERAGE_SAMPLE_SIZE;
             returnINSData.qAverage = qSum / MOVING_AVERAGE_SAMPLE_SIZE;
-            // record the time this value was removed from the queue and
-            // calculated
+            // record the time this value was removed from the queue and calculated
             returnINSData.timestamp = millis();
-            // Log.info("iAverage = %f, qAverage = %f", returnINSData.iAverage,
-            // returnINSData.qAverage);
+            // Log.info("iAverage = %f, qAverage = %f", returnINSData.iAverage, returnINSData.qAverage);
         }
 
     }  // end queue if
@@ -80,8 +67,7 @@ filteredINSData checkINS3331()
 }  // end checkINS3331()
 
 //*********************************threads***************************************
-void threadINSReader(void *param)
-{
+void threadINSReader(void *param) {
     static signed char receiveBuffer[14];
     static int receiveBufferIndex;
     signed char iHighByte;
@@ -91,10 +77,8 @@ void threadINSReader(void *param)
 
     rawINSData rawData;
 
-    while (true)
-    {
-        if (SerialRadar.available())
-        {
+    while (true) {
+        if (SerialRadar.available()) {
             unsigned char c = SerialRadar.read();
 
             if (c == START_DELIMITER) receiveBufferIndex = 0;
@@ -105,10 +89,9 @@ void threadINSReader(void *param)
 
             // Log.info("receiveBufferIndex = %d", receiveBufferIndex);
 
-            // if c = frame end deliminator = 0x16, frame has completed
-            // transmission so break and put the raw I and Q bytes in a queue
-            if (c == END_DELIMITER)
-            {
+            // if c = frame end deliminator = 0x16, frame has completed transmission
+            // so break and put the raw I and Q bytes in a queue
+            if (c == END_DELIMITER) {
                 // extract i and q in byte form
                 iHighByte = receiveBuffer[7];
                 iLowByte = receiveBuffer[8];
@@ -141,8 +124,7 @@ void threadINSReader(void *param)
 }  // end threadINSReader
 
 // loop() functions and sub-functions
-void startINSSerial()
-{
+void startINSSerial() {
     SerialRadar.begin(38400, SERIAL_8N1);
     writeToINS3331(APPLICATION_STOP);
     // give module time to stop sending data
@@ -150,39 +132,26 @@ void startINSSerial()
     writeToINS3331(APPLICATION_START);
 }
 
-void writeToINS3331(unsigned char function_code)
-{
-    unsigned char ins3331_send_buf[15] = {WAKEUP_BYTE,  START_DELIMITER,
-                                          0x80,         0x01,
-                                          0x00,         0x00,
-                                          0x00,         0x00,
-                                          0x00,         0x00,
-                                          0x00,         0x00,
-                                          0x00,         0x00,
-                                          END_DELIMITER};
+void writeToINS3331(unsigned char function_code) {
+    unsigned char ins3331_send_buf[15] = {WAKEUP_BYTE, START_DELIMITER, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, END_DELIMITER};
     ins3331_send_buf[4] = function_code;
 
-    // calculate checksum for a 15-byte array (writing to INS always requires 15
-    // byte array)
+    // calculate checksum for a 15-byte array (writing to INS always requires 15 byte array)
     unsigned char checksum = calculateChecksum(ins3331_send_buf, 15);
     // load checksum into array for writing
     ins3331_send_buf[13] = checksum;
 
-    for (int i = 0; i < 15; i++)
-    {
-        Log.info("frame written to INS3331: send_buf[%d] = 0x%02X", i,
-                 ins3331_send_buf[i]);
+    for (int i = 0; i < 15; i++) {
+        Log.info("frame written to INS3331: send_buf[%d] = 0x%02X", i, ins3331_send_buf[i]);
     }
     // write!
     SerialRadar.write(ins3331_send_buf, 15);
 }
 
-unsigned char calculateChecksum(unsigned char myArray[], int arrayLength)
-{
+unsigned char calculateChecksum(unsigned char myArray[], int arrayLength) {
     unsigned char checksum = 0x00;
 
-    for (int i = 2; i <= 12; i++)
-    {
+    for (int i = 2; i <= 12; i++) {
         checksum = checksum + myArray[i];
     }
 
