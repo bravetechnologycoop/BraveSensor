@@ -27,11 +27,13 @@ unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
 //contents will initialize this to "on"
 bool stateMachineDebugFlag = false;
 int resetReason = System.resetReason();
+// record whether a duration alert has been sent within the same session
+bool hasDurationAlertBeenSent;
 
 std::queue<int> stateQueue;
 std::queue<int> reasonQueue;
 std::queue<unsigned long> timeQueue;
-unsigned long lastStateChange = millis();
+unsigned long lastStateChangeOrAlert = millis();
 
 void setupStateMachine(){
 
@@ -44,6 +46,8 @@ void setupStateMachine(){
   //default to not publishing debug logs
   stateMachineDebugFlag = 0;
 
+  // default to no duration alert sent
+  hasDurationAlertBeenSent = 0;
 }
 
 void initializeStateMachineConsts(){
@@ -89,13 +93,14 @@ void state0_idle(){
   checkDoor = checkIM();
   //this returns 0.0 if the INS has no new data to transmit
   checkINS = checkINS3331();
+  // session is over in idle state, so reset the whether duration alert has been sent flag
+  hasDurationAlertBeenSent = 0;
 
   //do stuff in the state
   digitalWrite(D2,LOW);
   digitalWrite(D3,LOW);
   digitalWrite(D4,LOW);
   digitalWrite(D5,LOW);
-
 
   Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f",checkDoor.doorStatus, checkINS.iAverage);
   //default timer to 0 when state doesn't have a timer
@@ -107,7 +112,7 @@ void state0_idle(){
 
     Log.warn("In state 0, door closed and seeing movement, heading to state 1");
     publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(0, 0);
+    saveStateChangeOrAlert(0, 0);
     //zero the state 1 timer
     state1_timer = millis();
     //head to state 1
@@ -142,7 +147,7 @@ void state1_15sCountdown(){
 
     Log.warn("no movement, you're going back to state 0 from state 1");
     publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(1, 1);
+    saveStateChangeOrAlert(1, 1);
     stateHandler = state0_idle;
 
   }
@@ -150,7 +155,7 @@ void state1_15sCountdown(){
 
     Log.warn("door was opened, you're going back to state 0 from state 1");
     publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(1, 2);
+    saveStateChangeOrAlert(1, 2);
     stateHandler = state0_idle;
 
   }
@@ -158,7 +163,7 @@ void state1_15sCountdown(){
 
     Log.warn("door closed && motion for > Xs, going to state 2 from state1");
     publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(1, 3);
+    saveStateChangeOrAlert(1, 3);
     //zero the duration timer
     state2_duration_timer = millis();
     //head to duration state
@@ -196,7 +201,7 @@ void state2_duration(){
 
     Log.warn("Seeing stillness, going to state3_stillness from state2_duration");
     publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(2, 1);
+    saveStateChangeOrAlert(2, 1);
     //zero the stillness timer
     state3_stillness_timer = millis();
     //go to stillness state
@@ -207,18 +212,17 @@ void state2_duration(){
 
     Log.warn("Door opened, session over, going to idle from state2_duration");
     publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(2, 2);
+    saveStateChangeOrAlert(2, 2);
     stateHandler = state0_idle;
-
   }
-  else if(millis() - state2_duration_timer >= state2_max_duration){
+  else if((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent) {
 
-    Log.warn("See duration alert, going from state2_duration to idle after alert publish");
-    publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(2, 4);
+    Log.warn("See duration alert, remaining in state2_duration after alert publish");
+    saveStateChangeOrAlert(2, 4);
     Log.error("Duration Alert!!");
     Particle.publish("Duration Alert", "duration alert", PRIVATE);
-    stateHandler = state0_idle;
+    hasDurationAlertBeenSent = 1; // a duration alert has been sent, so do not send another one
+    stateHandler = state2_duration;
   }
   else {
     //if we don't meet the exit conditions above hang out here
@@ -250,7 +254,7 @@ void state3_stillness(){
 
     Log.warn("motion spotted again, going from state3_stillness to state2_duration");
     publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(3, 0);
+    saveStateChangeOrAlert(3, 0);
     //go back to state 2, duration
     stateHandler = state2_duration;
 
@@ -259,27 +263,27 @@ void state3_stillness(){
 
     Log.warn("door opened, session over, going from state3_stillness to idle");
     publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(3, 2);
+    saveStateChangeOrAlert(3, 2);
     stateHandler = state0_idle;
-
   }
-  else if(millis() - state2_duration_timer >= state2_max_duration){
+  else if((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent){
 
-    Log.warn("See duration alert, going from state3 to idle after alert publish");
-    publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(3, 4);
+    Log.warn("See duration alert, going from state3 to state2 after alert publish");
+    publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
+    saveStateChangeOrAlert(3, 4);
     Log.error("Duration Alert!!");
     Particle.publish("Duration Alert", "duration alert", PRIVATE);
-    stateHandler = state0_idle;
+    hasDurationAlertBeenSent = 1; // a duration alert has been sent, so do not send another one
+    stateHandler = state2_duration;
   }
   else if(millis() - state3_stillness_timer >= state3_max_stillness_time){
 
-    Log.warn("stillness alert, going from state3 to idle after publish");
-    publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
-    saveStateChange(3, 5);
+    Log.warn("stillness alert, remaining in state3 after publish");
+    saveStateChangeOrAlert(3, 5);
     Log.error("Stillness Alert!!");
     Particle.publish("Stillness Alert", "stillness alert!!!", PRIVATE);
-    stateHandler = state0_idle;
+    state3_stillness_timer = millis();  // reset the stillness timer
+    stateHandler = state3_stillness;
   }
   else {
     //if we don't meet the exit conditions above, we remain here
@@ -332,12 +336,11 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
  * 4           | Duration alert
  * 5           | Stillness alert
  **/
-void saveStateChange(int state, int reason){
-    
+void saveStateChangeOrAlert(int state, int reason) {
     stateQueue.push(state);
     reasonQueue.push(reason);
-    timeQueue.push(millis() - lastStateChange);
-    lastStateChange = millis();
+    timeQueue.push(millis() - lastStateChangeOrAlert);
+    lastStateChangeOrAlert = millis();
 }
 
 const char *resetReasonString(int resetReason)

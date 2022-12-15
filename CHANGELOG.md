@@ -11,6 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- Sensor state machine to reset stillness timer and transition back to stillness state after receiving a stillness alert (CU-39w5av5).
+- Sensor state machine to transition back to duration state after receiving a duration alert (CU-39w5av5).
+- Sensor duration alerts to only occur at most once per door close (CU-3c6my58).
+
 ## [7.0.0] - 2022-12-13
 
 ### Changed
