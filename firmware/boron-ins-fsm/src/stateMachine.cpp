@@ -66,7 +66,8 @@ void initializeStateMachineConsts() {
         initializeConstsFlag = INITIALIZE_STATE_MACHINE_CONSTS_FLAG;
         EEPROM.put(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
         Log.info("State machine constants were written to flash on bootup.");
-    } else {
+    }
+    else {
         EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
         EEPROM.get(ADDR_STATE1_MAX_TIME, state1_max_time);
         EEPROM.get(ADDR_STATE2_MAX_DURATION, state2_max_duration);
@@ -78,7 +79,8 @@ void initializeStateMachineConsts() {
 void state0_idle() {
     if (millis() - doorHeartbeatReceived > DEVICE_RESET_THRESHOLD) {
         System.enableReset();
-    } else {
+    }
+    else {
         System.disableReset();
     }
 
@@ -112,7 +114,8 @@ void state0_idle() {
         state1_timer = millis();
         // head to state 1
         stateHandler = state1_15sCountdown;
-    } else {
+    }
+    else {
         // if we don't meet the exit conditions above, we remain here
         // stateHandler = state0_idle;
     }
@@ -140,14 +143,14 @@ void state1_15sCountdown() {
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 1);
         stateHandler = state0_idle;
-
-    } else if (isDoorOpen(checkDoor.doorStatus)) {
+    }
+    else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("door was opened, you're going back to state 0 from state 1");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 2);
         stateHandler = state0_idle;
-
-    } else if (millis() - state1_timer >= state1_max_time) {
+    }
+    else if (millis() - state1_timer >= state1_max_time) {
         Log.warn("door closed && motion for > Xs, going to state 2 from state1");
         publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 3);
@@ -155,8 +158,8 @@ void state1_15sCountdown() {
         state2_duration_timer = millis();
         // head to duration state
         stateHandler = state2_duration;
-
-    } else {
+    }
+    else {
         // if we don't meet the exit conditions above, we remain here
         // stateHandler = state1_15sCountdown;
     }
@@ -186,20 +189,22 @@ void state2_duration() {
         state3_stillness_timer = millis();
         // go to stillness state
         stateHandler = state3_stillness;
-
-    } else if (isDoorOpen(checkDoor.doorStatus)) {
+    }
+    else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("Door opened, session over, going to idle from state2_duration");
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 2);
         stateHandler = state0_idle;
-    } else if ((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent) {
+    }
+    else if ((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent) {
         Log.warn("See duration alert, remaining in state2_duration after alert publish");
         saveStateChangeOrAlert(2, 4);
         Log.error("Duration Alert!!");
         Particle.publish("Duration Alert", "duration alert", PRIVATE);
         hasDurationAlertBeenSent = 1;  // a duration alert has been sent, so do not send another one
         stateHandler = state2_duration;
-    } else {
+    }
+    else {
         // if we don't meet the exit conditions above hang out here
         // stateHandler = state2_duration;
     }
@@ -228,13 +233,14 @@ void state3_stillness() {
         saveStateChangeOrAlert(3, 0);
         // go back to state 2, duration
         stateHandler = state2_duration;
-
-    } else if (isDoorOpen(checkDoor.doorStatus)) {
+    }
+    else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("door opened, session over, going from state3_stillness to idle");
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 2);
         stateHandler = state0_idle;
-    } else if ((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent) {
+    }
+    else if ((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent) {
         Log.warn("See duration alert, going from state3 to state2 after alert publish");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 4);
@@ -242,14 +248,16 @@ void state3_stillness() {
         Particle.publish("Duration Alert", "duration alert", PRIVATE);
         hasDurationAlertBeenSent = 1;  // a duration alert has been sent, so do not send another one
         stateHandler = state2_duration;
-    } else if (millis() - state3_stillness_timer >= state3_max_stillness_time) {
+    }
+    else if (millis() - state3_stillness_timer >= state3_max_stillness_time) {
         Log.warn("stillness alert, remaining in state3 after publish");
         saveStateChangeOrAlert(3, 5);
         Log.error("Stillness Alert!!");
         Particle.publish("Stillness Alert", "stillness alert!!!", PRIVATE);
         state3_stillness_timer = millis();  // reset the stillness timer
         stateHandler = state3_stillness;
-    } else {
+    }
+    else {
         // if we don't meet the exit conditions above, we remain here
         // stateHandler = state3_stillness;
     }
