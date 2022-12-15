@@ -38,8 +38,7 @@ bool isValidIM21Id(String input) {
 
     if (input.equals("e")) {
         return true;
-    }
-    else {
+    } else {
         if (!(input.length() == 8)) {
             return false;
         }
@@ -63,16 +62,13 @@ int toggle_debugging_publishes(String command) {
     // if e, echo whether debug publishes are on
     else if (*holder == 'e') {
         returnFlag = (int)stateMachineDebugFlag;
-    }
-    else if (*holder == '0') {
+    } else if (*holder == '0') {
         stateMachineDebugFlag = false;
         returnFlag = 0;
-    }
-    else if (*holder == '1') {
+    } else if (*holder == '1') {
         stateMachineDebugFlag = true;
         returnFlag = 1;
-    }
-    else {
+    } else {
         // anything else is bad input so
         returnFlag = -1;
     }
@@ -101,11 +97,9 @@ int initial_timer_set(String input) {
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
-        }
-        else if (timeout < 0) {
+        } else if (timeout < 0) {
             returnFlag = -1;
-        }
-        else {
+        } else {
             EEPROM.put(ADDR_STATE1_MAX_TIME, timeout);
             state1_max_time = timeout;
             returnFlag = state1_max_time / 1000;
@@ -135,11 +129,9 @@ int duration_timer_set(String input) {
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
-        }
-        else if (timeout < 0) {
+        } else if (timeout < 0) {
             returnFlag = -1;
-        }
-        else {
+        } else {
             EEPROM.put(ADDR_STATE2_MAX_DURATION, timeout);
             state2_max_duration = timeout;
             returnFlag = state2_max_duration / 1000;
@@ -170,11 +162,9 @@ int stillness_timer_set(String input) {
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
-        }
-        else if (timeout < 0) {
+        } else if (timeout < 0) {
             returnFlag = -1;
-        }
-        else {
+        } else {
             EEPROM.put(ADDR_STATE3_MAX_STILLNES_TIME, timeout);
             state3_max_stillness_time = timeout;
             returnFlag = state3_max_stillness_time / 1000;
@@ -203,11 +193,9 @@ int ins_threshold_set(String input) {
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
-        }
-        else if (threshold < 0) {
+        } else if (threshold < 0) {
             returnFlag = -1;
-        }
-        else {
+        } else {
             EEPROM.put(ADDR_INS_THRESHOLD, threshold);
             ins_threshold = threshold;
             returnFlag = ins_threshold;
@@ -239,8 +227,7 @@ int im21_door_id_set(String command) {  // command is a long string with all the
                  "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}",
                  holder.byte1, holder.byte2, holder.byte3);
         Particle.publish("Current Door Sensor ID: ", buffer, PRIVATE);
-    }
-    else  // else not echo, so we have a new door ID to parse
+    } else  // else not echo, so we have a new door ID to parse
     {
         // parse input string and update global door ID
         const char* byteholder1;
@@ -277,8 +264,7 @@ int force_reset(String command) {
     if (*(holder + 1) != 0) {
         // any string longer than 1 char is invalid input, so
         returnFlag = -1;
-    }
-    else if (*holder == '1') {
+    } else if (*holder == '1') {
         returnFlag = 1;
         bool msg_sent =
             Particle.publish("YOU SHALL NOT PANIC!!",
@@ -288,8 +274,7 @@ int force_reset(String command) {
         if (msg_sent) {
             System.reset();
         }
-    }
-    else {
+    } else {
         // anything else is bad input so
         returnFlag = -1;
     }

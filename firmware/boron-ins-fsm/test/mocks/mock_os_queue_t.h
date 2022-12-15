@@ -4,9 +4,8 @@
 
 #pragma once
 
-#include <stdint.h>
-
 #include "Particle.h"
+#include <stdint.h>
 
 typedef uint32_t system_tick_t;
 

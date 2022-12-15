@@ -4,8 +4,8 @@
 
 #pragma once
 
-#define BLE_GAP_ADV_SET_DATA_SIZE_MAX (31)  //< Maximum data length for an advertising set.
-#define BLE_MAX_ADV_DATA_LEN BLE_GAP_ADV_SET_DATA_SIZE_MAX
+#define BLE_GAP_ADV_SET_DATA_SIZE_MAX   (31)   //< Maximum data length for an advertising set.
+#define BLE_MAX_ADV_DATA_LEN            BLE_GAP_ADV_SET_DATA_SIZE_MAX
 
 #include "../inc/spark_wiring_vector.h"
 
@@ -16,7 +16,7 @@ enum class BleAdvertisingDataType : uint8_t {
 
 // Fake class for BleAddress object
 class BleAddress {
-   public:
+public:
     BleAddress();
 
     const BleAddress get() const {
@@ -26,23 +26,23 @@ class BleAddress {
 
 // Fake class for BleAdvertisingData object
 class BleAdvertisingData {
-   public:
+public:
     const BleAdvertisingData get(BleAdvertisingDataType bleAdvertisingDataType, uint8_t* advertisingData, int maxLength) const {
         return *this;
     }
 };
 
 // Fake class for BleScanResult object
-class BleScanResult {
-   private:
+class BleScanResult
+{
+private:
     BleAddress address_;
     BleAdvertisingData advertisingData_;
     BleAdvertisingData scanResponse_;
     int8_t rssi_;
 
-   public:
-    const BleAddress address() const {
-        ;
+public:
+    const BleAddress address() const {;
         return address_;
     }
 
@@ -52,31 +52,33 @@ class BleScanResult {
 };
 
 // Fake class for BleScanFilter
-class BleScanFilter {
-   private:
+class BleScanFilter
+{
+private:
     char* deviceNames_;
     char* addresses_;
 
-   public:
+public:
     // Device name
-    template <typename T>
+    template<typename T>
     BleScanFilter& deviceName(T name) {
         return *this;
     }
 
     // Device address
-    template <typename T>
+    template<typename T>
     BleScanFilter& address(T addr) {
         return *this;
     }
 };
 
 // Fake class for BLE
-class MockBLE {
-   public:
+class MockBLE
+{
+public:
     MockBLE() {}
 
-   public:
+public:
     int setScanTimeout(uint16_t timeout) const {
         return 0;
     }
@@ -85,5 +87,6 @@ class MockBLE {
         spark::Vector<BleScanResult> mockScanResults;
         return mockScanResults;
     }
+
 };
 extern MockBLE BLE;

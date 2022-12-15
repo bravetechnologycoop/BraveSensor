@@ -7,23 +7,24 @@
 #include "Particle.h"
 
 typedef enum LogLevel {
-    LOG_LEVEL_ALL = 1,  // Log all messages
+    LOG_LEVEL_ALL = 1, // Log all messages
     LOG_LEVEL_TRACE = 1,
     LOG_LEVEL_INFO = 30,
     LOG_LEVEL_WARN = 40,
     LOG_LEVEL_ERROR = 50,
     LOG_LEVEL_PANIC = 60,
-    LOG_LEVEL_NONE = 70  // Do not log any messages
+    LOG_LEVEL_NONE = 70 // Do not log any messages
 } LogLevel;
 
-class MockLogger {
-   public:
+class MockLogger
+{
+public:
     MockLogger() {}
 
-   public:
+public:
     void warn(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
         printf("LOG.WARN\n");
-    }
+    } 
 
     void error(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
         printf("LOG.ERROR\n");

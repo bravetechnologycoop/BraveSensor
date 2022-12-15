@@ -1,6 +1,5 @@
-#include "tpl5010watchdog.h"
-
 #include "Particle.h"
+#include "tpl5010watchdog.h"
 
 //******************global variable initialization*******************
 

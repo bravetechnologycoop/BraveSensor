@@ -44,8 +44,7 @@ void initializeDoorID() {
         initializeDoorIDFlag = INITIALIZE_DOOR_ID_FLAG;
         EEPROM.put(ADDR_INITIALIZE_DOOR_ID_FLAG, initializeDoorIDFlag);
         Log.info("Door ID was written to flash on bootup.");
-    }
-    else {
+    } else {
         EEPROM.get(ADDR_IM_DOORID, globalDoorID.byte1);
         EEPROM.get((ADDR_IM_DOORID + 1), globalDoorID.byte2);
         EEPROM.get((ADDR_IM_DOORID + 2), globalDoorID.byte3);
@@ -104,8 +103,8 @@ doorData checkIM() {
         else if ((currentDoorData.controlByte == 0x00) && (previousDoorData.controlByte == 0xFF)) {
             returnDoorData = currentDoorData;
             previousDoorData = currentDoorData;
-        }
-        else {
+
+        } else {
             // no new data, do nothing
             Log.info("no new data");
 

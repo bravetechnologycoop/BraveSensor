@@ -6,8 +6,9 @@
 
 struct os_thread_fn_t {};
 
-class Thread {
-   public:
+class Thread
+{
+public:
     Thread() {}
 
     Thread(const char* name, void (*)(void*)) {}
