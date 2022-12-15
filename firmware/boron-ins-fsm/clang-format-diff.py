@@ -54,9 +54,9 @@ def main():
                       'Mozilla, WebKit)')
   parser.add_argument('-binary', default='clang-format',
                       help='location of binary to use for clang-format')
-  parser.add_argument('-Werror', action='store_true', default=False,
+  parser.add_argument('--Werror', action='store_true', default=False,
                       help='if set, changes formatting warnings to errors')
-  parser.add_argument('-dry-run', action='store_true', default=False,
+  parser.add_argument('--dry-run', action='store_true', default=False,
                       help='if set, do not actually make the formatting changes')
   args = parser.parse_args()
 
