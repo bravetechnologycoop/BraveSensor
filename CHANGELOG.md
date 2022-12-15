@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [7.0.0] - 2022-12-13
+
 ### Changed
 
 - Sensor state machine to reset stillness timer and transition back to stillness state after receiving a stillness alert (CU-39w5av5).
