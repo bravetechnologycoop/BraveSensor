@@ -43,7 +43,7 @@ void state3_stillness();
 
 void publishDebugMessage(int, unsigned char, float, unsigned long);
 void publishStateTransition(int, int, unsigned char, float);
-void saveStateChange(int, int);
+void saveStateChangeOrAlert(int, int);
 
 //threads
 void heartbeatTimerThread(void *param);
