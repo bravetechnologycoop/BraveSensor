@@ -59,13 +59,14 @@ jobs:
         - npm run lint
         - sudo env "PATH=$PATH" npm test
     - stage: 'code linting and formatting checks'
-      addons:
-        # install clang-format
-        apt:
-          packages:
-            - clang-format-10.0
       language: python
+      #addons:
+        # install clang-format
+      #  apt:
+      #    packages:
+      #      - clang-format-10.0
       script:
+        - apt-cache search clang-format
         - cd firmware/boron-ins-fsm && python clang-format-check.py
     - stage: 'firmware tests'
       language: cpp
