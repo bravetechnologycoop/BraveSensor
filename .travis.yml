@@ -65,6 +65,7 @@ jobs:
         - echo 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main' | sudo tee -a /etc/apt/sources.list
         - echo 'deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main' | sudo tee -a /etc/apt/sources.list
         - sudo apt-get update
+        - sudo apt-get install -y libllvm10
         - sudo apt-get -y install clang-format-10
       script:
         - cd firmware/boron-ins-fsm && python clang-format-check.py
