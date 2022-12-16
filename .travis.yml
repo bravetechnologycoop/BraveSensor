@@ -60,13 +60,13 @@ jobs:
         - sudo env "PATH=$PATH" npm test
     - stage: 'code linting and formatting checks'
       language: python
-      #addons:
-        # install clang-format
-      #  apt:
-      #    packages:
-      #      - clang-format-10.0
+      before_install:
+        - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+        - echo 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main' | sudo tee -a /etc/apt/sources.list
+        - echo 'deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main' | sudo tee -a /etc/apt/sources.list
+        - sudo apt-get update
+        - sudo apt-get -y install clang-format-10
       script:
-        - apt-cache search clang-format
         - cd firmware/boron-ins-fsm && python clang-format-check.py
     - stage: 'firmware tests'
       language: cpp
