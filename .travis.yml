@@ -61,12 +61,13 @@ jobs:
     - stage: 'code linting and formatting checks'
       language: python
       before_install:
-        - npm list -g --depth=0
         - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
         - echo 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-12 main' | sudo tee -a /etc/apt/sources.list
         - echo 'deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-12 main' | sudo tee -a /etc/apt/sources.list
         - sudo apt-get update
         - sudo apt-get install -y clang-format-12
+        - clang-format -help
+        - clang-format -version
       script:
         - cd firmware/boron-ins-fsm && python clang-format-check.py
     - stage: 'firmware tests'
