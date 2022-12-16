@@ -62,6 +62,7 @@ jobs:
       language: python
       before_install:
         - sudo apt-get remove clang-format
+        - clang-format --version
         - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
         - echo 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-12 main' | sudo tee -a /etc/apt/sources.list
         - echo 'deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-12 main' | sudo tee -a /etc/apt/sources.list
