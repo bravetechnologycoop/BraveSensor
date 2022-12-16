@@ -63,7 +63,7 @@ jobs:
         # install clang-format
         apt:
           packages:
-            - clang-format-12
+            - clang-format-10.0
       language: python
       script:
         - cd firmware/boron-ins-fsm && python clang-format-check.py
