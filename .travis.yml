@@ -35,13 +35,6 @@ env:
 
 jobs:
   include:
-    - stage: 'code linting and formatting checks'
-      language: python
-      install:
-        - cd firmware/boron-ins-fsm
-        - sudo apt install clang-format
-      script:
-        - python clang-format-check.py
     # Run security audit, linting, unit tests, and integration tests
     - stage: 'server test'
       language: node_js
@@ -65,6 +58,15 @@ jobs:
         - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then npx audit-ci --config ./audit-ci.json; fi
         - npm run lint
         - sudo env "PATH=$PATH" npm test
+    - stage: 'code linting and formatting checks'
+      addons:
+        # install clang-format
+        apt:
+          packages:
+            - clang-format-15.0
+      language: python
+      script:
+        - cd firmware/boron-ins-fsm && python clang-format-check.py
     - stage: 'firmware tests'
       language: cpp
       script:
