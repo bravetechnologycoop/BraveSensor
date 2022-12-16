@@ -8,5 +8,5 @@
 
 import os
 
-os.system("find src -iname *.h -o -iname *.cpp | xargs clang-format -Werror -dry-run")
-os.system("find test -iname *.h -o -iname *.cpp | xargs clang-format -Werror -dry-run")
+os.system("find src -iname *.h -o -iname *.cpp | xargs clang-format --Werror --dry-run")
+os.system("find test -iname *.h -o -iname *.cpp | xargs clang-format --Werror --dry-run")
