@@ -62,10 +62,9 @@ jobs:
       language: python
       before_install:
         - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-        - echo 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main' | sudo tee -a /etc/apt/sources.list
-        - echo 'deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main' | sudo tee -a /etc/apt/sources.list
+        - echo 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-15 main' | sudo tee -a /etc/apt/sources.list
+        - echo 'deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-15 main' | sudo tee -a /etc/apt/sources.list
         - sudo apt-get update
-        - lsb_release -a
         - sudo apt-get install -y clang-format-10
       script:
         - cd firmware/boron-ins-fsm && python clang-format-check.py
