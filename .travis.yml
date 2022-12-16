@@ -35,7 +35,7 @@ env:
 
 jobs:
   include:
-      - stage: 'code linting and formatting checks'
+    - stage: 'code linting and formatting checks'
       language: python
       script:
         - cd firmware/boron-ins-fsm && python clang-format-check.py
@@ -62,7 +62,6 @@ jobs:
         - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then npx audit-ci --config ./audit-ci.json; fi
         - npm run lint
         - sudo env "PATH=$PATH" npm test
-
     - stage: 'firmware tests'
       language: cpp
       script:
