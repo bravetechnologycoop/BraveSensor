@@ -37,8 +37,11 @@ jobs:
   include:
     - stage: 'code linting and formatting checks'
       language: python
+      install:
+        - cd firmware/boron-ins-fsm
+        - sudo apt install clang-format
       script:
-        - cd firmware/boron-ins-fsm && python clang-format-check.py
+        - python clang-format-check.py
     # Run security audit, linting, unit tests, and integration tests
     - stage: 'server test'
       language: node_js
