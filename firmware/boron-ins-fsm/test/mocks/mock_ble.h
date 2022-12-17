@@ -5,7 +5,7 @@
 #pragma once
 
 #define BLE_GAP_ADV_SET_DATA_SIZE_MAX (31)  //< Maximum data length for an advertising set.
-#define BLE_MAX_ADV_DATA_LEN BLE_GAP_ADV_SET_DATA_SIZE_MAX
+#define BLE_MAX_ADV_DATA_LEN          BLE_GAP_ADV_SET_DATA_SIZE_MAX
 
 #include "../inc/spark_wiring_vector.h"
 

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#define Serial 0                               // not implemented
+#define Serial  0                              // not implemented
 #define Serial1 __fetch_mock_global_Serial1()  // defined as mock USART Serial
 
 #define SERIAL_8N1 0  // fake definition

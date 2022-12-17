@@ -9,14 +9,14 @@
 //***************************macro defines******************************
 
 #define SerialRadar Serial1  // Used for communication with the radar, Serial connection using TX,RX pins
-#define SerialUSB Serial     // Used for printing debug information, Serial connection with (micro) USB
+#define SerialUSB   Serial   // Used for printing debug information, Serial connection with (micro) USB
 
 // INS data frame constants
 #define START_DELIMITER 0xA2
-#define END_DELIMITER 0x16
-#define WAKEUP_BYTE 0x11
+#define END_DELIMITER   0x16
+#define WAKEUP_BYTE     0x11
 // INS function codes
-#define APPLICATION_STOP 0xE4
+#define APPLICATION_STOP  0xE4
 #define APPLICATION_START 0xEB
 
 // this is the number of samples that the average is taken on
