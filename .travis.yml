@@ -67,8 +67,10 @@ jobs:
         - sudo apt-get update
       install:
         - sudo apt-get install -y clang-format-12
+        - sudo apt-get install cppcheck
       script:
         - cd firmware/boron-ins-fsm && python clang-format-check.py
+        - cppcheck src --enable=all --error-exitcode=1
     - stage: 'firmware tests'
       language: cpp
       script:
