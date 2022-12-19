@@ -13,6 +13,14 @@ the code was deployed.
 
 ### Changed
 
+- Sensor state machine to reset stillness timer and transition back to stillness state after receiving a stillness alert (CU-39w5av5).
+- Sensor state machine to transition back to duration state after receiving a duration alert (CU-39w5av5).
+- Sensor duration alerts to only occur at most once per door close (CU-3c6my58).
+
+## [7.0.0] - 2022-12-13
+
+### Changed
+
 - Travis CI to run new unit tests as a part of the build process. 
 
 ### Added
@@ -446,7 +454,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.4.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v7.0.0...HEAD
+[7.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.4.0...v7.0.0
 [6.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.3.0...v6.4.0
 [6.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.2.0...v6.3.0
 [6.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.1.0...v6.2.0
