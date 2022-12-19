@@ -54,7 +54,6 @@ void initializeDoorID() {
 }
 
 doorData checkIM() {
-    static int initialDoorDataFlag = 1;
     static doorData previousDoorData = {0x00, 0x00, 0};
     static doorData currentDoorData = {0x00, 0x00, 0};
     static doorData returnDoorData = {INITIAL_DOOR_STATUS, INITIAL_DOOR_STATUS, 0};
@@ -62,8 +61,7 @@ doorData checkIM() {
     // BLE scanner is set fast enough to load duplicate advertising data packets
     // Every time the IM Door Sensor transmits a door event, filter out the duplicates and publish
     if (os_queue_take(bleQueue, &currentDoorData, 0, 0) == 0) {
-        // Log.warn("raw door sensor output - control:  prev, current: 0x%02X, 0x%02X", previousDoorData.controlByte, currentDoorData.controlByte);
-        // Log.warn("raw door sensor output - data byte prev, current: 0x%02X, 0x%02X", previousDoorData.doorStatus, currentDoorData.doorStatus);
+        static int initialDoorDataFlag = 1;
 
         // Checks if the 2nd bit (counting from 0) of doorStatus is 1
         // read as: doorLowBatteryFlag is true if doorStatus AND 0b0100 is not 0b0000

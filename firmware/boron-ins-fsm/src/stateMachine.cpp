@@ -281,7 +281,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char debugMessage[622];
         snprintf(debugMessage, sizeof(debugMessage),
-                 "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"timer_status\":\"%ld\"}", state, doorStatus, INSValue, timer);
+                 "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"timer_status\":\"%lu\"}", state, doorStatus, INSValue, timer);
         Particle.publish("Debug Message", debugMessage, PRIVATE);
         lastDebugPublish = millis();
     }

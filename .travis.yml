@@ -58,7 +58,7 @@ jobs:
         - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then npx audit-ci --config ./audit-ci.json; fi
         - npm run lint
         - sudo env "PATH=$PATH" npm test
-    - stage: 'code linting and formatting checks'
+    - stage: 'linting and formatting checks'
       language: python
       before_install:
         - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
@@ -70,7 +70,7 @@ jobs:
         - sudo apt-get install cppcheck
       script:
         - cd firmware/boron-ins-fsm && python clang-format-check.py
-        - cppcheck src --enable=warning,style,performance,portability,information --error-exitcode=1
+        - cppcheck src --enable=warning,style,performance,portability --error-exitcode=1
     - stage: 'firmware tests'
       language: cpp
       script:

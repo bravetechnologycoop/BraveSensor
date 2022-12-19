@@ -23,12 +23,13 @@ void setupINS3331() {
 filteredINSData checkINS3331() {
     rawINSData dataToParse;
     static CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> iBuffer, qBuffer;
-    static float iSum = 0;
-    static float qSum = 0;
     static filteredINSData returnINSData = {0, 0, 0};
 
     // os_queue_take returns 0 on success, so if we get a value, dump it to circular buffer
     if (os_queue_take(insQueue, &dataToParse, 0, 0) == 0) {
+        static float iSum = 0;
+        static float qSum = 0;
+
         // add absolute values to circular buffer for the rolling average
         // since push() adds to the tail, adding beyond capacity causes the element at head to be overwritten and lost
         iBuffer.push(abs(dataToParse.inPhase));

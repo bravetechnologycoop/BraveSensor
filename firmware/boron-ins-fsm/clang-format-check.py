@@ -15,5 +15,5 @@ if os.system("find src -iname *.h -o -iname *.cpp | xargs clang-format-12 --Werr
     os.system("echo \"Formatting error(s) found, run clang-format-all.py and try again!\n\"")
     os._exit(1)
 
-os.system("echo \"No Formatting errors found!\n\"")  
+os.system("echo \"No Formatting errors found!\"")  
 os._exit(0)
