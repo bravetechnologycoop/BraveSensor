@@ -70,7 +70,7 @@ jobs:
         - sudo apt-get install cppcheck
       script:
         - cd firmware/boron-ins-fsm && python clang-format-check.py
-        - cppcheck src --enable=all --error-exitcode=1
+        - cppcheck src --enable=warning,style,performance,portability,information --error-exitcode=1
     - stage: 'firmware tests'
       language: cpp
       script:
