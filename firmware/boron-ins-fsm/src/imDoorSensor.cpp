@@ -54,8 +54,9 @@ void initializeDoorID() {
 }
 
 doorData checkIM() {
-    static doorData previousDoorData = {0x00, 0x00, 0};static doorData currentDoorData = {0x00, 0x00, 0};
-static doorData returnDoorData = {INITIAL_DOOR_STATUS, INITIAL_DOOR_STATUS, 0};
+    static doorData previousDoorData = {0x00, 0x00, 0};
+    static doorData currentDoorData = {0x00, 0x00, 0};
+    static doorData returnDoorData = {INITIAL_DOOR_STATUS, INITIAL_DOOR_STATUS, 0};
 
     // BLE scanner is set fast enough to load duplicate advertising data packets
     // Every time the IM Door Sensor transmits a door event, filter out the duplicates and publish
