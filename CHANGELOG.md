@@ -17,6 +17,10 @@ the code was deployed.
 - Sensor state machine to transition back to duration state after receiving a duration alert (CU-39w5av5).
 - Sensor duration alerts to only occur at most once per door close (CU-3c6my58).
 
+### Added
+
+- New stage "linting and formatting checks" to Travis CI, which lints and checks the formatting of firmware code, failing the build if errors are found (CU-1k10ejd). 
+
 ## [7.0.0] - 2022-12-13
 
 ### Changed
