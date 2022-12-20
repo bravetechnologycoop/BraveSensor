@@ -111,7 +111,7 @@ SCENARIO( "Change_IM21_Door_ID", "[change door id]" ) {
         String doorID = "AB,CD,EF";
 
         WHEN( "the function is called with a valid door ID" ) {
-            int returnVal = im21_door_id_set(doorID);   // Note: The mock EEPROM is coded to always return 0x123456 as the door ID
+            int returnVal = im21_door_id_set(doorID);
 
             THEN( "The function should return the door ID converted to a decimal number" ) {
                 REQUIRE( returnVal == 11259375 );
