@@ -9,16 +9,38 @@ metadata:
 spec:
   tls:
   - hosts:
-    - example.sensors.brave.coop
+    - dev.sensors.brave.coop
+    - staging.sensors.brave.coop
+    - sensors.brave.coop
     secretName: sensors-tls
   rules:
-  - host: "example.sensors.brave.coop"
+  - host: dev.sensors.brave.coop
     http:
       paths:
-       - path: /
-         pathType: Prefix
-         backend:
+      - backend:
           service:
-            name: example-sensor-server 
-            port: 
+            name: dev-sensor-server
+            port:
               number: 8080
+        path: /
+        pathType: Prefix
+  - host: staging.sensors.brave.coop
+    http:
+      paths:
+      - backend:
+          service:
+            name: staging-sensor-server
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+  - host: sensors.brave.coop
+    http:
+      paths:
+      - backend:
+          service:
+            name: production-sensor-server
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix

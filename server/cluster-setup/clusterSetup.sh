@@ -11,7 +11,7 @@ helm repo update
 
 # install packages onto Kubernetes
 helm install sensor ingress-nginx/ingress-nginx --set controller.publishService.enabled=true # install nginx ingress controler
-helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.6.0 --set installCRDs=true # install cert-manager
+helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.7.0 --set installCRDs=true # install cert-manager
 kubectl create namespace redis
 kubectl apply -f redis-storage.yaml
 helm install sensor-redis bitnami/redis --namespace redis --set persistence.storageClass=redis-storage --set auth.enabled=false --set architecture=standalone
