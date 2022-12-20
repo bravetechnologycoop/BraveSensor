@@ -389,12 +389,12 @@ The IM21 door sensors each have a sticker on them with their door IDs. On the bo
 **Argument(s):**
 
 1. Three byte door ID separated by commas, for example: 1a,2b,3c See Description section above for where to locate an IM21 door sensor’s door ID.
-2. e - echos, aka publish to cloud, the door ID the Particle is currently connected to
+2. e - Echos (publishes to cloud) the door ID the Particle is currently connected to
 
 **Return(s):**
 
-- 1 - if door ID parsed and written to flash
-- 1 - if door ID echoed to the cloud
+- <The door ID converted to a decimal number> - if door ID was parsed and written to flash
+- <The door ID converted to a decimal number> - if door ID was echoed to the cloud
 - -1 - if bad input was received and door ID was neither parsed or echoed to the cloud
 
 ### **force_reset(String)**

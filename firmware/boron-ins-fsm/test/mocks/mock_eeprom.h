@@ -13,33 +13,27 @@
 
 #pragma once
 
-#define BORON_EEPROM_SIZE 4096
-#define BYTES_PER_ELEMENT 8
+#include "../../src/flashAddresses.h"
 
-class MockEEPROM
-{
-private:
-    uint8_t mockMemory[BORON_EEPROM_SIZE * BYTES_PER_ELEMENT];
-
+class MockEEPROM {
 public:
     MockEEPROM() {}
 
     template <typename T>
     void get(int const _address, T& data) {
-        if (_address >= BORON_EEPROM_SIZE) {
-            return;
+        if (_address == ADDR_IM_DOORID) {
+            data = (T)0x12;
         }
-
-        memcpy(&data, mockMemory + (_address * BYTES_PER_ELEMENT), sizeof(data));
+        else if (_address == ADDR_IM_DOORID + 1) {
+            data = (T)0x34;
+        }
+        else if (_address == ADDR_IM_DOORID + 2) {
+            data = (T)0x56;
+        }
     }
 
     template <typename T>
     void put(int const _address, T const& _data) {
-        if (_address >= BORON_EEPROM_SIZE) {
-            return;
-        }
-
-        memcpy(mockMemory + (_address * BYTES_PER_ELEMENT), &_data, sizeof(_data));
     }
 };
 

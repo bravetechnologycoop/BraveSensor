@@ -107,25 +107,23 @@ SCENARIO( "Turn_Debugging_Publishes_On_Off", "[toggle debug flag]" ) {
 
 SCENARIO( "Change_IM21_Door_ID", "[change door id]" ) {
 
-    GIVEN( "A default global door id" ) {
-
-        WHEN( "The function is called with e and a valid door ID was previously set" ) {
-            im21_door_id_set("56,34,12");
-            int returnVal = im21_door_id_set("e");
-
-            THEN( "The function should return the door ID that was previously set" ) {
-                // There exists a bug where the last two bytes of returnVal are set
-                // to 00 inside this THEN macro, even if the value was previously
-                // correct. 
-                REQUIRE( returnVal == 1193046 );
-            }
-        }
+    GIVEN( "A valid global door ID" ) {
+        String doorID = "AB,CD,EF";
 
         WHEN( "the function is called with a valid door ID" ) {
-            int returnVal = im21_door_id_set("EF,CD,AB");
+            int returnVal = im21_door_id_set(doorID);   // Note: The mock EEPROM is coded to always return 0x123456 as the door ID
 
             THEN( "The function should return the door ID converted to a decimal number" ) {
                 REQUIRE( returnVal == 11259375 );
+            }
+        }
+
+        WHEN( "The function is called with e and a valid door ID was previously set" ) {
+            im21_door_id_set("12,34,56");
+            int returnVal = im21_door_id_set("e");      // Note: The mock EEPROM is coded to always return 0x123456 as the door ID
+
+            THEN( "The function should return the door ID that was previously set converted to a decimal number" ) {
+                REQUIRE( returnVal == 1193046 );
             }
         }
 
@@ -150,7 +148,6 @@ SCENARIO( "Change_IM21_Door_ID", "[change door id]" ) {
 SCENARIO( "Set Initial Timer", "[initial timer]" ) {
     GIVEN( "A starting initial timer of 10 milliseconds" ) {
         state1_max_time = 10000;
-        initial_timer_set("10");
 
         WHEN( "the function is called with 'e'" ) {
             int returnFlag = initial_timer_set("e");
@@ -206,7 +203,6 @@ SCENARIO( "Set Duration Timer", "[duration timer]" ) {
 
     GIVEN( "A starting initial timer of 10 milliseconds" ) {
         state2_max_duration = 10000;
-        duration_timer_set("10");
 
         WHEN( "the function is called with 'e'" ) {
             int returnFlag = duration_timer_set("e");
@@ -261,7 +257,6 @@ SCENARIO( "Set Duration Timer", "[duration timer]" ) {
 SCENARIO( "Set Stillness Timer", "[stillness timer]" ) {
     GIVEN( "A starting stillness timer of 10 milliseconds" ) {
         state3_max_stillness_time = 10000;
-        stillness_timer_set("10");
 
         WHEN( "the function is called with 'e'" ) {
             int returnFlag = stillness_timer_set("e");
@@ -317,7 +312,6 @@ SCENARIO( "Set INS Threshold", "[ins threshold]" ) {
 
     GIVEN( "A starting initial threshold of 10" ) {
         ins_threshold = 10;
-        ins_threshold_set("10");
 
         WHEN( "the function is called with 'e'" ) {
             int returnFlag = ins_threshold_set("e");
