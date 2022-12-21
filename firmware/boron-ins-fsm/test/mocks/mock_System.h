@@ -4,8 +4,7 @@ bool resetWasCalled;
 
 class MockSystem {
    public:
-    MockSystem() {
-    }
+    MockSystem() {}
 
    public:
     void reset() {

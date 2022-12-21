@@ -36,9 +36,7 @@ SCENARIO("isDoorStatusUnknown", "[isDoorStatusUnknown]") {
         int doorStatus = INITIAL_DOOR_STATUS;
 
         WHEN("The function is called with the initial status") {
-            THEN("The function should return 1") {
-                REQUIRE(isDoorStatusUnknown(doorStatus) == 1);
-            }
+            THEN("The function should return 1") { REQUIRE(isDoorStatusUnknown(doorStatus) == 1); }
         }
     }
 

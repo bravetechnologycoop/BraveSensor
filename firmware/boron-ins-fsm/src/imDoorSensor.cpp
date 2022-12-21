@@ -121,8 +121,8 @@ doorData checkIM() {
 void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData) {
     char doorPublishBuffer[128];
 
-    sprintf(doorPublishBuffer, "{ \"deviceid\": \"%02X:%02X:%02X\", \"data\": \"%02X\", \"control\": \"%02X\" }",
-            globalDoorID.byte1, globalDoorID.byte2, globalDoorID.byte3, currentDoorData.doorStatus, currentDoorData.controlByte);
+    sprintf(doorPublishBuffer, "{ \"deviceid\": \"%02X:%02X:%02X\", \"data\": \"%02X\", \"control\": \"%02X\" }", globalDoorID.byte1,
+            globalDoorID.byte2, globalDoorID.byte3, currentDoorData.doorStatus, currentDoorData.controlByte);
     Particle.publish("IM Door Sensor Data", doorPublishBuffer, PRIVATE);
     Log.warn("published, 0x%02X", currentDoorData.controlByte);
 }
@@ -133,7 +133,8 @@ void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorDat
     sprintf(doorPublishBuffer, "{ \"deviceid\": \"%02X:%02X:%02X\", \"prev_control_byte\": \"%02X\", \"curr_control_byte\": \"%02X\" }",
             globalDoorID.byte1, globalDoorID.byte2, globalDoorID.byte3, previousDoorData.controlByte, currentDoorData.controlByte);
     Particle.publish("IM Door Sensor Warning", doorPublishBuffer, PRIVATE);
-    Log.warn("Published IM Door Sensor warning, prev door byte = 0x%02X, curr door byte = 0x%02X", previousDoorData.controlByte, currentDoorData.controlByte);
+    Log.warn("Published IM Door Sensor warning, prev door byte = 0x%02X, curr door byte = 0x%02X", previousDoorData.controlByte,
+             currentDoorData.controlByte);
 }
 
 //**********threads*****************
@@ -205,9 +206,7 @@ void threadBLEScanner(void *param) {
  * Parameters: The IM door sensor door status (byte 5 of the door sensor advertising data).
  * Returns: 1 if the door is open, 0 if the door is closed.
  */
-int isDoorOpen(int doorStatus) {
-    return ((doorStatus & 0x02) >> 1);
-}
+int isDoorOpen(int doorStatus) { return ((doorStatus & 0x02) >> 1); }
 
 /* Return whether the door status is unknown, according to the IM door sensor.
  * The door status is considered unknown when it is equal to INITIAL_DOOR_STATUS, which occurs upon initial startup.
@@ -215,6 +214,4 @@ int isDoorOpen(int doorStatus) {
  * Parameters: The IM door sensor door status (byte 5 of the door sensor advertising data).
  * Returns: 1 if the door status is unknown, 0 if the door status is known.
  */
-int isDoorStatusUnknown(int doorStatus) {
-    return (doorStatus == INITIAL_DOOR_STATUS);
-}
+int isDoorStatusUnknown(int doorStatus) { return (doorStatus == INITIAL_DOOR_STATUS); }

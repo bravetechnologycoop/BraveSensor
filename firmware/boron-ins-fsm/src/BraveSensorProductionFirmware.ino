@@ -1,7 +1,7 @@
 /*
  * Brave firmware state machine for single Boron
  * written by Heidi Fedorak, Apr 2021
-*/
+ */
 
 #include "Particle.h"
 #include "imDoorSensor.h"
@@ -44,7 +44,7 @@ void loop() {
     // particleOS may not have finished initializing its UART modules
     static bool initialized = false;
 
-    //do once
+    // do once
     if (!initialized && Particle.connected()) {
         // use external antenna on Boron
         // BLE.selectAntenna(BleAntennaType::EXTERNAL);

@@ -134,7 +134,8 @@ void startINSSerial() {
 }
 
 void writeToINS3331(unsigned char function_code) {
-    unsigned char ins3331_send_buf[15] = {WAKEUP_BYTE, START_DELIMITER, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, END_DELIMITER};
+    unsigned char ins3331_send_buf[15] = {WAKEUP_BYTE, START_DELIMITER, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                          0x00,        END_DELIMITER};
     ins3331_send_buf[4] = function_code;
 
     // calculate checksum for a 15-byte array (writing to INS always requires 15 byte array)

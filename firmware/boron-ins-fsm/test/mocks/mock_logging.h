@@ -21,16 +21,10 @@ class MockLogger {
     MockLogger() {}
 
    public:
-    void warn(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
-        printf("LOG.WARN\n");
-    }
+    void warn(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) { printf("LOG.WARN\n"); }
 
-    void error(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
-        printf("LOG.ERROR\n");
-    }
+    void error(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) { printf("LOG.ERROR\n"); }
 
-    void info(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
-        printf("LOG.INFO\n");
-    }
+    void info(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) { printf("LOG.INFO\n"); }
 };
 extern MockLogger Log;

@@ -134,7 +134,8 @@ void state1_15sCountdown() {
 
     // do stuff in the state
     digitalWrite(D2, HIGH);
-    Log.info("You are in state 1, 15s countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
+    Log.info("You are in state 1, 15s countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
+             (millis() - state1_timer));
     publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
 
     // fix outputs and state exit conditions accordingly
@@ -177,7 +178,8 @@ void state2_duration() {
 
     // do stuff in the state
     digitalWrite(D3, HIGH);
-    Log.info("You are in state 2, duration: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
+    Log.info("You are in state 2, duration: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
+             (millis() - state2_duration_timer));
     publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
 
     // fix outputs and state exit conditions accordingly
@@ -223,7 +225,8 @@ void state3_stillness() {
 
     // do stuff in the state
     digitalWrite(D4, HIGH);
-    Log.info("You are in state 3, stillness: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
+    Log.info("You are in state 3, stillness: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
+             (millis() - state3_stillness_timer));
     publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
 
     // fix outputs and state exit conditions accordingly
@@ -269,7 +272,8 @@ void publishStateTransition(int prevState, int nextState, unsigned char doorStat
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char stateTransition[622];
         snprintf(stateTransition, sizeof(stateTransition),
-                 "{\"prev_state\":\"%d\", \"next_state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\"}", prevState, nextState, doorStatus, INSValue);
+                 "{\"prev_state\":\"%d\", \"next_state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\"}", prevState, nextState, doorStatus,
+                 INSValue);
         Particle.publish("State Transition", stateTransition, PRIVATE);
     }
 }
@@ -280,8 +284,8 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
     if (stateMachineDebugFlag && (millis() - lastDebugPublish) > DEBUG_PUBLISH_INTERVAL) {
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char debugMessage[622];
-        snprintf(debugMessage, sizeof(debugMessage),
-                 "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"timer_status\":\"%lu\"}", state, doorStatus, INSValue, timer);
+        snprintf(debugMessage, sizeof(debugMessage), "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"timer_status\":\"%lu\"}",
+                 state, doorStatus, INSValue, timer);
         Particle.publish("Debug Message", debugMessage, PRIVATE);
         lastDebugPublish = millis();
     }
@@ -341,10 +345,11 @@ void getHeartbeat() {
     static unsigned long lastHeartbeatPublish = 0;
     // 1st "if condition" is so that the boron publishes a heartbeat on startup
     // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true.
-    //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 because the IM Door Sensor broadcasts 3 messages
-    //     The doorMessageReceivedFlag is set to true when any IM Door Sensor message is received, but only after a certain threshold
+    //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 because the IM Door Sensor broadcasts 3
+    //     messages The doorMessageReceivedFlag is set to true when any IM Door Sensor message is received, but only after a certain threshold
     // 3rd "if condition" is true only if a heartbeat hasnt been published in the last SM_HEARTBEAT_INTERVAL
-    if (lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && millis() - doorHeartbeatReceived >= HEARTBEAT_PUBLISH_DELAY) || (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) {
+    if (lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && millis() - doorHeartbeatReceived >= HEARTBEAT_PUBLISH_DELAY) ||
+        (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) {
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char heartbeatMessage[622] = {0};
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
@@ -357,7 +362,8 @@ void getHeartbeat() {
         writer.name("doorLowBatt").value(doorLowBatteryFlag);
 
         // logs time in milliseconds since last IM Door Sensor message was received
-        // the particle name is a bit misleading, remains this way because the server uses "doorLastHeartbeat" to check if the IM Door Sensor sensor has disconnected
+        // the particle name is a bit misleading, remains this way because the server uses "doorLastHeartbeat" to check if the IM Door Sensor sensor
+        // has disconnected
         writer.name("doorLastHeartbeat").value((unsigned int)(millis() - doorLastMessage));
 
         // logs the reason of the last reset
@@ -374,11 +380,7 @@ void getHeartbeat() {
                 Log.warn("Heartbeat message full, remaining states will be reported next heartbeat");
                 break;
             }
-            writer.beginArray()
-                .value(stateQueue.front())
-                .value(reasonQueue.front())
-                .value((unsigned int)timeQueue.front())
-                .endArray();
+            writer.beginArray().value(stateQueue.front()).value(reasonQueue.front()).value((unsigned int)timeQueue.front()).endArray();
             stateQueue.pop();
             reasonQueue.pop();
             timeQueue.pop();

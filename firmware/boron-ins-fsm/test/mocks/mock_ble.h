@@ -10,26 +10,20 @@
 #include "../inc/spark_wiring_vector.h"
 
 // Defines fake BleAdvertisingDataType values
-enum class BleAdvertisingDataType : uint8_t {
-    MANUFACTURER_SPECIFIC_DATA
-};
+enum class BleAdvertisingDataType : uint8_t { MANUFACTURER_SPECIFIC_DATA };
 
 // Fake class for BleAddress object
 class BleAddress {
    public:
     BleAddress();
 
-    const BleAddress get() const {
-        return *this;
-    }
+    const BleAddress get() const { return *this; }
 };
 
 // Fake class for BleAdvertisingData object
 class BleAdvertisingData {
    public:
-    const BleAdvertisingData get(BleAdvertisingDataType bleAdvertisingDataType, uint8_t* advertisingData, int maxLength) const {
-        return *this;
-    }
+    const BleAdvertisingData get(BleAdvertisingDataType bleAdvertisingDataType, uint8_t* advertisingData, int maxLength) const { return *this; }
 };
 
 // Fake class for BleScanResult object
@@ -46,9 +40,7 @@ class BleScanResult {
         return address_;
     }
 
-    const BleAdvertisingData advertisingData() const {
-        return advertisingData_;
-    }
+    const BleAdvertisingData advertisingData() const { return advertisingData_; }
 };
 
 // Fake class for BleScanFilter
@@ -77,9 +69,7 @@ class MockBLE {
     MockBLE() {}
 
    public:
-    int setScanTimeout(uint16_t timeout) const {
-        return 0;
-    }
+    int setScanTimeout(uint16_t timeout) const { return 0; }
 
     spark::Vector<BleScanResult> scanWithFilter(const BleScanFilter& filter) {
         spark::Vector<BleScanResult> mockScanResults;

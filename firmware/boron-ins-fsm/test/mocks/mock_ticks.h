@@ -19,6 +19,4 @@ uint32_t millis() {
     return (uint32_t)(uint64_t)(ts.tv_nsec / 1000000) + ((uint64_t)ts.tv_sec * 1000ull);
 }
 
-void delay(unsigned long ms) {
-    return;
-}
+void delay(unsigned long ms) { return; }

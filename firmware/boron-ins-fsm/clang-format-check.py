@@ -1,7 +1,7 @@
 #
 # clang-format-check.py
 #
-# Checks whether all files with filetype .cpp or .h in the src and test directories are formatted correctly. 
+# Checks whether all files with filetype .cpp, .ino or .h in the src and test directories are formatted correctly. 
 # The syntax of this script has been modified to work in Travis CI. In order to run it locally, change all references to clang-format-12 to clang-format. 
 # You must have clang-format version 12.0.0 installed in order to run this script. 
 # To run this script, use the command "python clang-format-check.py". 

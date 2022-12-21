@@ -234,9 +234,7 @@ int im21_door_id_set(String command) {  // command is a long string with all the
         EEPROM.get((ADDR_IM_DOORID + 2), holder.byte3);
 
         char buffer[64];
-        snprintf(buffer, sizeof(buffer),
-                 "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}",
-                 holder.byte1, holder.byte2, holder.byte3);
+        snprintf(buffer, sizeof(buffer), "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}", holder.byte1, holder.byte2, holder.byte3);
         Particle.publish("Current Door Sensor ID: ", buffer, PRIVATE);
     }
     else  // else not echo, so we have a new door ID to parse
@@ -279,11 +277,10 @@ int force_reset(String command) {
     }
     else if (*holder == '1') {
         returnFlag = 1;
-        bool msg_sent =
-            Particle.publish("YOU SHALL NOT PANIC!!",
-                             "Reset has begun so ignore the future particle "
-                             "message about failure to call force_reset()",
-                             PRIVATE | WITH_ACK);
+        bool msg_sent = Particle.publish("YOU SHALL NOT PANIC!!",
+                                         "Reset has begun so ignore the future particle "
+                                         "message about failure to call force_reset()",
+                                         PRIVATE | WITH_ACK);
         if (msg_sent) {
             System.reset();
         }
