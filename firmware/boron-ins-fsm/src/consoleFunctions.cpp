@@ -22,8 +22,7 @@
 void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
     Particle.function("Force_Reset", force_reset);
-    Particle.function("Turn_Debugging_Publishes_On_Off",
-                      toggle_debugging_publishes);
+    Particle.function("Turn_Debugging_Publishes_On_Off", toggle_debugging_publishes);
     Particle.function("Change_Initial_Timer", initial_timer_set);
     Particle.function("Change_Duration_Timer", duration_timer_set);
     Particle.function("Change_Stillness_Timer", stillness_timer_set);

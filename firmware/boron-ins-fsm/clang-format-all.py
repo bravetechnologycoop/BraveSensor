@@ -9,5 +9,5 @@
 
 import os
 
-os.system("find src -iname *.h -o -iname *.cpp | xargs clang-format -i")
-os.system("find test -iname *.h -o -iname *.cpp | xargs clang-format -i")
+os.system("find src -iname *.h -o -iname *.cpp -o -iname *.ino | xargs clang-format -i")
+os.system("find test -iname *.h -o -iname *.cpp -o -iname *.ino | xargs clang-format -i")

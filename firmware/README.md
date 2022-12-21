@@ -650,7 +650,7 @@ To compile and run the unit tests, see the .travis.yml file for the most up to d
 
 As a part of the second stage of the Travis CI process, the formatting of all firmware code located in the `/src` and `/test` folders is checked using clang-format, as specified in the .clang-format file. clang-format version 12.0.0 is used in order to be compatible with Travis. To format all code in these folders, run the clang-format-all.py script. 
 
-Addittionally, all firmware code located in the `/src` folder is checked using cppcheck for potential problems. Both checks must be free of errors for the stage to pass. 
+Additionally, all firmware code located in the `/src` folder is checked using cppcheck for potential problems. Both checks must be free of errors for the stage to pass. 
 
 # v3.2 Argon INS Firmware
 

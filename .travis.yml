@@ -58,7 +58,7 @@ jobs:
         - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then npx audit-ci --config ./audit-ci.json; fi
         - npm run lint
         - sudo env "PATH=$PATH" npm test
-    - stage: 'linting and formatting checks'
+    - stage: 'firmware linting and formatting checks'
       language: python
       before_install:
         - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
