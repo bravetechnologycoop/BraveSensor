@@ -2,13 +2,9 @@
  * Mock EEPROM memory for Particle Boron
  * Reference: https://docs.particle.io/reference/device-os/api/eeprom/eeprom/
  * 
- * NOTE: Due to an issue where sizeof() returns different values on different 
- * operating systems for certain data types, this mock EEPROM implementation
- * differs from the actual Boron EEPROM by always allocating BYTES_PER_ELEMENT
- * bytes for each element being stored. In reality, the EEPROM only has 
- * BORON_EEPROM_SIZE bytes of memory. When data is read from or written to the
- * address pointed to by _address, sizeof(data) is used to read or write a
- * number of bytes equal to the size of the data type. 
+ * The mock EEPROM is coded such that calling get() to get the IM door ID will
+ * always set the data variable to 0x12 for the first byte of ADDR_IM_DOORID,
+ * 0x34 for the second byte, and 0x56 for the third byte. 
 */
 
 #pragma once
