@@ -19,7 +19,7 @@ the code was deployed.
 
 ### Added
 
-- New stage "linting and formatting checks" to Travis CI, which lints and checks the formatting of firmware code, failing the build if errors are found (CU-1k10ejd). 
+- New stage "firmware linting and formatting checks" to Travis CI, which lints and checks the formatting of firmware code, failing the build if errors are found (CU-1k10ejd). 
 
 ## [7.0.0] - 2022-12-13
 
