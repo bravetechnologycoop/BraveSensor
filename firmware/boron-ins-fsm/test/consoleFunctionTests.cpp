@@ -104,25 +104,24 @@ SCENARIO("Turn_Debugging_Publishes_On_Off", "[toggle debug flag]") {
     }
 }
 
-SCENARIO( "Change_IM21_Door_ID", "[change door id]" ) {
-
-    GIVEN( "A valid global door ID" ) {
+SCENARIO("Change_IM21_Door_ID", "[change door id]") {
+    GIVEN("A valid global door ID") {
         String doorID = "AB,CD,EF";
 
-        WHEN( "the function is called with a valid door ID" ) {
+        WHEN("the function is called with a valid door ID") {
             int returnVal = im21_door_id_set(doorID);
 
-            THEN( "The function should return the door ID converted to a decimal number" ) {
-                REQUIRE( returnVal == 11259375 );
+            THEN("The function should return the door ID converted to a decimal number") {
+                REQUIRE(returnVal == 11259375);
             }
         }
 
-        WHEN( "The function is called with e and a valid door ID was previously set" ) {
+        WHEN("The function is called with e and a valid door ID was previously set") {
             im21_door_id_set("12,34,56");
-            int returnVal = im21_door_id_set("e");      // Note: The mock EEPROM is coded to always return 0x123456 as the door ID
+            int returnVal = im21_door_id_set("e");  // Note: The mock EEPROM is coded to always return 0x123456 as the door ID
 
-            THEN( "The function should return the door ID that was previously set converted to a decimal number" ) {
-                REQUIRE( returnVal == 1193046 );
+            THEN("The function should return the door ID that was previously set converted to a decimal number") {
+                REQUIRE(returnVal == 1193046);
             }
         }
 
