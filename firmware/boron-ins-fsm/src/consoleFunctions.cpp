@@ -240,7 +240,7 @@ int im21_door_id_set(String command) {
     EEPROM.get((ADDR_IM_DOORID + 1), doorIDHolder.byte2);  
     EEPROM.get((ADDR_IM_DOORID + 2), doorIDHolder.byte3);  
 
-    snprintf(buffer, sizeof(buffer), "%02X,%02X,%02X", doorIDHolder.byte3, doorIDHolder.byte2, doorIDHolder.byte1); 
+    snprintf(buffer, sizeof(buffer), "{\"doorId\": \"%02X,%02X,%02X\"}", doorIDHolder.byte3, doorIDHolder.byte2, doorIDHolder.byte1); 
     Particle.publish("Current Door Sensor ID: ", buffer, PRIVATE);
 
     // put door ID in buffer for return value
