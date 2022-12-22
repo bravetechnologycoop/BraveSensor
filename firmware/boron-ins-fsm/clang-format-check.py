@@ -10,7 +10,7 @@
 
 import os
 
-if os.system("find src -iname *.h -o -iname *.cpp | xargs clang-format-12 --Werror --dry-run") or os.system("find test -iname *.h -o -iname *.cpp | xargs clang-format-12 --Werror --dry-run"):
+if os.system("find src -iname *.h -o -iname *.cpp -o -iname *.ino | xargs clang-format-12 --Werror --dry-run") or os.system("find test -iname *.h -o -iname *.cpp -o -iname *.ino | xargs clang-format-12 --Werror --dry-run"):
     os.system("echo \"Formatting error(s) found, run clang-format-all.py and try again!\"")
     os._exit(1)
 
