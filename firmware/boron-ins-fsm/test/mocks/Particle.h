@@ -23,7 +23,8 @@ uint32_t millis();
 void delay(unsigned long ms);
 
 String fullPublishString;
-enum PublishFlag {
+enum PublishFlag
+{
     PUBLIC,
     PRIVATE,
     NO_ACK,
