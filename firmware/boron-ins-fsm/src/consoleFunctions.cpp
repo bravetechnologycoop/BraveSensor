@@ -217,136 +217,89 @@ int ins_threshold_set(String input) {
 }
 
 // particle console function to get/set door sensor ID
-<<<<<<< HEAD
 // command is a long string with all the config values
-int im21_door_id_set(String command) {
-    char buffer[64];
-    IMDoorID doorIDHolder;
+int im21_door_id_set(String command) { 
+  char buffer[64];
+  IMDoorID doorIDHolder; 
 
-    if (isValidIM21Id(command) == false) {
-        return -1;
+  if(isValidIM21Id(command) == false){
+    return -1;
+  }
+
+  // get pointer to user-entered string
+  const char* checkForEcho = command.c_str();
+
+  // if echo, publish current door ID
+  if(*checkForEcho == 'e'){  
+    EEPROM.get(ADDR_IM_DOORID, doorIDHolder.byte1);  
+    EEPROM.get((ADDR_IM_DOORID + 1), doorIDHolder.byte2);  
+    EEPROM.get((ADDR_IM_DOORID + 2), doorIDHolder.byte3);  
+
+    snprintf(buffer, sizeof(buffer), "{\"doorId\": \"%02X,%02X,%02X\"}", doorIDHolder.byte3, doorIDHolder.byte2, doorIDHolder.byte1); 
+    Particle.publish("Current Door Sensor ID: ", buffer, PRIVATE);
+
+    // put door ID in buffer for return value
+    snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorIDHolder.byte3, doorIDHolder.byte2, doorIDHolder.byte1);
+  } 
+  else // else not echo, so we have a new door ID to parse
+  {
+    // parse input string and update global door ID 
+    char* byteholder1;
+    char* byteholder2;
+    char* byteholder3;
+
+    int split1 = command.indexOf(',');                                // get index of first comma to delimit input
+    byteholder1 = strdup(command.substring(0, split1).c_str());       // get first byte of input and copy to holder variable
+    globalDoorID.byte3 = (uint8_t)strtol(byteholder1, NULL, 16);      // convert it to hex and set the third byte of the door ID
+
+    int split2 = command.indexOf(',', split1 + 1);
+    byteholder2 = strdup(command.substring(split1 + 1, split2).c_str());
+    globalDoorID.byte2 = (uint8_t)strtol(byteholder2, NULL, 16);
+
+    int split3 = command.indexOf(',', split2 + 1);
+    byteholder3 = strdup(command.substring(split2 + 1, split3).c_str());
+    globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);
+
+    //write new global door ID to flash
+    EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);
+    EEPROM.put((ADDR_IM_DOORID + 1), globalDoorID.byte2);
+    EEPROM.put((ADDR_IM_DOORID + 2), globalDoorID.byte3);
+
+    // put door ID in buffer for return value
+    snprintf(buffer, sizeof(buffer), "%02X%02X%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
+  
+  } // end if-else
+
+  // return door ID as int
+  return (int)strtol(buffer, NULL, 16);
+}
+
+int force_reset(String command) {
+    // default to invalid input
+    int returnFlag = -1;
+
+    // string.toInt() returns 0 if it fails, so can't distinguish between user
+    // entering 0 vs entering bad input. So convert to char and use ascii table
+    const char* holder = command.c_str();
+
+    if (*(holder + 1) != 0) {
+        // any string longer than 1 char is invalid input, so
+        returnFlag = -1;
+    }
+    else if (*holder == '1') {
+        returnFlag = 1;
+        bool msg_sent = Particle.publish("YOU SHALL NOT PANIC!!",
+                                         "Reset has begun so ignore the future particle "
+                                         "message about failure to call force_reset()",
+                                         PRIVATE | WITH_ACK);
+        if (msg_sent) {
+            System.reset();
+        }
+    }
+    else {
+        // anything else is bad input so
+        returnFlag = -1;
     }
 
-    // get pointer to user-entered string
-    const char* checkForEcho = command.c_str();
-
-    // if echo, publish current door ID
-    if (*checkForEcho == 'e') {
-        EEPROM.get(ADDR_IM_DOORID, doorIDHolder.byte1);
-        EEPROM.get((ADDR_IM_DOORID + 1), doorIDHolder.byte2);
-        EEPROM.get((ADDR_IM_DOORID + 2), doorIDHolder.byte3);
-
-        snprintf(buffer, sizeof(buffer), "{\"doorId\": \"%02X,%02X,%02X\"}", doorIDHolder.byte3, doorIDHolder.byte2, doorIDHolder.byte1);
-        Particle.publish("Current Door Sensor ID: ", buffer, PRIVATE);
-
-        // put door ID in buffer for return value
-        snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorIDHolder.byte3, doorIDHolder.byte2, doorIDHolder.byte1);
-    }
-    else  // else not echo, so we have a new door ID to parse
-    {
-        // parse input string and update global door ID
-        char* byteholder1;
-        char* byteholder2;
-        char* byteholder3;
-
-        int split1 = command.indexOf(',');                            // get index of first comma to delimit input
-        byteholder1 = strdup(command.substring(0, split1).c_str());   // get first byte of input and copy to holder variable
-        globalDoorID.byte3 = (uint8_t)strtol(byteholder1, NULL, 16);  // convert it to hex and set the third byte of the door ID
-
-        int split2 = command.indexOf(',', split1 + 1);
-        byteholder2 = strdup(command.substring(split1 + 1, split2).c_str());
-        globalDoorID.byte2 = (uint8_t)strtol(byteholder2, NULL, 16);
-
-        int split3 = command.indexOf(',', split2 + 1);
-        byteholder3 = strdup(command.substring(split2 + 1, split3).c_str());
-        globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);
-
-        // write new global door ID to flash
-        EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);
-        EEPROM.put((ADDR_IM_DOORID + 1), globalDoorID.byte2);
-        EEPROM.put((ADDR_IM_DOORID + 2), globalDoorID.byte3);
-
-        // put door ID in buffer for return value
-        snprintf(buffer, sizeof(buffer), "%02X%02X%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
-
-    }  // end if-else
-
-    // return door ID as int
-    return (int)strtol(buffer, NULL, 16);
-    == == == = int im21_door_id_set(String command) {  // command is a long string with all the config values
-
-        if (isValidIM21Id(command) == false) {
-            return -1;
-        }
-
-        // get pointer to user-entered string
-        const char* checkForEcho = command.c_str();
-
-        // if echo, publish current door ID
-        if (*checkForEcho == 'e') {
-            IMDoorID holder;
-            EEPROM.get(ADDR_IM_DOORID, holder.byte1);
-            EEPROM.get((ADDR_IM_DOORID + 1), holder.byte2);
-            EEPROM.get((ADDR_IM_DOORID + 2), holder.byte3);
-
-            char buffer[64];
-            snprintf(buffer, sizeof(buffer), "{\"byte1\":\"%02X\", \"byte2\":\"%02X\", \"byte3\":\"%02X\"}", holder.byte1, holder.byte2,
-                     holder.byte3);
-            Particle.publish("Current Door Sensor ID: ", buffer, PRIVATE);
-        }
-        else  // else not echo, so we have a new door ID to parse
-        {
-            // parse input string and update global door ID
-            const char* byteholder1;
-            const char* byteholder2;
-            const char* byteholder3;
-            int split1 = command.indexOf(',');
-            byteholder1 = command.substring(0, split1).c_str();
-            globalDoorID.byte3 = (uint8_t)strtol(byteholder1, NULL, 16);
-            int split2 = command.indexOf(',', split1 + 1);
-            byteholder2 = command.substring(split1 + 1, split2).c_str();
-            globalDoorID.byte2 = (uint8_t)strtol(byteholder2, NULL, 16);
-            int split3 = command.indexOf(',', split2 + 1);
-            byteholder3 = command.substring(split2 + 1, split3).c_str();
-            globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);
-
-            // write new global door ID to flash
-            EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);
-            EEPROM.put((ADDR_IM_DOORID + 1), globalDoorID.byte2);
-            EEPROM.put((ADDR_IM_DOORID + 2), globalDoorID.byte3);
-
-        }  // end if-else
-
-        return 1;
->>>>>>> 67b471d4c060115da5dfa948937e08a13de323b6
-    }
-
-    int force_reset(String command) {
-        // default to invalid input
-        int returnFlag = -1;
-
-        // string.toInt() returns 0 if it fails, so can't distinguish between user
-        // entering 0 vs entering bad input. So convert to char and use ascii table
-        const char* holder = command.c_str();
-
-        if (*(holder + 1) != 0) {
-            // any string longer than 1 char is invalid input, so
-            returnFlag = -1;
-        }
-        else if (*holder == '1') {
-            returnFlag = 1;
-            bool msg_sent = Particle.publish("YOU SHALL NOT PANIC!!",
-                                             "Reset has begun so ignore the future particle "
-                                             "message about failure to call force_reset()",
-                                             PRIVATE | WITH_ACK);
-            if (msg_sent) {
-                System.reset();
-            }
-        }
-        else {
-            // anything else is bad input so
-            returnFlag = -1;
-        }
-
-        return returnFlag;
-    }
+    return returnFlag;
+}
