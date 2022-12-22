@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [7.1.0] - 2022-12-22
+
 ### Changed
 
 - Sensor state machine to reset stillness timer and transition back to stillness state after receiving a stillness alert (CU-39w5av5).
@@ -458,7 +460,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v7.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v7.1.0...HEAD
+[7.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v7.0.0...v7.1.0
 [7.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.4.0...v7.0.0
 [6.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.3.0...v6.4.0
 [6.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.2.0...v6.3.0
