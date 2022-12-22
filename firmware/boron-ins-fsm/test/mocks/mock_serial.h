@@ -4,14 +4,13 @@
 
 #pragma once
 
-#define Serial 0                                // not implemented
-#define Serial1 __fetch_mock_global_Serial1()   // defined as mock USART Serial
+#define Serial  0                              // not implemented
+#define Serial1 __fetch_mock_global_Serial1()  // defined as mock USART Serial
 
-#define SERIAL_8N1 0                            // fake definition
+#define SERIAL_8N1 0  // fake definition
 
 // Fake class for USARTSerial
-class MockUSARTSerial
-{
+class MockUSARTSerial {
 public:
     MockUSARTSerial() {}
 

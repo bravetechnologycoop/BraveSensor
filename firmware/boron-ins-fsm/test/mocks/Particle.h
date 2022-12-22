@@ -1,6 +1,6 @@
 /*
  * Mock implementations for Particle.h library functions.
- 
+
  * The mock implementations are necessary so that unit tests
  * can be compiled using GCC and run automatically in Travis.
  */
@@ -34,31 +34,23 @@ enum PublishFlag
 // Fake structs
 struct os_queue_t {};
 
-class MockParticle
-{
+class MockParticle {
 public:
-    MockParticle()
-    {
-    }
+    MockParticle() {}
 
 public:
-    bool connected() const
-    {
+    bool connected() const {
         return true;
     }
 
-    bool publish(char const* const szEventName,
-                 char const* const szData,
-                 int const flags)
-    {
+    bool publish(char const* const szEventName, char const* const szData, int const flags) {
         printf("Particle.Publish: '%s' = '%s' (flags: 0x%02x)\n", szEventName, szData, flags);
         fullPublishString = String(szEventName) + String(szData);
         return true;
     }
 
-    static void function(const char *funcKey, std::function<int(String)> func) {
+    static void function(const char* funcKey, std::function<int(String)> func) {
         printf("Particle.function: '%s'", funcKey);
-
     }
 };
 extern String fullPublishString;

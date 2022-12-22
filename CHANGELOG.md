@@ -18,6 +18,10 @@ the code was deployed.
 - Sensor duration alerts to only occur at most once per door close (CU-3c6my58).
 - Modified im21_door_id_set function to return the current door ID, converted to a decimal number (CU-3455bc0).
 
+### Added
+
+- New stage "firmware linting and formatting checks" to Travis CI, which lints and checks the formatting of firmware code, failing the build if errors are found (CU-1k10ejd). 
+
 ## [7.0.0] - 2022-12-13
 
 ### Changed

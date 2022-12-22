@@ -38,7 +38,8 @@
      - [IM21 Warning](#im21-warning)
      - [spark/device/diagnostics/update](#spark/device/diagnostics/update)
 6. [Boron Firmware Unit Tests](#boron-firmware-unit-tests)
-7. [v3.2 Argon INS Firmware](#v3.2-argon-ins-firmware)
+7. [Firmware Code Linting and Formatting](#firmware-code-linting-and-formatting)
+8. [v3.2 Argon INS Firmware](#v3.2-argon-ins-firmware)
    - [Setting up an Argon to use v3.2](#setting-up-an-argon-to-use-v32)
    - [Argon INS Console Functions](#argon-ins-console-functions)
    - [Argon INS Published Messages](#argon-ins-published-messages)
@@ -644,6 +645,12 @@ If you need to include additional Particle header files, they can be located at 
 It is suggested that upon upgrading the Boron firmware version, the files in the `/inc` folder are also updated to the latest version. 
 
 To compile and run the unit tests, see the .travis.yml file for the most up to date command. 
+
+# Firmware Code Linting and Formatting
+
+As a part of the second stage of the Travis CI process, the formatting of all firmware code located in the `/src` and `/test` folders is checked using clang-format, as specified in the .clang-format file. clang-format version 12.0.0 is used in order to be compatible with Travis. To format all code in these folders, run the clang-format-all.py script. 
+
+Additionally, all firmware code located in the `/src` folder is checked using cppcheck for potential problems. Both checks must be free of errors for the stage to pass. 
 
 # v3.2 Argon INS Firmware
 
