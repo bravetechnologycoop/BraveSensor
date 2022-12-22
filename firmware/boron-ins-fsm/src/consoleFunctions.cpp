@@ -12,12 +12,11 @@
  *
  *
  */
-#include "consoleFunctions.h"
-
 #include "Particle.h"
+#include "consoleFunctions.h"
 #include "flashAddresses.h"
-#include "imDoorSensor.h"
 #include "stateMachine.h"
+#include "imDoorSensor.h"
 
 void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
