@@ -1,11 +1,11 @@
 /*
  * Mock EEPROM memory for Particle Boron
  * Reference: https://docs.particle.io/reference/device-os/api/eeprom/eeprom/
- * 
+ *
  * The mock EEPROM is coded such that calling get() to get the IM door ID will
  * always set the data variable to 0x56 for the first byte of ADDR_IM_DOORID,
- * 0x34 for the second byte, and 0x12 for the third byte. 
-*/
+ * 0x34 for the second byte, and 0x12 for the third byte.
+ */
 
 #pragma once
 
@@ -29,8 +29,7 @@ public:
     }
 
     template <typename T>
-    void put(int const _address, T const& _data) {
-    }
+    void put(int const _address, T const& _data) {}
 };
 
 extern MockEEPROM EEPROM;

@@ -18,8 +18,8 @@
 // write originals flag
 // flags are uint16_t so 2 bytes each
 #define ADDR_INITIALIZE_SM_CONSTS_FLAG 0  // uint16_t = 2 bytes
-#define ADDR_INITIALIZE_DOOR_ID_FLAG 2    // uint16_t = 2 bytes
-=======
+#define ADDR_INITIALIZE_DOOR_ID_FLAG   2  // uint16_t = 2 bytes
+== == == =
 //**********FLASH ADDRESSES***********************
 // write originals flag
 // flags are uint16_t so 2 bytes each
@@ -36,13 +36,13 @@
 
 // IM Door Sensor ID
 <<<<<<< HEAD
-//struct with three unsigned chars (uint8_t)
+// struct with three unsigned chars (uint8_t)
 #define ADDR_IM_DOORID 20
-=======
+             == == == =
 // struct with three unsigned chars (uint8_t)
 #define ADDR_IM_DOORID 20
 
-// next available address is 20 + 3 = 23
+                          // next available address is 20 + 3 = 23
 >>>>>>> 67b471d4c060115da5dfa948937e08a13de323b6
 
-#endif
+    #endif
