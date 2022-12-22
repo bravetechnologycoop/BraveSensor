@@ -3,10 +3,10 @@
 bool resetWasCalled;
 
 class MockSystem {
-   public:
+public:
     MockSystem() {}
 
-   public:
+public:
     void reset() {
         printf("System Reset Works\n");
         resetWasCalled = true;

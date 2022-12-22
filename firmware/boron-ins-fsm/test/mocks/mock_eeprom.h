@@ -1,10 +1,10 @@
 #pragma once
 
 class MockEEPROM {
-   public:
+public:
     MockEEPROM() {}
 
-   public:
+public:
     template <typename T>
     void get(int const _address, T& data) {}
 

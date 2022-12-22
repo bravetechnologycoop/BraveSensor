@@ -23,17 +23,24 @@ uint32_t millis();
 void delay(unsigned long ms);
 
 String fullPublishString;
-enum PublishFlag { PUBLIC, PRIVATE, NO_ACK, WITH_ACK };
+enum PublishFlag {
+    PUBLIC,
+    PRIVATE,
+    NO_ACK,
+    WITH_ACK
+};
 
 // Fake structs
 struct os_queue_t {};
 
 class MockParticle {
-   public:
+public:
     MockParticle() {}
 
-   public:
-    bool connected() const { return true; }
+public:
+    bool connected() const {
+        return true;
+    }
 
     bool publish(char const* const szEventName, char const* const szData, int const flags) {
         printf("Particle.Publish: '%s' = '%s' (flags: 0x%02x)\n", szEventName, szData, flags);
@@ -41,7 +48,9 @@ class MockParticle {
         return true;
     }
 
-    static void function(const char* funcKey, std::function<int(String)> func) { printf("Particle.function: '%s'", funcKey); }
+    static void function(const char* funcKey, std::function<int(String)> func) {
+        printf("Particle.function: '%s'", funcKey);
+    }
 };
 extern String fullPublishString;
 extern MockParticle Particle;

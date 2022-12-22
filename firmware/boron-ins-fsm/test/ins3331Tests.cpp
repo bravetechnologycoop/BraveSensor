@@ -11,7 +11,9 @@ SCENARIO("The correct checksum is returned by calculateChecksum()") {
         WHEN("The function is called") {
             int checksum = calculateChecksum(buffer, 15);
 
-            THEN("Checksum should be equal to 0") { REQUIRE(checksum == 0); }
+            THEN("Checksum should be equal to 0") {
+                REQUIRE(checksum == 0);
+            }
         }
     }
     GIVEN("The buffer is populated with ones") {
@@ -23,7 +25,9 @@ SCENARIO("The correct checksum is returned by calculateChecksum()") {
         WHEN("The function is called") {
             int checksum = calculateChecksum(buffer, 15);
 
-            THEN("Checksum should be equal to 11") { REQUIRE(checksum == 11); }
+            THEN("Checksum should be equal to 11") {
+                REQUIRE(checksum == 11);
+            }
         }
     }
     GIVEN("The buffer is populated with alternating zeros and ones, starting with zero") {
@@ -32,7 +36,9 @@ SCENARIO("The correct checksum is returned by calculateChecksum()") {
         WHEN("The function is called") {
             int checksum = calculateChecksum(buffer, 15);
 
-            THEN("Checksum should be equal to 5") { REQUIRE(checksum == 5); }
+            THEN("Checksum should be equal to 5") {
+                REQUIRE(checksum == 5);
+            }
         }
     }
 }

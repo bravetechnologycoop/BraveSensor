@@ -206,7 +206,9 @@ void threadBLEScanner(void *param) {
  * Parameters: The IM door sensor door status (byte 5 of the door sensor advertising data).
  * Returns: 1 if the door is open, 0 if the door is closed.
  */
-int isDoorOpen(int doorStatus) { return ((doorStatus & 0x02) >> 1); }
+int isDoorOpen(int doorStatus) {
+    return ((doorStatus & 0x02) >> 1);
+}
 
 /* Return whether the door status is unknown, according to the IM door sensor.
  * The door status is considered unknown when it is equal to INITIAL_DOOR_STATUS, which occurs upon initial startup.
@@ -214,4 +216,6 @@ int isDoorOpen(int doorStatus) { return ((doorStatus & 0x02) >> 1); }
  * Parameters: The IM door sensor door status (byte 5 of the door sensor advertising data).
  * Returns: 1 if the door status is unknown, 0 if the door status is known.
  */
-int isDoorStatusUnknown(int doorStatus) { return (doorStatus == INITIAL_DOOR_STATUS); }
+int isDoorStatusUnknown(int doorStatus) {
+    return (doorStatus == INITIAL_DOOR_STATUS);
+}
