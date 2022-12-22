@@ -1,22 +1,21 @@
 /*
  * Brave firmware state machine for single Boron
  * written by Heidi Fedorak, Apr 2021
-*/
+ */
 
 #ifndef CONSOLEFUNCTIONS_H
 #define CONSOLEFUNCTIONS_H
 
 //*************************macro defines**********************************
 
-
 //******************global variable declarations*******************
 
 //*************************function declarations*************************
 
-//setup() functions 
+// setup() functions
 void setupConsoleFunctions();
 
-//console functions
+// console functions
 int stillness_timer_set(String);
 int initial_timer_set(String);
 int duration_timer_set(String);

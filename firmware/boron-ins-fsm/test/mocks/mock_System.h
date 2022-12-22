@@ -2,16 +2,12 @@
 
 bool resetWasCalled;
 
-class MockSystem
-{
+class MockSystem {
 public:
-    MockSystem()
-    {
-    }
+    MockSystem() {}
 
 public:
-    void reset()
-    {
+    void reset() {
         printf("System Reset Works\n");
         resetWasCalled = true;
     }

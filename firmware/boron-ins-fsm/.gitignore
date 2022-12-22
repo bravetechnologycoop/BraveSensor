@@ -2,8 +2,9 @@
 SetupFiles/
 setupFirmware.h
 
-#ignore vscode settings
+#ignore vscode and visual studio settings
 .vscode/
+.vs/
 
 #ignore Argon binary files
 target/
@@ -21,3 +22,6 @@ ConsoleTests
 
 #ignore generated files
 src/BraveSensorProductionFirmware.cpp
+
+# ignore unused generated compile_commands.json file
+compile_commands.json

@@ -6,8 +6,7 @@
 
 struct os_thread_fn_t {};
 
-class Thread
-{
+class Thread {
 public:
     Thread() {}
 
