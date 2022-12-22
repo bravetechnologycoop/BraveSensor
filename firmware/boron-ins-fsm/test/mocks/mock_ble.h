@@ -42,7 +42,6 @@ private:
 
 public:
     const BleAddress address() const {
-        ;
         return address_;
     }
 
