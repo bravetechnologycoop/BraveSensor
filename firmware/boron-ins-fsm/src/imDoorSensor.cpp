@@ -28,8 +28,11 @@ void setupIM(){
 	new Thread("scanBLEThread", threadBLEScanner);
 
   EEPROM.get(LAST_HEARTBEAT_RECEIVED, doorHeartbeatReceived);
-}
 
+  if(doorHeartbeatReceived == 0xFFFFFFFF) {
+    doorHeartbeatReceived = 0;
+  }
+}
 
 //**********loop()*******************
 
