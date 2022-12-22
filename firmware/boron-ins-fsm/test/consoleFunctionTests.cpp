@@ -4,8 +4,7 @@
 #include "../src/consoleFunctions.h"
 #include "../src/flashAddresses.h"
 
-// Define globalDoorID only for console function tests
-IMDoorID globalDoorID;
+IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
 
 SCENARIO("Turn_Debugging_Publishes_On_Off", "[toggle debug flag]") {
     GIVEN("A false debug flag") {
@@ -106,26 +105,24 @@ SCENARIO("Turn_Debugging_Publishes_On_Off", "[toggle debug flag]") {
 }
 
 SCENARIO("Change_IM21_Door_ID", "[change door id]") {
-    GIVEN("A default global door id") {
-        globalDoorID.byte1 = (uint8_t)strtol("AA", NULL, 16);
-        globalDoorID.byte1 = (uint8_t)strtol("AA", NULL, 16);
-        globalDoorID.byte1 = (uint8_t)strtol("AA", NULL, 16);
+    GIVEN("A valid global door ID") {
+        String doorID = "AB,CD,EF";
 
-        WHEN("the function is called with e") {
-            int returnVal = im21_door_id_set("e");
+        WHEN("the function is called with a valid door ID") {
+            int returnVal = im21_door_id_set(doorID);
 
-            THEN("should return 1") {
-                REQUIRE(returnVal == 1);
+            THEN("The function should return the door ID converted to a decimal number") {
+                REQUIRE(returnVal == 11259375);
             }
         }
 
-        WHEN("the function is called with a valid door ID") {
-            int returnVal = im21_door_id_set("EF,CD,AB");
+        WHEN("The function is called with e and a valid door ID was previously set") {
+            im21_door_id_set("12,34,56");
+            int returnVal = im21_door_id_set("e");  // Note: The mock EEPROM is coded to always return 0x123456 as the door ID
 
-            THEN("should return 1") {
-                REQUIRE(returnVal == 1);
+            THEN("The function should return the current value of the door ID, converted to a decimal number") {
+                REQUIRE(returnVal == 1193046);
             }
-            // Was unable to test the assignment to the variables, byte1, byte2, and byte3 are all 0 despite the same code working on the Boron
         }
 
         WHEN("the function is called with an empty string") {

@@ -16,6 +16,7 @@ the code was deployed.
 - Sensor state machine to reset stillness timer and transition back to stillness state after receiving a stillness alert (CU-39w5av5).
 - Sensor state machine to transition back to duration state after receiving a duration alert (CU-39w5av5).
 - Sensor duration alerts to only occur at most once per door close (CU-3c6my58).
+- Modified im21_door_id_set function to return the current door ID, converted to a decimal number (CU-3455bc0).
 
 ### Added
 

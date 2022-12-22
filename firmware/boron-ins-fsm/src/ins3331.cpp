@@ -3,11 +3,9 @@
  * written by Heidi Fedorak, Apr 2021
  */
 
-#include "ins3331.h"
-
-#include <CircularBuffer.h>
-
 #include "Particle.h"
+#include "ins3331.h"
+#include <CircularBuffer.h>
 
 os_queue_t insQueue;
 
