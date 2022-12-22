@@ -241,8 +241,8 @@ int im21_door_id_set(String command) {
         // put door ID in buffer for return value
         snprintf(buffer, sizeof(buffer), "%02X%02X%02X", doorIDHolder.byte3, doorIDHolder.byte2, doorIDHolder.byte1);
     }
-    else  // else not echo, so we have a new door ID to parse
-    {
+    // else not echo, so we have a new door ID to parse
+    else {
         // parse input string and update global door ID
         char* byteholder1;
         char* byteholder2;
