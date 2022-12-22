@@ -120,7 +120,7 @@ SCENARIO("Change_IM21_Door_ID", "[change door id]") {
             im21_door_id_set("12,34,56");
             int returnVal = im21_door_id_set("e");  // Note: The mock EEPROM is coded to always return 0x123456 as the door ID
 
-            THEN("The function should return the door ID that was previously set converted to a decimal number") {
+            THEN("The function should return the current value of the door ID, converted to a decimal number") {
                 REQUIRE(returnVal == 1193046);
             }
         }
