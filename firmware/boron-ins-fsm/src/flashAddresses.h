@@ -30,6 +30,6 @@
 //struct with three unsigned chars (uint8_t)
 #define ADDR_IM_DOORID 20	
 
-//next available address is 20 + 3 = 23
+#define LAST_HEARTBEAT_RECEIVED 24 
 
 #endif

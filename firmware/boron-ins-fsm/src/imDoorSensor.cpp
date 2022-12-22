@@ -15,7 +15,7 @@ os_queue_t bleQueue;
 int missedDoorEventCount = 0;
 bool doorLowBatteryFlag = false;
 bool doorMessageReceivedFlag = false;
-unsigned long doorHeartbeatReceived = millis();
+unsigned long doorHeartbeatReceived;
 unsigned long doorLastMessage = millis();
 
 //**********setup()******************
@@ -27,6 +27,7 @@ void setupIM(){
 	// Create the thread
 	new Thread("scanBLEThread", threadBLEScanner);
 
+  EEPROM.get(LAST_HEARTBEAT_RECEIVED, doorHeartbeatReceived);
 }
 
 
@@ -84,6 +85,7 @@ doorData checkIM(){
     // Checks if the 3rd bit of doorStatus is 1
     if ((currentDoorData.doorStatus & (1 << 3)) != 0){
       doorHeartbeatReceived = millis();
+      EEPROM.put(LAST_HEARTBEAT_RECEIVED, doorHeartbeatReceived);
     }
     //if this is the first door event received after firmware bootup, publish
     if(initialDoorDataFlag){
