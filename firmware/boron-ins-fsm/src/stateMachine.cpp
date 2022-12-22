@@ -3,11 +3,9 @@
  * written by Heidi Fedorak, Apr 2021
  */
 
-#include "stateMachine.h"
-
-#include <queue>
-
 #include "Particle.h"
+#include "stateMachine.h"
+#include <queue>
 #include "debugFlags.h"
 #include "flashAddresses.h"
 #include "imDoorSensor.h"

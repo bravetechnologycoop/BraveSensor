@@ -3,9 +3,8 @@
  * written by Heidi Fedorak, Apr 2021
  */
 
-#include "imDoorSensor.h"
-
 #include "Particle.h"
+#include "imDoorSensor.h"
 #include "debugFlags.h"
 #include "flashAddresses.h"
 
