@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated to Device OS 3.3.1 (CU-3aru0mb).
+
 ### Security
 
 - Upgrade dependencies according to Dependabot.
