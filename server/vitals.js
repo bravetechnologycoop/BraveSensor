@@ -34,36 +34,39 @@ async function sendSingleAlert(locationid, message, pgClient) {
   })
 }
 
-async function sendDisconnectionMessage(locationid, displayName, language) {
+async function sendDisconnectionMessage(locationid, deviceDisplayName, language, clientDisplayName) {
   await sendSingleAlert(
     locationid,
     t('sensorDisconnectionInitial', {
       lng: language,
-      deviceDisplayName: displayName,
+      deviceDisplayName,
       locationid,
+      clientDisplayName,
     }),
   )
 }
 
-async function sendDisconnectionReminder(locationid, displayName, language) {
+async function sendDisconnectionReminder(locationid, deviceDisplayName, language, clientDisplayName) {
   await sendSingleAlert(
     locationid,
     t('sensorDisconnectionReminder', {
       lng: language,
-      deviceDisplayName: displayName,
+      deviceDisplayName,
       locationid,
       language,
+      clientDisplayName,
     }),
   )
 }
 
-async function sendReconnectionMessage(locationid, displayName, language) {
+async function sendReconnectionMessage(locationid, deviceDisplayName, language, clientDisplayName) {
   await sendSingleAlert(
     locationid,
     t('sensorReconnection', {
       lng: language,
-      deviceDisplayName: displayName,
+      deviceDisplayName,
       locationid,
+      clientDisplayName,
     }),
   )
 }
@@ -101,15 +104,15 @@ async function checkHeartbeat() {
               helpers.logSentry(`Radar sensor down at ${location.locationid}`)
             }
             await db.updateSentAlerts(location.locationid, true)
-            sendDisconnectionMessage(location.locationid, location.displayName, location.client.language)
+            sendDisconnectionMessage(location.locationid, location.displayName, location.client.language, location.client.displayName)
           } else if (currentDBTime - location.sentVitalsAlertAt > subsequentVitalsAlertThresholdSeconds * 1000) {
             await db.updateSentAlerts(location.locationid, true)
-            sendDisconnectionReminder(location.locationid, location.displayName, location.client.language)
+            sendDisconnectionReminder(location.locationid, location.displayName, location.client.language, location.client.displayName)
           }
         } else if (location.sentVitalsAlertAt !== null) {
           helpers.logSentry(`${location.locationid} reconnected after reason: ${sensorsVital.resetReason}`)
           await db.updateSentAlerts(location.locationid, false)
-          sendReconnectionMessage(location.locationid, location.displayName, location.client.language)
+          sendReconnectionMessage(location.locationid, location.displayName, location.client.language, location.client.displayName)
         }
       }
     } catch (err) {

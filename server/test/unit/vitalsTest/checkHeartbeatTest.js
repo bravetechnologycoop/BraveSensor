@@ -75,6 +75,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
         this.testLocation.locationid,
         this.testLocation.displayName,
         this.testLocation.client.language,
+        this.testLocation.client.displayName,
       )
     })
 
@@ -191,6 +192,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
         this.testLocation.locationid,
         this.testLocation.displayName,
         this.testLocation.client.language,
+        this.testLocation.client.displayName,
       )
     })
 
@@ -243,6 +245,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
         this.testLocation.locationid,
         this.testLocation.displayName,
         this.testLocation.client.language,
+        this.testLocation.client.displayName,
       )
     })
 
@@ -321,6 +324,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
         this.testLocation.locationid,
         this.testLocation.displayName,
         this.testLocation.client.language,
+        this.testLocation.client.displayName,
       )
     })
 

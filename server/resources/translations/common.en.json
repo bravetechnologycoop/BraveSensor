@@ -9,9 +9,9 @@
   "incidentCategorized": "The incident was categorized as {{ incidentCategory }}.\n\nThank you. This session is now complete. (You don't need to respond to this message.)",
   "incidentCategoryInvalid": "Sorry, the incident type wasn't recognized. Please try again.",
   "incidentCategoryRequest": "Once you have responded, please reply with the number that best describes the incident:\n{{ incidentCategories }}",
-  "sensorDisconnectionInitial": "The Brave Sensor at {{ deviceDisplayName }} ({{ locationid }}) has disconnected.\nPlease press the reset button within the circular hole on the ceiling unit using a pin. If you do not receive a reconnection message shortly after pressing the reset button, contact us by emailing clientsupport@brave.coop.",
-  "sensorDisconnectionReminder": "The Brave Sensor at {{ deviceDisplayName }} ({{ locationid }}) is still disconnected. \nPlease press the reset button within the circular hole on the ceiling unit using a pin. If you do not receive a reconnection message shortly after pressing the reset button, contact us by emailing clientsupport@brave.coop.",
+  "sensorDisconnectionInitial": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) has disconnected.\nPlease verify that your door sensor is attached and then press the reset button within the circular hole on the ceiling unit using a pin. If you do not receive a reconnection message shortly after pressing the reset button, contact us by emailing clientsupport@brave.coop.",
+  "sensorDisconnectionReminder": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) is still disconnected. \nPlease verify that your door sensor is attached and then press the reset button within the circular hole on the ceiling unit using a pin. If you do not receive a reconnection message shortly after pressing the reset button, contact us by emailing clientsupport@brave.coop.",
   "sensorLowBatteryInitial": "The battery for the {{ deviceDisplayName }} door sensor is low, and needs replacing.\n\nTo watch a video showing how to replace the battery, go to https://bit.ly/sensor-battery",
-  "sensorReconnection": "The Brave Sensor at {{ deviceDisplayName }} ({{ locationid }}) has been reconnected.",
+  "sensorReconnection": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) has been reconnected.",
   "thankYou": "Thank you"
 }
