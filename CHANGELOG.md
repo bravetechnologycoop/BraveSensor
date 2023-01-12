@@ -14,11 +14,13 @@ the code was deployed.
 ### Changed
 
 - Updated to Device OS 3.3.1 (CU-3aru0mb).
+- Replaced locationid with client display name in Sensor disconnection initial and reminder messages (CU-2q39wpk).
 
 ### Added
 
 - `GET /api/sensors` route to be used by new Dashboard in PA (CU-2chw9e3).
 - `GET /api/sensors/:sensorId` route to be used by new Dashboard in PA (CU-2chw9e3).
+- Include suggestion to check door sensor in Sensor disconnection message and reminder (CU-860pga04t).
 
 ### Security
 

@@ -26,7 +26,7 @@
    - [How to add or change an encrypted Travis environment variable](#how-to-add-or-change-an-encrypted-travis-environment-variable)
 1. [Sensors Admin Server](#sensors-admin-server)
    - [Adding public keys to the admin server](#adding-public-keys-to-the-admin-server)
-   - [Toublehooting authentication error](#toublehooting-authentication-error)
+   - [Toubleshooting authentication error](#toublehooting-authentication-error)
 1. [Interacting with the Managed Database](#interacting-with-the-managed-database)
    - [Connecting to a database](#connecting-to-a-database)
    - [Adding a new Database migration script](#adding-a-new-database-migration-script)
@@ -253,7 +253,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 #### To deploy to development
 
 1. Run `ssh brave@sensors-admin.brave.coop`
-1. Run the command `helm intsall dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
+1. Run the command `helm install dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
 
 #### To redeploy to development
 
