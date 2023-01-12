@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Security
+
+- Upgrade dependencies according to Dependabot.
+
 ## [7.1.0] - 2022-12-22
 
 ### Changed
@@ -22,13 +26,13 @@ the code was deployed.
 
 ### Added
 
-- New stage "firmware linting and formatting checks" to Travis CI, which lints and checks the formatting of firmware code, failing the build if errors are found (CU-1k10ejd). 
+- New stage "firmware linting and formatting checks" to Travis CI, which lints and checks the formatting of firmware code, failing the build if errors are found (CU-1k10ejd).
 
 ## [7.0.0] - 2022-12-13
 
 ### Changed
 
-- Travis CI to run new unit tests as a part of the build process. 
+- Travis CI to run new unit tests as a part of the build process.
 
 ### Added
 
