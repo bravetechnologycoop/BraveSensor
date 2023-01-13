@@ -15,6 +15,11 @@ the code was deployed.
 
 - Updated to Device OS 3.3.1 (CU-3aru0mb).
 
+### Added
+
+- `GET /api/sensors` route to be used by new Dashboard in PA (CU-2chw9e3).
+- `GET /api/sensors/:sensorId` route to be used by new Dashboard in PA (CU-2chw9e3).
+
 ### Security
 
 - Upgrade dependencies according to Dependabot.

@@ -1,5 +1,6 @@
 // In-house dependencies
 const { clickUpHelpers } = require('brave-alert-lib')
+const api = require('./api')
 const dashboard = require('./dashboard')
 const pa = require('./pa')
 const vitals = require('./vitals')
@@ -30,6 +31,9 @@ function configureRoutes(app) {
   app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, clickUpHelpers.clickUpChecker, pa.handleCreateSensorLocation)
   app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, clickUpHelpers.clickUpChecker, pa.handleGetSensorClients)
   app.post('/pa/sensor-twilio-number', pa.validateSensorTwilioNumber, clickUpHelpers.clickUpChecker, pa.handleSensorTwilioNumber)
+
+  app.get('/api/sensors', api.validateGetAllSensors, api.authorize, api.getAllSensors)
+  app.get('/api/sensors/:sensorId', api.validateGetSensor, api.authorize, api.getSensor)
 
   // TODO add the other routes
 }
