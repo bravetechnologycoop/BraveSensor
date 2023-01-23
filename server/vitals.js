@@ -186,13 +186,9 @@ async function handleHeartbeat(req, res) {
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
         res.status(200).json(errorMessage)
       } else {
-        const currentDbTime = await db.getCurrentTime()
-
         const message = JSON.parse(req.body.data)
         const doorMissedMessagesCount = message.doorMissedMsg
         const doorLowBatteryFlag = message.doorLowBatt
-        const doorTimeSinceLastHeartbeat = new Date(currentDbTime)
-        doorTimeSinceLastHeartbeat.setMilliseconds(currentDbTime.getMilliseconds() - message.doorLastHeartbeat)
         const resetReason = message.resetReason
         const stateTransitionsArray = message.states.map(convertStateArrayToObject)
 
@@ -200,14 +196,23 @@ async function handleHeartbeat(req, res) {
           await sendLowBatteryAlert(location.locationid)
         }
 
-        await db.logSensorsVital(
-          location.locationid,
-          doorMissedMessagesCount,
-          doorLowBatteryFlag,
-          doorTimeSinceLastHeartbeat,
-          resetReason,
-          stateTransitionsArray,
-        )
+        let doorLastSeenAt
+        if (message.doorLastMessage.toString() === '-1') {
+          const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
+          if (mostRecentSensorVitals === null) {
+            // If it doesn't have any previous heartbeats, just use the current time
+            const currentDbTime = await db.getCurrentTime()
+            doorLastSeenAt = currentDbTime
+          } else {
+            // If it has had a previous heartbeat, reuse its doorLastSeenValue because we don't have any better information
+            doorLastSeenAt = mostRecentSensorVitals.doorLastSeenAt
+          }
+        } else {
+          const currentDbTime = await db.getCurrentTime()
+          doorLastSeenAt = DateTime.fromJSDate(currentDbTime).minus(message.doorLastMessage).toJSDate()
+        }
+
+        await db.logSensorsVital(location.locationid, doorMissedMessagesCount, doorLowBatteryFlag, doorLastSeenAt, resetReason, stateTransitionsArray)
         res.status(200).json('OK')
       }
     } else {

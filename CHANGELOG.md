@@ -14,7 +14,11 @@ the code was deployed.
 ### Changed
 
 - Updated to Device OS 3.3.1 (CU-3aru0mb).
+<<<<<<< HEAD
 - Replaced locationid with client display name in Sensor disconnection initial and reminder messages (CU-2q39wpk).
+=======
+- Sensor heartbeat API call body key changed from 'doorLastHeartbeat' to 'doorLastMessage' (CU-34atvnc).
+>>>>>>> 1e43212 (Change the door last seen behaviour)
 
 ### Added
 
@@ -25,6 +29,10 @@ the code was deployed.
 ### Security
 
 - Upgrade dependencies according to Dependabot.
+
+### Fixes
+
+- When the sensor starts up, it no longer claims that it just saw the door sensor. The previous 'doorLastSeenAt' is used until a real new door message is received (CU-34atvnc).
 
 ## [7.1.0] - 2022-12-22
 

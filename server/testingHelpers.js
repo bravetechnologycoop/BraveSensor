@@ -110,6 +110,20 @@ function sensorsVitalFactory(overrides = {}) {
   )
 }
 
+async function sensorsVitalDBFactory(db, overrides = {}) {
+  // prettier-ignore
+  const sensorVital = await db.logSensorsVital(
+    overrides.locationid !== undefined ? overrides.locationid : 'myLocation',
+    overrides.missedDoorMessages !== undefined ? overrides.missedDoorMessages : 0,
+    overrides.isDoorBatteryLow !== undefined ? overrides.isDoorBatteryLow : false,
+    overrides.doorLastSeenAt !== undefined ? overrides.doorLastSeenAt : new Date('2022-01-03T04:05:06'),
+    overrides.resetReason !== undefined ? overrides.resetReason : 'NONE',
+    overrides.stateTransitions !== undefined ? overrides.stateTransitions : [],
+  )
+
+  return sensorVital
+}
+
 // Sends chai as a parameter so I don't need to include it as a regular dependency in package.json
 async function firmwareAlert(chai, server, coreID, sensorEvent) {
   let response
@@ -136,6 +150,7 @@ module.exports = {
   locationFactory,
   printRandomIntArray,
   randomXethruStream,
+  sensorsVitalDBFactory,
   sensorsVitalFactory,
   sessionDBFactory,
   sessionFactory,
