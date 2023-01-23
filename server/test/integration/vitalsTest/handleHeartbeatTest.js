@@ -8,7 +8,7 @@ const sinon = require('sinon')
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
 const { braveAlerter, db, server } = require('../../../index')
-const { locationDBFactory } = require('../../../testingHelpers')
+const { locationDBFactory, sensorsVitalDBFactory } = require('../../../testingHelpers')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)
@@ -23,7 +23,19 @@ async function normalHeartbeat(coreId) {
   try {
     await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+    })
+    await helpers.sleep(50)
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
+async function unknownDoorLastMessageHeartbeat(coreId) {
+  try {
+    await chai.request(server).post('/api/heartbeat').send({
+      coreid: coreId,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastMessage": -1, "resetReason": "NONE", "states":[]}`,
     })
     await helpers.sleep(50)
   } catch (e) {
@@ -35,7 +47,7 @@ async function lowBatteryHeartbeat(coreId) {
   try {
     await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
     })
     await helpers.sleep(50)
   } catch (e) {
@@ -74,15 +86,19 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     it('should return 200 for a valid heartbeat request', async () => {
       const request = {
         coreid: radar_coreID,
-        data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+        data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       }
       const response = await chai.request(server).post('/api/heartbeat').send(request)
       expect(response).to.have.status(200)
     })
 
-    it('should call logSensorsVital', async () => {
+    it('should call logSensorsVital with the correct lastSeenDoor value', async () => {
+      sandbox.stub(db, 'getCurrentTime').returns(new Date('2000-01-01T11:11:11Z'))
+
       await normalHeartbeat(radar_coreID)
-      expect(db.logSensorsVital).to.be.calledOnce
+
+      // 1000 ms before the current DB time
+      expect(db.logSensorsVital).to.be.calledOnceWithExactly(testLocation1Id, 0, false, new Date('2000-01-01T11:11:10Z'), 'NONE', [])
     })
 
     it('should not call logSentry', async () => {
@@ -100,6 +116,74 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     it('should not call sendSingleAlert if battery level is normal', async () => {
       await normalHeartbeat(radar_coreID)
       expect(braveAlerter.sendSingleAlert).to.not.be.called
+    })
+  })
+
+  describe('POST request heartbeat events with mock INS Firmware State machine when it has not seen a door message since the last restart and there have been no previous heartbeats', () => {
+    beforeEach(async () => {
+      await db.clearTables()
+
+      const client = await factories.clientDBFactory(db)
+      await locationDBFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        clientId: client.id,
+      })
+
+      this.currentTime = new Date('2023-01-24T00:00:04Z')
+
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(helpers, 'logSentry')
+      sandbox.stub(db, 'logSensorsVital')
+      sandbox.stub(db, 'getCurrentTime').returns(this.currentTime)
+    })
+
+    afterEach(async () => {
+      await db.clearTables()
+      sandbox.restore()
+    })
+
+    it('should call logSensorsVital with the current time from the DB', async () => {
+      await unknownDoorLastMessageHeartbeat(radar_coreID)
+      expect(db.logSensorsVital).to.be.calledWithExactly(testLocation1Id, 0, false, this.currentTime, 'NONE', [])
+    })
+  })
+
+  describe('POST request heartbeat events with mock INS Firmware State machine when it has not seen a door message since the last restart and there was a previous heartbeat', () => {
+    beforeEach(async () => {
+      await db.clearTables()
+
+      const client = await factories.clientDBFactory(db)
+      await locationDBFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        clientId: client.id,
+      })
+
+      this.doorLastSeenAt = new Date('2022-06-06T15:03:15')
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+        doorLastSeenAt: this.doorLastSeenAt,
+      })
+
+      this.currentTime = new Date('2023-01-24T00:00:04Z')
+
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(helpers, 'logSentry')
+      sandbox.stub(db, 'logSensorsVital')
+      sandbox.stub(db, 'getCurrentTime').returns(this.currentTime)
+    })
+
+    afterEach(async () => {
+      await db.clearTables()
+      sandbox.restore()
+    })
+
+    it('should call logSensorsVital with the same doorLastSeen value as the most recent heartbeat from the DB', async () => {
+      await unknownDoorLastMessageHeartbeat(radar_coreID)
+      expect(db.logSensorsVital).to.be.calledWithExactly(testLocation1Id, 0, false, this.doorLastSeenAt, 'NONE', [])
     })
   })
 
@@ -134,7 +218,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     it('should return 200 for a valid heartbeat request', async () => {
       const request = {
         coreid: radar_coreID,
-        data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastHeartbeat": 1000, "resetReason": "NONE", "states":[]}`,
+        data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       }
       const response = await chai.request(server).post('/api/heartbeat').send(request)
       expect(response).to.have.status(200)

@@ -35,7 +35,7 @@
      - [Debug Message](#debug-message)
      - [Debugging](#debugging)
      - [Current Door Sensor ID](#current-door-sensor-id)
-     - [IM21 Warning](#im21-warning)
+     - [IM Door Sensor Warning](#im-door-sensor-warning)
      - [spark/device/diagnostics/update](#spark/device/diagnostics/update)
 6. [Boron Firmware Unit Tests](#boron-firmware-unit-tests)
 7. [Firmware Code Linting and Formatting](#firmware-code-linting-and-formatting)
@@ -100,9 +100,9 @@ When you're ready to compile your project, make sure you have the correct Partic
 
 # Directories Outline
 
-boron-ins-fsm: is v4.0, the main long term stable release of BraveSensors firmware. It works on the Boron device and uses an INS Radar and IM21 door sensor.
+boron-ins-fsm: is v4.0, the main long term stable release of BraveSensors firmware. It works on the Boron device and uses an INS Radar and IM21 or IM24 door sensor.
 
-argon-ins-fsm: is v3.2, a backup version of the firmware where we are unable to use cellular connectivity and have to rely on wifi. It also uses an INS Radar and IM21 door sensor.
+argon-ins-fsm: is v3.2, a backup version of the firmware where we are unable to use cellular connectivity and have to rely on wifi. It uses an INS Radar and IM21 door sensor.
 
 argon-setup-firmware: this is the initial setup firmware that is used to populate wifi credentials for the argon-ins-fsm firmware.
 
@@ -128,7 +128,7 @@ This is the current long term stable release of the Brave Sensor Firmware.
 11. Test connectivity by turning debug publishes on and then off again.  Test the rest of the console functions by using ‘e’
 12. Confirm you’ve set the door ID via console function
 13. If the device is going into production, Add the door Sensor ID to the client information sheet
-14. If applicable, unplug and pack for shipping to client.  Do not forget to pack the IM21 door sensor!
+14. If applicable, unplug and pack for shipping to client.  Do not forget to pack the IM door sensor!
 
 ## State Machine
 
@@ -245,7 +245,7 @@ Thus the buffer size must be one larger than the sample size to retain oldVal fo
 
 ### Door Sensor Definitions
 
-All of the following definitions are in the im21door.h header file.
+All of the following definitions are in the imDoorSensor.h header file.
 
 The three byte door sensor ID is set to default values with one macro definiton per byte:
 
@@ -255,17 +255,27 @@ The three byte door sensor ID is set to default values with one macro definiton 
 
 This value can be overwritten using a console function (see section on console functions below) once the Boron is activated and connected via LTE.
 
-Various different macro defines for door sensor data are also in the im21door.h header file. The full list of data the IM21 door sensor can transmit is:
+Various different macro defines for door sensor data are also in the imDoorSensor.h header file. The full list of data the IM door sensor can transmit is:
 
     0x00 - closed
+    0x01 - closed + tamper
     0x04 - closed + low battery
+    0x05 - closed + low battery + tamper
     0x08 - closed + heartbeat
+    0x09 - closed + heartbeat + tamper
     0x0C - closed + heartbeat + low battery
+    0x0D - closed + heartbeat + low battery + tamper
 
     0x02 - open
+    0x03 - open + tamper
     0x06 - open + low battery
+    0x07 - open + low battery + tamper
     0x0A - open + heartbeat
+    0x0B - open + heartbeat + tamper
     0x0E - open + heartbeat + low battery
+    0x0F - open + heartbeat + low battery + tamper
+
+Note that the IM21 does not use the tamper bit, but the IM24 does.
 
 Note that the low battery signal is published in the state machine heartbeat publish. See the section on published messages below for more information.
 
@@ -381,15 +391,17 @@ Use this console function to turn cloud publishes of state machine debugging val
 
 **Description:**
 
-Sets a new door ID for Particle to connect to, or publishes current door ID to cloud. If new door ID is set, reconnection to new door sensor should occur instantly. Door ID is the three byte device ID for the IM21 bluetooth low energy sensor that the Particle is currently connected to.
+Note that this function is used for both IM21 and IM24 door sensors.
 
-When the firmware scans nearby bluetooth low energy devices, it finds the advertising data containing the IM21’s door ID, extracts the door status (open or closed), and publishes that to the cloud.
+Sets a new door ID for Particle to connect to, or publishes current door ID to cloud. If new door ID is set, reconnection to new door sensor should occur instantly. Door ID is the three byte device ID for the IM bluetooth low energy sensor that the Particle is currently connected to.
 
-The IM21 door sensors each have a sticker on them with their door IDs. On the bottom row of numbers and letters, take the first three bytes listed and enter them into the console function, separated by commas. For example, if the bottom row of numbers and letters on the sticker is 1a2b3c45, the door ID will be entered like: 1a,2b,3c
+When the firmware scans nearby bluetooth low energy devices, it finds the advertising data containing the IM’s door ID, extracts the door status (open or closed), and publishes that to the cloud.
+
+The IM door sensors each have a sticker on them with their door IDs. On the bottom row of numbers and letters, take the first three bytes listed and enter them into the console function, separated by commas. For example, if the bottom row of numbers and letters on the sticker is 1a2b3c45, the door ID will be entered like: 1a,2b,3c
 
 **Argument(s):**
 
-1. Three byte door ID separated by commas, for example: 1a,2b,3c See Description section above for where to locate an IM21 door sensor’s door ID.
+1. Three byte door ID separated by commas, for example: 1a,2b,3c See Description section above for where to locate an IM door sensor’s door ID.
 2. e - Echos (publishes to cloud) the door ID the Particle is currently connected to
 
 **Return(s):**
@@ -402,7 +414,7 @@ The IM21 door sensors each have a sticker on them with their door IDs. On the bo
 
 **Description:**
 
-Use this console function to force the boron to reset. Useful for development and testing as OTA updates with version > 6.0.0 require that the last IM21 heart has been over DEVICE_RESET_THRESHOLD milliseconds ago before it resets to the new firmware.
+Use this console function to force the boron to reset. Useful for development and testing as OTA updates with version > 6.0.0 require that the last IM door sensor heartbeat has been over DEVICE_RESET_THRESHOLD milliseconds ago before it resets to the new firmware.
 
 **Argument(s):**
 
@@ -437,7 +449,7 @@ None, other than a string saying "duration alert". This is redundant but doesn't
 
 ### **Heartbeat Message**
 
-This is published once every 10 minutes. It contains vitals from the INS3331 radar sensor, the IM21 door sensor, and the state machine. It is separate from the vitals messages published by the Particle OS, see below.
+This is published once every 10 minutes. It contains vitals from the INS3331 radar sensor, the IM door sensor, and the state machine. It is separate from the vitals messages published by the Particle OS, see below.
 
 **Event Name**
 
@@ -445,9 +457,9 @@ Heartbeat
 
 **Event Data**
 
-1. doorMissedMsg: the number of IM21 missed message alerts generated since the previous heartbeat.
-2. doorLowBatt: a boolean that indicates whether the last IM21 message received has a "1" on the low battery flag.
-3. doorLastHeartbeat: millis since the last IM21 heartbeat was received. Counts from 0 upon restart.
+1. doorMissedMsg: the number of IM door sensor missed message alerts generated since the previous heartbeat.
+2. doorLowBatt: a boolean that indicates whether the last IM door sensor message received has a "1" on the low battery flag.
+3. doorLastMessage: millis since the last IM door sensor message was received. Counts from 0 upon restart. Returns -1 if hasn't seen any door messages since the most recent restart
 4. resetReason: provides the reason of reset on the first heartbeat since a reset. Otherwise, will equal "NONE".
 5. states: an array that encodes all the state transitions that occured since the previous heartbeat\*, with each subarray representing a single state transition. Subarray data includes:
 
@@ -536,19 +548,17 @@ Current Door Sensor ID
 
 **Event data:**
 
-1. **Byte1** - first byte of door ID, in hex
-2. **Byte2** - second byte of door ID, in hex
-3. **Byte3** - third byte of door ID, in hex
+1. **doorId** - The three bytes of the IM door sensor ID in human readable order with commas in between. For example, if the IM door sensor ID is "AC9A22DE8B1D" then this will return `{"doorId": "DE,8B,1D"}`
 
-### **IM21 Warning**
+### **IM Door Sensor Warning**
 
-This event is published if the firmware's checkIM21() function sees that a door event has been missed.
+This event is published if the firmware's checkIM() function sees that a door event has been missed.
 
-The IM21 door sensor increments a control byte by 0x01 every time a door event (open, close, heartbeat) is transmitted. The firmware will publish an "IM21 Warning” event if it receives a control byte that is greater than the previous event's control byte + 0x01.
+The IM door sensor increments a control byte by 0x01 every time a door event (open, close, heartbeat) is transmitted. The firmware will publish an "IM Door Sensor Warning” event if it receives a control byte that is greater than the previous event's control byte + 0x01.
 
-Be aware: this means that notification a door event is missed won't be published until the next door event is received from the IM21 sensor. As you can see in the Event Data section below, the last received and the most recently received door control bytes are published to the cloud. So, for example, if prev_control_byte = 0x05 and curr_door_byte = 0x08, that means you have missed door events 0x06 and 0x07.
+Be aware: this means that notification a door event is missed won't be published until the next door event is received from the IM door sensor. As you can see in the Event Data section below, the last received and the most recently received door control bytes are published to the cloud. So, for example, if prev_control_byte = 0x05 and curr_door_byte = 0x08, that means you have missed door events 0x06 and 0x07.
 
-**Event Name**: IM21 Warning
+**Event Name**: IM Door Sensor Warning
 
 **Event data:**
 
@@ -688,7 +698,7 @@ Argons must have setup firmware flashed before the production firmware can be fl
 1. Run "Flash application (local)".
 1. Check the log output in the serial monitor window for correct output.  
    On the console, check Argon has connected to cloud and is publishing the expected data, use the console function to turn debug messages on to see if publishes are being received.
-1. Unplug and pack for shipping to client.  Do not forget to pack the IM21 door sensor!
+1. Unplug and pack for shipping to client.  Do not forget to pack the IM door sensor!
 
 The production firmware also has configuration values, found in the firmware_config.h file.
 

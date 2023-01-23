@@ -346,7 +346,7 @@ void getHeartbeat() {
     //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 because the IM Door Sensor broadcasts 3
     //     messages The doorMessageReceivedFlag is set to true when any IM Door Sensor message is received, but only after a certain threshold
     // 3rd "if condition" is true only if a heartbeat hasnt been published in the last SM_HEARTBEAT_INTERVAL
-    if (lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && millis() - doorHeartbeatReceived >= HEARTBEAT_PUBLISH_DELAY) ||
+    if (lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && ((millis() - doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY)) ||
         (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) {
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char heartbeatMessage[622] = {0};
@@ -359,10 +359,14 @@ void getHeartbeat() {
         // logs whether door sensor is low battery
         writer.name("doorLowBatt").value(doorLowBatteryFlag);
 
-        // logs time in milliseconds since last IM Door Sensor message was received
-        // the particle name is a bit misleading, remains this way because the server uses "doorLastHeartbeat" to check if the IM Door Sensor sensor
-        // has disconnected
-        writer.name("doorLastHeartbeat").value((unsigned int)(millis() - doorLastMessage));
+        if (doorLastMessage == 0) {
+            // Haven't seen any door messages since the device last restarted
+            writer.name("doorLastMessage").value(-1);
+        }
+        else {
+            // logs time in milliseconds since last IM Door Sensor message was received
+            writer.name("doorLastMessage").value((unsigned int)(millis() - doorLastMessage));
+        }
 
         // logs the reason of the last reset
         writer.name("resetReason").value(resetReasonString(resetReason));

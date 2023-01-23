@@ -15,8 +15,8 @@ os_queue_t bleQueue;
 int missedDoorEventCount = 0;
 bool doorLowBatteryFlag = false;
 bool doorMessageReceivedFlag = false;
-unsigned long doorHeartbeatReceived = millis();
-unsigned long doorLastMessage = millis();
+unsigned long doorHeartbeatReceived = 0;
+unsigned long doorLastMessage = 0;
 
 //**********setup()******************
 
