@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Security
+
+- Upgrade dependencies (CU-860phzbq5).
+
 ## [8.0.0] - 2022-01-30
 
 ### Changed
