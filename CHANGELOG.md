@@ -11,14 +11,13 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [8.0.0] - 2022-01-30
+
 ### Changed
 
 - Updated to Device OS 3.3.1 (CU-3aru0mb).
-<<<<<<< HEAD
 - Replaced locationid with client display name in Sensor disconnection initial and reminder messages (CU-2q39wpk).
-=======
 - Sensor heartbeat API call body key changed from 'doorLastHeartbeat' to 'doorLastMessage' (CU-34atvnc).
->>>>>>> 1e43212 (Change the door last seen behaviour)
 
 ### Added
 
@@ -483,7 +482,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v7.1.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v8.0.0...HEAD
+[8.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v7.1.0...v8.0.0
 [7.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v7.0.0...v7.1.0
 [7.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.4.0...v7.0.0
 [6.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.3.0...v6.4.0
