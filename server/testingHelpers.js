@@ -125,7 +125,7 @@ async function sensorsVitalDBFactory(db, overrides = {}) {
 }
 
 // Sends chai as a parameter so I don't need to include it as a regular dependency in package.json
-async function firmwareAlert(chai, server, coreID, sensorEvent) {
+async function firmwareAlert(chai, server, coreID, sensorEvent, apiKey) {
   let response
   try {
     response = await chai.request(server).post('/api/sensorEvent').send({
@@ -134,6 +134,7 @@ async function firmwareAlert(chai, server, coreID, sensorEvent) {
       ttl: 60,
       published_at: '2021-06-14T22:49:16.091Z',
       coreid: coreID,
+      api_key: apiKey,
     })
     await helpers.sleep(50)
   } catch (e) {

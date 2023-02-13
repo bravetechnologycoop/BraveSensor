@@ -9,6 +9,8 @@ const { t } = require('i18next')
 const { helpers } = require('brave-alert-lib')
 const db = require('./db/db')
 
+const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
+
 let braveAlerter
 
 // Expects JS Date objects and returns an int
@@ -171,49 +173,65 @@ async function sendLowBatteryAlert(locationid) {
   }
 }
 
-const validateHeartbeat = Validator.body(['coreid', 'data']).exists()
+const validateHeartbeat = Validator.body(['coreid', 'data', 'api_key']).exists()
 
 async function handleHeartbeat(req, res) {
   try {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
-      const coreId = req.body.coreid
-      const location = await db.getLocationFromParticleCoreID(coreId)
-      if (!location) {
-        const errorMessage = `Bad request to ${req.path}: no location matches the coreID ${coreId}`
+      const apiKey = req.body.api_key
+
+      if (webhookAPIKey === apiKey) {
+        const coreId = req.body.coreid
+        const location = await db.getLocationFromParticleCoreID(coreId)
+        if (!location) {
+          const errorMessage = `Bad request to ${req.path}: no location matches the coreID ${coreId}`
+          helpers.log(errorMessage)
+          // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+          res.status(200).json(errorMessage)
+        } else {
+          const message = JSON.parse(req.body.data)
+          const doorMissedMessagesCount = message.doorMissedMsg
+          const doorLowBatteryFlag = message.doorLowBatt
+          const resetReason = message.resetReason
+          const stateTransitionsArray = message.states.map(convertStateArrayToObject)
+
+          if (doorLowBatteryFlag) {
+            await sendLowBatteryAlert(location.locationid)
+          }
+
+          let doorLastSeenAt
+          if (message.doorLastMessage.toString() === '-1') {
+            const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
+            if (mostRecentSensorVitals === null) {
+              // If it doesn't have any previous heartbeats, just use the current time
+              const currentDbTime = await db.getCurrentTime()
+              doorLastSeenAt = currentDbTime
+            } else {
+              // If it has had a previous heartbeat, reuse its doorLastSeenValue because we don't have any better information
+              doorLastSeenAt = mostRecentSensorVitals.doorLastSeenAt
+            }
+          } else {
+            const currentDbTime = await db.getCurrentTime()
+            doorLastSeenAt = DateTime.fromJSDate(currentDbTime).minus(message.doorLastMessage).toJSDate()
+          }
+
+          await db.logSensorsVital(
+            location.locationid,
+            doorMissedMessagesCount,
+            doorLowBatteryFlag,
+            doorLastSeenAt,
+            resetReason,
+            stateTransitionsArray,
+          )
+          res.status(200).json('OK')
+        }
+      } else {
+        const errorMessage = `Access not allowed`
         helpers.log(errorMessage)
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
         res.status(200).json(errorMessage)
-      } else {
-        const message = JSON.parse(req.body.data)
-        const doorMissedMessagesCount = message.doorMissedMsg
-        const doorLowBatteryFlag = message.doorLowBatt
-        const resetReason = message.resetReason
-        const stateTransitionsArray = message.states.map(convertStateArrayToObject)
-
-        if (doorLowBatteryFlag) {
-          await sendLowBatteryAlert(location.locationid)
-        }
-
-        let doorLastSeenAt
-        if (message.doorLastMessage.toString() === '-1') {
-          const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
-          if (mostRecentSensorVitals === null) {
-            // If it doesn't have any previous heartbeats, just use the current time
-            const currentDbTime = await db.getCurrentTime()
-            doorLastSeenAt = currentDbTime
-          } else {
-            // If it has had a previous heartbeat, reuse its doorLastSeenValue because we don't have any better information
-            doorLastSeenAt = mostRecentSensorVitals.doorLastSeenAt
-          }
-        } else {
-          const currentDbTime = await db.getCurrentTime()
-          doorLastSeenAt = DateTime.fromJSDate(currentDbTime).minus(message.doorLastMessage).toJSDate()
-        }
-
-        await db.logSensorsVital(location.locationid, doorMissedMessagesCount, doorLowBatteryFlag, doorLastSeenAt, resetReason, stateTransitionsArray)
-        res.status(200).json('OK')
       }
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`

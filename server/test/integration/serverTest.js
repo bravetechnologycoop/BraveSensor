@@ -25,6 +25,9 @@ const testLocation1Id = 'TestLocation1'
 const testLocation1PhoneNumbers = ['+15005550006']
 const radar_coreID = 'radar_particlecoreid1'
 
+const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
+const badpassword = 'badpassword'
+
 describe('Brave Sensor server', () => {
   beforeEach(async () => {
     await db.clearTables()
@@ -60,13 +63,33 @@ describe('Brave Sensor server', () => {
       })
 
       it('should log the error', () => {
-        expect(helpers.logError).to.be.calledWithExactly('Bad request to /api/sensorEvent: coreid (Invalid value),event (Invalid value)')
+        expect(helpers.logError).to.be.calledWithExactly(
+          'Bad request to /api/sensorEvent: coreid (Invalid value),event (Invalid value),api_key (Invalid value)',
+        )
+      })
+    })
+
+    describe('for an otherwise valid DURATION request with an incorrect API key', () => {
+      beforeEach(async () => {
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, badpassword)
+      })
+
+      it('should return 200', () => {
+        expect(this.response).to.have.status(200)
+      })
+
+      it('should log the error', () => {
+        expect(helpers.logError).to.be.calledWithExactly(`Access not allowed`)
+      })
+
+      it('should not start the alert session since access should not have been given', () => {
+        expect(braveAlerter.startAlertSession).to.not.be.called
       })
     })
 
     describe('for a valid DURATION request', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey)
       })
 
       it('should create a session with DURATION alert reason', async () => {
@@ -81,9 +104,27 @@ describe('Brave Sensor server', () => {
       })
     })
 
-    describe('for a value STILLNESS request', () => {
+    describe('for an otherwise valid STILLNESS request with an incorrect API key', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, badpassword)
+      })
+
+      it('should return 200', () => {
+        expect(this.response).to.have.status(200)
+      })
+
+      it('should log the error', () => {
+        expect(helpers.logError).to.be.calledWithExactly(`Access not allowed`)
+      })
+
+      it('should not start the alert session since access should not have been given', () => {
+        expect(braveAlerter.startAlertSession).to.not.be.called
+      })
+    })
+
+    describe('for a valid STILLNESS request', () => {
+      beforeEach(async () => {
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
       })
 
       it('should create a session with STILLNESS as the alert reason for a valid STILLNESS request', async () => {
@@ -100,9 +141,9 @@ describe('Brave Sensor server', () => {
 
     describe('for multiple alerts within the session reset timeout', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
 
-        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
         const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
         this.oldUpdatedAt = sessions[0].updatedAt
 
@@ -129,9 +170,9 @@ describe('Brave Sensor server', () => {
 
     describe('for alerts that come in after the session reset timeout has expired', () => {
       beforeEach(async () => {
-        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
         await helpers.sleep(parseInt(helpers.getEnvVar('SESSION_RESET_THRESHOLD'), 10) + 50)
-        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
+        await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey)
       })
 
       it('should create additional sessions for alerts', async () => {
