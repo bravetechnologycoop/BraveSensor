@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- Replaced bit.ly link in low battery message with a YouTube link (CU-2mddwpd).
+
 ### Security
 
 - Upgrade dependencies (CU-860phzbq5).
