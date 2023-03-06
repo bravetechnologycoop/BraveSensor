@@ -2,7 +2,7 @@
 const pg = require('pg')
 
 // In-house dependencies
-const { CHATBOT_STATE, Client, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, CHATBOT_STATE, Client, helpers } = require('brave-alert-lib')
 const Session = require('../Session')
 const Location = require('../Location')
 const SensorsVital = require('../SensorsVital')
@@ -13,7 +13,7 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  ssl: { rejectUnauthorized: false },
+  ssl: false, // { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -420,22 +420,41 @@ async function getAllSessionsFromLocation(locationid, pgClient) {
 }
 
 // Creates a new session for a specific location
-async function createSession(locationid, incidentCategory, chatbotState, alertType, respondedAt, respondedByPhoneNumber, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'createSession',
-      `
-      INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, responded_at, responded_by_phone_number)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
-      `,
-      [locationid, incidentCategory, chatbotState, alertType, respondedAt, respondedByPhoneNumber],
-      pool,
-      pgClient,
-    )
-    return createSessionFromRow(results.rows[0])
-  } catch (err) {
-    helpers.log(err.toString())
+async function createSession(locationid, incidentCategory, chatbotState, alertType, createdAt, respondedAt, respondedByPhoneNumber, pgClient) {
+  if (createdAt !== undefined) {
+    try {
+      const results = await helpers.runQuery(
+        'createSession',
+        `
+        INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, created_at, responded_at, responded_by_phone_number)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+        `,
+        [locationid, incidentCategory, chatbotState, alertType, createdAt, respondedAt, respondedByPhoneNumber],
+        pool,
+        pgClient,
+      )
+      return createSessionFromRow(results.rows[0])
+    } catch (err) {
+      helpers.log(err.toString())
+    }
+  } else {
+    try {
+      const results = await helpers.runQuery(
+        'createSession',
+        `
+        INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, responded_at, responded_by_phone_number)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+        `,
+        [locationid, incidentCategory, chatbotState, alertType, respondedAt, respondedByPhoneNumber],
+        pool,
+        pgClient,
+      )
+      return createSessionFromRow(results.rows[0])
+    } catch (err) {
+      helpers.log(err.toString())
+    }
   }
 }
 
@@ -689,6 +708,31 @@ async function getLocationsFromClientId(clientId, pgClient) {
 
     const allClients = await getClients(pgClient)
     return results.rows.map(r => createLocationFromRow(r, allClients))
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function numberOfStillnessAlertsIn24Hours(locationid, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'numberOfStillnessAlertsIn24Hours',
+      `
+      SELECT COUNT (*)
+      FROM sessions
+      WHERE alert_type = $1
+      AND locationid = $2
+      AND created_at BETWEEN NOW() - INTERVAL '24 hours'
+      AND NOW()
+      `,
+      [ALERT_TYPE.SENSOR_STILLNESS, locationid],
+      pool,
+      pgClient,
+    )
+    if (results === undefined) {
+      return null
+    }
+    return results.rows[0].count
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -1394,6 +1438,7 @@ module.exports = {
   getSessionWithSessionIdAndAlertApiKey,
   getUnrespondedSessionWithLocationId,
   logSensorsVital,
+  numberOfStillnessAlertsIn24Hours,
   rollbackTransaction,
   saveSession,
   updateClient,

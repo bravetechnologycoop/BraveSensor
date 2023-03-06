@@ -73,7 +73,16 @@ async function handleAlert(location, alertType) {
     const client = location.client
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
-      const newSession = await db.createSession(location.locationid, undefined, CHATBOT_STATE.STARTED, alertType, undefined, undefined, pgClient)
+      const newSession = await db.createSession(
+        location.locationid,
+        undefined,
+        CHATBOT_STATE.STARTED,
+        alertType,
+        undefined,
+        undefined,
+        undefined,
+        pgClient,
+      )
 
       const alertInfo = {
         sessionId: newSession.id,
@@ -229,6 +238,7 @@ if (helpers.isTestEnvironment()) {
   }
   server = https.createServer(httpsOptions, app).listen(8080)
   setInterval(vitals.checkHeartbeat, 60000)
+  setInterval(vitals.checkForInternalProblems, 24 * 60 * 60 * 1000) // check every 24 hours to see if internal alerts need to be sent 24 * 60 * 60 * 1000, change to a shorter value for texting purposes
   helpers.log('brave server listening on port 8080')
 }
 

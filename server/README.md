@@ -110,7 +110,7 @@ then create it from the correct `.env` file (for example, on the Sensors Admin s
 
       - Version number = <version number>
 
-      - Title = v<version number> <envrionment>
+      - Title = v<version number> <environment>
 
       - Description - <leave blank>
 
@@ -184,7 +184,7 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
       - Version number = <version number>
 
-      - Title = v<version number> <envrionment>
+      - Title = v<version number> <environment>
 
       - Description - <leave blank>
 
@@ -385,7 +385,7 @@ Access is restricted to machines whose public key has been added to the server's
 
 1. Paste the user's public key onto a new line on the `~/.ssh/authorized_keys` file from a machine that is already capable of accessing the server
 
-## Toublehooting authentication error
+## Troubleshooting authentication error
 
 If you get the error
 

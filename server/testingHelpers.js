@@ -82,6 +82,7 @@ async function sessionDBFactory(db, overrides = {}) {
     overrides.incidentCategory !== undefined ? overrides.incidentCategory : null,
     overrides.chatbotState !== undefined ? overrides.chatbotState : CHATBOT_STATE.STARTED,
     overrides.alertType !== undefined ? overrides.alertType : ALERT_TYPE.SENSOR_DURATION,
+    overrides.createdAt !== undefined ? overrides.createdAt : undefined,
     overrides.respondedAt !== undefined ? overrides.respondedAt : null,
     overrides.respondedByPhoneNumber !== undefined ? overrides.respondedByPhoneNumber : null,
   )
