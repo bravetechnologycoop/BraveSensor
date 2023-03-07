@@ -154,7 +154,6 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: SUBSEQUENT_VITALS_ALERT_THRESHOLD
-
           - name: CLICKUP_TEAM_NAME
             valueFrom:
               secretKeyRef:
@@ -185,6 +184,11 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: PA_PASSWORD_SECONDARY
+          - name: PARTICLE_WEBHOOK_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: PARTICLE_WEBHOOK_API_KEY
           - name: IS_DB_LOGGING
             valueFrom:
               secretKeyRef:

@@ -17,6 +17,8 @@ const dashboard = require('./dashboard')
 const vitals = require('./vitals')
 const i18nextHelpers = require('./i18nextHelpers')
 
+const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
+
 // Configure internationalization
 i18nextHelpers.setup()
 
@@ -113,33 +115,42 @@ async function handleAlert(location, alertType) {
   }
 }
 
-app.post('/api/sensorEvent', Validator.body(['coreid', 'event']).exists(), async (request, response) => {
+app.post('/api/sensorEvent', Validator.body(['coreid', 'event', 'api_key']).exists(), async (request, response) => {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
-      let alertType
-      const coreId = request.body.coreid
-      const sensorEvent = request.body.event
-      if (sensorEvent === SENSOR_EVENT.DURATION) {
-        alertType = ALERT_TYPE.SENSOR_DURATION
-      } else if (sensorEvent === SENSOR_EVENT.STILLNESS) {
-        alertType = ALERT_TYPE.SENSOR_STILLNESS
+      const apiKey = request.body.api_key
+
+      if (webhookAPIKey === apiKey) {
+        let alertType
+        const coreId = request.body.coreid
+        const sensorEvent = request.body.event
+        if (sensorEvent === SENSOR_EVENT.DURATION) {
+          alertType = ALERT_TYPE.SENSOR_DURATION
+        } else if (sensorEvent === SENSOR_EVENT.STILLNESS) {
+          alertType = ALERT_TYPE.SENSOR_STILLNESS
+        } else {
+          const errorMessage = `Bad request to ${request.path}: Invalid event type`
+          helpers.logError(errorMessage)
+        }
+        const location = await db.getLocationFromParticleCoreID(coreId)
+        if (!location) {
+          const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
+          helpers.logError(errorMessage)
+          // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+          response.status(200).json(errorMessage)
+        } else {
+          if (location.client.isActive && location.isActive) {
+            await handleAlert(location, alertType)
+          }
+          response.status(200).json('OK')
+        }
       } else {
-        const errorMessage = `Bad request to ${request.path}: Invalid event type`
-        helpers.logError(errorMessage)
-      }
-      const location = await db.getLocationFromParticleCoreID(coreId)
-      if (!location) {
-        const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
+        const errorMessage = `Access not allowed`
         helpers.logError(errorMessage)
         // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
         response.status(200).json(errorMessage)
-      } else {
-        if (location.client.isActive && location.isActive) {
-          await handleAlert(location, alertType)
-        }
-        response.status(200).json('OK')
       }
     } else {
       const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`

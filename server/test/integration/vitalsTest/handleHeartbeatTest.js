@@ -18,12 +18,41 @@ const sandbox = sinon.createSandbox()
 const testLocation1Id = 'TestLocation1'
 const radar_coreID = 'radar_particlecoreid1'
 const firstLowBatteryAlert = '2021-03-09T19:37:28.176Z'
+const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
+const badpassword = 'badpassword'
 
 async function normalHeartbeat(coreId) {
   try {
     await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
       data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      api_key: webhookAPIKey,
+    })
+    await helpers.sleep(50)
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
+async function normalHeartbeatWithIncorrectAPIKey(coreId) {
+  try {
+    await chai.request(server).post('/api/heartbeat').send({
+      coreid: coreId,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      api_key: badpassword,
+    })
+    await helpers.sleep(50)
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
+async function lowBatteryHeartbeatWithIncorrectAPIKey(coreId) {
+  try {
+    await chai.request(server).post('/api/heartbeat').send({
+      coreid: coreId,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      api_key: badpassword,
     })
     await helpers.sleep(50)
   } catch (e) {
@@ -36,6 +65,7 @@ async function unknownDoorLastMessageHeartbeat(coreId) {
     await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
       data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastMessage": -1, "resetReason": "NONE", "states":[]}`,
+      api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
   } catch (e) {
@@ -48,6 +78,7 @@ async function lowBatteryHeartbeat(coreId) {
     await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
       data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
   } catch (e) {
@@ -56,6 +87,64 @@ async function lowBatteryHeartbeat(coreId) {
 }
 
 describe('vitals.js integration tests: handleHeartbeat', () => {
+  describe('for a request with an incorrect API key', () => {
+    beforeEach(async () => {
+      await db.clearTables()
+
+      const client = await factories.clientDBFactory(db)
+      await locationDBFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        clientId: client.id,
+      })
+
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(helpers, 'logSentry')
+      sandbox.spy(helpers, 'log')
+      sandbox.stub(db, 'logSensorsVital')
+    })
+
+    afterEach(async () => {
+      await db.clearTables()
+      sandbox.restore()
+    })
+
+    it('should return 200 for the valid heartbeat request', async () => {
+      const response = await chai.request(server).post('/api/heartbeat').send(normalHeartbeatWithIncorrectAPIKey(radar_coreID))
+      expect(response).to.have.status(200)
+    })
+
+    it('should log an error that states that the api key does not match', async () => {
+      await normalHeartbeatWithIncorrectAPIKey(radar_coreID)
+      expect(helpers.log).to.have.been.calledWith(`Access not allowed`)
+    })
+
+    it('should not update sentLowBatteryAlertAt because access was not provided', async () => {
+      const testLocation = await db.getLocationData(testLocation1Id)
+      await normalHeartbeatWithIncorrectAPIKey(radar_coreID)
+      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      expect(locationAfterHeartbeat.sentLowBatteryAlertAt).to.deep.equal(testLocation.sentLowBatteryAlertAt)
+    })
+
+    it('should not update sentLowBatteryAlertAt because access was not provided despite having a low battery level', async () => {
+      const testLocation = await db.getLocationData(testLocation1Id)
+      await lowBatteryHeartbeatWithIncorrectAPIKey(radar_coreID)
+      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      expect(locationAfterHeartbeat.sentLowBatteryAlertAt).to.deep.equal(testLocation.sentLowBatteryAlertAt)
+    })
+
+    it('should not call sendSingleAlert because access was not provided', async () => {
+      await normalHeartbeatWithIncorrectAPIKey(radar_coreID)
+      expect(braveAlerter.sendSingleAlert).to.not.be.called
+    })
+
+    it('should not call sendSingleAlert because access was not provided despite having a low battery level', async () => {
+      await lowBatteryHeartbeatWithIncorrectAPIKey(radar_coreID)
+      expect(braveAlerter.sendSingleAlert).to.not.be.called
+    })
+  })
+
   describe('POST request heartbeat events with mock INS Firmware State Machine when battery level is normal', () => {
     beforeEach(async () => {
       await db.clearTables()
@@ -87,6 +176,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       const request = {
         coreid: radar_coreID,
         data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+        api_key: webhookAPIKey,
       }
       const response = await chai.request(server).post('/api/heartbeat').send(request)
       expect(response).to.have.status(200)
@@ -219,6 +309,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       const request = {
         coreid: radar_coreID,
         data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+        api_key: webhookAPIKey,
       }
       const response = await chai.request(server).post('/api/heartbeat').send(request)
       expect(response).to.have.status(200)

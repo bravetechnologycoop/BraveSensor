@@ -18,6 +18,7 @@ the code was deployed.
 ### Security
 
 - Upgrade dependencies (CU-860phzbq5).
+- Add API Key to Particle webhooks (CU-yfdndf).
 
 ## [8.0.0] - 2022-01-30
 
