@@ -68,9 +68,11 @@ describe('api.js integration tests: getSensor', () => {
         durationTimer: sensor.durationTimer,
         stillnessTimer: sensor.stillnessTimer,
         radarCoreId: sensor.radarCoreId,
-        twilioNumber: sensor.twilioNumber,
+        phoneNumber: sensor.phoneNumber,
         initialTimer: sensor.initialTimer,
         isActive: sensor.isActive,
+        doorId: sensor.doorId,
+        isInDebugMode: sensor.isInDebugMode,
       }).to.eql({
         locationid: this.location2.locationid,
         displayName: this.location2.displayName,
@@ -78,9 +80,11 @@ describe('api.js integration tests: getSensor', () => {
         durationTimer: this.location2.durationTimer,
         stillnessTimer: this.location2.stillnessTimer,
         radarCoreId: this.location2.radarCoreId,
-        twilioNumber: this.location2.twilioNumber,
+        phoneNumber: this.location2.phoneNumber,
         initialTimer: this.location2.initialTimer,
         isActive: this.location2.isActive,
+        doorId: this.location2.doorId,
+        isInDebugMode: this.location2.isInDebugMode,
       })
     })
   })
@@ -108,9 +112,11 @@ describe('api.js integration tests: getSensor', () => {
         durationTimer: sensor.durationTimer,
         stillnessTimer: sensor.stillnessTimer,
         radarCoreId: sensor.radarCoreId,
-        twilioNumber: sensor.twilioNumber,
+        phoneNumber: sensor.phoneNumber,
         initialTimer: sensor.initialTimer,
         isActive: sensor.isActive,
+        doorId: sensor.doorId,
+        isInDebugMode: sensor.isInDebugMode,
       }).to.eql({
         locationid: this.location2.locationid,
         displayName: this.location2.displayName,
@@ -118,9 +124,11 @@ describe('api.js integration tests: getSensor', () => {
         durationTimer: this.location2.durationTimer,
         stillnessTimer: this.location2.stillnessTimer,
         radarCoreId: this.location2.radarCoreId,
-        twilioNumber: this.location2.twilioNumber,
+        phoneNumber: this.location2.phoneNumber,
         initialTimer: this.location2.initialTimer,
         isActive: this.location2.isActive,
+        doorId: this.location2.doorId,
+        isInDebugMode: this.location2.isInDebugMode,
       })
     })
   })

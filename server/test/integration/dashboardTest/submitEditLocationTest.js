@@ -54,7 +54,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       this.goodRequest = {
         displayName: 'New Name',
         radarCoreID: 'new_radar_core',
-        twilioPhone: '+11112223456',
+        phoneNumber: '+11112223456',
         movementThreshold: 15,
         durationTimer: 90,
         stillnessTimer: 10,
@@ -76,7 +76,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
-      expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
+      expect(updatedLocation.phoneNumber).to.equal(this.goodRequest.phoneNumber)
       expect(updatedLocation.isActive).to.be.true
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
@@ -97,7 +97,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       this.goodRequest = {
         displayName: ' New Name ',
         radarCoreID: '   new_radar_core ',
-        twilioPhone: '    +11112223456    ',
+        phoneNumber: '    +11112223456    ',
         movementThreshold: '    15    ',
         durationTimer: ' 90   ',
         stillnessTimer: '   10   ',
@@ -119,7 +119,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName.trim())
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID.trim())
-      expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone.trim())
+      expect(updatedLocation.phoneNumber).to.equal(this.goodRequest.phoneNumber.trim())
       expect(updatedLocation.isActive).to.be.true
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId.trim())
 
@@ -140,7 +140,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       this.goodRequest = {
         displayName: 'New Name',
         radarCoreID: 'new_radar_core',
-        twilioPhone: '+11112223456',
+        phoneNumber: '+11112223456',
         movementThreshold: 15,
         durationTimer: 90,
         stillnessTimer: 10,
@@ -162,7 +162,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
-      expect(updatedLocation.twilioNumber).to.equal(this.goodRequest.twilioPhone)
+      expect(updatedLocation.phoneNumber).to.equal(this.goodRequest.phoneNumber)
       expect(updatedLocation.isActive).to.be.false
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
@@ -184,7 +184,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       this.goodRequest = {
         displayName: 'New Name',
         radarCoreID: 'new_radar_core',
-        twilioPhone: '+11112223456',
+        phoneNumber: '+11112223456',
         movementThreshold: 15,
         durationTimer: 90,
         stillnessTimer: 10,
@@ -223,7 +223,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       const badRequest = {
         displayName: '',
         radarCoreID: '',
-        twilioPhone: '',
+        phoneNumber: '',
         movementThreshold: '',
         durationTimer: '',
         stillnessTimer: '',
@@ -246,7 +246,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -278,7 +278,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),clientId (Invalid value)`,
       )
     })
   })

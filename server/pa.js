@@ -30,12 +30,12 @@ async function handleCreateSensorLocation(req, res) {
     const locationID = req.body.locationID
     const displayName = req.body.displayName
     const particleDeviceID = req.body.particleDeviceID
-    const twilioNumber = req.body.twilioNumber
+    const phoneNumber = req.body.twilioNumber
     const clientID = req.body.clientID
 
     if (paApiKeys.includes(braveAPIKey) && paPasswords.includes(password)) {
       try {
-        const results = await db.createLocationFromBrowserForm(locationID, displayName, particleDeviceID, twilioNumber, clientID)
+        const results = await db.createLocationFromBrowserForm(locationID, displayName, particleDeviceID, phoneNumber, clientID)
 
         if (results === null) {
           res.status(400).send({ message: 'Error in database insert' })
@@ -87,9 +87,9 @@ async function handleGetSensorClients(req, res) {
   }
 }
 
-const validateSensorTwilioNumber = Validator.body(['braveKey', 'areaCode', 'locationID', 'clickupToken']).trim().notEmpty()
+const validateSensorPhoneNumber = Validator.body(['braveKey', 'areaCode', 'locationID', 'clickupToken']).trim().notEmpty()
 
-async function handleSensorTwilioNumber(req, res) {
+async function handleSensorPhoneNumber(req, res) {
   const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
   if (validationErrors.isEmpty()) {
@@ -117,8 +117,8 @@ async function handleSensorTwilioNumber(req, res) {
 module.exports = {
   handleCreateSensorLocation,
   handleGetSensorClients,
-  handleSensorTwilioNumber,
+  handleSensorPhoneNumber,
   validateCreateSensorLocation,
   validateGetSensorClients,
-  validateSensorTwilioNumber,
+  validateSensorPhoneNumber,
 }

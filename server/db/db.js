@@ -38,7 +38,7 @@ function createLocationFromRow(r, allClients) {
   const client = allClients.filter(c => c.id === r.client_id)[0]
 
   // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.radar_particlecoreid, r.twilio_number, r.initial_timer, r.is_active, r.sent_low_battery_alert_at, r.created_at, r.updated_at, client)
+  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.radar_particlecoreid, r.phone_number, r.initial_timer, r.is_active, r.sent_low_battery_alert_at, r.door_id, r.is_in_debug_mode, r.created_at, r.updated_at, client)
 }
 
 function createSensorsVitalFromRow(r, allLocations) {
@@ -320,7 +320,7 @@ async function getMostRecentSessionWithPhoneNumbers(devicePhoneNumber, responder
       FROM sessions AS s
       LEFT JOIN locations AS l ON s.locationid = l.locationid
       LEFT JOIN clients AS c ON l.client_id = c.id
-      WHERE l.twilio_number = $1
+      WHERE l.phone_number = $1
       AND $2 = ANY(c.responder_phone_numbers)
       ORDER BY s.created_at DESC
       LIMIT 1
@@ -750,7 +750,7 @@ async function getLocations(pgClient) {
 async function updateLocation(
   displayName,
   radarCoreId,
-  twilioNumber,
+  phoneNumber,
   movementThreshold,
   durationTimer,
   stillnessTimer,
@@ -768,7 +768,7 @@ async function updateLocation(
       SET
         display_name = $1,
         radar_particlecoreid = $2,
-        twilio_number = $3,
+        phone_number = $3,
         movement_threshold = $4,
         duration_timer = $5,
         stillness_timer = $6,
@@ -778,7 +778,7 @@ async function updateLocation(
       WHERE locationid = $10
       RETURNING *
       `,
-      [displayName, radarCoreId, twilioNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, isActive, clientId, locationid],
+      [displayName, radarCoreId, phoneNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, isActive, clientId, locationid],
       pool,
       pgClient,
     )
@@ -851,19 +851,20 @@ async function updateClient(
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, radarCoreId, twilioNumber, clientId, pgClient) {
+async function createLocationFromBrowserForm(locationid, displayName, radarCoreId, phoneNumber, clientId, pgClient) {
   try {
     const results = await helpers.runQuery('createLocationFromBrowserForm',
       `
-      INSERT INTO locations(locationid, display_name, radar_particlecoreid, twilio_number, client_id)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO locations(locationid, display_name, radar_particlecoreid, phone_number, is_in_debug_mode, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
       `,
       [
         locationid,
         displayName,
         radarCoreId,
-        twilioNumber,
+        phoneNumber,
+        false,
         clientId,
       ],
       pool,
@@ -891,11 +892,13 @@ async function createLocation(
   durationTimer,
   initialTimer,
   sentVitalsAlertAt,
-  twilioNumber,
+  phoneNumber,
   displayName,
   radarCoreId,
   isActive,
   sentLowBatteryAlertAt,
+  doorId,
+  isInDebugMode,
   clientId,
   pgClient,
 ) {
@@ -903,8 +906,8 @@ async function createLocation(
     const results = await helpers.runQuery(
       'createLocation',
       `
-      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, twilio_number, display_name, radar_particlecoreid, is_active, sent_low_battery_alert_at, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, phone_number, display_name, radar_particlecoreid, is_active, sent_low_battery_alert_at, door_id, is_in_debug_mode, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
       `,
       [
@@ -914,11 +917,13 @@ async function createLocation(
         durationTimer,
         initialTimer,
         sentVitalsAlertAt,
-        twilioNumber,
+        phoneNumber,
         displayName,
         radarCoreId,
         isActive,
         sentLowBatteryAlertAt,
+        doorId,
+        isInDebugMode,
         clientId,
       ],
       pool,

@@ -9,7 +9,7 @@ const radar_coreID = 'radar_coreID'
 
 const destinationURL = process.argv[1]
 const recipientNumber = process.argv[2]
-const twilioNumber = process.argv[3]
+const phoneNumber = process.argv[3]
 
 const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
@@ -24,11 +24,11 @@ async function teardown() {
   }
 }
 
-async function setup(recipientPhoneNumber, twilioPhoneNumber) {
+async function setup(recipientPhoneNumber, sensorPhoneNumber) {
   try {
     await axios.post('/smokeTest/setup', {
       recipientNumber: recipientPhoneNumber,
-      twilioNumber: twilioPhoneNumber,
+      phoneNumber: sensorPhoneNumber,
     })
   } catch (e) {
     helpers.log(e)
@@ -47,11 +47,11 @@ async function stillnessEvent(coreID) {
   }
 }
 
-async function smokeTest(recipientPhoneNumber, twilioPhoneNumber) {
+async function smokeTest(recipientPhoneNumber, sensorPhoneNumber) {
   try {
     helpers.log('Running INS Firmware State Machine Smoke Tests')
     await teardown()
-    await setup(recipientPhoneNumber, twilioPhoneNumber, true)
+    await setup(recipientPhoneNumber, sensorPhoneNumber, true)
     await stillnessEvent(radar_coreID)
     await helpers.sleep(70000)
   } catch (error) {
@@ -61,4 +61,4 @@ async function smokeTest(recipientPhoneNumber, twilioPhoneNumber) {
   }
 }
 
-smokeTest(recipientNumber, twilioNumber)
+smokeTest(recipientNumber, phoneNumber)

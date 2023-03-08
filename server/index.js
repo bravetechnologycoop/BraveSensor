@@ -78,7 +78,7 @@ async function handleAlert(location, alertType) {
       const alertInfo = {
         sessionId: newSession.id,
         toPhoneNumbers: client.responderPhoneNumbers,
-        fromPhoneNumber: location.twilioNumber,
+        fromPhoneNumber: location.phoneNumber,
         responderPushId: client.responderPushId,
         deviceName: location.displayName,
         alertType: newSession.alertType,
@@ -98,7 +98,7 @@ async function handleAlert(location, alertType) {
         currentSession.id,
         client.repsonderPushId,
         client.responderPhoneNumbers,
-        location.twilioNumber,
+        location.phoneNumber,
         t('alertAdditionalAlert', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
         `${alertTypeDisplayName} Alert:\n${location.displayName}`,
       )
@@ -167,12 +167,12 @@ app.post('/api/sensorEvent', Validator.body(['coreid', 'event', 'api_key']).exis
 })
 
 app.post('/smokeTest/setup', async (request, response) => {
-  const { recipientNumber, twilioNumber } = request.body
+  const { recipientNumber, phoneNumber } = request.body
   try {
     const client = await factories.clientDBFactory(db, {
       displayName: 'SmokeTestClient',
       responderPhoneNumbers: [recipientNumber],
-      fromPhoneNumber: twilioNumber,
+      fromPhoneNumber: phoneNumber,
       alertApiKey: 'alertApiKey',
       responderPushId: null,
       reminderTimeout: 30,
@@ -187,10 +187,12 @@ app.post('/smokeTest/setup', async (request, response) => {
       150,
       3,
       null,
-      twilioNumber,
+      phoneNumber,
       'SmokeTestLocation',
       'radar_coreID',
       true,
+      'AA11BB',
+      false,
       '2021-03-09T19:37:28.176Z',
       client.id,
     )

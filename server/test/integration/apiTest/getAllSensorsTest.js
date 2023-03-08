@@ -74,9 +74,11 @@ describe('api.js integration tests: getAllSensors', () => {
         durationTimer1: sensors[0].durationTimer,
         stillnessTimer1: sensors[0].stillnessTimer,
         radarCoreId1: sensors[0].radarCoreId,
-        twilioNumber1: sensors[0].twilioNumber,
+        phoneNumber1: sensors[0].phoneNumber,
         initialTimer1: sensors[0].initialTimer,
         isActive1: sensors[0].isActive,
+        doorId1: sensors[0].doorId,
+        isInDebugMode1: sensors[0].isInDebugMode,
 
         locationid2: sensors[1].locationid,
         displayName2: sensors[1].displayName,
@@ -84,9 +86,11 @@ describe('api.js integration tests: getAllSensors', () => {
         durationTimer2: sensors[1].durationTimer,
         stillnessTimer2: sensors[1].stillnessTimer,
         radarCoreId2: sensors[1].radarCoreId,
-        twilioNumber2: sensors[1].twilioNumber,
+        phoneNumber2: sensors[1].phoneNumber,
         initialTimer2: sensors[1].initialTimer,
         isActive2: sensors[1].isActive,
+        doorId2: sensors[1].doorId,
+        isInDebugMode2: sensors[1].isInDebugMode,
       }).to.eql({
         locationid1: this.location1.locationid,
         displayName1: this.location1.displayName,
@@ -94,9 +98,11 @@ describe('api.js integration tests: getAllSensors', () => {
         durationTimer1: this.location1.durationTimer,
         stillnessTimer1: this.location1.stillnessTimer,
         radarCoreId1: this.location1.radarCoreId,
-        twilioNumber1: this.location1.twilioNumber,
+        phoneNumber1: this.location1.phoneNumber,
         initialTimer1: this.location1.initialTimer,
         isActive1: this.location1.isActive,
+        doorId1: this.location1.doorId,
+        isInDebugMode1: this.location1.isInDebugMode,
 
         locationid2: this.location2.locationid,
         displayName2: this.location2.displayName,
@@ -104,9 +110,11 @@ describe('api.js integration tests: getAllSensors', () => {
         durationTimer2: this.location2.durationTimer,
         stillnessTimer2: this.location2.stillnessTimer,
         radarCoreId2: this.location2.radarCoreId,
-        twilioNumber2: this.location2.twilioNumber,
+        phoneNumber2: this.location2.phoneNumber,
         initialTimer2: this.location2.initialTimer,
         isActive2: this.location2.isActive,
+        doorId2: this.location2.doorId,
+        isInDebugMode2: this.location2.isInDebugMode,
       })
     })
   })
@@ -140,9 +148,11 @@ describe('api.js integration tests: getAllSensors', () => {
         durationTimer1: sensors[0].durationTimer,
         stillnessTimer1: sensors[0].stillnessTimer,
         radarCoreId1: sensors[0].radarCoreId,
-        twilioNumber1: sensors[0].twilioNumber,
+        phoneNumber1: sensors[0].phoneNumber,
         initialTimer1: sensors[0].initialTimer,
         isActive1: sensors[0].isActive,
+        doorId1: sensors[0].doorId,
+        isInDebugMode1: sensors[0].isInDebugMode,
 
         locationid2: sensors[1].locationid,
         displayName2: sensors[1].displayName,
@@ -150,9 +160,11 @@ describe('api.js integration tests: getAllSensors', () => {
         durationTimer2: sensors[1].durationTimer,
         stillnessTimer2: sensors[1].stillnessTimer,
         radarCoreId2: sensors[1].radarCoreId,
-        twilioNumber2: sensors[1].twilioNumber,
+        phoneNumber2: sensors[1].phoneNumber,
         initialTimer2: sensors[1].initialTimer,
         isActive2: sensors[1].isActive,
+        doorId2: sensors[1].doorId,
+        isInDebugMode2: sensors[1].isInDebugMode,
       }).to.eql({
         locationid1: this.location1.locationid,
         displayName1: this.location1.displayName,
@@ -160,9 +172,11 @@ describe('api.js integration tests: getAllSensors', () => {
         durationTimer1: this.location1.durationTimer,
         stillnessTimer1: this.location1.stillnessTimer,
         radarCoreId1: this.location1.radarCoreId,
-        twilioNumber1: this.location1.twilioNumber,
+        phoneNumber1: this.location1.phoneNumber,
         initialTimer1: this.location1.initialTimer,
         isActive1: this.location1.isActive,
+        doorId1: this.location1.doorId,
+        isInDebugMode1: this.location1.isInDebugMode,
 
         locationid2: this.location2.locationid,
         displayName2: this.location2.displayName,
@@ -170,9 +184,11 @@ describe('api.js integration tests: getAllSensors', () => {
         durationTimer2: this.location2.durationTimer,
         stillnessTimer2: this.location2.stillnessTimer,
         radarCoreId2: this.location2.radarCoreId,
-        twilioNumber2: this.location2.twilioNumber,
+        phoneNumber2: this.location2.phoneNumber,
         initialTimer2: this.location2.initialTimer,
         isActive2: this.location2.isActive,
+        doorId2: this.location2.doorId,
+        isInDebugMode2: this.location2.isInDebugMode,
       })
     })
   })
