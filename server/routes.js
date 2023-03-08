@@ -30,7 +30,7 @@ function configureRoutes(app) {
 
   app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, clickUpHelpers.clickUpChecker, pa.handleCreateSensorLocation)
   app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, clickUpHelpers.clickUpChecker, pa.handleGetSensorClients)
-  app.post('/pa/sensor-twilio-number', pa.validateSensorTwilioNumber, clickUpHelpers.clickUpChecker, pa.handleSensorTwilioNumber)
+  app.post('/pa/sensor-twilio-number', pa.validateSensorPhoneNumber, clickUpHelpers.clickUpChecker, pa.handleSensorPhoneNumber)
 
   app.get('/api/sensors', api.validateGetAllSensors, api.authorize, api.getAllSensors)
   app.get('/api/sensors/:sensorId', api.validateGetSensor, api.authorize, api.getSensor)

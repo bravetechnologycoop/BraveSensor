@@ -47,12 +47,12 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.locationid = 'unusedID'
       this.displayName = 'locationName'
       this.radarCoreId = 'radar_coreID'
-      this.twilioNumber = '+15005550006'
+      this.phoneNumber = '+15005550006'
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
         radarCoreID: this.radarCoreId,
-        twilioPhone: this.twilioNumber,
+        phoneNumber: this.phoneNumber,
         clientId: this.client.id,
       }
 
@@ -70,13 +70,13 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         locationid: newLocation.locationid,
         displayName: newLocation.displayName,
         radarCoreId: newLocation.radarCoreId,
-        twilioNumber: newLocation.twilioNumber,
+        phoneNumber: newLocation.phoneNumber,
         clientId: newLocation.client.id,
       }).to.eql({
         locationid: this.locationid,
         displayName: this.displayName,
         radarCoreId: this.radarCoreId,
-        twilioNumber: this.twilioNumber,
+        phoneNumber: this.phoneNumber,
         clientId: this.client.id,
       })
     })
@@ -92,12 +92,12 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.locationid = ' unusedID '
       this.displayName = '  locationName  '
       this.radarCoreId = '    radar_coreID    '
-      this.twilioNumber = '   +15005550006    '
+      this.phoneNumber = '   +15005550006    '
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
         radarCoreID: this.radarCoreId,
-        twilioPhone: this.twilioNumber,
+        phoneNumber: this.phoneNumber,
         clientId: `  ${this.client.id}   `,
       }
 
@@ -115,13 +115,13 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         locationid: newLocation.locationid,
         displayName: newLocation.displayName,
         radarCoreId: newLocation.radarCoreId,
-        twilioNumber: newLocation.twilioNumber,
+        phoneNumber: newLocation.phoneNumber,
         clientId: newLocation.client.id,
       }).to.eql({
         locationid: this.locationid.trim(),
         displayName: this.displayName.trim(),
         radarCoreId: this.radarCoreId.trim(),
-        twilioNumber: this.twilioNumber.trim(),
+        phoneNumber: this.phoneNumber.trim(),
         clientId: this.client.id.trim(),
       })
     })
@@ -141,7 +141,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         locationid: 'unusedID',
         displayName: 'locationName',
         radarCoreID: 'radar_coreID',
-        twilioPhone: '+15005550006',
+        phoneNumber: '+15005550006',
         clientId: this.clientId,
       }
 
@@ -169,7 +169,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         locationid: 'unusedID',
         displayName: 'locationName',
         radarCoreID: 'radar_coreID',
-        twilioPhone: '+15005550006',
+        phoneNumber: '+15005550006',
         clientId: '91ddc8f7-c2e7-490e-bfe9-3d2880a76108',
       }
 
@@ -202,7 +202,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         locationid: '',
         displayName: '',
         radarCoreID: '',
-        twilioPhone: '',
+        phoneNumber: '',
         clientId: '',
       }
 
@@ -219,7 +219,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -246,7 +246,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),radarCoreID (Invalid value),twilioPhone (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -270,7 +270,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         locationid: this.locationid,
         displayName: 'locationName',
         radarCoreID: 'radar_coreID',
-        twilioPhone: '+15005550006',
+        phoneNumber: '+15005550006',
         clientId: this.client.id,
       }
 

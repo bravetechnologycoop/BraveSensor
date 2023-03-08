@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Particle fields to the Locations table in the DB (CU-2chw9e3).
+
 ## [9.1.0] - 2023-03-13
 
 ### Changed

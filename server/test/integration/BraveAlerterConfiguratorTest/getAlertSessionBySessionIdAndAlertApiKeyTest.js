@@ -16,7 +16,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
     this.expectedIncidentCategory = 'No One Inside'
     this.expectedLocationDisplayName = 'TEST LOCATION'
     this.expectedRespondedByPhoneNumber = '+17772225555'
-    this.expectedTwilioPhoneNumber = '+3336661234'
+    this.expectedSensorPhoneNumber = '+3336661234'
     this.expectedIncidentCategoryKeys = ['1', '2', '3']
     this.expectedIncidentCategories = ['No One Inside', 'Person responded', 'None of the above']
     this.alertApiKey = 'myAlertApiKey'
@@ -30,7 +30,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionBySessio
       language: this.expectedLanguage,
     })
     const location = await locationDBFactory(db, {
-      twilioNumber: this.expectedTwilioPhoneNumber,
+      phoneNumber: this.expectedSensorPhoneNumber,
       displayName: this.expectedLocationDisplayName,
       clientId: client.id,
     })
