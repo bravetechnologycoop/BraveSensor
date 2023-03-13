@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [9.0.0] - 2023-03-13
+
 ### Changed
 
 - Replaced bit.ly link in low battery message with a YouTube link (CU-2mddwpd).
@@ -491,7 +493,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v8.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.0.0...HEAD
+[9.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v8.0.0...v9.0.0
 [8.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v7.1.0...v8.0.0
 [7.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v7.0.0...v7.1.0
 [7.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v6.4.0...v7.0.0
