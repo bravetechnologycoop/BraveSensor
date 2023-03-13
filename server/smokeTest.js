@@ -11,6 +11,8 @@ const destinationURL = process.argv[1]
 const recipientNumber = process.argv[2]
 const twilioNumber = process.argv[3]
 
+const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
+
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
 axios.defaults.baseURL = destinationURL
 
@@ -38,6 +40,7 @@ async function stillnessEvent(coreID) {
     await axios.post('/api/sensorEvent', {
       coreid: coreID,
       event: SENSOR_EVENT.STILLNESS,
+      api_key: webhookAPIKey,
     })
   } catch (e) {
     helpers.log(e)
