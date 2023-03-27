@@ -14,6 +14,11 @@ the code was deployed.
 ### Added
 
 - Particle fields to the Locations table in the DB (CU-2chw9e3).
+- AWS Dockerfile.
+
+###
+
+- DB setup script.
 
 ## [9.1.0] - 2023-03-13
 
