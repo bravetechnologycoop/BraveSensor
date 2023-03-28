@@ -450,18 +450,16 @@ To access a database shell
 
 This strategy assumes that each migration script in the `db` directory has a unique positive integer migration ID, and that each script's migration ID is exactly one greater than the previous script's migration ID. Otherwise, the scripts will not run.
 
-1. Copy `db/000-template.sql` and name it with the desired migration ID (padded with zeros) followed by a short description of what it does e.g. `005-newColumn.sql`
+1. Copy `db/000-template` and name it with the desired migration ID (padded with zeros) followed by a short description of what it does e.g. `005-newColumn.sql`
 
 2. Update the file with its migration ID by replacing `ADD MIGRATION ID HERE` and the new migration scripts by adding it to the section `-- ADD SCRIPT HERE`.
-
-3. Update the `setup_postgresql.sh` file to include the newly-created `.sql` file at the bottom
 
 ## Deploying the migration scripts
 
 1. In the `BraveSensor/server` directory, run the following command
 
    ```
-   PG_PORT=<your db's port> PG_HOST=<your db's host> PG_PASSWORD=<your db's password> PG_USER=<your db's user> PG_DATABASE=<your db name> ./setup_postgresql.sh
+   ./setup_postgresql.sh <your db's password> <your db's user> <your db's host> <your db's name> <your db's port>
    ```
 
 ## Viewing which migration scripts have been run and when
