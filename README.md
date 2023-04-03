@@ -9,4 +9,5 @@ NOTE: To interact with the firmware using the VSCode Particle Workbench, make su
 If not, one may get an error (after being prompted to open the 'project properties' file) along the lines of "Could not find task: Compile application & DeviceOS (local) for ... ". 
 
 So for example working on the boron-ins-fms project, one should open "C:\...\BraveSensor\firmware\boron-ins-fsm"
+
  
