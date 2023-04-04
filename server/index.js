@@ -134,6 +134,7 @@ app.post('/api/sensorEvent', Validator.body(['coreid', 'event', 'api_key']).exis
           const errorMessage = `Bad request to ${request.path}: Invalid event type`
           helpers.logError(errorMessage)
         }
+
         const location = await db.getLocationFromParticleCoreID(coreId)
         if (!location) {
           const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
@@ -141,7 +142,7 @@ app.post('/api/sensorEvent', Validator.body(['coreid', 'event', 'api_key']).exis
           // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
           response.status(200).json(errorMessage)
         } else {
-          if (location.client.isActive && location.isActive) {
+          if (location.client.isSendingAlerts && location.isSendingAlerts) {
             await handleAlert(location, alertType)
           }
           response.status(200).json('OK')

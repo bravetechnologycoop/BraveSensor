@@ -81,9 +81,9 @@ async function checkHeartbeat() {
 
   const currentDBTime = await db.getCurrentTime()
 
-  const firmwareStateMachineLocations = await db.getActiveFirmwareStateMachineLocations()
-  for (const location of firmwareStateMachineLocations) {
-    if (!location.client.isActive || !location.isActive) {
+  const locations = await db.getLocations()
+  for (const location of locations) {
+    if (!location.client.isSendingVitals || !location.isSendingVitals) {
       continue
     }
 
@@ -145,8 +145,8 @@ async function sendLowBatteryAlert(locationid) {
     const location = await db.getLocationData(locationid, pgClient)
 
     if (
-      location.isActive &&
-      location.client.isActive &&
+      location.isSendingVitals &&
+      location.client.isSendingVitals &&
       (location.sentLowBatteryAlertAt === null || currentTime - location.sentLowBatteryAlertAt >= timeoutInMillis)
     ) {
       helpers.logSentry(`Received a low battery alert for ${location.locationid}`)

@@ -31,14 +31,14 @@ function createSessionFromRow(r) {
 
 function createClientFromRow(r) {
   // prettier-ignore
-  return new Client(r.id, r.display_name, r.responder_phone_numbers, r.responder_push_id, r.alert_api_key, r.reminder_timeout, r.fallback_phone_numbers, r.from_phone_number, r.fallback_timeout, r.heartbeat_phone_numbers, r.incident_categories, r.is_active, r.language, r.created_at, r.updated_at)
+  return new Client(r.id, r.display_name, r.responder_phone_numbers, r.responder_push_id, r.alert_api_key, r.reminder_timeout, r.fallback_phone_numbers, r.from_phone_number, r.fallback_timeout, r.heartbeat_phone_numbers, r.incident_categories, r.is_displayed, r.is_sending_alerts, r.is_sending_vitals, r.language, r.created_at, r.updated_at)
 }
 
 function createLocationFromRow(r, allClients) {
   const client = allClients.filter(c => c.id === r.client_id)[0]
 
   // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.radar_particlecoreid, r.phone_number, r.initial_timer, r.is_active, r.sent_low_battery_alert_at, r.door_id, r.is_in_debug_mode, r.created_at, r.updated_at, client)
+  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.radar_particlecoreid, r.phone_number, r.initial_timer, r.is_displayed, r.is_sending_alerts, r.is_sending_vitals, r.sent_low_battery_alert_at, r.door_id, r.is_in_debug_mode, r.created_at, r.updated_at, client)
 }
 
 function createSensorsVitalFromRow(r, allLocations) {
@@ -161,7 +161,7 @@ async function getDataForExport(pgClient) {
         l.locationid AS "Sensor ID",
         l.display_name AS "Sensor Name",
         NULL AS "Radar Type",
-        l.is_active AS "Active?",
+        (l.is_sending_vitals AND l.is_sending_alerts AND c.is_sending_vitals AND c.is_sending_alerts) AS "Active?",
         s.id AS "Session ID",
         TO_CHAR(s.created_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Start",
         TO_CHAR(s.responded_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Responded At",
@@ -694,31 +694,6 @@ async function getLocationsFromClientId(clientId, pgClient) {
   }
 }
 
-async function getActiveFirmwareStateMachineLocations(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getActiveFirmwareStateMachineLocations',
-      `
-      SELECT *
-      FROM locations
-      WHERE is_active
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return results.rows.map(r => createLocationFromRow(r, allClients))
-  } catch (err) {
-    helpers.log(err.toString())
-  }
-}
-
 async function getLocations(pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -755,7 +730,9 @@ async function updateLocation(
   durationTimer,
   stillnessTimer,
   initialTimer,
-  isActive,
+  isDisplayed,
+  isSendingAlerts,
+  isSendingVitals,
   locationid,
   clientId,
   pgClient,
@@ -773,12 +750,27 @@ async function updateLocation(
         duration_timer = $5,
         stillness_timer = $6,
         initial_timer = $7,
-        is_active = $8,
-        client_id = $9
-      WHERE locationid = $10
+        is_displayed = $8,
+        is_sending_alerts = $9,
+        is_sending_vitals = $10,
+        client_id = $11
+      WHERE locationid = $12
       RETURNING *
       `,
-      [displayName, radarCoreId, phoneNumber, movementThreshold, durationTimer, stillnessTimer, initialTimer, isActive, clientId, locationid],
+      [
+        displayName,
+        radarCoreId,
+        phoneNumber,
+        movementThreshold,
+        durationTimer,
+        stillnessTimer,
+        initialTimer,
+        isDisplayed,
+        isSendingAlerts,
+        isSendingVitals,
+        clientId,
+        locationid,
+      ],
       pool,
       pgClient,
     )
@@ -806,7 +798,9 @@ async function updateClient(
   fallbackTimeout,
   heartbeatPhoneNumbers,
   incidentCategories,
-  isActive,
+  isDisplayed,
+  isSendingAlerts,
+  isSendingVitals,
   clientId,
   pgClient,
 ) {
@@ -815,8 +809,8 @@ async function updateClient(
       'updateClient',
       `
       UPDATE clients
-      SET display_name = $1, from_phone_number = $2, responder_phone_numbers = $3, responder_push_id = $4, alert_api_key = $5, reminder_timeout = $6, fallback_phone_numbers = $7, fallback_timeout = $8, heartbeat_phone_numbers = $9, incident_categories = $10, is_active = $11
-      WHERE id = $12
+      SET display_name = $1, from_phone_number = $2, responder_phone_numbers = $3, responder_push_id = $4, alert_api_key = $5, reminder_timeout = $6, fallback_phone_numbers = $7, fallback_timeout = $8, heartbeat_phone_numbers = $9, incident_categories = $10, is_displayed = $11, is_sending_alerts = $12, is_sending_vitals = $13
+      WHERE id = $14
       RETURNING *
       `,
       [
@@ -830,7 +824,9 @@ async function updateClient(
         fallbackTimeout,
         heartbeatPhoneNumbers,
         incidentCategories,
-        isActive,
+        isDisplayed,
+        isSendingAlerts,
+        isSendingVitals,
         clientId,
       ],
       pool,
@@ -855,8 +851,8 @@ async function createLocationFromBrowserForm(locationid, displayName, radarCoreI
   try {
     const results = await helpers.runQuery('createLocationFromBrowserForm',
       `
-      INSERT INTO locations(locationid, display_name, radar_particlecoreid, phone_number, is_in_debug_mode, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO locations(locationid, display_name, radar_particlecoreid, phone_number, is_in_debug_mode, is_displayed, is_sending_alerts, is_sending_vitals, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
       `,
       [
@@ -864,6 +860,9 @@ async function createLocationFromBrowserForm(locationid, displayName, radarCoreI
         displayName,
         radarCoreId,
         phoneNumber,
+        false,
+        true,
+        false,
         false,
         clientId,
       ],
@@ -895,7 +894,9 @@ async function createLocation(
   phoneNumber,
   displayName,
   radarCoreId,
-  isActive,
+  isDisplayed,
+  isSendingAlerts,
+  isSendingVitals,
   sentLowBatteryAlertAt,
   doorId,
   isInDebugMode,
@@ -906,8 +907,8 @@ async function createLocation(
     const results = await helpers.runQuery(
       'createLocation',
       `
-      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, phone_number, display_name, radar_particlecoreid, is_active, sent_low_battery_alert_at, door_id, is_in_debug_mode, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, phone_number, display_name, radar_particlecoreid, is_displayed, is_sending_alerts, is_sending_vitals, sent_low_battery_alert_at, door_id, is_in_debug_mode, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
       `,
       [
@@ -920,7 +921,9 @@ async function createLocation(
         phoneNumber,
         displayName,
         radarCoreId,
-        isActive,
+        isDisplayed,
+        isSendingAlerts,
+        isSendingVitals,
         sentLowBatteryAlertAt,
         doorId,
         isInDebugMode,
@@ -948,7 +951,9 @@ async function createClient(
   fallbackTimeout,
   heartbeatPhoneNumbers,
   incidentCategories,
-  isActive,
+  isDisplayed,
+  isSendingAlerts,
+  isSendingVitals,
   language,
   pgClient,
 ) {
@@ -956,8 +961,8 @@ async function createClient(
     const results = await helpers.runQuery(
       'createClient',
       `
-      INSERT INTO clients (display_name, responder_phone_numbers, responder_push_id, alert_api_key, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_active, language)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      INSERT INTO clients (display_name, responder_phone_numbers, responder_push_id, alert_api_key, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_displayed, is_sending_alerts, is_sending_vitals, language)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
       `,
       [
@@ -971,7 +976,9 @@ async function createClient(
         fallbackTimeout,
         heartbeatPhoneNumbers,
         incidentCategories,
-        isActive,
+        isDisplayed,
+        isSendingAlerts,
+        isSendingVitals,
         language,
       ],
       pool,
@@ -1365,7 +1372,6 @@ module.exports = {
   createNotification,
   createSession,
   getActiveAlertsByAlertApiKey,
-  getActiveFirmwareStateMachineLocations,
   getAllSessionsFromLocation,
   getClientWithClientId,
   getClients,

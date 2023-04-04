@@ -60,7 +60,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         stillnessTimer: 10,
         initialTimer: 9856,
         alertApiKey: 'newApiKey',
-        isActive: 'true',
+        isDisplayed: 'true',
+        isSendingAlerts: 'true',
+        isSendingVitals: 'false',
         clientId: this.client.id,
       }
 
@@ -77,7 +79,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
       expect(updatedLocation.phoneNumber).to.equal(this.goodRequest.phoneNumber)
-      expect(updatedLocation.isActive).to.be.true
+      expect(updatedLocation.isDisplayed).to.be.true
+      expect(updatedLocation.isSendingAlerts).to.be.true
+      expect(updatedLocation.isSendingVitals).to.be.false
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
       chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
@@ -103,7 +107,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         stillnessTimer: '   10   ',
         initialTimer: ' 9856 ',
         alertApiKey: '  newApiKey   ',
-        isActive: '    true     ',
+        isDisplayed: '    true     ',
+        isSendingAlerts: '    true     ',
+        isSendingVitals: '    false     ',
         clientId: `   ${this.client.id}   `,
       }
 
@@ -120,7 +126,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName.trim())
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID.trim())
       expect(updatedLocation.phoneNumber).to.equal(this.goodRequest.phoneNumber.trim())
-      expect(updatedLocation.isActive).to.be.true
+      expect(updatedLocation.isDisplayed).to.be.true
+      expect(updatedLocation.isSendingAlerts).to.be.true
+      expect(updatedLocation.isSendingVitals).to.be.false
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId.trim())
 
       chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold.trim())
@@ -146,7 +154,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         stillnessTimer: 10,
         initialTimer: 9856,
         alertApiKey: 'newApiKey',
-        isActive: 'false',
+        isDisplayed: 'false',
+        isSendingAlerts: 'false',
+        isSendingVitals: 'true',
         clientId: this.client.id,
       }
 
@@ -163,7 +173,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
       expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
       expect(updatedLocation.phoneNumber).to.equal(this.goodRequest.phoneNumber)
-      expect(updatedLocation.isActive).to.be.false
+      expect(updatedLocation.isDisplayed).to.be.false
+      expect(updatedLocation.isSendingAlerts).to.be.false
+      expect(updatedLocation.isSendingVitals).to.be.true
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
 
       chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
@@ -190,7 +202,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         stillnessTimer: 10,
         initialTimer: 9856,
         alertApiKey: 'newApiKey',
-        isActive: 'true',
+        isDisplayed: 'true',
+        isSendingAlerts: 'true',
+        isSendingVitals: 'false',
         clientId: this.clientId,
       }
 
@@ -229,7 +243,9 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         stillnessTimer: '',
         initialTimer: '',
         alertApiKey: '',
-        isActive: '',
+        isDisplayed: '',
+        isSendingAlerts: '',
+        isSendingVitals: '',
         clientId: '',
       }
 
@@ -246,7 +262,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -278,7 +294,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isActive (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),clientId (Invalid value)`,
       )
     })
   })

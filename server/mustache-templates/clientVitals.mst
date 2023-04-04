@@ -40,7 +40,8 @@
                             <th scope="col">Last Seen (Sensor)</th>
                             <th scope="col">Last Seen (Door)</th>
                             <th scope="col">Door Battery Low?</th>
-                            <th scope="col"></th>
+                            <th scope="col">Sends Alerts?</th>
+                            <th scope="col">Sends Vitals?</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -50,7 +51,8 @@
                                 <td data-toggle="tooltip" data-placement="top" title="{{sensorLastSeenAt}}">{{sensorLastSeenAgo}}</td>
                                 <td data-toggle="tooltip" data-placement="top" title="{{doorLastSeenAt}}">{{doorLastSeenAgo}}</td>
                                 <td>{{isDoorBatteryLow}}</td>
-                                <td>{{^isActive}}[INACTIVE]{{/isActive}}</td>
+                                <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
+                                <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
                             </tr>
                         {{/sensors}}
                     </tbody>

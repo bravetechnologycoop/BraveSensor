@@ -53,7 +53,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
-      this.isActive = true
+      this.isDisplayed = true
+      this.isSendingAlerts = true
+      this.isSendingVitals = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -65,7 +67,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -89,7 +93,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: updatedClient.incidentCategories,
         reminderTimeout: updatedClient.reminderTimeout,
         fallbackTimeout: updatedClient.fallbackTimeout,
-        isActive: updatedClient.isActive,
+        isDisplayed: updatedClient.isDisplayed,
+        isSendingAlerts: updatedClient.isSendingAlerts,
+        isSendingVitals: updatedClient.isSendingVitals,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -101,7 +107,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories,
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       })
     })
   })
@@ -123,7 +131,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.incidentCategories = ['   Cat1  ', ' Cat2   ']
       this.reminderTimeout = '   5   '
       this.fallbackTimeout = '   10  '
-      this.isActive = '   true   '
+      this.isDisplayed = '    true    '
+      this.isSendingAlerts = '    true    '
+      this.isSendingVitals = '    true    '
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -135,7 +145,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -159,7 +171,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: updatedClient.incidentCategories,
         reminderTimeout: updatedClient.reminderTimeout,
         fallbackTimeout: updatedClient.fallbackTimeout,
-        isActive: updatedClient.isActive,
+        isDisplayed: updatedClient.isDisplayed,
+        isSendingAlerts: updatedClient.isSendingAlerts,
+        isSendingVitals: updatedClient.isSendingVitals,
       }).to.eql({
         displayName: this.newDisplayname.trim(),
         fromPhoneNumber: this.newFromPhoneNumber.trim(),
@@ -171,7 +185,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories.map(category => category.trim()),
         reminderTimeout: parseInt(this.reminderTimeout.trim(), 10),
         fallbackTimeout: parseInt(this.fallbackTimeout.trim(), 10),
-        isActive: this.isActive.trim() === 'true',
+        isDisplayed: this.isDisplayed.trim() === 'true',
+        isSendingAlerts: this.isSendingAlerts.trim() === 'true',
+        isSendingVitals: this.isSendingVitals.trim() === 'true',
       })
     })
   })
@@ -191,7 +207,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: 'Cat1,Cat2',
         reminderTimeout: 5,
         fallbackTimeout: 10,
-        isActive: 'true',
+        isDisplayed: 'true',
+        isSendingAlerts: 'true',
+        isSendingVitals: 'true',
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(goodRequest)
@@ -228,7 +246,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.existingClient.incidentCategories.join(','),
         reminderTimeout: this.existingClient.reminderTimeout,
         fallbackTimeout: this.existingClient.fallbackTimeout,
-        isActive: this.existingClient.isActive,
+        isDisplayed: this.existingClient.isDisplayed,
+        isSendingAlerts: this.existingClient.isSendingAlerts,
+        isSendingVitals: this.existingClient.isSendingVitals,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -252,7 +272,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: updatedClient.incidentCategories,
         reminderTimeout: updatedClient.reminderTimeout,
         fallbackTimeout: updatedClient.fallbackTimeout,
-        isActive: updatedClient.isActive,
+        isDisplayed: updatedClient.isDisplayed,
+        isSendingAlerts: updatedClient.isSendingAlerts,
+        isSendingVitals: updatedClient.isSendingVitals,
       }).to.eql({
         displayName: this.existingClient.displayName,
         fromPhoneNumber: this.existingClient.fromPhoneNumber,
@@ -264,7 +286,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.existingClient.incidentCategories,
         reminderTimeout: this.existingClient.reminderTimeout,
         fallbackTimeout: this.existingClient.fallbackTimeout,
-        isActive: this.existingClient.isActive,
+        isDisplayed: this.existingClient.isDisplayed,
+        isSendingAlerts: this.existingClient.isSendingAlerts,
+        isSendingVitals: this.existingClient.isSendingVitals,
       })
     })
   })
@@ -285,7 +309,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
-      this.isActive = true
+      this.isDisplayed = true
+      this.isSendingAlerts = true
+      this.isSendingVitals = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -296,7 +322,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -320,7 +348,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: updatedClient.incidentCategories,
         reminderTimeout: updatedClient.reminderTimeout,
         fallbackTimeout: updatedClient.fallbackTimeout,
-        isActive: updatedClient.isActive,
+        isDisplayed: updatedClient.isDisplayed,
+        isSendingAlerts: updatedClient.isSendingAlerts,
+        isSendingVitals: updatedClient.isSendingVitals,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -332,7 +362,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories,
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       })
     })
   })
@@ -353,7 +385,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
-      this.isActive = true
+      this.isDisplayed = true
+      this.isSendingAlerts = true
+      this.isSendingVitals = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -364,7 +398,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -388,7 +424,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: updatedClient.incidentCategories,
         reminderTimeout: updatedClient.reminderTimeout,
         fallbackTimeout: updatedClient.fallbackTimeout,
-        isActive: updatedClient.isActive,
+        isDisplayed: updatedClient.isDisplayed,
+        isSendingAlerts: updatedClient.isSendingAlerts,
+        isSendingVitals: updatedClient.isSendingVitals,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -400,7 +438,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories,
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       })
     })
   })
@@ -421,7 +461,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
-      this.isActive = true
+      this.isDisplayed = true
+      this.isSendingAlerts = true
+      this.isSendingVitals = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -432,7 +474,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -456,7 +500,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: updatedClient.incidentCategories,
         reminderTimeout: updatedClient.reminderTimeout,
         fallbackTimeout: updatedClient.fallbackTimeout,
-        isActive: updatedClient.isActive,
+        isDisplayed: updatedClient.isDisplayed,
+        isSendingAlerts: updatedClient.isSendingAlerts,
+        isSendingVitals: updatedClient.isSendingVitals,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -468,7 +514,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories,
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       })
     })
   })
@@ -488,7 +536,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
-      this.isActive = true
+      this.isDisplayed = true
+      this.isSendingAlerts = true
+      this.isSendingVitals = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -498,7 +548,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -539,7 +591,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: '',
         reminderTimeout: '',
         fallbackTimeout: '',
-        isActive: '',
+        isDisplayed: '',
+        isSendingAlerts: '',
+        isSendingVitals: '',
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(badRequest)
@@ -557,7 +611,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),isActive (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
+        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
       )
     })
   })
@@ -584,7 +638,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),isActive (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
+        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
       )
     })
   })
@@ -606,7 +660,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
-      this.isActive = true
+      this.isDisplayed = true
+      this.isSendingAlerts = true
+      this.isSendingVitals = true
       const duplicateDisplayNameRequest = {
         displayName: this.otherClientName,
         fromPhoneNumber: '+17549553216',
@@ -618,7 +674,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(duplicateDisplayNameRequest)
@@ -652,7 +710,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = -5
       this.fallbackTimeout = -10
-      this.isActive = true
+      this.isDisplayed = true
+      this.isSendingAlerts = true
+      this.isSendingVitals = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -664,7 +724,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -704,7 +766,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 'abc'
       this.fallbackTimeout = 10.6
-      this.isActive = true
+      this.isDisplayed = true
+      this.isSendingAlerts = true
+      this.isSendingVitals = true
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -716,7 +780,9 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
-        isActive: this.isActive,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)

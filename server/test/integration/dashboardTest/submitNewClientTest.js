@@ -87,7 +87,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             incidentCategories: client.incidentCategories,
             reminderTimeout: client.reminderTimeout,
             fallbackTimeout: client.fallbackTimeout,
-            isActive: client.isActive,
+            isDisplayed: client.isDisplayed,
+            isSendingAlerts: client.isSendingAlerts,
+            isSendingVitals: client.isSendingVitals,
           }
         }),
       ).to.eql([
@@ -102,7 +104,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           incidentCategories: this.incidentCategories,
           reminderTimeout: this.reminderTimeout,
           fallbackTimeout: this.fallbackTimeout,
-          isActive: false,
+          isDisplayed: true,
+          isSendingAlerts: false,
+          isSendingVitals: false,
         },
       ])
     })
@@ -161,7 +165,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             incidentCategories: client.incidentCategories,
             reminderTimeout: client.reminderTimeout,
             fallbackTimeout: client.fallbackTimeout,
-            isActive: client.isActive,
+            isDisplayed: client.isDisplayed,
+            isSendingAlerts: client.isSendingAlerts,
+            isSendingVitals: client.isSendingVitals,
           }
         }),
       ).to.eql([
@@ -176,7 +182,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           incidentCategories: this.incidentCategories.map(category => category.trim()),
           reminderTimeout: parseInt(this.reminderTimeout.trim(), 10),
           fallbackTimeout: parseInt(this.fallbackTimeout.trim(), 10),
-          isActive: false,
+          isDisplayed: true,
+          isSendingAlerts: false,
+          isSendingVitals: false,
         },
       ])
     })
@@ -266,7 +274,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             incidentCategories: client.incidentCategories,
             reminderTimeout: client.reminderTimeout,
             fallbackTimeout: client.fallbackTimeout,
-            isActive: client.isActive,
+            isDisplayed: client.isDisplayed,
+            isSendingAlerts: client.isSendingAlerts,
+            isSendingVitals: client.isSendingVitals,
           }
         }),
       ).to.eql([
@@ -281,7 +291,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           incidentCategories: this.incidentCategories,
           reminderTimeout: this.reminderTimeout,
           fallbackTimeout: this.fallbackTimeout,
-          isActive: false,
+          isDisplayed: true,
+          isSendingAlerts: false,
+          isSendingVitals: false,
         },
       ])
     })
@@ -338,7 +350,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             incidentCategories: client.incidentCategories,
             reminderTimeout: client.reminderTimeout,
             fallbackTimeout: client.fallbackTimeout,
-            isActive: client.isActive,
+            isDisplayed: client.isDisplayed,
+            isSendingAlerts: client.isSendingAlerts,
+            isSendingVitals: client.isSendingVitals,
           }
         }),
       ).to.eql([
@@ -353,7 +367,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           incidentCategories: this.incidentCategories,
           reminderTimeout: this.reminderTimeout,
           fallbackTimeout: this.fallbackTimeout,
-          isActive: false,
+          isDisplayed: true,
+          isSendingAlerts: false,
+          isSendingVitals: false,
         },
       ])
     })
@@ -410,7 +426,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             incidentCategories: client.incidentCategories,
             reminderTimeout: client.reminderTimeout,
             fallbackTimeout: client.fallbackTimeout,
-            isActive: client.isActive,
+            isDisplayed: client.isDisplayed,
+            isSendingAlerts: client.isSendingAlerts,
+            isSendingVitals: client.isSendingVitals,
           }
         }),
       ).to.eql([
@@ -425,7 +443,9 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           incidentCategories: this.incidentCategories,
           reminderTimeout: this.reminderTimeout,
           fallbackTimeout: this.fallbackTimeout,
-          isActive: false,
+          isDisplayed: true,
+          isSendingAlerts: false,
+          isSendingVitals: false,
         },
       ])
     })

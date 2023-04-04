@@ -9,7 +9,9 @@ class Location {
     radarCoreId,
     phoneNumber,
     initialTimer,
-    isActive,
+    isDisplayed,
+    isSendingAlerts,
+    isSendingVitals,
     sentLowBatteryAlertAt,
     doorId,
     isInDebugMode,
@@ -26,7 +28,9 @@ class Location {
     this.radarCoreId = radarCoreId
     this.phoneNumber = phoneNumber
     this.initialTimer = initialTimer
-    this.isActive = isActive
+    this.isDisplayed = isDisplayed
+    this.isSendingAlerts = isSendingAlerts
+    this.isSendingVitals = isSendingVitals
     this.sentLowBatteryAlertAt = sentLowBatteryAlertAt
     this.doorId = doorId
     this.isInDebugMode = isInDebugMode

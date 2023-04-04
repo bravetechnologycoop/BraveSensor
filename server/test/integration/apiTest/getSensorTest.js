@@ -70,7 +70,9 @@ describe('api.js integration tests: getSensor', () => {
         radarCoreId: sensor.radarCoreId,
         phoneNumber: sensor.phoneNumber,
         initialTimer: sensor.initialTimer,
-        isActive: sensor.isActive,
+        isDisplayed: sensor.isDisplayed,
+        isSendingAlerts: sensor.isSendingAlerts,
+        isSendingVitals: sensor.isSendingVitals,
         doorId: sensor.doorId,
         isInDebugMode: sensor.isInDebugMode,
       }).to.eql({
@@ -82,7 +84,9 @@ describe('api.js integration tests: getSensor', () => {
         radarCoreId: this.location2.radarCoreId,
         phoneNumber: this.location2.phoneNumber,
         initialTimer: this.location2.initialTimer,
-        isActive: this.location2.isActive,
+        isDisplayed: this.location2.isDisplayed,
+        isSendingAlerts: this.location2.isSendingAlerts,
+        isSendingVitals: this.location2.isSendingVitals,
         doorId: this.location2.doorId,
         isInDebugMode: this.location2.isInDebugMode,
       })
@@ -114,7 +118,9 @@ describe('api.js integration tests: getSensor', () => {
         radarCoreId: sensor.radarCoreId,
         phoneNumber: sensor.phoneNumber,
         initialTimer: sensor.initialTimer,
-        isActive: sensor.isActive,
+        isDisplayed: sensor.isDisplayed,
+        isSendingAlerts: sensor.isSendingAlerts,
+        isSendingVitals: sensor.isSendingVitals,
         doorId: sensor.doorId,
         isInDebugMode: sensor.isInDebugMode,
       }).to.eql({
@@ -126,7 +132,9 @@ describe('api.js integration tests: getSensor', () => {
         radarCoreId: this.location2.radarCoreId,
         phoneNumber: this.location2.phoneNumber,
         initialTimer: this.location2.initialTimer,
-        isActive: this.location2.isActive,
+        isDisplayed: this.location2.isDisplayed,
+        isSendingAlerts: this.location2.isSendingAlerts,
+        isSendingVitals: this.location2.isSendingVitals,
         doorId: this.location2.doorId,
         isInDebugMode: this.location2.isInDebugMode,
       })
