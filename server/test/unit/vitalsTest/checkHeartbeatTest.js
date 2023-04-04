@@ -56,8 +56,13 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
 
   describe('when a device with a firmware state machine and no existing alerts notices that the latest radar message was longer than the threshold', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({ isActive: true, sentVitalsAlertAt: null })
-      sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
+      const client = factories.clientFactory({ isSendingVitals: true })
+      this.testLocation = locationFactory({
+        isSendingVitals: true,
+        sentVitalsAlertAt: null,
+        client,
+      })
+      sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
         .stub(db, 'getMostRecentSensorsVitalWithLocationid')
@@ -98,8 +103,8 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
 
   describe('when an inactive device with a firmware state machine and no existing alerts notices that the latest radar message was longer than the threshold', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({ isActive: false, sentVitalsAlertAt: null })
-      sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
+      this.testLocation = locationFactory({ isSendingVitals: false, sentVitalsAlertAt: null })
+      sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
         .stub(db, 'getMostRecentSensorsVitalWithLocationid')
@@ -135,9 +140,9 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
 
   describe("when an inactive client's device with a firmware state machine and no existing alerts notices that the latest radar message was longer than the threshold", () => {
     beforeEach(async () => {
-      const client = factories.clientFactory({ isActive: false })
-      this.testLocation = locationFactory({ isActive: false, sentVitalsAlertAt: null, client })
-      sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
+      const client = factories.clientFactory({ isSendingVitals: false })
+      this.testLocation = locationFactory({ isSendingVitals: false, sentVitalsAlertAt: null, client })
+      sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
         .stub(db, 'getMostRecentSensorsVitalWithLocationid')
@@ -173,8 +178,12 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
 
   describe('when a device with a firmware state machine and no existing alerts notices that the latest door message was longer than the threshold', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({ isActive: true, sentVitalsAlertAt: null })
-      sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
+      this.testLocation = locationFactory({
+        isSendingVitals: true,
+        sentVitalsAlertAt: null,
+        client: factories.clientFactory({ isSendingVitals: true }),
+      })
+      sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
         .stub(db, 'getMostRecentSensorsVitalWithLocationid')
@@ -216,10 +225,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
   describe('when a device with a firmware state machine and an existing alert is no longer exceeding the door or radar thresholds', () => {
     beforeEach(async () => {
       this.testLocation = locationFactory({
-        isActive: true,
+        isSendingVitals: true,
         sentVitalsAlertAt: new Date('2020-10-10T10:10:10.000Z'),
+        client: factories.clientFactory({ isSendingVitals: true }),
       })
-      sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
+      sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
         .stub(db, 'getMostRecentSensorsVitalWithLocationid')
@@ -261,10 +271,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
   describe('when a device with a firmware state machine and an existing alert is still exceeding the door or radar threshold but it has not yet exceeded the subsequent vitals threshold', () => {
     beforeEach(async () => {
       this.testLocation = locationFactory({
-        isActive: true,
+        isSendingVitals: true,
         sentVitalsAlertAt: new Date(),
+        client: factories.clientFactory({ isSendingVitals: true }),
       })
-      sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
+      sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
         .stub(db, 'getMostRecentSensorsVitalWithLocationid')
@@ -301,10 +312,11 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
   describe('when a device with a firmware side state machine and an existing alert is still exceeding the door or radar threshold and has exceeded the subsequent vitals threshold', () => {
     beforeEach(async () => {
       this.testLocation = locationFactory({
-        isActive: true,
+        isSendingVitals: true,
         sentVitalsAlertAt: new Date('2019-10-10'),
+        client: factories.clientFactory({ isSendingVitals: true }),
       })
-      sandbox.stub(db, 'getActiveFirmwareStateMachineLocations').returns([this.testLocation])
+      sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox.stub(db, 'getMostRecentSensorsVitalWithLocationid').returns({ createdAt: excessiveRadarDate, resetReason })
 

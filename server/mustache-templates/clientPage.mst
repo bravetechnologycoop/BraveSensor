@@ -29,17 +29,19 @@
                     <table class="table table-striped table-sm table-fixed">
                         <thead>
                             <tr class="table-header" scope="row">
-                                <th scope="col"></th>
                                 <th scope="col"><h5>Location</h5></th>
                                 <th scope="col"><h5>Last Session Started</h5></th>
+                                <th scope="col">Sends Alerts?</th>
+                                <th scope="col">Sends Vitals?</th>
                             </tr>
                         </thead>
                         <tbody>
                         {{#locations}}
                             <tr class="table-data">
-                                <td>{{^isActive}}[INACTIVE]{{/isActive}}</td>
                                 <th scope="row"><a href="/locations/{{id}}">{{name}}</a></th>
                                 <td>{{sessionStart}}</td>
+                                <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
+                                <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
                             </tr>
                         {{/locations}}
                         </tbody>

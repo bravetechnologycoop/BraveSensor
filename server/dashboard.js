@@ -99,24 +99,27 @@ async function renderVitalsPage(req, res) {
 
     const viewParams = {
       sensors: [],
-      clients,
+      clients: clients.filter(client => client.isDisplayed),
       currentDateTime: helpers.formatDateTimeForDashboard(await db.getCurrentTime()),
     }
 
     const sensorsVitals = await db.getRecentSensorsVitals()
     for (const sensorsVital of sensorsVitals) {
-      viewParams.sensors.push({
-        client: sensorsVital.location.client,
-        location: sensorsVital.location,
-        sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
-        sensorLastSeenAgo:
-          sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
-        doorLastSeenAt: sensorsVital.doorLastSeenAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt) : 'Never',
-        doorLastSeenAgo:
-          sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
-        isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
-        isActive: sensorsVital.location.client.isActive && sensorsVital.location.isActive,
-      })
+      if (sensorsVital.location.isDisplayed) {
+        viewParams.sensors.push({
+          client: sensorsVital.location.client,
+          location: sensorsVital.location,
+          sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
+          sensorLastSeenAgo:
+            sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
+          doorLastSeenAt: sensorsVital.doorLastSeenAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt) : 'Never',
+          doorLastSeenAgo:
+            sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
+          isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
+          isSendingAlerts: sensorsVital.location.client.isSendingAlerts && sensorsVital.location.isSendingAlerts,
+          isSendingVitals: sensorsVital.location.client.isSendingVitals && sensorsVital.location.isSendingVitals,
+        })
+      }
     }
 
     res.send(Mustache.render(vitalsTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
@@ -133,7 +136,7 @@ async function renderClientVitalsPage(req, res) {
 
     const viewParams = {
       sensors: [],
-      clients: allClients,
+      clients: allClients.filter(client => client.isDisplayed),
       currentDateTime: helpers.formatDateTimeForDashboard(await db.getCurrentTime()),
     }
 
@@ -143,17 +146,20 @@ async function renderClientVitalsPage(req, res) {
 
       const sensorsVitals = await db.getRecentSensorsVitalsWithClientId(currentClient.id)
       for (const sensorsVital of sensorsVitals) {
-        viewParams.sensors.push({
-          location: sensorsVital.location,
-          sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
-          sensorLastSeenAgo:
-            sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
-          doorLastSeenAt: sensorsVital.doorLastSeenAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt) : 'Never',
-          doorLastSeenAgo:
-            sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
-          isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
-          isActive: currentClient.isActive && sensorsVital.location.isActive,
-        })
+        if (sensorsVital.location.isDisplayed) {
+          viewParams.sensors.push({
+            location: sensorsVital.location,
+            sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
+            sensorLastSeenAgo:
+              sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
+            doorLastSeenAt: sensorsVital.doorLastSeenAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt) : 'Never',
+            doorLastSeenAgo:
+              sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
+            isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
+            isSendingAlerts: sensorsVital.location.client.isSendingAlerts && sensorsVital.location.isSendingAlerts,
+            isSendingVitals: sensorsVital.location.client.isSendingVitals && sensorsVital.location.isSendingVitals,
+          })
+        }
       }
     } else {
       viewParams.viewMessage = 'No client to display'
@@ -199,10 +205,10 @@ async function downloadCsv(req, res) {
 
 async function renderDashboardPage(req, res) {
   try {
-    const clients = await db.getClients()
-    const allLocations = await db.getLocations()
+    const displayedClients = (await db.getClients()).filter(client => client.isDisplayed)
+    const allDisplayedLocations = (await db.getLocations()).filter(location => location.isDisplayed)
 
-    for (const location of allLocations) {
+    for (const location of allDisplayedLocations) {
       const recentSession = await db.getMostRecentSessionWithLocationid(location.locationid)
       if (recentSession !== null) {
         const sessionCreatedAt = Date.parse(recentSession.createdAt)
@@ -211,21 +217,22 @@ async function renderDashboardPage(req, res) {
       }
     }
 
-    for (const client of clients) {
-      client.locations = allLocations
+    for (const client of displayedClients) {
+      client.locations = allDisplayedLocations
         .filter(location => location.client.id === client.id)
         .map(location => {
           return {
             name: location.displayName,
             id: location.locationid,
             sessionStart: location.sessionStart,
-            isActive: location.isActive,
+            isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
+            isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
           }
         })
     }
 
     const viewParams = {
-      clients,
+      clients: displayedClients,
     }
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
@@ -238,7 +245,7 @@ async function renderDashboardPage(req, res) {
 async function renderNewLocationPage(req, res) {
   try {
     const clients = await db.getClients()
-    const viewParams = { clients }
+    const viewParams = { clients: clients.filter(client => client.isDisplayed) }
 
     res.send(Mustache.render(newLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
@@ -256,7 +263,7 @@ async function renderLocationDetailsPage(req, res) {
     const currentLocation = await db.getLocationData(req.params.locationId)
 
     const viewParams = {
-      clients,
+      clients: clients.filter(client => client.isDisplayed),
       recentSessions: [],
       currentLocation,
     }
@@ -291,12 +298,14 @@ async function renderLocationEditPage(req, res) {
 
     const viewParams = {
       currentLocation,
-      clients: clients.map(client => {
-        return {
-          ...client,
-          selected: client.id === currentLocation.client.id,
-        }
-      }),
+      clients: clients
+        .filter(client => client.isDisplayed)
+        .map(client => {
+          return {
+            ...client,
+            selected: client.id === currentLocation.client.id,
+          }
+        }),
     }
 
     res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
@@ -310,7 +319,7 @@ async function renderNewClientPage(req, res) {
   try {
     // Needed for the navigation bar
     const clients = await db.getClients()
-    const viewParams = { clients }
+    const viewParams = { clients: clients.filter(client => client.isDisplayed) }
 
     res.send(Mustache.render(newClientTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
@@ -325,7 +334,7 @@ async function renderClientEditPage(req, res) {
     const currentClient = clients.find(client => client.id === req.params.id)
 
     const viewParams = {
-      clients,
+      clients: clients.filter(client => client.isDisplayed),
       currentClient,
     }
 
@@ -353,11 +362,19 @@ async function renderClientDetailsPage(req, res) {
     }
 
     const viewParams = {
-      clients,
+      clients: clients.filter(client => client.isDisplayed),
       currentClient,
-      locations: locations.map(location => {
-        return { name: location.displayName, id: location.locationid, sessionStart: location.sessionStart, isActive: location.isActive }
-      }),
+      locations: locations
+        .filter(location => location.isDisplayed)
+        .map(location => {
+          return {
+            name: location.displayName,
+            id: location.locationid,
+            sessionStart: location.sessionStart,
+            isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
+            isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
+          }
+        }),
     }
 
     res.send(Mustache.render(clientPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
@@ -416,6 +433,8 @@ async function submitNewClient(req, res) {
         data.fallbackTimeout,
         data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim()),
         data.incidentCategories.split(',').map(category => category.trim()),
+        true,
+        false,
         false,
         'en',
       )
@@ -433,7 +452,16 @@ async function submitNewClient(req, res) {
 }
 
 const validateEditClient = [
-  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'heartbeatPhoneNumbers', 'incidentCategories', 'isActive'])
+  Validator.body([
+    'displayName',
+    'fallbackPhoneNumbers',
+    'fromPhoneNumber',
+    'heartbeatPhoneNumbers',
+    'incidentCategories',
+    'isDisplayed',
+    'isSendingAlerts',
+    'isSendingVitals',
+  ])
     .trim()
     .notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
@@ -483,7 +511,9 @@ async function submitEditClient(req, res) {
         data.fallbackTimeout,
         data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim()),
         data.incidentCategories.split(',').map(category => category.trim()),
-        data.isActive,
+        data.isDisplayed,
+        data.isSendingAlerts,
+        data.isSendingVitals,
         req.params.id,
       )
 
@@ -551,7 +581,9 @@ const validateEditLocation = Validator.body([
   'durationTimer',
   'stillnessTimer',
   'initialTimer',
-  'isActive',
+  'isDisplayed',
+  'isSendingAlerts',
+  'isSendingVitals',
   'clientId',
 ])
   .trim()
@@ -586,7 +618,9 @@ async function submitEditLocation(req, res) {
         data.durationTimer,
         data.stillnessTimer,
         data.initialTimer,
-        data.isActive === 'true',
+        data.isDisplayed === 'true',
+        data.isSendingAlerts === 'true',
+        data.isSendingVitals === 'true',
         data.locationid,
         data.clientId,
       )

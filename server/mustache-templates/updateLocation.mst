@@ -81,10 +81,24 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="isActive" class="col-sm-3 col-form-label">Is this Location active?</label>
+                    <label for="isDisplayed" class="col-sm-3 col-form-label">Is this displayed on the Dashboard by default?</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="isActive" value="{{isActive}}" required pattern="(true|false)">
-                        <small id="isActiveHelp" class="form-text text-muted">"true" or "false"</small>
+                        <input type="text" class="form-control" name="isDisplayed" value="{{isDisplayed}}" required pattern="(true|false)">
+                        <small id="isDisplayedHelp" class="form-text text-muted">"true" or "false"</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="isSendingAlerts" class="col-sm-3 col-form-label">Does this client send alert messages?</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="isSendingAlerts" value="{{isSendingAlerts}}" required pattern="(true|false)">
+                        <small id="isSendingAlertsHelp" class="form-text text-muted">"true" or "false"</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="isSendingVitals" class="col-sm-3 col-form-label">Does this client send vitals messages?</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="isSendingVitals" value="{{isSendingVitals}}" required pattern="(true|false)">
+                        <small id="isSendingVitalsHelp" class="form-text text-muted">"true" or "false"</small>
                     </div>
                 </div>
                 <br>
