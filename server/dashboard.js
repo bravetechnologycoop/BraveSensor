@@ -105,7 +105,7 @@ async function renderVitalsPage(req, res) {
 
     const sensorsVitals = await db.getRecentSensorsVitals()
     for (const sensorsVital of sensorsVitals) {
-      if (sensorsVital.location.isDisplayed) {
+      if (sensorsVital.location.isDisplayed && sensorsVital.location.client.isDisplayed) {
         viewParams.sensors.push({
           client: sensorsVital.location.client,
           location: sensorsVital.location,
