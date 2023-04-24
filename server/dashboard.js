@@ -385,7 +385,7 @@ async function renderClientDetailsPage(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'heartbeatPhoneNumbers', 'incidentCategories']).trim().notEmpty(),
+  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'incidentCategories']).trim().notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
   Validator.oneOf([
     Validator.body(['responderPhoneNumbers']).trim().notEmpty(),
@@ -421,6 +421,10 @@ async function submitNewClient(req, res) {
           : null
       const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
       const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
+      const newHeartbeatPhoneNumbers =
+        data.heartbeatPhoneNumbers !== undefined && data.heartbeatPhoneNumbers.trim() !== ''
+          ? data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim())
+          : []
 
       const newClient = await db.createClient(
         data.displayName,
@@ -431,7 +435,7 @@ async function submitNewClient(req, res) {
         data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()),
         data.fromPhoneNumber,
         data.fallbackTimeout,
-        data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim()),
+        newHeartbeatPhoneNumbers,
         data.incidentCategories.split(',').map(category => category.trim()),
         true,
         false,
@@ -456,7 +460,6 @@ const validateEditClient = [
     'displayName',
     'fallbackPhoneNumbers',
     'fromPhoneNumber',
-    'heartbeatPhoneNumbers',
     'incidentCategories',
     'isDisplayed',
     'isSendingAlerts',
@@ -499,6 +502,10 @@ async function submitEditClient(req, res) {
           : null
       const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
       const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
+      const newHeartbeatPhoneNumbers =
+        data.heartbeatPhoneNumbers !== undefined && data.heartbeatPhoneNumbers.trim() !== ''
+          ? data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim())
+          : []
 
       await db.updateClient(
         data.displayName,
@@ -509,7 +516,7 @@ async function submitEditClient(req, res) {
         data.reminderTimeout,
         data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()),
         data.fallbackTimeout,
-        data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim()),
+        newHeartbeatPhoneNumbers,
         data.incidentCategories.split(',').map(category => category.trim()),
         data.isDisplayed,
         data.isSendingAlerts,

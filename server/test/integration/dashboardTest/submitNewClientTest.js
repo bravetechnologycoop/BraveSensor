@@ -299,6 +299,82 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
   })
 
+  describe('for a request that contains valid non-empty fields but with no heartbeatPhoneNumbers', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.displayName = 'myNewClient'
+      this.fromPhoneNumber = '+19998887777'
+      this.responderPhoneNumbers = ['+16665553333']
+      this.responderPushId = 'pushId'
+      this.alertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
+      const goodRequest = {
+        displayName: this.displayName,
+        fromPhoneNumber: this.fromPhoneNumber,
+        responderPhoneNumbers: this.responderPhoneNumbers.join(','),
+        responderPushId: this.responderPushId,
+        alertApiKey: this.alertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+      }
+
+      this.response = await this.agent.post('/clients').send(goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should create a single client in the database with the given values', async () => {
+      const clients = await db.getClients()
+
+      expect(
+        clients.map(client => {
+          return {
+            displayName: client.displayName,
+            fromPhoneNumber: client.fromPhoneNumber,
+            responderPhoneNumbers: client.responderPhoneNumbers,
+            responderPushId: client.responderPushId,
+            alertApiKey: client.alertApiKey,
+            fallbackPhoneNumbers: client.fallbackPhoneNumbers,
+            heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
+            incidentCategories: client.incidentCategories,
+            reminderTimeout: client.reminderTimeout,
+            fallbackTimeout: client.fallbackTimeout,
+            isDisplayed: client.isDisplayed,
+            isSendingAlerts: client.isSendingAlerts,
+            isSendingVitals: client.isSendingVitals,
+          }
+        }),
+      ).to.eql([
+        {
+          displayName: this.displayName,
+          fromPhoneNumber: this.fromPhoneNumber,
+          responderPhoneNumbers: this.responderPhoneNumbers,
+          responderPushId: this.responderPushId,
+          alertApiKey: this.alertApiKey,
+          fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+          heartbeatPhoneNumbers: [],
+          incidentCategories: this.incidentCategories,
+          reminderTimeout: this.reminderTimeout,
+          fallbackTimeout: this.fallbackTimeout,
+          isDisplayed: true,
+          isSendingAlerts: false,
+          isSendingVitals: false,
+        },
+      ])
+    })
+  })
+
   describe('for a request that contains valid non-empty fields but with no responderPushId', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
@@ -531,7 +607,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
+        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
       )
     })
   })
@@ -558,7 +634,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
+        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
       )
     })
   })

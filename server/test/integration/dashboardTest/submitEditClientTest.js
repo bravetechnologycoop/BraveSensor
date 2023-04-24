@@ -369,6 +369,82 @@ describe('dashboard.js integration tests: submitEditClient', () => {
     })
   })
 
+  describe('for a request that contains valid non-empty fields but with no heartbeatPhoneNumbers', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.newDisplayname = 'New Display Name'
+      this.newFromPhoneNumber = '+17549553216'
+      this.newResponderPhoneNumbers = ['+18885554444']
+      this.newResponderPushId = 'myPushId'
+      this.newAlertApiKey = 'myApiKey'
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
+      this.isDisplayed = true
+      this.isSendingAlerts = true
+      this.isSendingVitals = true
+      this.goodRequest = {
+        displayName: this.newDisplayname,
+        fromPhoneNumber: this.newFromPhoneNumber,
+        responderPhoneNumbers: this.newResponderPhoneNumbers.join(','),
+        responderPushId: this.newResponderPushId,
+        alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
+      }
+
+      this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should update the client in the database', async () => {
+      const updatedClient = await db.getClientWithClientId(this.existingClient.id)
+
+      expect({
+        displayName: updatedClient.displayName,
+        fromPhoneNumber: updatedClient.fromPhoneNumber,
+        responderPhoneNumbers: updatedClient.responderPhoneNumbers,
+        responderPushId: updatedClient.responderPushId,
+        alertApiKey: updatedClient.alertApiKey,
+        fallbackPhoneNumbers: updatedClient.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: updatedClient.heartbeatPhoneNumbers,
+        incidentCategories: updatedClient.incidentCategories,
+        reminderTimeout: updatedClient.reminderTimeout,
+        fallbackTimeout: updatedClient.fallbackTimeout,
+        isDisplayed: updatedClient.isDisplayed,
+        isSendingAlerts: updatedClient.isSendingAlerts,
+        isSendingVitals: updatedClient.isSendingVitals,
+      }).to.eql({
+        displayName: this.newDisplayname,
+        fromPhoneNumber: this.newFromPhoneNumber,
+        responderPhoneNumbers: this.newResponderPhoneNumbers,
+        responderPushId: this.newResponderPushId,
+        alertApiKey: this.newAlertApiKey,
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+        heartbeatPhoneNumbers: [],
+        incidentCategories: this.incidentCategories,
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        isDisplayed: this.isDisplayed,
+        isSendingAlerts: this.isSendingAlerts,
+        isSendingVitals: this.isSendingVitals,
+      })
+    })
+  })
+
   describe('for a request that contains valid non-empty fields but with no alertApiKey', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
@@ -611,7 +687,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
+        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
       )
     })
   })
@@ -638,7 +714,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),heartbeatPhoneNumbers (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
+        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
       )
     })
   })
