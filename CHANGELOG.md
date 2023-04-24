@@ -23,6 +23,7 @@ the code was deployed.
 - Only display Clients and Locations in the dashboard if their `is_displayed` is true (CU-860ptt5rp).
 - Only send vitals messages if the relevant `is_sending_vitals` is true (CU-860ptt5rp).
 - Only send Stillness/Duration alerts if the relevant `is_sending_vitals` is true (CU-860ptt5rp).
+- Allow the Heartbeat Phone Numbers field to be empty when adding/editing Clients on the Dashboard (CU-2uad09a).
 
 ## [9.1.0] - 2023-03-13
 
