@@ -24,7 +24,7 @@
 #define ADDR_INS_THRESHOLD            4
 #define ADDR_STATE1_MAX_TIME          8
 #define ADDR_STATE2_MAX_DURATION      12
-#define ADDR_STATE3_MAX_STILLNES_TIME 16
+#define ADDR_STATE3_MAX_STILLNESS_TIME 16
 
 // IM Door Sensor ID
 // struct with three unsigned chars (uint8_t)

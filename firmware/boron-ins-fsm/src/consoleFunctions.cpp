@@ -155,7 +155,7 @@ int stillness_timer_set(String input) {
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_STATE3_MAX_STILLNES_TIME, state3_max_stillness_time);
+        EEPROM.get(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
         returnFlag = state3_max_stillness_time / 1000;
     }
     // else parse new threshold
@@ -173,7 +173,7 @@ int stillness_timer_set(String input) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_STATE3_MAX_STILLNES_TIME, timeout);
+            EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, timeout);
             state3_max_stillness_time = timeout;
             returnFlag = state3_max_stillness_time / 1000;
         }
