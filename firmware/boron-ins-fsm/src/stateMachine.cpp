@@ -60,7 +60,7 @@ void initializeStateMachineConsts() {
         EEPROM.put(ADDR_INS_THRESHOLD, ins_threshold);
         EEPROM.put(ADDR_STATE1_MAX_TIME, state1_max_time);
         EEPROM.put(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        EEPROM.put(ADDR_STATE3_MAX_STILLNES_TIME, state3_max_stillness_time);
+        EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
         initializeConstsFlag = INITIALIZE_STATE_MACHINE_CONSTS_FLAG;
         EEPROM.put(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
         Log.info("State machine constants were written to flash on bootup.");
@@ -69,7 +69,7 @@ void initializeStateMachineConsts() {
         EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
         EEPROM.get(ADDR_STATE1_MAX_TIME, state1_max_time);
         EEPROM.get(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        EEPROM.get(ADDR_STATE3_MAX_STILLNES_TIME, state3_max_stillness_time);
+        EEPROM.get(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
         Log.info("State machine constants were read from flash on bootup.");
     }
 }
