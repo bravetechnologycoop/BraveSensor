@@ -109,11 +109,6 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: SESSION_RESET_THRESHOLD
-          - name: SUBSEQUENT_ALERT_MESSAGE_THRESHOLD
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.secretName | quote }}
-                key: SUBSEQUENT_ALERT_MESSAGE_THRESHOLD
           - name: RADAR_WINDOW_SIZE_SECONDS
             valueFrom:
               secretKeyRef:

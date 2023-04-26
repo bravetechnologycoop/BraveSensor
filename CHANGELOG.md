@@ -19,6 +19,10 @@ the code was deployed.
 
 - `db.clearLocation` also makes sure to clear the relevant rows from `sensors_vitals_cache` and `sensors_vitals`.
 
+### Removed
+
+- `SUBSEQUENT_ALERT_MESSAGE_THRESHOLD` (CU-860q2an4r).
+
 ## [9.3.0] - 2023-04-27
 
 ### Added
