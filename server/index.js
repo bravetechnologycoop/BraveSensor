@@ -102,7 +102,7 @@ async function handleAlert(location, alertType) {
         fallbackFromPhoneNumber: client.fromPhoneNumber,
       }
       braveAlerter.startAlertSession(alertInfo)
-    } else if (currentTime - currentSession.updatedAt >= helpers.getEnvVar('SUBSEQUENT_ALERT_MESSAGE_THRESHOLD')) {
+    } else {
       db.saveSession(currentSession, pgClient) // update updatedAt
 
       braveAlerter.sendAlertSessionUpdate(
