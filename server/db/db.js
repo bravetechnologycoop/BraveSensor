@@ -1303,7 +1303,29 @@ async function clearLocations(pgClient) {
 async function clearLocation(locationid, pgClient) {
   try {
     await helpers.runQuery(
-      'clearLocation',
+      'clearLocation: sensorsVitalsCache',
+      `
+      DELETE FROM sensors_vitals_cache
+      WHERE locationid = $1
+      `,
+      [locationid],
+      pool,
+      pgClient,
+    )
+
+    await helpers.runQuery(
+      'clearLocation: sensorsVitals',
+      `
+      DELETE FROM sensors_vitals
+      WHERE locationid = $1
+      `,
+      [locationid],
+      pool,
+      pgClient,
+    )
+
+    await helpers.runQuery(
+      'clearLocation: location',
       `
       DELETE FROM locations
       WHERE locationid = $1
