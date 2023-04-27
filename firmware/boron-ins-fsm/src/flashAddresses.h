@@ -21,15 +21,19 @@
 
 // state machine constants
 // all are uint32_t so 4 bytes each
-#define ADDR_INS_THRESHOLD            4
-#define ADDR_STATE1_MAX_TIME          8
-#define ADDR_STATE2_MAX_DURATION      12
+#define ADDR_INS_THRESHOLD             4
+#define ADDR_STATE1_MAX_TIME           8
+#define ADDR_STATE2_MAX_DURATION       12
 #define ADDR_STATE3_MAX_STILLNESS_TIME 16
 
 // IM Door Sensor ID
 // struct with three unsigned chars (uint8_t)
 #define ADDR_IM_DOORID 20
 
-// next available address is 20 + 3 = 23
+// new state machine constant and its write originals flag
+#define ADDR_STATE3_MAX_LONG_STILLNESS_TIME                 23  // uint32_t = 4 bytes
+#define ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG 27  // uint16_2 = 2 bytes
+
+// next available address is 27 + 2 = 29
 
 #endif

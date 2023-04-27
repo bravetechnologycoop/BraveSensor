@@ -305,6 +305,60 @@ SCENARIO("Set Stillness Timer", "[stillness timer]") {
     }
 }
 
+SCENARIO("Set Long Stillness Timer", "[long stillness timer]") {
+    GIVEN("A starting long stillness timer of 10 milliseconds") {
+        state3_max_long_stillness_time = 10000;
+
+        WHEN("the function is called with 'e'") {
+            int returnFlag = long_stillness_timer_set("e");
+
+            THEN("the initial timer value should remain the same") {
+                REQUIRE(state3_max_long_stillness_time == 10000);
+            }
+
+            THEN("the function should return the input") {
+                REQUIRE(returnFlag == 10);
+            }
+        }
+
+        WHEN("the function is called with a positive integer") {
+            int returnFlag = long_stillness_timer_set("15");
+
+            THEN("the initial timer value should be updated to the input * 1000") {
+                REQUIRE(state3_max_long_stillness_time == 15000);
+            }
+
+            THEN("the function should return the input") {
+                REQUIRE(returnFlag == 15);
+            }
+        }
+
+        WHEN("the function is called with a negative integer") {
+            int returnFlag = long_stillness_timer_set("-15");
+
+            THEN("the initial timer value should not be updated") {
+                REQUIRE(state3_max_long_stillness_time == 10000);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+
+        WHEN("the function is called with something other than 'e' or a positive integer") {
+            int returnFlag = long_stillness_timer_set("nonint");
+
+            THEN("the initial timer value should not be updated") {
+                REQUIRE(state3_max_long_stillness_time == 10000);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+    }
+}
+
 SCENARIO("Set INS Threshold", "[ins threshold]") {
     GIVEN("A starting initial threshold of 10") {
         ins_threshold = 10;
