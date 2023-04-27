@@ -23,12 +23,18 @@ unsigned long ins_threshold = INS_THRESHOLD;
 unsigned long state1_max_time = STATE1_MAX_TIME;
 unsigned long state2_max_duration = STATE2_MAX_DURATION;
 unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
+unsigned long state3_max_long_stillness_time =
+    STATE3_MAX_STILLNESS_TIME;  // By default, we use the same value for max_stillness_time and max_long_stillness_time
 // except this one, we don't want to take the chance that random memory
 // contents will initialize this to "on"
 bool stateMachineDebugFlag = false;
 int resetReason = System.resetReason();
 // record whether a duration alert has been sent within the same session
 bool hasDurationAlertBeenSent;
+// which max stillness time are we currently comparing against
+// using pointers so that the value pointed to be max_stillness_time will be the correct values of state3_max_stillness_time or
+// state3_max_long_stillness_time even if they change due to a console function call during the session
+unsigned long *max_stillness_time = &state3_max_stillness_time;
 
 std::queue<int> stateQueue;
 std::queue<int> reasonQueue;
@@ -51,8 +57,9 @@ void setupStateMachine() {
 
 void initializeStateMachineConsts() {
     uint16_t initializeConstsFlag;
+    uint16_t initializeState3MaxLongStillenssTimeFlag;
 
-    // Argon flash memory is initialized to all F's (1's)
+    // Boron flash memory is initialized to all F's (1's)
     EEPROM.get(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
     Log.info("state machine constants flag is 0x%04X", initializeConstsFlag);
 
@@ -71,6 +78,23 @@ void initializeStateMachineConsts() {
         EEPROM.get(ADDR_STATE2_MAX_DURATION, state2_max_duration);
         EEPROM.get(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
         Log.info("State machine constants were read from flash on bootup.");
+    }
+
+    // Boron flash memory is initialized to all F's (1's)
+    // Needs separate intialization for Borons that had versions of the firmware <= 9.3.0
+    EEPROM.get(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
+    Log.info("state machine constant State3MaxLongStillnessTime flag is 0x%04X", initializeState3MaxLongStillenssTimeFlag);
+
+    if (initializeState3MaxLongStillenssTimeFlag != INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG) {
+        EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME,
+                   state3_max_stillness_time);  // By default, we use the same value for max_stillness_time and max_long_stillness_time
+        initializeState3MaxLongStillenssTimeFlag = INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG;
+        EEPROM.put(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
+        Log.info("State machine constant State3MaxLongStillnessTime was written to flash on bootup.");
+    }
+    else {
+        EEPROM.get(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
+        Log.info("State machine constant State3MaxLongStillnessTime was read from flash on bootup.");
     }
 }
 
@@ -92,6 +116,8 @@ void state0_idle() {
     checkINS = checkINS3331();
     // session is over in idle state, so reset the whether duration alert has been sent flag
     hasDurationAlertBeenSent = 0;
+    // set to compare against the shorter stillness threshold
+    max_stillness_time = &state3_max_stillness_time;
 
     // do stuff in the state
     digitalWrite(D2, LOW);
@@ -241,21 +267,23 @@ void state3_stillness() {
         saveStateChangeOrAlert(3, 2);
         stateHandler = state0_idle;
     }
+    else if (millis() - state3_stillness_timer >= *max_stillness_time) {
+        Log.warn("stillness alert, remaining in state3 after publish");
+        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(3, 5);
+        Log.error("Stillness Alert!!");
+        Particle.publish("Stillness Alert", "stillness alert!!!", PRIVATE);
+        state3_stillness_timer = millis();                     // reset the stillness timer
+        max_stillness_time = &state3_max_long_stillness_time;  // set to compare against the longer stillness threshold for the rest of this session
+        stateHandler = state3_stillness;
+    }
     else if ((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent) {
-        Log.warn("See duration alert, going from state3 to state2 after alert publish");
-        publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
+        Log.warn("duration alert, remaining in state3 after publish");
+        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 4);
         Log.error("Duration Alert!!");
         Particle.publish("Duration Alert", "duration alert", PRIVATE);
         hasDurationAlertBeenSent = 1;  // a duration alert has been sent, so do not send another one
-        stateHandler = state2_duration;
-    }
-    else if (millis() - state3_stillness_timer >= state3_max_stillness_time) {
-        Log.warn("stillness alert, remaining in state3 after publish");
-        saveStateChangeOrAlert(3, 5);
-        Log.error("Stillness Alert!!");
-        Particle.publish("Stillness Alert", "stillness alert!!!", PRIVATE);
-        state3_stillness_timer = millis();  // reset the stillness timer
         stateHandler = state3_stillness;
     }
     else {

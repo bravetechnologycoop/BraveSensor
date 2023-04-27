@@ -25,6 +25,7 @@ void setupConsoleFunctions() {
     Particle.function("Change_Initial_Timer", initial_timer_set);
     Particle.function("Change_Duration_Timer", duration_timer_set);
     Particle.function("Change_Stillness_Timer", stillness_timer_set);
+    Particle.function("Change_Long_Stillness_Timer", long_stillness_timer_set);
     Particle.function("Change_INS_Threshold", ins_threshold_set);
     Particle.function("Change_IM21_Door_ID", im21_door_id_set);
 }
@@ -176,6 +177,41 @@ int stillness_timer_set(String input) {
             EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, timeout);
             state3_max_stillness_time = timeout;
             returnFlag = state3_max_stillness_time / 1000;
+        }
+    }
+
+    return returnFlag;
+}
+
+// returns long stillness timer length if valid input is given, otherwise returns -1
+int long_stillness_timer_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    // if e, echo the current threshold
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
+        returnFlag = state3_max_long_stillness_time / 1000;
+    }
+    // else parse new threshold
+    else {
+        int timeout = input.toInt();
+        // increase timeout value to from seconds to ms
+        timeout = timeout * 1000;
+
+        if (timeout == 0) {
+            // string.toInt() returns 0 if input not an int
+            // and a threshold value of 0 makes no sense, so return -1
+            returnFlag = -1;
+        }
+        else if (timeout < 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, timeout);
+            state3_max_long_stillness_time = timeout;
+            returnFlag = state3_max_long_stillness_time / 1000;
         }
     }
 
