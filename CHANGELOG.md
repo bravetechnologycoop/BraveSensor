@@ -15,6 +15,10 @@ the code was deployed.
 
 - Sentry logs when an unusually high number of stillness alerts occurs in set interval of time at each location (CU-2chw8y0).
 
+### Changed
+
+- `db.clearLocation` also makes sure to clear the relevant rows from `sensors_vitals_cache` and `sensors_vitals`.
+
 ## [9.3.0] - 2023-04-27
 
 ### Added
