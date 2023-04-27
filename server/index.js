@@ -192,9 +192,11 @@ app.post('/smokeTest/setup', async (request, response) => {
       'SmokeTestLocation',
       'radar_coreID',
       true,
+      true,
+      true,
+      '2021-03-09T19:37:28.176Z',
       'AA11BB',
       false,
-      '2021-03-09T19:37:28.176Z',
       client.id,
     )
     response.status(200).send()
