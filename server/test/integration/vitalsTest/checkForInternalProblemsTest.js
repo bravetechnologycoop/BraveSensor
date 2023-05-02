@@ -18,6 +18,11 @@ use(sinonChai)
 const sandbox = sinon.createSandbox()
 
 const maxStillnessAlerts = parseInt(helpers.getEnvVar('MAX_STILLNESS_ALERTS'), 10)
+const intervalToCheckAlerts = parseInt(helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS'), 10)
+
+const currentDate = new Date()
+const changedTime = currentDate.getTime() - (intervalToCheckAlerts + 1) * 60 * 1000
+const oneMinuteBeforeIntervalDate = new Date(changedTime)
 
 describe('vitals.js integration tests: checkForInternalProblems', () => {
   beforeEach(async () => {
@@ -65,7 +70,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
     })
   })
 
-  describe('should not log to Sentry if exactly maxStillnessAlerts have occurred in 24 hours at a location', () => {
+  describe('should not log to Sentry if exactly maxStillnessAlerts have occurred in set interval of time at a location', () => {
     beforeEach(async () => {
       // Insert a single location and maxStillnessAlerts sessions
       const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
@@ -95,7 +100,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
     })
   })
 
-  describe('duration alerts should not be counted, even if duration alerts exceed maxStillnessAlerts in 24 hours for a location', () => {
+  describe('duration alerts should not be counted, even if duration alerts exceed maxStillnessAlerts in set interval of time for a location', () => {
     beforeEach(async () => {
       // Insert a single location and maxStillnessAlerts + 3 sessions
       const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
@@ -129,7 +134,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
     })
   })
 
-  describe('should log to Sentry after finding more than maxStillnessAlerts have occurred in 24 hours from a single location', () => {
+  describe('should log to Sentry after finding more than maxStillnessAlerts have occurred in set interval of time from a single location', () => {
     beforeEach(async () => {
       // Insert a single location and maxStillnessAlerts + 1 sessions
       const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
@@ -138,8 +143,8 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
         isSendingAlerts: true,
       })
 
-      this.incidentCategory = ALERT_TYPE.SENSOR_STILLNESS
       this.alertType = ALERT_TYPE.SENSOR_STILLNESS
+      this.incidentCategory = ALERT_TYPE.SENSOR_STILLNESS
       for (let i = 1; i <= maxStillnessAlerts + 1; i += 1) {
         this[`session${i}`] = await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
@@ -150,7 +155,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
       await vitals.checkForInternalProblems()
     })
 
-    it('should send one max stillness alert specific to the location that has exceeded the maxStillnessAlerts in 24 hours to Sentry', () => {
+    it('should send one max stillness alert specific to the location that has exceeded the maxStillnessAlerts in set interval of time to Sentry', () => {
       expect(helpers.logSentry).to.have.been.calledOnceWithExactly(
         `Unusually frequent number of stillness alerts (${maxStillnessAlerts + 1}) have been received at ${this.testLocation.locationid}`,
       )
@@ -161,7 +166,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
     })
   })
 
-  describe('alerts sent earlier than 24hours prior should not be counted, even if the stillness alerts exceed maxStillnessAlerts', () => {
+  describe('alerts sent earlier than set interval of time prior should not be counted, even if the stillness alerts exceed maxStillnessAlerts', () => {
     beforeEach(async () => {
       // Insert a single location and maxStillnessAlerts + 3 sessions
       const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
@@ -197,7 +202,43 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
       expect(helpers.log).to.not.be.called
     })
   })
-  describe('should log to Sentry for more than maxStillnessAlerts, ignores present duration alerts in the past 24 hours for a location', () => {
+  describe('should not log to Sentry even if there exists an alert that was sent one minute before set interval of time', () => {
+    beforeEach(async () => {
+      // Insert a single location and maxStillnessAlerts + 1 sessions
+      const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
+      this.testLocation = await locationDBFactory(db, {
+        clientId: client.id,
+        isSendingAlerts: true,
+      })
+      this.alertType = ALERT_TYPE.SENSOR_STILLNESS
+      this.incidentCategory = ALERT_TYPE.SENSOR_STILLNESS
+      for (let i = 1; i <= maxStillnessAlerts; i += 1) {
+        this[`session${i}`] = await sessionDBFactory(db, {
+          locationid: this.testLocation.locationid,
+          alertType: this.alertType,
+          incidentCategory: this.incidentCategory,
+        })
+      }
+      for (let i = maxStillnessAlerts; i <= maxStillnessAlerts + 1; i += 1) {
+        this[`session${i}`] = await sessionDBFactory(db, {
+          locationid: this.testLocation.locationid,
+          alertType: this.alertType,
+          incidentCategory: this.incidentCategory,
+          createdAt: oneMinuteBeforeIntervalDate,
+        })
+      }
+      await vitals.checkForInternalProblems()
+    })
+
+    it('should not send any alerts to Sentry', () => {
+      expect(helpers.logSentry).to.not.have.been.called
+    })
+
+    it('should not log any errors', () => {
+      expect(helpers.log).to.not.be.called
+    })
+  })
+  describe('should log to Sentry for more than maxStillnessAlerts, ignores present duration alerts in the past set interval of time for a location', () => {
     beforeEach(async () => {
       // Insert a single location and (maxStillnessAlerts + 2) * 2 sessions
       const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
@@ -222,7 +263,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
       await vitals.checkForInternalProblems()
     })
 
-    it('should send one max stillness alert specific to the location that has exceeded the maxStillnessAlerts in 24 hours to Sentry', () => {
+    it('should send one max stillness alert specific to the location that has exceeded the maxStillnessAlerts in set interval of time to Sentry', () => {
       expect(helpers.logSentry).to.have.been.calledOnceWithExactly(
         `Unusually frequent number of stillness alerts (${maxStillnessAlerts + 3}) have been received at ${this.testLocation.locationid}`,
       )
@@ -232,7 +273,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
       expect(helpers.log).to.not.be.called
     })
   })
-  describe('should log to Sentry for more than maxStillnessAlerts, ignores alerts sent before the past 24 hours for a location', () => {
+  describe('should log to Sentry for more than maxStillnessAlerts, ignores alerts sent before the past set interval of time for a location', () => {
     beforeEach(async () => {
       // Insert a single location and (maxStillnessAlerts + 2) * 2 sessions
       const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
@@ -260,7 +301,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
       await vitals.checkForInternalProblems()
     })
 
-    it('should send one max stillness alert specific to the location that has exceeded the maxStillnessAlerts in 24 hours to Sentry', () => {
+    it('should send one max stillness alert specific to the location that has exceeded the maxStillnessAlerts in set interval of time to Sentry', () => {
       expect(helpers.logSentry).to.have.been.calledOnceWithExactly(
         `Unusually frequent number of stillness alerts (${maxStillnessAlerts + 3}) have been received at ${this.testLocation.locationid}`,
       )
@@ -270,8 +311,8 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
       expect(helpers.log).to.not.be.called
     })
   })
-  describe('should log to Sentry for each location that has more than maxStillnessAlerts in 24 hours', () => {
-    describe('all locations exceed maxStillnessAlerts in 24 hours', () => {
+  describe('should log to Sentry for each location that has more than maxStillnessAlerts in set interval of time', () => {
+    describe('all locations exceed maxStillnessAlerts in set interval of time', () => {
       beforeEach(async () => {
         // Insert a single location and maxStillnessAlerts sessions + 1
         const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
@@ -299,13 +340,13 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
         await vitals.checkForInternalProblems()
       })
 
-      it('should send one max stillness alert message specific to the first location that has exceeded the maxStillnessAlerts in 24 hours to Sentry', () => {
+      it('should send one max stillness alert message specific to the first location that has exceeded the maxStillnessAlerts in set interval of time to Sentry', () => {
         expect(helpers.logSentry).to.have.been.calledWithExactly(
           `Unusually frequent number of stillness alerts (${maxStillnessAlerts + 1}) have been received at location1`,
         )
       })
 
-      it('should send one max stillness alert message specific to the second location that has exceeded the maxStillnessAlerts in 24 hours to Sentry', () => {
+      it('should send one max stillness alert message specific to the second location that has exceeded the maxStillnessAlerts in set interval of time to Sentry', () => {
         expect(helpers.logSentry).to.have.been.calledWithExactly(
           `Unusually frequent number of stillness alerts (${maxStillnessAlerts + 1}) have been received at location2`,
         )
@@ -325,7 +366,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
         expect(helpers.log).to.not.be.called
       })
     })
-    describe('only one location exceeds maxStillnessAlerts in 24 hours, whereas other locations have exactly max and less than', () => {
+    describe('only one location exceeds maxStillnessAlerts in set interval of time, whereas other locations have exactly max and less than', () => {
       beforeEach(async () => {
         // Insert a single location and maxStillnessAlerts sessions + 1
         const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
@@ -365,7 +406,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
         await vitals.checkForInternalProblems()
       })
 
-      it('should only send one max stillness alert message specific to the second location that has exceeded the maxStillnessAlerts in 24 hours to Sentry', () => {
+      it('should only send one max stillness alert message specific to the second location that has exceeded the maxStillnessAlerts in set interval of time to Sentry', () => {
         expect(helpers.logSentry).to.have.been.calledOnceWithExactly(
           `Unusually frequent number of stillness alerts (${maxStillnessAlerts + 1}) have been received at location2`,
         )

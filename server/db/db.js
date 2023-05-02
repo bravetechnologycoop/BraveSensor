@@ -13,7 +13,7 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  ssl: false, // { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -713,16 +713,17 @@ async function getLocationsFromClientId(clientId, pgClient) {
   }
 }
 
-async function numberOfStillnessAlertsIn24Hours(locationid, pgClient) {
+async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
+  const intervalToCheckAlerts = parseInt(helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS'), 10)
   try {
     const results = await helpers.runQuery(
-      'numberOfStillnessAlertsIn24Hours',
+      'numberOfStillnessAlertsInIntervalOfTime',
       `
       SELECT COUNT (*)
       FROM sessions
       WHERE alert_type = $1
       AND locationid = $2
-      AND created_at BETWEEN NOW() - INTERVAL '24 hours'
+      AND created_at BETWEEN NOW() - INTERVAL '${intervalToCheckAlerts} minutes'
       AND NOW()
       `,
       [ALERT_TYPE.SENSOR_STILLNESS, locationid],
@@ -1438,7 +1439,7 @@ module.exports = {
   getSessionWithSessionIdAndAlertApiKey,
   getUnrespondedSessionWithLocationId,
   logSensorsVital,
-  numberOfStillnessAlertsIn24Hours,
+  numberOfStillnessAlertsInIntervalOfTime,
   rollbackTransaction,
   saveSession,
   updateClient,

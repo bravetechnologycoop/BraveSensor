@@ -28,6 +28,8 @@ const braveAlerter = new BraveAlerterConfigurator().createBraveAlerter()
 // Start Express App
 const app = express()
 
+const intervalToCheckAlerts = parseInt(helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS'), 10)
+
 // Configure and add ClickUp API proxy
 // Ref: https://github.com/chimurai/http-proxy-middleware/blob/master/examples/express/index.js
 const jsonPlaceholderProxy = createProxyMiddleware({
@@ -238,7 +240,7 @@ if (helpers.isTestEnvironment()) {
   }
   server = https.createServer(httpsOptions, app).listen(8080)
   setInterval(vitals.checkHeartbeat, 60000)
-  setInterval(vitals.checkForInternalProblems, 24 * 60 * 60 * 1000) // check every 24 hours to see if internal alerts need to be sent 24 * 60 * 60 * 1000, change to a shorter value for texting purposes
+  setInterval(vitals.checkForInternalProblems, intervalToCheckAlerts * 60 * 1000)
   helpers.log('brave server listening on port 8080')
 }
 
