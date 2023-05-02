@@ -3,14 +3,13 @@ const { expect, use } = require('chai')
 const { describe, it } = require('mocha')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
-const rewire = require('rewire')
 
 // In-house dependencies
 const { ALERT_TYPE, factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { locationDBFactory, sessionDBFactory } = require('../../../testingHelpers')
 
-const vitals = rewire('../../../vitals')
+const vitals = require('../../../vitals')
 
 // Configure Chai
 use(sinonChai)
@@ -70,6 +69,60 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
     })
   })
 
+  describe('should not log to Sentry if the client is not sending Alerts', () => {
+    beforeEach(async () => {
+      // Insert a single location and maxStillnessAlerts + 1 sessions
+      const client = await factories.clientDBFactory(db, { isSendingAlerts: false })
+      this.testLocation = await locationDBFactory(db, {
+        clientId: client.id,
+        isSendingAlerts: true,
+      })
+      this.alertType = ALERT_TYPE.SENSOR_STILLNESS
+      for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
+        await sessionDBFactory(db, {
+          locationid: this.testLocation.locationid,
+          alertType: this.alertType,
+        })
+      }
+      await vitals.checkForInternalProblems()
+    })
+
+    it('should not send any alerts to Sentry', () => {
+      expect(helpers.logSentry).to.have.been.not.been.called
+    })
+
+    it('should not log any errors', () => {
+      expect(helpers.log).to.not.be.called
+    })
+  })
+
+  describe('should not log to Sentry if the location is not sending Alerts', () => {
+    beforeEach(async () => {
+      // Insert a single location and maxStillnessAlerts + 1 sessions
+      const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
+      this.testLocation = await locationDBFactory(db, {
+        clientId: client.id,
+        isSendingAlerts: false,
+      })
+      this.alertType = ALERT_TYPE.SENSOR_STILLNESS
+      for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
+        await sessionDBFactory(db, {
+          locationid: this.testLocation.locationid,
+          alertType: this.alertType,
+        })
+      }
+      await vitals.checkForInternalProblems()
+    })
+
+    it('should not send any alerts to Sentry', () => {
+      expect(helpers.logSentry).to.have.been.not.been.called
+    })
+
+    it('should not log any errors', () => {
+      expect(helpers.log).to.not.be.called
+    })
+  })
+
   describe('should not log to Sentry if exactly maxStillnessAlerts have occurred in set interval of time at a location', () => {
     beforeEach(async () => {
       // Insert a single location and maxStillnessAlerts sessions
@@ -78,14 +131,11 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
         clientId: client.id,
         isSendingAlerts: true,
       })
-
-      this.incidentCategory = ALERT_TYPE.SENSOR_STILLNESS
       this.alertType = ALERT_TYPE.SENSOR_STILLNESS
-      for (let i = 1; i <= maxStillnessAlerts; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < maxStillnessAlerts; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: this.alertType,
-          incidentCategory: this.incidentCategory,
         })
       }
       await vitals.checkForInternalProblems()
@@ -102,24 +152,22 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
 
   describe('duration alerts should not be counted, even if duration alerts exceed maxStillnessAlerts in set interval of time for a location', () => {
     beforeEach(async () => {
-      // Insert a single location and maxStillnessAlerts + 3 sessions
+      // Insert a single location and maxStillnessAlerts + 2
       const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
       this.testLocation = await locationDBFactory(db, {
         clientId: client.id,
         isSendingAlerts: true,
       })
-      for (let i = 1; i <= maxStillnessAlerts + 1; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: ALERT_TYPE.SENSOR_DURATION,
-          incidentCategory: ALERT_TYPE.SENSOR_DURATION,
         })
       }
-      for (let i = maxStillnessAlerts + 2; i <= maxStillnessAlerts + 3; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < 1; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: ALERT_TYPE.SENSOR_STILLNESS,
-          incidentCategory: ALERT_TYPE.SENSOR_STILLNESS,
         })
       }
       await vitals.checkForInternalProblems()
@@ -142,14 +190,11 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
         clientId: client.id,
         isSendingAlerts: true,
       })
-
       this.alertType = ALERT_TYPE.SENSOR_STILLNESS
-      this.incidentCategory = ALERT_TYPE.SENSOR_STILLNESS
-      for (let i = 1; i <= maxStillnessAlerts + 1; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: this.alertType,
-          incidentCategory: this.incidentCategory,
         })
       }
       await vitals.checkForInternalProblems()
@@ -166,29 +211,26 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
     })
   })
 
-  describe('alerts sent earlier than set interval of time prior should not be counted, even if the stillness alerts exceed maxStillnessAlerts', () => {
+  describe('no sentry log should be sent for alerts sent earlier than the set interval of time', () => {
     beforeEach(async () => {
-      // Insert a single location and maxStillnessAlerts + 3 sessions
+      // Insert a single location and maxStillnessAlerts + 1 sessions
       const client = await factories.clientDBFactory(db, { isSendingAlerts: true })
       this.testLocation = await locationDBFactory(db, {
         clientId: client.id,
         isSendingAlerts: true,
       })
-      this.incidentCategory = ALERT_TYPE.SENSOR_STILLNESS
       this.alertType = ALERT_TYPE.SENSOR_STILLNESS
-      for (let i = 1; i <= maxStillnessAlerts + 1; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: this.alertType,
-          incidentCategory: this.incidentCategory,
           createdAt: new Date('2021-01-20T06:20:19.000Z'),
         })
       }
-      for (let i = maxStillnessAlerts + 2; i <= maxStillnessAlerts + 3; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < 1; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: this.alertType,
-          incidentCategory: this.incidentCategory,
         })
       }
       await vitals.checkForInternalProblems()
@@ -211,19 +253,16 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
         isSendingAlerts: true,
       })
       this.alertType = ALERT_TYPE.SENSOR_STILLNESS
-      this.incidentCategory = ALERT_TYPE.SENSOR_STILLNESS
-      for (let i = 1; i <= maxStillnessAlerts; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < maxStillnessAlerts; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: this.alertType,
-          incidentCategory: this.incidentCategory,
         })
       }
-      for (let i = maxStillnessAlerts; i <= maxStillnessAlerts + 1; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: this.alertType,
-          incidentCategory: this.incidentCategory,
           createdAt: oneMinuteBeforeIntervalDate,
         })
       }
@@ -246,18 +285,16 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
         clientId: client.id,
         isSendingAlerts: true,
       })
-      for (let i = 1; i <= maxStillnessAlerts + 1; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: ALERT_TYPE.SENSOR_DURATION,
-          incidentCategory: ALERT_TYPE.SENSOR_DURATION,
         })
       }
-      for (let i = maxStillnessAlerts + 2; i <= (maxStillnessAlerts + 2) * 2; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < maxStillnessAlerts + 3; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: ALERT_TYPE.SENSOR_STILLNESS,
-          incidentCategory: ALERT_TYPE.SENSOR_STILLNESS,
         })
       }
       await vitals.checkForInternalProblems()
@@ -281,21 +318,18 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
         clientId: client.id,
         isSendingAlerts: true,
       })
-      this.incidentCategory = ALERT_TYPE.SENSOR_STILLNESS
       this.alertType = ALERT_TYPE.SENSOR_STILLNESS
-      for (let i = 1; i <= maxStillnessAlerts + 1; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: this.alertType,
-          incidentCategory: this.incidentCategory,
           createdAt: new Date('2021-01-20T06:20:19.000Z'),
         })
       }
-      for (let i = maxStillnessAlerts + 2; i <= (maxStillnessAlerts + 2) * 2; i += 1) {
-        this[`session${i}`] = await sessionDBFactory(db, {
+      for (let i = 0; i < maxStillnessAlerts + 3; i += 1) {
+        await sessionDBFactory(db, {
           locationid: this.testLocation.locationid,
           alertType: this.alertType,
-          incidentCategory: this.incidentCategory,
         })
       }
       await vitals.checkForInternalProblems()
@@ -323,17 +357,13 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
             isSendingAlerts: true,
           })
         }
-
-        this.incidentCategory = ALERT_TYPE.SENSOR_STILLNESS
         this.alertType = ALERT_TYPE.SENSOR_STILLNESS
-
         for (let locationIndex = 1; locationIndex <= 3; locationIndex += 1) {
           const testLocation = `testLocation${locationIndex}`
-          for (let i = 1; i <= maxStillnessAlerts + 1; i += 1) {
+          for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
             await sessionDBFactory(db, {
               locationid: this[testLocation].locationid,
               alertType: this.alertType,
-              incidentCategory: this.incidentCategory,
             })
           }
         }
@@ -377,30 +407,25 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
             isSendingAlerts: true,
           })
         }
-
-        this.incidentCategory = ALERT_TYPE.SENSOR_STILLNESS
         this.alertType = ALERT_TYPE.SENSOR_STILLNESS
-        for (let i = 1; i <= maxStillnessAlerts; i += 1) {
+        for (let i = 0; i < maxStillnessAlerts; i += 1) {
           await sessionDBFactory(db, {
             locationid: this.testLocation1.locationid,
             alertType: this.alertType,
-            incidentCategory: this.incidentCategory,
           })
         }
 
-        for (let i = 1; i <= maxStillnessAlerts + 1; i += 1) {
+        for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
           await sessionDBFactory(db, {
             locationid: this.testLocation2.locationid,
             alertType: this.alertType,
-            incidentCategory: this.incidentCategory,
           })
         }
 
-        for (let i = 1; i <= maxStillnessAlerts + 1; i += 1) {
+        for (let i = 0; i < maxStillnessAlerts + 1; i += 1) {
           await sessionDBFactory(db, {
             locationid: this.testLocation3.locationid,
             alertType: ALERT_TYPE.SENSOR_DURATION,
-            incidentCategory: ALERT_TYPE.SENSOR_DURATION,
           })
         }
         await vitals.checkForInternalProblems()

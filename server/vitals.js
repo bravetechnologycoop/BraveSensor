@@ -128,7 +128,7 @@ async function checkForInternalProblems() {
   const maxStillnessAlerts = parseInt(helpers.getEnvVar('MAX_STILLNESS_ALERTS'), 10)
   const locations = await db.getLocations()
   for (const location of locations) {
-    if (!location.client.isSendingAlerts && !location.isSendingAlerts) {
+    if (!location.client.isSendingAlerts || !location.isSendingAlerts) {
       continue
     }
     try {
