@@ -352,7 +352,7 @@ describe('vitals.js integration tests: checkForInternalProblems', () => {
         )
       })
 
-      it('should send one max stillness alert message specific to the third location that has exceeded the maxStillnessAlerts in 24 hours to Sentry', () => {
+      it('should send one max stillness alert message specific to the third location that has exceeded the maxStillnessAlerts in set interval of time to Sentry', () => {
         expect(helpers.logSentry).to.have.been.calledWithExactly(
           `Unusually frequent number of stillness alerts (${maxStillnessAlerts + 1}) have been received at location3`,
         )
