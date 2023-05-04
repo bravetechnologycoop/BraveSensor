@@ -13,7 +13,7 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  ssl: { rejectUnauthorized: false },
+  ssl: false, // { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -723,8 +723,8 @@ async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
       FROM sessions
       WHERE alert_type = $1
       AND locationid = $2
-      AND date_trunc('microseconds', created_at) BETWEEN NOW() - $3 * INTERVAL '1 minute'
-      AND NOW()
+      AND created_at BETWEEN NOW()::timestamp - $3 * INTERVAL '1 minute'
+      AND NOW()::timestamp
       `,
       [ALERT_TYPE.SENSOR_STILLNESS, locationid, intervalToCheckAlerts],
       pool,
