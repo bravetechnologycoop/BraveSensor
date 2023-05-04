@@ -723,10 +723,10 @@ async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
       FROM sessions
       WHERE alert_type = $1
       AND locationid = $2
-      AND created_at BETWEEN NOW() - $3 * INTERVAL '1 second'
+      AND date_trunc('microseconds', created_at) BETWEEN NOW() - $3 * INTERVAL '1 minute'
       AND NOW()
       `,
-      [ALERT_TYPE.SENSOR_STILLNESS, locationid, intervalToCheckAlerts * 60],
+      [ALERT_TYPE.SENSOR_STILLNESS, locationid, intervalToCheckAlerts],
       pool,
       pgClient,
     )
