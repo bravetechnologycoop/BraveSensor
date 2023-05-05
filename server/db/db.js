@@ -714,7 +714,11 @@ async function getLocationsFromClientId(clientId, pgClient) {
 }
 
 async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
-  const intervalToCheckAlerts = parseInt(helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS'), 10)
+  const intervalToCheckAlertsStr = helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS')
+  const intervalToCheckAlerts = parseInt(intervalToCheckAlertsStr, 10)
+  if (Number.isNaN(intervalToCheckAlerts)) {
+    throw new Error(`Invalid value for INTERVAL_TO_CHECK_ALERTS: ${intervalToCheckAlertsStr}`)
+  }
   try {
     const results = await helpers.runQuery(
       'numberOfStillnessAlertsInIntervalOfTime',
