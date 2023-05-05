@@ -78,7 +78,7 @@ We deploy BraveSensor onto a [Kubernetes](https://kubernetes.io/docs/home/) clus
 
 `kubectl get secrets`
 
-To view the currently deployed value of an enviornment variable:
+To view the currently deployed value of an environment variable:
 
 `kubectl exec deploy/production-sensor-server -- printenv | grep <environment-variable-name>`
 
