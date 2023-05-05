@@ -715,22 +715,21 @@ async function getLocationsFromClientId(clientId, pgClient) {
 
 async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
   const intervalToCheckAlerts = parseInt(helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS'), 10)
-  console.log(intervalToCheckAlerts)
   try {
     const results = await helpers.runQuery(
       'numberOfStillnessAlertsInIntervalOfTime',
       `
-      SELECT COUNT (*)
+      SELECT COUNT(*)
       FROM sessions
       WHERE alert_type = $1
       AND locationid = $2
-      AND created_at AT TIME ZONE 'UTC' BETWEEN (NOW() AT TIME ZONE 'UTC' - ($3 * INTERVAL '1 minute')) AND (NOW() AT TIME ZONE 'UTC')
+      AND created_at BETWEEN NOW() - $3::interval
+      AND NOW()
       `,
-      [ALERT_TYPE.SENSOR_STILLNESS, locationid, intervalToCheckAlerts],
+      [ALERT_TYPE.SENSOR_STILLNESS, locationid, `${intervalToCheckAlerts} minutes`],
       pool,
       pgClient,
     )
-    console.log('NOW(): ', new Date().toISOString())
     if (results === undefined) {
       return null
     }
