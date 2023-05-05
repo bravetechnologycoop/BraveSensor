@@ -715,6 +715,7 @@ async function getLocationsFromClientId(clientId, pgClient) {
 
 async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
   const intervalToCheckAlerts = parseInt(helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS'), 10)
+  console.log(intervalToCheckAlerts)
   try {
     const results = await helpers.runQuery(
       'numberOfStillnessAlertsInIntervalOfTime',
@@ -729,6 +730,7 @@ async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
       pool,
       pgClient,
     )
+    console.log('NOW(): ', new Date().toISOString())
     if (results === undefined) {
       return null
     }
