@@ -28,6 +28,8 @@ const braveAlerter = new BraveAlerterConfigurator().createBraveAlerter()
 // Start Express App
 const app = express()
 
+const intervalToCheckAlerts = parseInt(helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS'), 10)
+
 // Configure and add ClickUp API proxy
 // Ref: https://github.com/chimurai/http-proxy-middleware/blob/master/examples/express/index.js
 const jsonPlaceholderProxy = createProxyMiddleware({
@@ -73,7 +75,16 @@ async function handleAlert(location, alertType) {
     const client = location.client
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
-      const newSession = await db.createSession(location.locationid, undefined, CHATBOT_STATE.STARTED, alertType, undefined, undefined, pgClient)
+      const newSession = await db.createSession(
+        location.locationid,
+        undefined,
+        CHATBOT_STATE.STARTED,
+        alertType,
+        undefined,
+        undefined,
+        undefined,
+        pgClient,
+      )
 
       const alertInfo = {
         sessionId: newSession.id,
@@ -229,6 +240,7 @@ if (helpers.isTestEnvironment()) {
   }
   server = https.createServer(httpsOptions, app).listen(8080)
   setInterval(vitals.checkHeartbeat, 60000)
+  setInterval(vitals.checkForInternalProblems, intervalToCheckAlerts * 60 * 1000)
   helpers.log('brave server listening on port 8080')
 }
 

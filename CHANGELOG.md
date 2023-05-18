@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Sentry logs when an unusually high number of stillness alerts occurs in set interval of time at each location (CU-2chw8y0).
+
 ## [9.3.0] - 2023-04-27
 
 ### Added

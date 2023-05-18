@@ -164,6 +164,16 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: CLICKUP_TEAM_ID
+          - name: MAX_STILLNESS_ALERTS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: MAX_STILLNESS_ALERTS
+          - name: INTERVAL_TO_CHECK_ALERTS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: INTERVAL_TO_CHECK_ALERTS
           - name: PA_API_KEY_PRIMARY
             valueFrom:
               secretKeyRef:

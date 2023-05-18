@@ -123,6 +123,26 @@ async function checkHeartbeat() {
   }
 }
 
+// Check for internal issues by calling DB, if there is, then log error in Sentry
+async function checkForInternalProblems() {
+  const maxStillnessAlerts = parseInt(helpers.getEnvVar('MAX_STILLNESS_ALERTS'), 10)
+  const locations = await db.getLocations()
+  for (const location of locations) {
+    if (!location.client.isSendingAlerts || !location.isSendingAlerts) {
+      continue
+    }
+    try {
+      const numberOfStillnessAlerts = await db.numberOfStillnessAlertsInIntervalOfTime(location.locationid)
+      const tooManyStillnessAlerts = numberOfStillnessAlerts > maxStillnessAlerts
+      if (tooManyStillnessAlerts) {
+        helpers.logSentry(`Unusually frequent number of stillness alerts (${numberOfStillnessAlerts}) have been received at ${location.locationid}`)
+      }
+    } catch (err) {
+      helpers.logError(`Error looking for alerts: ${err.toString()}`)
+    }
+  }
+}
+
 function convertStateArrayToObject(stateTransition) {
   const statesTable = ['idle', 'initial_timer', 'duration_timer', 'stillness_timer']
   const reasonsTable = ['movement', 'no_movement', 'door_open', 'initial_timer', 'duration_alert', 'stillness_alert']
@@ -253,4 +273,5 @@ module.exports = {
   sendLowBatteryAlert,
   setupVitals,
   validateHeartbeat,
+  checkForInternalProblems,
 }
