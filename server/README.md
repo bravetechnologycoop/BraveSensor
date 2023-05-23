@@ -48,15 +48,13 @@
 
    1. decide on an appropriate version number for the new version
 
-   1. update `CHANGELOG.md` by moving everything in `Unreleased` to a section for the new version
+   1. update `CHANGELOG.md` by moving everything in `Unreleased` to a section for the new version. Remember to scroll down to the bottom to update the links!
 
-   1. `cd` into the `~/BraveSensor/server/sensor-helm-chart` directory
+   1. Update `~/BraveSensor/server/sensor-helm-chart/Chart.yaml` with a new `version` and new `appVersion`, if applicable
 
-      1. Update `Chart.yaml` with a new `version` and new `appVersion`, if applicable
+   1. Run `git log -1 --format=%h` to get the container image tag
 
-      1. Run `git log -1 --format=%h` to get the container image tag
-
-      1. Update `values.yaml` by putting the tag of your new container image in the `tag` field of `image`
+   1. Update `~/BraveSensor/server/sensor-helm-chart/values.yaml` by putting the tag of your new container image in the `tag` field of `image`
 
    1. update `BRAVE_FIRMWARE_VERSION` in all `BraveSensorProductionFirmware.ino` files to the new version (versioning scheme described in `firmware/README.md#firmware-versioning`)
 
@@ -96,13 +94,13 @@ then create it from the correct `.env` file (for example, on the Sensors Admin s
 
 1. on your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
 
-1. run `git checkout production && git pull origin production` to get the latest version of the the code
+1. if you haven't already, run `git checkout production && git pull origin production` to get the latest version of the the code
 
 1. click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
 
 1. click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
 
-1. copy the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file somewhere to keep for reference. Rename to `v<version number>_dev.bin` (for example `v50100_dev.bin`)
+1. copy the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Rename to `v<version number>_dev.bin` (for example `v50100_dev.bin`)
 
 1. in your browser navigate to Particle Console --> Sandbox --> BetaTest Borons --> Firmware
 
@@ -168,15 +166,15 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. on your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
 
-1. run `git checkout production && git pull origin production` to get the latest version of the the code
+1. if you haven't already, run `git checkout production && git pull origin production` to get the latest version of the the code
 
 1. in `BraveSensorProductionFirmware.ino`, change `BRAVE_PRODUCT_ID` to the ID of the "Production Sensor Devices" project (`15479`) [NOTE: do NOT commit this change]
 
-1. click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
+1. if you haven't already, click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
 
-1. click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
+1. if you haven't already, click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
 
-1. copy the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file somewhere to keep for reference. Rename to `v<version number>_production.bin` (for example `v50100_production.bin`)
+1. copy the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Rename to `v<version number>_production.bin` (for example `v50100_production.bin`)
 
 1. in your browser navigate to Particle Console --> Brave Technology Coop --> Production Sensor Devices --> Firmware
 
@@ -216,11 +214,11 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
 1. If the deployment's changes did _not_ require downtime,
 
-   1. run the command `helm upgrade production ~/BraveSensor/server/sensor-helm-chart`.
+   1. run the command `helm upgrade production ~/BraveSensor/server/sensor-helm-chart`
 
    Otherwise
 
-   1. run the command `helm install production ~/BraveSensor/server/sensor-helm-chart`.
+   1. run the command `helm install production ~/BraveSensor/server/sensor-helm-chart`
 
    1. send a text message to all of the Responder phones letting them know that everything is back to normal
 
@@ -452,7 +450,7 @@ This strategy assumes that each migration script in the `db` directory has a u
 
 1. Copy `db/000-template` and name it with the desired migration ID (padded with zeros) followed by a short description of what it does e.g. `005-newColumn.sql`
 
-2. Update the file with its migration ID by replacing `ADD MIGRATION ID HERE` and the new migration scripts by adding it to the section `-- ADD SCRIPT HERE`.
+2. Update the file with its migration ID by replacing `ADD MIGRATION ID HERE` and the new migration scripts by adding it to the section `-- ADD SCRIPT HERE`
 
 ## Deploying the migration scripts
 

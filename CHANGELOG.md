@@ -15,6 +15,10 @@ the code was deployed.
 
 - Auto-shut off for debug publishes after 8 hours (CU-860r0z9zb).
 
+### Changed
+
+- Updated README.
+
 ## [9.5.0] - 2023-06-02
 
 ### Fixed
