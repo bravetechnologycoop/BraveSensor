@@ -24,6 +24,10 @@ the code was deployed.
 
 - Upgrade to Node.js 18.16.1 (CU-860pqat6u).
 
+### Changed
+
+- Updated README.
+
 ## [9.5.0] - 2023-06-02
 
 ### Fixed
