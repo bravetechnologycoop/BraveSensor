@@ -115,6 +115,7 @@ function sensorsVitalFactory(overrides = {}) {
     overrides.resetReason !== undefined ? overrides.resetReason : 'NONE',
     overrides.stateTransitions !== undefined ? overrides.stateTransitions : '[]',
     overrides.createdAt !== undefined ? overrides.createdAt : '2021-05-05T19:37:50.176Z',
+    overrides.isTampered !== undefined ? overrides.isTampered : false,
     overrides.location !== undefined ? overrides.location : locationFactory(),
   )
 }
@@ -128,6 +129,7 @@ async function sensorsVitalDBFactory(db, overrides = {}) {
     overrides.doorLastSeenAt !== undefined ? overrides.doorLastSeenAt : new Date('2022-01-03T04:05:06'),
     overrides.resetReason !== undefined ? overrides.resetReason : 'NONE',
     overrides.stateTransitions !== undefined ? overrides.stateTransitions : [],
+    overrides.isTampered !== undefined ? overrides.isTampered : false,
   )
 
   return sensorVital

@@ -45,7 +45,7 @@ function createSensorsVitalFromRow(r, allLocations) {
   const location = allLocations.filter(l => l.locationid === r.locationid)[0]
 
   // prettier-ignore
-  return new SensorsVital(r.id, r.missed_door_messages, r.is_door_battery_low, r.door_last_seen_at, r.reset_reason, r.state_transitions, r.created_at, location)
+  return new SensorsVital(r.id, r.missed_door_messages, r.is_door_battery_low, r.door_last_seen_at, r.reset_reason, r.state_transitions, r.created_at, r.is_tampered, location)
 }
 
 async function beginTransaction() {
@@ -1066,7 +1066,7 @@ async function getRecentSensorsVitals(pgClient) {
     const results = await helpers.runQuery(
       'getRecentSensorsVitals',
       `
-      SELECT l.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at
+      SELECT l.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at, sv.is_tampered
       FROM locations l
       LEFT JOIN sensors_vitals_cache sv on l.locationid = sv.locationid
       ORDER BY created_at
@@ -1092,7 +1092,7 @@ async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
     const results = await helpers.runQuery(
       'getRecentSensorsVitalsWithClientId',
       `
-      SELECT l.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at
+      SELECT l.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.is_tampered, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at
       FROM locations l
       LEFT JOIN sensors_vitals_cache sv on sv.locationid = l.locationid
       WHERE l.client_id = $1
@@ -1139,16 +1139,25 @@ async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
   }
 }
 
-async function logSensorsVital(locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, pgClient) {
+async function logSensorsVital(
+  locationid,
+  missedDoorMessages,
+  isDoorBatteryLow,
+  doorLastSeenAt,
+  resetReason,
+  stateTransitions,
+  isTampered,
+  pgClient,
+) {
   try {
     const results = await helpers.runQuery(
       'logSensorsVital',
       `
-      INSERT INTO sensors_vitals (locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO sensors_vitals (locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions, is_tampered)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
       `,
-      [locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions],
+      [locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, isTampered],
       pool,
       pgClient,
     )

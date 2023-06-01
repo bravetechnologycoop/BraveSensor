@@ -388,20 +388,24 @@ void getHeartbeat() {
         writer.name("doorMissedMsg").value(missedDoorEventCount);
         missedDoorEventCount = 0;
 
-        // logs whether door sensor is low battery
-        writer.name("doorLowBatt").value(doorLowBatteryFlag);
-
         if (doorLastMessage == 0) {
-            // Haven't seen any door messages since the device last restarted
+            // Haven't seen any door messages since the device last restarted so all of these are unknown at this point
             writer.name("doorLastMessage").value(-1);
+            writer.name("doorLowBatt").value(-1);
+            writer.name("doorTampered").value(-1);
         }
         else {
             // logs time in milliseconds since last IM Door Sensor message was received
             writer.name("doorLastMessage").value((unsigned int)(millis() - doorLastMessage));
+
+            writer.name("doorLowBatt").value(doorLowBatteryFlag);
+
+            writer.name("doorTampered").value(doorTamperedFlag);
         }
 
         // logs the reason of the last reset
         writer.name("resetReason").value(resetReasonString(resetReason));
+
         // subsequent heartbeats will not display reset reason
         resetReason = RESET_REASON_NONE;
 

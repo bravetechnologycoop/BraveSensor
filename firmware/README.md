@@ -466,10 +466,11 @@ Heartbeat
 **Event Data**
 
 1. doorMissedMsg: the number of IM door sensor missed message alerts generated since the previous heartbeat.
-2. doorLowBatt: a boolean that indicates whether the last IM door sensor message received has a "1" on the low battery flag.
-3. doorLastMessage: millis since the last IM door sensor message was received. Counts from 0 upon restart. Returns -1 if hasn't seen any door messages since the most recent restart
-4. resetReason: provides the reason of reset on the first heartbeat since a reset. Otherwise, will equal "NONE".
-5. states: an array that encodes all the state transitions that occured since the previous heartbeat\*, with each subarray representing a single state transition. Subarray data includes:
+1. doorLowBatt: a boolean that indicates whether the last IM door sensor message received has a "1" on the low battery flag. Returns -1 if hasn't seen any door messages since the most recent restart
+1. doorTampered: a boolean that indicates whether the last IM door sensor message received has a "1" on the tamper flag. Returns -1 if hasn't seen any door messages since the most recent restart
+1. doorLastMessage: millis since the last IM door sensor message was received. Counts from 0 upon restart. Returns -1 if hasn't seen any door messages since the most recent restart
+1. resetReason: provides the reason of reset on the first heartbeat since a reset. Otherwise, will equal "NONE".
+1. states: an array that encodes all the state transitions that occured since the previous heartbeat\*, with each subarray representing a single state transition. Subarray data includes:
 
    1. an integer between 0-3, representing the previous state. The number corresponds to the states described in the [state diagram](https://docs.google.com/drawings/d/14JmUKDO-Gs7YLV5bhE67ZYnGeZbBg-5sq0fQYwkhkI0/edit?usp=sharing).
    2. an integer between 0-5, representing the reason of transition out of the previous state. The table to decode the reason is below.

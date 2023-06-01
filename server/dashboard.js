@@ -116,6 +116,7 @@ async function renderVitalsPage(req, res) {
           doorLastSeenAgo:
             sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
           isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
+          isTampered: sensorsVital.isTampered !== null ? sensorsVital.isTampered : 'unknown',
           isSendingAlerts: sensorsVital.location.client.isSendingAlerts && sensorsVital.location.isSendingAlerts,
           isSendingVitals: sensorsVital.location.client.isSendingVitals && sensorsVital.location.isSendingVitals,
         })
@@ -156,6 +157,7 @@ async function renderClientVitalsPage(req, res) {
             doorLastSeenAgo:
               sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
             isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
+            isTampered: sensorsVital.isTampered !== null ? sensorsVital.isTampered : 'unknown',
             isSendingAlerts: sensorsVital.location.client.isSendingAlerts && sensorsVital.location.isSendingAlerts,
             isSendingVitals: sensorsVital.location.client.isSendingVitals && sensorsVital.location.isSendingVitals,
           })

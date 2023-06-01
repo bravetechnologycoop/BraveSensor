@@ -23,12 +23,14 @@ const badpassword = 'badpassword'
 
 async function normalHeartbeat(coreId) {
   try {
-    await chai.request(server).post('/api/heartbeat').send({
+    const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
+
+    return response
   } catch (e) {
     helpers.log(e)
   }
@@ -36,12 +38,14 @@ async function normalHeartbeat(coreId) {
 
 async function normalHeartbeatWithIncorrectAPIKey(coreId) {
   try {
-    await chai.request(server).post('/api/heartbeat').send({
+    const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: badpassword,
     })
     await helpers.sleep(50)
+
+    return response
   } catch (e) {
     helpers.log(e)
   }
@@ -49,12 +53,14 @@ async function normalHeartbeatWithIncorrectAPIKey(coreId) {
 
 async function lowBatteryHeartbeatWithIncorrectAPIKey(coreId) {
   try {
-    await chai.request(server).post('/api/heartbeat').send({
+    const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: badpassword,
     })
     await helpers.sleep(50)
+
+    return response
   } catch (e) {
     helpers.log(e)
   }
@@ -62,12 +68,14 @@ async function lowBatteryHeartbeatWithIncorrectAPIKey(coreId) {
 
 async function unknownDoorLastMessageHeartbeat(coreId) {
   try {
-    await chai.request(server).post('/api/heartbeat').send({
+    const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorLastMessage": -1, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": -1, "doorTampered": -1, "doorLastMessage": -1, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
+
+    return response
   } catch (e) {
     helpers.log(e)
   }
@@ -75,12 +83,29 @@ async function unknownDoorLastMessageHeartbeat(coreId) {
 
 async function lowBatteryHeartbeat(coreId) {
   try {
-    await chai.request(server).post('/api/heartbeat').send({
+    const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
+
+    return response
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
+async function doorTamperedHeartbeat(coreId) {
+  try {
+    const response = await chai.request(server).post('/api/heartbeat').send({
+      coreid: coreId,
+      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorTampered": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      api_key: webhookAPIKey,
+    })
+    await helpers.sleep(50)
+
+    return response
   } catch (e) {
     helpers.log(e)
   }
@@ -98,6 +123,10 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
         clientId: client.id,
       })
 
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+      })
+
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.spy(helpers, 'logSentry')
@@ -110,8 +139,8 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       sandbox.restore()
     })
 
-    it('should return 200 for the valid heartbeat request', async () => {
-      const response = await chai.request(server).post('/api/heartbeat').send(normalHeartbeatWithIncorrectAPIKey(radar_coreID))
+    it('should return 200 for the heartbeat request with an incorrect API key', async () => {
+      const response = await normalHeartbeatWithIncorrectAPIKey(radar_coreID)
       expect(response).to.have.status(200)
     })
 
@@ -156,6 +185,10 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
         clientId: client.id,
       })
 
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+      })
+
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.spy(helpers, 'logSentry')
@@ -173,12 +206,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     })
 
     it('should return 200 for a valid heartbeat request', async () => {
-      const request = {
-        coreid: radar_coreID,
-        data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
-        api_key: webhookAPIKey,
-      }
-      const response = await chai.request(server).post('/api/heartbeat').send(request)
+      const response = await normalHeartbeat(radar_coreID)
       expect(response).to.have.status(200)
     })
 
@@ -188,7 +216,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await normalHeartbeat(radar_coreID)
 
       // 1000 ms before the current DB time
-      expect(db.logSensorsVital).to.be.calledOnceWithExactly(testLocation1Id, 0, false, new Date('2000-01-01T11:11:10Z'), 'NONE', [])
+      expect(db.logSensorsVital).to.be.calledOnceWithExactly(testLocation1Id, 0, false, new Date('2000-01-01T11:11:10Z'), 'NONE', [], false)
     })
 
     it('should not call logSentry', async () => {
@@ -234,9 +262,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       sandbox.restore()
     })
 
-    it('should call logSensorsVital with the current time from the DB', async () => {
+    it('should call logSensorsVital with the current time from the DB and false for isTampered and isDoorBatteryLow', async () => {
       await unknownDoorLastMessageHeartbeat(radar_coreID)
-      expect(db.logSensorsVital).to.be.calledWithExactly(testLocation1Id, 0, false, this.currentTime, 'NONE', [])
+      expect(db.logSensorsVital).to.be.calledWithExactly(testLocation1Id, 0, false, this.currentTime, 'NONE', [], false)
     })
   })
 
@@ -249,12 +277,6 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
         locationid: testLocation1Id,
         radarCoreId: radar_coreID,
         clientId: client.id,
-      })
-
-      this.doorLastSeenAt = new Date('2022-06-06T15:03:15')
-      await sensorsVitalDBFactory(db, {
-        locationid: testLocation1Id,
-        doorLastSeenAt: this.doorLastSeenAt,
       })
 
       this.currentTime = new Date('2023-01-24T00:00:04Z')
@@ -271,9 +293,30 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       sandbox.restore()
     })
 
-    it('should call logSensorsVital with the same doorLastSeen value as the most recent heartbeat from the DB', async () => {
+    it('should call logSensorsVital with the same doorLastSeen, isTampered, and isDoorBatteryLow values as the most recent heartbeat from the DB', async () => {
+      const doorLastSeenAt = new Date('2022-06-06T15:03:15')
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+        doorLastSeenAt,
+        isTampered: true,
+        isDoorBatteryLow: false,
+      })
+
       await unknownDoorLastMessageHeartbeat(radar_coreID)
-      expect(db.logSensorsVital).to.be.calledWithExactly(testLocation1Id, 0, false, this.doorLastSeenAt, 'NONE', [])
+      expect(db.logSensorsVital).to.be.calledWithExactly(testLocation1Id, 0, false, doorLastSeenAt, 'NONE', [], true)
+    })
+
+    it('should call logSensorsVital with the same doorLastSeen, isTampered, and isDoorBatteryLow values as the most recent heartbeat from the DB with different values', async () => {
+      const doorLastSeenAt = new Date('2023-01-01T15:03:15')
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+        doorLastSeenAt,
+        isTampered: false,
+        isDoorBatteryLow: true,
+      })
+
+      await unknownDoorLastMessageHeartbeat(radar_coreID)
+      expect(db.logSensorsVital).to.be.calledWithExactly(testLocation1Id, 0, true, doorLastSeenAt, 'NONE', [], false)
     })
   })
 
@@ -289,6 +332,10 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
         clientId: client.id,
       })
 
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+      })
+
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.spy(helpers, 'logSentry')
@@ -300,18 +347,8 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       sandbox.restore()
     })
 
-    it('should return 200 for a heartbeat request with no headers', async () => {
-      const response = await chai.request(server).post('/api/heartbeat').send({})
-      expect(response).to.have.status(200)
-    })
-
-    it('should return 200 for a valid heartbeat request', async () => {
-      const request = {
-        coreid: radar_coreID,
-        data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
-        api_key: webhookAPIKey,
-      }
-      const response = await chai.request(server).post('/api/heartbeat').send(request)
+    it('should return 200 for a low battery heartbeat request', async () => {
+      const response = await lowBatteryHeartbeat(radar_coreID)
       expect(response).to.have.status(200)
     })
 
@@ -338,6 +375,166 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     it('should call sendSingleAlert', async () => {
       await lowBatteryHeartbeat(radar_coreID)
       expect(braveAlerter.sendSingleAlert).to.be.called
+    })
+  })
+
+  describe('POST request heartbeat events with mock INS Firmware State Machine when door sensor has been tampered with but was not tampered with in the previous heartbeat', () => {
+    beforeEach(async () => {
+      await db.clearTables()
+
+      this.client = await factories.clientDBFactory(db)
+      await locationDBFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        clientId: this.client.id,
+      })
+
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+        isTampered: false,
+      })
+
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(helpers, 'logSentry')
+      sandbox.stub(db, 'logSensorsVital')
+
+      this.response = await doorTamperedHeartbeat(radar_coreID)
+    })
+
+    afterEach(async () => {
+      await db.clearTables()
+      sandbox.restore()
+    })
+
+    it('should return 200 for isTampered heartbeat request', async () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should send the tampered alert', async () => {
+      expect(braveAlerter.sendSingleAlert).to.be.calledWith(
+        this.client.responderPhoneNumbers[0],
+        this.client.fromPhoneNumber,
+        'The door sensor at fakeLocationName is not fully attached to the door. If you require a replacement door sensor or have any questions about this, contact us by emailing clientsupport@brave.coop.',
+      )
+    })
+
+    it('should log isTampered to Sentry', async () => {
+      expect(helpers.logSentry).to.be.calledWith(`Sending an isTampered alert for ${testLocation1Id}`)
+    })
+  })
+
+  describe('The previous heartbeat indicated the door sensor was tampered with and the next heartbeat also indicates that the door sensor was tampered with', () => {
+    beforeEach(async () => {
+      await db.clearTables()
+
+      this.client = await factories.clientDBFactory(db)
+      await locationDBFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        clientId: this.client.id,
+      })
+
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+        isTampered: true,
+      })
+
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(helpers, 'logSentry')
+      sandbox.stub(db, 'logSensorsVital')
+
+      await doorTamperedHeartbeat(radar_coreID)
+    })
+
+    afterEach(async () => {
+      await db.clearTables()
+      sandbox.restore()
+    })
+
+    it('should not send the tampered alert', async () => {
+      expect(braveAlerter.sendSingleAlert).not.to.be.called
+    })
+
+    it('should not log to Sentry', async () => {
+      expect(helpers.logSentry).not.to.be.called
+    })
+  })
+
+  describe('The previous heartbeat indicated the door sensor was tampered with and the next heartbeat gives no information about the tamper flag', () => {
+    beforeEach(async () => {
+      await db.clearTables()
+
+      this.client = await factories.clientDBFactory(db)
+      await locationDBFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        clientId: this.client.id,
+      })
+
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+        isTampered: true,
+      })
+
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(helpers, 'logSentry')
+      sandbox.stub(db, 'logSensorsVital')
+
+      await unknownDoorLastMessageHeartbeat(radar_coreID)
+    })
+
+    afterEach(async () => {
+      await db.clearTables()
+      sandbox.restore()
+    })
+
+    it('should not send the tampered alert', async () => {
+      expect(braveAlerter.sendSingleAlert).not.to.be.called
+    })
+
+    it('should not log to Sentry', async () => {
+      expect(helpers.logSentry).not.to.be.called
+    })
+  })
+
+  describe('The previous heartbeat indicated the door sensor was tampered withand the next heartbeat indicates that the door has not been tampered with', () => {
+    beforeEach(async () => {
+      await db.clearTables()
+
+      this.client = await factories.clientDBFactory(db)
+      await locationDBFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        clientId: this.client.id,
+      })
+
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+        isTampered: true,
+      })
+
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(helpers, 'logSentry')
+      sandbox.stub(db, 'logSensorsVital')
+
+      await normalHeartbeat(radar_coreID)
+    })
+
+    afterEach(async () => {
+      await db.clearTables()
+      sandbox.restore()
+    })
+
+    it('should not send the tampered alert', async () => {
+      expect(braveAlerter.sendSingleAlert).not.to.be.called
+    })
+
+    it('should not log to Sentry', async () => {
+      expect(helpers.logSentry).not.to.be.called
     })
   })
 })

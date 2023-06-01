@@ -11,6 +11,7 @@
   "incidentCategoryRequest": "Once you have responded, please reply with the number that best describes the incident:\n{{ incidentCategories }}",
   "sensorDisconnectionInitial": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) has disconnected.\nPlease verify that your door sensor is attached and then press the reset button within the circular hole on the ceiling unit using a pin. If you do not receive a reconnection message shortly after pressing the reset button, contact us by emailing clientsupport@brave.coop.",
   "sensorDisconnectionReminder": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) is still disconnected. \nPlease verify that your door sensor is attached and then press the reset button within the circular hole on the ceiling unit using a pin. If you do not receive a reconnection message shortly after pressing the reset button, contact us by emailing clientsupport@brave.coop.",
+  "sensorIsTampered": "The door sensor at {{ deviceDisplayName }} is not fully attached to the door. If you require a replacement door sensor or have any questions about this, contact us by emailing clientsupport@brave.coop.",
   "sensorLowBatteryInitial": "The battery for the {{ deviceDisplayName }} door sensor is low, and needs replacing.\n\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w",
   "sensorReconnection": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) has been reconnected.",
   "thankYou": "Thank you"
