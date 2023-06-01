@@ -14,6 +14,11 @@ the code was deployed.
 ### Added
 
 - Auto-shut off for debug publishes after 8 hours (CU-860r0z9zb).
+- Vitals Alerts for when a door sensor's Tamper Flag changes (CU-860pp0zfn).
+
+### Fixed
+
+- Vitals Alerts for when a door sensor's Low Battery Flag changes.
 
 ## [9.5.0] - 2023-06-02
 

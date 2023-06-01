@@ -14,6 +14,7 @@ IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
 os_queue_t bleQueue;
 int missedDoorEventCount = 0;
 bool doorLowBatteryFlag = false;
+bool doorTamperedFlag = false;
 bool doorMessageReceivedFlag = false;
 unsigned long doorHeartbeatReceived = 0;
 unsigned long doorLastMessage = 0;
@@ -63,8 +64,10 @@ doorData checkIM() {
         static int initialDoorDataFlag = 1;
 
         // Checks if the 2nd bit (counting from 0) of doorStatus is 1
-        // read as: doorLowBatteryFlag is true if doorStatus AND 0b0100 is not 0b0000
-        doorLowBatteryFlag = (currentDoorData.doorStatus & (1 << 2)) != 0;
+        doorLowBatteryFlag = (currentDoorData.doorStatus & 0b0100) != 0;
+
+        // Checks if the 0th bit (counting from 0) of doorStatus is 1
+        doorTamperedFlag = (currentDoorData.doorStatus & 0b0001) != 0;
 
         // After a certain thereshold, the next door message received will trigger a boron heartbeat
         if (millis() - doorLastMessage >= MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD) {

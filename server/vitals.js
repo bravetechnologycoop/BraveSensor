@@ -193,6 +193,25 @@ async function sendLowBatteryAlert(locationid) {
   }
 }
 
+// Sends a isTampered alert if the previous heartbeat had the isTampered flag false (i.e. if the tampered status has just changed)
+async function sendIsTamperedAlert(location, currentIsTampered, previousIsTampered) {
+  if (!location.client.isSendingVitals || !location.isSendingVitals) {
+    return
+  }
+
+  if (currentIsTampered && !previousIsTampered) {
+    helpers.logSentry(`Sending an isTampered alert for ${location.locationid}`)
+
+    await sendSingleAlert(
+      location.locationid,
+      t('sensorIsTampered', {
+        lng: location.client.language,
+        deviceDisplayName: location.displayName,
+      }),
+    )
+  }
+}
+
 const validateHeartbeat = Validator.body(['coreid', 'data', 'api_key']).exists()
 
 async function handleHeartbeat(req, res) {
@@ -213,28 +232,47 @@ async function handleHeartbeat(req, res) {
         } else {
           const message = JSON.parse(req.body.data)
           const doorMissedMessagesCount = message.doorMissedMsg
-          const doorLowBatteryFlag = message.doorLowBatt
           const resetReason = message.resetReason
           const stateTransitionsArray = message.states.map(convertStateArrayToObject)
+          const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
+
+          let doorLastSeenAt
+          let isTamperedFlag
+          let doorLowBatteryFlag
+          if (message.doorLastMessage.toString() === '-1' || message.doorTampered.toString() === '-1' || message.doorLowBatt.toString() === '-1') {
+            if (mostRecentSensorVitals === null) {
+              // If it doesn't have any previous heartbeats, just use the current time
+              const currentDbTime = await db.getCurrentTime()
+              doorLastSeenAt = currentDbTime
+
+              // If it doesn't have any previous heartbeats, assume that it hasn't been tampered with
+              isTamperedFlag = false
+
+              // If it doesn't have any previous heartbeats, assume that it doesn't have a low battery
+              doorLowBatteryFlag = false
+            } else {
+              // If it has had a previous heartbeat, reuse its doorLastSeenValue because we don't have any better information
+              doorLastSeenAt = mostRecentSensorVitals.doorLastSeenAt
+
+              // If it has had a previous heartbeat, reuse its isTampered because we don't have any better information
+              isTamperedFlag = mostRecentSensorVitals.isTampered
+
+              // If it has had a previous heartbeat, reuse its isDoorBatteryLow because we don't have any better information
+              doorLowBatteryFlag = mostRecentSensorVitals.isDoorBatteryLow
+            }
+          } else {
+            const currentDbTime = await db.getCurrentTime()
+            doorLastSeenAt = DateTime.fromJSDate(currentDbTime).minus(message.doorLastMessage).toJSDate()
+            isTamperedFlag = message.doorTampered
+            doorLowBatteryFlag = message.doorLowBatt
+          }
 
           if (doorLowBatteryFlag) {
             await sendLowBatteryAlert(location.locationid)
           }
 
-          let doorLastSeenAt
-          if (message.doorLastMessage.toString() === '-1') {
-            const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
-            if (mostRecentSensorVitals === null) {
-              // If it doesn't have any previous heartbeats, just use the current time
-              const currentDbTime = await db.getCurrentTime()
-              doorLastSeenAt = currentDbTime
-            } else {
-              // If it has had a previous heartbeat, reuse its doorLastSeenValue because we don't have any better information
-              doorLastSeenAt = mostRecentSensorVitals.doorLastSeenAt
-            }
-          } else {
-            const currentDbTime = await db.getCurrentTime()
-            doorLastSeenAt = DateTime.fromJSDate(currentDbTime).minus(message.doorLastMessage).toJSDate()
+          if (mostRecentSensorVitals !== null) {
+            await sendIsTamperedAlert(location, isTamperedFlag, mostRecentSensorVitals.isTampered)
           }
 
           await db.logSensorsVital(
@@ -244,6 +282,7 @@ async function handleHeartbeat(req, res) {
             doorLastSeenAt,
             resetReason,
             stateTransitionsArray,
+            isTamperedFlag,
           )
           res.status(200).json('OK')
         }
