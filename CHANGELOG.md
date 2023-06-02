@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Fixed
+
+- Initialization of Long Stillness Threshold (CU-860r11fng).
+
 ## [9.4.0] - 2023-05-23
 
 ### Changed

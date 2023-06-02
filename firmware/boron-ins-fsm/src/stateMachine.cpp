@@ -86,8 +86,10 @@ void initializeStateMachineConsts() {
     Log.info("state machine constant State3MaxLongStillnessTime flag is 0x%04X", initializeState3MaxLongStillenssTimeFlag);
 
     if (initializeState3MaxLongStillenssTimeFlag != INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG) {
-        EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME,
-                   state3_max_stillness_time);  // By default, we use the same value for max_stillness_time and max_long_stillness_time
+        // By default, we use the same value for max_stillness_time and max_long_stillness_time
+        EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_stillness_time);
+        state3_max_long_stillness_time = state3_max_stillness_time;
+
         initializeState3MaxLongStillenssTimeFlag = INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG;
         EEPROM.put(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
         Log.info("State machine constant State3MaxLongStillnessTime was written to flash on bootup.");
@@ -158,7 +160,7 @@ void state1_15sCountdown() {
 
     // do stuff in the state
     digitalWrite(D2, HIGH);
-    Log.info("You are in state 1, 15s countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
+    Log.info("You are in state 1, initial countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
              (millis() - state1_timer));
     publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
 
@@ -310,8 +312,10 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
     if (stateMachineDebugFlag && (millis() - lastDebugPublish) > DEBUG_PUBLISH_INTERVAL) {
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char debugMessage[622];
-        snprintf(debugMessage, sizeof(debugMessage), "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"timer_status\":\"%lu\"}",
-                 state, doorStatus, INSValue, timer);
+        snprintf(debugMessage, sizeof(debugMessage),
+                 "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
+                 "\"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
+                 state, doorStatus, INSValue, ins_threshold, timer, state1_max_time, state2_max_duration, *max_stillness_time);
         Particle.publish("Debug Message", debugMessage, PRIVATE);
         lastDebugPublish = millis();
     }
