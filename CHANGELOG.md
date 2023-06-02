@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [9.5.0] - 2023-06-02
+
 ### Fixed
 
 - Initialization of Long Stillness Threshold (CU-860r11fng).
@@ -528,7 +530,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.4.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.5.0...HEAD
+[9.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.4.0...9.5.0
 [9.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.3.0...9.4.0
 [9.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.1.0...v9.3.0
 [9.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v8.0.0...v9.1.0
