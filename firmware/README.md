@@ -206,11 +206,19 @@ The length of time defaults to 2 minutes. It is defined in milliseconds, so the 
 
 ### DEBUG_PUBLISH_INTERVAL
 
-This is defined via a macro in the stateMachine.h header file.
+This is defined via a macro in the debugFlags.h header file.
 
 It is the length of time between publishes of debug messages to the cloud. (Debug publishes are turned on and off via console function, see section on console functions below).
 
 The debug interval defaults to 1.5 seconds. It is defined in milliseconds, so the actual macro definition will be 1500 in code.
+
+### DEBUG_AUTO_OFF_THRESHOLD
+
+This is defined via a macro in the debugFlags.h header file.
+
+It is the maximum length of time to publish debug messages to the cloud. (Debug publishes are turned on via console function, see section on console functions below).
+
+The auto-off threshold is set to 8 hours (i.e. a standard work day). It is defined in milliseconds, so the actual macro definition will be 8 \* 60 \* 60 \* 1000 = 28800000 in code.
 
 ### SM_HEARTBEAT_INTERVAL
 
@@ -374,17 +382,17 @@ The default level is set to 60. This is based on the radar testing documented [h
 
 **Description:**
 
-Use this console function to turn cloud publishes of state machine debugging values on and off. Note the firmware defaults to off. When on, the debug publishes occur approximately every 1.5 seconds, so be mindful of Particle data limits when using this feature.
+Use this console function to turn cloud publishes of state machine debugging values on and off. Note the firmware defaults to off. When on, the debug publishes occur approximately every 1.5 seconds for a maximum of 8 hours, so be mindful of Particle data limits when using this feature.
 
 **Argument(s):**
 
 1. Enter 1 to turn publishes on
 2. Enter 0 to turn publishes off
+3. e - this is short for echo, and will echo the current value
 
 **Return(s):**
 
-- 0 if 0 is entered
-- 1 if 1 is entered
+- The current integer value (0 or 1)
 - -1: when bad data is entered
 
 ### **im21_door_id_set(String)**

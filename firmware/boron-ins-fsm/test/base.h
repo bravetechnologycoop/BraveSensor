@@ -29,6 +29,7 @@ MockLogger Log;
 MockBLE BLE;
 
 bool stateMachineDebugFlag;
+unsigned long debugFlagTurnedOnAt;
 long unsigned state1_max_time;
 long unsigned state2_max_duration;
 long unsigned state3_max_stillness_time;

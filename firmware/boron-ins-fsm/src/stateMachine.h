@@ -20,11 +20,14 @@
 #define STATE2_MAX_DURATION       1200000  // ms = 20 min
 #define STATE3_MAX_STILLNESS_TIME 120000   // ms = 2 minutes
 
-// length of time between debug publishes
-#define DEBUG_PUBLISH_INTERVAL  1500    // ms
-#define SM_HEARTBEAT_INTERVAL   660000  // ms = 11 min
-#define DEVICE_RESET_THRESHOLD  540000  // ms = 9 min
-#define HEARTBEAT_STATES_CUTOFF 603     // = 622 - 17 (max length of sub state array) - 2 (length of closing brackets)
+// How often to publish Heartbeat messages
+#define SM_HEARTBEAT_INTERVAL 660000  // ms = 11 min
+
+// Attempt to minimize the time between a restart and the first Heartbeat message
+#define DEVICE_RESET_THRESHOLD 540000  // ms = 9 min
+
+// How many characters can be used to send the states array in the Heartbeat messages
+#define HEARTBEAT_STATES_CUTOFF 603  // = 622 - 17 (max length of sub state array) - 2 (length of closing brackets)
 
 // Restricts heartbeat to being published once instead of 3 times from the 3 IM Door Sensor broadcasts
 #define HEARTBEAT_PUBLISH_DELAY 1000  // ms = 1 sec
@@ -68,8 +71,5 @@ extern unsigned long state1_max_time;
 extern unsigned long state2_max_duration;
 extern unsigned long state3_max_stillness_time;
 extern unsigned long state3_max_long_stillness_time;
-
-// flag to turn debugging on and off
-extern bool stateMachineDebugFlag;
 
 #endif
