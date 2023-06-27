@@ -25,9 +25,6 @@ unsigned long state2_max_duration = STATE2_MAX_DURATION;
 unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
 unsigned long state3_max_long_stillness_time =
     STATE3_MAX_STILLNESS_TIME;  // By default, we use the same value for max_stillness_time and max_long_stillness_time
-// except this one, we don't want to take the chance that random memory
-// contents will initialize this to "on"
-bool stateMachineDebugFlag = false;
 int resetReason = System.resetReason();
 // record whether a duration alert has been sent within the same session
 bool hasDurationAlertBeenSent;
@@ -307,17 +304,20 @@ void publishStateTransition(int prevState, int nextState, unsigned char doorStat
 }
 
 void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, unsigned long timer) {
-    static unsigned long lastDebugPublish = 0;
-
-    if (stateMachineDebugFlag && (millis() - lastDebugPublish) > DEBUG_PUBLISH_INTERVAL) {
-        // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
-        char debugMessage[622];
-        snprintf(debugMessage, sizeof(debugMessage),
-                 "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
-                 "\"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
-                 state, doorStatus, INSValue, ins_threshold, timer, state1_max_time, state2_max_duration, *max_stillness_time);
-        Particle.publish("Debug Message", debugMessage, PRIVATE);
-        lastDebugPublish = millis();
+    if (stateMachineDebugFlag) {
+        if ((millis() - debugFlagTurnedOnAt) > DEBUG_AUTO_OFF_THRESHOLD) {
+            stateMachineDebugFlag = false;
+        }
+        else if ((millis() - lastDebugPublish) > DEBUG_PUBLISH_INTERVAL) {
+            // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
+            char debugMessage[622];
+            snprintf(debugMessage, sizeof(debugMessage),
+                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
+                     "\"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
+                     state, doorStatus, INSValue, ins_threshold, timer, state1_max_time, state2_max_duration, *max_stillness_time);
+            Particle.publish("Debug Message", debugMessage, PRIVATE);
+            lastDebugPublish = millis();
+        }
     }
 }
 

@@ -14,6 +14,7 @@
  */
 #include "Particle.h"
 #include "consoleFunctions.h"
+#include "debugFlags.h"
 #include "flashAddresses.h"
 #include "stateMachine.h"
 #include "imDoorSensor.h"
@@ -69,6 +70,7 @@ int toggle_debugging_publishes(String command) {
     }
     else if (*holder == '1') {
         stateMachineDebugFlag = true;
+        debugFlagTurnedOnAt = millis();
         returnFlag = 1;
     }
     else {
