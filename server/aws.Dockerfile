@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/node:16.14.2
+FROM public.ecr.aws/docker/library/node:18.16.1
 RUN mkdir -p /home/node/BraveSensor/node_modules && chown -R node:node /home/node/BraveSensor
 WORKDIR /home/node/BraveSensor
 COPY --chown=node:node package*.json ./

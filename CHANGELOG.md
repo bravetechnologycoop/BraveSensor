@@ -20,6 +20,10 @@ the code was deployed.
 
 - Vitals Alerts for when a door sensor's Low Battery Flag changes.
 
+### Security
+
+- Upgrade to Node.js 18.16.1 (CU-860pqat6u).
+
 ## [9.5.0] - 2023-06-02
 
 ### Fixed
