@@ -1,4 +1,4 @@
-dist: xenial
+dist: focal
 
 # setup environment variables because Travis doesn't have a .env file
 env:
