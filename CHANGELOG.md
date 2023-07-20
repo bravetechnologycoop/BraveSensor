@@ -550,9 +550,9 @@ the code was deployed.
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
 [unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.6.0...HEAD
-[9.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.5.0...9.6.0
-[9.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.4.0...9.5.0
-[9.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.3.0...9.4.0
+[9.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.5.0...v9.6.0
+[9.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.4.0...v9.5.0
+[9.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.3.0...v9.4.0
 [9.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.1.0...v9.3.0
 [9.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v8.0.0...v9.1.0
 [8.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v7.1.0...v8.0.0
