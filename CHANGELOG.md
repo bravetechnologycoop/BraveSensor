@@ -11,10 +11,16 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [9.6.0] - 2023-07-20
+
+### Changed
+
+- Updated README.
+
 ### Added
 
 - Auto-shut off for debug publishes after 8 hours (CU-860r0z9zb).
-- Vitals Alerts for when a door sensor's Tamper Flag changes (CU-860pp0zfn).
+- Vitals Alerts for when a door sensor's Tamper Flag turns on (CU-860pp0zfn).
 
 ### Fixed
 
@@ -23,10 +29,6 @@ the code was deployed.
 ### Security
 
 - Upgrade to Node.js 18.16.1 (CU-860pqat6u).
-
-### Changed
-
-- Updated README.
 
 ## [9.5.0] - 2023-06-02
 
@@ -547,7 +549,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.5.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.6.0...HEAD
+[9.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.5.0...9.6.0
 [9.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.4.0...9.5.0
 [9.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.3.0...9.4.0
 [9.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.1.0...v9.3.0
