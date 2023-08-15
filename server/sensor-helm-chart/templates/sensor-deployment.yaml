@@ -109,6 +109,11 @@ spec:
               secretKeyRef:
                 name: {{ .Values.secretName | quote }}
                 key: SESSION_RESET_THRESHOLD
+          - name: RADAR_WINDOW_SIZE_SECONDS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName | quote }}
+                key: RADAR_WINDOW_SIZE_SECONDS
           - name: PARTICLE_ACCESS_TOKEN
             valueFrom:
               secretKeyRef:
