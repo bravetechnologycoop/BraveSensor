@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- README for AWS infrastructure changes (CU-860ra8f7q).
+
 ## [9.9.0] - 2023-10-03
 
 ### Added
