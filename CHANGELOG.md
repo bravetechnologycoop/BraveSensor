@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Removed
+
+- Unused environment variable `RADAR_WINDOW_SIZE_SECONDS`.
+
 ## [9.6.0] - 2023-07-20
 
 ### Changed
