@@ -9,6 +9,7 @@
     "integrationtest": "NODE_ENV=test mocha --timeout 10000 --require \"test/mochaFixtures.js\" \"test/integration/**/*.js\"",
     "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/unit/**/*.js\"",
     "smoketest": "node -e 'require(\"./smokeTest.js\")'",
+    "start": "NODE_ENV=test node index.js",
     "test-coverage": "nyc --reporter=html --reporter=text npm test"
   },
   "eslintIgnore": [
