@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- CORS configuration to Express Proxy Middleware.
+
 ### Removed
 
 - Unused environment variable `RADAR_WINDOW_SIZE_SECONDS`.
