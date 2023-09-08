@@ -1,0 +1,50 @@
+name: ECR Build Push
+
+on:
+  workflow_call:
+    inputs:
+      commit_sha:
+        required: true
+        type: string
+    secrets:
+      devops_central_account_id:
+        required: true
+      ecr_registry_arn:
+        required: true
+      ecr_registry_name:
+        required: true
+      aws_region:
+        required: true
+
+permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout
+
+jobs:
+  DockerBuildPushECR:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v3
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1.7.0
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.devops_central_account_id }}:role/github_app_deployments
+          role-session-name: GitHub_ECR_Build_Push_${{ inputs.commit_sha }}
+          aws-region: ${{ secrets.aws_region }}
+      - name: Docker Build and Push
+        run: |
+          image_check=$(aws ecr describe-images --repository-name ${{ secrets.ecr_registry_name }} --image-ids imageTag=${{ inputs.commit_sha }} | jq -r .imageDetails[].imageDigest)
+          if [[ $image_check = "" ]]
+          then
+            echo "Building image"
+            cd server && docker build . --file Dockerfile --tag ${{ secrets.ecr_registry_arn }}:${{ inputs.commit_sha }}
+          
+            echo "Logging into ECR"
+            aws ecr get-login-password --region ${{ secrets.aws_region }} | docker login --username AWS --password-stdin ${{ secrets.devops_central_account_id }}.dkr.ecr.${{ secrets.aws_region }}.amazonaws.com
+            
+            echo "Pushing image to ECR"
+            docker push ${{ secrets.ecr_registry }}:${{ inputs.commit_sha }}
+          else
+            echo "ECR image tag ${{ inputs.commit_sha }} already exists, skipping build"
+          fi
