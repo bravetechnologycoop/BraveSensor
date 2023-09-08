@@ -72,3 +72,4 @@ jobs:
 
           echo "Waiting for ECS services deployment to complete"
           aws ecs wait services-stable --region "${{ secrets.aws_region }}" --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --services "brave-devices-${{ inputs.sdlc }}-api"
+
