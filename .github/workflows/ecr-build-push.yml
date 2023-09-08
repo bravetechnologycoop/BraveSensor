@@ -44,7 +44,7 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.aws_region }} | docker login --username AWS --password-stdin ${{ secrets.devops_central_account_id }}.dkr.ecr.${{ secrets.aws_region }}.amazonaws.com
             
             echo "Pushing image to ECR"
-            docker push ${{ secrets.ecr_registry }}:${{ inputs.commit_sha }}
+            docker push ${{ secrets.ecr_registry_arn }}:${{ inputs.commit_sha }}
           else
             echo "ECR image tag ${{ inputs.commit_sha }} already exists, skipping build"
           fi
