@@ -45,30 +45,30 @@ jobs:
         id: registerTaskDefinitions
         run: |
           echo "Getting task definitions"
-          ECS_TASK_DEFINITION_API=$(aws ecs describe-task-definition --task-definition brave-devices-${{ inputs.sdlc }}-api --region ${{ inputs.aws_region }} --query '{containerDefinitions: taskDefinition.containerDefinitions,family: taskDefinition.family,taskRoleArn: taskDefinition.taskRoleArn,executionRoleArn: taskDefinition.executionRoleArn,networkMode: taskDefinition.networkMode,volumes: taskDefinition.volumes,placementConstraints: taskDefinition.placementConstraints,requiresCompatibilities: taskDefinition.requiresCompatibilities,cpu: taskDefinition.cpu,memory: taskDefinition.memory}')
-          ECS_TASK_DEFINITION_API_MIGRATIONS=$(aws ecs describe-task-definition --task-definition brave-devices-${{ inputs.sdlc }}-api-db-migrations --region ${{ inputs.aws_region }} --query '{containerDefinitions: taskDefinition.containerDefinitions,family: taskDefinition.family,taskRoleArn: taskDefinition.taskRoleArn,executionRoleArn: taskDefinition.executionRoleArn,networkMode: taskDefinition.networkMode,volumes: taskDefinition.volumes,placementConstraints: taskDefinition.placementConstraints,requiresCompatibilities: taskDefinition.requiresCompatibilities,cpu: taskDefinition.cpu,memory: taskDefinition.memory}')
+          ECS_TASK_DEFINITION_API=$(aws ecs describe-task-definition --task-definition brave-devices-${{ inputs.sdlc }}-api --region ${{ secrets.aws_region }} --query '{containerDefinitions: taskDefinition.containerDefinitions,family: taskDefinition.family,taskRoleArn: taskDefinition.taskRoleArn,executionRoleArn: taskDefinition.executionRoleArn,networkMode: taskDefinition.networkMode,volumes: taskDefinition.volumes,placementConstraints: taskDefinition.placementConstraints,requiresCompatibilities: taskDefinition.requiresCompatibilities,cpu: taskDefinition.cpu,memory: taskDefinition.memory}')
+          ECS_TASK_DEFINITION_API_MIGRATIONS=$(aws ecs describe-task-definition --task-definition brave-devices-${{ inputs.sdlc }}-api-db-migrations --region ${{ secrets.aws_region }} --query '{containerDefinitions: taskDefinition.containerDefinitions,family: taskDefinition.family,taskRoleArn: taskDefinition.taskRoleArn,executionRoleArn: taskDefinition.executionRoleArn,networkMode: taskDefinition.networkMode,volumes: taskDefinition.volumes,placementConstraints: taskDefinition.placementConstraints,requiresCompatibilities: taskDefinition.requiresCompatibilities,cpu: taskDefinition.cpu,memory: taskDefinition.memory}')
 
           echo "Updating task definitions"
           NEW_ECS_TASK_DEFINITION_API=$(echo ${ECS_TASK_DEFINITION_API} | jq '.containerDefinitions[0].image='\"${{ secrets.ecr_registry }}:${{ inputs.commit_sha }}\")
           NEW_ECS_TASK_DEFINITION_API_MIGRATIONS=$(echo ${ECS_TASK_DEFINITION_API_MIGRATIONS} | jq '.containerDefinitions[0].image='\"${{ secrets.ecr_registry }}:${{ inputs.commit_sha }}\")
 
           echo "Registering new task definition versions"
-          NEW_ECS_TASK_DEFINITION_API_ARN=$(aws ecs register-task-definition --region "${{ inputs.aws_region }}" --family "brave-devices-${{ inputs.sdlc }}-api" --cli-input-json "${NEW_ECS_TASK_DEFINITION_API}" | jq -r .taskDefinition.taskDefinitionArn)
-          NEW_ECS_TASK_DEFINITION_API_MIGRATIONS_ARN=$(aws ecs register-task-definition --region "${{ inputs.aws_region }}" --family "brave-devices-${{ inputs.sdlc }}-api-db-migrations" --cli-input-json "${NEW_ECS_TASK_DEFINITION_API_MIGRATIONS}" | jq -r .taskDefinition.taskDefinitionArn)
+          NEW_ECS_TASK_DEFINITION_API_ARN=$(aws ecs register-task-definition --region "${{ secrets.aws_region }}" --family "brave-devices-${{ inputs.sdlc }}-api" --cli-input-json "${NEW_ECS_TASK_DEFINITION_API}" | jq -r .taskDefinition.taskDefinitionArn)
+          NEW_ECS_TASK_DEFINITION_API_MIGRATIONS_ARN=$(aws ecs register-task-definition --region "${{ secrets.aws_region }}" --family "brave-devices-${{ inputs.sdlc }}-api-db-migrations" --cli-input-json "${NEW_ECS_TASK_DEFINITION_API_MIGRATIONS}" | jq -r .taskDefinition.taskDefinitionArn)
           echo "db_migrations_task_arn=${NEW_ECS_TASK_DEFINITION_API_MIGRATIONS_ARN}" >> $GITHUB_OUTPUT
 
       - name: Run DB Migrations
         run: |
           echo "Running DB Migrations"
-          API_MIGRATIONS_TASK_ARN=$(aws ecs run-task --region "${{ inputs.aws_region }}" --task-definition ${{ steps.registerTaskDefinitions.outputs.db_migrations_task_arn }} --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --network-configuration "{ \"awsvpcConfiguration\": { \"assignPublicIp\":\"DISABLED\", \"securityGroups\": [\"${{ secrets.db_migrations_security_group }}\"], \"subnets\": [\"${{ secrets.db_migrations_subnet }}\"]}}" --query 'tasks[].taskArn' --output text | rev | cut -d'/' -f1 | rev)
+          API_MIGRATIONS_TASK_ARN=$(aws ecs run-task --region "${{ secrets.aws_region }}" --task-definition ${{ steps.registerTaskDefinitions.outputs.db_migrations_task_arn }} --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --network-configuration "{ \"awsvpcConfiguration\": { \"assignPublicIp\":\"DISABLED\", \"securityGroups\": [\"${{ secrets.db_migrations_security_group }}\"], \"subnets\": [\"${{ secrets.db_migrations_subnet }}\"]}}" --query 'tasks[].taskArn' --output text | rev | cut -d'/' -f1 | rev)
           
           echo "Waiting for migration task to finish"
-          aws ecs wait tasks-stopped --region "${{ inputs.aws_region }}" --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --tasks ${API_MIGRATIONS_TASK_ARN}
+          aws ecs wait tasks-stopped --region "${{ secrets.aws_region }}" --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --tasks ${API_MIGRATIONS_TASK_ARN}
 
       - name: Update ECS Services
         run: |
           echo "Updating ECS services"
-          aws ecs update-service --region "${{ inputs.aws_region }}" --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --service "brave-devices-${{ inputs.sdlc }}-api" --task-definition "brave-devices-${{ inputs.sdlc }}-api" --force-new-deployment
+          aws ecs update-service --region "${{ secrets.aws_region }}" --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --service "brave-devices-${{ inputs.sdlc }}-api" --task-definition "brave-devices-${{ inputs.sdlc }}-api" --force-new-deployment
 
           echo "Waiting for ECS services deployment to complete"
-          aws ecs wait services-stable --region "${{ inputs.aws_region }}" --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --services "brave-devices-${{ inputs.sdlc }}-api"
+          aws ecs wait services-stable --region "${{ secrets.aws_region }}" --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --services "brave-devices-${{ inputs.sdlc }}-api"
