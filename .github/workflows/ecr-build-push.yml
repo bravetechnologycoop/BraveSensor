@@ -38,7 +38,7 @@ jobs:
           if [[ $image_check = "" ]]
           then
             echo "Building image"
-            cd server && docker build . --file Dockerfile --tag ${{ secrets.ecr_registry_arn }}:${{ inputs.commit_sha }}
+            cd server && docker build . --file aws.Dockerfile --tag ${{ secrets.ecr_registry_arn }}:${{ inputs.commit_sha }}
           
             echo "Logging into ECR"
             aws ecr get-login-password --region ${{ secrets.aws_region }} | docker login --username AWS --password-stdin ${{ secrets.devops_central_account_id }}.dkr.ecr.${{ secrets.aws_region }}.amazonaws.com
