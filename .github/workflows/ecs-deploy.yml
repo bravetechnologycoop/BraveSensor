@@ -41,6 +41,11 @@ jobs:
           role-session-name: GitHub_ECR_Deploy_${{ inputs.commit_sha }}
           aws-region: ${{ secrets.aws_region }}
 
+      - name: Update SSM parameter for release
+        id: updatedReleaseParameter
+        run: |
+          aws ssm put-parameter --name "/brave/sensors-api/${{ inputs.sdlc }}/environment" --type "SecureString" --value "${{ inputs.commit_sha }}" --overwrite
+
       - name: Update & Register New Task Definitions
         id: registerTaskDefinitions
         run: |
