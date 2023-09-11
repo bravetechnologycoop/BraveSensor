@@ -23,8 +23,8 @@ on:
         required: true
 
 permissions:
-      id-token: write   # This is required for requesting the JWT
-      contents: read    # This is required for actions/checkout
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
 
 jobs:
   DeployECS:
@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1.7.0
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/github_app_deployments
           role-session-name: GitHub_ECR_Deploy_${{ inputs.commit_sha }}
@@ -66,7 +66,7 @@ jobs:
         run: |
           echo "Running DB Migrations"
           API_MIGRATIONS_TASK_ARN=$(aws ecs run-task --region "${{ secrets.aws_region }}" --task-definition ${{ steps.registerTaskDefinitions.outputs.db_migrations_task_arn }} --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --network-configuration "{ \"awsvpcConfiguration\": { \"assignPublicIp\":\"DISABLED\", \"securityGroups\": [\"${{ secrets.db_migrations_security_group }}\"], \"subnets\": [\"${{ secrets.db_migrations_subnet }}\"]}}" --query 'tasks[].taskArn' --output text | rev | cut -d'/' -f1 | rev)
-          
+
           echo "Waiting for migration task to finish"
           aws ecs wait tasks-stopped --region "${{ secrets.aws_region }}" --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --tasks ${API_MIGRATIONS_TASK_ARN}
 
@@ -77,4 +77,3 @@ jobs:
 
           echo "Waiting for ECS services deployment to complete"
           aws ecs wait services-stable --region "${{ secrets.aws_region }}" --cluster "brave-devices-${{ inputs.sdlc }}-cluster" --services "brave-devices-${{ inputs.sdlc }}-api"
-

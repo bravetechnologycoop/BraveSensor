@@ -17,8 +17,8 @@ on:
         required: true
 
 permissions:
-      id-token: write   # This is required for requesting the JWT
-      contents: read    # This is required for actions/checkout
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
 
 jobs:
   DockerBuildPushECR:
@@ -27,7 +27,7 @@ jobs:
       - name: Git clone
         uses: actions/checkout@v3
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v1.7.0
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::${{ secrets.devops_central_account_id }}:role/github_app_deployments
           role-session-name: GitHub_ECR_Build_Push_${{ inputs.commit_sha }}
@@ -39,7 +39,7 @@ jobs:
           then
             echo "Building image"
             cd server && docker build . --file aws.Dockerfile --tag ${{ secrets.ecr_registry_arn }}:${{ inputs.commit_sha }}
-          
+
             echo "Logging into ECR"
             aws ecr get-login-password --region ${{ secrets.aws_region }} | docker login --username AWS --password-stdin ${{ secrets.devops_central_account_id }}.dkr.ecr.${{ secrets.aws_region }}.amazonaws.com
             
