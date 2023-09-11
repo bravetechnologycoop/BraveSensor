@@ -26,7 +26,7 @@ jobs:
           echo "commit_sha=${GITHUB_SHA::10}" >> $GITHUB_OUTPUT
 
   BuildContainerImage:
-    uses: bravetechnologycoop/BraveSensor/.github/workflows/ecr-build-push.yml
+    uses: bravetechnologycoop/BraveSensor/.github/workflows/ecr-build-push.yml@${{ github.ref_name }}
     needs: [SetupEnv]
     with:
       commit_sha: ${{ needs.SetupEnv.outputs.commit_sha }}
@@ -37,7 +37,7 @@ jobs:
       aws_region: ${{ secrets.DEVOPS_CENTRAL_REGION }}
 
   DeployDevelopmentECS:
-    uses: bravetechnologycoop/BraveSensor/.github/workflows/ecs-deploy.yml
+    uses: bravetechnologycoop/BraveSensor/.github/workflows/ecs-deploy.yml@${{ github.ref_name }}
     needs: [SetupEnv, BuildContainerImage]
     with:
       sdlc: ${{ needs.SetupEnv.outputs.sdlc }}
