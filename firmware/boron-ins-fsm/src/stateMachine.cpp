@@ -373,14 +373,14 @@ const char *resetReasonString(int resetReason) {
 
 void getHeartbeat() {
     // constants (NOTE: should move to a global constants section?)
-    const unsigned int missedDoorEventTrackN = 3; // track the last 3 heartbeats
-    const unsigned int missedDoorEventMax    = 1; // can miss messages in max 1 of N heartbeats
+    const unsigned int missedDoorEventTrackN = 3;  // track the last 3 heartbeats
+    const unsigned int missedDoorEventMax = 1;     // can miss messages in max 1 of N heartbeats
 
     // statics
     static unsigned long lastHeartbeatPublish = 0;
-    static std::queue<bool> missedDoorEventQueue; // queue storing whether the last N heartbeats missed door events
-    static unsigned int missedDoorEventAmnt; // number of the last N heartbeats that missed door events
-    	// (horizontal sum of missedDoorEventQueue)
+    static std::queue<bool> missedDoorEventQueue;  // queue storing whether the last N heartbeats missed door events
+    static unsigned int missedDoorEventAmnt = 0;   // number of the last N heartbeats that missed door events
+                                                   // (horizontal sum of missedDoorEventQueue)
 
     // 1st "if condition" is so that the boron publishes a heartbeat on startup
     // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true.
@@ -395,13 +395,13 @@ void getHeartbeat() {
         writer.beginObject();
 
         if (missedDoorEventQueue.size() > missedDoorEventTrackN) {
-            if (missedDoorEventQueue.front())
-	        missedDoorEventAmnt--; // oldest value did miss; subtract it from the current amount
+            // if oldest value did miss; subtract 1 from the current amount
+            if (missedDoorEventQueue.front()) missedDoorEventAmnt--;
             missedDoorEventQueue.pop();
         }
         bool didMiss = missedDoorEventCount > 0;
-        missedDoorEventAmnt += (int)didMiss;
-        missedDoorEventQueue.push(didMiss); // enqueue whether this heartbeat did miss
+        missedDoorEventAmnt += (int)didMiss;  // if did miss; add 1 to the current amount
+        missedDoorEventQueue.push(didMiss);   // enqueue whether this heartbeat did miss
         // logs whether or not sensor is frequently missing door events
         writer.name("doorMissedFreq").value(missedDoorEventAmnt > missedDoorEventMax);
 
