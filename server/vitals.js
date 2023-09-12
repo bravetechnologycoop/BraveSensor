@@ -232,6 +232,7 @@ async function handleHeartbeat(req, res) {
         } else {
           const message = JSON.parse(req.body.data)
           const doorMissedMessagesCount = message.doorMissedMsg
+          const doorMissedFreq = message.doorMissedFreq
           const resetReason = message.resetReason
           const stateTransitionsArray = message.states.map(convertStateArrayToObject)
           const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
@@ -265,6 +266,10 @@ async function handleHeartbeat(req, res) {
             doorLastSeenAt = DateTime.fromJSDate(currentDbTime).minus(message.doorLastMessage).toJSDate()
             isTamperedFlag = message.doorTampered
             doorLowBatteryFlag = message.doorLowBatt
+          }
+
+          if (doorMissedFreq) {
+            helpers.logSentry(`Sensor ${location.displayName} for client ${location.client.displayName} is frequently missing door events.`)
           }
 
           if (doorLowBatteryFlag) {

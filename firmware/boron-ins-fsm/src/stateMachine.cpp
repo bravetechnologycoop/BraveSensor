@@ -372,7 +372,16 @@ const char *resetReasonString(int resetReason) {
 }
 
 void getHeartbeat() {
+    // constants (NOTE: should move to a global constants section?)
+    const unsigned int missedDoorEventTrackN = 3; // track the last 3 heartbeats
+    const unsigned int missedDoorEventMax    = 1; // can miss messages in max 1 of N heartbeats
+
+    // statics
     static unsigned long lastHeartbeatPublish = 0;
+    static std::queue<bool> missedDoorEventQueue; // queue storing whether the last N heartbeats missed door events
+    static unsigned int missedDoorEventAmnt; // number of the last N heartbeats that missed door events
+    	// (horizontal sum of missedDoorEventQueue)
+
     // 1st "if condition" is so that the boron publishes a heartbeat on startup
     // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true.
     //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 because the IM Door Sensor broadcasts 3
@@ -384,6 +393,18 @@ void getHeartbeat() {
         char heartbeatMessage[622] = {0};
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
         writer.beginObject();
+
+        if (missedDoorEventQueue.size() > missedDoorEventTrackN) {
+            if (missedDoorEventQueue.front())
+	        missedDoorEventAmnt--; // oldest value did miss; subtract it from the current amount
+            missedDoorEventQueue.pop();
+        }
+        bool didMiss = missedDoorEventCount > 0;
+        missedDoorEventAmnt += (int)didMiss;
+        missedDoorEventQueue.push(didMiss); // enqueue whether this heartbeat did miss
+        // logs whether or not sensor is frequently missing door events
+        writer.name("doorMissedFreq").value(missedDoorEventAmnt > missedDoorEventMax);
+
         // logs number of instances of missed door events since last heartbeat
         writer.name("doorMissedMsg").value(missedDoorEventCount);
         missedDoorEventCount = 0;
