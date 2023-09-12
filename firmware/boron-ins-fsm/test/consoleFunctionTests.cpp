@@ -3,8 +3,12 @@
 #include "../src/consoleFunctions.cpp"
 #include "../src/consoleFunctions.h"
 #include "../src/flashAddresses.h"
+#include "../src/stateMachine.h"
 
 IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
+unsigned long state3_stillness_timer;
+bool hasDurationAlertBeenSent;
+bool hasStillnessAlertBeenSent;
 
 SCENARIO("Turn_Debugging_Publishes_On_Off", "[toggle debug flag]") {
     GIVEN("A false debug flag") {
@@ -434,6 +438,73 @@ SCENARIO("Force_Reset", "[force reset]") {
             THEN("the return value should be -1 and resetWasCalled should be false") {
                 REQUIRE(returnVal == -1);
                 REQUIRE(resetWasCalled == false);
+            }
+        }
+    }
+}
+
+SCENARIO("Reset_Stillness_Timer_For_Alerting_Session", "[reset stillness timer for alerting session]") {
+    GIVEN("A session that has already had a Duration Alert") {
+        unsigned long initial_state3_stillness_timer_value = 30005;
+        state3_stillness_timer = initial_state3_stillness_timer_value;
+        hasDurationAlertBeenSent = true;
+        hasStillnessAlertBeenSent = false;
+
+        WHEN("the function is called with any string") {
+            int returnVal = reset_stillness_timer_for_alerting_session("any string");
+
+            THEN("The function should return the difference between old stillness timer value and now") {
+                // Testing a one-second range to prevent test flakiness
+                unsigned long expectedValue = millis() - initial_state3_stillness_timer_value;
+                REQUIRE((returnVal >= expectedValue - 1000 && returnVal <= expectedValue));
+            }
+
+            THEN("The new stillness timer value is the current value of millis()") {
+                // Testing a one-second range to prevent test flakiness
+                int currentTimeInMillis = (int)millis();
+                REQUIRE((state3_stillness_timer >= currentTimeInMillis - 1000 && state3_stillness_timer <= currentTimeInMillis));
+            }
+        }
+    }
+
+    GIVEN("A session that has already had a Stillness Alert") {
+        unsigned long initial_state3_stillness_timer_value = 30005;
+        state3_stillness_timer = initial_state3_stillness_timer_value;
+        hasDurationAlertBeenSent = false;
+        hasStillnessAlertBeenSent = true;
+
+        WHEN("the function is called with any string") {
+            int returnVal = reset_stillness_timer_for_alerting_session("any string");
+
+            THEN("The function should return the difference between old stillness timer value and now") {
+                // Testing a one-second range to prevent test flakiness
+                unsigned long expectedValue = millis() - initial_state3_stillness_timer_value;
+                REQUIRE((returnVal >= expectedValue - 1000 && returnVal <= expectedValue));
+            }
+
+            THEN("The new stillness timer value is the current value of millis()") {
+                // Testing a one-second range to prevent test flakiness
+                int currentTimeInMillis = (int)millis();
+                REQUIRE((state3_stillness_timer >= currentTimeInMillis - 1000 && state3_stillness_timer <= currentTimeInMillis));
+            }
+        }
+    }
+
+    GIVEN("A session that has not yet sent any alerts") {
+        unsigned long initial_state3_stillness_timer_value = 30005;
+        state3_stillness_timer = initial_state3_stillness_timer_value;
+        hasDurationAlertBeenSent = false;
+        hasStillnessAlertBeenSent = false;
+
+        WHEN("the function is called with any string") {
+            int returnVal = reset_stillness_timer_for_alerting_session("any string");
+
+            THEN("The function should return -1") {
+                REQUIRE(returnVal == -1);
+            }
+
+            THEN("The stillness timer value did not change") {
+                REQUIRE(state3_stillness_timer == initial_state3_stillness_timer_value);
             }
         }
     }

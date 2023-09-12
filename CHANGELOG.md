@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Cloud function to reset the current Stillness Timer (CU-860rbtg4k).
+
 ## [9.8.0] - 2023-09-29
 
 ### Security
