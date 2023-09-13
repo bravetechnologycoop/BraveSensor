@@ -14,6 +14,8 @@
 // define and initialize state machine pointer
 StateHandler stateHandler = state0_idle;
 
+// define global variables for publishing heartbeats
+unsigned long lastHeartbeatPublish;
 // define global variables so they are allocated in memory
 unsigned long state1_timer;
 unsigned long state2_duration_timer;
@@ -38,6 +40,11 @@ std::queue<int> reasonQueue;
 std::queue<unsigned long> timeQueue;
 unsigned long lastStateChangeOrAlert = millis();
 
+// for use with getHeartbeat
+// these variables must maintain their values between runs of getHeartbeat
+static unsigned int SM_didMissQueueSum;
+static std::queue<bool> SM_didMissQueue;
+
 void setupStateMachine() {
     // set up debug pins
     pinMode(D2, OUTPUT);
@@ -50,6 +57,11 @@ void setupStateMachine() {
 
     // default to no duration alert sent
     hasDurationAlertBeenSent = 0;
+
+    // publish heartbeat immediately upon first getHeartbeat
+    lastHeartbeatPublish = 0;
+    // SM_didMissQueue is empty initially; sum should be zero
+    SM_didMissQueueSum = 0;
 }
 
 void initializeStateMachineConsts() {
@@ -372,16 +384,6 @@ const char *resetReasonString(int resetReason) {
 }
 
 void getHeartbeat() {
-    // constants (NOTE: should move to a global constants section?)
-    const unsigned int missedDoorEventTrackN = 3;  // track the last 3 heartbeats
-    const unsigned int missedDoorEventMax = 1;     // can miss messages in max 1 of N heartbeats
-
-    // statics
-    static unsigned long lastHeartbeatPublish = 0;
-    static std::queue<bool> missedDoorEventQueue;  // queue storing whether the last N heartbeats missed door events
-    static unsigned int missedDoorEventAmnt = 0;   // number of the last N heartbeats that missed door events
-                                                   // (horizontal sum of missedDoorEventQueue)
-
     // 1st "if condition" is so that the boron publishes a heartbeat on startup
     // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true.
     //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 because the IM Door Sensor broadcasts 3
@@ -394,20 +396,26 @@ void getHeartbeat() {
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
         writer.beginObject();
 
-        if (missedDoorEventQueue.size() > missedDoorEventTrackN) {
-            // if oldest value did miss; subtract 1 from the current amount
-            if (missedDoorEventQueue.front()) missedDoorEventAmnt--;
-            missedDoorEventQueue.pop();
+        if (SM_didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
+            // if oldest value did miss; subtract from the current amount
+            if (SM_didMissQueue.front()) {
+                SM_didMissQueueSum--;
+            }
+            SM_didMissQueue.pop();
         }
-        bool didMiss = missedDoorEventCount > 0;
-        missedDoorEventAmnt += (int)didMiss;  // if did miss; add 1 to the current amount
-        missedDoorEventQueue.push(didMiss);   // enqueue whether this heartbeat did miss
-        // logs whether or not sensor is frequently missing door events
-        writer.name("doorMissedFreq").value(missedDoorEventAmnt > missedDoorEventMax);
+        // store the value of missedDoorEventCount at this instant then reset it;
+        // it is possible for the value to change during the execution of this function
+        int instantMissedDoorEventCount = missedDoorEventCount;
+        missedDoorEventCount = 0;
 
         // logs number of instances of missed door events since last heartbeat
-        writer.name("doorMissedMsg").value(missedDoorEventCount);
-        missedDoorEventCount = 0;
+        writer.name("doorMissedMsg").value(instantMissedDoorEventCount);
+
+        bool didMiss = instantMissedDoorEventCount > 0;
+        SM_didMissQueueSum += (int)didMiss;  // if did miss; add 1 to the current amount
+        SM_didMissQueue.push(didMiss);       // enqueue whether this heartbeat did miss
+        // logs whether or not sensor is frequently missing door events
+        writer.name("doorMissedFrequently").value(SM_didMissQueueSum > SM_HEARTBEAT_DID_MISS_THRESHOLD);
 
         if (doorLastMessage == 0) {
             // Haven't seen any door messages since the device last restarted so all of these are unknown at this point

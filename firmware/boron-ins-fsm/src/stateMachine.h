@@ -23,6 +23,9 @@
 // How often to publish Heartbeat messages
 #define SM_HEARTBEAT_INTERVAL 660000  // ms = 11 min
 
+#define SM_HEARTBEAT_DID_MISS_QUEUE_SIZE 3  // keep track of whether the last 3 heartbeats did miss events
+#define SM_HEARTBEAT_DID_MISS_THRESHOLD  1  // threshold of the last N heartbeats that can miss events
+
 // Attempt to minimize the time between a restart and the first Heartbeat message
 #define DEVICE_RESET_THRESHOLD 540000  // ms = 9 min
 
@@ -59,6 +62,9 @@ typedef void (*StateHandler)();
 
 // declaring the state handler pointer as extern so .ino file can use it
 extern StateHandler stateHandler;
+
+// time in ms since start of device of last heartbeat publish
+extern unsigned long lastHeartbeatPublish;
 
 // these are the timers that are zero'ed by millis()
 extern unsigned long state1_timer;
