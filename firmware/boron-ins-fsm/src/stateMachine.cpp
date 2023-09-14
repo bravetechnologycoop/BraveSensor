@@ -373,8 +373,6 @@ const char *resetReasonString(int resetReason) {
 
 void getHeartbeat() {
     static unsigned long lastHeartbeatPublish = 0;
-    static unsigned int didMissQueueSum = 0;
-    static std::queue<bool> didMissQueue;
 
     // 1st "if condition" is so that the boron publishes a heartbeat on startup
     // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true.
@@ -383,6 +381,8 @@ void getHeartbeat() {
     // 3rd "if condition" is true only if a heartbeat hasnt been published in the last SM_HEARTBEAT_INTERVAL
     if (lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && ((millis() - doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY)) ||
         (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) {
+        static unsigned int didMissQueueSum = 0;
+        static std::queue<bool> didMissQueue;
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char heartbeatMessage[622] = {0};
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
