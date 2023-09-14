@@ -63,9 +63,6 @@ typedef void (*StateHandler)();
 // declaring the state handler pointer as extern so .ino file can use it
 extern StateHandler stateHandler;
 
-// time in ms since start of device of last heartbeat publish
-extern unsigned long lastHeartbeatPublish;
-
 // these are the timers that are zero'ed by millis()
 extern unsigned long state1_timer;
 extern unsigned long state2_duration_timer;
