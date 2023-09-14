@@ -24,9 +24,11 @@ pool.on('error', err => {
   helpers.logError(`unexpected database error: ${err.toString()}`)
 })
 
-function createSessionFromRow(r) {
+function createSessionFromRow(r, allLocations) {
+  const location = allLocations.filter(l => l.locationid === r.locationid)[0]
+
   // prettier-ignore
-  return new Session(r.id, r.locationid, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number)
+  return new Session(r.id, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number, location)
 }
 
 function createClientFromRow(r) {
@@ -150,6 +152,32 @@ async function getClients(pgClient) {
   }
 }
 
+async function getLocations(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLocations',
+      `
+      SELECT l.*
+      FROM locations AS l
+      LEFT JOIN clients AS c ON l.client_id = c.id
+      ORDER BY c.display_name, l.display_name
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined) {
+      return null
+    }
+
+    const allClients = await getClients(pgClient)
+    return results.rows.map(r => createLocationFromRow(r, allClients))
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
 async function getDataForExport(pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -228,7 +256,8 @@ async function getMostRecentSessionWithLocationid(locationid, pgClient) {
       return null
     }
 
-    return createSessionFromRow(results.rows[0])
+    const allLocations = await getLocations(pgClient)
+    return createSessionFromRow(results.rows[0], allLocations)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -253,7 +282,8 @@ async function getSessionWithSessionId(id, pgClient) {
       return null
     }
 
-    return createSessionFromRow(results.rows[0])
+    const allLocations = await getLocations(pgClient)
+    return createSessionFromRow(results.rows[0], allLocations)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -280,7 +310,8 @@ async function getSessionWithSessionIdAndAlertApiKey(sessionId, alertApiKey, pgC
       return null
     }
 
-    return createSessionFromRow(results.rows[0])
+    const allLocations = await getLocations(pgClient)
+    return createSessionFromRow(results.rows[0], allLocations)
   } catch (err) {
     helpers.logError(err.toString())
   }
@@ -334,7 +365,8 @@ async function getMostRecentSessionWithPhoneNumbers(devicePhoneNumber, responder
       return null
     }
 
-    return createSessionFromRow(results.rows[0])
+    const allLocations = await getLocations(pgClient)
+    return createSessionFromRow(results.rows[0], allLocations)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -360,7 +392,8 @@ async function getHistoryOfSessions(locationid, pgClient) {
       return null
     }
 
-    return results.rows.map(r => createSessionFromRow(r))
+    const allLocations = await getLocations(pgClient)
+    return results.rows.map(r => createSessionFromRow(r, allLocations))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -388,7 +421,8 @@ async function getUnrespondedSessionWithLocationId(locationid, pgClient) {
       return null
     }
 
-    return createSessionFromRow(results.rows[0])
+    const allLocations = await getLocations(pgClient)
+    return createSessionFromRow(results.rows[0], allLocations)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -413,7 +447,8 @@ async function getAllSessionsFromLocation(locationid, pgClient) {
       return null
     }
 
-    return results.rows.map(r => createSessionFromRow(r))
+    const allLocations = await getLocations(pgClient)
+    return results.rows.map(r => createSessionFromRow(r, allLocations))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -434,7 +469,9 @@ async function createSession(locationid, incidentCategory, chatbotState, alertTy
         pool,
         pgClient,
       )
-      return createSessionFromRow(results.rows[0])
+
+      const allLocations = await getLocations(pgClient)
+      return createSessionFromRow(results.rows[0], allLocations)
     } catch (err) {
       helpers.log(err.toString())
     }
@@ -451,7 +488,9 @@ async function createSession(locationid, incidentCategory, chatbotState, alertTy
         pool,
         pgClient,
       )
-      return createSessionFromRow(results.rows[0])
+
+      const allLocations = await getLocations(pgClient)
+      return createSessionFromRow(results.rows[0], allLocations)
     } catch (err) {
       helpers.log(err.toString())
     }
@@ -531,7 +570,7 @@ async function saveSession(session, pgClient) {
       WHERE id = $7
       `,
       [
-        session.locationid,
+        session.location.locationid,
         session.incidentCategory,
         session.chatbotState,
         session.alertType,
@@ -735,32 +774,6 @@ async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
       return null
     }
     return results.rows[0].count
-  } catch (err) {
-    helpers.log(err.toString())
-  }
-}
-
-async function getLocations(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getLocations',
-      `
-      SELECT l.*
-      FROM locations AS l
-      LEFT JOIN clients AS c ON l.client_id = c.id
-      ORDER BY c.display_name, l.display_name
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return results.rows.map(r => createLocationFromRow(r, allClients))
   } catch (err) {
     helpers.log(err.toString())
   }

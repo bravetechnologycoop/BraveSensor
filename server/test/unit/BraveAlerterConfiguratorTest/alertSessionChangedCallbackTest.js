@@ -64,14 +64,12 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
     await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY, newRespondedByPhoneNumber))
 
-    const expectedSession = sessionFactory(
-      sessionFactory({
-        id: sessionId,
-        chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
-        respondedAt: this.testCurrentTime,
-        respondedByPhoneNumber: newRespondedByPhoneNumber,
-      }),
-    )
+    const expectedSession = sessionFactory({
+      id: sessionId,
+      chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
+      respondedAt: this.testCurrentTime,
+      respondedByPhoneNumber: newRespondedByPhoneNumber,
+    })
 
     expect(db.saveSession).to.be.calledWith(expectedSession, sandbox.any)
   })
@@ -88,14 +86,12 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
     await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY, oldRespondedByPhoneNumber))
 
-    const expectedSession = sessionFactory(
-      sessionFactory({
-        id: sessionId,
-        chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
-        respondedAt: testRespondedAtTime,
-        respondedByPhoneNumber: oldRespondedByPhoneNumber,
-      }),
-    )
+    const expectedSession = sessionFactory({
+      id: sessionId,
+      chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
+      respondedAt: testRespondedAtTime,
+      respondedByPhoneNumber: oldRespondedByPhoneNumber,
+    })
 
     expect(db.saveSession).to.be.calledWith(expectedSession, sandbox.any)
   })
@@ -123,9 +119,13 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
       client,
     })
     sandbox.stub(db, 'getLocationData').returns(location)
-    sandbox
-      .stub(db, 'getSessionWithSessionId')
-      .returns(sessionFactory({ id: sessionId, locationid: location.locationid, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
+    sandbox.stub(db, 'getSessionWithSessionId').returns(
+      sessionFactory({
+        id: sessionId,
+        location,
+        respondedByPhoneNumber: oldRespondedByPhoneNumber,
+      }),
+    )
 
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
@@ -133,7 +133,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
 
     const expectedSession = sessionFactory({
       id: sessionId,
-      locationid: location.locationid,
+      location,
       chatbotState: CHATBOT_STATE.COMPLETED,
       incidentCategory: 'No One Inside',
       respondedByPhoneNumber: oldRespondedByPhoneNumber,
@@ -152,7 +152,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     sandbox.stub(db, 'getLocationData').returns(location)
     sandbox
       .stub(db, 'getSessionWithSessionId')
-      .returns(sessionFactory({ id: sessionId, locationid: location.locationid, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
+      .returns(sessionFactory({ id: sessionId, location, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
 
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
