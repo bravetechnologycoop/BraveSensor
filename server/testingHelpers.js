@@ -94,7 +94,6 @@ function sessionFactory(overrides = {}) {
   // prettier-ignore
   return new Session(
     overrides.id !== undefined ? overrides.id : 'd91593b4-25ce-11ec-9621-0242ac130002',
-    overrides.locationid !== undefined ? overrides.locationid : 'myLocation',
     overrides.chatbotState !== undefined ? overrides.chatbotState : CHATBOT_STATE.COMPLETED,
     overrides.alertType !== undefined ? overrides.alertType : ALERT_TYPE.SENSOR_STILLNESS,
     overrides.createdAt !== undefined ? overrides.createdAt : new Date('2021-10-05T20:20:20.000Z'),
@@ -102,6 +101,7 @@ function sessionFactory(overrides = {}) {
     overrides.incidentCategory !== undefined ? overrides.incidentCategory : 'Overdose',
     overrides.respondedAt !== undefined ? overrides.respondedAt : new Date('2021-10-05T20:20:33.000Z'),
     overrides.respondedByPhoneNumber !== undefined ? overrides.respondedByPhoneNumber : '+17778886666',
+    overrides.location !== undefined ? overrides.location : locationFactory(),
   )
 }
 

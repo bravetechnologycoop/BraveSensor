@@ -23,9 +23,7 @@ class BraveAlerterConfigurator {
   }
 
   async createAlertSessionFromSession(session) {
-    const location = await db.getLocationData(session.locationid)
-
-    const client = location.client
+    const client = session.location.client
     const alertSession = new AlertSession(
       session.id,
       session.chatbotState,
@@ -109,8 +107,7 @@ class BraveAlerterConfigurator {
           }
 
           if (alertSession.incidentCategoryKey) {
-            const location = await db.getLocationData(session.locationid, pgClient)
-            session.incidentCategory = location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
+            session.incidentCategory = session.location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
           }
 
           if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
