@@ -14,6 +14,8 @@ the code was deployed.
 ### Added
 
 - CORS configuration to Express Proxy Middleware.
+- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a)
+- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a)
 
 ### Removed
 

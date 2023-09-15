@@ -373,6 +373,7 @@ const char *resetReasonString(int resetReason) {
 
 void getHeartbeat() {
     static unsigned long lastHeartbeatPublish = 0;
+
     // 1st "if condition" is so that the boron publishes a heartbeat on startup
     // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true.
     //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 because the IM Door Sensor broadcasts 3
@@ -380,13 +381,33 @@ void getHeartbeat() {
     // 3rd "if condition" is true only if a heartbeat hasnt been published in the last SM_HEARTBEAT_INTERVAL
     if (lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && ((millis() - doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY)) ||
         (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) {
+        static unsigned int didMissQueueSum = 0;
+        static std::queue<bool> didMissQueue;
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char heartbeatMessage[622] = {0};
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
         writer.beginObject();
-        // logs number of instances of missed door events since last heartbeat
-        writer.name("doorMissedMsg").value(missedDoorEventCount);
+
+        if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
+            // if oldest value did miss; subtract from the current amount
+            if (didMissQueue.front()) {
+                didMissQueueSum--;
+            }
+            didMissQueue.pop();
+        }
+        // store the value of missedDoorEventCount at this instant then reset it;
+        // it is possible for the value to change during the execution of this function
+        int instantMissedDoorEventCount = missedDoorEventCount;
         missedDoorEventCount = 0;
+
+        // logs number of instances of missed door events since last heartbeat
+        writer.name("doorMissedMsg").value(instantMissedDoorEventCount);
+
+        bool didMiss = instantMissedDoorEventCount > 0;
+        didMissQueueSum += (int)didMiss;  // if did miss; add 1 to the current amount
+        didMissQueue.push(didMiss);       // enqueue whether this heartbeat did miss
+        // logs whether or not sensor is frequently missing door events
+        writer.name("doorMissedFrequently").value(didMissQueueSum > SM_HEARTBEAT_DID_MISS_THRESHOLD);
 
         if (doorLastMessage == 0) {
             // Haven't seen any door messages since the device last restarted so all of these are unknown at this point

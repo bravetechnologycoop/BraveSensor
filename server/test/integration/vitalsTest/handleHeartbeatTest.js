@@ -25,7 +25,7 @@ async function normalHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
@@ -40,7 +40,7 @@ async function normalHeartbeatWithIncorrectAPIKey(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: badpassword,
     })
     await helpers.sleep(50)
@@ -55,7 +55,7 @@ async function lowBatteryHeartbeatWithIncorrectAPIKey(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": true, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: badpassword,
     })
     await helpers.sleep(50)
@@ -70,7 +70,7 @@ async function unknownDoorLastMessageHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": -1, "doorTampered": -1, "doorLastMessage": -1, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": -1, "doorTampered": -1, "doorLastMessage": -1, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
@@ -85,7 +85,7 @@ async function lowBatteryHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": true, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": true, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
@@ -100,7 +100,22 @@ async function doorTamperedHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorLowBatt": false, "doorTampered": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      api_key: webhookAPIKey,
+    })
+    await helpers.sleep(50)
+
+    return response
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
+async function doorMissedFrequentlyHeartbeat(coreId) {
+  try {
+    const response = await chai.request(server).post('/api/heartbeat').send({
+      coreid: coreId,
+      data: `{"doorMissedMsg": 0, "doorMissedFrequently": true, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
@@ -535,6 +550,40 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
 
     it('should not log to Sentry', async () => {
       expect(helpers.logSentry).not.to.be.called
+    })
+  })
+
+  describe('This heartbeat indicates that door events are frequently missed', () => {
+    beforeEach(async () => {
+      await db.clearTables()
+
+      this.client = await factories.clientDBFactory(db)
+      await locationDBFactory(db, {
+        locationid: testLocation1Id,
+        radarCoreId: radar_coreID,
+        clientId: this.client.id,
+      })
+
+      await sensorsVitalDBFactory(db, {
+        locationid: testLocation1Id,
+        isTampered: true,
+      })
+
+      sandbox.stub(braveAlerter, 'startAlertSession')
+      sandbox.stub(braveAlerter, 'sendSingleAlert')
+      sandbox.spy(helpers, 'logSentry')
+      sandbox.stub(db, 'logSensorsVital')
+
+      await doorMissedFrequentlyHeartbeat(radar_coreID)
+    })
+
+    afterEach(async () => {
+      await db.clearTables()
+      sandbox.restore()
+    })
+
+    it('should log to Sentry that sensor is frequently missing door events', async () => {
+      expect(helpers.logSentry).to.be.calledWith(`Sensor is frequently missing door events at ${testLocation1Id}`)
     })
   })
 })
