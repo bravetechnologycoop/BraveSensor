@@ -18,6 +18,7 @@ bool doorTamperedFlag = false;
 bool doorMessageReceivedFlag = false;
 unsigned long doorHeartbeatReceived = 0;
 unsigned long doorLastMessage = 0;
+unsigned long timeSinceDoorClosed = 0;
 
 //**********setup()******************
 
@@ -68,6 +69,11 @@ doorData checkIM() {
 
         // Checks if the 0th bit (counting from 0) of doorStatus is 1
         doorTamperedFlag = (currentDoorData.doorStatus & 0b0001) != 0;
+
+        // Set timer starting when door closes
+        if ((previousDoorData.doorStatus & 0b0010) != 0 && (currentDoorData.doorStatus & 0b0010) == 0) {
+            timeSinceDoorClosed = millis();
+        }
 
         // After a certain thereshold, the next door message received will trigger a boron heartbeat
         if (millis() - doorLastMessage >= MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD) {

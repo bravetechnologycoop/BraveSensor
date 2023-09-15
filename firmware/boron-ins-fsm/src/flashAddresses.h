@@ -34,6 +34,10 @@
 #define ADDR_STATE3_MAX_LONG_STILLNESS_TIME                 23  // uint32_t = 4 bytes
 #define ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG 27  // uint16_2 = 2 bytes
 
-// next available address is 27 + 2 = 29
+// new state machine constant for state0 window
+#define ADDR_INITIALIZE_STATE0_WINDOW_FLAG                  29  // uint16_2 = 2 bytes
+#define ADDR_STATE0_WINDOW_TIME                             31  // uint32_t = 4 bytes
+
+// next available address is 31 + 4 = 35
 
 #endif

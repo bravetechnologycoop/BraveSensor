@@ -12,6 +12,7 @@
      - [DEBUG_LEVEL](#debug_level)
      - [BRAVE_PRODUCT_ID for state machine](#brave_product_id-for-state-machine)
      - [INS_THRESHOLD](#ins_threshold)
+     - [STATE0_WINDOW_TIME](#state0_window_time)
      - [STATE1_MAX_TIME](#state1_max_time)
      - [STATE2_MAX_DURATION](#state2_max_duration)
      - [STATE3_MAX_STILLNESS_TIME](#state3_max_stillness_time)
@@ -179,6 +180,14 @@ This is defined via a macro in the stateMachine.h header file.
 It is compared to the filtered inPhase values detected by the INS radar. Anything above the threshold is considered movement, and anything below the threshold is considered stillness or an empty room.
 
 The default level is set to 60. This is based on the radar testing documented [here](https://docs.google.com/document/d/12TLw6XE9CSaNpguytS2NCSCP0aZWUs-OncmaDdoTKfo/edit?usp=sharing).
+
+### STATE0_WINDOW_TIME
+
+This is defined via a macro in the stateMachine.h header file
+
+It is the length of time (or window) after the door_status changes from an open to a closed state where entrance to state1 is allowed. After the state 0 timer has surpassed this window, the state machine with still in state 0 until this timer reset (door open and close) 
+
+The length of time is default to 1 hour defined as 3600000 milliseconds
 
 ### STATE1_MAX_TIME
 

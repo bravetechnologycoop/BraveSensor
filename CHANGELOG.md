@@ -14,6 +14,8 @@ the code was deployed.
 ### Added
 
 - CORS configuration to Express Proxy Middleware.
+- Added a window of time after the door closes where the sensor is allowed to detect for occupation
+- Added console function for the window aswell as timer status and window size in Debug Publishes
 
 ### Removed
 

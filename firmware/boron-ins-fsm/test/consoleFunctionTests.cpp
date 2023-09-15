@@ -143,6 +143,60 @@ SCENARIO("Change_IM21_Door_ID", "[change door id]") {
     }
 }
 
+SCENARIO("Set Window Time", "[window time]") {
+    GIVEN("A starting window time of 1 minute") {
+        state0_window_time = 60000;
+
+        WHEN("the function is called with 'e'") {
+            int returnFlag = window_size_set("e");
+
+            THEN("the initial timer value should remain the same") {
+                REQUIRE(state0_window_time == 60000);
+            }
+
+            THEN("the function should return the input") {
+                REQUIRE(returnFlag == 60);
+            }
+        }
+
+        WHEN("the function is called with a positive integer") {
+            int returnFlag = window_size_set("30");
+
+            THEN("the initial timer value should be updated to the input * 1000") {
+                REQUIRE(state0_window_time == 30000);
+            }
+
+            THEN("the function should return the input") {
+                REQUIRE(returnFlag == 30);
+            }
+        }
+
+        WHEN("the function is called with a negative integer") {
+            int returnFlag = window_size_set("-30");
+
+            THEN("the initial timer value should not be updated") {
+                REQUIRE(state0_window_time == 60000);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+
+        WHEN("the function is called with something other than 'e' or a positive integer") {
+            int returnFlag = window_size_set("nonInt");
+
+            THEN("the initial timer value should not be updated") {
+                REQUIRE(state0_window_time == 60000);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+    }
+}
+
 SCENARIO("Set Initial Timer", "[initial timer]") {
     GIVEN("A starting initial timer of 10 milliseconds") {
         state1_max_time = 10000;

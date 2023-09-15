@@ -23,6 +23,7 @@ void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
     Particle.function("Force_Reset", force_reset);
     Particle.function("Turn_Debugging_Publishes_On_Off", toggle_debugging_publishes);
+    Particle.function("Change_Occupant_Detection_Window", window_size_set);
     Particle.function("Change_Initial_Timer", initial_timer_set);
     Particle.function("Change_Duration_Timer", duration_timer_set);
     Particle.function("Change_Stillness_Timer", stillness_timer_set);
@@ -78,6 +79,40 @@ int toggle_debugging_publishes(String command) {
         returnFlag = -1;
     }
 
+    return returnFlag;
+}
+
+// returns initial timer length if valid input is given, otherwise returns -1
+int window_size_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    // if e, echo the current threshold
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_STATE0_WINDOW_TIME, state0_window_time);
+        returnFlag = state0_window_time / 1000;
+    }
+    // else parse new threshold
+    else {
+        int timeout = input.toInt();
+        // increase timeout value to from seconds to ms
+        timeout = timeout * 1000;
+
+        if (timeout == 0) {
+            // string.toInt() returns 0 if input not an int
+            // and a threshold value of 0 makes no sense, so return -1
+            returnFlag = -1;
+        }
+        else if (timeout < 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_STATE0_WINDOW_TIME, timeout);
+            state0_window_time = timeout;
+            returnFlag = state0_window_time / 1000;
+        }
+    }
     return returnFlag;
 }
 
