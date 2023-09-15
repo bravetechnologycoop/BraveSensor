@@ -9,18 +9,13 @@ Please note that the date associated with a release is the date the code
 was committed to the `production` branch. This is not necessarily the date that
 the code was deployed.
 
-## [9.6.0] - 2023-09-12
-
-### Added
-
-- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a)
-- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a)
-
 ## [Unreleased]
 
 ### Added
 
 - CORS configuration to Express Proxy Middleware.
+- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a)
+- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a)
 
 ### Removed
 
