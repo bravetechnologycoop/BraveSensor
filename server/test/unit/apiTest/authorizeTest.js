@@ -6,9 +6,7 @@ const sinonChai = require('sinon-chai')
 const rewire = require('rewire')
 
 // In-house dependencies
-const { factories, helpers } = require('brave-alert-lib')
-const db = require('../../../db/db')
-const { locationFactory, sensorsVitalFactory } = require('../../../testingHelpers')
+const { helpers } = require('brave-alert-lib')
 
 const api = rewire('../../../api')
 
@@ -17,21 +15,21 @@ use(sinonChai)
 
 const sandbox = sinon.createSandbox()
 
-const authorize_next = () => {
+function authorize_next() {
   helpers.log('authorize_next')
 }
 
-const mockRequest = (_req) => {
-  const req = _req;
-  return req;
+function mockRequest(_req) {
+  const req = _req
+  return req
 }
 
-const mockResponse = () => {
-  const res = {};
-  res.status = sinon.stub().returns(res);
-  res.send = sinon.stub().returns(res);
-  return res;
-};
+function mockResponse() {
+  const res = {}
+  res.status = sinon.stub().returns(res)
+  res.send = sinon.stub().returns(res)
+  return res
+}
 
 describe('api.js unit tests: authorize', () => {
   beforeEach(() => {
@@ -49,8 +47,8 @@ describe('api.js unit tests: authorize', () => {
       // create fake request object that implements the necessary members
       const req = mockRequest({
         query: { braveKey: helpers.getEnvVar('PA_API_KEY_PRIMARY') },
-	body: {}, // empty
-	path: 'test_path'
+        body: {}, // empty
+        path: 'test_path',
       })
       this.res = mockResponse()
 
@@ -67,8 +65,8 @@ describe('api.js unit tests: authorize', () => {
       // create fake request object that implements the necessary members
       const req = mockRequest({
         query: {}, // empty
-	body: { braveKey: helpers.getEnvVar('PA_API_KEY_PRIMARY') },
-	path: 'test_path'
+        body: { braveKey: helpers.getEnvVar('PA_API_KEY_PRIMARY') },
+        path: 'test_path',
       })
       this.res = mockResponse()
 
@@ -85,8 +83,8 @@ describe('api.js unit tests: authorize', () => {
       // create fake request object that implements the necessary members
       const req = mockRequest({
         query: { braveKey: helpers.getEnvVar('PA_API_KEY_SECONDARY') },
-	body: {}, // empty
-	path: 'test_path'
+        body: {}, // empty
+        path: 'test_path',
       })
       this.res = mockResponse()
 
@@ -103,8 +101,8 @@ describe('api.js unit tests: authorize', () => {
       // create fake request object that implements the necessary members
       const req = mockRequest({
         query: {}, // empty
-	body: { braveKey: helpers.getEnvVar('PA_API_KEY_SECONDARY') },
-	path: 'test_path'
+        body: { braveKey: helpers.getEnvVar('PA_API_KEY_SECONDARY') },
+        path: 'test_path',
       })
       this.res = mockResponse()
 
@@ -120,9 +118,9 @@ describe('api.js unit tests: authorize', () => {
     beforeEach(async () => {
       // create fake request object that implements the necessary members
       const req = mockRequest({
-	query: { braveKey: 'INVALID_API_KEY' },
+        query: { braveKey: 'INVALID_API_KEY' },
         body: {}, // empty
-	path: 'test_path'
+        path: 'test_path',
       })
       this.res = mockResponse()
 
@@ -143,8 +141,8 @@ describe('api.js unit tests: authorize', () => {
       // create fake request object that implements the necessary members
       const req = mockRequest({
         query: {}, // empty
-	body: { braveKey: 'INVALID_API_KEY' },
-	path: 'test_path'
+        body: { braveKey: 'INVALID_API_KEY' },
+        path: 'test_path',
       })
       this.res = mockResponse()
 
@@ -165,8 +163,8 @@ describe('api.js unit tests: authorize', () => {
       // create fake request object that implements the necessary members
       const req = mockRequest({
         query: {}, // empty
-	body: {}, // empty
-	path: 'test_path'
+        body: {}, // empty
+        path: 'test_path',
       })
       this.res = mockResponse()
 
@@ -186,9 +184,9 @@ describe('api.js unit tests: authorize', () => {
     beforeEach(async () => {
       // create fake request object that implements the necessary members
       const req = mockRequest({
-	query: { braveKey: helpers.getEnvVar('PA_API_KEY_PRIMARY') },
-	body: { braveKey: helpers.getEnvVar('PA_API_KEY_PRIMARY') },
-	path: 'test_path'
+        query: { braveKey: helpers.getEnvVar('PA_API_KEY_PRIMARY') },
+        body: { braveKey: helpers.getEnvVar('PA_API_KEY_PRIMARY') },
+        path: 'test_path',
       })
       this.res = mockResponse()
 
