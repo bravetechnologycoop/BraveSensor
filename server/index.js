@@ -27,6 +27,7 @@ const braveAlerter = new BraveAlerterConfigurator().createBraveAlerter()
 
 // Start Express App
 const app = express()
+console.log("Tara's test wahoo")
 
 const intervalToCheckAlerts = parseInt(helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS'), 10)
 
