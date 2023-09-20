@@ -17,7 +17,7 @@
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const { helpers, twilioHelpers } = require('brave-alert-lib')
 const db = require('./db/db')
 
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
@@ -77,10 +77,59 @@ async function getSensor(req, res) {
   }
 }
 
+const validateMessageClients = Validator.body(['braveKey', 'data']).exists()
+
+async function messageClients(req, res) {
+  const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+
+  try {
+    if (validationErrors.isEmpty()) {
+      let pgClient
+      pgClient = await db.beginTransaction()
+      const clients = await db.getClients(pgClient)
+      await db.commitTransaction(pgClient)
+      const data = req.body.data
+
+      for (const client of clients) {
+        // only message clients that are sending alerts AND are sending vitals
+        if (client.isSendingAlerts && client.isSendingVitals) {
+          pgClient = await db.beginTransaction()
+          const locations = await db.getLocationsFromClientId(client.id, pgClient)
+          await db.commitTransaction(pgClient)
+          let hasActiveLocation = false
+
+          for (const l of locations) {
+            if (l.isSendingAlerts && l.isSendingVitals) {
+              hasActiveLocation = true
+              // stop iterating over location after one active location
+              break
+            }
+          }
+
+          if (hasActiveLocation) {
+            // this client fulfills the criteria to message; send messages
+            for (const responder of client.responderPhoneNumbers) {
+              twilioHelpers.sendTwilioMessage(responder, client.fromPhoneNumber, data)
+            }
+          }
+        }
+      }
+
+      res.status(200).send({ status: 'success' })
+    } else {
+      res.status(400).send({ status: 'error' })
+    }
+  } catch (e) {
+    res.status(500).send({ status: 'error' })
+  }
+}
+
 module.exports = {
   authorize,
   getAllSensors,
   getSensor,
   validateGetAllSensors,
   validateGetSensor,
+  validateMessageClients,
+  messageClients,
 }
