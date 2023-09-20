@@ -19,6 +19,12 @@ the code was deployed.
 - "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a)
 - Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a)
 - GitHub Actions to deploy to AWS infrastructure on Dev and Staging (CU-860ra8f7q).
+- Unit tests for API authorize function (CU-8678uuvjm)
+
+### Fixed
+
+- API authorize function to work with PA API keys submitted in body of request (CU-8678uuvjm)
+- Incorrect calls to clearTable in API integration tests
 
 ### Removed
 
