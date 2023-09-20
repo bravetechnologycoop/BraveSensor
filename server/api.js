@@ -23,7 +23,7 @@ const db = require('./db/db')
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
 
 async function authorize(req, res, next) {
-  if (paApiKeys.indexOf(req.query.braveKey) < 0 && paApiKeys.indexOf(req.body.braveKey)) {
+  if (paApiKeys.indexOf(req.query.braveKey) < 0 && paApiKeys.indexOf(req.body.braveKey) < 0) {
     helpers.log(`Unauthorized request to: ${req.path}`)
     res.status(401).send({ status: 'error', message: 'Unauthorized' })
   } else {
