@@ -14,10 +14,14 @@ the code was deployed.
 ### Added
 
 - CORS configuration to Express Proxy Middleware.
-- Added a window of time after the door closes where the sensor is allowed to detect for occupation (CU-8678t4ztg)
-- Added console function for the window aswell as timer status and window size in Debug Publishes (CU-8678t4ztg)
-- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a)
-- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a)
+- Added a timer in state0 that is reset when the door closes where the sensor is allowed to detect for occupation (CU-8678t4ztg).
+- Added console function for the occupation detection timer as well as the timer count and timeout value in Debug Publishes (CU-8678t4ztg).
+- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a).
+- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a).
+
+### Fixed
+
+- Wording in consoleFunctionTests.cpp when functions are called with 'e'.
 
 ### Removed
 

@@ -12,7 +12,7 @@
      - [DEBUG_LEVEL](#debug_level)
      - [BRAVE_PRODUCT_ID for state machine](#brave_product_id-for-state-machine)
      - [INS_THRESHOLD](#ins_threshold)
-     - [STATE0_WINDOW_TIME](#state0_window_time)
+     - [STATE0_OCCUPANT_DETECTION_TIMER](#state0_occupant_detection_timer)
      - [STATE1_MAX_TIME](#state1_max_time)
      - [STATE2_MAX_DURATION](#state2_max_duration)
      - [STATE3_MAX_STILLNESS_TIME](#state3_max_stillness_time)
@@ -181,11 +181,11 @@ It is compared to the filtered inPhase values detected by the INS radar. Anythin
 
 The default level is set to 60. This is based on the radar testing documented [here](https://docs.google.com/document/d/12TLw6XE9CSaNpguytS2NCSCP0aZWUs-OncmaDdoTKfo/edit?usp=sharing).
 
-### STATE0_WINDOW_TIME
+### STATE0_OCCUPANT_DETECTION_TIMER
 
 This is defined via a macro in the stateMachine.h header file
 
-It is the length of time (or window) after the door_status changes from an open to a closed state where entrance to state1 is allowed. After the state 0 timer has surpassed this window, the state machine with still in state 0 until this timer reset (door open and close) 
+It is the length of time after the door_status changes from an open to a closed state where entrance to state1 is allowed. After the state 0 timer has surpassed this value, the state machine will stay in state 0 until this timer resets (door open and close) 
 
 The length of time is default to 1 hour defined as 3600000 milliseconds
 
@@ -332,21 +332,21 @@ Stillness timer is the length of time the Sensor sees stillness before publishin
 - The integer number of seconds of the current timer value, when e for echo is entered
 - -1: when bad data is entered
 
-### **window_size_set(String)**
+### **occupant_detection_timer_set(String)**
 
 **Description:**
 
-Window is the allowed time after the paired door sensor closes in which state 0 can transition to state 1. The default value is 60 minutes. Use this console function to set the window size (time) 
+This sets the allowed time after the paired door sensor closes in which state 0 can transition to state 1. The default value is 60 minutes.
 
 **Argument(s):**
 
-1. The integer number of seconds of the new window timeout.
-2. e - this is short for echo, and will echo the current window timeout
+1. The integer number of seconds of the new occupation detection timer.
+2. e - this is short for echo, and will echo the current occupation detection timer
 
 **Return(s):**
 
-- The integer number of seconds of the timeout value, when a new timeout value is entered
-- The integer number of seconds of the current timeout value, when e for echo is entered
+- The integer number of seconds of the timer value, when a new timer value is entered
+- The integer number of seconds of the current timer value, when e for echo is entered
 - -1: when bad data is entered
 
 ### **initial_timer_set(String)**
