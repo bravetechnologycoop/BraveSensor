@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [9.7.0] - 2023-09-21
+
 ### Added
 
 - CORS configuration to Express Proxy Middleware.
@@ -560,7 +562,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.6.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.7.0...HEAD
+[9.7.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.6.0...v9.7.0
 [9.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.5.0...v9.6.0
 [9.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.4.0...v9.5.0
 [9.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.3.0...v9.4.0
