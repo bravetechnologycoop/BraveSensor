@@ -3,7 +3,6 @@ const { expect, use } = require('chai')
 const { describe, it } = require('mocha')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
-const rewire = require('rewire')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
