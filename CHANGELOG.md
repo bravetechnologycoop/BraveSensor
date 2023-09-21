@@ -11,20 +11,23 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Unit tests for API authorize function (CU-8678uuvjm).
+
+### Fixed
+
+- API authorize function to work with PA API keys submitted in body of request (CU-8678uuvjm).
+- Incorrect calls to clearTable in API integration tests.
+
 ## [9.7.0] - 2023-09-21
 
 ### Added
 
 - CORS configuration to Express Proxy Middleware.
-- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a)
-- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a)
+- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a).
+- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a).
 - GitHub Actions to deploy to AWS infrastructure on Dev and Staging (CU-860ra8f7q).
-- Unit tests for API authorize function (CU-8678uuvjm)
-
-### Fixed
-
-- API authorize function to work with PA API keys submitted in body of request (CU-8678uuvjm)
-- Incorrect calls to clearTable in API integration tests
 
 ### Removed
 

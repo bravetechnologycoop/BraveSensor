@@ -8,7 +8,7 @@ const rewire = require('rewire')
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
 
-const api = rewire('../../../api')
+const api = require('../../../api')
 
 // Configure Chai
 use(sinonChai)
