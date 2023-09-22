@@ -11,6 +11,11 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Added 'View Client' button to Internal Dashboard-Location page (CU-8678vn1r5)
+
+
 ## [9.7.0] - 2023-09-21
 
 ### Added
