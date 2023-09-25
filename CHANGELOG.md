@@ -13,7 +13,7 @@ the code was deployed.
 
 ### Added
 
-- Added 'View Client' button to Internal Dashboard-Location page (CU-8678vn1r5)
+- Added 'View Client' button to Internal Dashboard-Location page (CU-8678vn1r5).
 
 
 ## [9.7.0] - 2023-09-21
@@ -21,8 +21,8 @@ the code was deployed.
 ### Added
 
 - CORS configuration to Express Proxy Middleware.
-- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a)
-- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a)
+- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a).
+- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a).
 - GitHub Actions to deploy to AWS infrastructure on Dev and Staging (CU-860ra8f7q).
 
 ### Removed
