@@ -14,7 +14,7 @@ the code was deployed.
 ### Added
 
 - Added 'View Client' button to Internal Dashboard-Location page (CU-8678vn1r5).
-
+- GitHub Actions to deploy to AWS infrastructure on Production (CU-860ra8f7q).
 
 ## [9.7.0] - 2023-09-21
 
