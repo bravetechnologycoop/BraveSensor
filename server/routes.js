@@ -27,7 +27,6 @@ function configureRoutes(app) {
   app.post('/login', dashboard.submitLogin)
 
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
-  app.post('/api/message-clients', api.validateMessageClients, api.authorize, api.messageClients)
 
   app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, clickUpHelpers.clickUpChecker, pa.handleCreateSensorLocation)
   app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, clickUpHelpers.clickUpChecker, pa.handleGetSensorClients)
@@ -35,6 +34,7 @@ function configureRoutes(app) {
 
   app.get('/api/sensors', api.validateGetAllSensors, api.authorize, api.getAllSensors)
   app.get('/api/sensors/:sensorId', api.validateGetSensor, api.authorize, api.getSensor)
+  app.post('/api/message-clients', api.validateMessageClients, api.authorize, api.messageClients)
 
   // TODO add the other routes
 }
