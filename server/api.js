@@ -77,41 +77,29 @@ async function getSensor(req, res) {
   }
 }
 
-const validateMessageClients = Validator.body(['braveKey', 'data']).exists()
+const validateMessageClients = Validator.body(['braveKey', 'message']).exists()
 
 async function messageClients(req, res) {
   const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
   try {
     if (validationErrors.isEmpty()) {
-      let pgClient
-      pgClient = await db.beginTransaction()
-      const clients = await db.getClients(pgClient)
-      await db.commitTransaction(pgClient)
-      const data = req.body.data
+      const clients = await db.getActiveClients()
+      const message = req.body.message
 
-      for (const client of clients) {
-        // only message clients that are sending alerts AND are sending vitals
-        if (client.isSendingAlerts && client.isSendingVitals) {
-          pgClient = await db.beginTransaction()
-          const locations = await db.getLocationsFromClientId(client.id, pgClient)
-          await db.commitTransaction(pgClient)
-          let hasActiveLocation = false
+      for (const c of clients) {
+        // define phone_numbers as a Set to prevent duplicate numbers
+        const phone_numbers = new Set()
 
-          for (const l of locations) {
-            if (l.isSendingAlerts && l.isSendingVitals) {
-              hasActiveLocation = true
-              // stop iterating over location after one active location
-              break
-            }
-          }
+        // add responder, fallback, and heartbeat numbers to phone_numbers
+        for (const pn of c.responder_phone_numbers) phone_numbers.add(pn)
+        for (const pn of c.fallback_phone_numbers) phone_numbers.add(pn)
+        for (const pn of c.heartbeat_phone_numbers) phone_numbers.add(pn)
 
-          if (hasActiveLocation) {
-            // this client fulfills the criteria to message; send messages
-            for (const responder of client.responderPhoneNumbers) {
-              twilioHelpers.sendTwilioMessage(responder, client.fromPhoneNumber, data)
-            }
-          }
+        // for each phone number of this client
+        for (const pn of phone_numbers) {
+          // send SMS text message
+          twilioHelpers.sendTwilioMessage(pn, c.fromPhoneNumber, message)
         }
       }
 
