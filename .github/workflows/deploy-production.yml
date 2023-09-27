@@ -1,0 +1,61 @@
+name: Deploy AWS Production
+
+run-name: Deploy ${{ github.ref }} to Production
+
+on:
+  workflow_dispatch:
+
+env:
+  SDLC: production
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+jobs:
+  SetupEnv:
+    runs-on: ubuntu-latest
+    outputs:
+      sdlc: ${{ steps.SetupEnv.outputs.sdlc }}
+      commit_sha: ${{ steps.SetupEnv.outputs.commit_sha }}
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v3
+      - name: SetupEnv
+        id: SetupEnv
+        run: |
+          echo "sdlc=${{ env.SDLC }}" >> $GITHUB_OUTPUT
+          echo "commit_sha=${GITHUB_SHA::10}" >> $GITHUB_OUTPUT
+      - name: CheckRef
+        run: |
+          if [[ ${{ github.ref }} == "refs/heads/production" ]] 
+          then
+            echo "Production branch confirmed. Continuing with workflow."
+          else
+            exit 1
+          fi
+
+  BuildContainerImage:
+    uses: bravetechnologycoop/BraveSensor/.github/workflows/ecr-build-push.yml@main
+    needs: [SetupEnv]
+    with:
+      commit_sha: ${{ needs.SetupEnv.outputs.commit_sha }}
+    secrets:
+      devops_central_account_id: ${{ secrets.DEVOPS_CENTRAL_AWS_ACCOUNT_ID }}
+      ecr_registry_arn: ${{ secrets.API_ECR_REGISTRY_ARN }}
+      ecr_registry_name: ${{ secrets.API_ECR_REGISTRY_NAME }}
+      aws_region: ${{ secrets.DEVOPS_CENTRAL_REGION }}
+
+  DeployProductionECS:
+    uses: bravetechnologycoop/BraveSensor/.github/workflows/ecs-deploy.yml@main
+    needs: [SetupEnv, BuildContainerImage]
+    with:
+      sdlc: ${{ needs.SetupEnv.outputs.sdlc }}
+      commit_sha: ${{ needs.SetupEnv.outputs.commit_sha }}
+
+    secrets:
+      aws_account_id: ${{ secrets.PRODUCTION_AWS_ACCOUNT_ID }}
+      ecr_registry: ${{ secrets.API_ECR_REGISTRY_ARN }}
+      db_migrations_subnet: ${{ secrets.PRODUCTION_DB_MIGRATIONS_SUBNET }}
+      db_migrations_security_group: ${{ secrets.PRODUCTION_DB_MIGRATIONS_SECURITY_GROUP }}
+      aws_region: ${{ secrets.ENV_REGION }}
