@@ -13,9 +13,16 @@ the code was deployed.
 
 ### Added
 
+- Added 'View Client' button to Internal Dashboard-Location page (CU-8678vn1r5).
+- GitHub Actions to deploy to AWS infrastructure on Production (CU-860ra8f7q).
+
+## [9.7.0] - 2023-09-21
+
+### Added
+
 - CORS configuration to Express Proxy Middleware.
-- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a)
-- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a)
+- "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a).
+- Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a).
 - GitHub Actions to deploy to AWS infrastructure on Dev and Staging (CU-860ra8f7q).
 - API call /api/message-clients that sends a POSTed message to all clients with active sensors (CU-w9bcb5)
 
@@ -561,7 +568,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.6.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.7.0...HEAD
+[9.7.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.6.0...v9.7.0
 [9.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.5.0...v9.6.0
 [9.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.4.0...v9.5.0
 [9.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.3.0...v9.4.0
