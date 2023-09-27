@@ -41,7 +41,7 @@ describe('api.js integration tests: getAllSensors', () => {
 
   afterEach(async () => {
     sandbox.restore()
-    await db.clearTables
+    await db.clearTables()
     this.agent.close()
   })
 

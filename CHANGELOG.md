@@ -13,8 +13,14 @@ the code was deployed.
 
 ### Added
 
+- Unit tests for API authorize function (CU-8678uuvjm).
 - Added 'View Client' button to Internal Dashboard-Location page (CU-8678vn1r5).
 - GitHub Actions to deploy to AWS infrastructure on Production (CU-860ra8f7q).
+
+### Fixed
+
+- API authorize function to work with PA API keys submitted in body of request (CU-8678uuvjm).
+- Incorrect calls to clearTable in API integration tests.
 
 ## [9.7.0] - 2023-09-21
 
