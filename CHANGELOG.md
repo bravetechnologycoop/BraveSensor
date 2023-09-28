@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Security
+
+- Upgrade Chai and brave-alert-lib (CU-8678wgn0p).
+
 ### Added
 
 - Unit tests for API authorize function (CU-8678uuvjm).
