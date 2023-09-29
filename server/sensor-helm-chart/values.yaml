@@ -8,7 +8,7 @@ image:
   repository: registry.digitalocean.com/odetect/odetect-prod
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: '7933198'
+  tag: 'b343026'
 
 imagePullSecrets: []
 nameOverride: ''
