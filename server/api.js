@@ -92,9 +92,15 @@ async function messageClients(req, res) {
         const phone_numbers = new Set()
 
         // add responder, fallback, and heartbeat numbers to phone_numbers
-        for (const pn of c.responder_phone_numbers) phone_numbers.add(pn)
-        for (const pn of c.fallback_phone_numbers) phone_numbers.add(pn)
-        for (const pn of c.heartbeat_phone_numbers) phone_numbers.add(pn)
+        c.responderPhoneNumbers.forEach(pn => {
+          phone_numbers.add(pn)
+        })
+        c.fallbackPhoneNumbers.forEach(pn => {
+          phone_numbers.add(pn)
+        })
+        c.heartbeatPhoneNumbers.forEach(pn => {
+          phone_numbers.add(pn)
+        })
 
         // for each phone number of this client
         for (const pn of phone_numbers) {
