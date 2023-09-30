@@ -106,11 +106,11 @@ void initializeStateMachineConsts() {
         EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
         initializeState0OccupationDetectionFlag = INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG;
         EEPROM.put(ADDR_INITIALIZE_STATE0_OCCUPANT_DETECTION_TIMER_FLAG, initializeState0OccupationDetectionFlag);
-        Log.info("State machine constant State3MaxLongStillnessTime was written to flash on bootup.");
+        Log.info("State machine constant State0OccupationDetectionTimer was written to flash on bootup.");
     }
     else {
         EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
-        Log.info("State machine constant State3MaxLongStillnessTime was read from flash on bootup.");
+        Log.info("State machine constant State0OccupationDetectionTimer was read from flash on bootup.");
     }
 }
 

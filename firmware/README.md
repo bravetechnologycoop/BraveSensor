@@ -556,7 +556,7 @@ Debug Message
 1. INS_val: the current filtered inPhase value from the INS radar
 1. INS_threshold: the current threshold that we compare the INS_val against
 1. timer_status: if the current state uses a timer, this contains the time in milliseconds that the timer has counted up to thus far. If the current state does not contain a timer, this is set to 0.
-1. window_size: the window timeout value that that the idle state timer compares against
+1. occupation_detection_timer: the occupation detection timer value that that the idle state compares against
 1. initial_timer: the initial timer value that the initial state compares against
 1. duration_timer: the duration timer value that the duration and stillness states compare against
 1. stillness_timer: the stillness timer value that the stillness state compares against
