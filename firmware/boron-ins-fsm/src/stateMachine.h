@@ -78,4 +78,8 @@ extern unsigned long state2_max_duration;
 extern unsigned long state3_max_stillness_time;
 extern unsigned long state3_max_long_stillness_time;
 
+// whether or not the current session has sent alerts
+extern bool hasDurationAlertBeenSent;
+extern bool hasStillnessAlertBeenSent;
+
 #endif

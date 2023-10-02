@@ -268,6 +268,7 @@ async function renderLocationDetailsPage(req, res) {
       clients: clients.filter(client => client.isDisplayed),
       recentSessions: [],
       currentLocation,
+      clientid: currentLocation.client.id,
     }
 
     for (const recentSession of recentSessions) {

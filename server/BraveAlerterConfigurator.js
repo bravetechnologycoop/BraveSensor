@@ -5,6 +5,7 @@ const { t } = require('i18next')
 // In-house dependencies
 const { ActiveAlert, BraveAlerter, AlertSession, CHATBOT_STATE, helpers, HistoricAlert, Location, SYSTEM } = require('brave-alert-lib')
 const db = require('./db/db')
+const particleFunctions = require('./particleFunctions')
 
 class BraveAlerterConfigurator {
   createBraveAlerter() {
@@ -23,9 +24,7 @@ class BraveAlerterConfigurator {
   }
 
   async createAlertSessionFromSession(session) {
-    const location = await db.getLocationData(session.locationid)
-
-    const client = location.client
+    const client = session.location.client
     const alertSession = new AlertSession(
       session.id,
       session.chatbotState,
@@ -109,11 +108,20 @@ class BraveAlerterConfigurator {
           }
 
           if (alertSession.incidentCategoryKey) {
-            const location = await db.getLocationData(session.locationid, pgClient)
-            session.incidentCategory = location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
+            session.incidentCategory = session.location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
           }
 
           if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
+            const oldStillnessTimer = await particleFunctions.resetStillnessTimer(
+              session.location.radarCoreId,
+              helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'),
+            )
+            if (oldStillnessTimer > -1) {
+              helpers.log(`Reset stillness timer for ${session.location.locationid} from ${oldStillnessTimer} to 0`)
+            } else {
+              helpers.log(`Did not reset stillness timer for ${session.location.locationid}`)
+            }
+
             session.respondedAt = await db.getCurrentTime(pgClient)
           }
 
