@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [9.9.0] - 2023-10-03
+
 ### Added
 
 - Cloud function to reset the current Stillness Timer (CU-860rbtg4k).
@@ -587,7 +589,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.8.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.9.0...HEAD
+[9.9.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.8.0...v9.9.0
 [9.8.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.7.0...v9.8.0
 [9.7.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.6.0...v9.7.0
 [9.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.5.0...v9.6.0
