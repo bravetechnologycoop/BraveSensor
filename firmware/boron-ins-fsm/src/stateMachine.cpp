@@ -379,6 +379,9 @@ const char *resetReasonString(int resetReason) {
 
 void getHeartbeat() {
     static unsigned long lastHeartbeatPublish = 0;
+    
+    // Check INS value
+    bool isINSZero = (checkINS3331() <= 0.0);
 
     // 1st "if condition" is so that the boron publishes a heartbeat on startup
     // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true.
@@ -393,6 +396,8 @@ void getHeartbeat() {
         char heartbeatMessage[622] = {0};
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
         writer.beginObject();
+        // Add "is_ins_zero" field to the JSON message
+        writer.name("is_ins_zero").value(isINSZero);
 
         if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
             // if oldest value did miss; subtract from the current amount
