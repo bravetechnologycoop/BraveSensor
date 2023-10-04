@@ -280,6 +280,10 @@ async function handleHeartbeat(req, res) {
             await sendIsTamperedAlert(location, isTamperedFlag, mostRecentSensorVitals.isTampered)
           }
 
+          if (isINSZero) {
+            helpers.logSentry(`is_ins_zero is true at ${location.locationid}`)
+          }
+
           await db.logSensorsVital(
             location.locationid,
             doorMissedMessagesCount,
