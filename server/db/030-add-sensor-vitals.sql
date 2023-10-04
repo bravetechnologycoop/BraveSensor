@@ -20,7 +20,8 @@ BEGIN
             door_last_seen_at timestamptz NOT NULL,
             reset_reason TEXT NOT NULL,
             state_transitions TEXT[] NOT NULL,
-            created_at timestamptz NOT NULL DEFAULT NOW()
+            created_at timestamptz NOT NULL DEFAULT NOW(),
+            is_ins_zero BOOLEAN NOT NULL
         );
 
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file

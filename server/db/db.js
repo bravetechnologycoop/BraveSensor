@@ -1160,17 +1160,18 @@ async function logSensorsVital(
   resetReason,
   stateTransitions,
   isTampered,
+  is_ins_zero,
   pgClient,
 ) {
   try {
     const results = await helpers.runQuery(
       'logSensorsVital',
       `
-      INSERT INTO sensors_vitals (locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions, is_tampered)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO sensors_vitals (locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions, is_tampered, is_ins_zero)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
       `,
-      [locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, isTampered],
+      [locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, isTampered, is_ins_zero],
       pool,
       pgClient,
     )

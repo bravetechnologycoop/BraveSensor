@@ -22,7 +22,8 @@ BEGIN
             reset_reason TEXT NOT NULL,
             state_transitions TEXT[] NOT NULL,
             created_at timestamptz NOT NULL DEFAULT NOW(),
-            updated_at timestamptz NOT NULL DEFAULT NOW()
+            updated_at timestamptz NOT NULL DEFAULT NOW(),
+            is_ins_zero BOOLEAN NOT NULL
         );
 
         -- Add the foreign key index onto new sensors_vitals_cache table
