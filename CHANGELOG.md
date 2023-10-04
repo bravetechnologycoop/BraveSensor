@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- API call /api/message-clients that sends a POSTed message to all clients with active sensors (CU-w9bcb5).
+
 ### Changed
 
 - README for AWS infrastructure changes (CU-860ra8f7q).
@@ -36,7 +40,6 @@ the code was deployed.
 - Unit tests for API authorize function (CU-8678uuvjm).
 - Added 'View Client' button to Internal Dashboard-Location page (CU-8678vn1r5).
 - GitHub Actions to deploy to AWS infrastructure on Production (CU-860ra8f7q).
-- API call /api/message-clients that sends a POSTed message to all clients with active sensors (CU-w9bcb5)
 
 ### Fixed
 
