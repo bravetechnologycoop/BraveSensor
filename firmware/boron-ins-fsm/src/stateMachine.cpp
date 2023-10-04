@@ -396,7 +396,7 @@ void getHeartbeat() {
         char heartbeatMessage[622] = {0};
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
         writer.beginObject();
-      
+
         // Add "isINSZero" field to the JSON message
         writer.name("isINSZero").value(isINSZero);
 
