@@ -231,6 +231,7 @@ async function handleHeartbeat(req, res) {
           res.status(200).json(errorMessage)
         } else {
           const message = JSON.parse(req.body.data)
+          const isINSZero = message.isINSZero;
           const doorMissedMessagesCount = message.doorMissedMsg
           const doorMissedFrequently = message.doorMissedFrequently
           const resetReason = message.resetReason
@@ -281,7 +282,7 @@ async function handleHeartbeat(req, res) {
           }
 
           if (isINSZero) {
-            helpers.logSentry(`is_ins_zero is true at ${location.locationid}`)
+            helpers.logSentry(`INS sensor is les or equal zero at ${location.locationid}`)
           }
 
           await db.logSensorsVital(

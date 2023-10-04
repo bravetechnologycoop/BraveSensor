@@ -381,7 +381,8 @@ void getHeartbeat() {
     static unsigned long lastHeartbeatPublish = 0;
     
     // Check INS value
-    bool isINSZero = (checkINS3331() <= 0.0);
+    filteredINSData checkINS = checkINS3331();
+    bool isINSZero = (checkINS.iAverage < 0.0001);
 
     // 1st "if condition" is so that the boron publishes a heartbeat on startup
     // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true.
