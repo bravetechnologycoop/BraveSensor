@@ -359,12 +359,18 @@ const char *resetReasonString(int resetReason)
 void getHeartbeat(){
 
     static unsigned long lastHeartbeatPublish = 0;
+    bool is_ins_zero = (checkINS3331() <= 0.0);
+  
+
     if((millis()-lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL){
       
       //from particle docs, max length of publish is 622 chars, I am assuming this includes null char
       char heartbeatMessage[622] = {0};
       JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage)-1);
       writer.beginObject();
+        // Add "is_ins_zero" field to the JSON message
+        writer.name("is_ins_zero").value(is_ins_zero);
+
         //logs number of instances of missed door events since last heartbeat
         writer.name("doorMissedMsg").value(missedDoorEventCount);
         missedDoorEventCount = 0;

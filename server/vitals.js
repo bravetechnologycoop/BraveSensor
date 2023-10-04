@@ -231,6 +231,7 @@ async function handleHeartbeat(req, res) {
           res.status(200).json(errorMessage)
         } else {
           const message = JSON.parse(req.body.data)
+          const is_ins_zero = message.is_ins_zero; 
           const doorMissedMessagesCount = message.doorMissedMsg
           const doorMissedFrequently = message.doorMissedFrequently
           const resetReason = message.resetReason
@@ -280,6 +281,10 @@ async function handleHeartbeat(req, res) {
             await sendIsTamperedAlert(location, isTamperedFlag, mostRecentSensorVitals.isTampered)
           }
 
+          if (is_ins_zero) {
+            helpers.logSentry(`is_ins_zero is true (less or equal zero) at ${location.locationid}`)
+          }
+
           await db.logSensorsVital(
             location.locationid,
             doorMissedMessagesCount,
@@ -288,6 +293,7 @@ async function handleHeartbeat(req, res) {
             resetReason,
             stateTransitionsArray,
             isTamperedFlag,
+            is_ins_zero,
           )
           res.status(200).json('OK')
         }
