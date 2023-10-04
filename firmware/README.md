@@ -433,6 +433,20 @@ Use this console function to force the boron to reset. Useful for development an
 - Nothing if 1 is entered, but does send a message to the particle console to warn about particle's future failed to call message
 - -1 - when bad data is entered
 
+### **reset_stillness_timer_for_alerting_session(String)**
+
+**Description:**
+
+Use this console function to reset the current stillness timer to the current time if and only if the current session has sent at least one alert. This acts to extend the period of time before subsequent Stillness Alerts.
+
+**Argument(s):**
+
+1. Enter any String
+
+**Return(s):**
+
+- The length of the stillness timer before it was reset, converted from a ` long` to an `int`.
+
 ## State Machine Published Messages
 
 ### **Stillness Alert**

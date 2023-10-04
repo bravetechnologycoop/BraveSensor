@@ -1,5 +1,7 @@
 name: Deploy AWS Staging
 
+run-name: Deploy ${{ github.ref }} to Staging
+
 on:
   workflow_dispatch:
 

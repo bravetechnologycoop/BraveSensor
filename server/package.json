@@ -9,6 +9,7 @@
     "integrationtest": "NODE_ENV=test mocha --timeout 10000 --require \"test/mochaFixtures.js\" \"test/integration/**/*.js\"",
     "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/unit/**/*.js\"",
     "smoketest": "node -e 'require(\"./smokeTest.js\")'",
+    "start": "NODE_ENV=test node index.js",
     "test-coverage": "nyc --reporter=html --reporter=text npm test"
   },
   "eslintIgnore": [
@@ -34,7 +35,7 @@
     "lodash": "^4.17.21",
     "luxon": "^2.5.2",
     "mustache": "^3.2.1",
-    "particle-api-js": "^7.4.0",
+    "particle-api-js": "^10.0.0",
     "pg": "^8.2.0"
   },
   "devDependencies": {

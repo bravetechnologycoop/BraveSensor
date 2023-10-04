@@ -5,9 +5,10 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 
 // In-house dependencies
-const { AlertSession, CHATBOT_STATE, factories } = require('brave-alert-lib')
+const { AlertSession, CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 const db = require('../../../db/db')
+const particleFunctions = require('../../../particleFunctions')
 const { locationFactory, sessionFactory } = require('../../../testingHelpers')
 
 // Configure Chai
@@ -64,16 +65,65 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
     await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY, newRespondedByPhoneNumber))
 
-    const expectedSession = sessionFactory(
-      sessionFactory({
-        id: sessionId,
-        chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
-        respondedAt: this.testCurrentTime,
-        respondedByPhoneNumber: newRespondedByPhoneNumber,
-      }),
-    )
+    const expectedSession = sessionFactory({
+      id: sessionId,
+      chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
+      respondedAt: this.testCurrentTime,
+      respondedByPhoneNumber: newRespondedByPhoneNumber,
+    })
 
     expect(db.saveSession).to.be.calledWith(expectedSession, sandbox.any)
+  })
+
+  it('if given alertState WAITING_FOR_CATEGORY and it has not already been responded to should reset the stillness timer in the firmware state machine', async () => {
+    const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
+    const newRespondedByPhoneNumber = '+18887774444'
+    sandbox.stub(db, 'getSessionWithSessionId').returns(sessionFactory({ id: sessionId, respondedAt: null, respondedByPhoneNumber: null }))
+    sandbox.stub(particleFunctions, 'resetStillnessTimer')
+
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
+    const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
+    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY, newRespondedByPhoneNumber))
+
+    const expectedSession = sessionFactory({
+      id: sessionId,
+      chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
+      respondedAt: this.testCurrentTime,
+      respondedByPhoneNumber: newRespondedByPhoneNumber,
+    })
+
+    expect(particleFunctions.resetStillnessTimer).to.be.calledWith(expectedSession.location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
+  })
+
+  it('if resetting the stillness timer in the firmware state machine is successful should print out the difference', async () => {
+    const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
+    const newRespondedByPhoneNumber = '+18887774444'
+    const session = sessionFactory({ id: sessionId, respondedAt: null, respondedByPhoneNumber: null })
+    sandbox.stub(db, 'getSessionWithSessionId').returns(session)
+    const oldStillnessTimer = 5307
+    sandbox.stub(particleFunctions, 'resetStillnessTimer').returns(oldStillnessTimer)
+    sandbox.stub(helpers, 'log')
+
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
+    const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
+    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY, newRespondedByPhoneNumber))
+
+    expect(helpers.log).to.be.calledWith(`Reset stillness timer for ${session.location.locationid} from ${oldStillnessTimer} to 0`)
+  })
+
+  it('if resetting the stillness timer in the firmware state machine is unsuccessful should out a message', async () => {
+    const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
+    const newRespondedByPhoneNumber = '+18887774444'
+    const session = sessionFactory({ id: sessionId, respondedAt: null, respondedByPhoneNumber: null })
+    sandbox.stub(db, 'getSessionWithSessionId').returns(session)
+    sandbox.stub(particleFunctions, 'resetStillnessTimer').returns(-1)
+    sandbox.stub(helpers, 'log')
+
+    const braveAlerterConfigurator = new BraveAlerterConfigurator()
+    const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
+    await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY, newRespondedByPhoneNumber))
+
+    expect(helpers.log).to.be.calledWith(`Did not reset stillness timer for ${session.location.locationid}`)
   })
 
   it('if given alertState WAITING_FOR_CATEGORY and it has already been responded to should update alertState but not update respondedAt', async () => {
@@ -88,14 +138,12 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
     await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.WAITING_FOR_CATEGORY, oldRespondedByPhoneNumber))
 
-    const expectedSession = sessionFactory(
-      sessionFactory({
-        id: sessionId,
-        chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
-        respondedAt: testRespondedAtTime,
-        respondedByPhoneNumber: oldRespondedByPhoneNumber,
-      }),
-    )
+    const expectedSession = sessionFactory({
+      id: sessionId,
+      chatbotState: CHATBOT_STATE.WAITING_FOR_CATEGORY,
+      respondedAt: testRespondedAtTime,
+      respondedByPhoneNumber: oldRespondedByPhoneNumber,
+    })
 
     expect(db.saveSession).to.be.calledWith(expectedSession, sandbox.any)
   })
@@ -123,9 +171,13 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
       client,
     })
     sandbox.stub(db, 'getLocationData').returns(location)
-    sandbox
-      .stub(db, 'getSessionWithSessionId')
-      .returns(sessionFactory({ id: sessionId, locationid: location.locationid, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
+    sandbox.stub(db, 'getSessionWithSessionId').returns(
+      sessionFactory({
+        id: sessionId,
+        location,
+        respondedByPhoneNumber: oldRespondedByPhoneNumber,
+      }),
+    )
 
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
@@ -133,7 +185,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
 
     const expectedSession = sessionFactory({
       id: sessionId,
-      locationid: location.locationid,
+      location,
       chatbotState: CHATBOT_STATE.COMPLETED,
       incidentCategory: 'No One Inside',
       respondedByPhoneNumber: oldRespondedByPhoneNumber,
@@ -152,7 +204,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     sandbox.stub(db, 'getLocationData').returns(location)
     sandbox
       .stub(db, 'getSessionWithSessionId')
-      .returns(sessionFactory({ id: sessionId, locationid: location.locationid, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
+      .returns(sessionFactory({ id: sessionId, location, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
 
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()

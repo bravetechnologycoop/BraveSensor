@@ -4,119 +4,125 @@
 
 # Table of Contents
 
-1. [How to release a new version of BraveSensor Server and Firmware](#how-to-release-a-new-version-of-bravesensor-server-and-firmware)
-   1. [Update git to reflect the new release](#1-update-git-to-reflect-the-new-release)
-   1. [Update the Staging database](#2-update-the-staging-database)
-   1. [Update the Staging secrets](#3-update-the-staging-secrets)
-      - [Creating a secret from a .env file](#creating-a-secret-from-a-env-file)
-   1. [Deploy the firmware changes and run a test on the BetaTest Borons](#4-deploy-the-firmware-changes-and-run-a-test-on-the-betatest-borons)
-   1. [Deploy and run the smoke tests on Staging](#5-deploy-and-run-the-smoke-tests-on-staging)
-   1. [Update production firmware](#6-update-production-firmware)
-   1. [Update production server](#7-update-production-server)
-   1. [Celebrate](#8-celebrate)
-1. [Deploying to the staging or development environment](#deploying-to-the-staging-or-development-environment)
-1. [Buliding and pushing containers to the Container Registry](#buliding-and-pushing-containers-to-the-container-registry)
-1. [Running Smoke Tests on the Kubernetes Cluster](#running-smoke-tests-on-the-kubernetes-cluster)
-1. [Local Development](#local-development)
-   - [Dependencies](#dependencies)
-   - [Environment Variables](#environment-variables)
-   - [Altering a secret's schema](#altering-a-secrets-schema)
-   - [Database Setup](#database-setup)
-   - [Tests](#tests)
-   - [How to add or change an encrypted Travis environment variable](#how-to-add-or-change-an-encrypted-travis-environment-variable)
-1. [Sensors Admin Server](#sensors-admin-server)
-   - [Adding public keys to the admin server](#adding-public-keys-to-the-admin-server)
-   - [Toubleshooting authentication error](#toublehooting-authentication-error)
-1. [Interacting with the Managed Database](#interacting-with-the-managed-database)
-   - [Connecting to a database](#connecting-to-a-database)
-   - [Adding a new Database migration script](#adding-a-new-database-migration-script)
-   - [Deploying the migration scripts](#deploying-the-migration-scripts)
-   - [Viewing which migration scripts have been run and when](#viewing-which-migration-scripts-have-been-run-and-when)
-1. [Cluster Migration and Setup](#cluster-migration-and-setup)
-   - [Setting up networking for a new cluster](#setting-up-networking-for-a-new-cluster)
-1. [Particle API access](#particle-api-access)
+1. [Production Deployment](#production-deployment)
+   - [(Staging Deployment)](#3-deploy-the-server-and-run-the-smoke-tests-on-staging)
+1. [Dev Deployment](#dev-deployment)
+1. [Server smoke tests](#server-smoke-tests)
+1. [Dashboard](#dashboard)
+1. [Logs](#logs)
+1. [Database](#database)
+1. [Local development](#local-development)
+1. [Travis](#travis)
+1. [Particle API Access](#particle-api-access)
+1. [Troubleshooting](#troubleshooting)
 
-# How to release a new version of BraveSensor Server and Firmware
+# Production Deployment
 
 ## 1. Update git to reflect the new release
 
-1. send a message to the `#sensor-aa-general` Slack channel letting everyone know that you are doing a deployment and, if necessary, to expect some downtime.
+1. Check the deployment ClickUp Task for any comments or SubTasks that could affect these deployment steps
 
-1. on your local machine, in the `BraveSensor` repository:
+1. Send a message to the `#sensor-aa-general` Slack channel letting everyone know that you are doing a deployment
 
-   1. pull the latest code ready for release: `git checkout main && git pull origin main`
+1. On your local machine, in the `BraveSensor` repository:
 
-   1. decide on an appropriate version number for the new version
+   1. Pull the latest code ready for release: `git checkout main && git pull origin main`
 
-   1. update `CHANGELOG.md` by moving everything in `Unreleased` to a section for the new version. Remember to scroll down to the bottom to update the links!
+   1. Decide on an appropriate version number for the new version
 
-   1. Update `~/BraveSensor/server/sensor-helm-chart/Chart.yaml` with a new `version` and new `appVersion`, if applicable
+   1. Update `CHANGELOG.md`
 
-   1. Run `git log -1 --format=%h` to get the container image tag
+      1. Add a new section header with the new version number and the current date below the `[Unreleased]` link so it will look like this: `[new version number] - YYYY-MM-DD`
 
-   1. Update `~/BraveSensor/server/sensor-helm-chart/values.yaml` by putting the tag of your new container image in the `tag` field of `image`
+      1. Create a new link for the new version near the bottom of the file that looks like this: `[new version number>]: https://github.com/bravetechnologycoop/BraveSensor/compare/v[previous version number]...v[new version number]`
 
-   1. update `BRAVE_FIRMWARE_VERSION` in all `BraveSensorProductionFirmware.ino` files to the new version (versioning scheme described in `firmware/README.md#firmware-versioning`)
+      1. Update the `[unreleased]` link to `[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v[new version number]...HEAD`
 
-   1. make a new commit directly on `main` which updates the changelog, helm chart, and `.ino` files
+   1. Update `BRAVE_FIRMWARE_VERSION` in all `BraveSensorProductionFirmware.ino` files to the new version (versioning scheme described in `firmware/README.md#firmware-versioning`)
 
-   1. tag the new commit - for example, if the version number is v1.0.0, use `git tag v1.0.0`
+   1. Make a new commit directly on `main` which updates the CHANGELOG and the `.ino` files with the commit message "Release v[version number]"
 
-   1. push the new version to GitHub: `git push origin main --tags`
+   1. Tag the new commit - for example, if the version number is v1.0.0, use `git tag v1.0.0`
 
-   1. update the `production` branch: `git checkout production && git merge main && git push origin production`
+   1. Push the new version to GitHub: `git push origin main --tags`
 
-## 2. Update the Staging database
+   1. Update the `production` branch: `git checkout production && git merge main && git push origin production`
 
-If your changes involve changes to the database schema, you'll need to run your database migration script on the appropriate database for your environment. See the [Database Migration section](#adding-a-new-database-migration-script).
+## 2. Update the Environment Variables in Staging and Production
 
-## 3. Update the Staging secrets
+1. On your local machine, in the `BraveSensor-DevOps` repository:
 
-We deploy BraveSensor onto a [Kubernetes](https://kubernetes.io/docs/home/) cluster as our production environment. On the cluster, environment variables are handled within `secret` resources. You can access the list of secrets on the cluster by running the command:
+   1. Pull the latest code for release: `git checkout main && git pull origin main`
 
-`kubectl get secrets`
+   1. Edit the Staging environment variables, if needed: `ansible-vault edit --ask-vault-pass environments/ssm_parameters/staging.tf`
 
-To view the currently deployed value of an environment variable:
+   1. Edit the Production environment variables, if needed: `ansible-vault edit --ask-vault-pass environments/ssm_parameters/production.tf`
 
-`kubectl exec deploy/production-sensor-server -- printenv | grep <environment-variable-name>`
+   1. Commit changes
 
-### Creating a secret from a .env file
+   1. Tag the new commit - for example, if the version number is v1.0.0, use `git tag v1.0.0`
 
-To create a secret from a .env file, first delete the old secret (don't worry, this won't affect the currently deployed version):
+   1. Push the new version to GitHub: `git push origin main --tags`
 
-`kubectl delete secret <your-secret-name>`
+1. Send the changes to AWS Parameter Store
 
-then create it from the correct `.env` file (for example, on the Sensors Admin server, `~/.env.staging` is the file to use for the Staging secret)
+   1. Go to the "Update Environment Variables" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor-DevOps/actions/workflows/update-env-vars.yml)
 
-`kubectl create secret generic <your-secret-name> --from-env-file=<path-to-env-file>`
+   1. Click "Run workflow"
+
+   1. Select the `main` branch
+
+   1. Select the `STAGING` environment
+
+   1. Click "Run workflow"
+
+1. Repeat for the `PRODUCTION` environment
+
+1. Wait until both Actions have completed successfully
+
+## 3. Deploy the server and run the smoke tests on Staging
+
+Before updating Production, we deploy the server to Staging and run the smoke tests to verify that there's nothing obviously wrong with the release candidate.
+
+1. Go to the "Deploy AWS Staging" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/deploy-staging.yml)
+
+1. Click "Run workflow", select the `production` branch, and click "Run workflow"
+
+1. Wait for it to complete successfully
+
+1. On your local machine in the `server` directory, update the `PARTICLE_WEBHOOKAPI_KEY` in `.env` to the value in Staging
+
+1. On your local machine in the `server` directory, run the smoke test script: `npm run smoketest 'https://api.staging.bravecoopservices.com' '[your phone number]' '+17787620179'`
+
+1. Verify that the deployment shows the expected behavior before proceeding
 
 ## 4. Deploy the firmware changes and run a test on the BetaTest Borons
 
-1. on your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
+1. On your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
 
-1. if you haven't already, run `git checkout production && git pull origin production` to get the latest version of the the code
+1. If you haven't already, run `git checkout production && git pull origin production` to get the latest version of the the code
 
-1. click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
+1. Click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
 
-1. click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
+1. Click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
 
-1. copy the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Rename to `v<version number>_dev.bin` (for example `v50100_dev.bin`)
+1. Copy the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Rename to `v[version number]_dev.bin` (for example `v5010_dev.bin`)
 
-1. in your browser navigate to Particle Console --> Sandbox --> BetaTest Borons --> Firmware
+1. In your browser navigate to Particle Console --> Sandbox --> BetaTest Borons --> Firmware
 
    1. Upload the firmware: Click "Upload", fill in the following, and click "Upload":
 
-      - Version number = <version number>
+      - Version number = [version number]
 
-      - Title = v<version number> <environment>
+      - Title = v[version number] [environment]
 
-      - Description - <leave blank>
+      - Description - [leave blank]
 
       - Drag and drop or upload the generated `.bin` file
 
 1. Go to Devices
 
-   1. open a device that is online and click "Edit"
+   1. Open a device that is online and click "Edit"
 
    1. In the firmware dropdown, select the newly uploaded firmware, check the box "Flash now", and click "Save"
 
@@ -134,63 +140,43 @@ then create it from the correct `.env` file (for example, on the Sensors Admin s
 
 1. Trigger a test alert using a real BetaTest Boron device
 
-## 5. Deploy and run the smoke tests on Staging
+## 5. Deploy the server on Production
 
-We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us to deploy different instances of the application corresponding to dev, staging, and production environments as different 'releases'. Before updating production, we run smoke tests to verify that there's nothing obviously wrong with a release candidate.
+1. Go to the "Deploy AWS Production" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/deploy-production.yml)
 
-1. Run `ssh brave@sensors-admin.brave.coop`
+1. Click "run workflow", select the `production` branch, and click "Run workflow"
 
-1. cd into the `~/BraveSensor/server` directory and run `git checkout production && git pull origin production` to get the latest version of the helm chart
+1. Wait for it to complete successfully
 
-1. Run the command `helm upgrade staging --set secretName=sensor-staging ~/BraveSensor/server/sensor-helm-chart` to deploy the latest version to staging
+## 6. Deploy the firmware on Production
 
-1. Run the smoke test script as described [below](#running-smoke-tests-on-the-kubernetes-cluster)
+1. On your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
 
-1. Verify that the deployment shows the expected behavior before proceeding
+1. If you haven't already, run `git checkout production && git pull origin production` to get the latest version of the the code
 
-## 6. Update production firmware
+1. In `BraveSensorProductionFirmware.ino`, change `BRAVE_PRODUCT_ID` to the ID of the "Production Sensor Devices" project (`15479`) [NOTE: do NOT commit this change]
 
-1. If you determined that this deployment's changes require downtime:
+1. If you haven't already, click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
 
-   1. send a text message to all of the Responder phones letting them know that you are doing some routine maintenance, there will be downtime, and that you will notify them when everything is back to normal again.
+1. If you haven't already, click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
 
-      1. verify that all the active Sensor clients are in the the Twilio Studio Flow "Sensor deployment started notification". Make any necessary updates and Publish
+1. Copy the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Rename to `v[version number]_production.bin` (for example `v5010_production.bin`)
 
-      1. use the Flow by hitting the designated `POST` endpoint with
-
-         - Basic auth username = Twilio account SID
-         - Basic auth password = Twilio auth token
-         - form-data Body
-         - To: The phone number to send the final confirmation text to (i.e. your phone number)
-         - From: Any number in the format +12223334444 (we don't use this number for anything, but Twilio will complain if it's missing or incorrectly formatted)
-
-1. on your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
-
-1. if you haven't already, run `git checkout production && git pull origin production` to get the latest version of the the code
-
-1. in `BraveSensorProductionFirmware.ino`, change `BRAVE_PRODUCT_ID` to the ID of the "Production Sensor Devices" project (`15479`) [NOTE: do NOT commit this change]
-
-1. if you haven't already, click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
-
-1. if you haven't already, click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
-
-1. copy the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Rename to `v<version number>_production.bin` (for example `v50100_production.bin`)
-
-1. in your browser navigate to Particle Console --> Brave Technology Coop --> Production Sensor Devices --> Firmware
+1. In your browser navigate to Particle Console --> Brave Technology Coop --> Production Sensor Devices --> Firmware
 
    1. Upload the firmware: Click "Upload", fill in the following, and click "Upload":
 
-      - Version number = <version number>
+      - Version number = [version number]
 
-      - Title = v<version number> <environment>
+      - Title = v[version number] [environment]
 
-      - Description - <leave blank>
+      - Description - [leave blank]
 
       - Drag and drop or upload the generated `.bin` file
 
 1. Go to Devices
 
-   1. open a test device that is online and click "Edit"
+   1. Open a test device that is online (preferrably one that you know isn't being used right now) and click "Edit"
 
    1. In the firmware dropdown, select the newly uploaded firmware, check the box "Flash now", and click "Save"
 
@@ -206,91 +192,211 @@ We use [helm](https://helm.sh/docs/) to manage our deployments. Helm allows us t
 
    1. Read, verify, check the box, and click "Release this firmware"
 
-## 7. Update production server
+## 7. Verify
 
-1. If you determined that this deployment's changes require downtime, take the production server offline `helm uninstall production`
+1. Verify that the production Dashboard is working: https://api.production.bravecoopservices.com/
 
-1. Update the production DB and secrets, as necessary
+1. Verify that the logs look reasonable
 
-1. If the deployment's changes did _not_ require downtime,
+   1. Login to AWS SSO --> AWS Accounts --> Brave Devices Production --> SSM_CW_Logs_RO --> Management console
 
-   1. run the command `helm upgrade production ~/BraveSensor/server/sensor-helm-chart`
+   1. Navigate to CloudWatch --> Logs --> Log groups --> brave-devices-production-api
 
-   Otherwise
-
-   1. run the command `helm install production ~/BraveSensor/server/sensor-helm-chart`
-
-   1. send a text message to all of the Responder phones letting them know that everything is back to normal
-
-      1. verify that all the active Sensor clients are in the the Twilio Studio Flow "Sensor deployment completed notification". Make any necessary updates and Publish
-
-      1. use the Flow by hitting the designated `POST` endpoint with
-
-         - Basic auth username = Twilio account SID
-         - Basic auth password = Twilio auth token
-         - form-data Body
-         - To: The phone number to send the final confirmation text to (i.e. your phone number)
-         - From: Any number in the format +12223334444 (we don't use this number for anything, but Twilio will complain if it's missing or incorrectly formatted)
+   1. Choose the most recent log stream, look at the logs, and optionally "Start tailing" them
 
 ## 8. Celebrate
 
 1. Post a message to the `#sensor-aa-general` Slack channel letting everyone know that the deployment is finished and list the changes in this deployment from the `CHANGELOG`
 
-# Deploying to the staging or development environment
+1. Update the ClickUp Tasks
 
-#### To deploy to staging
+1. If appropriate, send a Feature Change Announcement email to the clients
 
-1. Run `ssh brave@sensors-admin.brave.coop`
-1. Run the command `helm install staging --set secretName=sensor-staging --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
+# Dev Deployment
 
-#### To redeploy to staging
+## How to update the Environment Variables in Development
 
-1. Run `ssh brave@sensors-admin.brave.coop`
-1. Run the command `helm upgrade staging --set secretName=sensor-staging --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
+1. On your local machine, in the `BraveSensor-DevOps` repository:
 
-#### To deploy to development
+   1. Pull the latest code for release: `git checkout main && git pull origin main`
 
-1. Run `ssh brave@sensors-admin.brave.coop`
-1. Run the command `helm install dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
+   1. Edit the Staging environment variables, if needed: `ansible-vault edit --ask-vault-pass environments/ssm_parameters/development.tf`
 
-#### To redeploy to development
+   1. Commit changes
 
-1. Run `ssh brave@sensors-admin.brave.coop`
-1. Run the command `helm upgrade dev --set secretName=sensor-dev --set image.tag=<image tag you want to deploy> ~/BraveSensor/server/sensor-helm-chart`
+   1. Push the new version to GitHub: `git push origin main`
 
-# Buliding and pushing containers to the Container Registry
+1. Send the changes to AWS Parameter Store
 
-Our Docker containers are stored on a Digital Ocean Container Registry. Every time Travis finishes the `push container` job, a container (with that code named with the first 7 digits of the git hash) will be available in the registry. When deploying to production, we always want to use one of these Travis-generated versions.
+   1. Go to the "Update Environment Variables" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor-DevOps/actions/workflows/update-env-vars.yml)
 
-## Build and push a new container manually
+   1. Click "Run workflow"
 
-Sometimes during development and debugging, it is useful to build and push new container images manually because this is much faster than waiting for Travis. Containers generated this way should not be used in production deployments.
+   1. Select the `main` branch
 
-1. Install Docker locally (https://docs.docker.com/get-docker/ and, if you are running Linux,
-   https://docs.docker.com/engine/install/linux-postinstall/)
+   1. Select the `DEVELOPMENT` environment
 
-1. Install and configure `doctl` with your API token (https://www.digitalocean.com/docs/apis-clis/doctl/how-to/install/)
+   1. Click "Run workflow"
 
-1. Build the Docker image, tag it, and push it to the registry by running
+1. Wait until the Action has completed successfully
 
-   ```
-   ./build.sh
-   ```
+1. Deploy the server on Development (note that your environment variable changes will not take effect until the server is deployed)
 
-# Running Smoke Tests on the Kubernetes Cluster
+## How to deploy the Server on Development
 
-Once a build is deployed to the cluster, you can test basic aspects of its functionality by running the `smoketest.js` script on your local machine in the `BraveSensor/server` directory. The script takes three parameters, a url for a deployment, a recipient phone number, and a Twilio number.:
+1. Go to the "Deploy AWS Development" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/deploy-development.yml)
 
-    `npm run smoketest <server url> <your phone number> <valid Twilio number>`
+1. Click "run workflow", select the branch to deploy, and click "Run workflow"
 
-The twilio number must have its SMS webhook pointing at the server you're running the smoketest on. So, for example, if I wanted to run the smoke test on Staging with +17781234567 as the recipient phone number, and I knew +17786083684 was a valid twilio number pointing to the Staging server, I could run the following command:
+## How to deploy the Firwmare on Development
 
-    `npm run smoketest 'https://staging.sensors.brave.coop' '+17781234567' '+17786083684'`
+1. On your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
+
+1. In `BraveSensorProductionFirmware.ino`, change `BRAVE_FIRMWARE_VERSION` to an unused version number less than `7000` [NOTE: do NOT commit this change]
+
+1. Click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
+
+1. Click Compile --> "Local Compile"
+
+1. In your browser navigate to Particle Console --> Sandbox --> BetaTest Borons --> Firmware
+
+   1. Upload the firmware: Click "Upload", fill in the following, and click "Upload":
+
+      - Version number = [version number]
+
+      - Title = v[version number] [environment]
+
+      - Description - [leave blank]
+
+      - Drag and drop or upload the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file
+
+1. Go to Devices
+
+   1. Open the device that you'd like to deploy to and click "Edit"
+
+   1. In the firmware dropdown, select the newly uploaded firmware, check the box "Flash now", and click "Save"
+
+   1. After you see the Boron receive the `spark/flash/status` `success` message, force the Boron to restart by sending "1" to the `Force_Reset` cloud function to start using the latest firmware. Note that this will produce an error, this is expected, please ignore.
+
+# Taking the Dev, Staging, or Production server offline
+
+By default, our servers never go offline. Even during a deployment, they do so in a way that should have zero downtime. However, there may be situations where we really want to turn them offline. In these cases, we scale them to zero instances.
+
+1. Login to the `Brave Devices [environment]` AWS Account using your SSO login
+1. Switch to the "Canada (Central)" region
+1. Navigate to Elastic Container Service --> Clusters --> `brave-devices-[environment]-cluster` --> `brave-devices-[environment]-api`
+1. Click "Update Service"
+1. Change the value of "Desired tasks" to `0`
+1. Click "Update"
+
+To bring it back online, do the same thing but set the "Desired tasks" to 1.
+
+Note that it would be nice to have more than one task in production. However, when we tried this, we were unable to login to the Dashboard. So more experimenting is required before we can set this value to anything higher than one.
+
+# Server smoke tests
+
+Once a build is deployed, you can test basic aspects of its functionality by running the `smoketest.js` script on your local machine in the `BraveSensor/server` directory. The script takes three parameters, a url for a deployment, a recipient phone number, and a Twilio number.:
+
+```
+npm run smoketest [server url] [your phone number] [valid Twilio number]
+```
+
+The twilio number must have its SMS webhook pointing at the server you're running the smoketest on. So, for example, if I wanted to run the smoke test on Staging with +17781234567 as the recipient phone number, and I knew +17787620179 was a valid twilio number pointing to the Staging server, I could run the following command:
+
+```
+ npm run smoketest 'https://api.staging.bravecoopservices.com' '+17781234567' '+17787620179'
+```
+
+or on development:
+
+```
+npm run smoketest 'https://api.development.bravecoopservices.com' '+17781234567' '+16042008122'
+```
 
 The script will take a few minutes to conclude. The expected behavior is for a location to be created, and a session which results from a 'Stillness' alert to the phone number provided.
 
-You can get further details about the behaviour of the build by watching logs for the application with:
-`kubectl logs -f --timestamps deploy/<env>-sensor-server`
+You can get further details about the behaviour of the build by watching logs for the application on AWS CloudWatch.
+
+# Dashboard
+
+## How to login to the Development, Staging, and Production Dashboards
+
+1. Get the current username and password from AWS Parameter Store
+
+   1. Login to the `Brave Devices [environment]` AWS Account using your SSO login
+   1. Switch to the "Canada (Central)" region
+   1. Navigate to AWS System Manager --> Parameter Store
+   1. The username is the value of `/brave/sensors-api/[environment]/web-app/web_username` and the password is the value of `/brave/sensors-api/[environment]/web-app/password`
+
+1. Navigate to `https://api.[environment].bravecoopservices.com/` in a browser and login
+
+## How to run and login to your local Dashboard
+
+1. Navigate to the server directory
+
+1. Run `npm ci`
+
+1. Run `npm start`
+
+1. Get the current username (`WEB_USERNAME`) and password (`PASSWORD`) from your `.env` file
+
+1. Navigate to `http://localhost:8000` in a browser and login
+
+# Logs
+
+## How to view the server logs on Development, Staging, and Production
+
+1. Login to the `Brave Devices [environment]` AWS Account using your SSO login
+1. Switch to the "Canada (Central)" region
+1. Navigate to Cloud Watch --> Logs --> Log groups --> brave-devices-[environment]-api
+1. Click on the most recent log stream
+1. Click on "Start Tailing"
+
+# Database
+
+## Connecting to the Development, Staging, or Production database
+
+The development, staging, and production databases live on AWS and are only accessible through a VPN. We use TailScale, which can be downloaded [here](https://tailscale.com/download).
+
+This is implemented by a small EC2 instance in the DevOps Central AWS account.
+
+1. Login to Tailscale on your local machine:
+
+   1. Run `sudo tailscale login --accept-routes`
+   1. Navigate to the resulting link
+   1. Login using the Brave Google account for brave.devices.tailscale@gmail.com (credentials are in 1Password --> Brave Sensors Credentials --> Tailscale (VPN for accessing Brave Sensors DB))
+   1. Connect the device
+
+1. Connect to the database:
+
+   1. Get the current username and password from AWS Parameter Store
+      1. Login to the `Brave Devices [environment]` AWS Account using your SSO login
+      1. Switch to the "Canada (Central)" region
+      1. Navigate to AWS System Manager --> Parameter Store
+      1. Get the values:
+         - password = `/brave/sensors-api/[environment]/pg/pg_password`
+         - host = `/brave/sensors-api/[environment]/pg/pg_host`
+         - port = `/brave/sensors-api/[environment]/pg/pg_port`
+         - database = `/brave/sensors-api/[environment]/pg/pg_database`
+         - username = `/brave/sensors-api/[environment]/pg/pg_user`
+   1. Run `PGPASSWORD=[password] psql -h [host] -p [port] -d [database] -U [username]`
+
+## Adding a new Database migration script
+
+This strategy assumes that each migration script in the `db` directory has a unique positive integer migration ID, and that each script's migration ID is exactly one greater than the previous script's migration ID. Otherwise, the scripts will not run.
+
+1. Copy `db/000-template` and name it with the desired migration ID (padded with zeros) followed by a short description of what it does e.g. `005-newColumn.sql`
+
+2. Update the file with its migration ID by replacing `ADD MIGRATION ID HERE` and the new migration scripts by adding it to the section `-- ADD SCRIPT HERE`
+
+## Viewing which migration scripts have been run and when
+
+1. Run
+   ```postgres
+   SELECT *
+   FROM migrations
+   ORDER BY id;
+   ```
 
 # Local Development
 
@@ -306,18 +412,14 @@ Alternately, you have the option of installing these dependencies as docker cont
 
 For local development, we use `.env` files to set environment variables. To set one of these up, copy the `.env.example` and rename it to `.env`, and fill in the values as appropriate.
 
-### Altering a secret's schema
-
-If there are changes to the schema of the environment variables (like the addition or deletion of a key) this change must be reflected in the env variables section of `BraveSensor/server/sensor-helm-chart/templates/sensor-deployment.yaml`, in addition to changing the Kubernetes secret.
-
-## Database Setup
+## Local Database
 
 You will need to populate the `.env` file with connection parameters for Postgresql. If you are using a local database you will also need to setup the database schema.
 
 To do this, cd into the `BraveSensor/server` directory and run the following command
 
 ```
-sudo PG_PORT=<your db's port> PG_HOST=<your db's host> PG_PASSWORD=<your db's password> PG_USER=<your db's user> PG_DATABASE=<your db name> ./setup_postgresql_local.sh
+sudo PG_PORT=[your db's port] PG_HOST=[your db's host] PG_PASSWORD=[your db's password] PG_USER=[your db's user] PG_DATABASE=[your db name] ./setup_postgresql_local.sh
 ```
 
 ## Tests
@@ -332,6 +434,8 @@ npm run test
 ```
 
 The tests run automatically on Travis on every push to GitHub and every time a pull request is created.
+
+# Travis
 
 ## How to add or change an encrypted Travis environment variable
 
@@ -352,7 +456,7 @@ Reference: https://docs.travis-ci.com/user/environment-variables/#encrypting-env
    - `read:discussion`
    - `read:enterprise`
 
-1. login using `travis login --pro --github-token <token from github>`
+1. login using `travis login --pro --github-token [token from github]`
 
 1. For a given `VAR_NAME` that you want to have value `secret_value`, run
    `travis encrypt --pro VAR_NAME=secret_value`
@@ -363,120 +467,6 @@ Reference: https://docs.travis-ci.com/user/environment-variables/#encrypting-env
 
 1. Delete your personal access token from GitHub
 
-# Sensors Admin Server
-
-The Sensors Admin server is used for **dev**, **staging**, and **prod**.
-
-To ssh onto the `sensors-admin` server
-
-```
-ssh brave@sensors-admin.brave.coop
-```
-
-The `sudo` password is on 1Password --> Brave Sensor Credentials --> Sensors Admin server.
-
-## Adding public keys to the admin server
-
-Access is restricted to machines whose public key has been added to the server's allowlist.
-
-1. Using an account that can, SSH onto the `sensors-admin` server
-
-1. Paste the user's public key onto a new line on the `~/.ssh/authorized_keys` file from a machine that is already capable of accessing the server
-
-## Troubleshooting authentication error
-
-If you get the error
-
-`error: You must be logged in to the server (Unauthorized)`
-
-when you try to run any `kubectl` or `helm` commands. It's possible that your `doctl` access token has expired or was deleted. To see if that's the case, in run
-
-`doctl auth init`
-
-You will know that this is the case, if you get a response like this:
-
-```
-Using token [<long token here>]
-
-Validating token... invalid token
-
-Error: Unable to use supplied token to access API: GET https://api.digitalocean.com/v2/account: 401 (request "<guid>") Unable to authenticate you
-```
-
-To fix this problem:
-
-1. Create a new token following the instructions here: https://docs.digitalocean.com/reference/api/create-personal-access-token/
-
-2. On the Sensors Admin Server, run the command
-
-   `doctl auth init --access-token <new access token>`
-
-3. Open up the Cluster in Digital Ocean and navigate to Step 2 of the Getting Started Guide (https://cloud.digitalocean.com/kubernetes/clusters/565044a4-6b9d-4f08-859b-c42a6272a038?showGettingStarted=true&i=c5171f). Copy and paste the "Automated" command that looks like
-
-   `doctl kubernetes cluster kubeconfig save <guid>`
-
-4. Run that command on the Sensors Admin Server
-
-# Interacting with the Managed Database
-
-## Connecting to a database
-
-The PostgreSQL DB connection parameters are required for the application to open a connection to the database. We primarily use the following databases, although you are free to create new ones for development purposes
-
-| Environment | User      | Database Name       |
-| ----------- | --------- | ------------------- |
-| Production  | doadmin   | backend-replacement |
-| Staging     | bravetest | staging             |
-| Development | bravetest | bravetest           |
-
-To access a database shell
-
-1. Log in to Digital Ocean
-
-1. Navigate to Databases --> `odetect-db-jul-22-backup`
-
-1. In the Connection Details box:
-
-   1. In the "Connection parameters" dropdown, select "Flags"
-
-   1. In the "User" dropdown, select the user for your desired deployment environment
-
-   1. In the "Database/Pool" dropdown, select the database name for your desired deployment
-      environment, click the 'Copy' button below, and paste the result into your terminal to access the shell
-
-## Adding a new Database migration script
-
-This strategy assumes that each migration script in the `db` directory has a unique positive integer migration ID, and that each script's migration ID is exactly one greater than the previous script's migration ID. Otherwise, the scripts will not run.
-
-1. Copy `db/000-template` and name it with the desired migration ID (padded with zeros) followed by a short description of what it does e.g. `005-newColumn.sql`
-
-2. Update the file with its migration ID by replacing `ADD MIGRATION ID HERE` and the new migration scripts by adding it to the section `-- ADD SCRIPT HERE`
-
-## Deploying the migration scripts
-
-1. In the `BraveSensor/server` directory, run the following command
-
-   ```
-   ./setup_postgresql.sh <your db's password> <your db's user> <your db's host> <your db's name> <your db's port>
-   ```
-
-## Viewing which migration scripts have been run and when
-
-1. Copy the "Flag" connection details from Digital Ocean for the DB you want to check
-
-1. Run
-   ```postgres
-   SELECT *
-   FROM migrations
-   ORDER BY id;
-   ```
-
-# Cluster Migration and Setup
-
-## Setting up networking for a new cluster
-
-Follow [these instructions](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nginx-ingress-on-digitalocean-kubernetes-using-helm) from digital ocean if you are setting up a new cluster. After installing cert-manager and Nginx Ingress Controller, you can use the `prod_issuer.yaml` and `sensor-ingress.yaml` to set up certificate management and ingress respectively.
-
 # Particle API access
 
 The Brave Siren functions used the Particle API to trigger the Siren when a `DURATION` or `STILLNESS` event occurs. This requires the access token (`PARTICLE_ACCESS_TOKEN`) for an API user with permission to call functions in the product group (`PARTICLE_PRODUCT_GROUP`). This may be useful again in the future for interacting with Particle.
@@ -486,13 +476,13 @@ To generate this token:
 1. Generate an access token for dev@brave.coop (https://docs.particle.io/reference/device-cloud/api/#generate-an-access-token)
 
    ```
-   curl https://api.particle.io/oauth/token -u particle:particle -d grant_type=password -d "username=dev@brave.coop" -d "password=<get from 1Password>"
+   curl https://api.particle.io/oauth/token -u particle:particle -d grant_type=password -d "username=dev@brave.coop" -d "password=[get from 1Password]"
    ```
 
 1. Create a _new_ API user (https://docs.particle.io/reference/device-cloud/api/#creating-an-api-user) that is allowed to call functions in the given product group. Find the product group in the Particle Console - it should match the value in the `PARTICLE_PRODUCT_GROUP` environment variable (https://docs.particle.io/reference/SDKs/javascript/#product-support). Use a different `friendly_name` than the previous API user, which we will delete later.
 
    ```
-   curl "https://api.particle.io/v1/products/<product group slug or ID>?access_token=<access_token returned in step 1>" -H "Content-Type: application/json" -d '{ "friendly_name": "<new api user name>", "scopes": [ "devices.function:call" ]}'
+   curl "https://api.particle.io/v1/products/[product group slug or ID]?access_token=[access_token returned in step 1]" -H "Content-Type: application/json" -d '{ "friendly_name": "[new api user name]", "scopes": [ "devices.function:call" ]}'
    ```
 
 1. Set the `PARTICLE_ACCESS_TOKEN` environment variable to the `token` returned by the API call in the previous step
@@ -500,11 +490,19 @@ To generate this token:
 1. _AFTER_ the updated environment variable is deployed to all environments, delete the _old_ API user (https://docs.particle.io/reference/device-cloud/api/#deleting-an-api-user). Note that the username of the old API user can be found in the Particle Console: https://console.particle.io/orgs/brave-technology-coop/team under "API Users"
 
    ```
-   curl -X DELETE "https://api.particle.io/v1/orgs/brave-technology-coop/team/<username of OLD api user>?access_token=<access_token returned in step 1>"
+   curl -X DELETE "https://api.particle.io/v1/orgs/brave-technology-coop/team/[username of OLD api user]?access_token=[access_token returned in step 1]"
    ```
 
 1. Delete the access token for dev@brave.coop that you created in the first step (https://docs.particle.io/reference/device-cloud/api/#delete-current-access-token) so that it cannot be used for any nefarious purposes.
 
    ```
-   curl -X DELETE "https://api.particle.io/v1/access_tokens/current?access_token=<access_token returned in step 1>"
+   curl -X DELETE "https://api.particle.io/v1/access_tokens/current?access_token=[access_token returned in step 1]"
    ```
+
+# Troubleshooting
+
+## Tailscale
+
+If the "Update Environment Variables" GitHub Action fails due to TailScale authentication, this is because the TailScale API key needs to be updated every 3 months. This can be done in AWS.
+
+# // TODO add section on viewing environment variables

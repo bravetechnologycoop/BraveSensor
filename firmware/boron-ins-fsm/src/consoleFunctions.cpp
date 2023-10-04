@@ -29,6 +29,7 @@ void setupConsoleFunctions() {
     Particle.function("Change_Long_Stillness_Timer", long_stillness_timer_set);
     Particle.function("Change_INS_Threshold", ins_threshold_set);
     Particle.function("Change_IM21_Door_ID", im21_door_id_set);
+    Particle.function("Reset_Stillness_Timer_For_Alerting_Session", reset_stillness_timer_for_alerting_session);
 }
 
 bool isValidIM21Id(String input) {
@@ -183,6 +184,18 @@ int stillness_timer_set(String input) {
     }
 
     return returnFlag;
+}
+
+// returns the previous length of the stillness timer
+int reset_stillness_timer_for_alerting_session(String input) {
+    int returnValue = -1;
+
+    if (hasDurationAlertBeenSent || hasStillnessAlertBeenSent) {
+        returnValue = (int)(millis() - state3_stillness_timer);
+        state3_stillness_timer = millis();
+    }
+
+    return returnValue;
 }
 
 // returns long stillness timer length if valid input is given, otherwise returns -1
