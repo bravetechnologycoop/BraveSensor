@@ -11,6 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added - 2023-10-04
+
+- Added `is_ins_zero` column to the `sensors_vitals` table in the database schema (CU-8678v3y54).
+- Added INS sensor value check logic to evaluate if it is less than or equal to 0 (CU-8678v3y54).
+- Implemented Sentry message when `is_ins_zero` is true during INS value check (CU-8678v3y54).
+
 ### Changed
 
 - README for AWS infrastructure changes (CU-860ra8f7q).
