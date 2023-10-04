@@ -231,7 +231,7 @@ async function handleHeartbeat(req, res) {
           res.status(200).json(errorMessage)
         } else {
           const message = JSON.parse(req.body.data)
-          const isINSZero = message.isINSZero;
+          const isINSZero = message.isINSZero
           const doorMissedMessagesCount = message.doorMissedMsg
           const doorMissedFrequently = message.doorMissedFrequently
           const resetReason = message.resetReason
