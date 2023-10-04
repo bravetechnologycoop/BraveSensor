@@ -144,7 +144,7 @@ async function getClients(pgClient) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createClientFromRow(r, pgClient)))
+    return await Promise.all(results.rows.map(r => createClientFromRow(r)))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -175,7 +175,7 @@ async function getActiveClients(pgClient) {
       return null
     }
 
-    return await Promise.all(results.rows.map(r => createClientFromRow(r, pgClient)))
+    return await Promise.all(results.rows.map(r => createClientFromRow(r)))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -916,7 +916,7 @@ async function updateClient(
 
     helpers.log(`Client '${displayName}' successfully updated`)
 
-    return await createClientFromRow(results.rows[0], pgClient)
+    return await createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.log(err.toString())
   }

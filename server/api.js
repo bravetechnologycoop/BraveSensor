@@ -87,25 +87,25 @@ async function messageClients(req, res) {
       const clients = await db.getActiveClients()
       const message = req.body.message
 
-      for (const c of clients) {
-        // define phone_numbers as a Set to prevent duplicate numbers
-        const phone_numbers = new Set()
+      for (const client of clients) {
+        // define phoneNumbers as a Set to prevent duplicate numbers
+        const phoneNumbers = new Set()
 
-        // add responder, fallback, and heartbeat numbers to phone_numbers
-        c.responderPhoneNumbers.forEach(pn => {
-          phone_numbers.add(pn)
+        // add responder, fallback, and heartbeat numbers to phoneNumbers
+        client.responderPhoneNumbers.forEach(phoneNumber => {
+          phoneNumbers.add(phoneNumber)
         })
-        c.fallbackPhoneNumbers.forEach(pn => {
-          phone_numbers.add(pn)
+        client.fallbackPhoneNumbers.forEach(phoneNumber => {
+          phoneNumbers.add(phoneNumber)
         })
-        c.heartbeatPhoneNumbers.forEach(pn => {
-          phone_numbers.add(pn)
+        client.heartbeatPhoneNumbers.forEach(phoneNumber => {
+          phoneNumbers.add(phoneNumber)
         })
 
         // for each phone number of this client
-        for (const pn of phone_numbers) {
+        for (const phoneNumber of phoneNumbers) {
           // send SMS text message
-          twilioHelpers.sendTwilioMessage(pn, c.fromPhoneNumber, message)
+          await twilioHelpers.sendTwilioMessage(phoneNumber, client.fromPhoneNumber, message)
         }
       }
 

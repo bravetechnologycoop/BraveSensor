@@ -158,7 +158,7 @@ describe('api.js integration tests: messageClients', () => {
     this.agent.close()
   })
 
-  describe('for a good request', () => {
+  describe('for a request that uses the correct PA API key', () => {
     it('should respond with status 200 (OK)', async () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
 
@@ -182,7 +182,7 @@ describe('api.js integration tests: messageClients', () => {
     })
   })
 
-  describe('for a bad request', () => {
+  describe('for a request that uses an incorrect PA API key', () => {
     it('should respond with status 401 (Unauthorized)', async () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey: badBraveKey, message })
 
