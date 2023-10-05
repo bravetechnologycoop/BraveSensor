@@ -86,6 +86,11 @@ async function messageClients(req, res) {
     if (validationErrors.isEmpty()) {
       const clients = await db.getActiveClients()
       const message = req.body.message
+      const response = {
+        status: 'success',
+        contacted: [],
+        errors: [],
+      }
 
       for (const client of clients) {
         // define phoneNumbers as a Set to prevent duplicate numbers
@@ -105,11 +110,18 @@ async function messageClients(req, res) {
         // for each phone number of this client
         for (const phoneNumber of phoneNumbers) {
           // send SMS text message
-          await twilioHelpers.sendTwilioMessage(phoneNumber, client.fromPhoneNumber, message)
+          const twilioResponse = await twilioHelpers.sendTwilioMessage(phoneNumber, client.fromPhoneNumber, message)
+
+          // keep track of which clients were contacted and not contacted
+          if (twilioResponse.ok) {
+            response.contacted.push({ id: client.id, displayName: client.displayName })
+          } else {
+            response.errors.push({ id: client.id, displayName: client.displayName })
+          }
         }
       }
 
-      res.status(200).send({ status: 'success' })
+      res.status(200).send(response)
     } else {
       res.status(400).send({ status: 'error' })
     }
