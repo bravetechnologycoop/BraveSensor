@@ -282,7 +282,7 @@ async function handleHeartbeat(req, res) {
           }
 
           if (isINSZero) {
-            helpers.logSentry(`INS sensor is les or equal zero at ${location.locationid}`)
+            helpers.logSentry(`INS sensor is less or equal zero at ${location.locationid}`)
           }
 
           await db.logSensorsVital(
