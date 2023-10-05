@@ -398,7 +398,7 @@ void getHeartbeat() {
         writer.beginObject();
 
         // Add "isINSZero" field to the JSON message
-        writer.name("isINSZero").value(isINSZero);
+        writer.name("isINSZero").value(isINSZero && lastHeartbeatPublish > 0);
 
         if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
             // if oldest value did miss; subtract from the current amount
