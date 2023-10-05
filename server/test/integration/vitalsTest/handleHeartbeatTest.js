@@ -223,7 +223,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       })
 
       expect(response).to.have.status(200)
-      expect(helpers.logSentry).to.have.been.calledWith(`INS sensor is less or equal zero at ${testLocation1Id}`)
+      expect(helpers.logSentry).to.have.been.calledWith(`INS sensor is equal to or less than zero at ${testLocation1Id}`)
     })
 
     it('should return 200 for a heartbeat request with no headers', async () => {
