@@ -171,7 +171,7 @@ describe('api.js integration tests: messageClients', () => {
   describe('for a request that uses the correct PA API key, and where Twilio is operating correctly', () => {
     beforeEach(async () => {
       // stub twilioHelpers.sendTwilioMessage
-      sandbox.stub(twilioHelpers, 'sendTwilioMessage').returns({ ok: true })
+      sandbox.stub(twilioHelpers, 'sendTwilioMessage').returns({ status: 'queued' })
     })
 
     afterEach(async () => {
@@ -216,7 +216,7 @@ describe('api.js integration tests: messageClients', () => {
   describe('for a request that uses the correct PA API key, and where Twilio is not operating correctly', () => {
     beforeEach(async () => {
       // stub twilioHelpers.sendTwilioMessage
-      sandbox.stub(twilioHelpers, 'sendTwilioMessage').returns({ ok: false })
+      sandbox.stub(twilioHelpers, 'sendTwilioMessage').returns(undefined)
     })
 
     afterEach(async () => {

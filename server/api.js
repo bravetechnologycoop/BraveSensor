@@ -113,10 +113,11 @@ async function messageClients(req, res) {
           const twilioResponse = await twilioHelpers.sendTwilioMessage(phoneNumber, client.fromPhoneNumber, message)
 
           // keep track of which clients were contacted and not contacted
-          if (twilioResponse.ok) {
-            response.contacted.push({ id: client.id, displayName: client.displayName })
-          } else {
+          if (twilioResponse === undefined || twilioResponse.status === undefined || twilioResponse.status !== 'queued') {
             response.errors.push({ id: client.id, displayName: client.displayName })
+            helpers.log(`Failed to send Twilio message "${message}" to ${phoneNumber} from ${client.fromPhoneNumber}.`)
+          } else {
+            response.contacted.push({ id: client.id, displayName: client.displayName })
           }
         }
       }
