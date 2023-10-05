@@ -216,13 +216,6 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     })
 
     it('should log a Sentry alert when the INS sensor value is less or equal to zero', async () => {
-      const client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
-        locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
-        clientId: 1,
-      })
-
       const response = await chai.request(server).post('/api/heartbeat').send({
         coreid: radar_coreID,
         data: `{"isINSZero":true,"doorMissedMsg":0,"doorMissedFrequently":false,"doorLastMessage":-1,"doorLowBatt":-1,"doorTampered":-1,"resetReason":"NONE","states":[]}`,
