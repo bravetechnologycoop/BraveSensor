@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Implemented internal alert functionality with Sentry alerts triggered when a sensor's INS value is less than or equal to zero (CU-8678v3y54).
+
 ### Changed
 
 - README for AWS infrastructure changes (CU-860ra8f7q).
