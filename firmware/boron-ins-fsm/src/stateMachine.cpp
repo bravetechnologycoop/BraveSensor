@@ -387,12 +387,18 @@ void getHeartbeat() {
     // 3rd "if condition" is true only if a heartbeat hasnt been published in the last SM_HEARTBEAT_INTERVAL
     if (lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && ((millis() - doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY)) ||
         (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) {
+        // Check INS value
+        filteredINSData checkINS = checkINS3331();
+        bool isINSZero = (checkINS.iAverage < 0.0001);
         static unsigned int didMissQueueSum = 0;
         static std::queue<bool> didMissQueue;
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char heartbeatMessage[622] = {0};
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
         writer.beginObject();
+
+        // Add "isINSZero" field to the JSON message
+        writer.name("isINSZero").value(isINSZero && lastHeartbeatPublish > 0);
 
         if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
             // if oldest value did miss; subtract from the current amount
