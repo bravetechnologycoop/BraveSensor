@@ -80,18 +80,17 @@ describe('api.js integration tests: messageClients', () => {
         isSendingVitals: true,
       }),
     )
-
-    // create locations for all active clients
-    for (const client of activeClients) {
+    for (let i = 0; i < 4; i++) {
       testExpectResponse.push({
-        id: client.id,
-        displayName: client.displayName,
+        to: testExpectPhoneNumbers[i],
+        from: testFromPhoneNumber,
+        clientId: activeClients[i].id,
+        clientDisplayName: activeClients[i].displayName,
       })
-
       await locationDBFactory(db, {
-        locationid: `Location${client.id.substr(0, 8)}`,
-        displayName: `Location for ${client.displayName}`,
-        clientId: client.id,
+        locationid: `Location${activeClients[i].id.substr(0, 8)}`,
+        displayName: `Location for ${activeClients[i].displayName}`,
+        clientId: activeClients[i].id,
         isSendingAlerts: true,
         isSendingVitals: true,
       })
@@ -110,8 +109,10 @@ describe('api.js integration tests: messageClients', () => {
       isSendingVitals: true,
     })
     testNotExpectResponse.push({
-      id: testClientNoLocation.id,
-      displayName: testClientNoLocation.displayName,
+      to: testNotExpectPhoneNumbers[0],
+      from: testFromPhoneNumber,
+      clientId: testClientNoLocation.id,
+      clientDisplayName: testClientNoLocation.displayName,
     })
 
     nonActiveClients.push(
@@ -145,16 +146,17 @@ describe('api.js integration tests: messageClients', () => {
     )
 
     // create locations for all non-active clients
-    for (const client of nonActiveClients) {
+    for (let i = 0; i < 3; i++) {
       testNotExpectResponse.push({
-        id: client.id,
-        displayName: client.displayName,
+        to: testNotExpectPhoneNumbers[i+1],
+        from: testFromPhoneNumber,
+        clientId: nonActiveClients[i].id,
+        clientDisplayName: nonActiveClients[i].displayName,
       })
-
       await locationDBFactory(db, {
-        locationid: `Location${client.id.substr(0, 8)}`,
-        displayName: `Location for ${client.displayName}`,
-        clientId: client.id,
+        locationid: `Location${nonActiveClients[i].id.substr(0, 8)}`,
+        displayName: `Location for ${nonActiveClients[i].displayName}`,
+        clientId: nonActiveClients[i].id,
         isSendingAlerts: Math.round(Math.random()),
         isSendingVitals: Math.round(Math.random()),
       })
@@ -184,6 +186,12 @@ describe('api.js integration tests: messageClients', () => {
       expect(response).to.have.status(200)
     })
 
+    it('should respond with the same message that was posted', async () => {
+      const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
+
+      expect(response.body.message).to.be.a('string').that.equals(message)
+    })
+
     it('should attempt to message all active clients', async () => {
       await this.agent.post('/api/message-clients').send({ braveKey, message })
 
@@ -206,10 +214,10 @@ describe('api.js integration tests: messageClients', () => {
       expect(response.body.contacted).to.be.an('array').that.has.deep.members(testExpectResponse)
     })
 
-    it('should respond with no errors in the `errors` field of the response body', async () => {
+    it('should respond with no clients in the `failed` field of the response body', async () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
 
-      expect(response.body.errors).to.be.an('array').that.is.empty
+      expect(response.body.failed).to.be.an('array').that.is.empty
     })
   })
 
@@ -227,6 +235,12 @@ describe('api.js integration tests: messageClients', () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
 
       expect(response).to.have.status(200)
+    })
+
+    it('should respond with the same message that was posted', async () => {
+      const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
+
+      expect(response.body.message).to.be.a('string').that.equal(message)
     })
 
     it('should attempt to message all active clients', async () => {
@@ -251,10 +265,10 @@ describe('api.js integration tests: messageClients', () => {
       expect(response.body.contacted).to.be.an('array').that.is.empty
     })
 
-    it('should respond with active clients in the `errors` field of the response body', async () => {
+    it('should respond with active clients in the `failed` field of the response body', async () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
 
-      expect(response.body.errors).to.be.an('array').that.has.deep.members(testExpectResponse)
+      expect(response.body.failed).to.be.an('array').that.has.deep.members(testExpectResponse)
     })
   })
 

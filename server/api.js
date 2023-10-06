@@ -88,8 +88,9 @@ async function messageClients(req, res) {
       const message = req.body.message
       const response = {
         status: 'success',
+	message: message,
         contacted: [],
-        errors: [],
+        failed: [],
       }
 
       for (const client of clients) {
@@ -111,13 +112,21 @@ async function messageClients(req, res) {
         for (const phoneNumber of phoneNumbers) {
           // send SMS text message
           const twilioResponse = await twilioHelpers.sendTwilioMessage(phoneNumber, client.fromPhoneNumber, message)
+          // Twilio trace object: information about the sent message
+          const twilioTraceObject = {
+            to: phoneNumber,
+            from: client.fromPhoneNumber,
+            clientId: client.id,
+            clientDisplayName: client.displayName,
+          }
 
           // keep track of which clients were contacted and not contacted
           if (twilioResponse === undefined || twilioResponse.status === undefined || twilioResponse.status !== 'queued') {
-            response.errors.push({ id: client.id, displayName: client.displayName })
-            helpers.log(`Failed to send Twilio message "${message}" to ${phoneNumber} from ${client.fromPhoneNumber}.`)
+            response.failed.push(twilioTraceObject)
+            // log entire Twilio trace object
+            helpers.log(`Failed to send Twilio message: ${JSON.stringify(twilioTraceObject)}.`)
           } else {
-            response.contacted.push({ id: client.id, displayName: client.displayName })
+            response.contacted.push(twilioTraceObject)
           }
         }
       }
