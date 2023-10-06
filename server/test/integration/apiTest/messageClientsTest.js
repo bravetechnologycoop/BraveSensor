@@ -80,7 +80,7 @@ describe('api.js integration tests: messageClients', () => {
         isSendingVitals: true,
       }),
     )
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 4; i += 1) {
       testExpectResponse.push({
         to: testExpectPhoneNumbers[i],
         from: testFromPhoneNumber,
@@ -146,9 +146,9 @@ describe('api.js integration tests: messageClients', () => {
     )
 
     // create locations for all non-active clients
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 3; i += 1) {
       testNotExpectResponse.push({
-        to: testNotExpectPhoneNumbers[i+1],
+        to: testNotExpectPhoneNumbers[i + 1],
         from: testFromPhoneNumber,
         clientId: nonActiveClients[i].id,
         clientDisplayName: nonActiveClients[i].displayName,

@@ -88,7 +88,7 @@ async function messageClients(req, res) {
       const message = req.body.message
       const response = {
         status: 'success',
-	message: message,
+        message,
         contacted: [],
         failed: [],
       }
