@@ -34,6 +34,7 @@ function configureRoutes(app) {
 
   app.get('/api/sensors', api.validateGetAllSensors, api.authorize, api.getAllSensors)
   app.get('/api/sensors/:sensorId', api.validateGetSensor, api.authorize, api.getSensor)
+  app.post('/api/message-clients', api.validateMessageClients, api.authorize, api.messageClients)
 
   // TODO add the other routes
 }

@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- API call /api/message-clients that sends a POSTed message to all clients with active sensors (CU-w9bcb5).
+
 ## [9.10.0] - 2023-10-06
 
 ### Added
