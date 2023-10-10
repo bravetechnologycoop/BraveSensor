@@ -15,6 +15,10 @@ the code was deployed.
 
 - API call /api/message-clients that sends a POSTed message to all clients with active sensors (CU-w9bcb5).
 
+### Fixed
+
+- Response object of /api/message-clients to match conventions described at the top of api.js.
+
 ## [9.10.0] - 2023-10-06
 
 ### Added

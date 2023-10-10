@@ -9,7 +9,7 @@
  *  - Must return a JSON object containing the following keys:
  *    - status:   which will be either "success" or "error"
  *    - data:     the desired JSON object, if there is one
- *    - message:  a human-readable explaination of the error, if there was one and this is appropriate. Be careful
+ *    - message:  a human-readable explanation of the error, if there was one and this is appropriate. Be careful
  *                to not include anything that will give an attacker extra information
  */
 
@@ -88,9 +88,12 @@ async function messageClients(req, res) {
       const message = req.body.message
       const response = {
         status: 'success',
-        message,
-        contacted: [],
-        failed: [],
+        data: {
+          message,
+          contacted: [],
+          failed: [],
+        },
+        message: '',
       }
 
       for (const client of clients) {
@@ -122,11 +125,11 @@ async function messageClients(req, res) {
 
           // keep track of which clients were contacted and not contacted
           if (twilioResponse === undefined || twilioResponse.status === undefined || twilioResponse.status !== 'queued') {
-            response.failed.push(twilioTraceObject)
+            response.data.failed.push(twilioTraceObject)
             // log entire Twilio trace object
             helpers.log(`Failed to send Twilio message: ${JSON.stringify(twilioTraceObject)}.`)
           } else {
-            response.contacted.push(twilioTraceObject)
+            response.data.contacted.push(twilioTraceObject)
           }
         }
       }

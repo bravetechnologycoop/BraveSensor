@@ -189,7 +189,8 @@ describe('api.js integration tests: messageClients', () => {
     it('should respond with the same message that was posted', async () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
 
-      expect(response.body.message).to.be.a('string').that.equals(message)
+      expect(response.body.data).to.not.be.undefined
+      expect(response.body.data.message).to.be.a('string').that.equals(message)
     })
 
     it('should attempt to message all active clients', async () => {
@@ -211,13 +212,15 @@ describe('api.js integration tests: messageClients', () => {
     it('should respond with contacted client information in the `contacted` field of the response body', async () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
 
-      expect(response.body.contacted).to.be.an('array').that.has.deep.members(testExpectResponse)
+      expect(response.body.data).to.not.be.undefined
+      expect(response.body.data.contacted).to.be.an('array').that.has.deep.members(testExpectResponse)
     })
 
     it('should respond with no clients in the `failed` field of the response body', async () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
 
-      expect(response.body.failed).to.be.an('array').that.is.empty
+      expect(response.body.data).to.not.be.undefined
+      expect(response.body.data.failed).to.be.an('array').that.is.empty
     })
   })
 
@@ -240,7 +243,8 @@ describe('api.js integration tests: messageClients', () => {
     it('should respond with the same message that was posted', async () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
 
-      expect(response.body.message).to.be.a('string').that.equal(message)
+      expect(response.body.data).to.not.be.undefined
+      expect(response.body.data.message).to.be.a('string').that.equal(message)
     })
 
     it('should attempt to message all active clients', async () => {
@@ -262,13 +266,15 @@ describe('api.js integration tests: messageClients', () => {
     it('should respond with no clients in the `contacted` field of the response body', async () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
 
-      expect(response.body.contacted).to.be.an('array').that.is.empty
+      expect(response.body.data).to.not.be.undefined
+      expect(response.body.data.contacted).to.be.an('array').that.is.empty
     })
 
     it('should respond with active clients in the `failed` field of the response body', async () => {
       const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
 
-      expect(response.body.failed).to.be.an('array').that.has.deep.members(testExpectResponse)
+      expect(response.body.data).to.not.be.undefined
+      expect(response.body.data.failed).to.be.an('array').that.has.deep.members(testExpectResponse)
     })
   })
 
