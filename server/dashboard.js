@@ -443,7 +443,7 @@ async function submitNewClient(req, res) {
         true,
         false,
         false,
-        'en',
+        req.body.language || 'en',
       )
 
       res.redirect(`/clients/${newClient.id}`)
