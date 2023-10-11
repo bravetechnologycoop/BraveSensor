@@ -16,7 +16,6 @@ env:
     - PG_PASSWORD=travispassword
     - PG_PORT=5433
     - PG_HOST=localhost
-    - REDIS_CLUSTER_IP_TEST=localhost
     - SESSION_RESET_THRESHOLD_TEST=2000
     - LOW_BATTERY_ALERT_TIMEOUT_TEST=2
     - MAX_STILLNESS_ALERTS_TEST=2
@@ -45,9 +44,6 @@ jobs:
       install:
         - cd server
         - npm ci
-      # install Redis
-      services:
-        - redis-server
       addons:
         # install PostgreSQL
         postgresql: '12'
@@ -80,16 +76,3 @@ jobs:
         - cd firmware/boron-ins-fsm/test && g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
         - g++ -std=c++11 -I../inc -I./ -I./mocks -I../lib/CircularBuffer/src -o ins3331Tests ins3331Tests.cpp -lstdc++ -lm && ./ins3331Tests -s
         - g++ -std=c++11 -I../inc -I./ -I./mocks -o DoorSensorTests imDoorSensorTests.cpp -lstdc++ -lm && ./DoorSensorTests -s
-    # If all the test stage passes, then pushes the Docker container to DO
-    - stage: 'push container'
-      language: node_js
-      # node_js: node version specified in .nvmrc
-      addons:
-        # install Digital Ocean API CLI tool
-        snaps:
-          - doctl
-      script:
-        - cd server
-        - doctl auth init --access-token $DIGITALOCEAN_ACCESS_TOKEN
-        - sudo snap connect doctl:dot-docker
-        - ./build.sh

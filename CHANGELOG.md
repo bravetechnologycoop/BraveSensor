@@ -11,9 +11,31 @@ the code was deployed.
 
 ## [Unreleased]
 
-### Added
 - Timer in state0 that is reset when the door closes during which the sensor is allowed to detect for occupation (CU-8678t4ztg).
 - Console function for the occupation detection timer as well as the timer count and timeout value in Debug Publishes (CU-8678t4ztg).
+
+### Added
+
+- API call /api/message-clients that sends a POSTed message to all clients with active sensors (CU-w9bcb5).
+
+### Fixed
+
+- Response object of /api/message-clients to match conventions described at the top of api.js.
+
+## [9.10.0] - 2023-10-06
+
+### Added
+
+- Implemented internal alert functionality with Sentry alerts triggered when a sensor's INS value is less than or equal to zero (CU-8678v3y54).
+
+### Changed
+
+- README for AWS infrastructure changes (CU-860ra8f7q).
+
+## [9.9.0] - 2023-10-03
+
+### Added
+
 - Cloud function to reset the current Stillness Timer (CU-860rbtg4k).
 
 ### Changed
@@ -45,6 +67,7 @@ the code was deployed.
 - "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a).
 - Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a).
 - GitHub Actions to deploy to AWS infrastructure on Dev and Staging (CU-860ra8f7q).
+
 ### Fixed
 
 - Wording in consoleFunctionTests.cpp when functions are called with 'e'.
@@ -591,7 +614,9 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.8.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.10.0...HEAD
+[9.10.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.9.0...v9.10.0
+[9.9.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.8.0...v9.9.0
 [9.8.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.7.0...v9.8.0
 [9.7.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.6.0...v9.7.0
 [9.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.5.0...v9.6.0

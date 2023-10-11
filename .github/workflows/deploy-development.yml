@@ -1,5 +1,7 @@
 name: Deploy AWS Development
 
+run-name: Deploy ${{ github.ref }} to Development
+
 on:
   workflow_dispatch:
 
