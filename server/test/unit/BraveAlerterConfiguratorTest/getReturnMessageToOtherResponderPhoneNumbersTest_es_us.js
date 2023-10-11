@@ -6,7 +6,7 @@ const { before, describe, it } = require('mocha')
 const { CHATBOT_STATE } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 
-describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToOtherResponderPhoneNumbers', () => {
+describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToOtherResponderPhoneNumbers is Spanish', () => {
   before(() => {
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
