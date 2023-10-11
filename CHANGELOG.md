@@ -11,6 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Implemented language selection functionality on the add new client page, allowing users to choose their preferred language when registering a new client. The language selection dropdown now offers options for English and Spanish, automatically populating incident categories upon selection. Additionally, there is an option for English with manual input for incident categories (CU-3bnggtt).
+
+- Integrated an object containing translated messages in Spanish for the translation to Spanish feature functionality (CU-3bnggtt).
+
 ## [9.10.0] - 2023-10-06
 
 ### Added
