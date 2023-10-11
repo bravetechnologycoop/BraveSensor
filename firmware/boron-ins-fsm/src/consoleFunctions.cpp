@@ -23,6 +23,7 @@ void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
     Particle.function("Force_Reset", force_reset);
     Particle.function("Turn_Debugging_Publishes_On_Off", toggle_debugging_publishes);
+    Particle.function("Change_Occupant_Detection_Timer", occupant_detection_timer_set);
     Particle.function("Change_Initial_Timer", initial_timer_set);
     Particle.function("Change_Duration_Timer", duration_timer_set);
     Particle.function("Change_Stillness_Timer", stillness_timer_set);
@@ -79,6 +80,40 @@ int toggle_debugging_publishes(String command) {
         returnFlag = -1;
     }
 
+    return returnFlag;
+}
+
+// returns occupant detection timer if valid input is given, otherwise returns -1
+int occupant_detection_timer_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    // if e, echo the current threshold
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
+        returnFlag = state0_occupant_detection_timer / 1000;
+    }
+    // else parse new threshold
+    else {
+        int timeout = input.toInt();
+        // increase timeout value to from seconds to ms
+        timeout = timeout * 1000;
+
+        if (timeout == 0) {
+            // string.toInt() returns 0 if input not an int
+            // and a threshold value of 0 makes no sense, so return -1
+            returnFlag = -1;
+        }
+        else if (timeout < 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, timeout);
+            state0_occupant_detection_timer = timeout;
+            returnFlag = state0_occupant_detection_timer / 1000;
+        }
+    }
     return returnFlag;
 }
 

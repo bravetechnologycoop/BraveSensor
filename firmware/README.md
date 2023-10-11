@@ -12,6 +12,7 @@
      - [DEBUG_LEVEL](#debug_level)
      - [BRAVE_PRODUCT_ID for state machine](#brave_product_id-for-state-machine)
      - [INS_THRESHOLD](#ins_threshold)
+     - [STATE0_OCCUPANT_DETECTION_TIMER](#state0_occupant_detection_timer)
      - [STATE1_MAX_TIME](#state1_max_time)
      - [STATE2_MAX_DURATION](#state2_max_duration)
      - [STATE3_MAX_STILLNESS_TIME](#state3_max_stillness_time)
@@ -180,6 +181,14 @@ It is compared to the filtered inPhase values detected by the INS radar. Anythin
 
 The default level is set to 60. This is based on the radar testing documented [here](https://docs.google.com/document/d/12TLw6XE9CSaNpguytS2NCSCP0aZWUs-OncmaDdoTKfo/edit?usp=sharing).
 
+### STATE0_OCCUPANT_DETECTION_TIMER
+
+This is defined via a macro in the stateMachine.h header file
+
+It is the length of time after the door_status changes from an open to a closed state where entrance to state1 is allowed. After the state 0 timer has surpassed this value, the state machine will stay in state 0 until this timer resets (door open and close) 
+
+The length of time is default to 1 hour defined as 3600000 milliseconds
+
 ### STATE1_MAX_TIME
 
 This is defined via a macro in the stateMachine.h header file.
@@ -320,6 +329,23 @@ Stillness timer is the length of time the Sensor sees stillness before publishin
 **Return(s):**
 
 - The integer number of seconds of the new timer value, when a new timer value is entered
+- The integer number of seconds of the current timer value, when e for echo is entered
+- -1: when bad data is entered
+
+### **occupant_detection_timer_set(String)**
+
+**Description:**
+
+This sets the allowed time after the paired door sensor closes in which state 0 can transition to state 1. The default value is 60 minutes.
+
+**Argument(s):**
+
+1. The integer number of seconds of the new occupation detection timer.
+2. e - this is short for echo, and will echo the current occupation detection timer
+
+**Return(s):**
+
+- The integer number of seconds of the timer value, when a new timer value is entered
 - The integer number of seconds of the current timer value, when e for echo is entered
 - -1: when bad data is entered
 
@@ -544,6 +570,7 @@ Debug Message
 1. INS_val: the current filtered inPhase value from the INS radar
 1. INS_threshold: the current threshold that we compare the INS_val against
 1. timer_status: if the current state uses a timer, this contains the time in milliseconds that the timer has counted up to thus far. If the current state does not contain a timer, this is set to 0.
+1. occupation_detection_timer: the occupation detection timer value that that the idle state compares against
 1. initial_timer: the initial timer value that the initial state compares against
 1. duration_timer: the duration timer value that the duration and stillness states compare against
 1. stillness_timer: the stillness timer value that the stillness state compares against

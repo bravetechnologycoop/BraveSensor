@@ -147,6 +147,60 @@ SCENARIO("Change_IM21_Door_ID", "[change door id]") {
     }
 }
 
+SCENARIO("Set Occupation Detection Timer", "[occupation detection timer]") {
+    GIVEN("A starting occupation detection timer of 1 minute") {
+        state0_occupant_detection_timer = 60000;
+
+        WHEN("the function is called with 'e'") {
+            int returnFlag = occupant_detection_timer_set("e");
+
+            THEN("the initial timer value should remain the same") {
+                REQUIRE(state0_occupant_detection_timer == 60000);
+            }
+
+            THEN("the function should return the stored value") {
+                REQUIRE(returnFlag == 60);
+            }
+        }
+
+        WHEN("the function is called with a positive integer") {
+            int returnFlag = occupant_detection_timer_set("30");
+
+            THEN("the initial timer value should be updated to the input * 1000") {
+                REQUIRE(state0_occupant_detection_timer == 30000);
+            }
+
+            THEN("the function should return the input") {
+                REQUIRE(returnFlag == 30);
+            }
+        }
+
+        WHEN("the function is called with a negative integer") {
+            int returnFlag = occupant_detection_timer_set("-30");
+
+            THEN("the initial timer value should not be updated") {
+                REQUIRE(state0_occupant_detection_timer == 60000);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+
+        WHEN("the function is called with something other than 'e' or a positive integer") {
+            int returnFlag = occupant_detection_timer_set("nonInt");
+
+            THEN("the initial timer value should not be updated") {
+                REQUIRE(state0_occupant_detection_timer == 60000);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+    }
+}
+
 SCENARIO("Set Initial Timer", "[initial timer]") {
     GIVEN("A starting initial timer of 10 milliseconds") {
         state1_max_time = 10000;
@@ -158,7 +212,7 @@ SCENARIO("Set Initial Timer", "[initial timer]") {
                 REQUIRE(state1_max_time == 10000);
             }
 
-            THEN("the function should return the input") {
+            THEN("the function should return the stored value") {
                 REQUIRE(returnFlag == 10);
             }
         }
@@ -212,7 +266,7 @@ SCENARIO("Set Duration Timer", "[duration timer]") {
                 REQUIRE(state2_max_duration == 10000);
             }
 
-            THEN("the function should return the input") {
+            THEN("the function should return the stored value") {
                 REQUIRE(returnFlag == 10);
             }
         }
@@ -266,7 +320,7 @@ SCENARIO("Set Stillness Timer", "[stillness timer]") {
                 REQUIRE(state3_max_stillness_time == 10000);
             }
 
-            THEN("the function should return the input") {
+            THEN("the function should return the stored value") {
                 REQUIRE(returnFlag == 10);
             }
         }
@@ -320,7 +374,7 @@ SCENARIO("Set Long Stillness Timer", "[long stillness timer]") {
                 REQUIRE(state3_max_long_stillness_time == 10000);
             }
 
-            THEN("the function should return the input") {
+            THEN("the function should return the stored value") {
                 REQUIRE(returnFlag == 10);
             }
         }
@@ -374,7 +428,7 @@ SCENARIO("Set INS Threshold", "[ins threshold]") {
                 REQUIRE(ins_threshold == 10);
             }
 
-            THEN("the function should return the input") {
+            THEN("the function should return the stored value") {
                 REQUIRE(returnFlag == 10);
             }
         }

@@ -20,6 +20,7 @@ unsigned long state2_duration_timer;
 unsigned long state3_stillness_timer;
 // initialize constants to sensible default values
 unsigned long ins_threshold = INS_THRESHOLD;
+unsigned long state0_occupant_detection_timer = STATE0_OCCUPANT_DETECTION_TIMER;
 unsigned long state1_max_time = STATE1_MAX_TIME;
 unsigned long state2_max_duration = STATE2_MAX_DURATION;
 unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
@@ -59,6 +60,7 @@ void setupStateMachine() {
 void initializeStateMachineConsts() {
     uint16_t initializeConstsFlag;
     uint16_t initializeState3MaxLongStillenssTimeFlag;
+    uint16_t initializeState0OccupationDetectionFlag;
 
     // Boron flash memory is initialized to all F's (1's)
     EEPROM.get(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
@@ -99,6 +101,21 @@ void initializeStateMachineConsts() {
         EEPROM.get(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
         Log.info("State machine constant State3MaxLongStillnessTime was read from flash on bootup.");
     }
+
+    // Seperate initialization for State 0 Window
+    EEPROM.get(ADDR_INITIALIZE_STATE0_OCCUPANT_DETECTION_TIMER_FLAG, initializeState0OccupationDetectionFlag);
+    Log.info("state machine constant State3MaxLongStillnessTime flag is 0x%04X", initializeState0OccupationDetectionFlag);
+
+    if (initializeState0OccupationDetectionFlag != INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG) {
+        EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
+        initializeState0OccupationDetectionFlag = INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG;
+        EEPROM.put(ADDR_INITIALIZE_STATE0_OCCUPANT_DETECTION_TIMER_FLAG, initializeState0OccupationDetectionFlag);
+        Log.info("State machine constant State0OccupationDetectionTimer was written to flash on bootup.");
+    }
+    else {
+        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
+        Log.info("State machine constant State0OccupationDetectionTimer was read from flash on bootup.");
+    }
 }
 
 void state0_idle() {
@@ -131,10 +148,11 @@ void state0_idle() {
 
     Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f", checkDoor.doorStatus, checkINS.iAverage);
     // default timer to 0 when state doesn't have a timer
-    publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, 0);
+    publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, (millis() - timeWhenDoorClosed));
 
     // fix outputs and state exit conditions accordingly
-    if (((unsigned long)checkINS.iAverage > ins_threshold) && !isDoorOpen(checkDoor.doorStatus) && !isDoorStatusUnknown(checkDoor.doorStatus)) {
+    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && ((unsigned long)checkINS.iAverage > ins_threshold) &&
+        !isDoorOpen(checkDoor.doorStatus) && !isDoorStatusUnknown(checkDoor.doorStatus)) {
         Log.warn("In state 0, door closed and seeing movement, heading to state 1");
         publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(0, 0);
@@ -319,8 +337,9 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
             char debugMessage[622];
             snprintf(debugMessage, sizeof(debugMessage),
                      "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
-                     "\"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
-                     state, doorStatus, INSValue, ins_threshold, timer, state1_max_time, state2_max_duration, *max_stillness_time);
+                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
+                     state, doorStatus, INSValue, ins_threshold, timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
+                     *max_stillness_time);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
         }
