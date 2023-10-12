@@ -53,6 +53,7 @@ extern bool doorTamperedFlag;
 extern bool doorMessageReceivedFlag;
 extern unsigned long doorHeartbeatReceived;
 extern unsigned long doorLastMessage;
+extern unsigned long timeWhenDoorClosed;
 
 // setup() functions
 void setupIM(void);

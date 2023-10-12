@@ -11,6 +11,9 @@ the code was deployed.
 
 ## [Unreleased]
 
+- Timer in state0 that is reset when the door closes during which the sensor is allowed to detect for occupation (CU-8678t4ztg).
+- Console function for the occupation detection timer as well as the timer count and timeout value in Debug Publishes (CU-8678t4ztg).
+
 ### Added
 
 - API call /api/message-clients that sends a POSTed message to all clients with active sensors (CU-w9bcb5).
@@ -64,6 +67,10 @@ the code was deployed.
 - "doorMissedFrequently" field to JSON data submitted by brave sensors that is sent to /api/heartbeat (CU-860rk8v2a).
 - Sentry log in the case that doorMissedFrequently is true in posted data from brave sensor (CU-860rk8v2a).
 - GitHub Actions to deploy to AWS infrastructure on Dev and Staging (CU-860ra8f7q).
+
+### Fixed
+
+- Wording in consoleFunctionTests.cpp when functions are called with 'e'.
 
 ### Removed
 
