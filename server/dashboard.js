@@ -24,15 +24,29 @@ const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/new
 const updateClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateClient.mst`, 'utf-8')
 const updateLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateLocation.mst`, 'utf-8')
 const vitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/vitals.mst`, 'utf-8')
+let languageMode = 'en'
 
 function getAlertTypeDisplayName(alertType) {
   let displayName = ''
-  if (alertType === ALERT_TYPE.SENSOR_DURATION) {
-    displayName = 'Duration'
-  } else if (alertType === ALERT_TYPE.SENSOR_STILLNESS) {
-    displayName = 'Stillness'
+
+  if (languageMode === 'en') {
+    if (alertType === ALERT_TYPE.SENSOR_DURATION) {
+      displayName = 'Duration'
+    } else if (alertType === ALERT_TYPE.SENSOR_STILLNESS) {
+      displayName = 'Stillness'
+    } else {
+      displayName = 'Unknown'
+    }
+  } else if (languageMode === 'es_us') {
+    if (alertType === ALERT_TYPE.SENSOR_DURATION) {
+      displayName = 'Duración'
+    } else if (alertType === ALERT_TYPE.SENSOR_STILLNESS) {
+      displayName = 'Tranquilidad'
+    } else {
+      displayName = 'Desconocido'
+    }
   } else {
-    displayName = 'Unknown'
+    displayName = 'Unknown Language'
   }
 
   return displayName
@@ -409,7 +423,7 @@ async function submitNewClient(req, res) {
     if (validationErrors.isEmpty()) {
       const clients = await db.getClients()
       const data = req.body
-
+      languageMode = data.language
       for (const client of clients) {
         if (client.displayName === data.displayName) {
           const errorMessage = `Client Display Name already exists: ${data.displayName}`
