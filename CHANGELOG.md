@@ -11,11 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
-- Timer in state0 that is reset when the door closes during which the sensor is allowed to detect for occupation (CU-8678t4ztg).
-- Console function for the occupation detection timer as well as the timer count and timeout value in Debug Publishes (CU-8678t4ztg).
+## [10.0.0] - 2023-10-12
 
 ### Added
 
+- Timer in state0 that is reset when the door closes during which the sensor is allowed to detect for occupation (CU-8678t4ztg).
+- Console function for the occupation detection timer as well as the timer count and timeout value in Debug Publishes (CU-8678t4ztg).
 - API call /api/message-clients that sends a POSTed message to all clients with active sensors (CU-w9bcb5).
 
 ### Fixed
@@ -614,7 +615,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.10.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.0.0...HEAD
+[10.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.10.0...v10.0.0
 [9.10.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.9.0...v9.10.0
 [9.9.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.8.0...v9.9.0
 [9.8.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.7.0...v9.8.0
