@@ -423,7 +423,9 @@ async function submitNewClient(req, res) {
     if (validationErrors.isEmpty()) {
       const clients = await db.getClients()
       const data = req.body
-      languageMode = data.language
+      if (data.language) {
+        languageMode = data.language
+      }
       for (const client of clients) {
         if (client.displayName === data.displayName) {
           const errorMessage = `Client Display Name already exists: ${data.displayName}`
