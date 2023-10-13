@@ -30,7 +30,7 @@ function getAlertTypeDisplayName(alertType) {
   if (alertType === ALERT_TYPE.SENSOR_DURATION) {
     displayName = 'Duration'
   } else if (alertType === ALERT_TYPE.SENSOR_STILLNESS) {
-    displayName = 'Stillness'
+    displayName = 'example'
   } else {
     displayName = 'Unknown'
   }
