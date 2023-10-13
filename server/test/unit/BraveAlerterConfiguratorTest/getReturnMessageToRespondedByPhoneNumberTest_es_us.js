@@ -20,6 +20,8 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToRespondedByP
       CHATBOT_STATE.WAITING_FOR_REPLY,
       ['Cat0', 'Cat1'],
     )
+    console.log('Expected:', 'Una vez que haya contestado, responda con el número que mejor describa el incidente:\n1 - Cat0\n2 - Cat1');
+    console.log('Actual:', returnMessage);
 
     expect(returnMessage).to.equal('Una vez que haya contestado, responda con el número que mejor describa el incidente:\n1 - Cat0\n2 - Cat1\n')
   })
