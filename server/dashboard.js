@@ -498,7 +498,7 @@ async function submitEditClient(req, res) {
           return res.status(409).send(errorMessage)
         }
       }
-      
+
       const newResponderPhoneNumbers =
         data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== ''
           ? data.responderPhoneNumbers.split(',').map(phone => phone.trim())
