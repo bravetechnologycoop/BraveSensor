@@ -14,6 +14,7 @@ BEGIN
         DELETE from sessions where od_flag = 0;
         DELETE from sessions where od_flag is null;
         UPDATE sessions set alert_reason='Unknown' where alert_reason is null;
+        UPDATE sessions set alert_reason='Tranquilidad' where alert_reason is 'Stillness';
 
         ALTER TABLE sessions
             DROP still_counter,
