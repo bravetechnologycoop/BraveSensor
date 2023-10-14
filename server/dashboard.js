@@ -30,7 +30,7 @@ function getAlertTypeDisplayName(alertType) {
   if (alertType === ALERT_TYPE.SENSOR_DURATION) {
     displayName = 'Duration'
   } else if (alertType === ALERT_TYPE.SENSOR_STILLNESS) {
-    displayName = 'example'
+    displayName = 'Stillness'
   } else {
     displayName = 'Unknown'
   }
@@ -443,7 +443,7 @@ async function submitNewClient(req, res) {
         true,
         false,
         false,
-        req.body.language || 'en',
+        'en',
       )
 
       res.redirect(`/clients/${newClient.id}`)
