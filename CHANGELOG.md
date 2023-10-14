@@ -18,6 +18,11 @@ the code was deployed.
 - Feature that automatically populates the incident category field upon selection (CU-3bnggtt)
 - Integrated an object containing translated messages in Spanish for the translation to Spanish feature functionality (CU-3bnggtt).
 
+### Fixed
+
+- Test data object in handleHeartbeatTest to include "isINSZero" key-value (CU-8678y7w9y).
+- Clang formatting error by removing extra space.
+
 ## [10.0.0] - 2023-10-12
 
 ### Added
