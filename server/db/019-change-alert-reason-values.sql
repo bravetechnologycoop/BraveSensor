@@ -18,9 +18,9 @@ BEGIN
         ALTER TABLE sessions
         ADD COLUMN alert_type alert_type_enum;
 
-       UPDATE sessions
-       SET alert_type = 'SENSOR_STILLNESS'
-       WHERE alert_reason IN ('Stillness', 'Tranquilidad');
+        UPDATE sessions
+        SET alert_type = 'SENSOR_STILLNESS'
+        WHERE alert_reason IN ('Stillness', 'Tranquilidad');
 
 
         UPDATE sessions
