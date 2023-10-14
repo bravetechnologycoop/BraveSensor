@@ -20,11 +20,12 @@ BEGIN
 
         UPDATE sessions
         SET alert_type = 'SENSOR_STILLNESS'
-        WHERE alert_reason = 'Stillness';
+        WHERE alert_reason IN ('Stillness', 'Something else');
+
 
         UPDATE sessions
         SET alert_type = 'SENSOR_DURATION'
-        WHERE alert_reason = 'Duration';
+        WHERE alert_reason IN ('Duration', 'Duración');
 
         UPDATE sessions
         SET alert_type = 'SENSOR_UNKNOWN'
