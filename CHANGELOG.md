@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Fixed
+
+- Specify 1 byte write into Door ID flash addresses, preventing erroneous overwrite of long stillness timer flash addresses (CU-8678xpmpu). 
+
 ## [10.0.0] - 2023-10-12
 
 ### Added
