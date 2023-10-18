@@ -39,11 +39,9 @@ void initializeDoorID() {
     Log.info("door ID flag is 0x%04X", initializeDoorIDFlag);
 
     if (initializeDoorIDFlag != INITIALIZE_DOOR_ID_FLAG) {
-
         uint8_t doorID_byte1 = DOORID_BYTE1;
         uint8_t doorID_byte2 = DOORID_BYTE2;
         uint8_t doorID_byte3 = DOORID_BYTE3;
-
         EEPROM.put(ADDR_IM_DOORID, doorID_byte1);
         EEPROM.put((ADDR_IM_DOORID + 1), doorID_byte2);
         EEPROM.put((ADDR_IM_DOORID + 2), doorID_byte3);
