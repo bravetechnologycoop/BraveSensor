@@ -39,7 +39,7 @@ void initializeDoorID() {
     Log.info("door ID flag is 0x%04X", initializeDoorIDFlag);
 
     if (initializeDoorIDFlag != INITIALIZE_DOOR_ID_FLAG) {
-        //initialize as uint8_t so that only 1 byte is written for each doorID byte
+        // initialize as uint8_t so that only 1 byte is written for each doorID byte
         uint8_t doorID_byte1 = DOORID_BYTE1;
         uint8_t doorID_byte2 = DOORID_BYTE2;
         uint8_t doorID_byte3 = DOORID_BYTE3;
