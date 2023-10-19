@@ -25,7 +25,7 @@ async function normalHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
@@ -40,7 +40,7 @@ async function normalHeartbeatWithIncorrectAPIKey(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: badpassword,
     })
     await helpers.sleep(50)
@@ -55,7 +55,7 @@ async function lowBatteryHeartbeatWithIncorrectAPIKey(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": true, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": true, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: badpassword,
     })
     await helpers.sleep(50)
@@ -70,7 +70,7 @@ async function unknownDoorLastMessageHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": -1, "doorTampered": -1, "doorLastMessage": -1, "resetReason": "NONE", "states":[]}`,
+      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": -1, "doorTampered": -1, "doorLastMessage": -1, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
@@ -85,7 +85,7 @@ async function lowBatteryHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": true, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": true, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
@@ -100,7 +100,7 @@ async function doorTamperedHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
@@ -115,7 +115,7 @@ async function doorMissedFrequentlyHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"doorMissedMsg": 0, "doorMissedFrequently": true, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
+      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": true, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[]}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
@@ -218,7 +218,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     it('should log a Sentry alert when the INS sensor value is less or equal to zero', async () => {
       const response = await chai.request(server).post('/api/heartbeat').send({
         coreid: radar_coreID,
-        data: `{"isINSZero":true,"doorMissedMsg":0,"doorMissedFrequently":false,"doorLastMessage":-1,"doorLowBatt":-1,"doorTampered":-1,"resetReason":"NONE","states":[]}`,
+        data: `{"isINSZero": true, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLastMessage": -1, "doorLowBatt": -1, "doorTampered": -1, "resetReason": "NONE", "states": []}`,
         api_key: webhookAPIKey,
       })
 
