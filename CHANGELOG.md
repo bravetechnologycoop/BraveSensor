@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Fixed
+
+- Test data object in handleHeartbeatTest to include "isINSZero" key-value (CU-8678y7w9y)
+
 ## [10.0.0] - 2023-10-12
 
 ### Added
