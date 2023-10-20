@@ -13,6 +13,7 @@ the code was deployed.
 
 ### Fixed
 
+- Specify 1 byte write into Door ID flash addresses, preventing erroneous overwrite of long stillness timer flash addresses (CU-8678xpmpu). 
 - Test data object in handleHeartbeatTest to include "isINSZero" key-value (CU-8678y7w9y).
 - Clang formatting error by removing extra space.
 

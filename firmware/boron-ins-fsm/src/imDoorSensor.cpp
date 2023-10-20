@@ -39,9 +39,13 @@ void initializeDoorID() {
     Log.info("door ID flag is 0x%04X", initializeDoorIDFlag);
 
     if (initializeDoorIDFlag != INITIALIZE_DOOR_ID_FLAG) {
-        EEPROM.put(ADDR_IM_DOORID, DOORID_BYTE1);
-        EEPROM.put((ADDR_IM_DOORID + 1), DOORID_BYTE2);
-        EEPROM.put((ADDR_IM_DOORID + 2), DOORID_BYTE3);
+        // initialize as uint8_t so that only 1 byte is written for each doorID byte
+        uint8_t doorID_byte1 = DOORID_BYTE1;
+        uint8_t doorID_byte2 = DOORID_BYTE2;
+        uint8_t doorID_byte3 = DOORID_BYTE3;
+        EEPROM.put(ADDR_IM_DOORID, doorID_byte1);
+        EEPROM.put((ADDR_IM_DOORID + 1), doorID_byte2);
+        EEPROM.put((ADDR_IM_DOORID + 2), doorID_byte3);
         initializeDoorIDFlag = INITIALIZE_DOOR_ID_FLAG;
         EEPROM.put(ADDR_INITIALIZE_DOOR_ID_FLAG, initializeDoorIDFlag);
         Log.info("Door ID was written to flash on bootup.");
