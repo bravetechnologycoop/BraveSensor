@@ -162,6 +162,10 @@ async function sendLowBatteryAlert(locationid) {
     const timeoutInMillis = parseInt(helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT'), 10) * 1000
 
     pgClient = await db.beginTransaction()
+    if (pgClient === null) {
+      helpers.logError(`sendLowBatteryAlert: Error starting transaction`)
+      return
+    }
     const location = await db.getLocationData(locationid, pgClient)
 
     if (
