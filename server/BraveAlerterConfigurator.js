@@ -90,8 +90,12 @@ class BraveAlerterConfigurator {
     try {
       pgClient = await db.beginTransaction()
       if (pgClient === null) {
-        helpers.logError(`alertSessionChangedCallback: Error starting transaction`)
-        return
+        // If the beginTransaction function failed to start the transaction, retry it once more before logging an error
+        pgClient = await db.beginTransaction()
+        if (pgClient === null) {
+          helpers.logError(`alertSessionChangedCallback: Error starting transaction`)
+          return
+        }
       }
       session = await db.getSessionWithSessionId(alertSession.sessionId, pgClient)
 
