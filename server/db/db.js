@@ -71,6 +71,7 @@ async function beginTransaction() {
     if (pgClient) {
       try {
         await this.rollbackTransaction(pgClient)
+        return null
       } catch (err) {
         helpers.logError(`beginTransaction: Error rolling back the errored transaction: ${err}`)
       }
