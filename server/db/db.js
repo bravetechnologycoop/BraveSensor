@@ -65,7 +65,7 @@ async function beginTransaction() {
 
     await pgClient.query('BEGIN')
 
-    await pgClient.query('LOCK TABLE clients, notifications, sessions, locations, sensors_vitals, sensors_vitals_cache')
+    await pgClient.query('LOCK TABLE clients, sessions, locations')
   } catch (e) {
     helpers.logError(`Error running the beginTransaction query: ${e}`)
     if (pgClient) {
