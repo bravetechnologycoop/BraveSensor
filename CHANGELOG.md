@@ -11,6 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+- Return value when beginTransaction function fails to start and error handling to try and prevent deadlocks (CU-8678wudz8).
+
+### Removed 
+- Locks on unnecessary tables in beginTransaction function (CU-8678wudz8).
+
 ### Fixed
 
 - Specify 1 byte write into Door ID flash addresses, preventing erroneous overwrite of long stillness timer flash addresses (CU-8678xpmpu). 
