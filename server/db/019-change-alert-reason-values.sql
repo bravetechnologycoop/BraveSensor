@@ -20,7 +20,7 @@ BEGIN
 
         UPDATE sessions
         SET alert_type = 'SENSOR_STILLNESS'
-        WHERE alert_reason IN ('Stillness', 'Something else');
+        WHERE alert_reason IN ('Stillness', 'Tranquilidad');
 
 
         UPDATE sessions
@@ -29,7 +29,7 @@ BEGIN
 
         UPDATE sessions
         SET alert_type = 'SENSOR_UNKNOWN'
-        WHERE alert_reason = 'Unknown';
+        WHERE alert_reason IN ('Unknown', 'Incógnita');
 
         ALTER TABLE sessions
         DROP COLUMN alert_reason;
