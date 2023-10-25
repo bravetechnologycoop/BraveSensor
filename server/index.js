@@ -103,6 +103,7 @@ async function handleAlert(location, alertType) {
         responderPushId: client.responderPushId,
         deviceName: location.displayName,
         alertType: newSession.alertType,
+        language: client.language,
         message: t('alertStart', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
         reminderTimeoutMillis: client.reminderTimeout * 1000,
         fallbackTimeoutMillis: client.fallbackTimeout * 1000,
