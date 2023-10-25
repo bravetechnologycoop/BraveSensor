@@ -23,7 +23,7 @@ async function authorize(req, res, next) {
     }
 
     // will throw error on failure to validate idToken
-    const payload = await googlePayload(idToken)
+    await googlePayload(req.body.idToken)
 
     next()
   } catch (error) {

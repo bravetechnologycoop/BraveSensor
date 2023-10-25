@@ -24,6 +24,8 @@ env:
     - IS_DB_LOGGING=false
     - PA_API_KEY_PRIMARY_TEST=primaryPAkey
     - PA_API_KEY_SECONDARY_TEST=secondaryPAkey
+    - PA_CLIENT_ID=fakeclientid.apps.googleusercontent.com
+    - PA_CLIENT_SECRET=fakeclientsecret
     - PARTICLE_WEBHOOK_API_KEY_TEST=webhookKey
 
     # TWILIO_SID_TEST (from https://www.twilio.com/console/voice/project/test-credentials)
