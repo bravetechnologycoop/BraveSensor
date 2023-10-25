@@ -1181,6 +1181,7 @@ async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
     return createSensorsVitalFromRow(results.rows[0], allLocations)
   } catch (err) {
     helpers.log(err.toString())
+    return null
   }
 }
 
