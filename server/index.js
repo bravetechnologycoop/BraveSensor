@@ -69,7 +69,7 @@ app.use(braveAlerter.getRouter())
 vitals.setupVitals(braveAlerter)
 
 async function handleAlert(location, alertType) {
-  const alertTypeDisplayName = helpers.getAlertTypeDisplayName(alertType, location.client.language)
+  const alertTypeDisplayName = helpers.getAlertTypeDisplayName(alertType, 'es_us')
   helpers.log(`${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId}`)
 
   let pgClient
