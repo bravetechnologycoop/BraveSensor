@@ -1,5 +1,6 @@
 // Third-party dependencies
 const Validator = require('express-validator')
+const { OAuth2Client } = require('google-auth-library')
 
 // In-house dependencies
 const { helpers, twilioHelpers } = require('brave-alert-lib')
@@ -7,6 +8,56 @@ const db = require('./db/db')
 
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
 const paPasswords = [helpers.getEnvVar('PA_PASSWORD_PRIMARY'), helpers.getEnvVar('PA_PASSWORD_SECONDARY')]
+const paClientId = helpers.getEnvVar('PA_CLIENT_ID')
+const paOAuth2Client = new OAuth2Client(paClientId, helpers.getEnvVar('PA_CLIENT_SECRET'), 'postmessage')
+
+async function googlePayload(idToken) {
+  const ticket = await paOAuth2Client.verifyIdToken({ idToken, audience: paClientId })
+  return ticket.getPayload()
+}
+
+async function authorize(req, res, next) {
+  try {
+    if (!req.body.idToken) {
+      res.status(400)
+    }
+
+    // will throw error on failure to validate idToken
+    const payload = await googlePayload(idToken)
+
+    next()
+  } catch (error) {
+    helpers.log(`PA: Unauthorized request to: ${req.path}`)
+    res.status(401)
+  }
+}
+
+const validateGetGoogleTokens = Validator.body(['code']).trim().notEmpty()
+
+async function getGoogleTokens(req, res) {
+  try {
+    // exchange code for tokens
+    const { tokens } = await paOAuth2Client.getToken(req.body.code)
+
+    const payload = await googlePayload(tokens.id_token)
+    helpers.log(`PA: Got Google tokens for ${payload.name} (${payload.email})`)
+
+    res.json(tokens) // send tokens to PA
+  } catch (error) {
+    helpers.log('PA: Unauthorized attempt to get Google tokens')
+    res.status(401)
+  }
+}
+
+const validateGetGooglePayload = Validator.body(['idToken']).trim().notEmpty()
+
+async function getGooglePayload(req, res) {
+  try {
+    res.json(await googlePayload(req.body.idToken))
+  } catch (error) {
+    res.status(401)
+  }
+}
 
 const validateCreateSensorLocation = Validator.body([
   'braveKey',
@@ -115,6 +166,11 @@ async function handleSensorPhoneNumber(req, res) {
 }
 
 module.exports = {
+  authorize,
+  validateGetGoogleTokens,
+  getGoogleTokens,
+  validateGetGooglePayload,
+  getGooglePayload,
   handleCreateSensorLocation,
   handleGetSensorClients,
   handleSensorPhoneNumber,

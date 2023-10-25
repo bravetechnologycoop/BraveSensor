@@ -28,6 +28,9 @@ function configureRoutes(app) {
 
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
 
+  app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
+  app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)
+
   app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, clickUpHelpers.clickUpChecker, pa.handleCreateSensorLocation)
   app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, clickUpHelpers.clickUpChecker, pa.handleGetSensorClients)
   app.post('/pa/sensor-twilio-number', pa.validateSensorPhoneNumber, clickUpHelpers.clickUpChecker, pa.handleSensorPhoneNumber)
