@@ -9,7 +9,6 @@ const { t } = require('i18next')
 
 // In-house dependencies
 const { ALERT_TYPE, CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
-const localHelpers = require('./localHelpers/localHelpers')
 const db = require('./db/db')
 const SENSOR_EVENT = require('./SensorEventEnum')
 const BraveAlerterConfigurator = require('./BraveAlerterConfigurator')
@@ -70,7 +69,7 @@ app.use(braveAlerter.getRouter())
 vitals.setupVitals(braveAlerter)
 
 async function handleAlert(location, alertType) {
-  const alertTypeDisplayName = localHelpers.getAlertTypeDisplayName(alertType, location.client.language)
+  const alertTypeDisplayName = helpers.getAlertTypeDisplayName(alertType, location.client.language)
   helpers.log(`${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId}`)
 
   let pgClient
