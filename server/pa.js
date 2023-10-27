@@ -1,47 +1,21 @@
 // Third-party dependencies
 const Validator = require('express-validator')
-const { OAuth2Client } = require('google-auth-library')
 
 // In-house dependencies
-const { helpers, twilioHelpers } = require('brave-alert-lib')
+const { helpers, twilioHelpers, googleHelpers } = require('brave-alert-lib')
 const db = require('./db/db')
 
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
 const paPasswords = [helpers.getEnvVar('PA_PASSWORD_PRIMARY'), helpers.getEnvVar('PA_PASSWORD_SECONDARY')]
-const paClientId = helpers.getEnvVar('PA_CLIENT_ID')
-const paOAuth2Client = new OAuth2Client(paClientId, helpers.getEnvVar('PA_CLIENT_SECRET'), 'postmessage')
 
-async function googlePayload(idToken) {
-  const ticket = await paOAuth2Client.verifyIdToken({ idToken, audience: paClientId })
-  return ticket.getPayload()
-}
-
-async function authorize(req, res, next) {
-  try {
-    if (!req.body.idToken) {
-      res.status(400)
-    }
-
-    // will throw error on failure to validate idToken
-    await googlePayload(req.body.idToken)
-
-    next()
-  } catch (error) {
-    helpers.log(`PA: Unauthorized request to: ${req.path}`)
-    res.status(401)
-  }
-}
-
-const validateGetGoogleTokens = Validator.body(['code']).trim().notEmpty()
+const validateGetGoogleTokens = Validator.body(['authCode']).trim().notEmpty()
 
 async function getGoogleTokens(req, res) {
   try {
-    // exchange code for tokens
-    const { tokens } = await paOAuth2Client.getToken(req.body.code)
+    const tokens = await googleHelpers.paGetTokens(req.body.authCode)
+    const payload = await googleHelpers.paGetPayload(tokens.id_token)
 
-    const payload = await googlePayload(tokens.id_token)
     helpers.log(`PA: Got Google tokens for ${payload.name} (${payload.email})`)
-
     res.json(tokens) // send tokens to PA
   } catch (error) {
     helpers.log('PA: Unauthorized attempt to get Google tokens')
@@ -53,7 +27,7 @@ const validateGetGooglePayload = Validator.body(['idToken']).trim().notEmpty()
 
 async function getGooglePayload(req, res) {
   try {
-    res.json(await googlePayload(req.body.idToken))
+    res.json(await googleHelpers.paGetPayload(req.body.idToken))
   } catch (error) {
     res.status(401)
   }
@@ -67,7 +41,7 @@ const validateCreateSensorLocation = Validator.body([
   'particleDeviceID',
   'twilioNumber',
   'clientID',
-  'clickupToken',
+  'idToken',
 ])
   .trim()
   .notEmpty()
@@ -76,6 +50,9 @@ async function handleCreateSensorLocation(req, res) {
   const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
   if (validationErrors.isEmpty()) {
+    res.status(200).send({})
+    return
+
     const braveAPIKey = req.body.braveKey
     const password = req.body.password
     const locationID = req.body.locationID
@@ -107,12 +84,15 @@ async function handleCreateSensorLocation(req, res) {
   }
 }
 
-const validateGetSensorClients = Validator.body(['braveKey', 'clickupToken']).trim().notEmpty()
+const validateGetSensorClients = Validator.body(['braveKey', 'idToken']).trim().notEmpty()
 
 async function handleGetSensorClients(req, res) {
   const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
   if (validationErrors.isEmpty()) {
+    res.status(200).send({})
+    return
+
     const braveAPIKey = req.body.braveKey
 
     if (paApiKeys.includes(braveAPIKey)) {
@@ -138,7 +118,7 @@ async function handleGetSensorClients(req, res) {
   }
 }
 
-const validateSensorPhoneNumber = Validator.body(['braveKey', 'areaCode', 'locationID', 'clickupToken']).trim().notEmpty()
+const validateSensorPhoneNumber = Validator.body(['braveKey', 'areaCode', 'locationID', 'idToken']).trim().notEmpty()
 
 async function handleSensorPhoneNumber(req, res) {
   const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
@@ -147,6 +127,9 @@ async function handleSensorPhoneNumber(req, res) {
     const areaCode = req.body.areaCode
     const locationID = req.body.locationID
     const braveAPIKey = req.body.braveKey
+
+    res.status(200).send({})
+    return
 
     if (paApiKeys.includes(braveAPIKey)) {
       const response = await twilioHelpers.buyAndConfigureTwilioPhoneNumber(areaCode, locationID)
@@ -166,7 +149,6 @@ async function handleSensorPhoneNumber(req, res) {
 }
 
 module.exports = {
-  authorize,
   validateGetGoogleTokens,
   getGoogleTokens,
   validateGetGooglePayload,
