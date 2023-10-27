@@ -50,9 +50,6 @@ async function handleCreateSensorLocation(req, res) {
   const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
   if (validationErrors.isEmpty()) {
-    res.status(200).send({})
-    return
-
     const braveAPIKey = req.body.braveKey
     const password = req.body.password
     const locationID = req.body.locationID
@@ -90,9 +87,6 @@ async function handleGetSensorClients(req, res) {
   const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
   if (validationErrors.isEmpty()) {
-    res.status(200).send({})
-    return
-
     const braveAPIKey = req.body.braveKey
 
     if (paApiKeys.includes(braveAPIKey)) {
@@ -127,9 +121,6 @@ async function handleSensorPhoneNumber(req, res) {
     const areaCode = req.body.areaCode
     const locationID = req.body.locationID
     const braveAPIKey = req.body.braveKey
-
-    res.status(200).send({})
-    return
 
     if (paApiKeys.includes(braveAPIKey)) {
       const response = await twilioHelpers.buyAndConfigureTwilioPhoneNumber(areaCode, locationID)
