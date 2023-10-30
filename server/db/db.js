@@ -56,6 +56,7 @@ async function beginTransaction() {
   }
 
   let pgClient = null
+  let isRetry = false
 
   try {
     pgClient = await pool.connect()
@@ -67,6 +68,11 @@ async function beginTransaction() {
 
     await pgClient.query('LOCK TABLE clients, sessions, locations')
   } catch (e) {
+    if (!isRetry) {
+      isRetry = true
+      helpers.logError(`Error running the beginTransaction query: ${e}. Will retry beginTransaction again.`)
+      beginTransaction()
+    }
     helpers.logError(`Error running the beginTransaction query: ${e}`)
     if (pgClient) {
       try {
@@ -1177,8 +1183,7 @@ async function getMostRecentSensorsVitalWithLocation(location, pgClient) {
       return null
     }
 
-    const allLocations = [location]
-    return createSensorsVitalFromRow(results.rows[0], allLocations)
+    return createSensorsVitalFromRow(results.rows[0], [location])
   } catch (err) {
     helpers.log(err.toString())
     return null

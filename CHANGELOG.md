@@ -12,7 +12,7 @@ the code was deployed.
 ## [Unreleased]
 
 ### Changed 
-- database function getMostRecentSensorsVitalWithLocation to take in entire location as parameter instead of just the locationid (CU-8678wudz8).
+- Database function getMostRecentSensorsVitalWithLocation to take in entire location as parameter instead of just the locationid (CU-8678wudz8).
 
 ### Added
 - Return value when beginTransaction function fails to start and error handling to try and prevent deadlocks (CU-8678wudz8).
