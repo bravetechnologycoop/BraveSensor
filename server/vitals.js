@@ -88,7 +88,7 @@ async function checkHeartbeat() {
     }
 
     try {
-      const sensorsVital = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
+      const sensorsVital = await db.getMostRecentSensorsVitalWithLocation(location)
 
       if (sensorsVital) {
         const radarDelayInSeconds = differenceInSeconds(currentDBTime, sensorsVital.createdAt)
@@ -240,7 +240,7 @@ async function handleHeartbeat(req, res) {
           const doorMissedFrequently = message.doorMissedFrequently
           const resetReason = message.resetReason
           const stateTransitionsArray = message.states.map(convertStateArrayToObject)
-          const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
+          const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocation(location)
 
           let doorLastSeenAt
           let isTamperedFlag

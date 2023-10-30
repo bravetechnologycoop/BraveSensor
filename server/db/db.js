@@ -1159,16 +1159,16 @@ async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
   return []
 }
 
-async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
+async function getMostRecentSensorsVitalWithLocation(location, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getMostRecentSensorsVitalWithLocationid',
+      'getMostRecentSensorsVitalWithLocation',
       `
       SELECT *
       FROM sensors_vitals_cache
       WHERE locationid = $1
       `,
-      [locationid],
+      [location.locationid],
       pool,
       pgClient,
     )
@@ -1177,7 +1177,7 @@ async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
       return null
     }
 
-    const allLocations = await getLocations(pgClient)
+    const allLocations = [location]
     return createSensorsVitalFromRow(results.rows[0], allLocations)
   } catch (err) {
     helpers.log(err.toString())
@@ -1508,7 +1508,7 @@ module.exports = {
   getLocations,
   getLocationsFromAlertApiKey,
   getLocationsFromClientId,
-  getMostRecentSensorsVitalWithLocationid,
+  getMostRecentSensorsVitalWithLocation,
   getMostRecentSessionWithLocationid,
   getMostRecentSessionWithPhoneNumbers,
   getNewNotificationsCountByAlertApiKey,
