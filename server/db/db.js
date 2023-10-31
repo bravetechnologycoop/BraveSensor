@@ -50,13 +50,12 @@ function createSensorsVitalFromRow(r, allLocations) {
   return new SensorsVital(r.id, r.missed_door_messages, r.is_door_battery_low, r.door_last_seen_at, r.reset_reason, r.state_transitions, r.created_at, r.is_tampered, location)
 }
 
-async function beginTransaction() {
+async function beginTransaction(retryCount = 0) {
   if (helpers.isDbLogging()) {
     helpers.log('STARTED: beginTransaction')
   }
 
   let pgClient = null
-  let isRetry = false
 
   try {
     pgClient = await pool.connect()
@@ -68,10 +67,9 @@ async function beginTransaction() {
 
     await pgClient.query('LOCK TABLE clients, sessions, locations')
   } catch (e) {
-    if (!isRetry) {
-      isRetry = true
+    if (retryCount < 1) {
       helpers.logError(`Error running the beginTransaction query: ${e}. Will retry beginTransaction again.`)
-      beginTransaction()
+      beginTransaction(retryCount + 1)
     }
     helpers.logError(`Error running the beginTransaction query: ${e}`)
     if (pgClient) {
