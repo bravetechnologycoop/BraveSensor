@@ -499,6 +499,7 @@ async function submitEditClient(req, res) {
         }
       }
 
+      const newlanguage = data.language && data.language.trim() !== '' ? data.language : 'en'
       const newResponderPhoneNumbers =
         data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== ''
           ? data.responderPhoneNumbers.split(',').map(phone => phone.trim())
@@ -524,6 +525,7 @@ async function submitEditClient(req, res) {
         data.isDisplayed,
         data.isSendingAlerts,
         data.isSendingVitals,
+        newlanguage,
         req.params.id,
       )
 
