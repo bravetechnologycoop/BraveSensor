@@ -75,6 +75,15 @@
                         <small id="heartbeatPhoneNumbersHelp" class="form-text text-muted">Each phone number has +1 in front and separated by commas with no dashes or spaces, please (eg. +14445556789,+12223334444,+11231231234)</small>
                     </div>
                 </div>
+               <div class="form-group row justify-content-start row-no-gutters">
+                  <label for="language" class="col-sm-3 col-form-label">Select Language:</label>
+                  <div class="col-sm-5">
+                      <select class="form-control" id="language" name="language">
+                          <option value="en">English</option>
+                          <option value="es_us">Spanish</option>
+                      </select>
+                  </div>
+                </div>
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="incidentCategories" class="col-sm-3 col-form-label">Incident Categories:</label>
                     <div class="col-sm-5">
