@@ -14,5 +14,15 @@
   "sensorIsTampered": "The door sensor at {{ deviceDisplayName }} is not fully attached to the door. If you require a replacement door sensor or have any questions about this, contact us by emailing clientsupport@brave.coop.",
   "sensorLowBatteryInitial": "The battery for the {{ deviceDisplayName }} door sensor is low, and needs replacing.\n\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w",
   "sensorReconnection": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) has been reconnected.",
-  "thankYou": "Thank you"
+  "thankYou": "Thank you",
+  "SENSOR_DURATION": "Duration",
+  "SENSOR_STILLNESS": "Stillness",
+  "SENSOR_UNKNOWN": "Unknown",
+  "No One Inside": "No One Inside",
+  "Person responded": "Person responded",
+  "Overdose": "Overdose",
+  "None of the above": "None of the above",
+  "Cat0": "Cat0",
+  "Cat1": "Cat1"
+
 }
