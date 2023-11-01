@@ -22,7 +22,6 @@ BEGIN
         SET alert_type = 'SENSOR_STILLNESS'
         WHERE alert_reason = 'Stillness';
 
-
         UPDATE sessions
         SET alert_type = 'SENSOR_DURATION'
         WHERE alert_reason = 'Duration';
