@@ -29,7 +29,7 @@ BEGIN
 
         UPDATE sessions
         SET alert_type = 'SENSOR_UNKNOWN'
-        WHERE alert_reason z 'Unknown';
+        WHERE alert_reason = 'Unknown';
 
         ALTER TABLE sessions
         DROP COLUMN alert_reason;
