@@ -63,7 +63,7 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToOtherRespond
     )
 
     expect(returnMessage).to.equal(
-      `El incidente se clasificó como Selected Category. Gracias. Esta sesión ya está completa. (No necesita responder a este mensaje).`,
+      `El incidente se clasificó como Selected Category.\n\nGracias. Esta sesión ya está completa. (No necesita responder a este mensaje).`,
     )
   })
 

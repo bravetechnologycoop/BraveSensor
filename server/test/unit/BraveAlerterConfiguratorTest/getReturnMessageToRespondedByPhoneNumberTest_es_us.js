@@ -65,7 +65,7 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToRespondedByP
       ['Cat0', 'Cat1'],
     )
 
-    expect(returnMessage).to.equal(`Gracias. Esta sesión ya está completa. (No necesita responder a este mensaje).`)
+    expect(returnMessage).to.equal(`¡Gracias!. Esta sesión ya está completa. (No necesita responder a este mensaje).`)
   })
 
   it('should get message when COMPLETED => COMPLETED', () => {
