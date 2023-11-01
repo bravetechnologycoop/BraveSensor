@@ -365,6 +365,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       sandbox.stub(braveAlerter, 'startAlertSession')
       sandbox.stub(braveAlerter, 'sendSingleAlert')
       sandbox.spy(helpers, 'logSentry')
+      sandbox.spy(helpers, 'logError')
       sandbox.stub(db, 'logSensorsVital')
     })
 
@@ -401,6 +402,12 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     it('should call sendSingleAlert', async () => {
       await lowBatteryHeartbeat(radar_coreID)
       expect(braveAlerter.sendSingleAlert).to.be.called
+    })
+
+    it('should log an error if pgClient is null in sendLowBatteryAlert', async () => {
+      sandbox.stub(db, 'beginTransaction').returns(null)
+      await lowBatteryHeartbeat(radar_coreID)
+      expect(helpers.logError).to.be.calledWith(`sendLowBatteryAlert: Error starting transaction`)
     })
   })
 
