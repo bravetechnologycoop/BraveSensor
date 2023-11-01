@@ -138,7 +138,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = '    true    '
       this.isSendingAlerts = '    true    '
       this.isSendingVitals = '    true    '
-      this.language = '    en    '
+      this.language = 'en'
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
