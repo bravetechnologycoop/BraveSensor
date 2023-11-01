@@ -78,7 +78,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="incidentCategories" class="col-sm-3 col-form-label">Incident Categories:</label>
                     <div class="col-sm-5">
@@ -86,28 +85,23 @@
                         <small id="incidentCategoriesHelp" class="form-text text-muted">Each incident category is separated by commas with no quotes, please</small>
                     </div>
                 </div>
-
                 <script>
                     const englishIncidentCategories = 'No One Inside,Person responded,Overdose,None of the above'; 
 
                     const languageSelector = document.getElementById('languageSelector');
                     const incidentCategoriesInput = document.getElementById('incidentCategoriesInput');
-
                     languageSelector.addEventListener('change', function() {
                         const selectedLanguage = this.value;
-
                         if (selectedLanguage) {
                             incidentCategoriesInput.value = englishIncidentCategories;
                         } else {
                             incidentCategoriesInput.value = '';
                         }
                     });
-
                     // Trigger change event on page load to populate incident categories based on initial language selection
                     const event = new Event('change');
                     languageSelector.dispatchEvent(event);
                 </script>
-
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="reminderTimeout" class="col-sm-3 col-form-label">Reminder Message Timeout (secs):</label>
                     <div class="col-sm-5">
