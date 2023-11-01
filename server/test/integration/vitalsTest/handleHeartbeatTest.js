@@ -9,7 +9,6 @@ const sinon = require('sinon')
 const { factories, helpers } = require('brave-alert-lib')
 const { braveAlerter, db, server } = require('../../../index')
 const { locationDBFactory, sensorsVitalDBFactory } = require('../../../testingHelpers')
-// const { sendLowBatteryAlert } = require('../../../vitals')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)
