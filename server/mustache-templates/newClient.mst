@@ -89,7 +89,6 @@
 
                 <script>
                     const englishIncidentCategories = 'No One Inside,Person responded,Overdose,None of the above'; 
-                    const spanishIncidentCategories = 'Nadie adentro,La persona respondió,Sobredosis,Ninguna de las anteriores'; 
 
                     const languageSelector = document.getElementById('languageSelector');
                     const incidentCategoriesInput = document.getElementById('incidentCategoriesInput');
@@ -97,10 +96,8 @@
                     languageSelector.addEventListener('change', function() {
                         const selectedLanguage = this.value;
 
-                        if (selectedLanguage === 'en') {
+                        if (selectedLanguage) {
                             incidentCategoriesInput.value = englishIncidentCategories;
-                        } else if (selectedLanguage === 'es_us') {
-                            incidentCategoriesInput.value = spanishIncidentCategories;
                         } else {
                             incidentCategoriesInput.value = '';
                         }
