@@ -56,7 +56,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = true
       this.isSendingAlerts = true
       this.isSendingVitals = true
-      this.language = 'en'
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -71,7 +70,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -98,7 +96,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: updatedClient.isDisplayed,
         isSendingAlerts: updatedClient.isSendingAlerts,
         isSendingVitals: updatedClient.isSendingVitals,
-        language: updatedClient.language,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -113,7 +110,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       })
     })
   })
@@ -138,7 +134,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = '    true    '
       this.isSendingAlerts = '    true    '
       this.isSendingVitals = '    true    '
-      this.language = '    en    '
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -153,7 +148,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -180,7 +174,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: updatedClient.isDisplayed,
         isSendingAlerts: updatedClient.isSendingAlerts,
         isSendingVitals: updatedClient.isSendingVitals,
-        language: updatedClient.language,
       }).to.eql({
         displayName: this.newDisplayname.trim(),
         fromPhoneNumber: this.newFromPhoneNumber.trim(),
@@ -195,7 +188,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed.trim() === 'true',
         isSendingAlerts: this.isSendingAlerts.trim() === 'true',
         isSendingVitals: this.isSendingVitals.trim() === 'true',
-        language: this.language,
       })
     })
   })
@@ -218,7 +210,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: 'true',
         isSendingAlerts: 'true',
         isSendingVitals: 'true',
-        language: 'en',
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(goodRequest)
@@ -258,7 +249,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.existingClient.isDisplayed,
         isSendingAlerts: this.existingClient.isSendingAlerts,
         isSendingVitals: this.existingClient.isSendingVitals,
-        language: this.existingClient.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -285,7 +275,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: updatedClient.isDisplayed,
         isSendingAlerts: updatedClient.isSendingAlerts,
         isSendingVitals: updatedClient.isSendingVitals,
-        language: updatedClient.language,
       }).to.eql({
         displayName: this.existingClient.displayName,
         fromPhoneNumber: this.existingClient.fromPhoneNumber,
@@ -300,7 +289,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.existingClient.isDisplayed,
         isSendingAlerts: this.existingClient.isSendingAlerts,
         isSendingVitals: this.existingClient.isSendingVitals,
-        language: this.existingClient.language,
       })
     })
   })
@@ -324,7 +312,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = true
       this.isSendingAlerts = true
       this.isSendingVitals = true
-      this.language = 'en'
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -338,7 +325,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -365,7 +351,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: updatedClient.isDisplayed,
         isSendingAlerts: updatedClient.isSendingAlerts,
         isSendingVitals: updatedClient.isSendingVitals,
-        language: updatedClient.language,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -380,7 +365,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       })
     })
   })
@@ -404,7 +388,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = true
       this.isSendingAlerts = true
       this.isSendingVitals = true
-      this.language = 'en'
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -418,7 +401,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -445,7 +427,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: updatedClient.isDisplayed,
         isSendingAlerts: updatedClient.isSendingAlerts,
         isSendingVitals: updatedClient.isSendingVitals,
-        language: updatedClient.language,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -460,7 +441,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       })
     })
   })
@@ -484,7 +464,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = true
       this.isSendingAlerts = true
       this.isSendingVitals = true
-      this.language = 'en'
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -498,7 +477,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -525,7 +503,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: updatedClient.isDisplayed,
         isSendingAlerts: updatedClient.isSendingAlerts,
         isSendingVitals: updatedClient.isSendingVitals,
-        language: updatedClient.language,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -540,7 +517,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       })
     })
   })
@@ -564,7 +540,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = true
       this.isSendingAlerts = true
       this.isSendingVitals = true
-      this.language = 'en'
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -578,7 +553,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -605,7 +579,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: updatedClient.isDisplayed,
         isSendingAlerts: updatedClient.isSendingAlerts,
         isSendingVitals: updatedClient.isSendingVitals,
-        language: updatedClient.language,
       }).to.eql({
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -620,7 +593,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       })
     })
   })
@@ -643,7 +615,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = true
       this.isSendingAlerts = true
       this.isSendingVitals = true
-      this.language = 'en'
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -656,7 +627,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -700,7 +670,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: '',
         isSendingAlerts: '',
         isSendingVitals: '',
-        language: '',
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(badRequest)
@@ -770,7 +739,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = true
       this.isSendingAlerts = true
       this.isSendingVitals = true
-      this.language = 'en'
       const duplicateDisplayNameRequest = {
         displayName: this.otherClientName,
         fromPhoneNumber: '+17549553216',
@@ -785,7 +753,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(duplicateDisplayNameRequest)
@@ -822,7 +789,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = true
       this.isSendingAlerts = true
       this.isSendingVitals = true
-      this.language = 'en'
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -837,7 +803,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
@@ -880,7 +845,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = true
       this.isSendingAlerts = true
       this.isSendingVitals = true
-      this.language = 'en'
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -895,7 +859,6 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed,
         isSendingAlerts: this.isSendingAlerts,
         isSendingVitals: this.isSendingVitals,
-        language: this.language,
       }
 
       this.response = await this.agent.post(`/clients/${this.existingClient.id}`).send(this.goodRequest)
