@@ -13,13 +13,13 @@ the code was deployed.
 
 ### Added
 
-- Language field to the add new client page of dashboard(CU-3bnggtt).
+- Language field to the add new client page of dashboard (CU-3bnggtt).
 - English and Spanish options to language field in new client page of dashboard (CU-3bnggtt).
 - Feature that automatically populates the incident category field upon selection (CU-3bnggtt).
-- Implemented the ability to switch the language of an existing client from English to Spanish directly from the edit client page.
-- Incident categories are stored in English in the database for all clients, simplifying the reporting process for statistics.
-- Dynamically translating incident categories to the client's chosen language, similar to the translation of messages from a predefined JSON file.
-- Updated database edit client test codes to validate the language change functionality.
+- Implemented the ability to switch the language of an existing client from English to Spanish directly from the edit client page (CU-2q39wtu).
+- Incident categories are stored in English in the database for all clients, simplifying the reporting process for statistics (CU-8678zfmph).
+- Dynamically translating incident categories to the client's chosen language, similar to the translation of messages from a predefined JSON file (CU-8678zfmph).
+- Updated database edit client test codes to validate the language change functionality (CU-2q39wtu).
 
 ### Fixed
 
