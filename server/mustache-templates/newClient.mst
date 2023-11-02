@@ -82,7 +82,7 @@
                     <label for="incidentCategories" class="col-sm-3 col-form-label">Incident Categories:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="incidentCategories" id="incidentCategoriesInput" required>
-                        <small id="incidentCategoriesHelp" class="form-text text-muted">Each incident category is separated by commas with no quotes, please</small>
+                        <small id="incidentCategoriesHelp" class="form-text text-muted">Each incident category is separated by commas with no quotes, please (eg. No One Inside,Person responded,Overdose,None of the above)</small>
                     </div>
                 </div>
                 <script>
