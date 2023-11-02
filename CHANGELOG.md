@@ -16,13 +16,21 @@ the code was deployed.
 - Language field to the add new client page of dashboard (CU-3bnggtt).
 - English and Spanish options to language field in new client page of dashboard (CU-3bnggtt).
 - Feature that automatically populates the incident category field upon selection (CU-3bnggtt).
-- Implemented the ability to switch the language of an existing client from English to Spanish directly from the edit client page (CU-2q39wtu).
+- The ability to switch the language of an existing client from English to Spanish directly from the edit client page (CU-2q39wtu).
 - Incident categories are stored in English in the database for all clients, simplifying the reporting process for statistics (CU-8678zfmph).
 - Dynamically translating incident categories to the client's chosen language, similar to the translation of messages from a predefined JSON file (CU-8678zfmph).
-- Updated database edit client test codes to validate the language change functionality (CU-2q39wtu).
+- Test codes to validate the language change functionality (CU-2q39wtu).
+- Return value when beginTransaction function fails to start and error handling to try and prevent deadlocks (CU-8678wudz8).
+
+### Changed 
+- Database function getMostRecentSensorsVitalWithLocation to take in entire location as parameter instead of just the locationid (CU-8678wudz8).
+
+### Removed 
+- Locks on unnecessary tables in beginTransaction function (CU-8678wudz8).
 
 ### Fixed
 
+- Specify 1 byte write into Door ID flash addresses, preventing erroneous overwrite of long stillness timer flash addresses (CU-8678xpmpu). 
 - Test data object in handleHeartbeatTest to include "isINSZero" key-value (CU-8678y7w9y).
 - Clang formatting error by removing extra space.
 

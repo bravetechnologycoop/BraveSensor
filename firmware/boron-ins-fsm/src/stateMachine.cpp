@@ -104,7 +104,7 @@ void initializeStateMachineConsts() {
 
     // Seperate initialization for State 0 Window
     EEPROM.get(ADDR_INITIALIZE_STATE0_OCCUPANT_DETECTION_TIMER_FLAG, initializeState0OccupationDetectionFlag);
-    Log.info("state machine constant State3MaxLongStillnessTime flag is 0x%04X", initializeState0OccupationDetectionFlag);
+    Log.info("state machine constant State0OccupationDetectionFlag is 0x%04X", initializeState0OccupationDetectionFlag);
 
     if (initializeState0OccupationDetectionFlag != INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG) {
         EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);

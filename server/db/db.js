@@ -50,7 +50,7 @@ function createSensorsVitalFromRow(r, allLocations) {
   return new SensorsVital(r.id, r.missed_door_messages, r.is_door_battery_low, r.door_last_seen_at, r.reset_reason, r.state_transitions, r.created_at, r.is_tampered, location)
 }
 
-async function beginTransaction() {
+async function beginTransaction(retryCount = 0) {
   if (helpers.isDbLogging()) {
     helpers.log('STARTED: beginTransaction')
   }
@@ -65,12 +65,17 @@ async function beginTransaction() {
 
     await pgClient.query('BEGIN')
 
-    await pgClient.query('LOCK TABLE clients, notifications, sessions, locations, sensors_vitals, sensors_vitals_cache')
+    await pgClient.query('LOCK TABLE clients, sessions, locations')
   } catch (e) {
+    if (retryCount < 1) {
+      helpers.logError(`Error running the beginTransaction query: ${e}. Will retry beginTransaction again.`)
+      beginTransaction(retryCount + 1)
+    }
     helpers.logError(`Error running the beginTransaction query: ${e}`)
     if (pgClient) {
       try {
         await this.rollbackTransaction(pgClient)
+        return null
       } catch (err) {
         helpers.logError(`beginTransaction: Error rolling back the errored transaction: ${err}`)
       }
@@ -1160,16 +1165,16 @@ async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
   return []
 }
 
-async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
+async function getMostRecentSensorsVitalWithLocation(location, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getMostRecentSensorsVitalWithLocationid',
+      'getMostRecentSensorsVitalWithLocation',
       `
       SELECT *
       FROM sensors_vitals_cache
       WHERE locationid = $1
       `,
-      [locationid],
+      [location.locationid],
       pool,
       pgClient,
     )
@@ -1178,10 +1183,10 @@ async function getMostRecentSensorsVitalWithLocationid(locationid, pgClient) {
       return null
     }
 
-    const allLocations = await getLocations(pgClient)
-    return createSensorsVitalFromRow(results.rows[0], allLocations)
+    return createSensorsVitalFromRow(results.rows[0], [location])
   } catch (err) {
     helpers.log(err.toString())
+    return null
   }
 }
 
@@ -1508,7 +1513,7 @@ module.exports = {
   getLocations,
   getLocationsFromAlertApiKey,
   getLocationsFromClientId,
-  getMostRecentSensorsVitalWithLocationid,
+  getMostRecentSensorsVitalWithLocation,
   getMostRecentSessionWithLocationid,
   getMostRecentSessionWithPhoneNumbers,
   getNewNotificationsCountByAlertApiKey,

@@ -65,7 +65,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
-        .stub(db, 'getMostRecentSensorsVitalWithLocationid')
+        .stub(db, 'getMostRecentSensorsVitalWithLocation')
         .returns(sensorsVitalFactory({ createdAt: excessiveRadarDate, doorLastSeenAt: notExcessiveDoorDate, resetReason }))
 
       await vitals.checkHeartbeat()
@@ -107,7 +107,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
-        .stub(db, 'getMostRecentSensorsVitalWithLocationid')
+        .stub(db, 'getMostRecentSensorsVitalWithLocation')
         .returns(sensorsVitalFactory({ createdAt: excessiveRadarDate, doorLastSeenAt: notExcessiveDoorDate, resetReason }))
 
       await vitals.checkHeartbeat()
@@ -145,7 +145,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
-        .stub(db, 'getMostRecentSensorsVitalWithLocationid')
+        .stub(db, 'getMostRecentSensorsVitalWithLocation')
         .returns(sensorsVitalFactory({ createdAt: excessiveRadarDate, doorLastSeenAt: notExcessiveDoorDate, resetReason }))
 
       await vitals.checkHeartbeat()
@@ -186,7 +186,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
-        .stub(db, 'getMostRecentSensorsVitalWithLocationid')
+        .stub(db, 'getMostRecentSensorsVitalWithLocation')
         .returns(sensorsVitalFactory({ createdAt: notExcessiveRadarDate, doorLastSeenAt: excessiveDoorDate, resetReason }))
 
       await vitals.checkHeartbeat()
@@ -232,7 +232,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
-        .stub(db, 'getMostRecentSensorsVitalWithLocationid')
+        .stub(db, 'getMostRecentSensorsVitalWithLocation')
         .returns(sensorsVitalFactory({ createdAt: notExcessiveRadarDate, doorLastSeenAt: notExcessiveDoorDate, resetReason }))
 
       await vitals.checkHeartbeat()
@@ -278,7 +278,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
-        .stub(db, 'getMostRecentSensorsVitalWithLocationid')
+        .stub(db, 'getMostRecentSensorsVitalWithLocation')
         .returns(sensorsVitalFactory({ createdAt: excessiveRadarDate, doorLastSeenAt: notExcessiveDoorDate, resetReason }))
 
       await vitals.checkHeartbeat()
@@ -318,7 +318,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       })
       sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
-      sandbox.stub(db, 'getMostRecentSensorsVitalWithLocationid').returns({ createdAt: excessiveRadarDate, resetReason })
+      sandbox.stub(db, 'getMostRecentSensorsVitalWithLocation').returns({ createdAt: excessiveRadarDate, resetReason })
 
       await vitals.checkHeartbeat()
     })
