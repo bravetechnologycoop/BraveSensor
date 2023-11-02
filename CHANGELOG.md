@@ -12,6 +12,7 @@ the code was deployed.
 ## [Unreleased]
 
 ### Added
+
 - Language field to the add new client page of dashboard (CU-3bnggtt).
 - English and Spanish options to language field in new client page of dashboard (CU-3bnggtt).
 - Feature that automatically populates the incident category field upon selection (CU-3bnggtt).
@@ -19,12 +20,22 @@ the code was deployed.
 - Incident categories are stored in English in the database for all clients, simplifying the reporting process for statistics (CU-8678zfmph).
 - Dynamically translating incident categories to the client's chosen language, similar to the translation of messages from a predefined JSON file (CU-8678zfmph).
 - Test codes to validate the language change functionality (CU-2q39wtu).
+
+## [10.1.0] - 2023-11-02
+
+### Changed 
+
+- Database function getMostRecentSensorsVitalWithLocation to take in entire location as parameter instead of just the locationid (CU-8678wudz8).
+
+### Added
+
 - Return value when beginTransaction function fails to start and error handling to try and prevent deadlocks (CU-8678wudz8).
 
 ### Changed 
 - Database function getMostRecentSensorsVitalWithLocation to take in entire location as parameter instead of just the locationid (CU-8678wudz8).
 
 ### Removed 
+
 - Locks on unnecessary tables in beginTransaction function (CU-8678wudz8).
 
 ### Fixed
@@ -637,7 +648,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.0...HEAD
+[10.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.0.0...v10.1.0
 [10.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.10.0...v10.0.0
 [9.10.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.9.0...v9.10.0
 [9.9.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.8.0...v9.9.0
