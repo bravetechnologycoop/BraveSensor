@@ -2,7 +2,7 @@
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { helpers, twilioHelpers, googleHelpers } = require('brave-alert-lib')
+const { helpers, googleHelpers, twilioHelpers } = require('brave-alert-lib')
 const db = require('./db/db')
 
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
@@ -12,13 +12,14 @@ const validateGetGoogleTokens = Validator.body(['authCode']).trim().notEmpty()
 
 async function getGoogleTokens(req, res) {
   try {
-    const tokens = await googleHelpers.paGetTokens(req.body.authCode)
-    const payload = await googleHelpers.paGetPayload(tokens.id_token)
-
-    helpers.log(`PA: Got Google tokens for ${payload.name} (${payload.email})`)
-    res.json(tokens) // send tokens to PA
+    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+    if (validationErrors.isEmpty()) {
+      // paGetTokens will throw an error if the authorization code doesn't originate from PA
+      const tokens = await googleHelpers.paGetTokens(req.body.authCode)
+      res.json(tokens) // send tokens to PA: { accessToken, idToken }
+    }
   } catch (error) {
-    helpers.log('PA: Unauthorized attempt to get Google tokens')
+    helpers.log('PA: Unauthorized request to get Google tokens')
     res.status(401)
   }
 }
@@ -27,8 +28,13 @@ const validateGetGooglePayload = Validator.body(['idToken']).trim().notEmpty()
 
 async function getGooglePayload(req, res) {
   try {
-    res.json(await googleHelpers.paGetPayload(req.body.idToken))
+    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+    if (validationErrors.isEmpty()) {
+      // paGetPayload will throw an error if the ID token is not valid (see brave-alert-lib for more details)
+      res.json(await googleHelpers.paGetPayload(req.body.idToken))
+    }
   } catch (error) {
+    helpers.log('PA: Unauthorized request to get Google payload')
     res.status(401)
   }
 }
