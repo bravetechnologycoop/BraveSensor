@@ -11,6 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Fixed
+- BeginTransaction retry logic, to include return keyword when retrying the function via recursion (CU-8679376g6).
+
+### Added
+- Unit tests for beginTransaction function (CU-8679376g6).
+
 ## [10.1.0] - 2023-11-02
 
 ### Changed 
