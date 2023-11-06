@@ -88,7 +88,7 @@ async function checkHeartbeat() {
     }
 
     try {
-      const sensorsVital = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
+      const sensorsVital = await db.getMostRecentSensorsVitalWithLocation(location)
 
       if (sensorsVital) {
         const radarDelayInSeconds = differenceInSeconds(currentDBTime, sensorsVital.createdAt)
@@ -162,6 +162,10 @@ async function sendLowBatteryAlert(locationid) {
     const timeoutInMillis = parseInt(helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT'), 10) * 1000
 
     pgClient = await db.beginTransaction()
+    if (pgClient === null) {
+      helpers.logError(`sendLowBatteryAlert: Error starting transaction`)
+      return
+    }
     const location = await db.getLocationData(locationid, pgClient)
 
     if (
@@ -236,7 +240,7 @@ async function handleHeartbeat(req, res) {
           const doorMissedFrequently = message.doorMissedFrequently
           const resetReason = message.resetReason
           const stateTransitionsArray = message.states.map(convertStateArrayToObject)
-          const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocationid(location.locationid)
+          const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocation(location)
 
           let doorLastSeenAt
           let isTamperedFlag

@@ -21,6 +21,20 @@ the code was deployed.
 
 - PA API routes /pa/create-sensor-location, /pa/get-sensor-clients, /pa/sensor-twilio-number to use googleHelpers.paAuthorize instead of clickUpHelpers.clickUpChecker (CU-8679128c8).
 
+## [10.1.0] - 2023-11-02
+
+### Changed 
+
+- Database function getMostRecentSensorsVitalWithLocation to take in entire location as parameter instead of just the locationid (CU-8678wudz8).
+
+### Added
+
+- Return value when beginTransaction function fails to start and error handling to try and prevent deadlocks (CU-8678wudz8).
+
+### Removed 
+
+- Locks on unnecessary tables in beginTransaction function (CU-8678wudz8).
+
 ### Fixed
 
 - Specify 1 byte write into Door ID flash addresses, preventing erroneous overwrite of long stillness timer flash addresses (CU-8678xpmpu). 
@@ -631,7 +645,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.0...HEAD
+[10.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.0.0...v10.1.0
 [10.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.10.0...v10.0.0
 [9.10.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.9.0...v9.10.0
 [9.9.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.8.0...v9.9.0
