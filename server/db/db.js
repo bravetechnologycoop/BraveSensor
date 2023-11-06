@@ -69,7 +69,10 @@ async function beginTransaction(retryCount = 0) {
   } catch (e) {
     if (retryCount < 1) {
       helpers.logError(`Error running the beginTransaction query: ${e}. Will retry beginTransaction again.`)
-      beginTransaction(retryCount + 1)
+      if (pgClient) {
+        await this.rollbackTransaction(pgClient)
+      }
+      return await beginTransaction(retryCount + 1)
     }
     helpers.logError(`Error running the beginTransaction query: ${e}`)
     if (pgClient) {
