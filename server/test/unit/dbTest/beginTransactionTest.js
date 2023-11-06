@@ -53,4 +53,23 @@ describe('db.js unit tests: beginTransaction', () => {
       expect(pgClient).to.be.equal(clientStub)
     })
   })
+
+  describe('When beginTransaction is successful', () => {
+    let clientStub
+    beforeEach(async () => {
+      clientStub = { query: sinon.stub() }
+      sandbox.spy(db, 'beginTransaction')
+      poolConnectStub.onCall(0).resolves(clientStub)
+      pgClient = await db.beginTransaction()
+    })
+    it('should not log any errors', () => {
+      expect(helpers.logError).to.not.be.called
+    })
+    it('should lock the clients, sessions, and locations tables', () => {
+      expect(clientStub.query).to.be.calledWith(`LOCK TABLE clients, sessions, locations`)
+    })
+    it('should return a valid pgClient', () => {
+      expect(pgClient).to.be.equal(clientStub)
+    })
+  })
 })
