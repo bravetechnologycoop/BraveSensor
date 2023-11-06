@@ -13,7 +13,13 @@ the code was deployed.
 
 ### Added
 
-- Google authentication for PA API (CU-8679128c8).
+- /pa/get-google-tokens route to the sensors server handled by getGoogleTokens in pa.js (CU-8679128c8).
+- /pa/get-google-payload route to the sensors server handled by getGooglePayload in pa.js (CU-8679128c8).
+- Unit tests for getGoogleTokens and getGooglePayload (CU-8679128c8).
+
+### Changed
+
+- PA API routes /pa/create-sensor-location, /pa/get-sensor-clients, /pa/sensor-twilio-number to use googleHelpers.paAuthorize instead of clickUpHelpers.clickUpChecker (CU-8679128c8).
 
 ### Fixed
 
