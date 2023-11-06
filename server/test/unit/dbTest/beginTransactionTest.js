@@ -31,9 +31,8 @@ describe('db.js unit tests: beginTransaction', () => {
     sandbox.restore()
   })
 
-  describe('when beginTransaction fails the first time because of a deadlock, then successfully connects after retry', async () => {
+  describe('when beginTransaction fails the first time because of a deadlock, then successfully connects after retry', () => {
     let clientStub
-
     beforeEach(async () => {
       clientStub = { query: sandbox.stub() }
       sandbox.spy(db, 'beginTransaction')
@@ -56,7 +55,6 @@ describe('db.js unit tests: beginTransaction', () => {
 
   describe('when beginTransaction is successful the first time it is called', () => {
     let clientStub
-
     beforeEach(async () => {
       clientStub = { query: sinon.stub() }
       sandbox.spy(db, 'beginTransaction')
