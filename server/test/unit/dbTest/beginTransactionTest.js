@@ -23,7 +23,7 @@ describe('db.js unit tests: beginTransaction', () => {
   beforeEach(() => {
     sandbox.spy(helpers, 'logError')
     sandbox.spy(helpers, 'log')
-    poolConnectStub = sinon.stub()
+    poolConnectStub = sandbox.stub()
     db.__set__('pool', { connect: poolConnectStub })
   })
 
@@ -35,9 +35,8 @@ describe('db.js unit tests: beginTransaction', () => {
     let clientStub
 
     beforeEach(async () => {
-      clientStub = { query: sinon.stub() }
+      clientStub = { query: sandbox.stub() }
       sandbox.spy(db, 'beginTransaction')
-      sandbox.spy(db, 'rollbackTransaction')
       poolConnectStub.onCall(0).rejects(new Error('deadlock detected')).onCall(1).resolves(clientStub)
       pgClient = await db.beginTransaction()
     })
@@ -55,7 +54,7 @@ describe('db.js unit tests: beginTransaction', () => {
     })
   })
 
-  describe('When beginTransaction is successful', () => {
+  describe('when beginTransaction is successful the first time it is called', () => {
     let clientStub
 
     beforeEach(async () => {
@@ -75,6 +74,34 @@ describe('db.js unit tests: beginTransaction', () => {
 
     it('should return a valid pgClient', () => {
       expect(pgClient).to.be.equal(clientStub)
+    })
+  })
+
+  describe('when beginTransaction deadlocks on the first attempt and throws an error with an active pgClient on the retry', () => {
+    let clientStub
+    beforeEach(async () => {
+      clientStub = { query: sandbox.stub() }
+      clientStub.query.withArgs('BEGIN').rejects(new Error('some error'))
+      sandbox.spy(db, 'beginTransaction')
+      sandbox.spy(db, 'rollbackTransaction')
+      poolConnectStub.onCall(0).rejects(new Error('deadlock detected')).onCall(1).resolves(clientStub)
+      pgClient = await db.beginTransaction()
+    })
+
+    it('should log the deadlock error', () => {
+      expect(helpers.logError).to.be.calledWith(`Error running the beginTransaction query: Error: deadlock detected`)
+    })
+
+    it('should log the retry', () => {
+      expect(helpers.log).to.be.calledWith(`Retrying beginTransaction.`)
+    })
+
+    it('should log the second error', () => {
+      expect(helpers.logError).to.be.calledWith(`Error running the beginTransaction query: Error: some error`)
+    })
+
+    it('should return null', () => {
+      expect(pgClient).to.be.null
     })
   })
 })
