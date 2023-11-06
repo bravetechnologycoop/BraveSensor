@@ -154,6 +154,17 @@ async function firmwareAlert(chai, server, coreID, sensorEvent, apiKey) {
   return response
 }
 
+function mockResponse(sandbox) {
+  // From https://codewithhugo.com/express-request-response-mocking/
+  const res = {}
+  res.writeHead = sandbox.stub().returns(res)
+  res.json = sandbox.stub().returns(res)
+  res.status = sandbox.stub().returns(res)
+  res.send = sandbox.stub().returns(res)
+
+  return res
+}
+
 module.exports = {
   firmwareAlert,
   getRandomArbitrary,
@@ -166,4 +177,5 @@ module.exports = {
   sensorsVitalFactory,
   sessionDBFactory,
   sessionFactory,
+  mockResponse,
 }

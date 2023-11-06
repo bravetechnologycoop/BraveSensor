@@ -16,7 +16,7 @@ async function getGoogleTokens(req, res) {
     if (validationErrors.isEmpty()) {
       // paGetTokens will throw an error if the authorization code doesn't originate from PA
       const tokens = await googleHelpers.paGetTokens(req.body.authCode)
-      res.json(tokens) // send tokens to PA: { accessToken, idToken }
+      res.status(200).json(tokens) // send tokens to PA: { accessToken, idToken }
     }
   } catch (error) {
     helpers.log('PA: Unauthorized request to get Google tokens')
@@ -31,7 +31,7 @@ async function getGooglePayload(req, res) {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
     if (validationErrors.isEmpty()) {
       // paGetPayload will throw an error if the ID token is not valid (see brave-alert-lib for more details)
-      res.json(await googleHelpers.paGetPayload(req.body.idToken))
+      res.status(200).json(await googleHelpers.paGetPayload(req.body.idToken))
     }
   } catch (error) {
     helpers.log('PA: Unauthorized request to get Google payload')
