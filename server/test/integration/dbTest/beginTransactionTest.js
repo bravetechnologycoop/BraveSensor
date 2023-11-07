@@ -48,11 +48,11 @@ describe('db.js integration tests: beginTransaction', () => {
       expect(helpers.log).to.be.calledWith(`Retrying beginTransaction.`)
     })
 
-    it('should lock the clients, sessions, and locations tables', () => {
+    it('should lock the clients, sessions, and locations tables to reflect the retry', () => {
       expect(clientStub.query).to.be.calledWith(`LOCK TABLE clients, sessions, locations`)
     })
 
-    it('should have a valid pgClient', () => {
+    it('should return a valid pgClient', () => {
       expect(pgClient).to.be.equal(clientStub)
     })
   })
@@ -70,7 +70,7 @@ describe('db.js integration tests: beginTransaction', () => {
       expect(helpers.logError).to.not.be.called
     })
 
-    it('should not log a retry, and not call runBeginTransactionWithRetries', () => {
+    it('should not log a retry', () => {
       expect(helpers.log).to.not.be.calledWith(`Retrying beginTransaction.`)
     })
 
@@ -83,13 +83,12 @@ describe('db.js integration tests: beginTransaction', () => {
     })
   })
 
-  describe('when beginTransaction deadlocks on the first attempt and throws an error with an active pgClient on the retry', () => {
+  describe('when beginTransaction fails twice, deadlocking on the first attempt and throwing an error with a valid pgClient on the second attempt', () => {
     let clientStub
     beforeEach(async () => {
       clientStub = { query: sandbox.stub() }
       clientStub.query.withArgs('BEGIN').rejects(new Error('some error'))
       sandbox.spy(db, 'beginTransaction')
-      sandbox.spy(db, 'rollbackTransaction')
       poolConnectStub.onCall(0).rejects(new Error('deadlock detected')).onCall(1).resolves(clientStub)
       pgClient = await db.beginTransaction()
     })
