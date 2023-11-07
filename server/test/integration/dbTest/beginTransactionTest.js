@@ -15,7 +15,7 @@ use(sinonChai)
 
 const sandbox = sinon.createSandbox()
 
-describe('db.js unit tests: beginTransaction', () => {
+describe('db.js integration tests: beginTransaction', () => {
   /* eslint-disable no-underscore-dangle */
   let poolConnectStub
   let pgClient
