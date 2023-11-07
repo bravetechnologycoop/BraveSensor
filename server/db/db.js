@@ -50,7 +50,7 @@ function createSensorsVitalFromRow(r, allLocations) {
   return new SensorsVital(r.id, r.missed_door_messages, r.is_door_battery_low, r.door_last_seen_at, r.reset_reason, r.state_transitions, r.created_at, r.is_tampered, location)
 }
 
-async function beginTransaction(retryCount = 0) {
+async function runBeginTransactionWithRetries(retryCount) {
   if (helpers.isDbLogging()) {
     helpers.log('STARTED: beginTransaction')
   }
@@ -79,7 +79,7 @@ async function beginTransaction(retryCount = 0) {
 
     if (retryCount < 1) {
       helpers.log(`Retrying beginTransaction.`)
-      return await beginTransaction(retryCount + 1)
+      return await runBeginTransactionWithRetries(retryCount + 1)
     }
     return null
   } finally {
@@ -89,6 +89,10 @@ async function beginTransaction(retryCount = 0) {
   }
 
   return pgClient
+}
+
+async function beginTransaction() {
+  return runBeginTransactionWithRetries(0)
 }
 
 async function commitTransaction(pgClient) {
