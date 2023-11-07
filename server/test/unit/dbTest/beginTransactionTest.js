@@ -48,8 +48,12 @@ describe('db.js unit tests: beginTransaction', () => {
       expect(helpers.log).to.be.calledWith(`Retrying beginTransaction.`)
     })
 
-    it('should not return null', () => {
-      expect(pgClient).to.not.be.null
+    it('should lock the clients, sessions, and locations tables', () => {
+      expect(clientStub.query).to.be.calledWith(`LOCK TABLE clients, sessions, locations`)
+    })
+
+    it('should have a valid pgClient', () => {
+      expect(pgClient).to.be.equal(clientStub)
     })
   })
 
@@ -64,6 +68,10 @@ describe('db.js unit tests: beginTransaction', () => {
 
     it('should not log any errors', () => {
       expect(helpers.logError).to.not.be.called
+    })
+
+    it('should not log a retry, and not call runBeginTransactionWithRetries', () => {
+      expect(helpers.log).to.not.be.calledWith(`Retrying beginTransaction.`)
     })
 
     it('should lock the clients, sessions, and locations tables', () => {
