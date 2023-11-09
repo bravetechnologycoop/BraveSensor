@@ -92,7 +92,13 @@ async function runBeginTransactionWithRetries(retryCount) {
 }
 
 async function beginTransaction() {
-  return runBeginTransactionWithRetries(0)
+  try {
+    const pgClient = await runBeginTransactionWithRetries(0)
+    return pgClient
+  } catch (e) {
+    helpers.logError(`${e}`)
+    return null
+  }
 }
 
 async function commitTransaction(pgClient) {
