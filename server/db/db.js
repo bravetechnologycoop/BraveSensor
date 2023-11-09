@@ -96,7 +96,6 @@ async function beginTransaction() {
     const pgClient = await runBeginTransactionWithRetries(0)
     return pgClient
   } catch (e) {
-    helpers.logError(`${e}`)
     return null
   }
 }
