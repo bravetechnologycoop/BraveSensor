@@ -67,18 +67,18 @@ async function runBeginTransactionWithRetries(retryCount) {
 
     await pgClient.query('LOCK TABLE clients, sessions, locations')
   } catch (e) {
-    helpers.logError(`Error running the beginTransaction query: ${e}`)
+    helpers.logError(`Error running the runBeginTransactionWithRetries query: ${e}`)
 
     if (pgClient) {
       try {
         await this.rollbackTransaction(pgClient)
       } catch (err) {
-        helpers.logError(`beginTransaction: Error rolling back the errored transaction: ${err}`)
+        helpers.logError(`runBeginTransactionWithRetries: Error rolling back the errored transaction: ${err}`)
       }
     }
 
     if (retryCount < 1) {
-      helpers.log(`Retrying beginTransaction.`)
+      helpers.log(`Retrying runBeginTransactionWithRetries.`)
       return await runBeginTransactionWithRetries(retryCount + 1)
     }
     return null
