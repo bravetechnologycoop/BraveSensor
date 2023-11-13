@@ -41,11 +41,11 @@ describe('db.js integration tests: beginTransaction', () => {
     })
 
     it('should log the deadlock error', () => {
-      expect(helpers.logError).to.be.calledWith(`Error running the beginTransaction query: Error: deadlock detected`)
+      expect(helpers.logError).to.be.calledWith(`Error running the runBeginTransactionWithRetries query: Error: deadlock detected`)
     })
 
     it('should log the retry', () => {
-      expect(helpers.log).to.be.calledWith(`Retrying beginTransaction.`)
+      expect(helpers.log).to.be.calledWith(`Retrying runBeginTransactionWithRetries.`)
     })
 
     it('should lock the clients, sessions, and locations tables to reflect the retry', () => {
@@ -71,7 +71,7 @@ describe('db.js integration tests: beginTransaction', () => {
     })
 
     it('should not log a retry', () => {
-      expect(helpers.log).to.not.be.calledWith(`Retrying beginTransaction.`)
+      expect(helpers.log).to.not.be.calledWith(`Retrying runBeginTransactionWithRetries.`)
     })
 
     it('should lock the clients, sessions, and locations tables', () => {
@@ -94,15 +94,15 @@ describe('db.js integration tests: beginTransaction', () => {
     })
 
     it('should log the deadlock error', () => {
-      expect(helpers.logError).to.be.calledWith(`Error running the beginTransaction query: Error: deadlock detected`)
+      expect(helpers.logError).to.be.calledWith(`Error running the runBeginTransactionWithRetries query: Error: deadlock detected`)
     })
 
     it('should log the retry', () => {
-      expect(helpers.log).to.be.calledWith(`Retrying beginTransaction.`)
+      expect(helpers.log).to.be.calledWith(`Retrying runBeginTransactionWithRetries.`)
     })
 
     it('should log the second error', () => {
-      expect(helpers.logError).to.be.calledWith(`Error running the beginTransaction query: Error: some error`)
+      expect(helpers.logError).to.be.calledWith(`Error running the runBeginTransactionWithRetries query: Error: some error`)
     })
 
     it('should return null', () => {
