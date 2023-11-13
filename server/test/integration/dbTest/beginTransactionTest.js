@@ -85,7 +85,10 @@ describe('db.js integration tests: beginTransaction', () => {
 
   describe('when beginTransaction fails twice, deadlocking on the first attempt and throwing an error with a valid pgClient on the second attempt', () => {
     let clientStub
+    let rollbackTransactionStub
     beforeEach(async () => {
+      rollbackTransactionStub = sandbox.stub()
+      db.__set__('rollbackTransaction', rollbackTransactionStub)
       clientStub = { query: sandbox.stub() }
       clientStub.query.withArgs('BEGIN').rejects(new Error('some error'))
       sandbox.spy(db, 'beginTransaction')
@@ -107,6 +110,10 @@ describe('db.js integration tests: beginTransaction', () => {
 
     it('should return null', () => {
       expect(pgClient).to.be.null
+    })
+
+    it('should try to rollback the transaction', () => {
+      expect(rollbackTransactionStub).to.be.called
     })
   })
 })
