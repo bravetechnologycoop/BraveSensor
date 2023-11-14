@@ -13,33 +13,32 @@ use(sinonChai)
 
 const sandbox = sinon.createSandbox()
 
-const fakePaTokens = { accessToken: 'fake-access-token', idToken: 'fake-id-token' }
+const mockGoogleTokens = { googleAccessToken: 'mock-google-access-token', googleIdToken: 'mock-google-id-token' }
 
 describe('pa.js unit tests: getGoogleTokens', () => {
   beforeEach(() => {
     sandbox.spy(helpers, 'log')
-    sandbox.spy(pa, 'getGoogleTokens')
   })
 
   afterEach(() => {
     sandbox.restore()
   })
 
-  describe('for a valid authorization code', () => {
+  describe('for a valid Google authorization code', () => {
     beforeEach(async () => {
-      // have googleHelpers.paGetTokens return successfully
-      sandbox.stub(googleHelpers, 'paGetTokens').returns(fakePaTokens)
-
+      // have googleHelpers.paGetTokens return the mock Google tokens
+      sandbox.stub(googleHelpers, 'paGetTokens').returns(mockGoogleTokens)
       this.res = mockResponse(sandbox)
-      await pa.getGoogleTokens({ body: { authCode: 'auth-code' } }, this.res)
+
+      await pa.getGoogleTokens({ body: { googleAuthCode: 'mock-google-auth-code' } }, this.res)
     })
 
     it('should respond with status 200 (OK)', () => {
       expect(this.res.status).to.be.calledWith(200)
     })
 
-    it('should respond with JSON data accessToken and idToken as returned by paGetTokens', () => {
-      expect(this.res.json).to.be.calledWith(fakePaTokens)
+    it('should respond with JSON data googleAccessToken and googleIdToken as returned by googleHelpers.paGetTokens', () => {
+      expect(this.res.json).to.be.calledWith(mockGoogleTokens)
     })
 
     it('should not log any information', () => {
@@ -47,13 +46,13 @@ describe('pa.js unit tests: getGoogleTokens', () => {
     })
   })
 
-  describe('for an invalid authorization code', () => {
+  describe('for an invalid Google authorization code', () => {
     beforeEach(async () => {
       // have googleHelpers.paGetTokens throw an Error
       sandbox.stub(googleHelpers, 'paGetTokens').throws()
-
       this.res = mockResponse(sandbox)
-      await pa.getGoogleTokens({ body: { authCode: 'auth-code' } }, this.res)
+
+      await pa.getGoogleTokens({ body: { googleAuthCode: 'mock-google-auth-code' } }, this.res)
     })
 
     it('should respond with status 401 (Unauthorized)', () => {
@@ -69,12 +68,12 @@ describe('pa.js unit tests: getGoogleTokens', () => {
     })
   })
 
-  describe('for no authorization code provided', () => {
+  describe('for no Google authorization code provided', () => {
     beforeEach(async () => {
       // have googleHelpers.paGetTokens throw an Error
       sandbox.stub(googleHelpers, 'paGetTokens').throws()
-
       this.res = mockResponse(sandbox)
+
       await pa.getGoogleTokens({}, this.res)
     })
 

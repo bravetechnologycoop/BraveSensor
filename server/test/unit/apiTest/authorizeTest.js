@@ -14,10 +14,6 @@ use(sinonChai)
 
 const sandbox = sinon.createSandbox()
 
-function authorizeNext() {
-  helpers.log('authorizeNext')
-}
-
 describe('api.js unit tests: authorize', () => {
   beforeEach(() => {
     sandbox.spy(helpers, 'logSentry')
@@ -38,12 +34,17 @@ describe('api.js unit tests: authorize', () => {
         path: 'test_path',
       }
       this.res = mockResponse(sandbox)
+      this.next = sandbox.stub()
 
-      await api.authorize(req, this.res, authorizeNext)
+      await api.authorize(req, this.res, this.next)
     })
 
-    it('should call the authorizeNext function', () => {
-      expect(helpers.log).to.have.been.calledWith('authorizeNext')
+    it('should call the next function', () => {
+      expect(this.next).to.be.called
+    })
+
+    it('should not set the response status', () => {
+      expect(this.res.status).to.not.be.called
     })
   })
 
@@ -56,12 +57,17 @@ describe('api.js unit tests: authorize', () => {
         path: 'test_path',
       }
       this.res = mockResponse(sandbox)
+      this.next = sandbox.stub()
 
-      await api.authorize(req, this.res, authorizeNext)
+      await api.authorize(req, this.res, this.next)
     })
 
-    it('should call the authorizeNext function', () => {
-      expect(helpers.log).to.have.been.calledWith('authorizeNext')
+    it('should call the next function', () => {
+      expect(this.next).to.be.called
+    })
+
+    it('should not set the response status', () => {
+      expect(this.res.status).to.not.be.called
     })
   })
 
@@ -74,96 +80,17 @@ describe('api.js unit tests: authorize', () => {
         path: 'test_path',
       }
       this.res = mockResponse(sandbox)
+      this.next = sandbox.stub()
 
-      await api.authorize(req, this.res, authorizeNext)
+      await api.authorize(req, this.res, this.next)
     })
 
-    it('should call the authorizeNext function', () => {
-      expect(helpers.log).to.have.been.calledWith('authorizeNext')
-    })
-  })
-
-  describe('when a request provides the secondary PA API key in the body of the request', () => {
-    beforeEach(async () => {
-      // create fake request object that implements the necessary members
-      const req = {
-        query: {}, // empty
-        body: { braveKey: helpers.getEnvVar('PA_API_KEY_SECONDARY') },
-        path: 'test_path',
-      }
-      this.res = mockResponse(sandbox)
-
-      await api.authorize(req, this.res, authorizeNext)
+    it('should call the next function', () => {
+      expect(this.next).to.be.called
     })
 
-    it('should call the authorizeNext function', () => {
-      expect(helpers.log).to.have.been.calledWith('authorizeNext')
-    })
-  })
-
-  describe('when a request provides an invalid PA API key in the query string of the request', () => {
-    beforeEach(async () => {
-      // create fake request object that implements the necessary members
-      const req = {
-        query: { braveKey: 'INVALID_API_KEY' },
-        body: {}, // empty
-        path: 'test_path',
-      }
-      this.res = mockResponse(sandbox)
-
-      await api.authorize(req, this.res, authorizeNext)
-    })
-
-    it('should not call the authorizeNext function', () => {
-      expect(helpers.log).to.not.have.been.calledWith('authorizeNext')
-    })
-
-    it('should result in status 401 (Unauthorized)', () => {
-      expect(this.res.status).to.have.been.calledWith(401)
-    })
-  })
-
-  describe('when a request provides an invalid PA API key in the body of the request', () => {
-    beforeEach(async () => {
-      // create fake request object that implements the necessary members
-      const req = {
-        query: {}, // empty
-        body: { braveKey: 'INVALID_API_KEY' },
-        path: 'test_path',
-      }
-      this.res = mockResponse(sandbox)
-
-      await api.authorize(req, this.res, authorizeNext)
-    })
-
-    it('should not call the authorizeNext function', () => {
-      expect(helpers.log).to.not.have.been.calledWith('authorizeNext')
-    })
-
-    it('should result in status 401 (Unauthorized)', () => {
-      expect(this.res.status).to.have.been.calledWith(401)
-    })
-  })
-
-  describe('when a request does not provide a PA API key at all', () => {
-    beforeEach(async () => {
-      // create fake request object that implements the necessary members
-      const req = {
-        query: {}, // empty
-        body: {}, // empty
-        path: 'test_path',
-      }
-      this.res = mockResponse(sandbox)
-
-      await api.authorize(req, this.res, authorizeNext)
-    })
-
-    it('should not call the authorizeNext function', () => {
-      expect(helpers.log).to.not.have.been.calledWith('authorizeNext')
-    })
-
-    it('should result in status 401 (Unauthorized)', () => {
-      expect(this.res.status).to.have.been.calledWith(401)
+    it('should not set the response status', () => {
+      expect(this.res.status).to.not.be.called
     })
   })
 
@@ -176,12 +103,109 @@ describe('api.js unit tests: authorize', () => {
         path: 'test_path',
       }
       this.res = mockResponse(sandbox)
+      this.next = sandbox.stub()
 
-      await api.authorize(req, this.res, authorizeNext)
+      await api.authorize(req, this.res, this.next)
     })
 
-    it('should call the authorizeNext function', () => {
-      expect(helpers.log).to.have.been.calledWith('authorizeNext')
+    it('should call the next function', () => {
+      expect(this.next).to.be.called
+    })
+
+    it('should not set the response status', () => {
+      expect(this.res.status).to.not.be.called
+    })
+  })
+
+  describe('when a request provides the secondary PA API key in the body of the request', () => {
+    beforeEach(async () => {
+      // create fake request object that implements the necessary members
+      const req = {
+        query: {}, // empty
+        body: { braveKey: helpers.getEnvVar('PA_API_KEY_SECONDARY') },
+        path: 'test_path',
+      }
+      this.res = mockResponse(sandbox)
+      this.next = sandbox.stub()
+
+      await api.authorize(req, this.res, this.next)
+    })
+
+    it('should call the next function', () => {
+      expect(this.next).to.be.called
+    })
+
+    it('should not set the response status', () => {
+      expect(this.res.status).to.not.be.called
+    })
+  })
+
+  describe('when a request provides an invalid PA API key in the query string of the request', () => {
+    beforeEach(async () => {
+      // create fake request object that implements the necessary members
+      const req = {
+        query: { braveKey: 'INVALID_API_KEY' },
+        body: {}, // empty
+        path: 'test_path',
+      }
+      this.res = mockResponse(sandbox)
+      this.next = sandbox.stub()
+
+      await api.authorize(req, this.res, this.next)
+    })
+
+    it('should not call the next function', () => {
+      expect(this.next).to.not.be.called
+    })
+
+    it('should respond with status 401 (Unauthorized)', () => {
+      expect(this.res.status).to.be.calledWith(401)
+    })
+  })
+
+  describe('when a request provides an invalid PA API key in the body of the request', () => {
+    beforeEach(async () => {
+      // create fake request object that implements the necessary members
+      const req = {
+        query: {}, // empty
+        body: { braveKey: 'INVALID_API_KEY' },
+        path: 'test_path',
+      }
+      this.res = mockResponse(sandbox)
+      this.next = sandbox.stub()
+
+      await api.authorize(req, this.res, this.next)
+    })
+
+    it('should not call the next function', () => {
+      expect(this.next).to.not.be.called
+    })
+
+    it('should respond with status 401 (Unauthorized)', () => {
+      expect(this.res.status).to.be.calledWith(401)
+    })
+  })
+
+  describe('when a request does not provide a PA API key at all', () => {
+    beforeEach(async () => {
+      // create fake request object that implements the necessary members
+      const req = {
+        query: {}, // empty
+        body: {}, // empty
+        path: 'test_path',
+      }
+      this.res = mockResponse(sandbox)
+      this.next = sandbox.stub()
+
+      await api.authorize(req, this.res, this.next)
+    })
+
+    it('should not call the next function', () => {
+      expect(this.next).to.not.be.called
+    })
+
+    it('should respond with status 401 (Unauthorized)', () => {
+      expect(this.res.status).to.be.calledWith(401)
     })
   })
 })

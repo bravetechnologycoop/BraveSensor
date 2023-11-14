@@ -13,40 +13,34 @@ use(sinonChai)
 
 const sandbox = sinon.createSandbox()
 
-const fakePaPayload = {
-  aud: 'fakeclientid.apps.googleusercontent.com',
-  iss: 'https://accounts.google.com',
-  exp: Date.now(),
-  hd: 'brave.coop',
-  email: 'brave@brave.coop',
-  name: 'Brave User',
-}
+/* NOTE: getGooglePayload should not care what type the Google payload is,
+ * i.e., Object, String, etc., nor what it contains. */
+const mockGooglePayload = 'mock-google-payload'
 
 describe('pa.js unit tests: getGooglePayload', () => {
   beforeEach(() => {
     sandbox.spy(helpers, 'log')
-    sandbox.spy(pa, 'getGooglePayload')
   })
 
   afterEach(() => {
     sandbox.restore()
   })
 
-  describe('for a valid ID token', () => {
+  describe('for a valid Google ID token', () => {
     beforeEach(async () => {
-      // have googleHelpers.paGetPayload return successfully
-      sandbox.stub(googleHelpers, 'paGetPayload').returns(fakePaPayload)
-
+      // have googleHelpers.paGetPayload return the mock Google payload
+      sandbox.stub(googleHelpers, 'paGetPayload').returns(mockGooglePayload)
       this.res = mockResponse(sandbox)
-      await pa.getGooglePayload({ body: { idToken: 'id-token' } }, this.res)
+
+      await pa.getGooglePayload({ body: { googleIdToken: 'mock-google-id-token' } }, this.res)
     })
 
     it('should respond with status 200 (OK)', () => {
       expect(this.res.status).to.be.calledWith(200)
     })
 
-    it('should respond with JSON data aud, iss, exp, hd, email, and name, as returned by paGetPayload', () => {
-      expect(this.res.json).to.be.calledWith(fakePaPayload)
+    it('should respond with JSON data aud, iss, exp, hd, email, and name, as returned by googleHelpers.paGetPayload', () => {
+      expect(this.res.json).to.be.calledWith(mockGooglePayload)
     })
 
     it('should not log any information', () => {
@@ -54,13 +48,13 @@ describe('pa.js unit tests: getGooglePayload', () => {
     })
   })
 
-  describe('for an invalid ID token', () => {
+  describe('for an invalid Google ID token', () => {
     beforeEach(async () => {
       // have googleHelpers.paGetPayload throw an Error
       sandbox.stub(googleHelpers, 'paGetPayload').throws()
-
       this.res = mockResponse(sandbox)
-      await pa.getGooglePayload({ body: { idToken: 'id-token' } }, this.res)
+
+      await pa.getGooglePayload({ body: { googleIdToken: 'mock-google-id-token' } }, this.res)
     })
 
     it('should respond with status 401 (Unauthorized)', () => {
@@ -76,12 +70,12 @@ describe('pa.js unit tests: getGooglePayload', () => {
     })
   })
 
-  describe('for no ID token provided', () => {
+  describe('for no Google ID token provided', () => {
     beforeEach(async () => {
       // have googleHelpers.paGetPayload throw an Error
       sandbox.stub(googleHelpers, 'paGetPayload').throws()
-
       this.res = mockResponse(sandbox)
+
       await pa.getGooglePayload({}, this.res)
     })
 

@@ -8,15 +8,15 @@ const db = require('./db/db')
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
 const paPasswords = [helpers.getEnvVar('PA_PASSWORD_PRIMARY'), helpers.getEnvVar('PA_PASSWORD_SECONDARY')]
 
-const validateGetGoogleTokens = Validator.body(['authCode']).trim().notEmpty()
+const validateGetGoogleTokens = Validator.body(['googleAuthCode']).trim().notEmpty()
 
 async function getGoogleTokens(req, res) {
   try {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
     if (validationErrors.isEmpty()) {
       // paGetTokens will throw an error if the authorization code doesn't originate from PA
-      const tokens = await googleHelpers.paGetTokens(req.body.authCode)
-      res.status(200).json(tokens) // send tokens to PA: { accessToken, idToken }
+      const tokens = await googleHelpers.paGetTokens(req.body.googleAuthCode)
+      res.status(200).json(tokens) // send tokens to PA: { googleAccessToken, googleIdToken }
     }
   } catch (error) {
     helpers.log('PA: Unauthorized request to get Google tokens')
@@ -24,14 +24,15 @@ async function getGoogleTokens(req, res) {
   }
 }
 
-const validateGetGooglePayload = Validator.body(['idToken']).trim().notEmpty()
+const validateGetGooglePayload = Validator.body(['googleIdToken']).trim().notEmpty()
 
 async function getGooglePayload(req, res) {
   try {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
     if (validationErrors.isEmpty()) {
-      // paGetPayload will throw an error if the ID token is not valid (see brave-alert-lib for more details)
-      res.status(200).json(await googleHelpers.paGetPayload(req.body.idToken))
+      // paGetPayload will throw an error if the Google ID token is not valid (see brave-alert-lib for more details)
+      const payload = await googleHelpers.paGetPayload(req.body.googleIdToken)
+      res.status(200).json(payload) // send payload to PA
     }
   } catch (error) {
     helpers.log('PA: Unauthorized request to get Google payload')
@@ -47,7 +48,7 @@ const validateCreateSensorLocation = Validator.body([
   'particleDeviceID',
   'twilioNumber',
   'clientID',
-  'idToken',
+  'googleIdToken',
 ])
   .trim()
   .notEmpty()
@@ -87,7 +88,7 @@ async function handleCreateSensorLocation(req, res) {
   }
 }
 
-const validateGetSensorClients = Validator.body(['braveKey', 'idToken']).trim().notEmpty()
+const validateGetSensorClients = Validator.body(['braveKey', 'googleIdToken']).trim().notEmpty()
 
 async function handleGetSensorClients(req, res) {
   const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
@@ -118,7 +119,7 @@ async function handleGetSensorClients(req, res) {
   }
 }
 
-const validateSensorPhoneNumber = Validator.body(['braveKey', 'areaCode', 'locationID', 'idToken']).trim().notEmpty()
+const validateSensorPhoneNumber = Validator.body(['braveKey', 'areaCode', 'locationID', 'googleIdToken']).trim().notEmpty()
 
 async function handleSensorPhoneNumber(req, res) {
   const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
