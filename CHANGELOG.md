@@ -16,12 +16,16 @@ the code was deployed.
 - /pa/get-google-tokens route to the sensors server handled by getGoogleTokens in pa.js (CU-8679128c8).
 - /pa/get-google-payload route to the sensors server handled by getGooglePayload in pa.js (CU-8679128c8).
 - Unit tests for getGoogleTokens and getGooglePayload (CU-8679128c8).
+- Integration tests for beginTransaction functionality (CU-8679376g6).
 
 ### Changed
 
 - PA API routes /pa/create-sensor-location, /pa/get-sensor-clients, /pa/sensor-twilio-number to use googleHelpers.paAuthorize instead of clickUpHelpers.clickUpChecker (CU-8679128c8).
 - Unit tests for api.authorize function to follow conventions in other testing files.
 - Upgraded `brave-alert-lib` to v10.3.0
+
+### Fixed
+- BeginTransaction retry logic, added return keyword for recursion and split function into two (CU-8679376g6).
 
 ## [10.1.0] - 2023-11-02
 

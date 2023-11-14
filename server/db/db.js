@@ -50,7 +50,29 @@ function createSensorsVitalFromRow(r, allLocations) {
   return new SensorsVital(r.id, r.missed_door_messages, r.is_door_battery_low, r.door_last_seen_at, r.reset_reason, r.state_transitions, r.created_at, r.is_tampered, location)
 }
 
-async function beginTransaction(retryCount = 0) {
+async function rollbackTransaction(pgClient) {
+  if (helpers.isDbLogging()) {
+    helpers.log('STARTED: rollbackTransaction')
+  }
+
+  try {
+    await pgClient.query('ROLLBACK')
+  } catch (e) {
+    helpers.logError(`Error running the rollbackTransaction query: ${e}`)
+  } finally {
+    try {
+      pgClient.release()
+    } catch (err) {
+      helpers.logError(`rollbackTransaction: Error releasing client: ${err}`)
+    }
+
+    if (helpers.isDbLogging()) {
+      helpers.log('COMPLETED: rollbackTransaction')
+    }
+  }
+}
+
+async function runBeginTransactionWithRetries(retryCount) {
   if (helpers.isDbLogging()) {
     helpers.log('STARTED: beginTransaction')
   }
@@ -67,19 +89,21 @@ async function beginTransaction(retryCount = 0) {
 
     await pgClient.query('LOCK TABLE clients, sessions, locations')
   } catch (e) {
-    if (retryCount < 1) {
-      helpers.logError(`Error running the beginTransaction query: ${e}. Will retry beginTransaction again.`)
-      beginTransaction(retryCount + 1)
-    }
-    helpers.logError(`Error running the beginTransaction query: ${e}`)
+    helpers.logError(`Error running the runBeginTransactionWithRetries query: ${e}`)
+
     if (pgClient) {
       try {
-        await this.rollbackTransaction(pgClient)
-        return null
+        await rollbackTransaction(pgClient)
       } catch (err) {
-        helpers.logError(`beginTransaction: Error rolling back the errored transaction: ${err}`)
+        helpers.logError(`runBeginTransactionWithRetries: Error rolling back the errored transaction: ${err}`)
       }
     }
+
+    if (retryCount < 1) {
+      helpers.log(`Retrying runBeginTransactionWithRetries.`)
+      return await runBeginTransactionWithRetries(retryCount + 1)
+    }
+    return null
   } finally {
     if (helpers.isDbLogging()) {
       helpers.log('COMPLETED: beginTransaction')
@@ -87,6 +111,15 @@ async function beginTransaction(retryCount = 0) {
   }
 
   return pgClient
+}
+
+async function beginTransaction() {
+  try {
+    const pgClient = await runBeginTransactionWithRetries(0)
+    return pgClient
+  } catch (e) {
+    return null
+  }
 }
 
 async function commitTransaction(pgClient) {
@@ -107,28 +140,6 @@ async function commitTransaction(pgClient) {
 
     if (helpers.isDbLogging()) {
       helpers.log('COMPLETED: commitTransaction')
-    }
-  }
-}
-
-async function rollbackTransaction(pgClient) {
-  if (helpers.isDbLogging()) {
-    helpers.log('STARTED: rollbackTransaction')
-  }
-
-  try {
-    await pgClient.query('ROLLBACK')
-  } catch (e) {
-    helpers.logError(`Error running the rollbackTransaction query: ${e}`)
-  } finally {
-    try {
-      pgClient.release()
-    } catch (err) {
-      helpers.logError(`rollbackTransaction: Error releasing client: ${err}`)
-    }
-
-    if (helpers.isDbLogging()) {
-      helpers.log('COMPLETED: rollbackTransaction')
     }
   }
 }
