@@ -11,6 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Fixed
+- BeginTransaction retry logic, added return keyword for recursion and split function into two (CU-8679376g6).
+
+### Added
+- Integration tests for beginTransaction functionality (CU-8679376g6).
+
 ## [10.1.0] - 2023-11-02
 
 ### Changed 
