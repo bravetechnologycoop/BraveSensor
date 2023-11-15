@@ -11,10 +11,14 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [10.1.1] - 2023-11-15
+
 ### Fixed
+
 - BeginTransaction retry logic, added return keyword for recursion and split function into two (CU-8679376g6).
 
 ### Added
+
 - Integration tests for beginTransaction functionality (CU-8679376g6).
 
 ## [10.1.0] - 2023-11-02
@@ -641,7 +645,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.1...HEAD
+[10.1.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.0...v10.1.1
 [10.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.0.0...v10.1.0
 [10.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.10.0...v10.0.0
 [9.10.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.9.0...v9.10.0
