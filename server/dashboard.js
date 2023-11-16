@@ -376,6 +376,7 @@ async function renderClientDetailsPage(req, res) {
             sessionStart: location.sessionStart,
             isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
             isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
+            language: location.language,
           }
         }),
     }
