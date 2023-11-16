@@ -18,8 +18,27 @@ the code was deployed.
 - Feature that automatically populates the incident category field upon selection (CU-3bnggtt).
 - The ability to switch the language of an existing client from English to Spanish directly from the edit client page (CU-2q39wtu).
 - Incident categories are stored in English in the database for all clients, simplifying the reporting process for statistics (CU-8678zfmph).
-- Dynamically translating incident categories to the client's chosen language, similar to the translation of messages from a predefined JSON file (CU-8678zfmph).
+- Dynamically translating incident categories to the client's chosen language, similar to the translation of messages from a predefined JSON file  (CU-8678zfmph).
 - Test codes to validate the language change functionality (CU-2q39wtu).
+- /pa/get-google-tokens route to the sensors server handled by getGoogleTokens in pa.js (CU-8679128c8).
+- /pa/get-google-payload route to the sensors server handled by getGooglePayload in pa.js (CU-8679128c8).
+- Unit tests for getGoogleTokens and getGooglePayload (CU-8679128c8).
+
+### Changed
+
+- PA API routes /pa/create-sensor-location, /pa/get-sensor-clients, /pa/sensor-twilio-number to use googleHelpers.paAuthorize instead of clickUpHelpers.clickUpChecker (CU-8679128c8).
+- Upgraded `brave-alert-lib` to v10.3.0 (CU-8679128c8).
+- Unit tests for api.authorize function to follow conventions in other testing files.
+
+## [10.1.1] - 2023-11-15
+
+### Fixed
+
+- BeginTransaction retry logic, added return keyword for recursion and split function into two (CU-8679376g6).
+
+### Added
+
+- Integration tests for beginTransaction functionality (CU-8679376g6).
 
 ## [10.1.0] - 2023-11-02
 
@@ -648,7 +667,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.1...HEAD
+[10.1.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.0...v10.1.1
 [10.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.0.0...v10.1.0
 [10.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.10.0...v10.0.0
 [9.10.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.9.0...v9.10.0

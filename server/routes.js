@@ -1,5 +1,5 @@
 // In-house dependencies
-const { clickUpHelpers } = require('brave-alert-lib')
+const { googleHelpers } = require('brave-alert-lib')
 const api = require('./api')
 const dashboard = require('./dashboard')
 const pa = require('./pa')
@@ -28,9 +28,12 @@ function configureRoutes(app) {
 
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
 
-  app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, clickUpHelpers.clickUpChecker, pa.handleCreateSensorLocation)
-  app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, clickUpHelpers.clickUpChecker, pa.handleGetSensorClients)
-  app.post('/pa/sensor-twilio-number', pa.validateSensorPhoneNumber, clickUpHelpers.clickUpChecker, pa.handleSensorPhoneNumber)
+  app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
+  app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)
+
+  app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, googleHelpers.paAuthorize, pa.handleCreateSensorLocation)
+  app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, googleHelpers.paAuthorize, pa.handleGetSensorClients)
+  app.post('/pa/sensor-twilio-number', pa.validateSensorPhoneNumber, googleHelpers.paAuthorize, pa.handleSensorPhoneNumber)
 
   app.get('/api/sensors', api.validateGetAllSensors, api.authorize, api.getAllSensors)
   app.get('/api/sensors/:sensorId', api.validateGetSensor, api.authorize, api.getSensor)
