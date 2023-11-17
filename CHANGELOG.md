@@ -22,6 +22,7 @@ the code was deployed.
 - PA API routes /pa/create-sensor-location, /pa/get-sensor-clients, /pa/sensor-twilio-number to use googleHelpers.paAuthorize instead of clickUpHelpers.clickUpChecker (CU-8679128c8).
 - Upgraded `brave-alert-lib` to v10.3.0 (CU-8679128c8).
 - Unit tests for api.authorize function to follow conventions in other testing files.
+- Upgraded `axios` from 0.21.4 to 1.6.0.
 
 ## [10.1.1] - 2023-11-15
 
