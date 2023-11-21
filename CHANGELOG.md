@@ -19,7 +19,6 @@ the code was deployed.
 - The ability to switch the language of an existing client from English to Spanish directly from the edit client page (CU-2q39wtu).
 - Incident categories are stored in English in the database for all clients, simplifying the reporting process for statistics (CU-8678zfmph).
 - Dynamically translating incident categories to the client's chosen language, similar to the translation of messages from a predefined JSON file  (CU-8678zfmph).
-- Test codes to validate the language change functionality (CU-2q39wtu).
 - /pa/get-google-tokens route to the sensors server handled by getGoogleTokens in pa.js (CU-8679128c8).
 - /pa/get-google-payload route to the sensors server handled by getGooglePayload in pa.js (CU-8679128c8).
 - Unit tests for getGoogleTokens and getGooglePayload (CU-8679128c8).
