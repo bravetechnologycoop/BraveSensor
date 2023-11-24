@@ -1,14 +1,12 @@
 // Third-party dependencies
-const chai = require('chai')
 const { expect, use } = require('chai')
 const chaiHttp = require('chai-http')
 const sinonChai = require('sinon-chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
-const rewire = require('rewire')
 
 // In-house dependencies
-const { factories, helpers, twilioHelpers, googleHelpers } = require('brave-alert-lib')
+const { factories, twilioHelpers } = require('brave-alert-lib')
 const { db } = require('../../../index')
 const pa = require('../../../pa')
 const { locationDBFactory, mockResponse } = require('../../../testingHelpers')
