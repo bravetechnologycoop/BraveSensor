@@ -146,6 +146,71 @@ async function handleSensorPhoneNumber(req, res) {
   }
 }
 
+const validateMessageClients = Validator.body(['message', 'googleIdToken']).exists()
+
+async function messageClients(req, res) {
+  const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+
+  try {
+    if (validationErrors.isEmpty()) {
+      const clients = await db.getActiveClients()
+      const message = req.body.message
+      const response = {
+        status: 'success',
+        twilioMessage: message,
+        contacted: [],
+        failed: [],
+        message: '',
+      }
+
+      for (const client of clients) {
+        // define phoneNumbers as a Set to prevent duplicate numbers
+        const phoneNumbers = new Set()
+
+        // add responder, fallback, and heartbeat numbers to phoneNumbers
+        client.responderPhoneNumbers.forEach(phoneNumber => {
+          phoneNumbers.add(phoneNumber)
+        })
+        client.fallbackPhoneNumbers.forEach(phoneNumber => {
+          phoneNumbers.add(phoneNumber)
+        })
+        client.heartbeatPhoneNumbers.forEach(phoneNumber => {
+          phoneNumbers.add(phoneNumber)
+        })
+
+        // for each phone number of this client
+        for (const phoneNumber of phoneNumbers) {
+          // send SMS text message
+          const twilioResponse = await twilioHelpers.sendTwilioMessage(phoneNumber, client.fromPhoneNumber, message)
+          // Twilio trace object: information about the sent message
+          const twilioTraceObject = {
+            to: phoneNumber,
+            from: client.fromPhoneNumber,
+            clientId: client.id,
+            clientDisplayName: client.displayName,
+          }
+
+          // keep track of which clients were contacted and not contacted
+          if (twilioResponse === undefined || twilioResponse.status === undefined || twilioResponse.status !== 'queued') {
+            response.failed.push(twilioTraceObject)
+            // log entire Twilio trace object
+            helpers.log(`Failed to send Twilio message: ${JSON.stringify(twilioTraceObject)}.`)
+          } else {
+            response.contacted.push(twilioTraceObject)
+          }
+        }
+      }
+
+      res.status(200).json(response)
+    } else {
+      res.status(401).send({ message: 'Bad request' })
+    }
+  } catch (error) {
+    helpers.log(`Failed to send message to clients: ${error.message}`)
+    res.status(500).send({ message: 'Internal server error' })
+  }
+}
+
 module.exports = {
   validateGetGoogleTokens,
   getGoogleTokens,
@@ -157,4 +222,6 @@ module.exports = {
   validateCreateSensorLocation,
   validateGetSensorClients,
   validateSensorPhoneNumber,
+  validateMessageClients,
+  messageClients,
 }

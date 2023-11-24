@@ -77,78 +77,10 @@ async function getSensor(req, res) {
   }
 }
 
-const validateMessageClients = Validator.body(['braveKey', 'message']).exists()
-
-async function messageClients(req, res) {
-  const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
-
-  try {
-    if (validationErrors.isEmpty()) {
-      const clients = await db.getActiveClients()
-      const message = req.body.message
-      const response = {
-        status: 'success',
-        data: {
-          message,
-          contacted: [],
-          failed: [],
-        },
-        message: '',
-      }
-
-      for (const client of clients) {
-        // define phoneNumbers as a Set to prevent duplicate numbers
-        const phoneNumbers = new Set()
-
-        // add responder, fallback, and heartbeat numbers to phoneNumbers
-        client.responderPhoneNumbers.forEach(phoneNumber => {
-          phoneNumbers.add(phoneNumber)
-        })
-        client.fallbackPhoneNumbers.forEach(phoneNumber => {
-          phoneNumbers.add(phoneNumber)
-        })
-        client.heartbeatPhoneNumbers.forEach(phoneNumber => {
-          phoneNumbers.add(phoneNumber)
-        })
-
-        // for each phone number of this client
-        for (const phoneNumber of phoneNumbers) {
-          // send SMS text message
-          const twilioResponse = await twilioHelpers.sendTwilioMessage(phoneNumber, client.fromPhoneNumber, message)
-          // Twilio trace object: information about the sent message
-          const twilioTraceObject = {
-            to: phoneNumber,
-            from: client.fromPhoneNumber,
-            clientId: client.id,
-            clientDisplayName: client.displayName,
-          }
-
-          // keep track of which clients were contacted and not contacted
-          if (twilioResponse === undefined || twilioResponse.status === undefined || twilioResponse.status !== 'queued') {
-            response.data.failed.push(twilioTraceObject)
-            // log entire Twilio trace object
-            helpers.log(`Failed to send Twilio message: ${JSON.stringify(twilioTraceObject)}.`)
-          } else {
-            response.data.contacted.push(twilioTraceObject)
-          }
-        }
-      }
-
-      res.status(200).send(response)
-    } else {
-      res.status(400).send({ status: 'error' })
-    }
-  } catch (e) {
-    res.status(500).send({ status: 'error' })
-  }
-}
-
 module.exports = {
   authorize,
   getAllSensors,
   getSensor,
   validateGetAllSensors,
   validateGetSensor,
-  validateMessageClients,
-  messageClients,
 }

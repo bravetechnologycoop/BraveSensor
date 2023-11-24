@@ -34,10 +34,10 @@ function configureRoutes(app) {
   app.post('/pa/create-sensor-location', pa.validateCreateSensorLocation, googleHelpers.paAuthorize, pa.handleCreateSensorLocation)
   app.post('/pa/get-sensor-clients', pa.validateGetSensorClients, googleHelpers.paAuthorize, pa.handleGetSensorClients)
   app.post('/pa/sensor-twilio-number', pa.validateSensorPhoneNumber, googleHelpers.paAuthorize, pa.handleSensorPhoneNumber)
+  app.post('/pa/message-clients', pa.validateMessageClients, googleHelpers.paAuthorize, pa.messageClients)
 
   app.get('/api/sensors', api.validateGetAllSensors, api.authorize, api.getAllSensors)
   app.get('/api/sensors/:sensorId', api.validateGetSensor, api.authorize, api.getSensor)
-  app.post('/api/message-clients', api.validateMessageClients, api.authorize, api.messageClients)
 
   // TODO add the other routes
 }

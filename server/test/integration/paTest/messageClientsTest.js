@@ -1,23 +1,20 @@
 // Third-party dependencies
 const chai = require('chai')
+const { expect, use } = require('chai')
 const chaiHttp = require('chai-http')
 const sinonChai = require('sinon-chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
+const rewire = require('rewire')
 
 // In-house dependencies
-const { factories, helpers, twilioHelpers } = require('brave-alert-lib')
-const { db, server } = require('../../../index')
-const { locationDBFactory } = require('../../../testingHelpers')
+const { factories, helpers, twilioHelpers, googleHelpers } = require('brave-alert-lib')
+const { db } = require('../../../index')
+const pa = require('../../../pa')
+const { locationDBFactory, mockResponse } = require('../../../testingHelpers')
 
-chai.use(chaiHttp)
-chai.use(sinonChai)
-
-const expect = chai.expect
-const sandbox = sinon.createSandbox()
-const braveKey = helpers.getEnvVar('PA_API_KEY_PRIMARY')
-const badBraveKey = 'badbravekey'
 const message = 'Hello, world!'
+const googleIdToken = 'google-id-token'
 const testFromPhoneNumber = '+11234567890'
 
 // information about clients that should be contacted
@@ -30,7 +27,12 @@ const testNotExpectPhoneNumbers = ['+15555555555', '+16666666666', '+17777777777
 // contents are set once clients are created from factories.clientDBFactory
 const testNotExpectResponse = []
 
-describe('api.js integration tests: messageClients', () => {
+use(chaiHttp)
+use(sinonChai)
+
+const sandbox = sinon.createSandbox()
+
+describe('pa.js integration tests: messageClients', () => {
   beforeEach(async () => {
     await db.clearTables()
 
@@ -161,19 +163,19 @@ describe('api.js integration tests: messageClients', () => {
         isSendingVitals: Math.round(Math.random()),
       })
     }
-
-    this.agent = chai.request.agent(server)
   })
 
   afterEach(async () => {
     await db.clearTables()
-    this.agent.close()
   })
 
-  describe('for a request that uses the correct PA API key, and where Twilio is operating correctly', () => {
+  describe('for a request where Twilio is operating correctly', () => {
     beforeEach(async () => {
-      // stub twilioHelpers.sendTwilioMessage
+      // stub twilioHelpers.sendTwilioMessage to return the successful output
       sandbox.stub(twilioHelpers, 'sendTwilioMessage').returns({ status: 'queued' })
+
+      this.res = mockResponse(sandbox)
+      await pa.messageClients({ body: { googleIdToken, message } }, this.res)
     })
 
     afterEach(async () => {
@@ -181,53 +183,41 @@ describe('api.js integration tests: messageClients', () => {
     })
 
     it('should respond with status 200 (OK)', async () => {
-      const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
-
-      expect(response).to.have.status(200)
+      expect(this.res.status).to.be.calledWith(200)
     })
 
     it('should respond with the same message that was posted', async () => {
-      const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
-
-      expect(response.body.data).to.not.be.undefined
-      expect(response.body.data.message).to.be.a('string').that.equals(message)
-    })
-
-    it('should attempt to message all active clients', async () => {
-      await this.agent.post('/api/message-clients').send({ braveKey, message })
-
-      testExpectPhoneNumbers.forEach(pn => {
-        expect(twilioHelpers.sendTwilioMessage).to.be.calledWith(pn, testFromPhoneNumber, message)
-      })
-    })
-
-    it('should not attempt to message any non-active clients', async () => {
-      await this.agent.post('/api/message-clients').send({ braveKey, message })
-
-      testNotExpectPhoneNumbers.forEach(pn => {
-        expect(twilioHelpers.sendTwilioMessage).to.not.be.calledWith(pn, testFromPhoneNumber, message)
-      })
+      expect(this.res.body.twilioMessage).to.be.a('string').that.equals(message)
     })
 
     it('should respond with contacted client information in the `contacted` field of the response body', async () => {
-      const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
-
-      expect(response.body.data).to.not.be.undefined
-      expect(response.body.data.contacted).to.be.an('array').that.has.deep.members(testExpectResponse)
+      expect(this.res.body.contacted).to.be.an('array').that.has.deep.members(testExpectResponse)
     })
 
     it('should respond with no clients in the `failed` field of the response body', async () => {
-      const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
+      expect(this.res.body.failed).to.be.an('array').that.is.empty
+    })
 
-      expect(response.body.data).to.not.be.undefined
-      expect(response.body.data.failed).to.be.an('array').that.is.empty
+    it('should attempt to message all active clients', async () => {
+      testExpectPhoneNumbers.forEach(pn => {
+        expect(twilioHelpers.sendTwilioMessage).to.be.calledWith(pn, testFromPhoneNumber, message)
+      })
+    })
+
+    it('should not attempt to message any non-active clients', async () => {
+      testNotExpectPhoneNumbers.forEach(pn => {
+        expect(twilioHelpers.sendTwilioMessage).to.not.be.calledWith(pn, testFromPhoneNumber, message)
+      })
     })
   })
 
-  describe('for a request that uses the correct PA API key, and where Twilio is not operating correctly', () => {
+  describe('for a request where Twilio is not operating correctly', () => {
     beforeEach(async () => {
       // stub twilioHelpers.sendTwilioMessage
       sandbox.stub(twilioHelpers, 'sendTwilioMessage').returns(undefined)
+
+      this.res = mockResponse(sandbox)
+      await pa.messageClients({ body: { googleIdToken, message } }, this.res)
     })
 
     afterEach(async () => {
@@ -235,94 +225,31 @@ describe('api.js integration tests: messageClients', () => {
     })
 
     it('should respond with status 200 (OK)', async () => {
-      const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
-
-      expect(response).to.have.status(200)
+      expect(this.res.status).to.be.calledWith(200)
     })
 
     it('should respond with the same message that was posted', async () => {
-      const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
+      expect(this.res.body.twilioMessage).to.be.a('string').that.equals(message)
+    })
 
-      expect(response.body.data).to.not.be.undefined
-      expect(response.body.data.message).to.be.a('string').that.equal(message)
+    it('should respond with no clients in the `contacted` field of the response body', async () => {
+      expect(this.res.body.contacted).to.be.an('array').that.is.empty
+    })
+
+    it('should respond with active clients in the `failed` field of the response body', async () => {
+      expect(this.res.body.failed).to.be.an('array').that.has.deep.members(testExpectResponse)
     })
 
     it('should attempt to message all active clients', async () => {
-      await this.agent.post('/api/message-clients').send({ braveKey, message })
-
       testExpectPhoneNumbers.forEach(pn => {
         expect(twilioHelpers.sendTwilioMessage).to.be.calledWith(pn, testFromPhoneNumber, message)
       })
     })
 
     it('should not attempt to message any non-active clients', async () => {
-      await this.agent.post('/api/message-clients').send({ braveKey, message })
-
       testNotExpectPhoneNumbers.forEach(pn => {
         expect(twilioHelpers.sendTwilioMessage).to.not.be.calledWith(pn, testFromPhoneNumber, message)
       })
-    })
-
-    it('should respond with no clients in the `contacted` field of the response body', async () => {
-      const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
-
-      expect(response.body.data).to.not.be.undefined
-      expect(response.body.data.contacted).to.be.an('array').that.is.empty
-    })
-
-    it('should respond with active clients in the `failed` field of the response body', async () => {
-      const response = await this.agent.post('/api/message-clients').send({ braveKey, message })
-
-      expect(response.body.data).to.not.be.undefined
-      expect(response.body.data.failed).to.be.an('array').that.has.deep.members(testExpectResponse)
-    })
-  })
-
-  describe('for a request that uses an incorrect PA API key', () => {
-    beforeEach(async () => {
-      // stub twilioHelpers.sendTwilioMessage;
-      // it shouldn't be called, so don't bother with providing a return value
-      sandbox.stub(twilioHelpers, 'sendTwilioMessage')
-    })
-
-    afterEach(async () => {
-      sandbox.restore()
-    })
-
-    it('should respond with status 401 (Unauthorized)', async () => {
-      const response = await this.agent.post('/api/message-clients').send({ braveKey: badBraveKey, message })
-
-      expect(response).to.have.status(401)
-    })
-
-    it('should not message anyone', async () => {
-      await this.agent.post('/api/message-clients').send({ braveKey: badBraveKey, message })
-
-      expect(twilioHelpers.sendTwilioMessage).to.not.be.called
-    })
-  })
-
-  describe('for a request that does not provide any PA API key', () => {
-    beforeEach(async () => {
-      // stub twilioHelpers.sendTwilioMessage;
-      // it shouldn't be called, so don't bother with providing a return value
-      sandbox.stub(twilioHelpers, 'sendTwilioMessage')
-    })
-
-    afterEach(async () => {
-      sandbox.restore()
-    })
-
-    it('should respond with status 401 (Unauthorized)', async () => {
-      const response = await this.agent.post('/api/message-clients').send({ message })
-
-      expect(response).to.have.status(401)
-    })
-
-    it('should not message anyone', async () => {
-      await this.agent.post('/api/message-clients').send({ message })
-
-      expect(twilioHelpers.sendTwilioMessage).to.not.be.called
     })
   })
 })
