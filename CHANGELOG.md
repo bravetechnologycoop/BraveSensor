@@ -22,6 +22,7 @@ the code was deployed.
 - PA API routes /pa/create-sensor-location, /pa/get-sensor-clients, /pa/sensor-twilio-number to use googleHelpers.paAuthorize instead of clickUpHelpers.clickUpChecker (CU-8679128c8).
 - Unit tests for api.authorize function to follow conventions in other testing files.
 - Upgraded `brave-alert-lib` to v10.3.1 (CU-8679128c8).
+- API route /api/message-clients to become the PA API route /pa/message-clients, now authenticating with Google (CU-w9bcb5).
 
 ### Security
 
