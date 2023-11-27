@@ -17,8 +17,5 @@
   "thankYou": "Thank you",
   "SENSOR_DURATION": "Duration",
   "SENSOR_STILLNESS": "Stillness",
-  "SENSOR_UNKNOWN": "Unknown",
-  "Cat0": "Cat0",
-  "Cat1": "Cat1"
-
+  "SENSOR_UNKNOWN": "Unknown"
 }
