@@ -138,7 +138,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
       this.isDisplayed = '    true    '
       this.isSendingAlerts = '    true    '
       this.isSendingVitals = '    true    '
-      this.language = 'en'
+      this.language = '    en    '
       this.goodRequest = {
         displayName: this.newDisplayname,
         fromPhoneNumber: this.newFromPhoneNumber,
@@ -195,7 +195,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isDisplayed: this.isDisplayed.trim() === 'true',
         isSendingAlerts: this.isSendingAlerts.trim() === 'true',
         isSendingVitals: this.isSendingVitals.trim() === 'true',
-        language: this.language,
+        language: this.language.trim(),
       })
     })
   })
@@ -718,7 +718,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
+        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),language (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
       )
     })
   })
@@ -745,7 +745,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
+        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),language (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))`,
       )
     })
   })
