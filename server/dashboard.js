@@ -376,7 +376,6 @@ async function renderClientDetailsPage(req, res) {
             sessionStart: location.sessionStart,
             isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
             isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
-            language: location.language,
           }
         }),
     }
@@ -389,7 +388,7 @@ async function renderClientDetailsPage(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'incidentCategories']).trim().notEmpty(),
+  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'language', 'incidentCategories']).trim().notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
   Validator.oneOf([
     Validator.body(['responderPhoneNumbers']).trim().notEmpty(),
@@ -444,7 +443,7 @@ async function submitNewClient(req, res) {
         true,
         false,
         false,
-        data.language || 'en',
+        data.language,
       )
 
       res.redirect(`/clients/${newClient.id}`)
@@ -468,6 +467,7 @@ const validateEditClient = [
     'isDisplayed',
     'isSendingAlerts',
     'isSendingVitals',
+    'language',
   ])
     .trim()
     .notEmpty(),
