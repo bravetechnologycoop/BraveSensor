@@ -20,7 +20,7 @@ async function getGoogleTokens(req, res) {
     }
   } catch (error) {
     helpers.log('PA: Unauthorized request to get Google tokens')
-    res.status(401)
+    res.status(401).send({ message: 'Unauthorized' })
   }
 }
 
@@ -36,7 +36,7 @@ async function getGooglePayload(req, res) {
     }
   } catch (error) {
     helpers.log('PA: Unauthorized request to get Google payload')
-    res.status(401)
+    res.status(401).send({ message: 'Unauthorized' })
   }
 }
 
