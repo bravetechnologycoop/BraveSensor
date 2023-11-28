@@ -58,9 +58,6 @@ the code was deployed.
 
 - Return value when beginTransaction function fails to start and error handling to try and prevent deadlocks (CU-8678wudz8).
 
-### Changed 
-- Database function getMostRecentSensorsVitalWithLocation to take in entire location as parameter instead of just the locationid (CU-8678wudz8).
-
 ### Removed 
 
 - Locks on unnecessary tables in beginTransaction function (CU-8678wudz8).
