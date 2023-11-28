@@ -159,15 +159,8 @@ function mockResponse(sandbox) {
 
   res.writeHead = sandbox.stub().returns(res)
   res.status = sandbox.stub().returns(res)
-  res.body = {}
-  res.json = data => {
-    res.body = data
-    return res
-  }
-  res.send = res.json
-
-  sandbox.spy(res, 'json')
-  sandbox.spy(res, 'send')
+  res.json = sandbox.stub().returns(res)
+  res.send = sandbox.stub().returns(res)
 
   return res
 }
