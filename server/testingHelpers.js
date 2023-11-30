@@ -159,8 +159,22 @@ function mockResponse(sandbox) {
 
   res.writeHead = sandbox.stub().returns(res)
   res.status = sandbox.stub().returns(res)
-  res.json = sandbox.stub().returns(res)
-  res.send = sandbox.stub().returns(res)
+
+  // for more rigorous testing, res.body will be
+  // set to the arguments to res.json and res.send
+  res.body = {}
+
+  res.json = sandbox.stub().callsFake(json => {
+    res.body = json
+
+    return res
+  })
+
+  res.send = sandbox.stub().callsFake(data => {
+    res.body = data
+
+    return res
+  })
 
   return res
 }

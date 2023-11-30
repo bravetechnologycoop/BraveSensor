@@ -16,6 +16,7 @@ the code was deployed.
 - /pa/get-google-tokens route to the sensors server handled by getGoogleTokens in pa.js (CU-8679128c8).
 - /pa/get-google-payload route to the sensors server handled by getGooglePayload in pa.js (CU-8679128c8).
 - Unit tests for getGoogleTokens and getGooglePayload (CU-8679128c8).
+- Integration tests for db.getActiveClients (CU-w9bcb5).
 
 ### Changed
 
@@ -23,6 +24,7 @@ the code was deployed.
 - Unit tests for api.authorize function to follow conventions in other testing files.
 - Upgraded `brave-alert-lib` to v10.3.1 (CU-8679128c8).
 - API route /api/message-clients to become the PA API route /pa/message-clients, now authenticating with Google (CU-w9bcb5).
+- Unit tests for pa.handleMessageClients (CU-w9bcb5).
 
 ### Security
 
