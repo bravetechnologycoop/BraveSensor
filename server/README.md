@@ -90,7 +90,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
 1. Wait for it to complete successfully
 
-1. On your local machine in the `server` directory, update the `PARTICLE_WEBHOOKAPI_KEY` in `.env` to the value in Staging
+1. On your local machine in the `server` directory, update the `PARTICLE_WEBHOOK_API_KEY` in `.env` to the value in Staging
 
 1. On your local machine in the `server` directory, run the smoke test script: `npm run smoketest 'https://api.staging.bravecoopservices.com' '[your phone number]' '+17787620179'`
 
@@ -128,6 +128,8 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
    1. After you see the Boron receive the `spark/flash/status` `success` message, force the Boron to restart by sending "1" to the `Force_Reset` cloud function to start using the latest firmware. Note that this will produce an error, this is expected, please ignore.
 
+   1. Trigger a test alert using the BetaTest Boron device with the new firmware
+
 1. Go back to Firmware
 
    1. Hover over your new version, click on "Release firmware", fill in the following, and click "Next"
@@ -138,7 +140,6 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
    1. Read, verify, check the box, and click "Release this firmware"
 
-1. Trigger a test alert using a real BetaTest Boron device
 
 ## 5. Deploy the server on Production
 
@@ -220,7 +221,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
    1. Pull the latest code for release: `git checkout main && git pull origin main`
 
-   1. Edit the Staging environment variables, if needed: `ansible-vault edit --ask-vault-pass environments/ssm_parameters/development.tf`
+   1. Edit the Development environment variables, if needed: `ansible-vault edit --ask-vault-pass environments/ssm_parameters/development.tf`
 
    1. Commit changes
 

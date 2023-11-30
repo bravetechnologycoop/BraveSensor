@@ -13,22 +13,35 @@ the code was deployed.
 
 ### Added
 
+- Integration tests for db.getActiveClients (CU-w9bcb5).
+
+### Changed
+
+- API route /api/message-clients to become the PA API route /pa/message-clients, now authenticating with Google (CU-w9bcb5).
+- Unit tests for pa.handleMessageClients (CU-w9bcb5).
+
+## [10.2.0] - 2023-11-30
+
+### Added
+
 - /pa/get-google-tokens route to the sensors server handled by getGoogleTokens in pa.js (CU-8679128c8).
 - /pa/get-google-payload route to the sensors server handled by getGooglePayload in pa.js (CU-8679128c8).
 - Unit tests for getGoogleTokens and getGooglePayload (CU-8679128c8).
-- Integration tests for db.getActiveClients (CU-w9bcb5).
 
 ### Changed
 
 - PA API routes /pa/create-sensor-location, /pa/get-sensor-clients, /pa/sensor-twilio-number to use googleHelpers.paAuthorize instead of clickUpHelpers.clickUpChecker (CU-8679128c8).
 - Unit tests for api.authorize function to follow conventions in other testing files.
 - Upgraded `brave-alert-lib` to v10.3.1 (CU-8679128c8).
-- API route /api/message-clients to become the PA API route /pa/message-clients, now authenticating with Google (CU-w9bcb5).
-- Unit tests for pa.handleMessageClients (CU-w9bcb5).
+- Updated README Instructions (CU-8678yk217).
 
 ### Security
 
 - Upgraded `axios` from 0.21.4 to 1.6.0.
+
+### Removed
+
+- DigitalOcean files from old infrastructure that are no longer used (CU-8678yk217).
 
 ## [10.1.1] - 2023-11-15
 
@@ -664,7 +677,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.1...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.2.0...HEAD
+[10.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.1...v10.2.0
 [10.1.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.0...v10.1.1
 [10.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.0.0...v10.1.0
 [10.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.10.0...v10.0.0
