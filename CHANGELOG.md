@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [10.2.0] - 2023-11-30
+
 ### Added
 
 - /pa/get-google-tokens route to the sensors server handled by getGoogleTokens in pa.js (CU-8679128c8).
@@ -666,7 +668,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.1...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.2.0...HEAD
+[10.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.1...v10.2.0
 [10.1.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.0...v10.1.1
 [10.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.0.0...v10.1.0
 [10.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.10.0...v10.0.0
