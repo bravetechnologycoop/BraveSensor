@@ -11,6 +11,15 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Integration tests for db.getActiveClients (CU-w9bcb5).
+
+### Changed
+
+- API route /api/message-clients to become the PA API route /pa/message-clients, now authenticating with Google (CU-w9bcb5).
+- Unit tests for pa.handleMessageClients (CU-w9bcb5).
+
 ## [10.2.0] - 2023-11-30
 
 ### Added
