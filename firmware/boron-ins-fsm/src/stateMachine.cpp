@@ -28,7 +28,6 @@ unsigned long state3_max_long_stillness_time =
     STATE3_MAX_STILLNESS_TIME;  // By default, we use the same value for max_stillness_time and max_long_stillness_time
 int resetReason = System.resetReason();
 // record whether an alert has been sent within the same session
-bool hasDurationAlertBeenSent;
 bool hasStillnessAlertBeenSent;
 // which max stillness time are we currently comparing against
 // using pointers so that the value pointed to be max_stillness_time will be the correct values of state3_max_stillness_time or
@@ -49,9 +48,6 @@ void setupStateMachine() {
 
     // default to not publishing debug logs
     stateMachineDebugFlag = 0;
-
-    // default to no duration alert sent
-    hasDurationAlertBeenSent = false;
 
     // default to no stillness alert sent
     hasStillnessAlertBeenSent = false;
@@ -134,8 +130,7 @@ void state0_idle() {
     checkDoor = checkIM();
     // this returns 0.0 if the INS has no new data to transmit
     checkINS = checkINS3331();
-    // session is over in idle state, so reset the whether alert has been sent flags
-    hasDurationAlertBeenSent = false;
+    // session is over in idle state, so reset the whether alert has been sent stillness flag
     hasStillnessAlertBeenSent = false;
     // set to compare against the shorter stillness threshold
     max_stillness_time = &state3_max_stillness_time;
@@ -244,12 +239,11 @@ void state2_duration() {
         saveStateChangeOrAlert(2, 2);
         stateHandler = state0_idle;
     }
-    else if ((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent) {
+    else if ((millis() - state2_duration_timer >= state2_max_duration)) {
         Log.warn("See duration alert, remaining in state2_duration after alert publish");
         saveStateChangeOrAlert(2, 4);
         Log.error("Duration Alert!!");
         Particle.publish("Duration Alert", "duration alert", PRIVATE);
-        hasDurationAlertBeenSent = true;
         stateHandler = state2_duration;
     }
     else {
@@ -300,13 +294,12 @@ void state3_stillness() {
         max_stillness_time = &state3_max_long_stillness_time;  // set to compare against the longer stillness threshold for the rest of this session
         stateHandler = state3_stillness;
     }
-    else if ((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent) {
+    else if ((millis() - state2_duration_timer >= state2_max_duration)) {
         Log.warn("duration alert, remaining in state3 after publish");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 4);
         Log.error("Duration Alert!!");
         Particle.publish("Duration Alert", "duration alert", PRIVATE);
-        hasDurationAlertBeenSent = true;
         stateHandler = state3_stillness;
     }
     else {
