@@ -19,6 +19,17 @@ the code was deployed.
 - The ability to switch the language of an existing client from English to Spanish directly from the edit client page (CU-2q39wtu).
 - Incident categories are stored in English in the database for all clients, simplifying the reporting process for statistics (CU-8678zfmph).
 - Dynamically translating incident categories to the client's chosen language, similar to the translation of messages from a predefined JSON file  (CU-8678zfmph).
+- Integration tests for db.getActiveClients (CU-w9bcb5).
+
+### Changed
+
+- API route /api/message-clients to become the PA API route /pa/message-clients, now authenticating with Google (CU-w9bcb5).
+- Unit tests for pa.handleMessageClients (CU-w9bcb5).
+
+## [10.2.0] - 2023-11-30
+
+### Added
+
 - /pa/get-google-tokens route to the sensors server handled by getGoogleTokens in pa.js (CU-8679128c8).
 - /pa/get-google-payload route to the sensors server handled by getGooglePayload in pa.js (CU-8679128c8).
 - Unit tests for getGoogleTokens and getGooglePayload (CU-8679128c8).
@@ -672,7 +683,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.1...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.2.0...HEAD
+[10.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.1...v10.2.0
 [10.1.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.0...v10.1.1
 [10.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.0.0...v10.1.0
 [10.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v9.10.0...v10.0.0

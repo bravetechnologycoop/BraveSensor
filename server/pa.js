@@ -146,6 +146,69 @@ async function handleSensorPhoneNumber(req, res) {
   }
 }
 
+const validateMessageClients = Validator.body(['twilioMessage', 'googleIdToken']).exists()
+
+async function handleMessageClients(req, res) {
+  const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+
+  try {
+    if (validationErrors.isEmpty()) {
+      const clients = await db.getActiveClients()
+      const twilioMessage = req.body.twilioMessage
+      const responseObject = {
+        status: 'success',
+        twilioMessage,
+        successfullyMessaged: [],
+        failedToMessage: [],
+      }
+
+      for (const client of clients) {
+        // create array of all phone numbers for this client
+        const phoneNumbers = []
+        phoneNumbers.push(...client.responderPhoneNumbers, ...client.fallbackPhoneNumbers, ...client.heartbeatPhoneNumbers)
+
+        // create set of all unique phone numbers for this client
+        const uniquePhoneNumbers = new Set()
+        phoneNumbers.forEach(phoneNumber => {
+          uniquePhoneNumbers.add(phoneNumber)
+        })
+
+        // for each unique phone number of this client
+        for (const phoneNumber of uniquePhoneNumbers) {
+          // attempt to send Twilio SMS message from client's from phone number
+          const twilioResponse = await twilioHelpers.sendTwilioMessage(phoneNumber, client.fromPhoneNumber, twilioMessage)
+
+          // Twilio trace object: information about the sent message
+          const twilioTraceObject = {
+            to: phoneNumber,
+            from: client.fromPhoneNumber,
+            clientId: client.id,
+            clientDisplayName: client.displayName,
+          }
+
+          // check if the Twilio SMS message wasn't sent successfully
+          if (twilioResponse === undefined || twilioResponse.status === undefined || twilioResponse.status !== 'queued') {
+            responseObject.failedToMessage.push(twilioTraceObject)
+
+            // log the entire Twilio trace object
+            helpers.log(`Failed to send Twilio SMS message to specific client: ${JSON.stringify(twilioTraceObject)}`)
+          } else {
+            // Twilio SMS message was sent successfully
+            responseObject.successfullyMessaged.push(twilioTraceObject)
+          }
+        }
+      }
+
+      res.status(200).json(responseObject)
+    } else {
+      res.status(401).send({ message: 'Bad request' })
+    }
+  } catch (error) {
+    helpers.log(`Failed to send Twilio SMS message to clients: ${error.message}`)
+    res.status(500).send({ message: 'Internal server error' })
+  }
+}
+
 module.exports = {
   validateGetGoogleTokens,
   getGoogleTokens,
@@ -154,7 +217,9 @@ module.exports = {
   handleCreateSensorLocation,
   handleGetSensorClients,
   handleSensorPhoneNumber,
+  handleMessageClients,
   validateCreateSensorLocation,
   validateGetSensorClients,
   validateSensorPhoneNumber,
+  validateMessageClients,
 }
