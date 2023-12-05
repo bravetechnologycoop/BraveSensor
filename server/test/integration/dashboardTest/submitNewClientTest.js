@@ -51,6 +51,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
+      this.language = 'en'
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
@@ -62,6 +63,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
+        language: this.language,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -90,6 +92,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             isDisplayed: client.isDisplayed,
             isSendingAlerts: client.isSendingAlerts,
             isSendingVitals: client.isSendingVitals,
+            language: client.language,
           }
         }),
       ).to.eql([
@@ -107,6 +110,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           isDisplayed: true,
           isSendingAlerts: false,
           isSendingVitals: false,
+          language: this.language,
         },
       ])
     })
@@ -129,6 +133,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.incidentCategories = ['   Cat1 ', '    Cat2   ']
       this.reminderTimeout = '   5   '
       this.fallbackTimeout = ' 10 '
+      this.language = '    en    '
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
@@ -140,6 +145,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
+        language: this.language,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -168,6 +174,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             isDisplayed: client.isDisplayed,
             isSendingAlerts: client.isSendingAlerts,
             isSendingVitals: client.isSendingVitals,
+            language: client.language,
           }
         }),
       ).to.eql([
@@ -185,6 +192,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           isDisplayed: true,
           isSendingAlerts: false,
           isSendingVitals: false,
+          language: this.language.trim(),
         },
       ])
     })
@@ -239,6 +247,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
+      this.language = 'en'
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
@@ -249,6 +258,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
+        language: this.language,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -277,6 +287,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             isDisplayed: client.isDisplayed,
             isSendingAlerts: client.isSendingAlerts,
             isSendingVitals: client.isSendingVitals,
+            language: client.language,
           }
         }),
       ).to.eql([
@@ -294,6 +305,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           isDisplayed: true,
           isSendingAlerts: false,
           isSendingVitals: false,
+          language: this.language,
         },
       ])
     })
@@ -315,6 +327,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
+      this.language = 'en'
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
@@ -325,6 +338,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
+        language: this.language,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -353,6 +367,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             isDisplayed: client.isDisplayed,
             isSendingAlerts: client.isSendingAlerts,
             isSendingVitals: client.isSendingVitals,
+            language: client.language,
           }
         }),
       ).to.eql([
@@ -370,6 +385,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           isDisplayed: true,
           isSendingAlerts: false,
           isSendingVitals: false,
+          language: this.language,
         },
       ])
     })
@@ -391,6 +407,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
+      this.language = 'en'
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
@@ -401,6 +418,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
+        language: this.language,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -429,6 +447,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             isDisplayed: client.isDisplayed,
             isSendingAlerts: client.isSendingAlerts,
             isSendingVitals: client.isSendingVitals,
+            language: client.language,
           }
         }),
       ).to.eql([
@@ -446,6 +465,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           isDisplayed: true,
           isSendingAlerts: false,
           isSendingVitals: false,
+          language: this.language,
         },
       ])
     })
@@ -467,6 +487,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
+      this.language = 'en'
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
@@ -477,6 +498,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
+        language: this.language,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -505,6 +527,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             isDisplayed: client.isDisplayed,
             isSendingAlerts: client.isSendingAlerts,
             isSendingVitals: client.isSendingVitals,
+            language: client.language,
           }
         }),
       ).to.eql([
@@ -522,6 +545,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           isDisplayed: true,
           isSendingAlerts: false,
           isSendingVitals: false,
+          language: this.language,
         },
       ])
     })
@@ -543,6 +567,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
+      this.language = 'en'
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
@@ -552,6 +577,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
+        language: this.language,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -590,6 +616,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: '',
         reminderTimeout: '',
         fallbackTimeout: '',
+        language: '',
       }
 
       this.response = await this.agent.post('/clients').send(badRequest)
@@ -607,7 +634,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
+        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),language (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
       )
     })
   })
@@ -634,7 +661,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
+        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),language (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
       )
     })
   })
@@ -659,6 +686,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: 'Cat1,Cat2',
         reminderTimeout: 5,
         fallbackTimeout: 10,
+        language: 'en',
       }
 
       this.response = await this.agent.post('/clients').send(duplicateDisplayNameRequest)
@@ -699,6 +727,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: 'Cat1,Cat2',
         reminderTimeout: -5,
         fallbackTimeout: -10,
+        language: 'en',
       }
 
       this.response = await this.agent.post('/clients').send(duplicateDisplayNameRequest)
@@ -739,6 +768,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         incidentCategories: 'Cat1,Cat2',
         reminderTimeout: 'abc',
         fallbackTimeout: 10.5,
+        language: 'en',
       }
 
       this.response = await this.agent.post('/clients').send(duplicateDisplayNameRequest)

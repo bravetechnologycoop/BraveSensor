@@ -388,7 +388,7 @@ async function renderClientDetailsPage(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'incidentCategories']).trim().notEmpty(),
+  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'language', 'incidentCategories']).trim().notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
   Validator.oneOf([
     Validator.body(['responderPhoneNumbers']).trim().notEmpty(),
@@ -443,7 +443,7 @@ async function submitNewClient(req, res) {
         true,
         false,
         false,
-        'en',
+        data.language,
       )
 
       res.redirect(`/clients/${newClient.id}`)
@@ -467,6 +467,7 @@ const validateEditClient = [
     'isDisplayed',
     'isSendingAlerts',
     'isSendingVitals',
+    'language',
   ])
     .trim()
     .notEmpty(),
@@ -524,6 +525,7 @@ async function submitEditClient(req, res) {
         data.isDisplayed,
         data.isSendingAlerts,
         data.isSendingVitals,
+        data.language,
         req.params.id,
       )
 

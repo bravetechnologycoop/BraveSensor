@@ -76,6 +76,19 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
+                <label for="language" class="col-sm-3 col-form-label">Select Language:</label>
+                    <div class="col-sm-5">
+                      <select class="form-control" id="language" name="language">
+                            <script>
+                            var languageValue = '{{language}}'; 
+                            document.getElementById('language').innerHTML = `
+                                <option value="es_us" ${languageValue === 'es_us' ? 'selected' : ''}>Spanish</option>
+                                <option value="en" ${languageValue === 'en' ? 'selected' : ''}>English</option>`;
+                            </script>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="incidentCategories" class="col-sm-3 col-form-label">Incident Categories:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="incidentCategories" value="{{incidentCategories}}" required>

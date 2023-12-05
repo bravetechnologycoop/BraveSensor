@@ -907,6 +907,7 @@ async function updateClient(
   isDisplayed,
   isSendingAlerts,
   isSendingVitals,
+  language,
   clientId,
   pgClient,
 ) {
@@ -915,8 +916,8 @@ async function updateClient(
       'updateClient',
       `
       UPDATE clients
-      SET display_name = $1, from_phone_number = $2, responder_phone_numbers = $3, responder_push_id = $4, alert_api_key = $5, reminder_timeout = $6, fallback_phone_numbers = $7, fallback_timeout = $8, heartbeat_phone_numbers = $9, incident_categories = $10, is_displayed = $11, is_sending_alerts = $12, is_sending_vitals = $13
-      WHERE id = $14
+      SET display_name = $1, from_phone_number = $2, responder_phone_numbers = $3, responder_push_id = $4, alert_api_key = $5, reminder_timeout = $6, fallback_phone_numbers = $7, fallback_timeout = $8, heartbeat_phone_numbers = $9, incident_categories = $10, is_displayed = $11, is_sending_alerts = $12, is_sending_vitals = $13, language = $14
+      WHERE id = $15
       RETURNING *
       `,
       [
@@ -933,6 +934,7 @@ async function updateClient(
         isDisplayed,
         isSendingAlerts,
         isSendingVitals,
+        language,
         clientId,
       ],
       pool,
