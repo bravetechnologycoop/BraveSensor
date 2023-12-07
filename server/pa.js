@@ -209,6 +209,36 @@ async function handleMessageClients(req, res) {
   }
 }
 
+const validateCheckDatabaseConnection = Validator.body(['braveKey', 'googleIdToken']).trim().notEmpty()
+
+async function handleCheckDatabaseConnection(req, res) {
+  const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+
+  if (validationErrors.isEmpty()) {
+    const braveAPIKey = req.body.braveKey
+
+    if (paApiKeys.includes(braveAPIKey)) {
+      try {
+        const client = await db.getFirstClient()
+        if (client !== null) {
+          res.status(200).send({ message: 'success' })
+        } else {
+          res.status(500).send({ message: 'Error in Database Access' })
+        }
+      } catch (err) {
+        helpers.logError(err)
+        res.status(500).send({ message: 'Error in Database Access' })
+      }
+    } else {
+      res.status(401).send({ message: 'Invalid API Key' })
+    }
+  } else {
+    const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
+    helpers.log(errorMessage)
+    res.status(400).send(errorMessage)
+  }
+}
+
 module.exports = {
   validateGetGoogleTokens,
   getGoogleTokens,
@@ -222,4 +252,6 @@ module.exports = {
   validateGetSensorClients,
   validateSensorPhoneNumber,
   validateMessageClients,
+  validateCheckDatabaseConnection,
+  handleCheckDatabaseConnection,
 }
