@@ -1252,6 +1252,29 @@ async function createNotification(clientId, subject, body, isAcknowledged, pgCli
   }
 }
 
+async function getFirstClient(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getFirstClient',
+      `
+      SELECT id
+      FROM clients
+      LIMIT 1
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+    return results.rows
+  } catch (err) {
+    helpers.log(err.toString())
+    return null
+  }
+}
+
 async function clearSensorsVitals(pgClient) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear sensors vitals table outside of a test environment!')
@@ -1541,4 +1564,5 @@ module.exports = {
   updateLocation,
   updateLowBatteryAlertTime,
   updateSentAlerts,
+  getFirstClient,
 }
