@@ -1265,13 +1265,12 @@ async function getFirstClient(pgClient) {
       pool,
       pgClient,
     )
-    if (results === undefined || results.rows.length === 0) {
+    if (results === undefined) {
       return null
     }
     return results.rows
   } catch (err) {
     helpers.log(err.toString())
-    return null
   }
 }
 
