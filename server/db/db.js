@@ -13,8 +13,7 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  // ssl: { rejectUnauthorized: false },
-  ssl: false,
+  ssl: { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
