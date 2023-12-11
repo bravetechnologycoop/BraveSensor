@@ -219,11 +219,12 @@ async function handleCheckDatabaseConnection(req, res) {
 
     if (paApiKeys.includes(braveAPIKey)) {
       try {
-        await db.getCurrentTime()
+        await db.getCurrentTimeForHealthCheck()
         res.status(200).send({ message: 'success' })
       } catch (err) {
         helpers.logError(err)
-        res.status(500).send({ message: 'Error in Database Access' })
+        helpers.logSentry(err)
+        res.status(503).send({ message: 'Error in Database Access' })
       }
     } else {
       res.status(401).send({ message: 'Invalid API Key' })

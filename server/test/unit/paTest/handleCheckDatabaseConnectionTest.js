@@ -28,6 +28,7 @@ describe('pa.js unit tests: handleCheckDatabaseConnection', () => {
 
   describe('for a valid request where the database function successfully returns a client', () => {
     beforeEach(async () => {
+      sandbox.stub(db, 'getCurrentTimeForHealthCheck').returns('2023-12-11 12:34:56.789+00')
       await pa.handleCheckDatabaseConnection(
         {
           body: { braveKey, googleIdToken: testGoogleIdToken },
@@ -42,6 +43,7 @@ describe('pa.js unit tests: handleCheckDatabaseConnection', () => {
 
   describe('for an request with an invalid braveKey', () => {
     beforeEach(async () => {
+      sandbox.stub(db, 'getCurrentTimeForHealthCheck')
       await pa.handleCheckDatabaseConnection(
         {
           body: { braveKey: 'invalidKey', googleIdToken: testGoogleIdToken },
@@ -56,7 +58,7 @@ describe('pa.js unit tests: handleCheckDatabaseConnection', () => {
 
   describe('for a valid request where an error occurs during database access', () => {
     beforeEach(async () => {
-      sandbox.stub(db, 'getCurrentTime').rejects(new Error('fake error'))
+      sandbox.stub(db, 'getCurrentTimeForHealthCheck').rejects(new Error('fake error'))
       await pa.handleCheckDatabaseConnection(
         {
           body: { braveKey, googleIdToken: testGoogleIdToken },
@@ -67,8 +69,8 @@ describe('pa.js unit tests: handleCheckDatabaseConnection', () => {
     it('should log the error', () => {
       expect(helpers.logError).to.be.called
     })
-    it('should respond with status 500', () => {
-      expect(this.res.status).to.be.calledWith(500)
+    it('should respond with status 503', () => {
+      expect(this.res.status).to.be.calledWith(503)
     })
   })
 })
