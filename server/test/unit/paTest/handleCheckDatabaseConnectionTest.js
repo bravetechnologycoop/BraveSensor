@@ -66,7 +66,7 @@ describe('pa.js unit tests: handleCheckDatabaseConnection', () => {
         this.res,
       )
     })
-    it('should log the error', () => {
+    it.only('should log the error', () => {
       expect(helpers.logError).to.be.called
     })
     it('should respond with status 500', () => {
