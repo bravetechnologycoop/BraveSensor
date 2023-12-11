@@ -13,7 +13,8 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  ssl: { rejectUnauthorized: false },
+  // ssl: { rejectUnauthorized: false },
+  ssl: false,
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -279,6 +280,38 @@ async function getCurrentTime(pgClient) {
     return results.rows[0].now
   } catch (err) {
     helpers.log(err.toString())
+  }
+}
+
+// Checks the database connection, if not able to connect will throw an error
+async function getCurrentTimeForHealthCheck() {
+  if (helpers.isDbLogging()) {
+    helpers.log(`STARTED: getCurrentTimeForHealthCheck`)
+  }
+
+  let pgClient = null
+
+  try {
+    pgClient = await pool.connect()
+    if (helpers.isDbLogging()) {
+      helpers.log(`CONNECTED: getCurrentTimeForHealthCheck`)
+    }
+
+    const results = await pgClient.query(`SELECT NOW()`)
+    return results.rows[0].now
+  } catch (err) {
+    helpers.logError(`Error running the getCurrentTimeForHealthCheck query: ${err}`)
+    throw err
+  } finally {
+    try {
+      pgClient.release()
+    } catch (err) {
+      helpers.logError(`getCurrentTimeForHealthCheck: Error releasing client: ${err}`)
+    }
+
+    if (helpers.isDbLogging()) {
+      helpers.log(`COMPLETED: getCurrentTimeForHealthCheck`)
+    }
   }
 }
 
@@ -1516,6 +1549,7 @@ module.exports = {
   getClients,
   getActiveClients,
   getCurrentTime,
+  getCurrentTimeForHealthCheck,
   getDataForExport,
   getHistoricAlertsByAlertApiKey,
   getHistoryOfSessions,
