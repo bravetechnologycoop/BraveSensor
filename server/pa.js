@@ -219,12 +219,8 @@ async function handleCheckDatabaseConnection(req, res) {
 
     if (paApiKeys.includes(braveAPIKey)) {
       try {
-        const client = await db.getFirstClient()
-        if (client !== null) {
-          res.status(200).send({ message: 'success' })
-        } else {
-          res.status(500).send({ message: 'Error in Database Access' })
-        }
+        await db.getCurrentTime()
+        res.status(200).send({ message: 'success' })
       } catch (err) {
         helpers.logError(err)
         res.status(500).send({ message: 'Error in Database Access' })

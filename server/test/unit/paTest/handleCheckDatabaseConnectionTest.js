@@ -28,7 +28,6 @@ describe('pa.js unit tests: handleCheckDatabaseConnection', () => {
 
   describe('for a valid request where the database function successfully returns a client', () => {
     beforeEach(async () => {
-      sandbox.stub(db, 'getFirstClient').returns([{ id: '1', displayName: 'Fake Client' }])
       await pa.handleCheckDatabaseConnection(
         {
           body: { braveKey, googleIdToken: testGoogleIdToken },
@@ -43,7 +42,6 @@ describe('pa.js unit tests: handleCheckDatabaseConnection', () => {
 
   describe('for an request with an invalid braveKey', () => {
     beforeEach(async () => {
-      sandbox.stub(db, 'getFirstClient')
       await pa.handleCheckDatabaseConnection(
         {
           body: { braveKey: 'invalidKey', googleIdToken: testGoogleIdToken },
@@ -58,7 +56,7 @@ describe('pa.js unit tests: handleCheckDatabaseConnection', () => {
 
   describe('for a valid request where an error occurs during database access', () => {
     beforeEach(async () => {
-      sandbox.stub(db, 'getFirstClient').rejects(new Error('fake error'))
+      sandbox.stub(db, 'getCurrentTime').rejects(new Error('fake error'))
       await pa.handleCheckDatabaseConnection(
         {
           body: { braveKey, googleIdToken: testGoogleIdToken },
@@ -68,21 +66,6 @@ describe('pa.js unit tests: handleCheckDatabaseConnection', () => {
     })
     it('should log the error', () => {
       expect(helpers.logError).to.be.called
-    })
-    it('should respond with status 500', () => {
-      expect(this.res.status).to.be.calledWith(500)
-    })
-  })
-
-  describe('for a valid request where the database function returns null', () => {
-    beforeEach(async () => {
-      sandbox.stub(db, 'getFirstClient').returns(null)
-      await pa.handleCheckDatabaseConnection(
-        {
-          body: { braveKey, googleIdToken: testGoogleIdToken },
-        },
-        this.res,
-      )
     })
     it('should respond with status 500', () => {
       expect(this.res.status).to.be.calledWith(500)
