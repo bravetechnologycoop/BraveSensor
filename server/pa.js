@@ -223,7 +223,6 @@ async function handleCheckDatabaseConnection(req, res) {
         res.status(200).send({ message: 'success' })
       } catch (err) {
         helpers.logError(err)
-        helpers.logSentry(err)
         res.status(503).send({ message: 'Error in Database Access' })
       }
     } else {
