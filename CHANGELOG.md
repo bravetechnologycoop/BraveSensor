@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+## Added
+
+- PA route /pa/check-database-connection to check if database connection is working as expected (CU-86dqkw7ef).
+
 ## [10.3.0] - 2023-12-07
 
 ### Added
