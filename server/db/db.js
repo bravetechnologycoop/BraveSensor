@@ -368,34 +368,6 @@ async function getSessionWithSessionId(id, pgClient) {
   }
 }
 
-async function getSessionWithSessionIdAndAlertApiKey(sessionId, alertApiKey, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getSessionWithSessionIdAndAlertApiKey',
-      `
-      SELECT s.*
-      FROM sessions AS s
-      LEFT JOIN locations AS l ON s.locationid = l.locationid
-      LEFT JOIN clients AS c ON l.client_id = c.id
-      WHERE s.id = $1
-      AND c.alert_api_key = $2
-      `,
-      [sessionId, alertApiKey],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    const allLocations = await getLocations(pgClient)
-    return createSessionFromRow(results.rows[0], allLocations)
-  } catch (err) {
-    helpers.logError(err.toString())
-  }
-}
-
 async function getClientWithClientId(id, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -665,66 +637,6 @@ async function saveSession(session, pgClient) {
   }
 }
 
-async function getActiveAlertsByAlertApiKey(alertApiKey, maxTimeAgoInMillis, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getActiveAlertsByAlertApiKey',
-      `
-      SELECT s.id, s.chatbot_state, l.display_name, s.alert_type, s.created_at, c.incident_categories
-      FROM sessions AS s
-      LEFT JOIN locations AS l ON l.locationid = s.locationid
-      LEFT JOIN clients AS c ON l.client_id = c.id
-      WHERE c.alert_api_key = $1
-      AND (
-        s.chatbot_state <> $2
-        AND s.updated_at >= now() - $3 * INTERVAL '1 millisecond'
-      )
-      ORDER BY s.created_at DESC
-      `,
-      [alertApiKey, CHATBOT_STATE.COMPLETED, maxTimeAgoInMillis],
-      pool,
-      pgClient,
-    )
-
-    return results.rows
-  } catch (err) {
-    helpers.logError(err.toString())
-  }
-}
-
-async function getHistoricAlertsByAlertApiKey(alertApiKey, maxHistoricAlerts, maxTimeAgoInMillis, pgClient) {
-  try {
-    // Historic Alerts are those with status "Completed" or that were last updated longer ago than the SESSION_RESET_TIMEOUT
-    const results = await helpers.runQuery(
-      'getHistoricAlertsByAlertApiKey',
-      `
-      SELECT s.id, l.display_name, s.incident_category, s.alert_type, s.created_at, s.responded_at
-      FROM sessions AS s
-      LEFT JOIN locations AS l ON s.locationid = l.locationid
-      LEFT JOIN clients as c ON l.client_id = c.id
-      WHERE c.alert_api_key = $1
-      AND (
-        s.chatbot_state = $2
-        OR s.updated_at < now() - $3 * INTERVAL '1 millisecond'
-      )
-      ORDER BY s.created_at DESC
-      LIMIT $4
-      `,
-      [alertApiKey, CHATBOT_STATE.COMPLETED, maxTimeAgoInMillis, maxHistoricAlerts],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    return results.rows
-  } catch (err) {
-    helpers.log(err.toString())
-  }
-}
-
 // Retrieves the data from the locations table for a given location
 async function getLocationData(locationid, pgClient) {
   try {
@@ -746,33 +658,6 @@ async function getLocationData(locationid, pgClient) {
 
     const allClients = await getClients(pgClient)
     return createLocationFromRow(results.rows[0], allClients)
-  } catch (err) {
-    helpers.log(err.toString())
-  }
-}
-
-async function getLocationsFromAlertApiKey(alertApiKey, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getLocationsFromAlertApiKey',
-      `
-      SELECT l.*
-      FROM locations AS l
-      LEFT JOIN clients AS c on l.client_id = c.id
-      WHERE c.alert_api_key = $1
-      `,
-      [alertApiKey],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      helpers.log('Error: No location with associated API key exists')
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return results.rows.map(r => createLocationFromRow(r, allClients))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -1131,28 +1016,6 @@ async function createClient(
   }
 
   return null
-}
-
-async function getNewNotificationsCountByAlertApiKey(alertApiKey, pgClient) {
-  try {
-    const { rows } = await helpers.runQuery(
-      'getNewNotificationsCountByAlertApiKey',
-      `
-      SELECT COUNT (*)
-      FROM notifications n 
-      LEFT JOIN clients c ON n.client_id = c.id
-      WHERE c.alert_api_key = $1
-      AND NOT n.is_acknowledged
-      `,
-      [alertApiKey],
-      pool,
-      pgClient,
-    )
-
-    return parseInt(rows[0].count, 10)
-  } catch (err) {
-    helpers.log(err.toString())
-  }
 }
 
 async function getRecentSensorsVitals(pgClient) {
@@ -1542,7 +1405,6 @@ module.exports = {
   createLocationFromBrowserForm,
   createNotification,
   createSession,
-  getActiveAlertsByAlertApiKey,
   getAllSessionsFromLocation,
   getClientWithClientId,
   getClients,
@@ -1550,21 +1412,17 @@ module.exports = {
   getCurrentTime,
   getCurrentTimeForHealthCheck,
   getDataForExport,
-  getHistoricAlertsByAlertApiKey,
   getHistoryOfSessions,
   getLocationData,
   getLocationFromParticleCoreID,
   getLocations,
-  getLocationsFromAlertApiKey,
   getLocationsFromClientId,
   getMostRecentSensorsVitalWithLocation,
   getMostRecentSessionWithLocationid,
   getMostRecentSessionWithPhoneNumbers,
-  getNewNotificationsCountByAlertApiKey,
   getRecentSensorsVitals,
   getRecentSensorsVitalsWithClientId,
   getSessionWithSessionId,
-  getSessionWithSessionIdAndAlertApiKey,
   getUnrespondedSessionWithLocationId,
   logSensorsVital,
   numberOfStillnessAlertsInIntervalOfTime,
