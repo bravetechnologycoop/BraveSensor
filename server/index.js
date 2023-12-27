@@ -100,7 +100,6 @@ async function handleAlert(location, alertType) {
         sessionId: newSession.id,
         toPhoneNumbers: client.responderPhoneNumbers,
         fromPhoneNumber: location.phoneNumber,
-        responderPushId: client.responderPushId,
         deviceName: location.displayName,
         alertType: newSession.alertType,
         language: client.language,
@@ -119,7 +118,6 @@ async function handleAlert(location, alertType) {
 
       braveAlerter.sendAlertSessionUpdate(
         currentSession.id,
-        client.repsonderPushId,
         client.responderPhoneNumbers,
         location.phoneNumber,
         t('alertAdditionalAlert', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
@@ -197,7 +195,6 @@ app.post('/smokeTest/setup', async (request, response) => {
       responderPhoneNumbers: [recipientNumber],
       fromPhoneNumber: phoneNumber,
       alertApiKey: 'alertApiKey',
-      responderPushId: null,
       reminderTimeout: 30,
       fallbackTimeout: 45,
       heartbeatPhoneNumbers: [recipientNumber],
