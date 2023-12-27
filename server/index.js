@@ -123,7 +123,6 @@ async function handleAlert(location, alertType) {
         client.responderPhoneNumbers,
         location.phoneNumber,
         t('alertAdditionalAlert', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
-        `${alertTypeDisplayName} Alert:\n${location.displayName}`,
       )
     }
     await db.commitTransaction(pgClient)
