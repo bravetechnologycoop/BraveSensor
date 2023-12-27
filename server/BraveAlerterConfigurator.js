@@ -3,7 +3,7 @@
 const { t } = require('i18next')
 
 // In-house dependencies
-const { BraveAlerter, AlertSession, CHATBOT_STATE, helpers, } = require('brave-alert-lib')
+const { BraveAlerter, AlertSession, CHATBOT_STATE, helpers } = require('brave-alert-lib')
 const db = require('./db/db')
 const particleFunctions = require('./particleFunctions')
 
