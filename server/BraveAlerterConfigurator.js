@@ -76,12 +76,12 @@ class BraveAlerterConfigurator {
 
       if (session) {
         // If the session has no respondedByPhoneNumber, then this is the first SMS response, so assign it as the session's respondedByPhoneNumber
-        if (alertSession.respondedByPhoneNumber !== undefined && session.respondedByPhoneNumber === null) {
+        if (session.respondedByPhoneNumber === null) {
           session.respondedByPhoneNumber = alertSession.respondedByPhoneNumber
         }
 
         // If the SMS came from the session's respondedByPhoneNumber
-        if (alertSession.respondedByPhoneNumber === undefined || alertSession.respondedByPhoneNumber === session.respondedByPhoneNumber) {
+        if (alertSession.respondedByPhoneNumber === session.respondedByPhoneNumber) {
           if (alertSession.alertState) {
             session.chatbotState = alertSession.alertState
           }
