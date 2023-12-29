@@ -1130,23 +1130,6 @@ async function logSensorsVital(
   return null
 }
 
-async function createNotification(clientId, subject, body, isAcknowledged, pgClient) {
-  try {
-    await helpers.runQuery(
-      'createNotification',
-      `
-      INSERT INTO notifications (client_id, subject, body, is_acknowledged)
-      VALUES ($1, $2, $3, $4)
-      `,
-      [clientId, subject, body, isAcknowledged],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.log(err.toString())
-  }
-}
-
 async function clearSensorsVitals(pgClient) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('warning - tried to clear sensors vitals table outside of a test environment!')
@@ -1178,26 +1161,6 @@ async function clearSensorsVitalsCache(pgClient) {
       'clearSensorsVitalsCache',
       `DELETE FROM sensors_vitals_cache
         `,
-      [],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.log(err.toString())
-  }
-}
-
-async function clearNotifications(pgClient) {
-  if (!helpers.isTestEnvironment()) {
-    helpers.log('warning - tried to clear notifications table outside of a test environment!')
-    return
-  }
-
-  try {
-    await helpers.runQuery(
-      'clearNotifications',
-      `DELETE FROM notifications
-      `,
       [],
       pool,
       pgClient,
@@ -1377,7 +1340,6 @@ async function clearTables(pgClient) {
   await clearSensorsVitalsCache(pgClient)
   await clearSensorsVitals(pgClient)
   await clearSessions(pgClient)
-  await clearNotifications(pgClient)
   await clearLocations(pgClient)
   await clearClients(pgClient)
 }
@@ -1392,7 +1354,6 @@ module.exports = {
   clearClients,
   clearLocation,
   clearLocations,
-  clearNotifications,
   clearSensorsVitals,
   clearSensorsVitalsCache,
   clearSessions,
@@ -1403,7 +1364,6 @@ module.exports = {
   createClient,
   createLocation,
   createLocationFromBrowserForm,
-  createNotification,
   createSession,
   getAllSessionsFromLocation,
   getClientWithClientId,
