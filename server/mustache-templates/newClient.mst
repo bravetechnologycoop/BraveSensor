@@ -35,20 +35,6 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="responderPushId" class="col-sm-3 col-form-label">Responder Push ID:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="responderPushId" placeholder="Responder Push ID">
-                        <small id="responderPushIdHelp" class="form-text text-muted">Must provide either "Responder Phone Number" or ("Responder Push ID" and "Alert App API Key")</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="alertApiKey" class="col-sm-3 col-form-label">Alert App API Key:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="alertApiKey" placeholder="API Key">
-                        <small id="alertApiKeyHelp" class="form-text text-muted">Must provide either "Responder Phone Number" or ("Responder Push ID" and "Alert App API Key")</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="fallbackPhoneNumbers" class="col-sm-3 col-form-label">Fallback Phone Numbers:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="fallbackPhoneNumbers" value="{{fallbackPhoneNumbers}}" required pattern="[+][1]\d{10}([,][+][1]\d{10})*">

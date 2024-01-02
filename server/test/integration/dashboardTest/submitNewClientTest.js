@@ -44,8 +44,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.displayName = 'myNewClient'
       this.fromPhoneNumber = '+19998887777'
       this.responderPhoneNumbers = ['+16665553333']
-      this.responderPushId = 'pushId'
-      this.alertApiKey = 'myApiKey'
       this.fallbackPhoneNumbers = ['+1', '+2', '+3']
       this.heartbeatPhoneNumbers = ['+4', '+5']
       this.incidentCategories = ['Cat1', 'Cat2']
@@ -56,8 +54,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
         responderPhoneNumbers: this.responderPhoneNumbers.join(','),
-        responderPushId: this.responderPushId,
-        alertApiKey: this.alertApiKey,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
         heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
         incidentCategories: this.incidentCategories.join(','),
@@ -82,8 +78,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             displayName: client.displayName,
             fromPhoneNumber: client.fromPhoneNumber,
             responderPhoneNumbers: client.responderPhoneNumbers,
-            responderPushId: client.responderPushId,
-            alertApiKey: client.alertApiKey,
             fallbackPhoneNumbers: client.fallbackPhoneNumbers,
             heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
             incidentCategories: client.incidentCategories,
@@ -100,8 +94,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           displayName: this.displayName,
           fromPhoneNumber: this.fromPhoneNumber,
           responderPhoneNumbers: this.responderPhoneNumbers,
-          responderPushId: this.responderPushId,
-          alertApiKey: this.alertApiKey,
           fallbackPhoneNumbers: this.fallbackPhoneNumbers,
           heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
           incidentCategories: this.incidentCategories,
@@ -126,8 +118,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.displayName = ' myNewClient  '
       this.fromPhoneNumber = '  +19998887777  '
       this.responderPhoneNumbers = [' +16665553333 ']
-      this.responderPushId = '  pushId  '
-      this.alertApiKey = '   myApiKey  '
       this.fallbackPhoneNumbers = ['  +1  ', ' +2 ', '   +3   ']
       this.heartbeatPhoneNumbers = [' +4 ', '  +5  ']
       this.incidentCategories = ['   Cat1 ', '    Cat2   ']
@@ -138,8 +128,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
         responderPhoneNumbers: this.responderPhoneNumbers.join(','),
-        responderPushId: this.responderPushId,
-        alertApiKey: this.alertApiKey,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
         heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
         incidentCategories: this.incidentCategories.join(','),
@@ -164,8 +152,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             displayName: client.displayName,
             fromPhoneNumber: client.fromPhoneNumber,
             responderPhoneNumbers: client.responderPhoneNumbers,
-            responderPushId: client.responderPushId,
-            alertApiKey: client.alertApiKey,
             fallbackPhoneNumbers: client.fallbackPhoneNumbers,
             heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
             incidentCategories: client.incidentCategories,
@@ -182,8 +168,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           displayName: this.displayName.trim(),
           fromPhoneNumber: this.fromPhoneNumber.trim(),
           responderPhoneNumbers: this.responderPhoneNumbers.map(phone => phone.trim()),
-          responderPushId: this.responderPushId.trim(),
-          alertApiKey: this.alertApiKey.trim(),
           fallbackPhoneNumbers: this.fallbackPhoneNumbers.map(phone => phone.trim()),
           heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.map(phone => phone.trim()),
           incidentCategories: this.incidentCategories.map(category => category.trim()),
@@ -206,8 +190,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         displayName: 'testDisplayName',
         fromPhoneNumber: '+17778889999',
         responderPhoneNumbers: '+12223334444',
-        responderPushId: 'myResponderPushId',
-        alertApiKey: 'myAlertApiKey',
         fallbackPhoneNumbers: '+12223334444',
         heartbeatPhoneNumbers: '+17772223333,+19995554444',
         incidentCategories: 'Cat1,Cat2',
@@ -231,86 +213,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
   })
 
-  describe('for a request that contains valid non-empty fields but with no responderPhoneNumbers', () => {
-    beforeEach(async () => {
-      await this.agent.post('/login').send({
-        username: helpers.getEnvVar('WEB_USERNAME'),
-        password: helpers.getEnvVar('PASSWORD'),
-      })
-
-      this.displayName = 'myNewClient'
-      this.fromPhoneNumber = '+19998887777'
-      this.responderPushId = 'pushId'
-      this.alertApiKey = 'myApiKey'
-      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
-      this.heartbeatPhoneNumbers = ['+4', '+5']
-      this.incidentCategories = ['Cat1', 'Cat2']
-      this.reminderTimeout = 5
-      this.fallbackTimeout = 10
-      this.language = 'en'
-      const goodRequest = {
-        displayName: this.displayName,
-        fromPhoneNumber: this.fromPhoneNumber,
-        responderPushId: this.responderPushId,
-        alertApiKey: this.alertApiKey,
-        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
-        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
-        incidentCategories: this.incidentCategories.join(','),
-        reminderTimeout: this.reminderTimeout,
-        fallbackTimeout: this.fallbackTimeout,
-        language: this.language,
-      }
-
-      this.response = await this.agent.post('/clients').send(goodRequest)
-    })
-
-    it('should return 200', () => {
-      expect(this.response).to.have.status(200)
-    })
-
-    it('should create a single client in the database with the given values', async () => {
-      const clients = await db.getClients()
-
-      expect(
-        clients.map(client => {
-          return {
-            displayName: client.displayName,
-            fromPhoneNumber: client.fromPhoneNumber,
-            responderPhoneNumbers: client.responderPhoneNumbers,
-            responderPushId: client.responderPushId,
-            alertApiKey: client.alertApiKey,
-            fallbackPhoneNumbers: client.fallbackPhoneNumbers,
-            heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
-            incidentCategories: client.incidentCategories,
-            reminderTimeout: client.reminderTimeout,
-            fallbackTimeout: client.fallbackTimeout,
-            isDisplayed: client.isDisplayed,
-            isSendingAlerts: client.isSendingAlerts,
-            isSendingVitals: client.isSendingVitals,
-            language: client.language,
-          }
-        }),
-      ).to.eql([
-        {
-          displayName: this.displayName,
-          fromPhoneNumber: this.fromPhoneNumber,
-          responderPhoneNumbers: null,
-          responderPushId: this.responderPushId,
-          alertApiKey: this.alertApiKey,
-          fallbackPhoneNumbers: this.fallbackPhoneNumbers,
-          heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
-          incidentCategories: this.incidentCategories,
-          reminderTimeout: this.reminderTimeout,
-          fallbackTimeout: this.fallbackTimeout,
-          isDisplayed: true,
-          isSendingAlerts: false,
-          isSendingVitals: false,
-          language: this.language,
-        },
-      ])
-    })
-  })
-
   describe('for a request that contains valid non-empty fields but with no heartbeatPhoneNumbers', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
@@ -321,8 +223,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.displayName = 'myNewClient'
       this.fromPhoneNumber = '+19998887777'
       this.responderPhoneNumbers = ['+16665553333']
-      this.responderPushId = 'pushId'
-      this.alertApiKey = 'myApiKey'
       this.fallbackPhoneNumbers = ['+1', '+2', '+3']
       this.incidentCategories = ['Cat1', 'Cat2']
       this.reminderTimeout = 5
@@ -332,8 +232,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
         responderPhoneNumbers: this.responderPhoneNumbers.join(','),
-        responderPushId: this.responderPushId,
-        alertApiKey: this.alertApiKey,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
         incidentCategories: this.incidentCategories.join(','),
         reminderTimeout: this.reminderTimeout,
@@ -357,8 +255,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
             displayName: client.displayName,
             fromPhoneNumber: client.fromPhoneNumber,
             responderPhoneNumbers: client.responderPhoneNumbers,
-            responderPushId: client.responderPushId,
-            alertApiKey: client.alertApiKey,
             fallbackPhoneNumbers: client.fallbackPhoneNumbers,
             heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
             incidentCategories: client.incidentCategories,
@@ -375,8 +271,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           displayName: this.displayName,
           fromPhoneNumber: this.fromPhoneNumber,
           responderPhoneNumbers: this.responderPhoneNumbers,
-          responderPushId: this.responderPushId,
-          alertApiKey: this.alertApiKey,
           fallbackPhoneNumbers: this.fallbackPhoneNumbers,
           heartbeatPhoneNumbers: [],
           incidentCategories: this.incidentCategories,
@@ -391,7 +285,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
   })
 
-  describe('for a request that contains valid non-empty fields but with no responderPushId', () => {
+  describe('for a request that contains valid non-empty fields but with no responderPhoneNumbers', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
         username: helpers.getEnvVar('WEB_USERNAME'),
@@ -400,8 +294,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
       this.displayName = 'myNewClient'
       this.fromPhoneNumber = '+19998887777'
-      this.responderPhoneNumbers = ['+16665553333']
-      this.alertApiKey = 'myApiKey'
       this.fallbackPhoneNumbers = ['+1', '+2', '+3']
       this.heartbeatPhoneNumbers = ['+4', '+5']
       this.incidentCategories = ['Cat1', 'Cat2']
@@ -411,167 +303,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
-        responderPhoneNumbers: this.responderPhoneNumbers.join(','),
-        alertApiKey: this.alertApiKey,
-        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
-        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
-        incidentCategories: this.incidentCategories.join(','),
-        reminderTimeout: this.reminderTimeout,
-        fallbackTimeout: this.fallbackTimeout,
-        language: this.language,
-      }
-
-      this.response = await this.agent.post('/clients').send(goodRequest)
-    })
-
-    it('should return 200', () => {
-      expect(this.response).to.have.status(200)
-    })
-
-    it('should create a single client in the database with the given values', async () => {
-      const clients = await db.getClients()
-
-      expect(
-        clients.map(client => {
-          return {
-            displayName: client.displayName,
-            fromPhoneNumber: client.fromPhoneNumber,
-            responderPhoneNumbers: client.responderPhoneNumbers,
-            responderPushId: client.responderPushId,
-            alertApiKey: client.alertApiKey,
-            fallbackPhoneNumbers: client.fallbackPhoneNumbers,
-            heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
-            incidentCategories: client.incidentCategories,
-            reminderTimeout: client.reminderTimeout,
-            fallbackTimeout: client.fallbackTimeout,
-            isDisplayed: client.isDisplayed,
-            isSendingAlerts: client.isSendingAlerts,
-            isSendingVitals: client.isSendingVitals,
-            language: client.language,
-          }
-        }),
-      ).to.eql([
-        {
-          displayName: this.displayName,
-          fromPhoneNumber: this.fromPhoneNumber,
-          responderPhoneNumbers: this.responderPhoneNumbers,
-          responderPushId: null,
-          alertApiKey: this.alertApiKey,
-          fallbackPhoneNumbers: this.fallbackPhoneNumbers,
-          heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
-          incidentCategories: this.incidentCategories,
-          reminderTimeout: this.reminderTimeout,
-          fallbackTimeout: this.fallbackTimeout,
-          isDisplayed: true,
-          isSendingAlerts: false,
-          isSendingVitals: false,
-          language: this.language,
-        },
-      ])
-    })
-  })
-
-  describe('for a request that contains valid non-empty fields but with no alertApiKey', () => {
-    beforeEach(async () => {
-      await this.agent.post('/login').send({
-        username: helpers.getEnvVar('WEB_USERNAME'),
-        password: helpers.getEnvVar('PASSWORD'),
-      })
-
-      this.displayName = 'myNewClient'
-      this.fromPhoneNumber = '+19998887777'
-      this.responderPhoneNumbers = ['+16665553333']
-      this.responderPushId = 'pushId'
-      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
-      this.heartbeatPhoneNumbers = ['+4', '+5']
-      this.incidentCategories = ['Cat1', 'Cat2']
-      this.reminderTimeout = 5
-      this.fallbackTimeout = 10
-      this.language = 'en'
-      const goodRequest = {
-        displayName: this.displayName,
-        fromPhoneNumber: this.fromPhoneNumber,
-        responderPhoneNumbers: this.responderPhoneNumbers.join(','),
-        responderPushId: this.responderPushId,
-        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
-        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
-        incidentCategories: this.incidentCategories.join(','),
-        reminderTimeout: this.reminderTimeout,
-        fallbackTimeout: this.fallbackTimeout,
-        language: this.language,
-      }
-
-      this.response = await this.agent.post('/clients').send(goodRequest)
-    })
-
-    it('should return 200', () => {
-      expect(this.response).to.have.status(200)
-    })
-
-    it('should create a single client in the database with the given values', async () => {
-      const clients = await db.getClients()
-
-      expect(
-        clients.map(client => {
-          return {
-            displayName: client.displayName,
-            fromPhoneNumber: client.fromPhoneNumber,
-            responderPhoneNumbers: client.responderPhoneNumbers,
-            responderPushId: client.responderPushId,
-            alertApiKey: client.alertApiKey,
-            fallbackPhoneNumbers: client.fallbackPhoneNumbers,
-            heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
-            incidentCategories: client.incidentCategories,
-            reminderTimeout: client.reminderTimeout,
-            fallbackTimeout: client.fallbackTimeout,
-            isDisplayed: client.isDisplayed,
-            isSendingAlerts: client.isSendingAlerts,
-            isSendingVitals: client.isSendingVitals,
-            language: client.language,
-          }
-        }),
-      ).to.eql([
-        {
-          displayName: this.displayName,
-          fromPhoneNumber: this.fromPhoneNumber,
-          responderPhoneNumbers: this.responderPhoneNumbers,
-          responderPushId: this.responderPushId,
-          alertApiKey: null,
-          fallbackPhoneNumbers: this.fallbackPhoneNumbers,
-          heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
-          incidentCategories: this.incidentCategories,
-          reminderTimeout: this.reminderTimeout,
-          fallbackTimeout: this.fallbackTimeout,
-          isDisplayed: true,
-          isSendingAlerts: false,
-          isSendingVitals: false,
-          language: this.language,
-        },
-      ])
-    })
-  })
-
-  describe('for a request that contains valid non-empty fields but with no responderPhoneNumbers and no responderPushId', () => {
-    beforeEach(async () => {
-      await this.agent.post('/login').send({
-        username: helpers.getEnvVar('WEB_USERNAME'),
-        password: helpers.getEnvVar('PASSWORD'),
-      })
-
-      this.displayName = 'myNewClient'
-      this.fromPhoneNumber = '+19998887777'
-      this.responderPushId = 'pushId'
-      this.alertApiKey = 'myApiKey'
-      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
-      this.heartbeatPhoneNumbers = ['+4', '+5']
-      this.incidentCategories = ['Cat1', 'Cat2']
-      this.reminderTimeout = 5
-      this.fallbackTimeout = 10
-      this.language = 'en'
-      const goodRequest = {
-        displayName: this.displayName,
-        fromPhoneNumber: this.fromPhoneNumber,
-        alertApiKey: this.alertApiKey,
         fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
         heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
         incidentCategories: this.incidentCategories.join(','),
@@ -594,7 +325,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
     })
 
     it('should log the error', () => {
-      expect(helpers.log).to.have.been.calledWith('Bad request to /clients: responderPhoneNumbers/responderPushId (Invalid value(s))')
+      expect(helpers.log).to.have.been.calledWith('Bad request to /clients: responderPhoneNumbers (Invalid value)')
     })
   })
 
@@ -609,8 +340,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         displayName: '',
         fromPhoneNumber: '',
         responderPhoneNumbers: '',
-        responderPushId: '',
-        alertApiKey: '',
         fallbackPhoneNumbers: '',
         heartbeatPhoneNumbers: '',
         incidentCategories: '',
@@ -634,7 +363,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),language (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
+        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),language (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers (Invalid value)',
       )
     })
   })
@@ -661,7 +390,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),language (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers/alertApiKey/responderPushId (Invalid value(s))',
+        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),language (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers (Invalid value)',
       )
     })
   })
@@ -679,8 +408,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         displayName: this.existingClient.displayName,
         fromPhoneNumber: '+14445556666',
         responderPhoneNumbers: ['+19995552222'],
-        responderPushId: 'mypushid',
-        alertApiKey: 'myapikey',
         fallbackPhoneNumbers: '+1,+2,+3',
         heartbeatPhoneNumbers: '+4,+5',
         incidentCategories: 'Cat1,Cat2',
@@ -720,8 +447,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         displayName: 'myNewclient',
         fromPhoneNumber: '+14445556666',
         responderPhoneNumbers: ['+19995552222'],
-        responderPushId: 'mypushid',
-        alertApiKey: 'myapikey',
         fallbackPhoneNumbers: '+1,+2,+3',
         heartbeatPhoneNumbers: '+4,+5',
         incidentCategories: 'Cat1,Cat2',
@@ -761,8 +486,6 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         displayName: 'myNewclient',
         fromPhoneNumber: '+14445556666',
         responderPhoneNumbers: ['+19995552222'],
-        responderPushId: 'mypushid',
-        alertApiKey: 'myapikey',
         fallbackPhoneNumbers: '+1,+2,+3',
         heartbeatPhoneNumbers: '+4,+5',
         incidentCategories: 'Cat1,Cat2',
