@@ -194,7 +194,6 @@ app.post('/smokeTest/setup', async (request, response) => {
       displayName: 'SmokeTestClient',
       responderPhoneNumbers: [recipientNumber],
       fromPhoneNumber: phoneNumber,
-      alertApiKey: 'alertApiKey',
       reminderTimeout: 30,
       fallbackTimeout: 45,
       heartbeatPhoneNumbers: [recipientNumber],
