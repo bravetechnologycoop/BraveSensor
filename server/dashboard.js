@@ -388,12 +388,10 @@ async function renderClientDetailsPage(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'language', 'incidentCategories']).trim().notEmpty(),
+  Validator.body(['displayName', 'responderPhoneNumbers', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'language', 'incidentCategories'])
+    .trim()
+    .notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
-  Validator.oneOf([
-    Validator.body(['responderPhoneNumbers']).trim().notEmpty(),
-    Validator.body(['alertApiKey', 'responderPushId']).trim().notEmpty(),
-  ]),
 ]
 
 async function submitNewClient(req, res) {
@@ -422,8 +420,6 @@ async function submitNewClient(req, res) {
         data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== ''
           ? data.responderPhoneNumbers.split(',').map(phone => phone.trim())
           : null
-      const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
-      const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
       const newHeartbeatPhoneNumbers =
         data.heartbeatPhoneNumbers !== undefined && data.heartbeatPhoneNumbers.trim() !== ''
           ? data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim())
@@ -432,8 +428,6 @@ async function submitNewClient(req, res) {
       const newClient = await db.createClient(
         data.displayName,
         newResponderPhoneNumbers,
-        newResponderPushId,
-        newAlertApiKey,
         data.reminderTimeout,
         data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()),
         data.fromPhoneNumber,
@@ -461,6 +455,7 @@ async function submitNewClient(req, res) {
 const validateEditClient = [
   Validator.body([
     'displayName',
+    'responderPhoneNumbers',
     'fallbackPhoneNumbers',
     'fromPhoneNumber',
     'incidentCategories',
@@ -472,10 +467,6 @@ const validateEditClient = [
     .trim()
     .notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
-  Validator.oneOf([
-    Validator.body(['responderPhoneNumbers']).trim().notEmpty(),
-    Validator.body(['alertApiKey', 'responderPushId']).trim().notEmpty(),
-  ]),
 ]
 
 async function submitEditClient(req, res) {
@@ -504,8 +495,6 @@ async function submitEditClient(req, res) {
         data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== ''
           ? data.responderPhoneNumbers.split(',').map(phone => phone.trim())
           : null
-      const newResponderPushId = data.responderPushId && data.responderPushId.trim() !== '' ? data.responderPushId : null
-      const newAlertApiKey = data.alertApiKey && data.alertApiKey.trim() !== '' ? data.alertApiKey : null
       const newHeartbeatPhoneNumbers =
         data.heartbeatPhoneNumbers !== undefined && data.heartbeatPhoneNumbers.trim() !== ''
           ? data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim())
@@ -515,8 +504,6 @@ async function submitEditClient(req, res) {
         data.displayName,
         data.fromPhoneNumber,
         newResponderPhoneNumbers,
-        newResponderPushId,
-        newAlertApiKey,
         data.reminderTimeout,
         data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()),
         data.fallbackTimeout,

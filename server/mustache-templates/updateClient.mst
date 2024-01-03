@@ -36,22 +36,8 @@
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="responderPhoneNumbers" class="col-sm-3 col-form-label">Responder Phone Numbers:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="responderPhoneNumbers" value="{{responderPhoneNumbers}}" pattern="[+][1]\d{10}([,][+][1]\d{10})*">
+                        <input type="text" class="form-control" name="responderPhoneNumbers" value="{{responderPhoneNumbers}}" required pattern="[+][1]\d{10}([,][+][1]\d{10})*">
                         <small id="responderPhoneNumbersHelp" class="form-text text-muted">Each phone number has +1 in front and separated by commas with no dashes or spaces, please (eg. +14445556789,+12223334444,+11231231234)</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="responderPushId" class="col-sm-3 col-form-label">Responder Push ID:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="responderPushId" placeholder="Responder Push ID" value="{{responderPushId}}">
-                        <small id="responderPushIdHelp" class="form-text text-muted">Must provide either "Responder Phone Number" or ("Responder Push ID" and "Alert App API Key")</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="alertApiKey" class="col-sm-3 col-form-label">Alert App API Key:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="alertApiKey" placeholder="API Key" value="{{alertApiKey}}">
-                        <small id="alertApiKeyHelp" class="form-text text-muted">Must provide either "Responder Phone Number" or ("Responder Push ID" and "Alert App API Key")</small>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
