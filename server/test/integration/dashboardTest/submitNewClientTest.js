@@ -363,7 +363,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),language (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers (Invalid value)',
+        'Bad request to /clients: displayName (Invalid value),responderPhoneNumbers (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),language (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value)',
       )
     })
   })
@@ -390,7 +390,7 @@ describe('dashboard.js integration tests: submitNewClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        'Bad request to /clients: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),language (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers (Invalid value)',
+        'Bad request to /clients: displayName (Invalid value),responderPhoneNumbers (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),language (Invalid value),incidentCategories (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value)',
       )
     })
   })

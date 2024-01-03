@@ -388,9 +388,10 @@ async function renderClientDetailsPage(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'language', 'incidentCategories']).trim().notEmpty(),
+  Validator.body(['displayName', 'responderPhoneNumbers', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'language', 'incidentCategories'])
+    .trim()
+    .notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
-  Validator.body(['responderPhoneNumbers']).trim().notEmpty(),
 ]
 
 async function submitNewClient(req, res) {
@@ -454,6 +455,7 @@ async function submitNewClient(req, res) {
 const validateEditClient = [
   Validator.body([
     'displayName',
+    'responderPhoneNumbers',
     'fallbackPhoneNumbers',
     'fromPhoneNumber',
     'incidentCategories',
@@ -465,7 +467,6 @@ const validateEditClient = [
     .trim()
     .notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
-  Validator.body(['responderPhoneNumbers']).trim().notEmpty(),
 ]
 
 async function submitEditClient(req, res) {

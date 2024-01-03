@@ -440,7 +440,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),language (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers (Invalid value)`,
+        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),responderPhoneNumbers (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),language (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value)`,
       )
     })
   })
@@ -467,7 +467,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),language (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value),responderPhoneNumbers (Invalid value)`,
+        `Bad request to /clients/${this.existingClient.id}: displayName (Invalid value),responderPhoneNumbers (Invalid value),fallbackPhoneNumbers (Invalid value),fromPhoneNumber (Invalid value),incidentCategories (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),language (Invalid value),reminderTimeout (Invalid value),fallbackTimeout (Invalid value)`,
       )
     })
   })
