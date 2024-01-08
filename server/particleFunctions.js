@@ -6,6 +6,24 @@ const { helpers } = require('brave-alert-lib')
 
 const particle = new Particle()
 
+async function forceReset(deviceId, productId) {
+  try {
+    const response = await particle.callFunction({
+      deviceId,
+      name: 'Force_Reset',
+      argument: '1',
+      product: productId,
+      auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
+    })
+
+    return response.body.return_value
+  } catch (err) {
+    helpers.log(`${err.errorDescription} : for device ${deviceId}`)
+  }
+
+  return -1
+}
+
 async function resetStillnessTimer(deviceId, productId) {
   try {
     const response = await particle.callFunction({
@@ -26,5 +44,6 @@ async function resetStillnessTimer(deviceId, productId) {
 }
 
 module.exports = {
+  forceReset,
   resetStillnessTimer,
 }

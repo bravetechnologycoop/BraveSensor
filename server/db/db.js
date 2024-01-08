@@ -28,7 +28,7 @@ function createSessionFromRow(r, allLocations) {
   const location = allLocations.filter(l => l.locationid === r.locationid)[0]
 
   // prettier-ignore
-  return new Session(r.id, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number, location)
+  return new Session(r.id, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number, location, r.number_of_alerts)
 }
 
 function createClientFromRow(r) {
@@ -245,6 +245,7 @@ async function getDataForExport(pgClient) {
         s.chatbot_state AS "Session State",
         s.alert_type As "Alert Type",
         s.responded_by_phone_number AS "Session Responded By",
+        s.number_of_alerts AS "Number Of Alerts",
         x.country AS "Country",
         x.country_subdivision AS "Country Subdivision",
         x.building_type AS "Building Type"
@@ -371,13 +372,39 @@ async function getSessionWithSessionId(id, pgClient) {
 async function getClientWithClientId(id, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getSessionWithSessionId',
+      'getClientWithClientId',
       `
       SELECT *
       FROM clients
       WHERE id = $1
       `,
       [id],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createClientFromRow(results.rows[0])
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function getClientWithSessionId(sessionid, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClientWithSessionId',
+      `
+      SELECT c.*
+      FROM clients AS c
+      LEFT JOIN locations AS l ON c.id = l.client_id
+      LEFT JOIN sessions AS s ON l.locationid = s.locationid
+      WHERE s.id = $1
+      `,
+      [sessionid],
       pool,
       pgClient,
     )
@@ -460,10 +487,11 @@ async function getUnrespondedSessionWithLocationId(locationid, pgClient) {
       WHERE locationid = $1
       AND chatbot_state != $2
       AND chatbot_state != $3
+      AND chatbot_state != $4
       ORDER BY created_at DESC 
       LIMIT 1
       `,
-      [locationid, CHATBOT_STATE.WAITING_FOR_CATEGORY, CHATBOT_STATE.COMPLETED],
+      [locationid, CHATBOT_STATE.WAITING_FOR_CATEGORY, CHATBOT_STATE.COMPLETED, CHATBOT_STATE.RESET],
       pool,
       pgClient,
     )
@@ -617,8 +645,8 @@ async function saveSession(session, pgClient) {
       'saveSessionUpdate',
       `
       UPDATE sessions
-      SET locationid = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5, responded_by_phone_number = $6
-      WHERE id = $7
+      SET locationid = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5, responded_by_phone_number = $6, number_of_alerts = $7
+      WHERE id = $8
       `,
       [
         session.location.locationid,
@@ -627,6 +655,7 @@ async function saveSession(session, pgClient) {
         session.alertType,
         session.respondedAt,
         session.respondedByPhoneNumber,
+        session.numberOfAlerts,
         session.id,
       ],
       pool,
@@ -1359,6 +1388,7 @@ module.exports = {
   createSession,
   getAllSessionsFromLocation,
   getClientWithClientId,
+  getClientWithSessionId,
   getClients,
   getActiveClients,
   getCurrentTime,

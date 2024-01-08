@@ -114,13 +114,21 @@ async function handleAlert(location, alertType) {
       }
       braveAlerter.startAlertSession(alertInfo)
     } else {
+      currentSession.numberOfAlerts += 1 // increase the number of alerts for this session
       db.saveSession(currentSession, pgClient) // update updatedAt
+
+      // boolean value of whether a request to reset should be accepted
+      const acceptResetRequest = currentSession.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
 
       braveAlerter.sendAlertSessionUpdate(
         currentSession.id,
         client.responderPhoneNumbers,
         location.phoneNumber,
-        t('alertAdditionalAlert', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
+        t(acceptResetRequest ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
+          lng: client.language,
+          alertTypeDisplayName,
+          deviceDisplayName: location.displayName,
+        }),
       )
     }
     await db.commitTransaction(pgClient)
