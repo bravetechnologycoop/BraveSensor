@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [10.5.0] - 2024-01-08
+
 ### Removed
 
 - OneSignal functionality (CU-86dqkmhza).
@@ -696,7 +698,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.4.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.5.0...HEAD
+[10.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.4.0...v10.5.0
 [10.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.3.0...v10.4.0
 [10.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.2.1...v10.3.0
 [10.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.1.1...v10.2.0
