@@ -3,7 +3,6 @@ const { expect } = require('chai')
 const { before, describe, it } = require('mocha')
 
 // In-house dependencies
-const { CHATBOT_STATE } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 
 describe('BraveAlerterConfigurator.js unit tests: getClientMessageForRequestToReset', () => {

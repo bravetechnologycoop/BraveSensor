@@ -25,7 +25,7 @@ describe('particleFunctions.js unit tests: forceReset', () => {
     sandbox.stub(helpers, 'log')
   })
 
-  beforeEach(() => {
+  afterEach(() => {
     sandbox.restore()
   })
 

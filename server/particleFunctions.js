@@ -8,7 +8,7 @@ const particle = new Particle()
 
 async function forceReset(deviceId, productId) {
   try {
-    const response = await particle.callFunction({
+    await particle.callFunction({
       deviceId,
       name: 'Force_Reset',
       argument: '1',

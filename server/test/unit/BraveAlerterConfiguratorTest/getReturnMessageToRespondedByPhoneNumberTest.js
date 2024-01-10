@@ -36,14 +36,14 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToRespondedByP
   })
 
   it('should get message when STARTED => RESET', () => {
-    const returnMessage = this.alertStateMachine.getReturnMessageToRespondedByPhoneNumber(
-      'en',
-      CHATBOT_STATE.STARTED,
-      CHATBOT_STATE.RESET,
-      ['Cat0', 'Cat1'],
-    )
+    const returnMessage = this.alertStateMachine.getReturnMessageToRespondedByPhoneNumber('en', CHATBOT_STATE.STARTED, CHATBOT_STATE.RESET, [
+      'Cat0',
+      'Cat1',
+    ])
 
-    expect(returnMessage).to.equal('This Brave Sensor will be reset, and you will no longer receive alerts for this session.\n\nPlease note that after a reset, the sensor will not accurately monitor for stillness until about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don\'t need to respond to this message.)')
+    expect(returnMessage).to.equal(
+      "This Brave Sensor will be reset, and you will no longer receive alerts for this session.\n\nPlease note that after a reset, the sensor will not accurately monitor for stillness until about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
+    )
   })
 
   it('should get message when WAITING_FOR_REPLY => WAITING_FOR_CATEGORY', () => {
@@ -65,7 +65,9 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToRespondedByP
       ['Cat0', 'Cat1'],
     )
 
-    expect(returnMessage).to.equal('This Brave Sensor will be reset, and you will no longer receive alerts for this session.\n\nPlease note that after a reset, the sensor will not accurately monitor for stillness until about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don\'t need to respond to this message.)')
+    expect(returnMessage).to.equal(
+      "This Brave Sensor will be reset, and you will no longer receive alerts for this session.\n\nPlease note that after a reset, the sensor will not accurately monitor for stillness until about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
+    )
   })
 
   it('should get message when WAITING_FOR_CATEGORY => WAITING_FOR_CATEGORY', () => {
