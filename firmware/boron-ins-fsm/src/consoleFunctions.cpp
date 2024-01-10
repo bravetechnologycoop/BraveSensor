@@ -30,6 +30,7 @@ void setupConsoleFunctions() {
     Particle.function("Change_Long_Stillness_Timer", long_stillness_timer_set);
     Particle.function("Change_INS_Threshold", ins_threshold_set);
     Particle.function("Change_IM21_Door_ID", im21_door_id_set);
+    Particle.function("Change BLE Antenna Type", toggle_ble_antenna);
     Particle.function("Reset_Stillness_Timer_For_Alerting_Session", reset_stillness_timer_for_alerting_session);
 }
 
@@ -357,6 +358,42 @@ int im21_door_id_set(String command) {
 
     // return door ID as int
     return (int)strtol(buffer, NULL, 16);
+}
+
+int toggle_ble_antenna(String command) {
+    // default to invalid input
+    int returnFlag = -1;
+
+    // string.toInt() returns 0 if it fails, so can't distinguish between user
+    // entering 0 vs entering bad input. So convert to char and use ascii table
+    const char* holder = command.c_str();
+
+    if (*(holder + 1) != 0) {
+        // any string longer than 1 char is invalid input, so
+        returnFlag = -1;
+    }
+    // if e, echo whether debug publishes are on
+    else if (*holder == 'e') {
+        returnFlag = bleAntennaType;
+    }
+    else if (*holder == '0') {
+        bleAntennaType = 0x00;
+        EEPROM.put(ADDR_BLE_ANTENNA_TYPE, bleAntennaType);
+        BLE.selectAntenna(BleAntennaType::INTERNAL);
+        returnFlag = 0;
+    }
+    else if (*holder == '1') {
+        bleAntennaType = 0x01;
+        EEPROM.put(ADDR_BLE_ANTENNA_TYPE, bleAntennaType);
+        BLE.selectAntenna(BleAntennaType::EXTERNAL);
+        returnFlag = 1;
+    }
+    else {
+        // anything else is bad input so
+        returnFlag = -1;
+    }
+
+    return returnFlag;
 }
 
 int force_reset(String command) {
