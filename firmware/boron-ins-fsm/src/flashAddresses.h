@@ -39,8 +39,8 @@
 #define ADDR_STATE0_OCCUPANT_DETECTION_TIMER                 31  // uint32_t = 4 bytes
 
 // bluetooth antenna type
-#define ADDR_INITIALIZE_BLE_ANTENNA_TYPE_FLAG 35 // uint16_t = 2 byte
-#define ADDR_BLE_ANTENNA_TYPE                 37 // uint8_t = 1 byte
+#define ADDR_INITIALIZE_BLE_ANTENNA_TYPE_FLAG 35  // uint16_t = 2 byte
+#define ADDR_BLE_ANTENNA_TYPE                 37  // uint8_t = 1 byte
 
 // next available address is 37 + 1 = 38
 
