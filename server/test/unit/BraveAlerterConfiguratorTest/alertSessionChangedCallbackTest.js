@@ -25,6 +25,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     sandbox.stub(db, 'commitTransaction')
     sandbox.stub(db, 'getCurrentTime').returns(this.testCurrentTime)
     sandbox.stub(db, 'getClientWithSessionId').returns({})
+    sandbox.stub(helpers, 'getEnvVar').withArgs('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST').returns(7)
   })
 
   afterEach(() => {
