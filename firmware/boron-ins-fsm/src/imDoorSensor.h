@@ -10,6 +10,7 @@
 // ascii table goes up to 7F, so pick something greater than that
 // which is also unlikely to be part of a door ID or a threshold/timer const
 #define INITIALIZE_DOOR_ID_FLAG 0x8888
+#define INITIALIZE_ANTENNA_TYPE_FLAG 0x8888
 #define INITIAL_DOOR_STATUS     0x99
 
 // initial (default) values for door ID, can be changed via console function
@@ -47,6 +48,7 @@ extern os_queue_t bleHeartbeatQueue;
 extern IMDoorID globalDoorID;
 
 // used in getHeartbeat()
+extern uint8_t bleAntennaType;
 extern int missedDoorEventCount;
 extern bool doorLowBatteryFlag;
 extern bool doorTamperedFlag;
@@ -60,6 +62,7 @@ void setupIM(void);
 
 // loop() functions
 void initializeDoorID(void);
+void initializeAntennaType(void);
 doorData checkIM(void);
 void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorData);
 void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData);

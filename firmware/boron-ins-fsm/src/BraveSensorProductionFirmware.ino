@@ -24,7 +24,6 @@ void setup() {
     System.enableFeature(FEATURE_RESET_INFO);
 
     // use internal antenna on Boron for BLE
-    BLE.selectAntenna(BleAntennaType::INTERNAL);
     setupIM();
     setupINS3331();
     setupConsoleFunctions();
@@ -46,10 +45,9 @@ void loop() {
 
     // do once
     if (!initialized && Particle.connected()) {
-        // use external antenna on Boron
-        // BLE.selectAntenna(BleAntennaType::EXTERNAL);
         initializeStateMachineConsts();
         initializeDoorID();
+        initializeAntennaType();
         startINSSerial();
         initialized = true;
     }
