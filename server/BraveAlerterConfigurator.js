@@ -88,11 +88,11 @@ class BraveAlerterConfigurator {
             alertSession.alertState === CHATBOT_STATE.RESET &&
             session.numberOfAlerts < helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
           ) {
-            // Rollback the transaction and don't update the session
-            await db.rollbackTransaction(pgClient)
+            // Commit the transaction; didn't do anything
+            await db.commitTransaction(pgClient)
 
             // Get language of client
-            const { language } = await db.getClientWithSessionId(alertSession.sessionId, pgClient)
+            const { language } = await db.getClientWithSessionId(alertSession.sessionId)
 
             // Send a message to the client stating that their request to reset was declined
             const replacementReturnMessageToRespondedByPhoneNumber = t('resetRequestRejected', { lng: language })

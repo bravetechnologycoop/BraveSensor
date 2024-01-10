@@ -15,13 +15,9 @@ async function forceReset(deviceId, productId) {
       product: productId,
       auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
     })
-
-    return response.body.return_value
   } catch (err) {
     helpers.log(`${err.errorDescription} : for device ${deviceId}`)
   }
-
-  return -1
 }
 
 async function resetStillnessTimer(deviceId, productId) {

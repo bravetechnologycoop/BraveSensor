@@ -33,6 +33,16 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToOtherRespond
     expect(returnMessage).to.equal(`Another Responder has acknowledged this request. (You don't need to respond to this message.)`)
   })
 
+  it('should get message when STARTED => RESET', () => {
+    const returnMessage = this.alertStateMachine.getReturnMessageToOtherResponderPhoneNumbers(
+      'en',
+      CHATBOT_STATE.STARTED,
+      CHATBOT_STATE.RESET,
+    )
+
+    expect(returnMessage).to.equal('Another Responder has reset the Brave Sensor.\n\nPlease note that after a reset, the sensor will not accurately monitor for stillness until about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don\'t need to respond to this message.)')
+  })
+
   it('should get message when WAITING_FOR_REPLY => WAITING_FOR_CATEGORY', () => {
     const returnMessage = this.alertStateMachine.getReturnMessageToOtherResponderPhoneNumbers(
       'en',
@@ -42,6 +52,16 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToOtherRespond
     )
 
     expect(returnMessage).to.equal(`Another Responder has acknowledged this request. (You don't need to respond to this message.)`)
+  })
+
+  it('should get message when WAITING_FOR_REPLY => RESET', () => {
+    const returnMessage = this.alertStateMachine.getReturnMessageToOtherResponderPhoneNumbers(
+      'en',
+      CHATBOT_STATE.WAITING_FOR_REPLY,
+      CHATBOT_STATE.RESET,
+    )
+
+    expect(returnMessage).to.equal('Another Responder has reset the Brave Sensor.\n\nPlease note that after a reset, the sensor will not accurately monitor for stillness until about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don\'t need to respond to this message.)')
   })
 
   it('should get no message when WAITING_FOR_CATEGORY => WAITING_FOR_CATEGORY', () => {
@@ -72,6 +92,17 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToOtherRespond
       'en',
       CHATBOT_STATE.COMPLETED,
       CHATBOT_STATE.COMPLETED,
+      ['Cat0'],
+    )
+
+    expect(returnMessage).to.equal(null)
+  })
+
+  it('should get no message when RESET => RESET', () => {
+    const returnMessage = this.alertStateMachine.getReturnMessageToOtherResponderPhoneNumbers(
+      'en',
+      CHATBOT_STATE.RESET,
+      CHATBOT_STATE.RESET,
       ['Cat0'],
     )
 
