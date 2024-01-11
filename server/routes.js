@@ -7,7 +7,6 @@ const vitals = require('./vitals')
 const particle = require('./particle')
 
 function configureRoutes(app) {
-  console.log('configuring routes')
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)
   app.get('/clients/new', dashboard.sessionChecker, dashboard.renderNewClientPage) // Must be configured before /clients/:id
   app.get('/clients/:id', dashboard.sessionChecker, dashboard.renderClientDetailsPage)
