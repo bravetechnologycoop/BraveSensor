@@ -41,7 +41,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets[format('{0}_AWS_ACCOUNT_ID', github.event.inputs.environment)] }}:role/github_stop_start
           role-session-name: GitHub_StartEnv
-          aws-region: ${{ secrets.aws_region }}
+          aws-region: ${{ secrets.ENV_REGION }}
 
       - name: Start ECS services
         run: |
