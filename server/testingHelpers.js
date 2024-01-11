@@ -180,6 +180,16 @@ function mockResponse(sandbox) {
   return res
 }
 
+function mockBraveAlerter(sandbox) {
+  const braveAlerter = {}
+
+  braveAlerter.sendSingleAlert = sandbox.stub()
+  braveAlerter.sendAlertSessionUpdate = sandbox.stub()
+  braveAlerter.startAlertSession = sandbox.stub()
+
+  return braveAlerter
+}
+
 module.exports = {
   firmwareAlert,
   getRandomArbitrary,
@@ -193,4 +203,5 @@ module.exports = {
   sessionDBFactory,
   sessionFactory,
   mockResponse,
+  mockBraveAlerter,
 }

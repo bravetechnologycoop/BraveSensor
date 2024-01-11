@@ -3,24 +3,24 @@ const { expect, use } = require('chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
-const Particle = require('particle-api-js')
 const rewire = require('rewire')
+const ParticleApi = require('particle-api-js')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
 
-const particleFunctions = rewire('../../../particleFunctions')
+const particle = rewire('../../../particle')
 
 // Configure Chai
 use(sinonChai)
 
 const sandbox = sinon.createSandbox()
 
-describe('particleFunctions.js unit tests: resetStillnessTimer', () => {
+describe('particle.js unit tests: resetStillnessTimer', () => {
   /* eslint-disable no-underscore-dangle */
   beforeEach(() => {
-    this.particle = new Particle()
-    particleFunctions.__set__('particle', this.particle)
+    this.particleApi = new ParticleApi()
+    particle.__set__('particleApi', this.particleApi)
 
     sandbox.stub(helpers, 'log')
   })
@@ -34,13 +34,13 @@ describe('particleFunctions.js unit tests: resetStillnessTimer', () => {
       this.deviceId = 'myDeviceId'
       this.productId = 'myProductId'
 
-      sandbox.stub(this.particle, 'callFunction')
+      sandbox.stub(this.particleApi, 'callFunction')
 
-      await particleFunctions.resetStillnessTimer(this.deviceId, this.productId)
+      await particle.resetStillnessTimer(this.deviceId, this.productId)
     })
 
     it('should call the Particle API with the given Device ID and Product ID', () => {
-      expect(this.particle.callFunction).to.be.calledWithExactly({
+      expect(this.particleApi.callFunction).to.be.calledWithExactly({
         deviceId: this.deviceId,
         name: 'Reset_Stillness_Timer_For_Alerting_Session',
         argument: '',
@@ -56,7 +56,7 @@ describe('particleFunctions.js unit tests: resetStillnessTimer', () => {
       this.productId = 'myProductId'
       this.lengthOfOldStillnessTimer = 9823
 
-      sandbox.stub(this.particle, 'callFunction').returns({
+      sandbox.stub(this.particleApi, 'callFunction').returns({
         body: {
           connected: true,
           id: this.deviceId,
@@ -64,7 +64,7 @@ describe('particleFunctions.js unit tests: resetStillnessTimer', () => {
         },
       })
 
-      this.response = await particleFunctions.resetStillnessTimer(this.deviceId, this.productId)
+      this.response = await particle.resetStillnessTimer(this.deviceId, this.productId)
     })
 
     it('should return the old length of the stillness timer', () => {
@@ -81,7 +81,7 @@ describe('particleFunctions.js unit tests: resetStillnessTimer', () => {
       this.deviceId = 'myDeviceId'
       this.productId = 'myProductId'
 
-      sandbox.stub(this.particle, 'callFunction').throws({
+      sandbox.stub(this.particleApi, 'callFunction').throws({
         statusCode: 400,
         errorDescription:
           'HTTP error 400 from https://api.particle.io/v1/products/12345/devices/e00fce680dcdd859b8089f31/Reset_Stillness_Timer_For_Alerting_Session',
@@ -105,7 +105,7 @@ describe('particleFunctions.js unit tests: resetStillnessTimer', () => {
         },
       })
 
-      this.response = await particleFunctions.resetStillnessTimer(this.deviceId, this.productId)
+      this.response = await particle.resetStillnessTimer(this.deviceId, this.productId)
     })
 
     it('should return -1', () => {
@@ -124,7 +124,7 @@ describe('particleFunctions.js unit tests: resetStillnessTimer', () => {
       this.deviceId = 'myDeviceId'
       this.productId = 'myProductId'
 
-      sandbox.stub(this.particle, 'callFunction').throws({
+      sandbox.stub(this.particleApi, 'callFunction').throws({
         statusCode: 404,
         errorDescription:
           'HTTP error 404 from https://api.particle.io/v1/products/12345/devices/radar_coreID/Reset_Stillness_Timer_For_Alerting_Session',
@@ -148,7 +148,7 @@ describe('particleFunctions.js unit tests: resetStillnessTimer', () => {
         },
       })
 
-      this.response = await particleFunctions.resetStillnessTimer(this.deviceId, this.productId)
+      this.response = await particle.resetStillnessTimer(this.deviceId, this.productId)
     })
 
     it('should return -1', () => {

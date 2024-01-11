@@ -4,8 +4,10 @@ const api = require('./api')
 const dashboard = require('./dashboard')
 const pa = require('./pa')
 const vitals = require('./vitals')
+const particle = require('./particle')
 
 function configureRoutes(app) {
+  console.log('configuring routes')
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)
   app.get('/clients/new', dashboard.sessionChecker, dashboard.renderNewClientPage) // Must be configured before /clients/:id
   app.get('/clients/:id', dashboard.sessionChecker, dashboard.renderClientDetailsPage)
@@ -27,6 +29,7 @@ function configureRoutes(app) {
   app.post('/login', dashboard.submitLogin)
 
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
+  app.post('/api/sensorEvent', particle.validateSensorEvent, particle.handleSensorEvent)
 
   app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
   app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)

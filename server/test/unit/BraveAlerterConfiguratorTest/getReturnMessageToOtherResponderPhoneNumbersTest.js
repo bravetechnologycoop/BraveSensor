@@ -37,7 +37,7 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToOtherRespond
     const returnMessage = this.alertStateMachine.getReturnMessageToOtherResponderPhoneNumbers('en', CHATBOT_STATE.STARTED, CHATBOT_STATE.RESET)
 
     expect(returnMessage).to.equal(
-      "Another Responder has reset the Brave Sensor.\n\nPlease note that after a reset, the sensor will not accurately monitor for stillness until about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
+      "Another Responder has reset the Brave Sensor.\n\nThe sensor will return to normal operation after about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
     )
   })
 
@@ -60,7 +60,7 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToOtherRespond
     )
 
     expect(returnMessage).to.equal(
-      "Another Responder has reset the Brave Sensor.\n\nPlease note that after a reset, the sensor will not accurately monitor for stillness until about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
+      "Another Responder has reset the Brave Sensor.\n\nThe sensor will return to normal operation after about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
     )
   })
 

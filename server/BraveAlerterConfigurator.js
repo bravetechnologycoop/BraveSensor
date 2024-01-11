@@ -5,7 +5,7 @@ const { t } = require('i18next')
 // In-house dependencies
 const { BraveAlerter, AlertSession, CHATBOT_STATE, helpers } = require('brave-alert-lib')
 const db = require('./db/db')
-const particleFunctions = require('./particleFunctions')
+const particle = require('./particle')
 
 class BraveAlerterConfigurator {
   createBraveAlerter() {
@@ -117,15 +117,12 @@ class BraveAlerterConfigurator {
 
           if (alertSession.alertState === CHATBOT_STATE.RESET) {
             // Don't wait for this to complete; it could take a while, and it returns as failed anyways
-            particleFunctions.forceReset(session.location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
-            helpers.log(`Valid request to reset location ${session.location.locationid}.`)
+            particle.forceReset(session.location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
+            helpers.log(`Reset the Brave Sensor for ${session.location.locationid}`)
           }
 
           if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
-            const oldStillnessTimer = await particleFunctions.resetStillnessTimer(
-              session.location.radarCoreId,
-              helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'),
-            )
+            const oldStillnessTimer = await particle.resetStillnessTimer(session.location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
             if (oldStillnessTimer > -1) {
               helpers.log(`Reset stillness timer for ${session.location.locationid} from ${oldStillnessTimer} to 0`)
             } else {

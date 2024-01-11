@@ -3,24 +3,25 @@ const { expect, use } = require('chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
-const Particle = require('particle-api-js')
 const rewire = require('rewire')
+const ParticleApi = require('particle-api-js')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
 
-const particleFunctions = rewire('../../../particleFunctions')
+const particle = rewire('../../../particle')
 
 // Configure Chai
 use(sinonChai)
 
 const sandbox = sinon.createSandbox()
 
-describe('particleFunctions.js unit tests: forceReset', () => {
+describe('particle.js unit tests: forceReset', () => {
   /* eslint-disable no-underscore-dangle */
   beforeEach(() => {
-    this.particle = new Particle()
-    particleFunctions.__set__('particle', this.particle)
+    this.particleApi = new ParticleApi()
+    sandbox.stub(this.particleApi, 'callFunction')
+    particle.__set__('particleApi', this.particleApi)
 
     sandbox.stub(helpers, 'log')
   })
@@ -33,14 +34,11 @@ describe('particleFunctions.js unit tests: forceReset', () => {
     beforeEach(async () => {
       this.deviceId = 'myDeviceId'
       this.productId = 'myProductId'
-
-      sandbox.stub(this.particle, 'callFunction')
-
-      this.returnValue = await particleFunctions.forceReset(this.deviceId, this.productId)
+      this.returnValue = await particle.forceReset(this.deviceId, this.productId)
     })
 
     it('should call the Particle API with the given Device ID and Product ID', () => {
-      expect(this.particle.callFunction).to.be.calledWithExactly({
+      expect(this.particleApi.callFunction).to.be.calledWithExactly({
         deviceId: this.deviceId,
         name: 'Force_Reset',
         argument: '1',

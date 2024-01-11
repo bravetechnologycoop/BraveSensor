@@ -42,7 +42,7 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToRespondedByP
     ])
 
     expect(returnMessage).to.equal(
-      "This Brave Sensor will be reset, and you will no longer receive alerts for this session.\n\nPlease note that after a reset, the sensor will not accurately monitor for stillness until about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
+      "This Brave Sensor will be reset, and you will no longer receive alerts for this session.\n\nThe sensor will return to normal operation after about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
     )
   })
 
@@ -66,7 +66,7 @@ describe('BraveAlerterConfigurator.js unit tests: getReturnMessageToRespondedByP
     )
 
     expect(returnMessage).to.equal(
-      "This Brave Sensor will be reset, and you will no longer receive alerts for this session.\n\nPlease note that after a reset, the sensor will not accurately monitor for stillness until about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
+      "This Brave Sensor will be reset, and you will no longer receive alerts for this session.\n\nThe sensor will return to normal operation after about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
     )
   })
 
