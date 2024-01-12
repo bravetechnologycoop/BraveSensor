@@ -66,18 +66,20 @@ async function handleAlert(location, alertType) {
 
       // boolean value of whether a request to reset should be accepted
       const acceptResetRequest = currentSession.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+      const alertMessage = t(acceptResetRequest ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
+        lng: client.language,
+        alertTypeDisplayName,
+        deviceDisplayName: location.displayName,
+      })
+
+      helpers.log(`mdb-debug: for session: ${currentSession.id}.`)
+      helpers.log(`mdb-debug: numberOfAlerts: ${currentSession.numberOfAlerts}.`)
+      helpers.log(`mdb-debug: numberOfAlertsToAcceptResetRequest: ${helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')}.`)
+      helpers.log(`mdb-debug: acceptResetRequest: ${acceptResetRequest}.`)
+      helpers.log(`mdb-debug: alertMessage: ${alertMessage}.`)
 
       // send session update to responder phone numbers
-      braveAlerter.sendAlertSessionUpdate(
-        currentSession.id,
-        client.responderPhoneNumbers,
-        location.phoneNumber,
-        t(acceptResetRequest ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
-          lng: client.language,
-          alertTypeDisplayName,
-          deviceDisplayName: location.displayName,
-        }),
-      )
+      braveAlerter.sendAlertSessionUpdate(currentSession.id, client.responderPhoneNumbers, location.phoneNumber, alertMessage)
     }
 
     await db.commitTransaction(pgClient)
