@@ -1,0 +1,66 @@
+name: Stop AWS Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment you wish to stop"
+        type: choice
+        required: true
+        options:
+          - DEVELOPMENT
+          - STAGING
+
+permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout
+
+jobs:
+  SetupEnv:
+    runs-on: ubuntu-latest
+    outputs:
+      sdlc: ${{ steps.SetupEnv.outputs.sdlc }}
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v3
+      - name: SetupEnv
+        id: SetupEnv
+        run: |
+          environment_lower=$(echo "${{ github.event.inputs.environment }}" | tr '[:upper:]' '[:lower:]')
+          echo "sdlc=${environment_lower}" >> $GITHUB_OUTPUT
+
+  StopEnv:
+    runs-on: ubuntu-latest
+    needs:
+      - SetupEnv
+    env:
+      sdlc: ${{ needs.SetupEnv.outputs.sdlc }}
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1.7.0
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets[format('{0}_AWS_ACCOUNT_ID', github.event.inputs.environment)] }}:role/github_stop_start
+          role-session-name: GitHub_StartEnv
+          aws-region: ${{ secrets.ENV_REGION }}
+
+      - name: Disable CW Alarms
+        run: |
+          ALARMS=$(aws cloudwatch describe-alarms | jq -r .MetricAlarms[].AlarmName)
+          aws cloudwatch disable-alarm-actions --alarm-name $ALARMS       
+
+      - name: Stop ECS services
+        run: |
+          ECS_SERVICES=$(aws ecs list-services --cluster "brave-devices-${{ env.sdlc }}-cluster" | jq -r '.serviceArns[]')
+          for service in $ECS_SERVICES
+          do
+            echo "${service}"
+            echo "Updating desired count to 0"
+            aws ecs update-service --cluster "brave-devices-${{ env.sdlc }}-cluster" --service "${service}" --desired-count 0
+          done
+
+      - name: Stop Aurora
+        run: |
+          ARN=$(aws rds describe-db-clusters --db-cluster-identifier "brave-devices-${{ env.sdlc }}-aurora" | jq -r .DBClusters[].DBClusterArn)
+          
+          echo "Stopping Aurora Cluster"
+          aws rds stop-db-cluster --db-cluster-identifier "${ARN}"
