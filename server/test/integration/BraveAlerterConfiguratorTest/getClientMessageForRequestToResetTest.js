@@ -5,7 +5,7 @@ const { before, describe, it } = require('mocha')
 // In-house dependencies
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
 
-describe('BraveAlerterConfigurator.js unit tests: getClientMessageForRequestToReset', () => {
+describe('BraveAlerterConfigurator.js integration tests: getClientMessageForRequestToReset', () => {
   before(() => {
     const braveAlerterConfigurator = new BraveAlerterConfigurator()
     const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
