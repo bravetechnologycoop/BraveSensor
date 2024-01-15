@@ -17,6 +17,10 @@ the code was deployed.
 - Chatbot flow to reset a sensor if the `number_of_alerts` in a session exceeds the threshold `SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST` (CU-860r8k57h).
 - English and (temporary) Spanish translations of `alertAcceptResetRequest`, `clientMessageForRequestToReset`, `resetNoticeToRequester`, `resetNoticeToOtherResponders`, `resetRequestRejected` (CU-860r8k57h).
 
+### Changed
+
+- `index.js` handling of `/api/sensorEvent` into `particle.js` and `sensorEvent.js` files to match Buttons (CU-13kqjz8).
+
 ## [10.5.0] - 2024-01-08
 
 ### Removed
