@@ -96,13 +96,13 @@ function sessionFactory(overrides = {}) {
     overrides.id !== undefined ? overrides.id : 'd91593b4-25ce-11ec-9621-0242ac130002',
     overrides.chatbotState !== undefined ? overrides.chatbotState : CHATBOT_STATE.COMPLETED,
     overrides.alertType !== undefined ? overrides.alertType : ALERT_TYPE.SENSOR_STILLNESS,
+    overrides.numberOfAlerts !== undefined ? overrides.numberOfAlerts : 1,
     overrides.createdAt !== undefined ? overrides.createdAt : new Date('2021-10-05T20:20:20.000Z'),
     overrides.updatedAt !== undefined ? overrides.updatedAt : new Date('2021-10-05T20:20:55.000Z'),
     overrides.incidentCategory !== undefined ? overrides.incidentCategory : 'Overdose',
     overrides.respondedAt !== undefined ? overrides.respondedAt : new Date('2021-10-05T20:20:33.000Z'),
     overrides.respondedByPhoneNumber !== undefined ? overrides.respondedByPhoneNumber : null,
     overrides.location !== undefined ? overrides.location : locationFactory(),
-    overrides.numberOfAlerts !== undefined ? overrides.numberOfAlerts : 1,
   )
 }
 

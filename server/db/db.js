@@ -28,7 +28,7 @@ function createSessionFromRow(r, allLocations) {
   const location = allLocations.filter(l => l.locationid === r.locationid)[0]
 
   // prettier-ignore
-  return new Session(r.id, r.chatbot_state, r.alert_type, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number, location, r.number_of_alerts)
+  return new Session(r.id, r.chatbot_state, r.alert_type, r.number_of_alerts, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number, location)
 }
 
 function createClientFromRow(r) {
