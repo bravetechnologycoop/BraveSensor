@@ -8,7 +8,9 @@ const SENSOR_EVENT = require('./SensorEventEnum')
 const db = require('./db/db')
 const sensorAlerts = require('./sensorAlerts')
 
-const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
+// Particle Webhook API Key and Particle Access Token
+const particleAccessToken = helpers.getEnvVar('PARTICLE_ACCESS_TOKEN')
+const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
 const particleApi = new ParticleApi()
 
@@ -19,7 +21,7 @@ async function forceReset(deviceId, productId) {
       name: 'Force_Reset',
       argument: '1',
       product: productId,
-      auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
+      auth: particleAccessToken,
     })
   } catch (err) {
     helpers.log(`${err.errorDescription} : for device ${deviceId}`)
@@ -33,7 +35,7 @@ async function resetStillnessTimer(deviceId, productId) {
       name: 'Reset_Stillness_Timer_For_Alerting_Session',
       argument: '',
       product: productId,
-      auth: helpers.getEnvVar('PARTICLE_ACCESS_TOKEN'),
+      auth: particleAccessToken,
     })
 
     // response.body.return_value should contain the old value of the Stillness Timer before it was reset
@@ -54,7 +56,7 @@ async function handleSensorEvent(request, response) {
     if (validationErrors.isEmpty()) {
       const apiKey = request.body.api_key
 
-      if (webhookAPIKey === apiKey) {
+      if (particleWebhookAPIKey === apiKey) {
         let alertType
         const coreId = request.body.coreid
         const sensorEvent = request.body.event

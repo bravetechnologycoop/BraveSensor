@@ -14,7 +14,7 @@ the code was deployed.
 ### Added
 
 - `number_of_alerts` integer column to the sessions table (CU-860r8k57h).
-- Chatbot flow to reset a sensor if the `number_of_alerts` in a session exceeds the threshold `SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST` (CU-860r8k57h).
+- Chatbot flow to reset a sensor if the `number_of_alerts` in a session meets or exceeds the threshold `SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST` (CU-860r8k57h).
 - English and (temporary) Spanish translations of `alertAcceptResetRequest`, `clientMessageForRequestToReset`, `resetNoticeToRequester`, `resetNoticeToOtherResponders`, `resetRequestRejected` (CU-860r8k57h).
 
 ### Changed

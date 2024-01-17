@@ -245,7 +245,6 @@ async function getDataForExport(pgClient) {
         s.chatbot_state AS "Session State",
         s.alert_type As "Alert Type",
         s.responded_by_phone_number AS "Session Responded By",
-        s.number_of_alerts AS "Number Of Alerts",
         x.country AS "Country",
         x.country_subdivision AS "Country Subdivision",
         x.building_type AS "Building Type"
