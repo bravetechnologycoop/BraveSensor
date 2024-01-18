@@ -5,7 +5,7 @@ const { t } = require('i18next')
 // In-house dependencies
 const { BraveAlerter, AlertSession, CHATBOT_STATE, helpers } = require('brave-alert-lib')
 const db = require('./db/db')
-const particleFunctions = require('./particleFunctions')
+const particle = require('./particle')
 
 class BraveAlerterConfigurator {
   createBraveAlerter() {
@@ -15,6 +15,7 @@ class BraveAlerterConfigurator {
       this.alertSessionChangedCallback.bind(this),
       this.getReturnMessageToRespondedByPhoneNumber.bind(this),
       this.getReturnMessageToOtherResponderPhoneNumbers.bind(this),
+      this.getClientMessageForRequestToReset.bind(this),
     )
   }
 
@@ -82,6 +83,30 @@ class BraveAlerterConfigurator {
 
         // If the SMS came from the session's respondedByPhoneNumber
         if (alertSession.respondedByPhoneNumber === session.respondedByPhoneNumber) {
+          // Check for an invalid request to reset
+          if (
+            alertSession.alertState === CHATBOT_STATE.RESET &&
+            session.numberOfAlerts < helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+          ) {
+            // Commit the transaction; didn't do anything
+            await db.commitTransaction(pgClient)
+
+            // Get language of client
+            const { language } = await db.getClientWithSessionId(alertSession.sessionId)
+
+            // Send a message to the client stating that their request to reset was declined
+            const replacementReturnMessageToRespondedByPhoneNumber = t('resetRequestRejected', { lng: language })
+
+            // Don't send a message to the other responder phone numbers
+            const replacementReturnMessageToOtherResponderPhoneNumbers = null
+
+            return {
+              respondedByPhoneNumber: session.respondedByPhoneNumber,
+              replacementReturnMessageToRespondedByPhoneNumber,
+              replacementReturnMessageToOtherResponderPhoneNumbers,
+            }
+          }
+
           if (alertSession.alertState) {
             session.chatbotState = alertSession.alertState
           }
@@ -90,11 +115,14 @@ class BraveAlerterConfigurator {
             session.incidentCategory = session.location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
           }
 
+          if (alertSession.alertState === CHATBOT_STATE.RESET) {
+            // Don't wait for this to complete; it could take a while, and it returns as failed anyways
+            particle.forceReset(session.location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
+            helpers.log(`Reset the Brave Sensor for ${session.location.locationid}`)
+          }
+
           if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
-            const oldStillnessTimer = await particleFunctions.resetStillnessTimer(
-              session.location.radarCoreId,
-              helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'),
-            )
+            const oldStillnessTimer = await particle.resetStillnessTimer(session.location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
             if (oldStillnessTimer > -1) {
               helpers.log(`Reset stillness timer for ${session.location.locationid} from ${oldStillnessTimer} to 0`)
             } else {
@@ -121,7 +149,7 @@ class BraveAlerterConfigurator {
       }
     }
 
-    return session.respondedByPhoneNumber
+    return { respondedByPhoneNumber: session.respondedByPhoneNumber }
   }
 
   getReturnMessageToRespondedByPhoneNumber(language, fromAlertState, toAlertState, incidentCategories) {
@@ -130,10 +158,14 @@ class BraveAlerterConfigurator {
     switch (fromAlertState) {
       case CHATBOT_STATE.STARTED:
       case CHATBOT_STATE.WAITING_FOR_REPLY:
-        returnMessage = t('incidentCategoryRequest', {
-          lng: language,
-          incidentCategories: this.createResponseStringFromIncidentCategories(incidentCategories, language),
-        })
+        if (toAlertState === CHATBOT_STATE.RESET) {
+          returnMessage = t('resetNoticeToRequester', { lng: language })
+        } else {
+          returnMessage = t('incidentCategoryRequest', {
+            lng: language,
+            incidentCategories: this.createResponseStringFromIncidentCategories(incidentCategories, language),
+          })
+        }
         break
 
       case CHATBOT_STATE.WAITING_FOR_CATEGORY:
@@ -145,6 +177,7 @@ class BraveAlerterConfigurator {
         break
 
       case CHATBOT_STATE.COMPLETED:
+      case CHATBOT_STATE.RESET:
         returnMessage = t('thankYou', { lng: language })
         break
 
@@ -162,7 +195,9 @@ class BraveAlerterConfigurator {
     switch (fromAlertState) {
       case CHATBOT_STATE.STARTED:
       case CHATBOT_STATE.WAITING_FOR_REPLY:
-        if (toAlertState === CHATBOT_STATE.WAITING_FOR_CATEGORY) {
+        if (toAlertState === CHATBOT_STATE.RESET) {
+          returnMessage = t('resetNoticeToOtherResponders', { lng: language })
+        } else if (toAlertState === CHATBOT_STATE.WAITING_FOR_CATEGORY) {
           returnMessage = t('alertAcknowledged', { lng: language })
         } else {
           returnMessage = null
@@ -178,6 +213,7 @@ class BraveAlerterConfigurator {
         break
 
       case CHATBOT_STATE.COMPLETED:
+      case CHATBOT_STATE.RESET:
         returnMessage = null
         break
 
@@ -187,6 +223,10 @@ class BraveAlerterConfigurator {
     }
 
     return returnMessage
+  }
+
+  getClientMessageForRequestToReset(language) {
+    return t('clientMessageForRequestToReset', { lng: language })
   }
 
   createIncidentCategoryKeys(incidentCategories) {

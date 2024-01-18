@@ -3,27 +3,26 @@ const express = require('express')
 const fs = require('fs')
 const https = require('https')
 const cors = require('cors')
-const Validator = require('express-validator')
 const { createProxyMiddleware } = require('http-proxy-middleware')
-const { t } = require('i18next')
 
 // In-house dependencies
-const { ALERT_TYPE, CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
+const { factories, helpers } = require('brave-alert-lib')
 const db = require('./db/db')
-const SENSOR_EVENT = require('./SensorEventEnum')
 const BraveAlerterConfigurator = require('./BraveAlerterConfigurator')
 const routes = require('./routes')
 const dashboard = require('./dashboard')
 const vitals = require('./vitals')
 const i18nextHelpers = require('./i18nextHelpers')
-
-const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
+const sensorAlerts = require('./sensorAlerts')
 
 // Configure internationalization
 i18nextHelpers.setup()
 
 // Configure braveAlerter
 const braveAlerter = new BraveAlerterConfigurator().createBraveAlerter()
+
+// Use the above configured alerter for all sensor alerts
+sensorAlerts.setup(braveAlerter)
 
 // Start Express App
 const app = express()
@@ -67,125 +66,6 @@ routes.configureRoutes(app)
 app.use(braveAlerter.getRouter())
 
 vitals.setupVitals(braveAlerter)
-
-async function handleAlert(location, alertType) {
-  const alertTypeDisplayName = helpers.getAlertTypeDisplayName(alertType, location.client.language, t)
-  helpers.log(`${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId}`)
-
-  let pgClient
-
-  try {
-    pgClient = await db.beginTransaction()
-    if (pgClient === null) {
-      helpers.logError(`handleAlert: Error starting transaction`)
-      return
-    }
-    const currentSession = await db.getUnrespondedSessionWithLocationId(location.locationid, pgClient)
-    const currentTime = await db.getCurrentTime(pgClient)
-    const client = location.client
-
-    if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
-      const newSession = await db.createSession(
-        location.locationid,
-        undefined,
-        CHATBOT_STATE.STARTED,
-        alertType,
-        undefined,
-        undefined,
-        undefined,
-        pgClient,
-      )
-
-      const alertInfo = {
-        sessionId: newSession.id,
-        toPhoneNumbers: client.responderPhoneNumbers,
-        fromPhoneNumber: location.phoneNumber,
-        deviceName: location.displayName,
-        alertType: newSession.alertType,
-        language: client.language,
-        t,
-        message: t('alertStart', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
-        reminderTimeoutMillis: client.reminderTimeout * 1000,
-        fallbackTimeoutMillis: client.fallbackTimeout * 1000,
-        reminderMessage: t('alertReminder', { lng: client.language, deviceDisplayName: location.displayName }),
-        fallbackMessage: t('alertFallback', { lng: client.language, deviceDisplayName: location.displayName }),
-        fallbackToPhoneNumbers: client.fallbackPhoneNumbers,
-        fallbackFromPhoneNumber: client.fromPhoneNumber,
-      }
-      braveAlerter.startAlertSession(alertInfo)
-    } else {
-      db.saveSession(currentSession, pgClient) // update updatedAt
-
-      braveAlerter.sendAlertSessionUpdate(
-        currentSession.id,
-        client.responderPhoneNumbers,
-        location.phoneNumber,
-        t('alertAdditionalAlert', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
-      )
-    }
-    await db.commitTransaction(pgClient)
-  } catch (e) {
-    try {
-      await db.rollbackTransaction(pgClient)
-      helpers.logError(`handleAlert: Rolled back transaction because of error: ${e}`)
-    } catch (error) {
-      // Do nothing
-      helpers.logError(`handleAlert: Error rolling back transaction: ${error} Rollback attempted because of error: ${e}`)
-    }
-  }
-}
-
-app.post('/api/sensorEvent', Validator.body(['coreid', 'event', 'api_key']).exists(), async (request, response) => {
-  try {
-    const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
-
-    if (validationErrors.isEmpty()) {
-      const apiKey = request.body.api_key
-
-      if (webhookAPIKey === apiKey) {
-        let alertType
-        const coreId = request.body.coreid
-        const sensorEvent = request.body.event
-        if (sensorEvent === SENSOR_EVENT.DURATION) {
-          alertType = ALERT_TYPE.SENSOR_DURATION
-        } else if (sensorEvent === SENSOR_EVENT.STILLNESS) {
-          alertType = ALERT_TYPE.SENSOR_STILLNESS
-        } else {
-          const errorMessage = `Bad request to ${request.path}: Invalid event type`
-          helpers.logError(errorMessage)
-        }
-
-        const location = await db.getLocationFromParticleCoreID(coreId)
-        if (!location) {
-          const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
-          helpers.logError(errorMessage)
-          // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-          response.status(200).json(errorMessage)
-        } else {
-          if (location.client.isSendingAlerts && location.isSendingAlerts) {
-            await handleAlert(location, alertType)
-          }
-          response.status(200).json('OK')
-        }
-      } else {
-        const errorMessage = `Access not allowed`
-        helpers.logError(errorMessage)
-        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-        response.status(200).json(errorMessage)
-      }
-    } else {
-      const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
-      helpers.logError(errorMessage)
-      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-      response.status(200).json(errorMessage)
-    }
-  } catch (err) {
-    const errorMessage = `Error calling ${request.path}: ${err.toString()}`
-    helpers.logError(errorMessage)
-    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-    response.status(200).json(errorMessage)
-  }
-})
 
 app.post('/smokeTest/setup', async (request, response) => {
   const { recipientNumber, phoneNumber } = request.body
