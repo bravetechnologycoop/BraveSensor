@@ -309,112 +309,6 @@ SCENARIO("Set Duration Timer", "[duration timer]") {
     }
 }
 
-SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
-    GIVEN("An internal antenna type") {
-        bleAntennaType = 0x00;
-
-        WHEN("the function is called with 'e'") {
-            int returnFlag = toggle_ble_antenna("e");
-
-            THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 0x00);
-            }
-
-            THEN("the function should return the stored value") {
-                REQUIRE(returnFlag == 0x00);
-            }
-        }
-
-        WHEN("the function is called with neither 1, 0 or e") {
-            int returnFlag = toggle_ble_antenna("invalid value");
-
-            THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 0x00);
-            }
-
-            THEN("the function should return -1") {
-                REQUIRE(returnFlag == -1);
-            }
-        }
-
-        WHEN ("the function is called with '0'") {
-            int returnFlag = toggle_ble_antenna("0");
-
-            THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 0x00);
-            }
-
-            THEN("the function should return 0") {
-                REQUIRE(returnFlag == 0x00);
-            }
-        }
-
-        WHEN("the functions is called with '1'") {
-            int returnFlag = toggle_ble_antenna("1");
-
-            THEN("antenna type should change to external") {
-                REQUIRE(bleAntennaType == 1);
-            }
-
-            THEN("the function should return 1") {
-                REQUIRE(returnFlag == 0x01);
-            }
-        }
-    }
-
-    GIVEN("An external antenna type") {
-        bleAntennaType = 0x01;
-        
-        WHEN("the function is called with 'e'") {
-            int returnFlag = toggle_ble_antenna("e");
-
-            THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 0x01);
-            }
-
-            THEN("the function should return the stored value") {
-                REQUIRE(returnFlag == 0x01);
-            }
-        }
-
-        WHEN("the function is called with neither 1, 0 or e") {
-            int returnFlag = toggle_ble_antenna("invalid value");
-
-            THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 0x01);
-            }
-
-            THEN("the function should return -1") {
-                REQUIRE(returnFlag == -1);
-            }
-        }
-
-        WHEN ("the function is called with '0'") {
-            int returnFlag = toggle_ble_antenna("0");
-
-            THEN("antenna type should change to internal") {
-                REQUIRE(bleAntennaType == 0x00);
-            }
-
-            THEN("the function should return 0") {
-                REQUIRE(returnFlag == 0x00);
-            }
-        }
-
-        WHEN("the function is called with '1'") {
-            int returnFlag = toggle_ble_antenna("1");
-
-            THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 0x01);
-            }
-
-            THEN("the function should return 1") {
-                REQUIRE(returnFlag == 0x01);
-            }
-        }
-    }
-}
-
 SCENARIO("Set Stillness Timer", "[stillness timer]") {
     GIVEN("A starting stillness timer of 10 milliseconds") {
         state3_max_stillness_time = 10000;
@@ -665,6 +559,112 @@ SCENARIO("Reset_Stillness_Timer_For_Alerting_Session", "[reset stillness timer f
 
             THEN("The stillness timer value did not change") {
                 REQUIRE(state3_stillness_timer == initial_state3_stillness_timer_value);
+            }
+        }
+    }
+}
+
+SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
+    GIVEN("An internal antenna type") {
+        bleAntennaType = 0;
+
+        WHEN("the function is called with 'e'") {
+            int returnFlag = toggle_ble_antenna("e");
+
+            THEN("antenna type should remain the same") {
+                REQUIRE(bleAntennaType == 0);
+            }
+
+            THEN("the function should return the stored value") {
+                REQUIRE(returnFlag == 0);
+            }
+        }
+
+        WHEN("the function is called with neither 1, 0 or e") {
+            int returnFlag = toggle_ble_antenna("invalid value");
+
+            THEN("antenna type should remain the same") {
+                REQUIRE(bleAntennaType == 0);
+            }
+
+            THEN("the function should return -1") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+
+        WHEN ("the function is called with '0'") {
+            int returnFlag = toggle_ble_antenna("0");
+
+            THEN("antenna type should remain the same") {
+                REQUIRE(bleAntennaType == 0);
+            }
+
+            THEN("the function should return 0") {
+                REQUIRE(returnFlag == 0);
+            }
+        }
+
+        WHEN("the functions is called with '1'") {
+            int returnFlag = toggle_ble_antenna("1");
+
+            THEN("antenna type should change to external") {
+                REQUIRE(bleAntennaType == 1);
+            }
+
+            THEN("the function should return 1") {
+                REQUIRE(returnFlag == 1);
+            }
+        }
+    }
+
+    GIVEN("An external antenna type") {
+        bleAntennaType = 1;
+        
+        WHEN("the function is called with 'e'") {
+            int returnFlag = toggle_ble_antenna("e");
+
+            THEN("antenna type should remain the same") {
+                REQUIRE(bleAntennaType == 1);
+            }
+
+            THEN("the function should return the stored value") {
+                REQUIRE(returnFlag == 1);
+            }
+        }
+
+        WHEN("the function is called with neither 1, 0 or e") {
+            int returnFlag = toggle_ble_antenna("invalid value");
+
+            THEN("antenna type should remain the same") {
+                REQUIRE(bleAntennaType == 1);
+            }
+
+            THEN("the function should return -1") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+
+        WHEN ("the function is called with '0'") {
+            int returnFlag = toggle_ble_antenna("0");
+
+            THEN("antenna type should change to internal") {
+                REQUIRE(bleAntennaType == 0);
+            }
+
+            THEN("the function should return 0") {
+                REQUIRE(returnFlag == 0);
+            }
+        }
+
+        WHEN("the function is called with '1'") {
+            int returnFlag = toggle_ble_antenna("1");
+
+            THEN("antenna type should remain the same") {
+                REQUIRE(bleAntennaType == 1);
+            }
+
+            THEN("the function should return 1") {
+                REQUIRE(returnFlag == 1);
             }
         }
     }

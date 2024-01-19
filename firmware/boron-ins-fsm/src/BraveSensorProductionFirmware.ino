@@ -23,7 +23,6 @@ void setup() {
     // enable reset reason
     System.enableFeature(FEATURE_RESET_INFO);
 
-    // use internal antenna on Boron for BLE
     setupIM();
     setupINS3331();
     setupConsoleFunctions();

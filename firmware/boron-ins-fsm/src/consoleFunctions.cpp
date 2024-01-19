@@ -377,13 +377,13 @@ int toggle_ble_antenna(String command) {
         returnFlag = bleAntennaType;
     }
     else if (*holder == '0') {
-        bleAntennaType = 0x00;
+        bleAntennaType = antennaType::INTERNAL;
         EEPROM.put(ADDR_BLE_ANTENNA_TYPE, bleAntennaType);
         BLE.selectAntenna(BleAntennaType::INTERNAL);
         returnFlag = 0;
     }
     else if (*holder == '1') {
-        bleAntennaType = 0x01;
+        bleAntennaType = antennaType::EXTERNAL;
         EEPROM.put(ADDR_BLE_ANTENNA_TYPE, bleAntennaType);
         BLE.selectAntenna(BleAntennaType::EXTERNAL);
         returnFlag = 1;
