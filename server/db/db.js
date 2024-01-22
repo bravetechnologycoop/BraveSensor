@@ -2,8 +2,7 @@
 const pg = require('pg')
 
 // In-house dependencies
-const { ALERT_TYPE, CHATBOT_STATE, Client, helpers } = require('brave-alert-lib')
-const Session = require('../Session')
+const { ALERT_TYPE, CHATBOT_STATE, Client, Session, helpers } = require('brave-alert-lib')
 const Location = require('../Location')
 const SensorsVital = require('../SensorsVital')
 
