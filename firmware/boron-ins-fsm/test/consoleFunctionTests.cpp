@@ -593,7 +593,6 @@ SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
         }
 
         WHEN("the function is called with '0'") {
-
             int returnFlag = toggle_ble_antenna("0");
 
             THEN("antenna type should remain the same") {
@@ -620,7 +619,7 @@ SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
 
     GIVEN("An external antenna type") {
         bleAntennaType = 1;
-        
+
         WHEN("the function is called with 'e'") {
             int returnFlag = toggle_ble_antenna("e");
 
@@ -645,11 +644,7 @@ SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
             }
         }
 
-<<<<<<< HEAD
         WHEN("the function is called with '0'") {
-=======
-        WHEN ("the function is called with '0'") {
->>>>>>> 30f7e960286f3d8cb1697d63889704cc5110a02c
             int returnFlag = toggle_ble_antenna("0");
 
             THEN("antenna type should change to internal") {
