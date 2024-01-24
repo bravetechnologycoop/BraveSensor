@@ -6,7 +6,8 @@
 
 #include "Particle.h"
 
-typedef enum LogLevel {
+typedef enum LogLevel
+{
     LOG_LEVEL_ALL = 1,  // Log all messages
     LOG_LEVEL_TRACE = 1,
     LOG_LEVEL_INFO = 30,

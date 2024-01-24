@@ -40,7 +40,8 @@ typedef struct IMDoorID {
     unsigned char byte3;
 } IMDoorID;
 
-typedef enum {
+typedef enum
+{
     INTERNAL,
     EXTERNAL
 } antennaType;
