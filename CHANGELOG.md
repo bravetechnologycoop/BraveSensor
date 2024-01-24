@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Allow Duration alerts to repeat. The duration timer is reset after a duration alert is triggered (CU-8678tmmew).
+
 ## [10.6.0] - 2024-01-23
 
 ### Added
@@ -18,7 +22,6 @@ the code was deployed.
 - `number_of_alerts` integer column to the sessions table (CU-860r8k57h).
 - Chatbot flow to reset a sensor if the `number_of_alerts` in a session meets or exceeds the threshold `SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST` (CU-860r8k57h).
 - English and (temporary) Spanish translations of `alertAcceptResetRequest`, `clientMessageForRequestToReset`, `resetNoticeToRequester`, `resetNoticeToOtherResponders`, `resetRequestRejected` (CU-860r8k57h).
-- Allow Duration alerts to repeat. The duration timer is reset after a duration alert is triggered (CU-8678tmmew).
 
 ### Changed
 
