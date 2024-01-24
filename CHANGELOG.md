@@ -11,15 +11,17 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Removed
+
+- Session model (moved to brave-alert-lib) (CU-86791yyvg).
+
+## [10.6.0] - 2024-01-23
+
 ### Added
 
 - `number_of_alerts` integer column to the sessions table (CU-860r8k57h).
 - Chatbot flow to reset a sensor if the `number_of_alerts` in a session meets or exceeds the threshold `SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST` (CU-860r8k57h).
 - English and (temporary) Spanish translations of `alertAcceptResetRequest`, `clientMessageForRequestToReset`, `resetNoticeToRequester`, `resetNoticeToOtherResponders`, `resetRequestRejected` (CU-860r8k57h).
-
-### Removed
-
-- Session model (moved to brave-alert-lib) (CU-86791yyvg).
 
 ### Changed
 
@@ -712,7 +714,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.5.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.6.0...HEAD
+[10.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.5.0...v10.6.0
 [10.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.4.0...v10.5.0
 [10.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.3.0...v10.4.0
 [10.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.2.1...v10.3.0
