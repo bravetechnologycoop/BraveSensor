@@ -28,7 +28,6 @@ MockSystem System;
 MockLogger Log;
 MockBLE BLE;
 
-uint8_t bleAntennaType;
 bool stateMachineDebugFlag;
 unsigned long debugFlagTurnedOnAt;
 long unsigned state0_occupant_detection_timer;

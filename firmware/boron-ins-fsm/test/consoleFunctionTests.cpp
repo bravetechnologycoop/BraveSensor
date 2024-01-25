@@ -6,6 +6,7 @@
 #include "../src/stateMachine.h"
 
 IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
+uint8_t bleAntennaType;
 unsigned long state3_stillness_timer;
 bool hasDurationAlertBeenSent;
 bool hasStillnessAlertBeenSent;
