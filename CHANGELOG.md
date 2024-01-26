@@ -19,6 +19,10 @@ the code was deployed.
 
 - Session model (moved to brave-alert-lib) (CU-86791yyvg).
 
+### Changed
+
+- Upgraded brave-alert-lib to v12.3.0 (CU-13kqjz8).
+
 ## [10.6.0] - 2024-01-23
 
 ### Added
