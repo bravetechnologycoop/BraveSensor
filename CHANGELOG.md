@@ -15,6 +15,10 @@ the code was deployed.
 
 - Allow Duration alerts to repeat. The duration timer is reset after a duration alert is triggered (CU-8678tmmew).
 
+### Removed
+
+- Session model (moved to brave-alert-lib) (CU-86791yyvg).
+
 ## [10.6.0] - 2024-01-23
 
 ### Added
