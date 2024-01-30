@@ -9,7 +9,10 @@ Please note that the date associated with a release is the date the code
 was committed to the `production` branch. This is not necessarily the date that
 the code was deployed.
 
+
 ## [Unreleased]
+
+## [10.7.0] - 2024-01-30
 
 ### Added
 
@@ -722,7 +725,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.6.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.7.0...HEAD
+[10.7.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.6.0...v10.7.0
 [10.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.5.0...v10.6.0
 [10.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.4.0...v10.5.0
 [10.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.3.0...v10.4.0
