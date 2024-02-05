@@ -9,12 +9,29 @@ Please note that the date associated with a release is the date the code
 was committed to the `production` branch. This is not necessarily the date that
 the code was deployed.
 
+
 ## [Unreleased]
 
+<<<<<<< HEAD
 ### Added
 
 - Console function to toggle between internal/external antenna type (CU-8678vcb9v)
 - Location in flash memory for antenna type and intialization of antenna type (CU-8678vcb9v)
+=======
+## [10.7.0] - 2024-01-30
+
+### Added
+
+- Allow Duration alerts to repeat. The duration timer is reset after a duration alert is triggered (CU-8678tmmew).
+
+### Removed
+
+- Session model (moved to brave-alert-lib) (CU-86791yyvg).
+
+### Changed
+
+- Upgraded brave-alert-lib to v12.3.0 (CU-13kqjz8).
+>>>>>>> 822400eb9726d2df8ac722bb3fb5a56bad209f62
 
 ## [10.6.0] - 2024-01-23
 
@@ -715,7 +732,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.6.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.7.0...HEAD
+[10.7.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.6.0...v10.7.0
 [10.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.5.0...v10.6.0
 [10.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.4.0...v10.5.0
 [10.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.3.0...v10.4.0

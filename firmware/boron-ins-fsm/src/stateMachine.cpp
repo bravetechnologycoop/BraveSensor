@@ -244,12 +244,13 @@ void state2_duration() {
         saveStateChangeOrAlert(2, 2);
         stateHandler = state0_idle;
     }
-    else if ((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent) {
+    else if (millis() - state2_duration_timer >= state2_max_duration) {
         Log.warn("See duration alert, remaining in state2_duration after alert publish");
         saveStateChangeOrAlert(2, 4);
         Log.error("Duration Alert!!");
         Particle.publish("Duration Alert", "duration alert", PRIVATE);
         hasDurationAlertBeenSent = true;
+        state2_duration_timer = millis();
         stateHandler = state2_duration;
     }
     else {
@@ -300,13 +301,14 @@ void state3_stillness() {
         max_stillness_time = &state3_max_long_stillness_time;  // set to compare against the longer stillness threshold for the rest of this session
         stateHandler = state3_stillness;
     }
-    else if ((millis() - state2_duration_timer >= state2_max_duration) && !hasDurationAlertBeenSent) {
+    else if (millis() - state2_duration_timer >= state2_max_duration) {
         Log.warn("duration alert, remaining in state3 after publish");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 4);
         Log.error("Duration Alert!!");
         Particle.publish("Duration Alert", "duration alert", PRIVATE);
         hasDurationAlertBeenSent = true;
+        state2_duration_timer = millis();
         stateHandler = state3_stillness;
     }
     else {
