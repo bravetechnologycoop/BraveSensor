@@ -12,12 +12,15 @@ the code was deployed.
 
 ## [Unreleased]
 
-<<<<<<< HEAD
 ### Added
 
 - Console function to toggle between internal/external antenna type (CU-8678vcb9v)
 - Location in flash memory for antenna type and intialization of antenna type (CU-8678vcb9v)
-=======
+
+### Changed
+
+- Travis CI PostgreSQL port from 5433 to 5432.
+
 ## [10.7.0] - 2024-01-30
 
 ### Added
