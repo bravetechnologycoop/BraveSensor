@@ -30,7 +30,7 @@ void setupConsoleFunctions() {
     Particle.function("Change_Long_Stillness_Timer", long_stillness_timer_set);
     Particle.function("Change_INS_Threshold", ins_threshold_set);
     Particle.function("Change_IM21_Door_ID", im21_door_id_set);
-    Particle.function("Use External BLE Antenna", use_external_ble_antenna);
+    Particle.function("Turn_External_BLE_Antenna_On_Off", use_external_ble_antenna);
     Particle.function("Reset_Stillness_Timer_For_Alerting_Session", reset_stillness_timer_for_alerting_session);
 }
 
