@@ -23,7 +23,7 @@ int initial_timer_set(String);
 int duration_timer_set(String);
 int ins_threshold_set(String);
 int im21_door_id_set(String);
-int toggle_ble_antenna(String);
+int use_external_ble_antenna(String);
 int toggle_debugging_publishes(String);
 int force_reset(String);
 int reset_stillness_timer_for_alerting_session(String);

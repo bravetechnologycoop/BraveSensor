@@ -12,12 +12,11 @@ the code was deployed.
 
 ## [Unreleased]
 
-<<<<<<< HEAD
 ### Added
 
-- Console function to toggle between internal/external antenna type (CU-8678vcb9v)
-- Location in flash memory for antenna type and intialization of antenna type (CU-8678vcb9v)
-=======
+- Console function to toggle between internal/external antenna type (CU-8678vcb9v).
+- Location in flash memory for antenna type and intialization of antenna type (CU-8678vcb9v).
+
 ## [10.7.0] - 2024-01-30
 
 ### Added
@@ -31,7 +30,6 @@ the code was deployed.
 ### Changed
 
 - Upgraded brave-alert-lib to v12.3.0 (CU-13kqjz8).
->>>>>>> 822400eb9726d2df8ac722bb3fb5a56bad209f62
 
 ## [10.6.0] - 2024-01-23
 

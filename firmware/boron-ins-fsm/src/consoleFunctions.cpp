@@ -30,7 +30,7 @@ void setupConsoleFunctions() {
     Particle.function("Change_Long_Stillness_Timer", long_stillness_timer_set);
     Particle.function("Change_INS_Threshold", ins_threshold_set);
     Particle.function("Change_IM21_Door_ID", im21_door_id_set);
-    Particle.function("Change BLE Antenna Type", toggle_ble_antenna);
+    Particle.function("Use External BLE Antenna", use_external_ble_antenna);
     Particle.function("Reset_Stillness_Timer_For_Alerting_Session", reset_stillness_timer_for_alerting_session);
 }
 
@@ -360,7 +360,7 @@ int im21_door_id_set(String command) {
     return (int)strtol(buffer, NULL, 16);
 }
 
-int toggle_ble_antenna(String command) {
+int use_external_ble_antenna(String command) {
     // default to invalid input
     int returnFlag = -1;
 
@@ -374,17 +374,17 @@ int toggle_ble_antenna(String command) {
     }
     // if e, echo whether debug publishes are on
     else if (*holder == 'e') {
-        returnFlag = bleAntennaType;
+        returnFlag = usingExternalBLEAntenna;
     }
     else if (*holder == '0') {
-        bleAntennaType = antennaType::INTERNAL;
-        EEPROM.put(ADDR_BLE_ANTENNA_TYPE, bleAntennaType);
+        usingExternalBLEAntenna = false;
+        EEPROM.put(ADDR_BLE_ANTENNA_TYPE, usingExternalBLEAntenna);
         BLE.selectAntenna(BleAntennaType::INTERNAL);
         returnFlag = 0;
     }
     else if (*holder == '1') {
-        bleAntennaType = antennaType::EXTERNAL;
-        EEPROM.put(ADDR_BLE_ANTENNA_TYPE, bleAntennaType);
+        usingExternalBLEAntenna = true;
+        EEPROM.put(ADDR_BLE_ANTENNA_TYPE, usingExternalBLEAntenna);
         BLE.selectAntenna(BleAntennaType::EXTERNAL);
         returnFlag = 1;
     }

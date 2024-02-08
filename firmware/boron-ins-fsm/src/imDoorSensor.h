@@ -40,12 +40,6 @@ typedef struct IMDoorID {
     unsigned char byte3;
 } IMDoorID;
 
-typedef enum
-{
-    INTERNAL,
-    EXTERNAL
-} antennaType;
-
 //************************global variable declarations***************************
 // extern os_queue_t bleQueue;
 extern os_queue_t bleHeartbeatQueue;
@@ -54,7 +48,7 @@ extern os_queue_t bleHeartbeatQueue;
 extern IMDoorID globalDoorID;
 
 // antenna that is being used for bluetooth LE (internal or external)
-extern uint8_t bleAntennaType;
+extern bool usingExternalBLEAntenna;
 
 // used in getHeartbeat()
 extern int missedDoorEventCount;

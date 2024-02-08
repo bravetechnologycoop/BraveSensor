@@ -6,7 +6,7 @@
 #include "../src/stateMachine.h"
 
 IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
-uint8_t bleAntennaType;
+bool usingExternalBLEAntenna;
 unsigned long state3_stillness_timer;
 bool hasDurationAlertBeenSent;
 bool hasStillnessAlertBeenSent;
@@ -567,13 +567,13 @@ SCENARIO("Reset_Stillness_Timer_For_Alerting_Session", "[reset stillness timer f
 
 SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
     GIVEN("An internal antenna type") {
-        bleAntennaType = 0;
+        usingExternalBLEAntenna = false;
 
         WHEN("the function is called with 'e'") {
-            int returnFlag = toggle_ble_antenna("e");
+            int returnFlag = use_external_ble_antenna("e");
 
             THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 0);
+                REQUIRE(usingExternalBLEAntenna == false);
             }
 
             THEN("the function should return the stored value") {
@@ -582,10 +582,10 @@ SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
         }
 
         WHEN("the function is called with neither 1, 0 or e") {
-            int returnFlag = toggle_ble_antenna("invalid value");
+            int returnFlag = use_external_ble_antenna("invalid value");
 
             THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 0);
+                REQUIRE(usingExternalBLEAntenna == false);
             }
 
             THEN("the function should return -1") {
@@ -594,10 +594,10 @@ SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
         }
 
         WHEN("the function is called with '0'") {
-            int returnFlag = toggle_ble_antenna("0");
+            int returnFlag = use_external_ble_antenna("0");
 
             THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 0);
+                REQUIRE(usingExternalBLEAntenna == false);
             }
 
             THEN("the function should return 0") {
@@ -606,10 +606,10 @@ SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
         }
 
         WHEN("the functions is called with '1'") {
-            int returnFlag = toggle_ble_antenna("1");
+            int returnFlag = use_external_ble_antenna("1");
 
             THEN("antenna type should change to external") {
-                REQUIRE(bleAntennaType == 1);
+                REQUIRE(usingExternalBLEAntenna == true);
             }
 
             THEN("the function should return 1") {
@@ -619,13 +619,13 @@ SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
     }
 
     GIVEN("An external antenna type") {
-        bleAntennaType = 1;
+        usingExternalBLEAntenna = true;
 
         WHEN("the function is called with 'e'") {
-            int returnFlag = toggle_ble_antenna("e");
+            int returnFlag = use_external_ble_antenna("e");
 
             THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 1);
+                REQUIRE(usingExternalBLEAntenna == true);
             }
 
             THEN("the function should return the stored value") {
@@ -634,10 +634,10 @@ SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
         }
 
         WHEN("the function is called with neither 1, 0 or e") {
-            int returnFlag = toggle_ble_antenna("invalid value");
+            int returnFlag = use_external_ble_antenna("invalid value");
 
             THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 1);
+                REQUIRE(usingExternalBLEAntenna == true);
             }
 
             THEN("the function should return -1") {
@@ -646,10 +646,10 @@ SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
         }
 
         WHEN("the function is called with '0'") {
-            int returnFlag = toggle_ble_antenna("0");
+            int returnFlag = use_external_ble_antenna("0");
 
             THEN("antenna type should change to internal") {
-                REQUIRE(bleAntennaType == 0);
+                REQUIRE(usingExternalBLEAntenna == false);
             }
 
             THEN("the function should return 0") {
@@ -658,10 +658,10 @@ SCENARIO("Set BLE Antenna Type", "[ble antenna type]") {
         }
 
         WHEN("the function is called with '1'") {
-            int returnFlag = toggle_ble_antenna("1");
+            int returnFlag = use_external_ble_antenna("1");
 
             THEN("antenna type should remain the same") {
-                REQUIRE(bleAntennaType == 1);
+                REQUIRE(usingExternalBLEAntenna == true);
             }
 
             THEN("the function should return 1") {
