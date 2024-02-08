@@ -9,8 +9,9 @@
 //*************************global macro defines**********************************
 // ascii table goes up to 7F, so pick something greater than that
 // which is also unlikely to be part of a door ID or a threshold/timer const
-#define INITIALIZE_DOOR_ID_FLAG 0x8888
-#define INITIAL_DOOR_STATUS     0x99
+#define INITIALIZE_DOOR_ID_FLAG      0x8888
+#define INITIALIZE_ANTENNA_TYPE_FLAG 0x8888
+#define INITIAL_DOOR_STATUS          0x99
 
 // initial (default) values for door ID, can be changed via console function
 // or by writing something other than 0x8888 to the above flag in flash
@@ -46,6 +47,9 @@ extern os_queue_t bleHeartbeatQueue;
 // needs to be global because it is used in setup(), loop(), and console function
 extern IMDoorID globalDoorID;
 
+// antenna that is being used for bluetooth LE (internal or external)
+extern bool usingExternalBLEAntenna;
+
 // used in getHeartbeat()
 extern int missedDoorEventCount;
 extern bool doorLowBatteryFlag;
@@ -60,6 +64,7 @@ void setupIM(void);
 
 // loop() functions
 void initializeDoorID(void);
+void initializeAntennaType(void);
 doorData checkIM(void);
 void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorData);
 void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData);
