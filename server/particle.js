@@ -41,7 +41,7 @@ async function resetStillnessTimer(deviceId, productId) {
     // response.body.return_value should contain the old value of the Stillness Timer before it was reset
     return response.body.return_value
   } catch (err) {
-    helpers.log(`${err.toString()} : for device ${deviceId}`)
+    helpers.log(`${err.errorDescription} : for device ${deviceId}`)
   }
 
   return -1
