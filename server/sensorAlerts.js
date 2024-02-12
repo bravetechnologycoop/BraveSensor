@@ -4,6 +4,7 @@ const { t } = require('i18next')
 // In-house dependencies
 const { CHATBOT_STATE, helpers } = require('brave-alert-lib')
 const db = require('./db/db')
+const { changeLongStillnessTimer } = require('./particle')
 
 let braveAlerter
 
@@ -62,10 +63,16 @@ async function handleAlert(location, alertType) {
       // this session already exists; this is an additional alert
       // increase the number of alerts for this session
       currentSession.numberOfAlerts += 1
-      db.saveSession(currentSession, pgClient)
+      await db.saveSession(currentSession, pgClient)
+
+      // get the long stillness timer of this location
+      const locationLongStillnessTimer = await changeLongStillnessTimer(location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'), 'e')
+      const windowToSumNumberOfAlerts = locationLongStillnessTimer * helpers.getEnvVar('SESSION_WINDOW_TO_SUM_NUMBER_OF_ALERTS_MULTIPLE')
+      const sinceDate = new Date(Date.now().valueOf() - windowToSumNumberOfAlerts * 1000)
+      const sumNumberOfAlerts = await db.getNumberOfAlertsSinceDateWithLocationidAndDate(location.locationid, sinceDate)
 
       // boolean value of whether a request to reset should be accepted
-      const acceptResetRequest = currentSession.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+      const acceptResetRequest = sumNumberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
       const alertMessage = t(acceptResetRequest ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
         lng: client.language,
         alertTypeDisplayName,

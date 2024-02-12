@@ -27,6 +27,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     sandbox.stub(db, 'getClientWithSessionId').returns({})
     sandbox.stub(helpers, 'log')
     sandbox.stub(particle, 'forceReset')
+    sandbox.stub(particle, 'changeLongStillnessTimer').returns(120)
   })
 
   afterEach(() => {
@@ -221,16 +222,19 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     })
   })
 
-  describe('if given alertState RESET and numberOfAlerts is less than SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST', () => {
+  describe('if given alertState RESET and the number of recent alerts is less than SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST', () => {
     beforeEach(async () => {
       const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
       sandbox.stub(db, 'getSessionWithSessionId').returns(
         sessionFactory({
           id: sessionId,
           chatbotState: CHATBOT_STATE.STARTED,
-          numberOfAlerts: helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST') - 1,
+          numberOfAlerts: 1,
         }),
       )
+      sandbox
+        .stub(db, 'getNumberOfAlertsSinceDateWithLocationidAndDate')
+        .returns(parseInt(helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST'), 10) - 1)
 
       const braveAlerterConfigurator = new BraveAlerterConfigurator()
       const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
@@ -250,16 +254,19 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     })
   })
 
-  describe('if given alertState RESET and numberOfAlerts is equal to SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST', () => {
+  describe('if given alertState RESET and the number of recent alerts is equal to SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST', () => {
     beforeEach(async () => {
       const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
       sandbox.stub(db, 'getSessionWithSessionId').returns(
         sessionFactory({
           id: sessionId,
           chatbotState: CHATBOT_STATE.STARTED,
-          numberOfAlerts: helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST'),
+          numberOfAlerts: 1,
         }),
       )
+      sandbox
+        .stub(db, 'getNumberOfAlertsSinceDateWithLocationidAndDate')
+        .returns(helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST'))
 
       const braveAlerterConfigurator = new BraveAlerterConfigurator()
       const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
@@ -268,7 +275,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
       this.expectedSession = sessionFactory({
         id: sessionId,
         chatbotState: CHATBOT_STATE.RESET,
-        numberOfAlerts: helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST'),
+        numberOfAlerts: 1,
       })
     })
 
@@ -285,16 +292,19 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     })
   })
 
-  describe('if given alertState RESET and numberOfAlerts is greater than SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST', () => {
+  describe('if given alertState RESET and the number of recent alerts is greater than SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST', () => {
     beforeEach(async () => {
       const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
       sandbox.stub(db, 'getSessionWithSessionId').returns(
         sessionFactory({
           id: sessionId,
           chatbotState: CHATBOT_STATE.STARTED,
-          numberOfAlerts: helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST') + 1,
+          numberOfAlerts: 1,
         }),
       )
+      sandbox
+        .stub(db, 'getNumberOfAlertsSinceDateWithLocationidAndDate')
+        .returns(parseInt(helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST'), 10) + 1)
 
       const braveAlerterConfigurator = new BraveAlerterConfigurator()
       const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
@@ -303,7 +313,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
       this.expectedSession = sessionFactory({
         id: sessionId,
         chatbotState: CHATBOT_STATE.RESET,
-        numberOfAlerts: helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST') + 1,
+        numberOfAlerts: 1,
       })
     })
 

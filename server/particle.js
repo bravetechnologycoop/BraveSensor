@@ -24,7 +24,7 @@ async function forceReset(deviceId, productId) {
       auth: particleAccessToken,
     })
   } catch (err) {
-    helpers.log(`${err.errorDescription} : for device ${deviceId}`)
+    helpers.log(`${err.toString()} : for device ${deviceId}`)
   }
 }
 
@@ -41,7 +41,7 @@ async function resetStillnessTimer(deviceId, productId) {
     // response.body.return_value should contain the old value of the Stillness Timer before it was reset
     return response.body.return_value
   } catch (err) {
-    helpers.log(`${err.errorDescription} : for device ${deviceId}`)
+    helpers.log(`${err.toString()} : for device ${deviceId}`)
   }
 
   return -1
@@ -101,9 +101,29 @@ async function handleSensorEvent(request, response) {
   }
 }
 
+async function changeLongStillnessTimer(deviceId, productId, argument) {
+  try {
+    const response = await particleApi.callFunction({
+      deviceId,
+      name: 'Change_Long_Stillness_Timer',
+      argument,
+      product: productId,
+      auth: particleAccessToken,
+    })
+
+    // response.body.return_value should contain the current Long Stillness Timer of the device
+    return response.body.return_value
+  } catch (err) {
+    helpers.log(`${err.toString()} : for device ${deviceId}`)
+  }
+
+  return -1
+}
+
 module.exports = {
+  changeLongStillnessTimer,
   forceReset,
+  handleSensorEvent,
   resetStillnessTimer,
   validateSensorEvent,
-  handleSensorEvent,
 }

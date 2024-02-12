@@ -84,26 +84,35 @@ class BraveAlerterConfigurator {
         // If the SMS came from the session's respondedByPhoneNumber
         if (alertSession.respondedByPhoneNumber === session.respondedByPhoneNumber) {
           // Check for an invalid request to reset
-          if (
-            alertSession.alertState === CHATBOT_STATE.RESET &&
-            session.numberOfAlerts < helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
-          ) {
-            // Commit the transaction; didn't do anything
-            await db.commitTransaction(pgClient)
+          if (alertSession.alertState === CHATBOT_STATE.RESET) {
+            // get the long stillness timer for this location
+            const locationLongStillnessTimer = await particle.changeLongStillnessTimer(
+              session.location.radarCoreId,
+              helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'),
+              'e',
+            )
+            const windowToSumNumberOfAlerts = locationLongStillnessTimer * helpers.getEnvVar('SESSION_WINDOW_TO_SUM_NUMBER_OF_ALERTS_MULTIPLE')
+            const sinceDate = new Date(Date.now().valueOf() - windowToSumNumberOfAlerts * 1000)
+            const sumNumberOfAlerts = await db.getNumberOfAlertsSinceDateWithLocationidAndDate(session.location.locationid, sinceDate)
 
-            // Get language of client
-            const { language } = await db.getClientWithSessionId(alertSession.sessionId)
+            if (sumNumberOfAlerts < helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')) {
+              // Commit the transaction; didn't do anything
+              await db.commitTransaction(pgClient)
 
-            // Send a message to the client stating that their request to reset was declined
-            const replacementReturnMessageToRespondedByPhoneNumber = t('resetRequestRejected', { lng: language })
+              // Get language of client
+              const { language } = await db.getClientWithSessionId(alertSession.sessionId)
 
-            // Don't send a message to the other responder phone numbers
-            const replacementReturnMessageToOtherResponderPhoneNumbers = null
+              // Send a message to the client stating that their request to reset was declined
+              const replacementReturnMessageToRespondedByPhoneNumber = t('resetRequestRejected', { lng: language })
 
-            return {
-              respondedByPhoneNumber: session.respondedByPhoneNumber,
-              replacementReturnMessageToRespondedByPhoneNumber,
-              replacementReturnMessageToOtherResponderPhoneNumbers,
+              // Don't send a message to the other responder phone numbers
+              const replacementReturnMessageToOtherResponderPhoneNumbers = null
+
+              return {
+                respondedByPhoneNumber: session.respondedByPhoneNumber,
+                replacementReturnMessageToRespondedByPhoneNumber,
+                replacementReturnMessageToOtherResponderPhoneNumbers,
+              }
             }
           }
 

@@ -1363,6 +1363,30 @@ async function clearTables(pgClient) {
   await clearClients(pgClient)
 }
 
+async function getNumberOfAlertsSinceDateWithLocationidAndDate(locationid, sinceDate, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getNumberOfAlertsSinceDateWithLocationid',
+      `
+      SELECT SUM(number_of_alerts)
+      FROM sessions
+      WHERE locationid = $1 AND updated_at > $2
+      `,
+      [locationid, sinceDate],
+      pool,
+      pgClient,
+    )
+
+    if (results !== undefined) {
+      return results.rows[0].sum
+    }
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+
+  return 0
+}
+
 async function close() {
   await pool.end()
 }
@@ -1400,6 +1424,7 @@ module.exports = {
   getMostRecentSensorsVitalWithLocation,
   getMostRecentSessionWithLocationid,
   getMostRecentSessionWithPhoneNumbers,
+  getNumberOfAlertsSinceDateWithLocationidAndDate,
   getRecentSensorsVitals,
   getRecentSensorsVitalsWithClientId,
   getSessionWithSessionId,
