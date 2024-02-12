@@ -1,15 +1,11 @@
 // Third-party dependencies
-const Validator = require('express-validator')
 const ParticleApi = require('particle-api-js')
 
 // In-house depenencies
-const { ALERT_TYPE, helpers } = require('brave-alert-lib')
-const SENSOR_EVENT = require('./SensorEventEnum')
-const db = require('./db/db')
+const { helpers } = require('brave-alert-lib')
 
 // Particle Webhook API Key and Particle Access Token
 const particleAccessToken = helpers.getEnvVar('PARTICLE_ACCESS_TOKEN')
-const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
 const particleApi = new ParticleApi()
 

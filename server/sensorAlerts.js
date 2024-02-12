@@ -1,10 +1,14 @@
 // Third-party dependencies
+const Validator = require('express-validator')
 const { t } = require('i18next')
 
 // In-house dependencies
-const { CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const SENSOR_EVENT = require('./SensorEventEnum')
 const db = require('./db/db')
 const particle = require('./particle')
+
+const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
 let braveAlerter
 
@@ -66,7 +70,11 @@ async function handleAlert(location, alertType) {
       await db.saveSession(currentSession, pgClient)
 
       // get the long stillness timer of this location
-      const locationLongStillnessTimer = await particle.changeLongStillnessTimer(location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'), 'e')
+      const locationLongStillnessTimer = await particle.changeLongStillnessTimer(
+        location.radarCoreId,
+        helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'),
+        'e',
+      )
       const windowToSumNumberOfAlerts = locationLongStillnessTimer * helpers.getEnvVar('SESSION_WINDOW_TO_SUM_NUMBER_OF_ALERTS_MULTIPLE')
       const sinceDate = new Date(Date.now().valueOf() - windowToSumNumberOfAlerts * 1000)
       const sumNumberOfAlerts = await db.getNumberOfAlertsSinceDateWithLocationidAndDate(location.locationid, sinceDate)
