@@ -194,6 +194,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'getCurrentTime').returns(new Date(this.session.updatedAt.getTime() + sessionResetThreshold - 1))
       sandbox.stub(db, 'createSession')
       sandbox.stub(db, 'saveSession')
+      sandbox.stub(db, 'getNumberOfAlertsSinceDateWithLocationidAndDate').returns(1)
 
       await sensorAlerts.handleAlert(this.location, alertType)
     })
@@ -232,14 +233,14 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:05:00.000Z'),
-        numberOfAlerts: numberOfAlertsToAcceptResetRequest,
+        numberOfAlerts: 1,
       })
       this.savedSession = sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:05:00.000Z'),
-        numberOfAlerts: numberOfAlertsToAcceptResetRequest + 1,
+        numberOfAlerts: 2,
       })
 
       sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(this.session)
@@ -247,6 +248,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'getCurrentTime').returns(new Date(this.session.updatedAt.getTime() + sessionResetThreshold - 1))
       sandbox.stub(db, 'createSession')
       sandbox.stub(db, 'saveSession')
+      sandbox.stub(db, 'getNumberOfAlertsSinceDateWithLocationidAndDate').returns(numberOfAlertsToAcceptResetRequest)
 
       await sensorAlerts.handleAlert(this.location, alertType)
     })
@@ -285,14 +287,14 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:05:00.000Z'),
-        numberOfAlerts: numberOfAlertsToAcceptResetRequest + 10,
+        numberOfAlerts: 1,
       })
       this.savedSession = sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:05:00.000Z'),
-        numberOfAlerts: numberOfAlertsToAcceptResetRequest + 11,
+        numberOfAlerts: 2,
       })
 
       sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(this.session)
@@ -300,6 +302,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'getCurrentTime').returns(new Date(this.session.updatedAt.getTime() + sessionResetThreshold - 1))
       sandbox.stub(db, 'createSession')
       sandbox.stub(db, 'saveSession')
+      sandbox.stub(db, 'getNumberOfAlertsSinceDateWithLocationidAndDate').returns(numberOfAlertsToAcceptResetRequest + 1)
 
       await sensorAlerts.handleAlert(this.location, alertType)
     })
