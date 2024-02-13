@@ -70,18 +70,23 @@ async function handleAlert(location, alertType) {
       await db.saveSession(currentSession, pgClient)
 
       // get the long stillness timer of this location
-      const locationLongStillnessTimer = await particle.changeLongStillnessTimer(
-        location.radarCoreId,
-        helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'),
-        'e',
-      )
-      const windowToSumNumberOfAlerts = locationLongStillnessTimer * helpers.getEnvVar('SESSION_WINDOW_TO_SUM_NUMBER_OF_ALERTS_MULTIPLE')
-      const sinceDate = new Date(Date.now().valueOf() - windowToSumNumberOfAlerts * 1000)
+      let locationLongStillnessTimer = await particle.changeLongStillnessTimer(location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'), 'e')
+
+      if (locationLongStillnessTimer === -1) {
+        locationLongStillnessTimer = 120 // default to two minutes
+      }
+
+      const numberOfAlertsToAcceptResetRequest = helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+
+      // window to sum number of alerts (in milliseconds)
+      // currently defined as the long stillness timer of the location multiplied by the number of alerts to accept a reset request plus one
+      const windowToSumNumberOfAlerts = 1000 * locationLongStillnessTimer * (numberOfAlertsToAcceptResetRequest + 1)
+      const sinceDate = new Date(Date.now().valueOf() - windowToSumNumberOfAlerts)
+
+      // sum the number of alerts generated from this location since the above calculated date
       const sumNumberOfAlerts = await db.getNumberOfAlertsSinceDateWithLocationidAndDate(location.locationid, sinceDate)
 
-      // boolean value of whether a request to reset should be accepted
-      const acceptResetRequest = sumNumberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
-      const alertMessage = t(acceptResetRequest ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
+      const alertMessage = t(sumNumberOfAlerts >= numberOfAlertsToAcceptResetRequest ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
         lng: client.language,
         alertTypeDisplayName,
         deviceDisplayName: location.displayName,

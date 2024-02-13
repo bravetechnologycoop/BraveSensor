@@ -85,17 +85,29 @@ class BraveAlerterConfigurator {
         if (alertSession.respondedByPhoneNumber === session.respondedByPhoneNumber) {
           // Check for an invalid request to reset
           if (alertSession.alertState === CHATBOT_STATE.RESET) {
-            // get the long stillness timer for this location
-            const locationLongStillnessTimer = await particle.changeLongStillnessTimer(
+            // Get the long stillness timer for this location
+            let locationLongStillnessTimer = await particle.changeLongStillnessTimer(
               session.location.radarCoreId,
               helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'),
               'e',
             )
-            const windowToSumNumberOfAlerts = locationLongStillnessTimer * helpers.getEnvVar('SESSION_WINDOW_TO_SUM_NUMBER_OF_ALERTS_MULTIPLE')
-            const sinceDate = new Date(Date.now().valueOf() - windowToSumNumberOfAlerts * 1000)
+
+            if (locationLongStillnessTimer === -1) {
+              locationLongStillnessTimer = 120 // default to two minutes
+            }
+
+            const numberOfAlertsToAcceptResetRequest = helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+
+            // Window to sum number of alerts (in milliseconds)
+            // Currently defined as the long stillness timer of the location multiplied by the number of alerts to accept a reset request plus one
+            const windowToSumNumberOfAlerts = 1000 * locationLongStillnessTimer * (numberOfAlertsToAcceptResetRequest + 1)
+            const sinceDate = new Date(Date.now().valueOf() - windowToSumNumberOfAlerts)
+
+            // Sum the number of alerts generated from this location since the above calculated date
             const sumNumberOfAlerts = await db.getNumberOfAlertsSinceDateWithLocationidAndDate(session.location.locationid, sinceDate)
 
-            if (sumNumberOfAlerts < helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')) {
+            // Check if the number of alerts within the calculated window does not meet the number of alerts to accept reset request
+            if (sumNumberOfAlerts < numberOfAlertsToAcceptResetRequest) {
               // Commit the transaction; didn't do anything
               await db.commitTransaction(pgClient)
 
