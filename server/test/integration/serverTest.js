@@ -1,26 +1,30 @@
+// Third-party dependencies
 const chai = require('chai')
 const chaiHttp = require('chai-http')
 const sinonChai = require('sinon-chai')
 const chaiDateTime = require('chai-datetime')
-
-const expect = chai.expect
+const rewire = require('rewire')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
+
+// In-house dependencies
 const { ALERT_TYPE, factories, helpers } = require('brave-alert-lib')
-const imports = require('../../index')
-
-const db = imports.db
-const server = imports.server
-const braveAlerter = imports.braveAlerter
 const SENSOR_EVENT = require('../../SensorEventEnum')
-
-const { firmwareAlert, locationDBFactory } = require('../../testingHelpers')
+const { firmwareAlert, locationDBFactory, mockParticleApi } = require('../../testingHelpers')
+const { db, server, braveAlerter } = require('../../index')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)
 chai.use(chaiDateTime)
 
+const expect = chai.expect
 const sandbox = sinon.createSandbox()
+
+// disable all requests to Particle
+const particle = rewire('../../particle')
+// eslint-disable-next-line no-underscore-dangle
+particle.__set__('particleApi', mockParticleApi)
+
 const testLocation1Id = 'TestLocation1'
 const testLocation1PhoneNumbers = ['+15005550006']
 const radar_coreID = 'radar_particlecoreid1'

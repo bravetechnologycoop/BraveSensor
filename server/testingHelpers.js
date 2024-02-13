@@ -189,18 +189,27 @@ function mockBraveAlerter(sandbox) {
   return braveAlerter
 }
 
+function mockParticleApi(sandbox) {
+  const particleApi = {}
+
+  particleApi.callFunction = sandbox.stub()
+
+  return particleApi
+}
+
 module.exports = {
   firmwareAlert,
   getRandomArbitrary,
   getRandomInt,
   locationDBFactory,
   locationFactory,
+  mockBraveAlerter,
+  mockParticleApi,
+  mockResponse,
   printRandomIntArray,
   randomXethruStream,
   sensorsVitalDBFactory,
   sensorsVitalFactory,
   sessionDBFactory,
   sessionFactory,
-  mockResponse,
-  mockBraveAlerter,
 }

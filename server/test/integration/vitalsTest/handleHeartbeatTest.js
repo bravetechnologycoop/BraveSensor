@@ -4,17 +4,24 @@ const chaiHttp = require('chai-http')
 const sinonChai = require('sinon-chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
+const rewire = require('rewire')
 
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
 const { braveAlerter, db, server } = require('../../../index')
-const { locationDBFactory, sensorsVitalDBFactory } = require('../../../testingHelpers')
+const { locationDBFactory, sensorsVitalDBFactory, mockParticleApi } = require('../../../testingHelpers')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)
 
 const expect = chai.expect
 const sandbox = sinon.createSandbox()
+
+// disable all requests to Particle
+const particle = rewire('../../../particle')
+// eslint-disable-next-line no-underscore-dangle
+particle.__set__('particleApi', mockParticleApi)
+
 const testLocation1Id = 'TestLocation1'
 const radar_coreID = 'radar_particlecoreid1'
 const firstLowBatteryAlert = '2021-03-09T19:37:28.176Z'

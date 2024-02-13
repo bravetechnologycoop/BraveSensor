@@ -3,11 +3,12 @@ const { expect, use } = require('chai')
 const { describe, it } = require('mocha')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
+const rewire = require('rewire')
 
 // In-house dependencies
 const { ALERT_TYPE, factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
-const { locationDBFactory, sessionDBFactory } = require('../../../testingHelpers')
+const { locationDBFactory, sessionDBFactory, mockParticleApi } = require('../../../testingHelpers')
 
 const vitals = require('../../../vitals')
 
@@ -15,6 +16,11 @@ const vitals = require('../../../vitals')
 use(sinonChai)
 
 const sandbox = sinon.createSandbox()
+
+// disable all requests to Particle
+const particle = rewire('../../../particle')
+// eslint-disable-next-line no-underscore-dangle
+particle.__set__('particleApi', mockParticleApi)
 
 const maxStillnessAlerts = parseInt(helpers.getEnvVar('MAX_STILLNESS_ALERTS'), 10)
 const intervalToCheckAlerts = parseInt(helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS'), 10)
