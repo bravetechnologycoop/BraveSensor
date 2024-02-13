@@ -13,6 +13,9 @@ const db = require('../../../db/db')
 
 const sensorAlerts = rewire('../../../sensorAlerts')
 
+// eslint-disable-next-line no-underscore-dangle
+const handleAlert = sensorAlerts.__get__('handleAlert')
+
 let braveAlerter
 
 use(sinonChai)
@@ -52,7 +55,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession').returns(this.session)
       sandbox.stub(db, 'saveSession')
 
-      await sensorAlerts.handleAlert(this.location, alertType)
+      await handleAlert(this.location, alertType)
     })
 
     it('should log the alert', () => {
@@ -123,7 +126,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession').returns(this.session)
       sandbox.stub(db, 'saveSession')
 
-      await sensorAlerts.handleAlert(this.location, alertType)
+      await handleAlert(this.location, alertType)
     })
 
     it('should log the alert', () => {
@@ -196,7 +199,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'saveSession')
       sandbox.stub(db, 'getNumberOfAlertsSinceDateWithLocationidAndDate').returns(1)
 
-      await sensorAlerts.handleAlert(this.location, alertType)
+      await handleAlert(this.location, alertType)
     })
 
     it('should log the alert', () => {
@@ -250,7 +253,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'saveSession')
       sandbox.stub(db, 'getNumberOfAlertsSinceDateWithLocationidAndDate').returns(numberOfAlertsToAcceptResetRequest)
 
-      await sensorAlerts.handleAlert(this.location, alertType)
+      await handleAlert(this.location, alertType)
     })
 
     it('should log the alert', () => {
@@ -304,7 +307,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'saveSession')
       sandbox.stub(db, 'getNumberOfAlertsSinceDateWithLocationidAndDate').returns(numberOfAlertsToAcceptResetRequest + 1)
 
-      await sensorAlerts.handleAlert(this.location, alertType)
+      await handleAlert(this.location, alertType)
     })
 
     it('should log the alert', () => {
