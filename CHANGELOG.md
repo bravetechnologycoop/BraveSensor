@@ -12,10 +12,6 @@ the code was deployed.
 
 ## [Unreleased]
 
-### Changed
-
-- Travis CI PostgreSQL port from 5433 to 5432.
-
 ## [10.7.0] - 2024-01-30
 
 ### Added
