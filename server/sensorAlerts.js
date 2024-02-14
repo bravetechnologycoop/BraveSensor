@@ -1,9 +1,13 @@
 // Third-party dependencies
 const { t } = require('i18next')
+const Validator = require('express-validator')
 
 // In-house dependencies
-const { CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const SENSOR_EVENT = require('./SensorEventEnum')
 const db = require('./db/db')
+
+const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
 let braveAlerter
 
@@ -88,7 +92,61 @@ async function handleAlert(location, alertType) {
   }
 }
 
+const validateSensorEvent = Validator.body(['coreid', 'event', 'api_key']).exists()
+
+async function handleSensorEvent(request, response) {
+  try {
+    const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
+
+    if (validationErrors.isEmpty()) {
+      const apiKey = request.body.api_key
+
+      if (particleWebhookAPIKey === apiKey) {
+        let alertType
+        const coreId = request.body.coreid
+        const sensorEvent = request.body.event
+        if (sensorEvent === SENSOR_EVENT.DURATION) {
+          alertType = ALERT_TYPE.SENSOR_DURATION
+        } else if (sensorEvent === SENSOR_EVENT.STILLNESS) {
+          alertType = ALERT_TYPE.SENSOR_STILLNESS
+        } else {
+          const errorMessage = `Bad request to ${request.path}: Invalid event type`
+          helpers.logError(errorMessage)
+        }
+
+        const location = await db.getLocationFromParticleCoreID(coreId)
+        if (!location) {
+          const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
+          helpers.logError(errorMessage)
+          // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+          response.status(200).json(errorMessage)
+        } else {
+          if (location.client.isSendingAlerts && location.isSendingAlerts) {
+            await handleAlert(location, alertType)
+          }
+          response.status(200).json('OK')
+        }
+      } else {
+        const errorMessage = `Access not allowed`
+        helpers.logError(errorMessage)
+        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+        response.status(200).json(errorMessage)
+      }
+    } else {
+      const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
+      helpers.logError(errorMessage)
+      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+      response.status(200).json(errorMessage)
+    }
+  } catch (err) {
+    const errorMessage = `Error calling ${request.path}: ${err.toString()}`
+    helpers.logError(errorMessage)
+    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+  }
+}
+
 module.exports = {
   setup,
-  handleAlert,
+  validateSensorEvent,
+  handleSensorEvent,
 }
