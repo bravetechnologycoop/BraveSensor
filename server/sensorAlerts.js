@@ -15,9 +15,9 @@ function setup(braveAlerterObj) {
   braveAlerter = braveAlerterObj
 }
 
-async function handleAlert(location, alertType) {
+async function handleAlert(location, alertType, alertData) {
   const alertTypeDisplayName = helpers.getAlertTypeDisplayName(alertType, location.client.language, t)
-  helpers.log(`${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId}`)
+  helpers.log(`${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId} Data: ${JSON.stringify(alertData)}`)
 
   let pgClient
 
@@ -66,11 +66,15 @@ async function handleAlert(location, alertType) {
       // this session already exists; this is an additional alert
       // increase the number of alerts for this session
       currentSession.numberOfAlerts += 1
+
+      // boolean value of whether the device is resettable (number of alerts exceeds threshold)
+      // NOTE: alertData.numberOfAlerts is different to currentSession.numberOfAlerts. It represents the number of alerts generated
+      //   while the sensor remained in state 3 (stillness), not the number of alerts in a given server-side session.
+      currentSession.isResettable = alertData.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+
       db.saveSession(currentSession, pgClient)
 
-      // boolean value of whether a request to reset should be accepted
-      const acceptResetRequest = currentSession.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
-      const alertMessage = t(acceptResetRequest ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
+      const alertMessage = t(currentSession.isResettable ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
         lng: client.language,
         alertTypeDisplayName,
         deviceDisplayName: location.displayName,
@@ -92,7 +96,7 @@ async function handleAlert(location, alertType) {
   }
 }
 
-const validateSensorEvent = Validator.body(['coreid', 'event', 'api_key']).exists()
+const validateSensorEvent = Validator.body(['coreid', 'event', 'api_key', 'data']).exists()
 
 async function handleSensorEvent(request, response) {
   try {

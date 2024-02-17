@@ -55,11 +55,11 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession').returns(this.session)
       sandbox.stub(db, 'saveSession')
 
-      await handleAlert(this.location, alertType)
+      await handleAlert(this.location, alertType, { numberOfAlerts: 1 })
     })
 
     it('should log the alert', () => {
-      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId')
+      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}')
     })
 
     it('should create a new session with chatbot state STARTED', () => {
@@ -126,11 +126,11 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession').returns(this.session)
       sandbox.stub(db, 'saveSession')
 
-      await handleAlert(this.location, alertType)
+      await handleAlert(this.location, alertType, { numberOfAlerts: 1 })
     })
 
     it('should log the alert', () => {
-      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId')
+      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}')
     })
 
     it('should create a new session with chatbot state STARTED', () => {
@@ -183,6 +183,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:05:00.000Z'),
         numberOfAlerts: 1,
+        isResettable: false,
       })
       this.savedSession = sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
@@ -190,6 +191,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:05:00.000Z'),
         numberOfAlerts: 2,
+        isResettable: false,
       })
 
       sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(this.session)
@@ -198,11 +200,11 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession')
       sandbox.stub(db, 'saveSession')
 
-      await handleAlert(this.location, alertType)
+      await handleAlert(this.location, alertType, { numberOfAlerts: 1 })
     })
 
     it('should log the alert', () => {
-      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId')
+      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}')
     })
 
     it('should not create a new session', () => {
@@ -235,14 +237,16 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:05:00.000Z'),
-        numberOfAlerts: numberOfAlertsToAcceptResetRequest,
+        numberOfAlerts: 1,
+        isResettable: false,
       })
       this.savedSession = sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:05:00.000Z'),
-        numberOfAlerts: numberOfAlertsToAcceptResetRequest + 1,
+        numberOfAlerts: 2,
+        isResettable: true,
       })
 
       sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(this.session)
@@ -251,11 +255,11 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession')
       sandbox.stub(db, 'saveSession')
 
-      await handleAlert(this.location, alertType)
+      await handleAlert(this.location, alertType, { numberOfAlerts: numberOfAlertsToAcceptResetRequest })
     })
 
     it('should log the alert', () => {
-      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId')
+      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":7}')
     })
 
     it('should not create a new session', () => {
@@ -288,14 +292,16 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:05:00.000Z'),
-        numberOfAlerts: numberOfAlertsToAcceptResetRequest + 10,
+        numberOfAlerts: 1,
+        isResettable: true,
       })
       this.savedSession = sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:05:00.000Z'),
-        numberOfAlerts: numberOfAlertsToAcceptResetRequest + 11,
+        numberOfAlerts: 2,
+        isResettable: true,
       })
 
       sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(this.session)
@@ -304,11 +310,11 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession')
       sandbox.stub(db, 'saveSession')
 
-      await handleAlert(this.location, alertType)
+      await handleAlert(this.location, alertType, { numberOfAlerts: numberOfAlertsToAcceptResetRequest + 1 })
     })
 
     it('should log the alert', () => {
-      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId')
+      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":8}')
     })
 
     it('should not create a new session', () => {

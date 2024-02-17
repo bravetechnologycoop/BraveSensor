@@ -27,7 +27,7 @@ function createSessionFromRow(r, allLocations) {
   const location = allLocations.filter(l => l.locationid === r.locationid)[0]
 
   // prettier-ignore
-  return new Session(r.id, r.chatbot_state, r.alert_type, r.number_of_alerts, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number, location)
+  return new Session(r.id, r.chatbot_state, r.alert_type, r.number_of_alerts, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number, location, r.is_resettable)
 }
 
 function createClientFromRow(r) {
@@ -643,8 +643,8 @@ async function saveSession(session, pgClient) {
       'saveSessionUpdate',
       `
       UPDATE sessions
-      SET locationid = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5, responded_by_phone_number = $6, number_of_alerts = $7
-      WHERE id = $8
+      SET locationid = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5, responded_by_phone_number = $6, number_of_alerts = $7, is_resettable = $8
+      WHERE id = $9
       `,
       [
         session.location.locationid,
@@ -654,6 +654,7 @@ async function saveSession(session, pgClient) {
         session.respondedAt,
         session.respondedByPhoneNumber,
         session.numberOfAlerts,
+        session.isResettable,
         session.id,
       ],
       pool,

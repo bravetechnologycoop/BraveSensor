@@ -28,6 +28,8 @@ const radar_coreID = 'radar_particlecoreid1'
 const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 const badpassword = 'badpassword'
 
+const alertData = { numberOfAlerts: 1 }
+
 describe('Brave Sensor server', () => {
   beforeEach(async () => {
     await db.clearTables()
@@ -65,14 +67,14 @@ describe('Brave Sensor server', () => {
 
         it('should log the error', () => {
           expect(helpers.logError).to.be.calledWithExactly(
-            'Bad request to /api/sensorEvent: coreid (Invalid value),event (Invalid value),api_key (Invalid value)',
+            'Bad request to /api/sensorEvent: coreid (Invalid value),event (Invalid value),api_key (Invalid value),data (Invalid value)',
           )
         })
       })
 
       describe('for an otherwise valid DURATION request with an incorrect API key', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, badpassword)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, badpassword, alertData)
         })
 
         it('should return 200', () => {
@@ -90,7 +92,7 @@ describe('Brave Sensor server', () => {
 
       describe('for a valid DURATION request', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey, alertData)
         })
 
         it('should create a session with DURATION alert reason', async () => {
@@ -107,7 +109,7 @@ describe('Brave Sensor server', () => {
 
       describe('for an otherwise valid STILLNESS request with an incorrect API key', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, badpassword)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, badpassword, alertData)
         })
 
         it('should return 200', () => {
@@ -125,7 +127,7 @@ describe('Brave Sensor server', () => {
 
       describe('for a valid STILLNESS request', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey, alertData)
         })
 
         it('should create a session with STILLNESS as the alert reason for a valid STILLNESS request', async () => {
@@ -142,13 +144,13 @@ describe('Brave Sensor server', () => {
 
       describe('for multiple alerts within the session reset timeout', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey, alertData)
 
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey, alertData)
           const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
           this.oldUpdatedAt = sessions[0].updatedAt
 
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, undefined, alertData)
           const newSessions = await db.getAllSessionsFromLocation(testLocation1Id)
           this.newUpdatedAt = newSessions[0].updatedAt
         })
@@ -171,9 +173,9 @@ describe('Brave Sensor server', () => {
 
       describe('for alerts that come in after the session reset timeout has expired', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey, alertData)
           await helpers.sleep(parseInt(helpers.getEnvVar('SESSION_RESET_THRESHOLD'), 10) + 50)
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey, alertData)
         })
 
         it('should create additional sessions for alerts', async () => {
@@ -206,7 +208,7 @@ describe('Brave Sensor server', () => {
 
       describe('for a valid DURATION request', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey, alertData)
         })
 
         it('should return 200', () => {
@@ -225,7 +227,7 @@ describe('Brave Sensor server', () => {
 
       describe('for a valid STILLNESS request', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey, alertData)
         })
 
         it('should return 200', () => {
@@ -260,7 +262,7 @@ describe('Brave Sensor server', () => {
 
       describe('for a valid DURATION request', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey, alertData)
         })
 
         it('should return 200', () => {
@@ -279,7 +281,7 @@ describe('Brave Sensor server', () => {
 
       describe('for a valid STILLNESS request', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey, alertData)
         })
 
         it('should return 200', () => {
@@ -314,7 +316,7 @@ describe('Brave Sensor server', () => {
 
       describe('for a valid DURATION request', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, webhookAPIKey, alertData)
         })
 
         it('should return 200', () => {
@@ -333,7 +335,7 @@ describe('Brave Sensor server', () => {
 
       describe('for a valid STILLNESS request', () => {
         beforeEach(async () => {
-          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey)
+          await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey, alertData)
         })
 
         it('should return 200', () => {

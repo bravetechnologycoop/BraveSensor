@@ -25,7 +25,8 @@ unsigned long state1_max_time = STATE1_MAX_TIME;
 unsigned long state2_max_duration = STATE2_MAX_DURATION;
 unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
 unsigned long state3_max_long_stillness_time =
-    STATE3_MAX_STILLNESS_TIME;  // By default, we use the same value for max_stillness_time and max_long_stillness_time
+    STATE3_MAX_STILLNESS_TIME;              // By default, we use the same value for max_stillness_time and max_long_stillness_time
+unsigned long state3_number_of_alerts = 0;  // The number of alerts generated in a session should start at 0
 int resetReason = System.resetReason();
 // record whether an alert has been sent within the same session
 bool hasDurationAlertBeenSent;
@@ -264,6 +265,9 @@ void state3_stillness() {
     // scan inputs
     doorData checkDoor;
     filteredINSData checkINS;
+    // will contain the data for a Stillness Alert; max 622 chars as per Particle docs
+    char alertMessage[622];
+
     // this returns the previous door event value until a new door event is received
     // on code boot up it initializes to returning INITIAL_DOOR_STATUS
     checkDoor = checkIM();
@@ -281,6 +285,7 @@ void state3_stillness() {
         Log.warn("motion spotted again, going from state3_stillness to state2_duration");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 0);
+        state3_number_of_alerts = 0;  // reset number of alerts to 0 alerts; the session is over
         // go back to state 2, duration
         stateHandler = state2_duration;
     }
@@ -288,6 +293,7 @@ void state3_stillness() {
         Log.warn("door opened, session over, going from state3_stillness to idle");
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 2);
+        state3_number_of_alerts = 0;  // reset number of alerts to 0 alerts; the session is over
         stateHandler = state0_idle;
     }
     else if (millis() - state3_stillness_timer >= *max_stillness_time) {
@@ -295,7 +301,9 @@ void state3_stillness() {
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
         Log.error("Stillness Alert!!");
-        Particle.publish("Stillness Alert", "stillness alert!!!", PRIVATE);
+        state3_number_of_alerts += 1;  // increment the number of alerts
+        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlerts\": %lu}", state3_number_of_alerts);
+        Particle.publish("Stillness Alert", alertMessage, PRIVATE);
         hasStillnessAlertBeenSent = true;
         state3_stillness_timer = millis();                     // reset the stillness timer
         max_stillness_time = &state3_max_long_stillness_time;  // set to compare against the longer stillness threshold for the rest of this session
@@ -306,7 +314,9 @@ void state3_stillness() {
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 4);
         Log.error("Duration Alert!!");
-        Particle.publish("Duration Alert", "duration alert", PRIVATE);
+        state3_number_of_alerts += 1;  // increment the number of alerts
+        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlerts\": %lu}", state3_number_of_alerts);
+        Particle.publish("Duration Alert", alertMessage, PRIVATE);
         hasDurationAlertBeenSent = true;
         state2_duration_timer = millis();
         stateHandler = state3_stillness;

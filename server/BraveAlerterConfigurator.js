@@ -84,10 +84,7 @@ class BraveAlerterConfigurator {
         // If the SMS came from the session's respondedByPhoneNumber
         if (alertSession.respondedByPhoneNumber === session.respondedByPhoneNumber) {
           // Check for an invalid request to reset
-          if (
-            alertSession.alertState === CHATBOT_STATE.RESET &&
-            session.numberOfAlerts < helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
-          ) {
+          if (alertSession.alertState === CHATBOT_STATE.RESET && !session.isResettable) {
             // Commit the transaction; didn't do anything
             await db.commitTransaction(pgClient)
 

@@ -84,6 +84,7 @@ async function sessionDBFactory(db, overrides = {}) {
     overrides.createdAt !== undefined ? overrides.createdAt : undefined,
     overrides.respondedAt !== undefined ? overrides.respondedAt : null,
     overrides.respondedByPhoneNumber !== undefined ? overrides.respondedByPhoneNumber : null,
+    overrides.isResettable !== undefined ? overrides.isResettable : false,
   )
 
   return session
@@ -102,6 +103,7 @@ function sessionFactory(overrides = {}) {
     overrides.respondedAt !== undefined ? overrides.respondedAt : new Date('2021-10-05T20:20:33.000Z'),
     overrides.respondedByPhoneNumber !== undefined ? overrides.respondedByPhoneNumber : null,
     overrides.location !== undefined ? overrides.location : locationFactory(),
+    overrides.isResettable !== undefined ? overrides.isResettable : false,
   )
 }
 
@@ -136,16 +138,16 @@ async function sensorsVitalDBFactory(db, overrides = {}) {
 }
 
 // Sends chai as a parameter so I don't need to include it as a regular dependency in package.json
-async function firmwareAlert(chai, server, coreID, sensorEvent, apiKey) {
+async function firmwareAlert(chai, server, coreID, sensorEvent, apiKey, data) {
   let response
   try {
     response = await chai.request(server).post('/api/sensorEvent').send({
       event: sensorEvent,
-      data: 'test-event',
       ttl: 60,
       published_at: '2021-06-14T22:49:16.091Z',
       coreid: coreID,
       api_key: apiKey,
+      data,
     })
     await helpers.sleep(50)
   } catch (e) {
