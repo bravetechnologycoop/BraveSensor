@@ -17,7 +17,11 @@ function setup(braveAlerterObj) {
 
 async function handleAlert(location, alertType, alertData) {
   const alertTypeDisplayName = helpers.getAlertTypeDisplayName(alertType, location.client.language, t)
-  helpers.log(`${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId} Data: ${JSON.stringify(alertData)}`)
+  helpers.log(
+    `${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${
+      location.radarCoreId
+    } Data: ${JSON.stringify(alertData)}`,
+  )
 
   let pgClient
 
@@ -33,6 +37,19 @@ async function handleAlert(location, alertType, alertData) {
     const currentTime = await db.getCurrentTime(pgClient)
     const client = location.client
 
+    // default to this sensor not being resettable
+    let isResettable = false
+
+    // old sensors' (version < 10.8.0) alert data are strings that contain no useful information
+    // this check is a safeguard in the case that an old sensor is generating an alert before upgrading
+    if (typeof alertData === 'object') {
+      // boolean value of whether the sensor is resettable (number of alerts exceeds threshold)
+      // NOTE: alertData.numberOfAlerts is different to the session column number_of_alerts. It represents the number of alerts generated
+      //   while the sensor is in state 3 (sensor is seeing stillness, which is terminated only by the door opening), not the number of alerts
+      //   in a server-side session (number of alerts received since the session began).
+      isResettable = alertData.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+    }
+
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
       // this session doesn't exist; create new session
       const newSession = await db.createSession(
@@ -43,6 +60,7 @@ async function handleAlert(location, alertType, alertData) {
         undefined,
         undefined,
         undefined,
+        isResettable,
         pgClient,
       )
 
@@ -64,17 +82,13 @@ async function handleAlert(location, alertType, alertData) {
       })
     } else {
       // this session already exists; this is an additional alert
-      // increase the number of alerts for this session
-      currentSession.numberOfAlerts += 1
 
-      // boolean value of whether the device is resettable (number of alerts exceeds threshold)
-      // NOTE: alertData.numberOfAlerts is different to currentSession.numberOfAlerts. It represents the number of alerts generated
-      //   while the sensor remained in state 3 (stillness), not the number of alerts in a given server-side session.
-      currentSession.isResettable = alertData.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+      currentSession.numberOfAlerts += 1 // increase the number of alerts for this session
+      currentSession.isResettable = isResettable
 
       db.saveSession(currentSession, pgClient)
 
-      const alertMessage = t(currentSession.isResettable ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
+      const alertMessage = t(isResettable ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
         lng: client.language,
         alertTypeDisplayName,
         deviceDisplayName: location.displayName,
@@ -117,6 +131,7 @@ async function handleSensorEvent(request, response) {
           const errorMessage = `Bad request to ${request.path}: Invalid event type`
           helpers.logError(errorMessage)
         }
+        const alertData = request.body.data
 
         const location = await db.getLocationFromParticleCoreID(coreId)
         if (!location) {
@@ -126,7 +141,7 @@ async function handleSensorEvent(request, response) {
           response.status(200).json(errorMessage)
         } else {
           if (location.client.isSendingAlerts && location.isSendingAlerts) {
-            await handleAlert(location, alertType)
+            await handleAlert(location, alertType, alertData)
           }
           response.status(200).json('OK')
         }

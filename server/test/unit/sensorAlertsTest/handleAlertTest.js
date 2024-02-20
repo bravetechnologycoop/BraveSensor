@@ -59,7 +59,9 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
     })
 
     it('should log the alert', () => {
-      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}')
+      expect(helpers.log).to.be.calledWithExactly(
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}',
+      )
     })
 
     it('should create a new session with chatbot state STARTED', () => {
@@ -71,6 +73,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         undefined,
         undefined,
         undefined,
+        false,
         pgClient,
       )
     })
@@ -130,7 +133,9 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
     })
 
     it('should log the alert', () => {
-      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}')
+      expect(helpers.log).to.be.calledWithExactly(
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}',
+      )
     })
 
     it('should create a new session with chatbot state STARTED', () => {
@@ -142,6 +147,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         undefined,
         undefined,
         undefined,
+        false,
         pgClient,
       )
     })
@@ -204,7 +210,9 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
     })
 
     it('should log the alert', () => {
-      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}')
+      expect(helpers.log).to.be.calledWithExactly(
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}',
+      )
     })
 
     it('should not create a new session', () => {
@@ -259,7 +267,9 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
     })
 
     it('should log the alert', () => {
-      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":7}')
+      expect(helpers.log).to.be.calledWithExactly(
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":7}',
+      )
     })
 
     it('should not create a new session', () => {
@@ -314,7 +324,9 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
     })
 
     it('should log the alert', () => {
-      expect(helpers.log).to.be.calledWithExactly('Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":8}')
+      expect(helpers.log).to.be.calledWithExactly(
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":8}',
+      )
     })
 
     it('should not create a new session', () => {

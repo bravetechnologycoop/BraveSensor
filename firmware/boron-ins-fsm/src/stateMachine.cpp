@@ -285,7 +285,7 @@ void state3_stillness() {
         Log.warn("motion spotted again, going from state3_stillness to state2_duration");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 0);
-        state3_number_of_alerts = 0;  // reset number of alerts to 0 alerts; the session is over
+        state3_number_of_alerts = 0;  // reset number of alerts to 0 alerts; exiting state 3
         // go back to state 2, duration
         stateHandler = state2_duration;
     }
@@ -293,7 +293,7 @@ void state3_stillness() {
         Log.warn("door opened, session over, going from state3_stillness to idle");
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 2);
-        state3_number_of_alerts = 0;  // reset number of alerts to 0 alerts; the session is over
+        state3_number_of_alerts = 0;  // reset number of alerts to 0 alerts; exiting state 3
         stateHandler = state0_idle;
     }
     else if (millis() - state3_stillness_timer >= *max_stillness_time) {
@@ -301,7 +301,7 @@ void state3_stillness() {
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
         Log.error("Stillness Alert!!");
-        state3_number_of_alerts += 1;  // increment the number of alerts
+        state3_number_of_alerts += 1;  // increment the number of alerts generated while in state 3
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlerts\": %lu}", state3_number_of_alerts);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
         hasStillnessAlertBeenSent = true;
@@ -314,7 +314,7 @@ void state3_stillness() {
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 4);
         Log.error("Duration Alert!!");
-        state3_number_of_alerts += 1;  // increment the number of alerts
+        state3_number_of_alerts += 1;  // increment the number of alerts generated while in state 3
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlerts\": %lu}", state3_number_of_alerts);
         Particle.publish("Duration Alert", alertMessage, PRIVATE);
         hasDurationAlertBeenSent = true;
