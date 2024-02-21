@@ -40,8 +40,8 @@ async function handleAlert(location, alertType, alertData) {
     // default to this sensor not being resettable
     let isResettable = false
 
-    // old sensors' (version < 10.8.0) alert data are strings that contain no useful information
-    // this check is a safeguard in the case that an old sensor is generating an alert before upgrading
+    // Sensors with version <= 10.7.0 will send alert data that is a string with no particularly useful information.
+    // This check is a safeguard in the case that an old sensor generates an alert before upgrading to a version that sends useful alert data.
     if (typeof alertData === 'object') {
       // boolean value of whether the sensor is resettable (number of alerts exceeds threshold)
       // NOTE: alertData.numberOfAlerts is different to the session column number_of_alerts. It represents the number of alerts generated
@@ -49,6 +49,9 @@ async function handleAlert(location, alertType, alertData) {
       //   in a server-side session (number of alerts received since the session began).
       isResettable = alertData.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
     }
+
+    // debug
+    helpers.log(`Alert data has type ${typeof alertData} with number of alerts ${alertData.numberOfAlerts}; is resettable ${isResettable}`)
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
       // this session doesn't exist; create new session
@@ -63,6 +66,9 @@ async function handleAlert(location, alertType, alertData) {
         isResettable,
         pgClient,
       )
+
+      // debug
+      console.log(`creating new session: ${newSession}`)
 
       braveAlerter.startAlertSession({
         sessionId: newSession.id,
@@ -85,6 +91,9 @@ async function handleAlert(location, alertType, alertData) {
 
       currentSession.numberOfAlerts += 1 // increase the number of alerts for this session
       currentSession.isResettable = isResettable
+
+      // debug
+      console.log(`updating existing session to: ${currentSession}`)
 
       db.saveSession(currentSession, pgClient)
 
