@@ -72,7 +72,11 @@ async function handleAlert(location, alertType, alertData) {
         alertType: newSession.alertType,
         language: client.language,
         t,
-        message: t('alertStart', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
+        message: t(isResettable ? 'alertStartAcceptResetRequest' : 'alertStart', {
+          lng: client.language,
+          alertTypeDisplayName,
+          deviceDisplayName: location.displayName,
+        }),
         reminderTimeoutMillis: client.reminderTimeout * 1000,
         fallbackTimeoutMillis: client.fallbackTimeout * 1000,
         reminderMessage: t('alertReminder', { lng: client.language, deviceDisplayName: location.displayName }),
@@ -88,7 +92,7 @@ async function handleAlert(location, alertType, alertData) {
 
       db.saveSession(currentSession, pgClient)
 
-      const alertMessage = t(isResettable ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
+      const alertMessage = t(isResettable ? 'alertAdditionalAlertAcceptResetRequest' : 'alertAdditionalAlert', {
         lng: client.language,
         alertTypeDisplayName,
         deviceDisplayName: location.displayName,

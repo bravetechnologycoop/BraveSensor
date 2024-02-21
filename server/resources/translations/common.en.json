@@ -1,11 +1,12 @@
 {
-  "alertAcceptResetRequest": "An additional {{ alertTypeDisplayName }} alert was generated at {{ deviceDisplayName }}.\n\nWe noticed that many alerts are being sent from {{ deviceDisplayName }}. Please respond with 'ok' once you have checked on it, or 'reset' to reset the device if you believe these to be false alerts.",
   "alertAcknowledged": "Another Responder has acknowledged this request. (You don't need to respond to this message.)",
   "alertAdditionalAlert": "An additional {{ alertTypeDisplayName }} alert was generated at {{ deviceDisplayName }}",
+  "alertAdditionalAlertAcceptResetRequest": "An additional {{ alertTypeDisplayName }} alert was generated at {{ deviceDisplayName }}.\n\nWe noticed that many alerts are being sent from {{ deviceDisplayName }}. Please respond with 'ok' once you have checked on it, or 'reset' to reset the device if you believe these to be false alerts.",
   "alertCompleted": "Thank you! This session is now complete. (You don't need to respond to this message.)",
   "alertFallback": "An alert to check on {{ deviceDisplayName }} was not responded to. Please check on it.",
   "alertReminder": "This is a reminder to check on {{ deviceDisplayName }}",
   "alertStart": "This is a {{ alertTypeDisplayName }} alert. Please check on {{ deviceDisplayName }}. Please respond with 'ok' once you have checked on it.",
+  "alertStartAcceptResetRequest": "This is a {{ alertTypeDisplayName }} alert. Please check on {{ deviceDisplayName }}.\n\nWe noticed that many alerts are being sent from {{ deviceDisplayName }}. Please respond with 'ok' once you have checked on it, or 'reset' to reset the device if you believe these to be false alerts.",
   "clientMessageForRequestToReset": "Reset",
   "errorNoSession": "Error: No active session found",
   "incidentCategorized": "The incident was categorized as {{ incidentCategory }}.\n\nThank you. This session is now complete. (You don't need to respond to this message.)",
