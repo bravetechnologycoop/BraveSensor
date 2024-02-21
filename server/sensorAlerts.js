@@ -18,9 +18,7 @@ function setup(braveAlerterObj) {
 async function handleAlert(location, alertType, alertData) {
   const alertTypeDisplayName = helpers.getAlertTypeDisplayName(alertType, location.client.language, t)
   helpers.log(
-    `${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${
-      location.radarCoreId
-    } Data: ${JSON.stringify(alertData)}`,
+    `${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId} Data: ${alertData}`,
   )
 
   let pgClient
@@ -40,18 +38,17 @@ async function handleAlert(location, alertType, alertData) {
     // default to this sensor not being resettable
     let isResettable = false
 
+    const parsedAlertData = JSON.parse(alertData)
+
     // Sensors with version <= 10.7.0 will send alert data that is a string with no particularly useful information.
     // This check is a safeguard in the case that an old sensor generates an alert before upgrading to a version that sends useful alert data.
-    if (typeof alertData === 'object') {
+    if (typeof parsedAlertData === 'object') {
       // boolean value of whether the sensor is resettable (number of alerts exceeds threshold)
-      // NOTE: alertData.numberOfAlerts is different to the session column number_of_alerts. It represents the number of alerts generated
+      // NOTE: parsedAlertData.numberOfAlerts is different to the session column number_of_alerts. It represents the number of alerts generated
       //   while the sensor is in state 3 (sensor is seeing stillness, which is terminated only by the door opening), not the number of alerts
       //   in a server-side session (number of alerts received since the session began).
-      isResettable = alertData.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+      isResettable = parsedAlertData.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
     }
-
-    // debug
-    helpers.log(`Alert data has type ${typeof alertData} with number of alerts ${alertData.numberOfAlerts}; is resettable ${isResettable}`)
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
       // this session doesn't exist; create new session
@@ -66,9 +63,6 @@ async function handleAlert(location, alertType, alertData) {
         isResettable,
         pgClient,
       )
-
-      // debug
-      console.log(`creating new session: ${newSession}`)
 
       braveAlerter.startAlertSession({
         sessionId: newSession.id,
@@ -91,9 +85,6 @@ async function handleAlert(location, alertType, alertData) {
 
       currentSession.numberOfAlerts += 1 // increase the number of alerts for this session
       currentSession.isResettable = isResettable
-
-      // debug
-      console.log(`updating existing session to: ${currentSession}`)
 
       db.saveSession(currentSession, pgClient)
 

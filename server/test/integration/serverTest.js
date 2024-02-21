@@ -28,7 +28,7 @@ const radar_coreID = 'radar_particlecoreid1'
 const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 const badpassword = 'badpassword'
 
-const alertData = { numberOfAlerts: 1 }
+const alertData = '{"numberOfAlerts": 1}'
 
 describe('Brave Sensor server', () => {
   beforeEach(async () => {

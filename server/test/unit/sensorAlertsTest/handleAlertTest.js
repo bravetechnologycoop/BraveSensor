@@ -55,12 +55,12 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession').returns(this.session)
       sandbox.stub(db, 'saveSession')
 
-      await handleAlert(this.location, alertType, { numberOfAlerts: 1 })
+      await handleAlert(this.location, alertType, '{"numberOfAlerts": 1}')
     })
 
     it('should log the alert', () => {
       expect(helpers.log).to.be.calledWithExactly(
-        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}',
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts": 1}',
       )
     })
 
@@ -129,12 +129,12 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession').returns(this.session)
       sandbox.stub(db, 'saveSession')
 
-      await handleAlert(this.location, alertType, { numberOfAlerts: 1 })
+      await handleAlert(this.location, alertType, '{"numberOfAlerts": 1}')
     })
 
     it('should log the alert', () => {
       expect(helpers.log).to.be.calledWithExactly(
-        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}',
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts": 1}',
       )
     })
 
@@ -206,12 +206,12 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession')
       sandbox.stub(db, 'saveSession')
 
-      await handleAlert(this.location, alertType, { numberOfAlerts: 1 })
+      await handleAlert(this.location, alertType, '{"numberOfAlerts": 1}')
     })
 
     it('should log the alert', () => {
       expect(helpers.log).to.be.calledWithExactly(
-        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":1}',
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts": 1}',
       )
     })
 
@@ -263,12 +263,12 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession')
       sandbox.stub(db, 'saveSession')
 
-      await handleAlert(this.location, alertType, { numberOfAlerts: numberOfAlertsToAcceptResetRequest })
+      await handleAlert(this.location, alertType, `{"numberOfAlerts": ${numberOfAlertsToAcceptResetRequest}}`)
     })
 
     it('should log the alert', () => {
       expect(helpers.log).to.be.calledWithExactly(
-        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":7}',
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts": 7}',
       )
     })
 
@@ -320,12 +320,12 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
       sandbox.stub(db, 'createSession')
       sandbox.stub(db, 'saveSession')
 
-      await handleAlert(this.location, alertType, { numberOfAlerts: numberOfAlertsToAcceptResetRequest + 1 })
+      await handleAlert(this.location, alertType, `{"numberOfAlerts": ${numberOfAlertsToAcceptResetRequest + 1}}`)
     })
 
     it('should log the alert', () => {
       expect(helpers.log).to.be.calledWithExactly(
-        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts":8}',
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: {"numberOfAlerts": 8}',
       )
     })
 
