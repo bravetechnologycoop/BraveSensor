@@ -14,13 +14,13 @@ the code was deployed.
 
 ### Added
 
-- Number of alerts variable to state 3 of firmware which increments for every alert generated without a state change (CU-86drfmvrj).
-- Data sent from sensor in a Stillness Alert which includes the number of alerts generated while in state 3 (CU-86drfmvrj).
-- Logic that sets the `is_resettable` column to true for a given session if the number of alerts sent in a sensor alert exceeds a threshold (CU-86drfmvrj).
+- `number_of_alerts_published` variable which represents the number of alerts published while in state 2 and state 3 of firmware (CU-86drfmvrj).
+- Alert data in Stillness and Duration alerts published from sensors in state 2 or state 3 (CU-86drfmvrj).
+- `is_resettable` boolean column to sessions: represents if `numberOfAlertsPublished` in alert data exceeds the threshold `SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST` (CU-86drfmvrj).
 
 ### Changed
 
-- Chatbot reset flow to be permitted if `is_resettable` column is true for a given session (CU-86drfmvrj).
+- Chatbot reset flow to occur if and only if `is_resettable` column is true for a given session (CU-86drfmvrj).
 
 ## [10.7.0] - 2024-01-30
 
