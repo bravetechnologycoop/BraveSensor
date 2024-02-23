@@ -21,6 +21,7 @@ the code was deployed.
 ### Changed
 
 - Chatbot reset flow to occur if and only if `is_resettable` column is true for a given session (CU-86drfmvrj).
+- Firmware to compile for Device OS 4.2.0 (CU-860r9cvdy).
 
 ## [10.7.0] - 2024-01-30
 
