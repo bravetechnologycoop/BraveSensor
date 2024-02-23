@@ -180,7 +180,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
     })
   })
 
-  describe('given an alert for a not-stale session that has not been responded to, with not enough (<) alerts to accept a reset request', () => {
+  describe('given an alert for an existing session that has not been responded to, with not enough (<) alerts to accept a reset request', () => {
     beforeEach(async () => {
       this.location = locationFactory({})
       this.session = sessionFactory({
@@ -237,7 +237,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
     })
   })
 
-  describe('given an alert for a not-stale session that has not been responded to, with enough (===) alerts to accept a reset request', () => {
+  describe('given an alert for an existing session that has not been responded to, with enough (===) alerts to accept a reset request', () => {
     beforeEach(async () => {
       this.location = locationFactory({})
       this.session = sessionFactory({
@@ -294,7 +294,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
     })
   })
 
-  describe('given an alert for a not-stale session that has not been responded to, with more than enough (>) alerts to accept a reset request', () => {
+  describe('given an alert for an existing session that has not been responded to, with more than enough (>) alerts to accept a reset request', () => {
     beforeEach(async () => {
       this.location = locationFactory({})
       this.session = sessionFactory({
@@ -348,6 +348,67 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         this.location.phoneNumber,
         "An additional Test alert was generated at fakeLocationName.\n\nWe noticed that many alerts are being sent from fakeLocationName. Please respond with 'ok' once you have checked on it, or 'reset' to reset the device if you believe these to be false alerts.",
       )
+    })
+  })
+
+  describe('given an alert for a new session from an old sensor, where alert data is "stillness alert!!!"', () => {
+    beforeEach(async () => {
+      this.location = locationFactory({})
+      this.session = sessionFactory({ chatbotState: CHATBOT_STATE.STARTED, alertType })
+
+      sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(null)
+      sandbox.stub(db, 'getCurrentTime')
+      sandbox.stub(db, 'createSession').returns(this.session)
+      sandbox.stub(db, 'saveSession')
+
+      await handleAlert(this.location, alertType, 'stillness alert!!!')
+    })
+
+    it('should log the alert', () => {
+      expect(helpers.log).to.be.calledWithExactly(
+        'Test Alert for: fakeLocationid Display Name: fakeLocationName CoreID: fakeRadarParticleId Data: stillness alert!!!',
+      )
+    })
+
+    it('should create a new session with chatbot state STARTED', () => {
+      expect(db.createSession).to.be.calledWithExactly(
+        this.location.locationid,
+        undefined,
+        CHATBOT_STATE.STARTED,
+        alertType,
+        undefined,
+        undefined,
+        undefined,
+        false,
+        pgClient,
+      )
+    })
+
+    it('should start a new alert session', () => {
+      expect(braveAlerter.startAlertSession).to.be.calledWithExactly({
+        sessionId: this.session.id,
+        toPhoneNumbers: this.location.client.responderPhoneNumbers,
+        fromPhoneNumber: this.location.phoneNumber,
+        deviceName: this.location.displayName,
+        alertType,
+        language: this.location.client.language,
+        t,
+        message: "This is a Test alert. Please check on fakeLocationName. Please respond with 'ok' once you have checked on it.",
+        reminderTimeoutMillis: this.location.client.reminderTimeout * 1000,
+        fallbackTimeoutMillis: this.location.client.fallbackTimeout * 1000,
+        reminderMessage: 'This is a reminder to check on fakeLocationName',
+        fallbackMessage: 'An alert to check on fakeLocationName was not responded to. Please check on it.',
+        fallbackToPhoneNumbers: this.location.client.fallbackPhoneNumbers,
+        fallbackFromPhoneNumber: this.location.client.fromPhoneNumber,
+      })
+    })
+
+    it('should not update an existing session', () => {
+      expect(db.saveSession).to.not.be.called
+    })
+
+    it('should not send an alert session update for an existing session', () => {
+      expect(braveAlerter.sendAlertSessionUpdate).to.not.be.called
     })
   })
 })
