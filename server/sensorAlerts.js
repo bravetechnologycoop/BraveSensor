@@ -44,10 +44,10 @@ async function handleAlert(location, alertType, alertData) {
     // This check is a safeguard in the case that an old sensor generates an alert before upgrading to a version that sends useful alert data.
     if (typeof parsedAlertData === 'object') {
       // boolean value of whether the sensor is resettable (number of alerts exceeds threshold)
-      // NOTE: parsedAlertData.numberOfAlerts is different to the session column number_of_alerts. It represents the number of alerts generated
-      //   while the sensor is in state 3 (sensor is seeing stillness, which is terminated only by the door opening), not the number of alerts
-      //   in a server-side session (number of alerts received since the session began).
-      isResettable = parsedAlertData.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+      // NOTE: parsedAlertData.numberOfAlertsPublished is different to the session column number_of_alerts. It represents the number of alerts
+      //   published while the sensor is in state 2 or state 3 (the bathroom is occupied and the door is closed, which is terminated only by
+      //   the door opening), not the number of alerts in a server-side session (number of alerts received since the session began).
+      isResettable = parsedAlertData.numberOfAlertsPublished >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
     }
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {

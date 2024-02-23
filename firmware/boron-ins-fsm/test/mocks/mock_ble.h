@@ -10,9 +10,8 @@
 #include "../inc/spark_wiring_vector.h"
 
 // Defines fake BleAdvertisingDataType values
-enum class BleAdvertisingDataType : uint8_t {
-    MANUFACTURER_SPECIFIC_DATA
-};
+enum class BleAdvertisingDataType : uint8_t
+{ MANUFACTURER_SPECIFIC_DATA };
 
 // Fake class for BleAddress object
 class BleAddress {

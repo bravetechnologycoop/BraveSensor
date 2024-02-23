@@ -102,8 +102,8 @@ function sessionFactory(overrides = {}) {
     overrides.incidentCategory !== undefined ? overrides.incidentCategory : 'Overdose',
     overrides.respondedAt !== undefined ? overrides.respondedAt : new Date('2021-10-05T20:20:33.000Z'),
     overrides.respondedByPhoneNumber !== undefined ? overrides.respondedByPhoneNumber : null,
-    overrides.location !== undefined ? overrides.location : locationFactory(),
     overrides.isResettable !== undefined ? overrides.isResettable : false,
+    overrides.location !== undefined ? overrides.location : locationFactory(),
   )
 }
 
