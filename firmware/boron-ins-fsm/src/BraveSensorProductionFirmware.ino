@@ -11,7 +11,7 @@
 #include "tpl5010watchdog.h"
 
 #define DEBUG_LEVEL            LOG_LEVEL_INFO
-#define BRAVE_FIRMWARE_VERSION 12  // see versioning notes in the readme
+#define BRAVE_FIRMWARE_VERSION 10070  // see versioning notes in the readme
 
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);  // must be an int, see versioning notes above
 SYSTEM_THREAD(ENABLED);
