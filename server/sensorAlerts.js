@@ -1,9 +1,13 @@
 // Third-party dependencies
 const { t } = require('i18next')
+const Validator = require('express-validator')
 
 // In-house dependencies
-const { CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const SENSOR_EVENT = require('./SensorEventEnum')
 const db = require('./db/db')
+
+const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
 let braveAlerter
 
@@ -11,9 +15,11 @@ function setup(braveAlerterObj) {
   braveAlerter = braveAlerterObj
 }
 
-async function handleAlert(location, alertType) {
+async function handleAlert(location, alertType, alertData) {
   const alertTypeDisplayName = helpers.getAlertTypeDisplayName(alertType, location.client.language, t)
-  helpers.log(`${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId}`)
+  helpers.log(
+    `${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.radarCoreId} Data: ${alertData}`,
+  )
 
   let pgClient
 
@@ -29,6 +35,26 @@ async function handleAlert(location, alertType) {
     const currentTime = await db.getCurrentTime(pgClient)
     const client = location.client
 
+    // default to this sensor not being resettable
+    let isResettable = false
+
+    // Sensors with version <= 10.7.0 will send alert data that is a string with no particularly useful information.
+    // JSON.parse(alertData) should throw in this case, where isResettable should default to false.
+    try {
+      const parsedAlertData = JSON.parse(alertData)
+
+      if (parsedAlertData.numberOfAlertsPublished) {
+        // boolean value of whether the sensor is resettable (number of alerts exceeds threshold)
+        // NOTE: parsedAlertData.numberOfAlertsPublished is different to the session column number_of_alerts. It represents the number of alerts
+        //   published while the sensor is in state 2 or state 3 (the bathroom is occupied and the door is closed, which is terminated only by
+        //   the door opening), not the number of alerts in a server-side session (number of alerts received since the session began).
+        isResettable = parsedAlertData.numberOfAlertsPublished >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+      }
+    } catch (error) {
+      // default to isResettable false
+      isResettable = false
+    }
+
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
       // this session doesn't exist; create new session
       const newSession = await db.createSession(
@@ -39,6 +65,7 @@ async function handleAlert(location, alertType) {
         undefined,
         undefined,
         undefined,
+        isResettable,
         pgClient,
       )
 
@@ -50,7 +77,11 @@ async function handleAlert(location, alertType) {
         alertType: newSession.alertType,
         language: client.language,
         t,
-        message: t('alertStart', { lng: client.language, alertTypeDisplayName, deviceDisplayName: location.displayName }),
+        message: t(isResettable ? 'alertStartAcceptResetRequest' : 'alertStart', {
+          lng: client.language,
+          alertTypeDisplayName,
+          deviceDisplayName: location.displayName,
+        }),
         reminderTimeoutMillis: client.reminderTimeout * 1000,
         fallbackTimeoutMillis: client.fallbackTimeout * 1000,
         reminderMessage: t('alertReminder', { lng: client.language, deviceDisplayName: location.displayName }),
@@ -60,13 +91,13 @@ async function handleAlert(location, alertType) {
       })
     } else {
       // this session already exists; this is an additional alert
-      // increase the number of alerts for this session
-      currentSession.numberOfAlerts += 1
+
+      currentSession.numberOfAlerts += 1 // increase the number of alerts for this session
+      currentSession.isResettable = isResettable
+
       db.saveSession(currentSession, pgClient)
 
-      // boolean value of whether a request to reset should be accepted
-      const acceptResetRequest = currentSession.numberOfAlerts >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
-      const alertMessage = t(acceptResetRequest ? 'alertAcceptResetRequest' : 'alertAdditionalAlert', {
+      const alertMessage = t(isResettable ? 'alertAdditionalAlertAcceptResetRequest' : 'alertAdditionalAlert', {
         lng: client.language,
         alertTypeDisplayName,
         deviceDisplayName: location.displayName,
@@ -88,7 +119,62 @@ async function handleAlert(location, alertType) {
   }
 }
 
+const validateSensorEvent = Validator.body(['coreid', 'event', 'api_key', 'data']).exists()
+
+async function handleSensorEvent(request, response) {
+  try {
+    const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
+
+    if (validationErrors.isEmpty()) {
+      const apiKey = request.body.api_key
+
+      if (particleWebhookAPIKey === apiKey) {
+        let alertType
+        const coreId = request.body.coreid
+        const sensorEvent = request.body.event
+        if (sensorEvent === SENSOR_EVENT.DURATION) {
+          alertType = ALERT_TYPE.SENSOR_DURATION
+        } else if (sensorEvent === SENSOR_EVENT.STILLNESS) {
+          alertType = ALERT_TYPE.SENSOR_STILLNESS
+        } else {
+          const errorMessage = `Bad request to ${request.path}: Invalid event type`
+          helpers.logError(errorMessage)
+        }
+        const alertData = request.body.data
+
+        const location = await db.getLocationFromParticleCoreID(coreId)
+        if (!location) {
+          const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
+          helpers.logError(errorMessage)
+          // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+          response.status(200).json(errorMessage)
+        } else {
+          if (location.client.isSendingAlerts && location.isSendingAlerts) {
+            await handleAlert(location, alertType, alertData)
+          }
+          response.status(200).json('OK')
+        }
+      } else {
+        const errorMessage = `Access not allowed`
+        helpers.logError(errorMessage)
+        // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+        response.status(200).json(errorMessage)
+      }
+    } else {
+      const errorMessage = `Bad request to ${request.path}: ${validationErrors.array()}`
+      helpers.logError(errorMessage)
+      // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+      response.status(200).json(errorMessage)
+    }
+  } catch (err) {
+    const errorMessage = `Error calling ${request.path}: ${err.toString()}`
+    helpers.logError(errorMessage)
+    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+  }
+}
+
 module.exports = {
   setup,
-  handleAlert,
+  validateSensorEvent,
+  handleSensorEvent,
 }

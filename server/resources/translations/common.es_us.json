@@ -1,11 +1,12 @@
 {
-  "alertAcceptResetRequest": "Se generó una alerta adicional de {{ alertTypeDisplayName }} en {{ deviceDisplayName }}.\n\nNotamos que muchas alertas se envían desde {{ deviceDisplayName }}. Responda con 'ok' una vez que lo haya verificado, o 'reinicializar' para restablecer el dispositivo si cree que no funciona correctamente.",
   "alertAcknowledged": "Otro personal de auxilio ha confirmado esta solicitud. (No necesita responder a este mensaje).",
   "alertAdditionalAlert": "Se generó una alerta {{ alertTypeDisplayName }} adicional en {{ deviceDisplayName }}",
+  "alertAdditionalAlertAcceptResetRequest": "Se generó una alerta adicional de {{ alertTypeDisplayName }} en {{ deviceDisplayName }}.\n\nNotamos que muchas alertas se envían desde {{ deviceDisplayName }}. Responda con 'ok' una vez que lo haya verificado, o 'reinicializar' para restablecer el dispositivo si cree que no funciona correctamente.",
   "alertCompleted": "¡Gracias!. Esta sesión ya está completa. (No necesita responder a este mensaje).",
   "alertFallback": "No se respondió a una alerta de verificación de {{ deviceDisplayName }}. Por favor, verifíquelo.",
   "alertReminder": "Este es un recordatorio para que verifique {{ deviceDisplayName }}",
   "alertStart": "Esta es una alerta {{ alertTypeDisplayName }}. Verifique en {{ deviceDisplayName }}. Responda con 'ok' una vez que lo haya verificado.",
+  "alertStartAcceptResetRequest": "Esta es una alerta {{ alertTypeDisplayName }}. Verifique en {{ deviceDisplayName }}.\n\nNotamos que muchas alertas se envían desde {{ deviceDisplayName }}. Responda con 'ok' una vez que lo haya verificado, o 'reinicializar' para restablecer el dispositivo si cree que no funciona correctamente.",
   "clientMessageForRequestToReset": "Reinicializar",
   "errorNoSession": "Error: No se encontró ninguna sesión activa",
   "incidentCategorized": "El incidente se clasificó como {{ incidentCategory }}.\n\nGracias. Esta sesión ya está completa. (No necesita responder a este mensaje).",

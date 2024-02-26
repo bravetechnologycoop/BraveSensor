@@ -102,11 +102,13 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
 1. If you haven't already, run `git checkout production && git pull origin production` to get the latest version of the the code
 
-1. Click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
+1. Click Target --> "Configure for device" and type `4.2.0` to choose the OS and then `boron` to choose the device
 
 1. Click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
 
-1. Copy the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Rename to `v[version number]_dev.bin` (for example `v5010_dev.bin`)
+1. Copy the generated `/target/4.2.0/boron/boron-ins-fsm.bin` file to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Rename to `v[version number].bin`, e.g., `v10080.bin`.
+
+1. Keep this binary file for later; you will need it for deploying the firmware on Production.
 
 1. In your browser navigate to Particle Console --> Sandbox --> BetaTest Borons --> Firmware
 
@@ -114,7 +116,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
       - Version number = [version number]
 
-      - Title = v[version number] [environment]
+      - Title = v[version number]
 
       - Description - [leave blank]
 
@@ -151,17 +153,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
 ## 6. Deploy the firmware on Production
 
-1. On your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
-
-1. If you haven't already, run `git checkout production && git pull origin production` to get the latest version of the the code
-
-1. In `BraveSensorProductionFirmware.ino`, change `BRAVE_PRODUCT_ID` to the ID of the "Production Sensor Devices" project (`15479`) [NOTE: do NOT commit this change]
-
-1. If you haven't already, click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
-
-1. If you haven't already, click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
-
-1. Copy the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Rename to `v[version number]_production.bin` (for example `v5010_production.bin`)
+1. Locate the binary file generated in step 4.
 
 1. In your browser navigate to Particle Console --> Brave Technology Coop --> Production Sensor Devices --> Firmware
 
@@ -169,7 +161,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
       - Version number = [version number]
 
-      - Title = v[version number] [environment]
+      - Title = v[version number]
 
       - Description - [leave blank]
 

@@ -12,9 +12,16 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- `number_of_alerts_published` variable which represents the number of alerts published while in state 2 and state 3 of firmware (CU-86drfmvrj).
+- Alert data in Stillness and Duration alerts published from sensors in state 2 or state 3 (CU-86drfmvrj).
+- `is_resettable` boolean column to sessions: represents if `numberOfAlertsPublished` in alert data exceeds the threshold `SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST` (CU-86drfmvrj).
+
 ### Changed
 
-- Travis CI PostgreSQL port from 5433 to 5432.
+- Chatbot reset flow to occur if and only if `is_resettable` column is true for a given session (CU-86drfmvrj).
+- Firmware to compile for Device OS 4.2.0 (CU-860r9cvdy).
 
 ## [10.7.0] - 2024-01-30
 

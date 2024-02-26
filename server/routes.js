@@ -4,7 +4,7 @@ const api = require('./api')
 const dashboard = require('./dashboard')
 const pa = require('./pa')
 const vitals = require('./vitals')
-const particle = require('./particle')
+const sensorAlerts = require('./sensorAlerts')
 
 function configureRoutes(app) {
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)
@@ -28,7 +28,7 @@ function configureRoutes(app) {
   app.post('/login', dashboard.submitLogin)
 
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
-  app.post('/api/sensorEvent', particle.validateSensorEvent, particle.handleSensorEvent)
+  app.post('/api/sensorEvent', sensorAlerts.validateSensorEvent, sensorAlerts.handleSensorEvent)
 
   app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
   app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)

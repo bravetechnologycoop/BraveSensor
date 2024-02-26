@@ -27,7 +27,7 @@ function createSessionFromRow(r, allLocations) {
   const location = allLocations.filter(l => l.locationid === r.locationid)[0]
 
   // prettier-ignore
-  return new Session(r.id, r.chatbot_state, r.alert_type, r.number_of_alerts, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number, location)
+  return new Session(r.id, r.chatbot_state, r.alert_type, r.number_of_alerts, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number, r.is_resettable, location)
 }
 
 function createClientFromRow(r) {
@@ -532,17 +532,27 @@ async function getAllSessionsFromLocation(locationid, pgClient) {
 }
 
 // Creates a new session for a specific location
-async function createSession(locationid, incidentCategory, chatbotState, alertType, createdAt, respondedAt, respondedByPhoneNumber, pgClient) {
+async function createSession(
+  locationid,
+  incidentCategory,
+  chatbotState,
+  alertType,
+  createdAt,
+  respondedAt,
+  respondedByPhoneNumber,
+  isResettable,
+  pgClient,
+) {
   if (createdAt !== undefined) {
     try {
       const results = await helpers.runQuery(
         'createSession',
         `
-        INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, created_at, responded_at, responded_by_phone_number)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, created_at, responded_at, responded_by_phone_number, is_resettable)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *
         `,
-        [locationid, incidentCategory, chatbotState, alertType, createdAt, respondedAt, respondedByPhoneNumber],
+        [locationid, incidentCategory, chatbotState, alertType, createdAt, respondedAt, respondedByPhoneNumber, isResettable],
         pool,
         pgClient,
       )
@@ -643,8 +653,8 @@ async function saveSession(session, pgClient) {
       'saveSessionUpdate',
       `
       UPDATE sessions
-      SET locationid = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5, responded_by_phone_number = $6, number_of_alerts = $7
-      WHERE id = $8
+      SET locationid = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5, responded_by_phone_number = $6, number_of_alerts = $7, is_resettable = $8
+      WHERE id = $9
       `,
       [
         session.location.locationid,
@@ -654,6 +664,7 @@ async function saveSession(session, pgClient) {
         session.respondedAt,
         session.respondedByPhoneNumber,
         session.numberOfAlerts,
+        session.isResettable,
         session.id,
       ],
       pool,
