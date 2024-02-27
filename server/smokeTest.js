@@ -41,6 +41,7 @@ async function stillnessEvent(coreID) {
       coreid: coreID,
       event: SENSOR_EVENT.STILLNESS,
       api_key: webhookAPIKey,
+      data: '{"numberOfAlertsPublished": 1}',
     })
   } catch (e) {
     helpers.log(e)
