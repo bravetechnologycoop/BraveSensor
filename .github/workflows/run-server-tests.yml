@@ -41,4 +41,5 @@ jobs:
         with:
           node-version-file: '.nvmrc'
       - run: npm --prefix server ci
+      - run: npm --prefix server run lint
       - run: npm --prefix server run test
