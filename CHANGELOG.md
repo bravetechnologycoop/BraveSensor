@@ -22,6 +22,7 @@ the code was deployed.
 
 - Chatbot reset flow to occur if and only if `is_resettable` column is true for a given session (CU-86drfmvrj).
 - Firmware to compile for Device OS 4.2.0 (CU-860r9cvdy).
+- Initial and reminder Sensor disconnection messages to specify a "15 to 20 minute" window instead of "shortly after" to expect a reconnection message (CU-86dquwxnu).
 
 ## [10.7.0] - 2024-01-30
 
