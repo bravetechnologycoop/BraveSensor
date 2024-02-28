@@ -247,7 +247,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
 1. In `BraveSensorProductionFirmware.ino`, change `BRAVE_FIRMWARE_VERSION` to an unused version number less than `7000` [NOTE: do NOT commit this change]
 
-1. Click Target --> "Configure for device" and type `3.3.1` to choose the OS and then `boron` to choose the device
+1. Click Target --> "Configure for device" and type `4.2.0` to choose the OS and then `boron` to choose the device
 
 1. Click Compile --> "Local Compile"
 
@@ -261,7 +261,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
       - Description - [leave blank]
 
-      - Drag and drop or upload the generated `/target/3.3.1/boron/boron-ins-fsm.bin` file
+      - Drag and drop or upload the generated `/target/4.2.0/boron/boron-ins-fsm.bin` file
 
 1. Go to Devices
 
