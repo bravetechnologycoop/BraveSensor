@@ -74,9 +74,6 @@ class BraveAlerterConfigurator {
         return
       }
       session = await db.getSessionWithSessionId(alertSession.sessionId, pgClient)
-      console.log('--- FOUND SESSION FOR ALERT SESSION CHANGED CALLBACK ---')
-      console.log(session)
-      console.log(`IS RESETTABLE: ${session.isResettable}`)
 
       if (session) {
         // If the session has no respondedByPhoneNumber, then this is the first SMS response, so assign it as the session's respondedByPhoneNumber

@@ -567,11 +567,11 @@ async function createSession(
       const results = await helpers.runQuery(
         'createSession',
         `
-        INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, responded_at, responded_by_phone_number)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, responded_at, responded_by_phone_number, is_resettable)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *
         `,
-        [locationid, incidentCategory, chatbotState, alertType, respondedAt, respondedByPhoneNumber],
+        [locationid, incidentCategory, chatbotState, alertType, respondedAt, respondedByPhoneNumber, isResettable],
         pool,
         pgClient,
       )

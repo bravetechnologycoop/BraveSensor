@@ -69,10 +69,6 @@ async function handleAlert(location, alertType, alertData) {
         pgClient,
       )
 
-      console.log('--- Created new session ---')
-      console.log(newSession)
-      console.log(`IS RESETTABLE: ${isResettable}`)
-
       braveAlerter.startAlertSession({
         sessionId: newSession.id,
         toPhoneNumbers: client.responderPhoneNumbers,
@@ -100,10 +96,6 @@ async function handleAlert(location, alertType, alertData) {
       currentSession.isResettable = isResettable
 
       db.saveSession(currentSession, pgClient)
-
-      console.log('--- Saved Session ---')
-      console.log(currentSession)
-      console.log(`IS RESETTABLE: ${isResettable}`)
 
       const alertMessage = t(isResettable ? 'alertAdditionalAlertAcceptResetRequest' : 'alertAdditionalAlert', {
         lng: client.language,
