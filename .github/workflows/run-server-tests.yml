@@ -34,12 +34,28 @@ env:
 jobs:
   ServerTests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:12
+        env:
+          POSTGRES_DB: brave
+          POSTGRES_PASSWORD: actionspassword
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: brave
     steps:
       - uses: actions/checkout@v4
+      - name: Setup PostgreSQL
+        run: |
+          cd server
+          ./setup_postgresql.sh $PG_PASSWORD $PG_USER $PG_HOST $PG_DATABASE $PG_PORT
+          cd ..
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-      - run: npm --prefix server ci
-      - run: npm --prefix server run lint
-      - run: npm --prefix server run test
+      - name: Install Node.js packages
+        run: npm --prefix server ci
+      - name: Run server tests
+        run: |
+          npm --prefix server run lint
+          npm --prefix server run test
