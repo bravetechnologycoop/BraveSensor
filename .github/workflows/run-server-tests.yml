@@ -5,15 +5,10 @@ run-name: Running Server Tests for ${{ github.ref }}
 on: [push]
 
 env:
-  PG_USER: brave
   PG_USER_TEST: brave
-  PG_DATABASE: brave
   PG_DATABASE_TEST: brave
-  PG_PASSWORD: actionspassword
   PG_PASSWORD_TEST: actionspassword
-  PG_PORT: 5432
-  PG_PORT_TEST: 5432
-  PG_HOST: localhost
+  PG_PORT_TEST: 5433
   PG_HOST_TEST: localhost
   WEB_USERNAME_TEST: ActionsDashboardUsername
   PASSWORD_TEST: ActionsDashboardPassword
@@ -34,20 +29,13 @@ env:
 jobs:
   ServerTests:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:12
-        env:
-          POSTGRES_DB: brave
-          POSTGRES_PASSWORD: actionspassword
-          POSTGRES_PORT: 5432
-          POSTGRES_USER: brave
     steps:
       - uses: actions/checkout@v4
       - name: Setup PostgreSQL
         run: |
+          sudo systemctl start posgresql
           cd server
-          ./setup_postgresql.sh $PG_PASSWORD $PG_USER $PG_HOST $PG_DATABASE $PG_PORT
+          ./setup_postgresql.sh $PG_PASSWORD_TEST $PG_USER_TEST $PG_HOST_TEST $PG_DATABASE_TEST $PG_PORT_TEST
           cd ..
       - name: Use Node.js
         uses: actions/setup-node@v4
