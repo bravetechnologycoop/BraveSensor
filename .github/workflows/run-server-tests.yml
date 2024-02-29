@@ -7,8 +7,8 @@ on: [push]
 env:
   PG_USER_TEST: brave
   PG_DATABASE_TEST: brave
-  PG_PASSWORD_TEST: actionspassword
-  PG_PORT_TEST: 5433
+  PG_PASSWORD_TEST: actions
+  PG_PORT_TEST: 5432
   PG_HOST_TEST: localhost
   WEB_USERNAME_TEST: ActionsDashboardUsername
   PASSWORD_TEST: ActionsDashboardPassword
@@ -29,11 +29,21 @@ env:
 jobs:
   ServerTests:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:12
+        env:
+          POSTGRES_USER: brave
+          POSTGRES_DB: brave
+          POSTGRES_PASSWORD: actions
+        ports:
+          - 5432:5432/tcp
+
     steps:
       - uses: actions/checkout@v4
       - name: Setup PostgreSQL
         run: |
-          sudo systemctl start posgresql
           cd server
           ./setup_postgresql.sh $PG_PASSWORD_TEST $PG_USER_TEST $PG_HOST_TEST $PG_DATABASE_TEST $PG_PORT_TEST
           cd ..
