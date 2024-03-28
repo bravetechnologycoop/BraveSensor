@@ -2,8 +2,7 @@
 const pg = require('pg')
 
 // In-house dependencies
-const { ALERT_TYPE, CHATBOT_STATE, Client, Session, helpers } = require('brave-alert-lib')
-const Location = require('../Location')
+const { ALERT_TYPE, CHATBOT_STATE, Client, DEVICE_TYPE, Device, Session, helpers } = require('brave-alert-lib')
 const SensorsVital = require('../SensorsVital')
 
 const pool = new pg.Pool({
@@ -23,30 +22,79 @@ pool.on('error', err => {
   helpers.logError(`unexpected database error: ${err.toString()}`)
 })
 
-function createSessionFromRow(r, allLocations) {
-  const location = allLocations.filter(l => l.locationid === r.locationid)[0]
+function createSessionFromRow(r, allDevices) {
+  const device = allDevices.filter(d => d.id === r.device_id)[0]
 
-  // prettier-ignore
-  return new Session(r.id, r.chatbot_state, r.alert_type, r.number_of_alerts, r.created_at, r.updated_at, r.incident_category, r.responded_at, r.responded_by_phone_number, r.is_resettable, location)
+  return new Session(
+    r.id,
+    r.chatbot_state,
+    r.alert_type,
+    r.number_of_alerts,
+    r.created_at,
+    r.updated_at,
+    r.incident_category,
+    r.responded_at,
+    r.responded_by_phone_number,
+    r.is_resettable,
+    device,
+  )
 }
 
 function createClientFromRow(r) {
-  // prettier-ignore
-  return new Client(r.id, r.display_name, r.responder_phone_numbers, r.reminder_timeout, r.fallback_phone_numbers, r.from_phone_number, r.fallback_timeout, r.heartbeat_phone_numbers, r.incident_categories, r.is_displayed, r.is_sending_alerts, r.is_sending_vitals, r.language, r.created_at, r.updated_at)
+  return new Client(
+    r.id,
+    r.display_name,
+    r.responder_phone_numbers,
+    r.reminder_timeout,
+    r.fallback_phone_numbers,
+    r.from_phone_number,
+    r.fallback_timeout,
+    r.heartbeat_phone_numbers,
+    r.incident_categories,
+    r.is_displayed,
+    r.is_sending_alerts,
+    r.is_sending_vitals,
+    r.language,
+    r.created_at,
+    r.updated_at,
+  )
 }
 
-function createLocationFromRow(r, allClients) {
+function createDeviceFromRow(r, allClients) {
   const client = allClients.filter(c => c.id === r.client_id)[0]
 
-  // prettier-ignore
-  return new Location(r.locationid, r.display_name, r.movement_threshold, r.duration_timer, r.stillness_timer, r.sent_vitals_alert_at, r.radar_particlecoreid, r.phone_number, r.initial_timer, r.is_displayed, r.is_sending_alerts, r.is_sending_vitals, r.sent_low_battery_alert_at, r.door_id, r.is_in_debug_mode, r.created_at, r.updated_at, client)
+  return new Device(
+    r.id,
+    r.device_type,
+    r.locationid,
+    r.phone_number,
+    r.display_name,
+    r.serial_number,
+    r.sent_low_battery_alert_at,
+    r.sent_vitals_alert_at,
+    r.created_at,
+    r.updated_at,
+    r.is_displayed,
+    r.is_sending_alerts,
+    r.is_sending_vitals,
+    client,
+  )
 }
 
-function createSensorsVitalFromRow(r, allLocations) {
-  const location = allLocations.filter(l => l.locationid === r.locationid)[0]
+function createSensorsVitalFromRow(r, allSensors) {
+  const device = allSensors.filter(d => d.id === r.device_id)
 
-  // prettier-ignore
-  return new SensorsVital(r.id, r.missed_door_messages, r.is_door_battery_low, r.door_last_seen_at, r.reset_reason, r.state_transitions, r.created_at, r.is_tampered, location)
+  return new SensorsVital(
+    r.id,
+    r.missed_door_messages,
+    r.is_door_battery_low,
+    r.door_last_seen_at,
+    r.reset_reason,
+    r.state_transitions,
+    r.created_at,
+    r.is_tampered,
+    device,
+  )
 }
 
 async function rollbackTransaction(pgClient) {
@@ -86,7 +134,7 @@ async function runBeginTransactionWithRetries(retryCount) {
 
     await pgClient.query('BEGIN')
 
-    await pgClient.query('LOCK TABLE clients, sessions, locations')
+    await pgClient.query('LOCK TABLE clients, sessions, devices')
   } catch (e) {
     helpers.logError(`Error running the runBeginTransactionWithRetries query: ${e}`)
 
@@ -176,14 +224,16 @@ async function getActiveClients(pgClient) {
       FROM clients c
       INNER JOIN (
         SELECT DISTINCT client_id AS id
-        FROM locations
-        WHERE is_sending_alerts AND is_sending_vitals
-      ) AS l
-      ON c.id = l.id
+        FROM devices
+        WHERE device_type = $1
+        AND is_sending_alerts
+        AND is_sending_vitals
+      ) AS d
+      ON c.id = d.id
       WHERE c.is_sending_alerts AND c.is_sending_vitals
       ORDER BY c.display_name;
       `,
-      [],
+      [DEVICE_TYPE.DEVICE_SENSOR],
       pool,
       pgClient,
     )
@@ -198,15 +248,15 @@ async function getActiveClients(pgClient) {
   }
 }
 
-async function getLocations(pgClient) {
+async function getDevices(pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getLocations',
+      'getDevices',
       `
-      SELECT l.*
-      FROM locations AS l
-      LEFT JOIN clients AS c ON l.client_id = c.id
-      ORDER BY c.display_name, l.display_name
+      SELECT d.*
+      FROM devices AS d
+      LEFT JOIN clients AS c ON d.client_id = c.id
+      ORDER BY c.display_name, d.display_name
       `,
       [],
       pool,
@@ -218,7 +268,34 @@ async function getLocations(pgClient) {
     }
 
     const allClients = await getClients(pgClient)
-    return results.rows.map(r => createLocationFromRow(r, allClients))
+    return results.rows.map(r => createDeviceFromRow(r, allClients))
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+}
+
+async function getLocations(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLocations',
+      `
+      SELECT d.*
+      FROM devices AS d
+      LEFT JOIN clients AS c ON d.client_id = c.id
+      WHERE d.device_type = $1
+      ORDER BY c.display_name, d.display_name
+      `,
+      [DEVICE_TYPE.DEVICE_SENSOR],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined) {
+      return null
+    }
+
+    const allClients = await getClients(pgClient)
+    return results.rows.map(r => createDeviceFromRow(r, allClients))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -248,11 +325,12 @@ async function getDataForExport(pgClient) {
         x.country_subdivision AS "Country Subdivision",
         x.building_type AS "Building Type"
       FROM sessions s
-        LEFT JOIN locations l ON s.locationid = l.locationid
-        LEFT JOIN clients c on l.client_id = c.id
+        LEFT JOIN devices d ON s.locationid = d.locationid
+        LEFT JOIN clients c on d.client_id = c.id
         LEFT JOIN clients_extension x on x.client_id = c.id
+        WHERE d.device_type = $1
       `,
-      [],
+      [DEVICE_TYPE.DEVICE_SENSOR],
       pool,
       pgClient,
     )
@@ -334,8 +412,8 @@ async function getMostRecentSessionWithLocationid(locationid, pgClient) {
       return null
     }
 
-    const allLocations = await getLocations(pgClient)
-    return createSessionFromRow(results.rows[0], allLocations)
+    const allDevices = await getDevices(pgClient)
+    return createSessionFromRow(results.rows[0], allDevices)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -360,8 +438,8 @@ async function getSessionWithSessionId(id, pgClient) {
       return null
     }
 
-    const allLocations = await getLocations(pgClient)
-    return createSessionFromRow(results.rows[0], allLocations)
+    const allDevices = await getDevices(pgClient)
+    return createSessionFromRow(results.rows[0], allDevices)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -398,8 +476,8 @@ async function getClientWithSessionId(sessionid, pgClient) {
       `
       SELECT c.*
       FROM clients AS c
-      LEFT JOIN locations AS l ON c.id = l.client_id
-      LEFT JOIN sessions AS s ON l.locationid = s.locationid
+      LEFT JOIN devices AS d ON c.id = d.client_id
+      LEFT JOIN sessions AS s ON d.locationid = s.locationid
       WHERE s.id = $1
       `,
       [sessionid],
@@ -425,9 +503,9 @@ async function getMostRecentSessionWithPhoneNumbers(devicePhoneNumber, responder
       `
       SELECT s.*
       FROM sessions AS s
-      LEFT JOIN locations AS l ON s.locationid = l.locationid
-      LEFT JOIN clients AS c ON l.client_id = c.id
-      WHERE l.phone_number = $1
+      LEFT JOIN devices AS d ON s.locationid = d.locationid
+      LEFT JOIN clients AS c ON d.client_id = c.id
+      WHERE d.phone_number = $1
       AND $2 = ANY(c.responder_phone_numbers)
       ORDER BY s.created_at DESC
       LIMIT 1
@@ -441,8 +519,8 @@ async function getMostRecentSessionWithPhoneNumbers(devicePhoneNumber, responder
       return null
     }
 
-    const allLocations = await getLocations(pgClient)
-    return createSessionFromRow(results.rows[0], allLocations)
+    const allDevices = await getDevices(pgClient)
+    return createSessionFromRow(results.rows[0], allDevices)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -468,8 +546,8 @@ async function getHistoryOfSessions(locationid, pgClient) {
       return null
     }
 
-    const allLocations = await getLocations(pgClient)
-    return results.rows.map(r => createSessionFromRow(r, allLocations))
+    const allDevices = await getDevices(pgClient)
+    return results.rows.map(r => createSessionFromRow(r, allDevices))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -498,8 +576,8 @@ async function getUnrespondedSessionWithLocationId(locationid, pgClient) {
       return null
     }
 
-    const allLocations = await getLocations(pgClient)
-    return createSessionFromRow(results.rows[0], allLocations)
+    const allDevices = await getDevices(pgClient)
+    return createSessionFromRow(results.rows[0], allDevices)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -588,13 +666,13 @@ async function updateSentAlerts(locationid, sentalerts, pgClient) {
   try {
     const query = sentalerts
       ? `
-        UPDATE locations
+        UPDATE devices
         SET sent_vitals_alert_at = NOW()
         WHERE locationid = $1
         RETURNING *
       `
       : `
-        UPDATE locations
+        UPDATE devices
         SET sent_vitals_alert_at = NULL
         WHERE locationid = $1
         RETURNING *
@@ -607,7 +685,7 @@ async function updateSentAlerts(locationid, sentalerts, pgClient) {
     }
 
     const allClients = await getClients(pgClient)
-    return createLocationFromRow(results.rows[0], allClients)
+    return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -618,7 +696,7 @@ async function updateLowBatteryAlertTime(locationid, pgClient) {
     await helpers.runQuery(
       'updateLowBatteryAlertTime',
       `
-      UPDATE locations
+      UPDATE devices
       SET sent_low_battery_alert_at = NOW()
       WHERE locationid = $1
       `,
@@ -675,14 +753,14 @@ async function saveSession(session, pgClient) {
   }
 }
 
-// Retrieves the data from the locations table for a given location
+// Retrieves the data from the devices table for a given location
 async function getLocationData(locationid, pgClient) {
   try {
     const results = await helpers.runQuery(
       'getLocationData',
       `
       SELECT *
-      FROM locations
+      FROM devices
       WHERE locationid = $1
       `,
       [locationid],
@@ -695,23 +773,23 @@ async function getLocationData(locationid, pgClient) {
     }
 
     const allClients = await getClients(pgClient)
-    return createLocationFromRow(results.rows[0], allClients)
+    return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
 }
 
-// Retrieves the locationid corresponding to a particle device coreID
-async function getLocationFromParticleCoreID(coreID, pgClient) {
+// Retrieves the location corresponding to a given Particle core ID (serial number)
+async function getLocationWithSerialNumber(serialNumber, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getLocationFromParticleCoreID',
+      'getLocationWithSerialNumber',
       `
       SELECT *
-      FROM locations
-      WHERE radar_particlecoreid = $1
+      FROM devices
+      WHERE serial_number = $1
       `,
-      [coreID],
+      [serialNumber],
       pool,
       pgClient,
     )
@@ -721,7 +799,7 @@ async function getLocationFromParticleCoreID(coreID, pgClient) {
     }
 
     const allClients = await getClients(pgClient)
-    return createLocationFromRow(results.rows[0], allClients)
+    return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -733,11 +811,12 @@ async function getLocationsFromClientId(clientId, pgClient) {
       'getLocationsFromClientId',
       `
       SELECT *
-      FROM locations
+      FROM devices
       WHERE client_id = $1
+      AND device_type = $2
       ORDER BY display_name
       `,
-      [clientId],
+      [clientId, DEVICE_TYPE.DEVICE_SENSOR],
       pool,
       pgClient,
     )
@@ -748,7 +827,7 @@ async function getLocationsFromClientId(clientId, pgClient) {
     }
 
     const allClients = await getClients(pgClient)
-    return results.rows.map(r => createLocationFromRow(r, allClients))
+    return results.rows.map(r => createDeviceFromRow(r, allClients))
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -781,16 +860,12 @@ async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
   }
 }
 
-// Updates the locations table entry for a specific location with the new data
+// Updates the devices table entry for a specific device with the new data
 // eslint-disable-next-line prettier/prettier
 async function updateLocation(
   displayName,
-  radarCoreId,
+  serialNumber,
   phoneNumber,
-  movementThreshold,
-  durationTimer,
-  stillnessTimer,
-  initialTimer,
   isDisplayed,
   isSendingAlerts,
   isSendingVitals,
@@ -802,30 +877,22 @@ async function updateLocation(
     const results = await helpers.runQuery(
       'updateLocation',
       `
-      UPDATE locations
+      UPDATE devices
       SET
         display_name = $1,
-        radar_particlecoreid = $2,
+        serial_number = $2,
         phone_number = $3,
-        movement_threshold = $4,
-        duration_timer = $5,
-        stillness_timer = $6,
-        initial_timer = $7,
-        is_displayed = $8,
-        is_sending_alerts = $9,
-        is_sending_vitals = $10,
-        client_id = $11
-      WHERE locationid = $12
+        is_displayed = $4,
+        is_sending_alerts = $5,
+        is_sending_vitals = $6,
+        client_id = $7
+      WHERE locationid = $8
       RETURNING *
       `,
       [
         displayName,
         radarCoreId,
         phoneNumber,
-        movementThreshold,
-        durationTimer,
-        stillnessTimer,
-        initialTimer,
         isDisplayed,
         isSendingAlerts,
         isSendingVitals,
@@ -842,7 +909,7 @@ async function updateLocation(
 
     helpers.log(`Location '${locationid}' successfully updated`)
     const allClients = await getClients(pgClient)
-    return createLocationFromRow(results.rows[0], allClients)
+    return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -906,20 +973,20 @@ async function updateClient(
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, radarCoreId, phoneNumber, clientId, pgClient) {
+async function createLocationFromBrowserForm(locationid, displayName, serialNumber, phoneNumber, clientId, pgClient) {
   try {
     const results = await helpers.runQuery('createLocationFromBrowserForm',
       `
-      INSERT INTO locations(locationid, display_name, radar_particlecoreid, phone_number, is_in_debug_mode, is_displayed, is_sending_alerts, is_sending_vitals, client_id)
+      INSERT INTO devices(device_type, locationid, display_name, serial_number, phone_number, is_displayed, is_sending_alerts, is_sending_vitals, client_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
       `,
       [
+        DEVICE_TYPE.DEVICE_SENSOR,
         locationid,
         displayName,
-        radarCoreId,
+        serialNumber,
         phoneNumber,
-        false,
         true,
         false,
         false,
@@ -936,7 +1003,7 @@ async function createLocationFromBrowserForm(locationid, displayName, radarCoreI
     helpers.log(`New location inserted into Database: ${locationid}`)
 
     const allClients = await getClients(pgClient)
-    return createLocationFromRow(results.rows[0], allClients)
+    return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -945,20 +1012,14 @@ async function createLocationFromBrowserForm(locationid, displayName, radarCoreI
 // Adds a location table entry
 async function createLocation(
   locationid,
-  movementThreshold,
-  stillnessTimer,
-  durationTimer,
-  initialTimer,
   sentVitalsAlertAt,
   phoneNumber,
   displayName,
-  radarCoreId,
+  serialNumber,
   isDisplayed,
   isSendingAlerts,
   isSendingVitals,
   sentLowBatteryAlertAt,
-  doorId,
-  isInDebugMode,
   clientId,
   pgClient,
 ) {
@@ -966,26 +1027,21 @@ async function createLocation(
     const results = await helpers.runQuery(
       'createLocation',
       `
-      INSERT INTO locations(locationid, movement_threshold, stillness_timer, duration_timer, initial_timer, sent_vitals_alert_at, phone_number, display_name, radar_particlecoreid, is_displayed, is_sending_alerts, is_sending_vitals, sent_low_battery_alert_at, door_id, is_in_debug_mode, client_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      INSERT INTO devices(device_type, locationid, sent_vitals_alert_at, phone_number, display_name, serial_number, is_displayed, is_sending_alerts, is_sending_vitals, sent_low_battery_alert_at, client_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
       `,
       [
+        DEVICE_TYPE.DEVICE_SENSOR,
         locationid,
-        movementThreshold,
-        stillnessTimer,
-        durationTimer,
-        initialTimer,
         sentVitalsAlertAt,
         phoneNumber,
         displayName,
-        radarCoreId,
+        serialNumber,
         isDisplayed,
         isSendingAlerts,
         isSendingVitals,
         sentLowBatteryAlertAt,
-        doorId,
-        isInDebugMode,
         clientId,
       ],
       pool,
@@ -993,7 +1049,7 @@ async function createLocation(
     )
 
     const allClients = await getClients(pgClient)
-    return createLocationFromRow(results.rows[0], allClients)
+    return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
     helpers.log(err.toString())
   }
@@ -1053,12 +1109,13 @@ async function getRecentSensorsVitals(pgClient) {
     const results = await helpers.runQuery(
       'getRecentSensorsVitals',
       `
-      SELECT l.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at, sv.is_tampered
-      FROM locations l
-      LEFT JOIN sensors_vitals_cache sv on l.locationid = sv.locationid
+      SELECT d.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at, sv.is_tampered
+      FROM devices d
+      LEFT JOIN sensors_vitals_cache sv on d.locationid = sv.locationid
+      WHERE d.device_type = $1
       ORDER BY created_at
       `,
-      [],
+      [DEVICE_TYPE.DEVICE_SENSOR],
       pool,
       pgClient,
     )
@@ -1079,10 +1136,10 @@ async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
     const results = await helpers.runQuery(
       'getRecentSensorsVitalsWithClientId',
       `
-      SELECT l.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.is_tampered, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at
-      FROM locations l
-      LEFT JOIN sensors_vitals_cache sv on sv.locationid = l.locationid
-      WHERE l.client_id = $1
+      SELECT d.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.is_tampered, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at
+      FROM devices d
+      LEFT JOIN sensors_vitals_cache sv on sv.locationid = d.locationid
+      WHERE d.client_id = $1
       ORDER BY sv.created_at
       `,
       [clientId],
@@ -1238,17 +1295,17 @@ async function clearSessionsFromLocation(locationid, pgClient) {
   }
 }
 
-async function clearLocations(pgClient) {
+async function clearDevices(pgClient) {
   if (!helpers.isTestEnvironment()) {
-    helpers.log('warning - tried to clear locations table outside of a test environment!')
+    helpers.log('warning - tried to clear devices table outside of a test environment!')
     return
   }
 
   try {
     await helpers.runQuery(
-      'clearLocations',
+      'clearDevices',
       `
-      DELETE FROM locations
+      DELETE FROM devices
       `,
       [],
       pool,
@@ -1286,7 +1343,7 @@ async function clearLocation(locationid, pgClient) {
     await helpers.runQuery(
       'clearLocation: location',
       `
-      DELETE FROM locations
+      DELETE FROM devices
       WHERE locationid = $1
       `,
       [locationid],
