@@ -82,7 +82,7 @@ function createDeviceFromRow(r, allClients) {
 }
 
 function createSensorsVitalFromRow(r, allSensors) {
-  const device = allSensors.filter(d => d.id === r.device_id)
+  const device = allSensors.filter(d => d.locationid === r.locationid)
 
   return new SensorsVital(
     r.id,
@@ -611,7 +611,7 @@ async function getAllSessionsFromLocation(locationid, pgClient) {
 
 // Creates a new session for a specific location
 async function createSession(
-  locationid,
+  deviceId,
   incidentCategory,
   chatbotState,
   alertType,
@@ -626,11 +626,11 @@ async function createSession(
       const results = await helpers.runQuery(
         'createSession',
         `
-        INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, created_at, responded_at, responded_by_phone_number, is_resettable)
+        INSERT INTO sessions(device_id, incident_category, chatbot_state, alert_type, created_at, responded_at, responded_by_phone_number, is_resettable)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *
         `,
-        [locationid, incidentCategory, chatbotState, alertType, createdAt, respondedAt, respondedByPhoneNumber, isResettable],
+        [deviceId, incidentCategory, chatbotState, alertType, createdAt, respondedAt, respondedByPhoneNumber, isResettable],
         pool,
         pgClient,
       )
@@ -645,11 +645,11 @@ async function createSession(
       const results = await helpers.runQuery(
         'createSession',
         `
-        INSERT INTO sessions(locationid, incident_category, chatbot_state, alert_type, responded_at, responded_by_phone_number, is_resettable)
+        INSERT INTO sessions(device_id, incident_category, chatbot_state, alert_type, responded_at, responded_by_phone_number, is_resettable)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *
         `,
-        [locationid, incidentCategory, chatbotState, alertType, respondedAt, respondedByPhoneNumber, isResettable],
+        [deviceId, incidentCategory, chatbotState, alertType, respondedAt, respondedByPhoneNumber, isResettable],
         pool,
         pgClient,
       )
@@ -731,11 +731,11 @@ async function saveSession(session, pgClient) {
       'saveSessionUpdate',
       `
       UPDATE sessions
-      SET locationid = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5, responded_by_phone_number = $6, number_of_alerts = $7, is_resettable = $8
+      SET device_id = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5, responded_by_phone_number = $6, number_of_alerts = $7, is_resettable = $8
       WHERE id = $9
       `,
       [
-        session.location.locationid,
+        session.location.id,
         session.incidentCategory,
         session.chatbotState,
         session.alertType,
@@ -1435,6 +1435,54 @@ async function close() {
   await pool.end()
 }
 
+async function createDevice(
+  deviceType,
+  clientId,
+  locationid,
+  phoneNumber,
+  displayName,
+  serialNumber,
+  sentLowBatteryAlertAt,
+  sentVitalsAlertAt,
+  isDisplayed,
+  isSendingAlerts,
+  isSendingVitals,
+  pgClient,
+) {
+  try {
+    const results = await helpers.runQuery(
+      'createDevice',
+      `
+      INSERT INTO devices (device_type, client_id, locationid, phone_number, display_name, serial_number, sent_low_battery_alert_at, sent_vitals_alert_at, is_displayed, is_sending_alerts, is_sending_vitals)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *
+      `,
+      [
+        deviceType,
+        clientId,
+        locationid,
+        phoneNumber,
+        displayName,
+        serialNumber,
+        sentLowBatteryAlertAt,
+        sentVitalsAlertAt,
+        isDisplayed,
+        isSendingAlerts,
+        isSendingVitals,
+      ],
+      pool,
+      pgClient,
+    )
+
+    const allClients = await getClients(pgClient)
+    return createDeviceFromRow(results.rows[0], allClients)
+  } catch (err) {
+    helpers.logError(err.toString())
+  }
+
+  return null
+}
+
 module.exports = {
   beginTransaction,
   clearClientWithDisplayName,
@@ -1449,6 +1497,7 @@ module.exports = {
   close,
   commitTransaction,
   createClient,
+  createDevice,
   createLocation,
   createLocationFromBrowserForm,
   createSession,

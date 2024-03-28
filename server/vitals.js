@@ -227,7 +227,7 @@ async function handleHeartbeat(req, res) {
 
       if (webhookAPIKey === apiKey) {
         const coreId = req.body.coreid
-        const location = await db.getLocationFromParticleCoreID(coreId)
+        const location = await db.getLocationWithSerialNumber(coreId)
         if (!location) {
           const errorMessage = `Bad request to ${req.path}: no location matches the coreID ${coreId}`
           helpers.log(errorMessage)

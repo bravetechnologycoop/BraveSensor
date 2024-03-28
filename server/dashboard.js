@@ -105,10 +105,10 @@ async function renderVitalsPage(req, res) {
 
     const sensorsVitals = await db.getRecentSensorsVitals()
     for (const sensorsVital of sensorsVitals) {
-      if (sensorsVital.location.isDisplayed && sensorsVital.location.client.isDisplayed) {
+      if (sensorsVital.device.isDisplayed && sensorsVital.device.client.isDisplayed) {
         viewParams.sensors.push({
-          client: sensorsVital.location.client,
-          location: sensorsVital.location,
+          client: sensorsVital.device.client,
+          location: sensorsVital.device,
           sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
           sensorLastSeenAgo:
             sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
@@ -117,8 +117,8 @@ async function renderVitalsPage(req, res) {
             sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
           isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
           isTampered: sensorsVital.isTampered !== null ? sensorsVital.isTampered : 'unknown',
-          isSendingAlerts: sensorsVital.location.client.isSendingAlerts && sensorsVital.location.isSendingAlerts,
-          isSendingVitals: sensorsVital.location.client.isSendingVitals && sensorsVital.location.isSendingVitals,
+          isSendingAlerts: sensorsVital.device.client.isSendingAlerts && sensorsVital.device.isSendingAlerts,
+          isSendingVitals: sensorsVital.device.client.isSendingVitals && sensorsVital.device.isSendingVitals,
         })
       }
     }
@@ -147,9 +147,9 @@ async function renderClientVitalsPage(req, res) {
 
       const sensorsVitals = await db.getRecentSensorsVitalsWithClientId(currentClient.id)
       for (const sensorsVital of sensorsVitals) {
-        if (sensorsVital.location.isDisplayed) {
+        if (sensorsVital.device.isDisplayed) {
           viewParams.sensors.push({
-            location: sensorsVital.location,
+            location: sensorsVital.device,
             sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
             sensorLastSeenAgo:
               sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
@@ -158,8 +158,8 @@ async function renderClientVitalsPage(req, res) {
               sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
             isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
             isTampered: sensorsVital.isTampered !== null ? sensorsVital.isTampered : 'unknown',
-            isSendingAlerts: sensorsVital.location.client.isSendingAlerts && sensorsVital.location.isSendingAlerts,
-            isSendingVitals: sensorsVital.location.client.isSendingVitals && sensorsVital.location.isSendingVitals,
+            isSendingAlerts: sensorsVital.device.client.isSendingAlerts && sensorsVital.device.isSendingAlerts,
+            isSendingVitals: sensorsVital.device.client.isSendingVitals && sensorsVital.device.isSendingVitals,
           })
         }
       }
@@ -613,10 +613,6 @@ async function submitEditLocation(req, res) {
         data.displayName,
         data.radarCoreID,
         data.phoneNumber,
-        data.movementThreshold,
-        data.durationTimer,
-        data.stillnessTimer,
-        data.initialTimer,
         data.isDisplayed === 'true',
         data.isSendingAlerts === 'true',
         data.isSendingVitals === 'true',

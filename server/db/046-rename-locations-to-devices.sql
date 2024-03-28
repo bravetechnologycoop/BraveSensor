@@ -50,51 +50,11 @@ BEGIN
 
         -- sensors_vitals table changes
 
-        -- disable the create_sensors_vitals_trigger trigger
-        ALTER TABLE sensors_vitals DISABLE TRIGGER create_sensors_vitals_trigger;
-
-        ALTER TABLE sensors_vitals ALTER COLUMN locationid DROP NOT NULL;
-        ALTER TABLE sensors_vitals ADD COLUMN device_id uuid NOT NULL;
-
-        -- update constraints and indexes
-        ALTER TABLE sensors_vitals ADD CONSTRAINT sensors_vitals_device_id_fkey FOREIGN KEY (device_id) REFERENCES devices (id);
-        CREATE INDEX sensors_vitals_device_id_key ON sensors_vitals (device_id);
-
-        -- update trigger function
-        CREATE OR REPLACE FUNCTION create_sensors_vitals_trigger_fn()
-        RETURNS TRIGGER LANGUAGE PLPGSQL AS $t$
-        BEGIN
-            INSERT INTO sensors_vitals_cache (id, device_id, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions, created_at) 
-            VALUES (NEW.id, NEW.device_id, NEW.missed_door_messages, NEW.is_door_battery_low, NEW.door_last_seen_at, NEW.reset_reason, NEW.state_transitions, NEW.created_at)
-            ON CONFLICT (device_id)
-            DO UPDATE SET
-                id = NEW.id,
-                missed_door_messages = NEW.missed_door_messages,
-                is_door_battery_low = NEW.is_door_battery_low,
-                door_last_seen_at = NEW.door_last_seen_at,
-                reset_reason = NEW.reset_reason,
-                state_transitions = NEW.state_transitions,
-                created_at = NEW.created_at;
-            RETURN NEW;
-        END;
-        $t$;
-
-        ALTER TABLE sensors_vitals ENABLE TRIGGER create_sensors_vitals_trigger;
+        ALTER TABLE sensors_vitals ADD CONSTRAINT sensors_vitals_locationid_fkey FOREIGN KEY (locationid) REFERENCES devices (locationid);
 
         -- sensors_vitals_cache table changes
 
-        ALTER TABLE sensors_vitals_cache DISABLE TRIGGER set_sensors_vitals_cache_timestamp;
-
-        -- add, and alter columns
-        ALTER TABLE sensors_vitals_cache ADD COLUMN device_id uuid NOT NULL;
-        ALTER TABLE sensors_vitals_cache ALTER COLUMN locationid DROP NOT NULL;
-
-        -- indexes, constraints, and triggers
-        ALTER TABLE sensors_vitals_cache ADD CONSTRAINT sensors_vitals_cache_device_id_fkey FOREIGN KEY (device_id) REFERENCES devices (id);
-        ALTER TABLE sensors_vitals_cache DROP CONSTRAINT sensors_vitals_cache_locationid_key;
-        CREATE INDEX sensors_vitals_cache_device_id_key ON sensors_vitals_cache (device_id);
-
-        ALTER TABLE sensors_vitals_cache ENABLE TRIGGER set_sensors_vitals_cache_timestamp;
+        ALTER TABLE sensors_vitals_cache ADD CONSTRAINT sensors_vitals_cache_locationid_fkey FOREIGN KEY (locationid) REFERENCES devices (locationid);
 
         -- sessions table changes
 

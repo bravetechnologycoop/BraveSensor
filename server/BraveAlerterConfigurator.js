@@ -20,7 +20,7 @@ class BraveAlerterConfigurator {
   }
 
   async createAlertSessionFromSession(session) {
-    const client = session.location.client
+    const client = session.device.client
     const alertSession = new AlertSession(
       session.id,
       session.chatbotState,
@@ -109,21 +109,21 @@ class BraveAlerterConfigurator {
           }
 
           if (alertSession.incidentCategoryKey) {
-            session.incidentCategory = session.location.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
+            session.incidentCategory = session.device.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
           }
 
           if (alertSession.alertState === CHATBOT_STATE.RESET) {
             // Don't wait for this to complete; it could take a while, and it returns as failed anyways
-            particle.forceReset(session.location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
-            helpers.log(`Reset the Brave Sensor for ${session.location.locationid}`)
+            particle.forceReset(session.device.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
+            helpers.log(`Reset the Brave Sensor for ${session.device.locationid}`)
           }
 
           if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
-            const oldStillnessTimer = await particle.resetStillnessTimer(session.location.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
+            const oldStillnessTimer = await particle.resetStillnessTimer(session.device.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
             if (oldStillnessTimer > -1) {
-              helpers.log(`Reset stillness timer for ${session.location.locationid} from ${oldStillnessTimer} to 0`)
+              helpers.log(`Reset stillness timer for ${session.device.locationid} from ${oldStillnessTimer} to 0`)
             } else {
-              helpers.log(`Did not reset stillness timer for ${session.location.locationid}`)
+              helpers.log(`Did not reset stillness timer for ${session.device.locationid}`)
             }
 
             session.respondedAt = await db.getCurrentTime(pgClient)

@@ -58,7 +58,7 @@ async function handleAlert(location, alertType, alertData) {
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
       // this session doesn't exist; create new session
       const newSession = await db.createSession(
-        location.locationid,
+        location.id,
         undefined,
         CHATBOT_STATE.STARTED,
         alertType,
@@ -142,7 +142,7 @@ async function handleSensorEvent(request, response) {
         }
         const alertData = request.body.data
 
-        const location = await db.getLocationFromParticleCoreID(coreId)
+        const location = await db.getLocationWithSerialNumber(coreId)
         if (!location) {
           const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
           helpers.logError(errorMessage)
