@@ -2,8 +2,7 @@
 const { fill } = require('lodash')
 
 // In-house dependencies
-const { ALERT_TYPE, CHATBOT_STATE, Session, factories, helpers } = require('brave-alert-lib')
-const Location = require('./Location')
+const { factories, helpers } = require('brave-alert-lib')
 const SensorsVital = require('./SensorsVital')
 
 function getRandomInt(minValue, maxValue) {

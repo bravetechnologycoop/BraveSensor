@@ -5,7 +5,6 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 // In-house dependencies
 const { factories } = require('brave-alert-lib')
 const db = require('../../../db/db')
-const { locationDBFactory } = require('../../../testingHelpers')
 
 // arbitrary number of active clients to generate
 const nActiveClients = 10
@@ -22,7 +21,7 @@ async function dbInsertActiveClients() {
     })
 
     // create a location for this client that is sending alerts and vitals
-    await locationDBFactory(db, {
+    await factories.locationDBFactory(db, {
       locationid: `active-client-location-${index}`,
       displayName: `Active Client Location ${index}`,
       clientId: client.id,
@@ -176,7 +175,7 @@ async function dbInsertInactiveClients() {
 
     if (options.clientHasLocation) {
       // create a location for this client that is sending alerts and vitals
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: `inactive-client-location-${index}`,
         displayName: `Inactive Client Location ${index}`,
         clientId: client.id,

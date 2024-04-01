@@ -9,7 +9,6 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { locationDBFactory } = require('../../../testingHelpers')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -69,7 +68,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       expect({
         locationid: newLocation.locationid,
         displayName: newLocation.displayName,
-        radarCoreId: newLocation.radarCoreId,
+        radarCoreId: newLocation.serialNumber,
         phoneNumber: newLocation.phoneNumber,
         clientId: newLocation.client.id,
       }).to.eql({
@@ -114,7 +113,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       expect({
         locationid: newLocation.locationid,
         displayName: newLocation.displayName,
-        radarCoreId: newLocation.radarCoreId,
+        radarCoreId: newLocation.serialNumber,
         phoneNumber: newLocation.phoneNumber,
         clientId: newLocation.client.id,
       }).to.eql({
@@ -256,7 +255,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       sandbox.spy(db, 'createLocationFromBrowserForm')
 
       this.locationid = 'existingLocationId'
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: this.locationid,
         clientId: this.client.id,
       })

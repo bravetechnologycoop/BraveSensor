@@ -9,7 +9,6 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { locationDBFactory } = require('../../../testingHelpers')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -27,11 +26,11 @@ describe('api.js integration tests: getAllSensors', () => {
     await db.clearTables()
 
     this.client = await factories.clientDBFactory(db)
-    this.location1 = await locationDBFactory(db, {
+    this.location1 = await factories.locationDBFactory(db, {
       locationid: 'location1',
       clientId: this.client.id,
     })
-    this.location2 = await locationDBFactory(db, {
+    this.location2 = await factories.locationDBFactory(db, {
       locationid: 'location2',
       clientId: this.client.id,
     })
@@ -66,63 +65,50 @@ describe('api.js integration tests: getAllSensors', () => {
 
     it('should return all the sensors', async () => {
       const sensors = this.response.body.data
+      sensors.sort((a, b) => {
+        return a.locationid.localeCompare(b.localeCompare)
+      })
 
       expect({
+        id1: sensors[0].id,
+        deviceType1: sensors[0].deviceType,
         locationid1: sensors[0].locationid,
-        displayName1: sensors[0].displayName,
-        movementThreshold1: sensors[0].movementThreshold,
-        durationTimer1: sensors[0].durationTimer,
-        stillnessTimer1: sensors[0].stillnessTimer,
-        radarCoreId1: sensors[0].radarCoreId,
         phoneNumber1: sensors[0].phoneNumber,
-        initialTimer1: sensors[0].initialTimer,
+        displayName1: sensors[0].displayName,
+        serialNumber1: sensors[0].serialNumber,
         isDisplayed1: sensors[0].isDisplayed,
         isSendingAlerts1: sensors[0].isSendingAlerts,
         isSendingVitals1: sensors[0].isSendingVitals,
-        doorId1: sensors[0].doorId,
-        isInDebugMode1: sensors[0].isInDebugMode,
 
+        id2: sensors[1].id,
+        deviceType2: sensors[1].deviceType,
         locationid2: sensors[1].locationid,
-        displayName2: sensors[1].displayName,
-        movementThreshold2: sensors[1].movementThreshold,
-        durationTimer2: sensors[1].durationTimer,
-        stillnessTimer2: sensors[1].stillnessTimer,
-        radarCoreId2: sensors[1].radarCoreId,
         phoneNumber2: sensors[1].phoneNumber,
-        initialTimer2: sensors[1].initialTimer,
+        displayName2: sensors[1].displayName,
+        serialNumber2: sensors[1].serialNumber,
         isDisplayed2: sensors[1].isDisplayed,
         isSendingAlerts2: sensors[1].isSendingAlerts,
         isSendingVitals2: sensors[1].isSendingVitals,
-        doorId2: sensors[1].doorId,
-        isInDebugMode2: sensors[1].isInDebugMode,
       }).to.eql({
+        id1: this.location1.id,
+        deviceType1: this.location1.deviceType,
         locationid1: this.location1.locationid,
-        displayName1: this.location1.displayName,
-        movementThreshold1: this.location1.movementThreshold,
-        durationTimer1: this.location1.durationTimer,
-        stillnessTimer1: this.location1.stillnessTimer,
-        radarCoreId1: this.location1.radarCoreId,
         phoneNumber1: this.location1.phoneNumber,
-        initialTimer1: this.location1.initialTimer,
+        displayName1: this.location1.displayName,
+        serialNumber1: this.location1.serialNumber,
         isDisplayed1: this.location1.isDisplayed,
         isSendingAlerts1: this.location1.isSendingAlerts,
         isSendingVitals1: this.location1.isSendingVitals,
-        doorId1: this.location1.doorId,
-        isInDebugMode1: this.location1.isInDebugMode,
 
+        id2: this.location2.id,
+        deviceType2: this.location2.deviceType,
         locationid2: this.location2.locationid,
-        displayName2: this.location2.displayName,
-        movementThreshold2: this.location2.movementThreshold,
-        durationTimer2: this.location2.durationTimer,
-        stillnessTimer2: this.location2.stillnessTimer,
-        radarCoreId2: this.location2.radarCoreId,
         phoneNumber2: this.location2.phoneNumber,
-        initialTimer2: this.location2.initialTimer,
+        displayName2: this.location2.displayName,
+        serialNumber2: this.location2.serialNumber,
         isDisplayed2: this.location2.isDisplayed,
         isSendingAlerts2: this.location2.isSendingAlerts,
         isSendingVitals2: this.location2.isSendingVitals,
-        doorId2: this.location2.doorId,
-        isInDebugMode2: this.location2.isInDebugMode,
       })
     })
   })
@@ -148,63 +134,50 @@ describe('api.js integration tests: getAllSensors', () => {
 
     it('should return all the sensors', async () => {
       const sensors = this.response.body.data
+      sensors.sort((a, b) => {
+        return a.locationid.localeCompare(b.localeCompare)
+      })
 
       expect({
+        id1: sensors[0].id,
+        deviceType1: sensors[0].deviceType,
         locationid1: sensors[0].locationid,
-        displayName1: sensors[0].displayName,
-        movementThreshold1: sensors[0].movementThreshold,
-        durationTimer1: sensors[0].durationTimer,
-        stillnessTimer1: sensors[0].stillnessTimer,
-        radarCoreId1: sensors[0].radarCoreId,
         phoneNumber1: sensors[0].phoneNumber,
-        initialTimer1: sensors[0].initialTimer,
+        displayName1: sensors[0].displayName,
+        serialNumber1: sensors[0].serialNumber,
         isDisplayed1: sensors[0].isDisplayed,
         isSendingAlerts1: sensors[0].isSendingAlerts,
         isSendingVitals1: sensors[0].isSendingVitals,
-        doorId1: sensors[0].doorId,
-        isInDebugMode1: sensors[0].isInDebugMode,
 
+        id2: sensors[1].id,
+        deviceType2: sensors[1].deviceType,
         locationid2: sensors[1].locationid,
-        displayName2: sensors[1].displayName,
-        movementThreshold2: sensors[1].movementThreshold,
-        durationTimer2: sensors[1].durationTimer,
-        stillnessTimer2: sensors[1].stillnessTimer,
-        radarCoreId2: sensors[1].radarCoreId,
         phoneNumber2: sensors[1].phoneNumber,
-        initialTimer2: sensors[1].initialTimer,
+        displayName2: sensors[1].displayName,
+        serialNumber2: sensors[1].serialNumber,
         isDisplayed2: sensors[1].isDisplayed,
         isSendingAlerts2: sensors[1].isSendingAlerts,
         isSendingVitals2: sensors[1].isSendingVitals,
-        doorId2: sensors[1].doorId,
-        isInDebugMode2: sensors[1].isInDebugMode,
       }).to.eql({
+        id1: this.location1.id,
+        deviceType1: this.location1.deviceType,
         locationid1: this.location1.locationid,
-        displayName1: this.location1.displayName,
-        movementThreshold1: this.location1.movementThreshold,
-        durationTimer1: this.location1.durationTimer,
-        stillnessTimer1: this.location1.stillnessTimer,
-        radarCoreId1: this.location1.radarCoreId,
         phoneNumber1: this.location1.phoneNumber,
-        initialTimer1: this.location1.initialTimer,
+        displayName1: this.location1.displayName,
+        serialNumber1: this.location1.serialNumber,
         isDisplayed1: this.location1.isDisplayed,
         isSendingAlerts1: this.location1.isSendingAlerts,
         isSendingVitals1: this.location1.isSendingVitals,
-        doorId1: this.location1.doorId,
-        isInDebugMode1: this.location1.isInDebugMode,
 
+        id2: this.location2.id,
+        deviceType2: this.location2.deviceType,
         locationid2: this.location2.locationid,
-        displayName2: this.location2.displayName,
-        movementThreshold2: this.location2.movementThreshold,
-        durationTimer2: this.location2.durationTimer,
-        stillnessTimer2: this.location2.stillnessTimer,
-        radarCoreId2: this.location2.radarCoreId,
         phoneNumber2: this.location2.phoneNumber,
-        initialTimer2: this.location2.initialTimer,
+        displayName2: this.location2.displayName,
+        serialNumber2: this.location2.serialNumber,
         isDisplayed2: this.location2.isDisplayed,
         isSendingAlerts2: this.location2.isSendingAlerts,
         isSendingVitals2: this.location2.isSendingVitals,
-        doorId2: this.location2.doorId,
-        isInDebugMode2: this.location2.isInDebugMode,
       })
     })
   })

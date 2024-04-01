@@ -7,7 +7,6 @@ const chaiDateTime = require('chai-datetime')
 // In-house dependencies
 const { factories } = require('brave-alert-lib')
 const db = require('../../../db/db')
-const { locationDBFactory } = require('../../../testingHelpers')
 
 chai.use(chaiDateTime)
 
@@ -23,7 +22,7 @@ describe('db.js integration tests: updateSentAlerts', () => {
   describe('if a heartbeat alert was sent', () => {
     beforeEach(async () => {
       const client = await factories.clientDBFactory(db)
-      const location = await locationDBFactory(db, {
+      const location = await factories.locationDBFactory(db, {
         sentVitalsAlertAt: '2010-10-10T10:10:10.000Z',
         clientId: client.id,
       })
@@ -40,7 +39,7 @@ describe('db.js integration tests: updateSentAlerts', () => {
   describe('if a heartbeat alert is not sent', () => {
     beforeEach(async () => {
       const client = await factories.clientDBFactory(db)
-      const location = await locationDBFactory(db, {
+      const location = await factories.locationDBFactory(db, {
         sentVitalsAlertAt: '2010-10-10T10:10:10.000Z',
         clientId: client.id,
       })

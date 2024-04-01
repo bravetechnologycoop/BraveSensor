@@ -211,7 +211,7 @@ async function renderDashboardPage(req, res) {
     const allDisplayedLocations = (await db.getLocations()).filter(location => location.isDisplayed)
 
     for (const location of allDisplayedLocations) {
-      const recentSession = await db.getMostRecentSessionWithLocationid(location.locationid)
+      const recentSession = await db.getMostRecentSessionWithDeviceId(location.id)
       if (recentSession !== null) {
         const sessionCreatedAt = Date.parse(recentSession.createdAt)
         const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
@@ -260,8 +260,9 @@ async function renderLocationDetailsPage(req, res) {
   try {
     // Needed for the navigation bar
     const clients = await db.getClients()
+    const location = await db.getLocationWithLocationid(req.params.locationId)
 
-    const recentSessions = await db.getHistoryOfSessions(req.params.locationId)
+    const recentSessions = await db.getHistoryOfSessions(location.id)
     const currentLocation = await db.getLocationData(req.params.locationId)
 
     const viewParams = {
@@ -356,7 +357,7 @@ async function renderClientDetailsPage(req, res) {
     const locations = await db.getLocationsFromClientId(currentClient.id)
 
     for (const location of locations) {
-      const recentSession = await db.getMostRecentSessionWithLocationid(location.locationid)
+      const recentSession = await db.getMostRecentSessionWithDeviceId(location.id)
       if (recentSession !== null) {
         const sessionCreatedAt = Date.parse(recentSession.createdAt)
         const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)

@@ -114,12 +114,12 @@ class BraveAlerterConfigurator {
 
           if (alertSession.alertState === CHATBOT_STATE.RESET) {
             // Don't wait for this to complete; it could take a while, and it returns as failed anyways
-            particle.forceReset(session.device.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
+            particle.forceReset(session.device.serialNumber, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
             helpers.log(`Reset the Brave Sensor for ${session.device.locationid}`)
           }
 
           if (alertSession.alertState === CHATBOT_STATE.WAITING_FOR_CATEGORY && session.respondedAt === null) {
-            const oldStillnessTimer = await particle.resetStillnessTimer(session.device.radarCoreId, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
+            const oldStillnessTimer = await particle.resetStillnessTimer(session.device.serialNumber, helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
             if (oldStillnessTimer > -1) {
               helpers.log(`Reset stillness timer for ${session.device.locationid} from ${oldStillnessTimer} to 0`)
             } else {

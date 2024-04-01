@@ -8,7 +8,7 @@ const sinon = require('sinon')
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
 const { braveAlerter, db, server } = require('../../../index')
-const { locationDBFactory, sensorsVitalDBFactory } = require('../../../testingHelpers')
+const { sensorsVitalDBFactory } = require('../../../testingHelpers')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)
@@ -132,9 +132,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
+        serialNumber: radar_coreID,
         clientId: client.id,
       })
 
@@ -194,9 +194,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
+        serialNumber: radar_coreID,
         clientId: client.id,
       })
 
@@ -268,9 +268,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
+        serialNumber: radar_coreID,
         clientId: client.id,
       })
 
@@ -299,9 +299,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
+        serialNumber: radar_coreID,
         clientId: client.id,
       })
 
@@ -351,9 +351,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
+        serialNumber: radar_coreID,
         sentLowBatteryAlertAt: firstLowBatteryAlert,
         clientId: client.id,
       })
@@ -416,9 +416,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       this.client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
+        serialNumber: radar_coreID,
         clientId: this.client.id,
       })
 
@@ -462,9 +462,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       this.client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
+        serialNumber: radar_coreID,
         clientId: this.client.id,
       })
 
@@ -500,9 +500,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       this.client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
+        serialNumber: radar_coreID,
         clientId: this.client.id,
       })
 
@@ -538,9 +538,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       this.client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
+        serialNumber: radar_coreID,
         clientId: this.client.id,
       })
 
@@ -576,9 +576,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       this.client = await factories.clientDBFactory(db)
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
-        radarCoreId: radar_coreID,
+        serialNumber: radar_coreID,
         clientId: this.client.id,
       })
 

@@ -14,7 +14,7 @@ const server = imports.server
 const braveAlerter = imports.braveAlerter
 const SENSOR_EVENT = require('../../SensorEventEnum')
 
-const { firmwareAlert, locationDBFactory } = require('../../testingHelpers')
+const { firmwareAlert } = require('../../testingHelpers')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)
@@ -44,9 +44,9 @@ describe('Brave Sensor server', () => {
     describe('given a sensor that is sending alerts and whose client is also sending alerts', async () => {
       beforeEach(async () => {
         const client = await factories.clientDBFactory(db, { responderPhoneNumbers: testLocation1PhoneNumbers, isSendingAlerts: true })
-        await locationDBFactory(db, {
+        this.location = await factories.locationDBFactory(db, {
           locationid: testLocation1Id,
-          radarCoreId: radar_coreID,
+          serialNumber: radar_coreID,
           isSendingAlerts: true,
           clientId: client.id,
         })
@@ -96,7 +96,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should create a session with DURATION alert reason', async () => {
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           expect(sessions.length).to.equal(1)
           const session = sessions[0]
           expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
@@ -131,7 +131,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should create a session with STILLNESS as the alert reason for a valid STILLNESS request', async () => {
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           expect(sessions.length).to.equal(1)
           const session = sessions[0]
           expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
@@ -147,16 +147,16 @@ describe('Brave Sensor server', () => {
           await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey, alertData)
 
           await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.STILLNESS, webhookAPIKey, alertData)
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           this.oldUpdatedAt = sessions[0].updatedAt
 
           await firmwareAlert(chai, server, radar_coreID, SENSOR_EVENT.DURATION, undefined, alertData)
-          const newSessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const newSessions = await db.getAllSessionsWithDeviceId(this.location.id)
           this.newUpdatedAt = newSessions[0].updatedAt
         })
 
         it('should only create one new session', async () => {
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           expect(sessions.length).to.equal(1)
           const session = sessions[0]
           expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_STILLNESS)
@@ -179,7 +179,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should create additional sessions for alerts', async () => {
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           expect(sessions.length).to.equal(2)
           const session = sessions[0]
           expect(session.alertType).to.equal(ALERT_TYPE.SENSOR_DURATION)
@@ -194,9 +194,9 @@ describe('Brave Sensor server', () => {
     describe('given a sensor that is sending alerts but whose client is not sending alerts', async () => {
       beforeEach(async () => {
         const client = await factories.clientDBFactory(db, { responderPhoneNumbers: testLocation1PhoneNumbers, isSendingAlerts: false })
-        await locationDBFactory(db, {
+        this.location = await factories.locationDBFactory(db, {
           locationid: testLocation1Id,
-          radarCoreId: radar_coreID,
+          serialNumber: radar_coreID,
           isSendingAlerts: true,
           clientId: client.id,
         })
@@ -216,7 +216,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should not create a session', async () => {
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           expect(sessions.length).to.equal(0)
         })
 
@@ -235,7 +235,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should not create a session', async () => {
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           expect(sessions.length).to.equal(0)
         })
 
@@ -248,9 +248,9 @@ describe('Brave Sensor server', () => {
     describe('given a sensor that is not sending alerts but whose client is sending alerts', async () => {
       beforeEach(async () => {
         const client = await factories.clientDBFactory(db, { responderPhoneNumbers: testLocation1PhoneNumbers, isSendingAlerts: true })
-        await locationDBFactory(db, {
+        this.location = await factories.locationDBFactory(db, {
           locationid: testLocation1Id,
-          radarCoreId: radar_coreID,
+          serialNumber: radar_coreID,
           isSendingAlerts: false,
           clientId: client.id,
         })
@@ -270,7 +270,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should not create a session', async () => {
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           expect(sessions.length).to.equal(0)
         })
 
@@ -289,7 +289,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should not create a session', async () => {
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           expect(sessions.length).to.equal(0)
         })
 
@@ -302,9 +302,9 @@ describe('Brave Sensor server', () => {
     describe('given a sensor that is not sending alerts and whose client is also not sending alerts', async () => {
       beforeEach(async () => {
         const client = await factories.clientDBFactory(db, { responderPhoneNumbers: testLocation1PhoneNumbers, isSendingAlerts: false })
-        await locationDBFactory(db, {
+        this.location = await factories.locationDBFactory(db, {
           locationid: testLocation1Id,
-          radarCoreId: radar_coreID,
+          serialNumber: radar_coreID,
           isSendingAlerts: false,
           clientId: client.id,
         })
@@ -324,7 +324,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should not create a session', async () => {
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           expect(sessions.length).to.equal(0)
         })
 
@@ -343,7 +343,7 @@ describe('Brave Sensor server', () => {
         })
 
         it('should not create a session', async () => {
-          const sessions = await db.getAllSessionsFromLocation(testLocation1Id)
+          const sessions = await db.getAllSessionsWithDeviceId(this.location.id)
           expect(sessions.length).to.equal(0)
         })
 

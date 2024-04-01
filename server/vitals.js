@@ -132,7 +132,7 @@ async function checkForInternalProblems() {
       continue
     }
     try {
-      const numberOfStillnessAlerts = await db.numberOfStillnessAlertsInIntervalOfTime(location.locationid)
+      const numberOfStillnessAlerts = await db.numberOfStillnessAlertsInIntervalOfTime(location.id)
       const tooManyStillnessAlerts = numberOfStillnessAlerts > maxStillnessAlerts
       if (tooManyStillnessAlerts) {
         helpers.logSentry(`Unusually frequent number of stillness alerts (${numberOfStillnessAlerts}) have been received at ${location.locationid}`)

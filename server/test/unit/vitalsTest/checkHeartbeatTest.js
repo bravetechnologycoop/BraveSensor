@@ -8,7 +8,7 @@ const rewire = require('rewire')
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
-const { locationFactory, sensorsVitalFactory } = require('../../../testingHelpers')
+const { sensorsVitalFactory } = require('../../../testingHelpers')
 
 const vitals = rewire('../../../vitals')
 
@@ -57,7 +57,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
   describe('when a device with a firmware state machine and no existing alerts notices that the latest radar message was longer than the threshold', () => {
     beforeEach(async () => {
       const client = factories.clientFactory({ isSendingVitals: true })
-      this.testLocation = locationFactory({
+      this.testLocation = factories.locationFactory({
         isSendingVitals: true,
         sentVitalsAlertAt: null,
         client,
@@ -103,7 +103,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
 
   describe('when an inactive device with a firmware state machine and no existing alerts notices that the latest radar message was longer than the threshold', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({ isSendingVitals: false, sentVitalsAlertAt: null })
+      this.testLocation = factories.locationFactory({ isSendingVitals: false, sentVitalsAlertAt: null })
       sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
@@ -141,7 +141,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
   describe("when an inactive client's device with a firmware state machine and no existing alerts notices that the latest radar message was longer than the threshold", () => {
     beforeEach(async () => {
       const client = factories.clientFactory({ isSendingVitals: false })
-      this.testLocation = locationFactory({ isSendingVitals: false, sentVitalsAlertAt: null, client })
+      this.testLocation = factories.locationFactory({ isSendingVitals: false, sentVitalsAlertAt: null, client })
       sandbox.stub(db, 'getLocations').returns([this.testLocation])
 
       sandbox
@@ -178,7 +178,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
 
   describe('when a device with a firmware state machine and no existing alerts notices that the latest door message was longer than the threshold', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({
+      this.testLocation = factories.locationFactory({
         isSendingVitals: true,
         sentVitalsAlertAt: null,
         client: factories.clientFactory({ isSendingVitals: true }),
@@ -224,7 +224,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
 
   describe('when a device with a firmware state machine and an existing alert is no longer exceeding the door or radar thresholds', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({
+      this.testLocation = factories.locationFactory({
         isSendingVitals: true,
         sentVitalsAlertAt: new Date('2020-10-10T10:10:10.000Z'),
         client: factories.clientFactory({ isSendingVitals: true }),
@@ -270,7 +270,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
 
   describe('when a device with a firmware state machine and an existing alert is still exceeding the door or radar threshold but it has not yet exceeded the subsequent vitals threshold', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({
+      this.testLocation = factories.locationFactory({
         isSendingVitals: true,
         sentVitalsAlertAt: new Date(),
         client: factories.clientFactory({ isSendingVitals: true }),
@@ -311,7 +311,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
 
   describe('when a device with a firmware side state machine and an existing alert is still exceeding the door or radar threshold and has exceeded the subsequent vitals threshold', () => {
     beforeEach(async () => {
-      this.testLocation = locationFactory({
+      this.testLocation = factories.locationFactory({
         isSendingVitals: true,
         sentVitalsAlertAt: new Date('2019-10-10'),
         client: factories.clientFactory({ isSendingVitals: true }),

@@ -325,7 +325,7 @@ async function getDataForExport(pgClient) {
         x.country_subdivision AS "Country Subdivision",
         x.building_type AS "Building Type"
       FROM sessions s
-        LEFT JOIN devices d ON s.locationid = d.locationid
+        LEFT JOIN devices d ON s.device_id = d.id
         LEFT JOIN clients c on d.client_id = c.id
         LEFT JOIN clients_extension x on x.client_id = c.id
         WHERE d.device_type = $1
@@ -392,18 +392,18 @@ async function getCurrentTimeForHealthCheck() {
 }
 
 // Gets the most recent session data in the table for a specified location
-async function getMostRecentSessionWithLocationid(locationid, pgClient) {
+async function getMostRecentSessionWithDeviceId(deviceId, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getMostRecentSessionWithLocationid',
+      'getMostRecentSessionWithDeviceId',
       `
       SELECT *
       FROM sessions
-      WHERE locationid = $1
+      WHERE device_id = $1
       ORDER BY created_at DESC
       LIMIT 1
       `,
-      [locationid],
+      [deviceId],
       pool,
       pgClient,
     )
@@ -503,7 +503,7 @@ async function getMostRecentSessionWithPhoneNumbers(devicePhoneNumber, responder
       `
       SELECT s.*
       FROM sessions AS s
-      LEFT JOIN devices AS d ON s.locationid = d.locationid
+      LEFT JOIN devices AS d ON s.device_id = d.id
       LEFT JOIN clients AS c ON d.client_id = c.id
       WHERE d.phone_number = $1
       AND $2 = ANY(c.responder_phone_numbers)
@@ -526,18 +526,18 @@ async function getMostRecentSessionWithPhoneNumbers(devicePhoneNumber, responder
   }
 }
 
-async function getHistoryOfSessions(locationid, pgClient) {
+async function getHistoryOfSessions(deviceId, pgClient) {
   try {
     const results = await helpers.runQuery(
       'getHistoryOfSessions',
       `
       SELECT *
       FROM sessions
-      WHERE locationid = $1
+      WHERE device_id = $1
       ORDER BY created_at DESC
       LIMIT 200
       `,
-      [locationid],
+      [deviceId],
       pool,
       pgClient,
     )
@@ -553,21 +553,21 @@ async function getHistoryOfSessions(locationid, pgClient) {
   }
 }
 
-async function getUnrespondedSessionWithLocationId(locationid, pgClient) {
+async function getUnrespondedSessionWithDeviceId(deviceId, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getUnrespondedSessionWithLocationId',
+      'getUnrespondedSessionWithDeviceId',
       `
       SELECT *
       FROM sessions
-      WHERE locationid = $1
+      WHERE device_id = $1
       AND chatbot_state != $2
       AND chatbot_state != $3
       AND chatbot_state != $4
       ORDER BY created_at DESC 
       LIMIT 1
       `,
-      [locationid, CHATBOT_STATE.WAITING_FOR_CATEGORY, CHATBOT_STATE.COMPLETED, CHATBOT_STATE.RESET],
+      [deviceId, CHATBOT_STATE.WAITING_FOR_CATEGORY, CHATBOT_STATE.COMPLETED, CHATBOT_STATE.RESET],
       pool,
       pgClient,
     )
@@ -583,17 +583,17 @@ async function getUnrespondedSessionWithLocationId(locationid, pgClient) {
   }
 }
 
-async function getAllSessionsFromLocation(locationid, pgClient) {
+async function getAllSessionsWithDeviceId(deviceId, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getAllSessionsFromLocation',
+      'getAllSessionsWithDeviceId',
       `
       SELECT *
       FROM sessions
-      WHERE locationid = $1
+      WHERE device_id = $1
       ORDER BY created_at DESC
       `,
-      [locationid],
+      [deviceId],
       pool,
       pgClient,
     )
@@ -803,6 +803,36 @@ async function getLocationWithSerialNumber(serialNumber, pgClient) {
   } catch (err) {
     helpers.log(err.toString())
   }
+
+  return null
+}
+
+// Retrieves the location corresponding to a given location ID
+async function getLocationWithLocationid(locationid, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLocationWithLocationid',
+      `
+      SELECT *
+      FROM devices
+      WHERE locationid = $1
+      `,
+      [locationid],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    const allClients = await getClients(pgClient)
+    return createDeviceFromRow(results.rows[0], allClients)
+  } catch (err) {
+    helpers.log(err.toString())
+  }
+
+  return null
 }
 
 async function getLocationsFromClientId(clientId, pgClient) {
@@ -833,7 +863,7 @@ async function getLocationsFromClientId(clientId, pgClient) {
   }
 }
 
-async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
+async function numberOfStillnessAlertsInIntervalOfTime(deviceId, pgClient) {
   const intervalToCheckAlertsStr = helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS')
   const intervalToCheckAlerts = parseInt(intervalToCheckAlertsStr, 10)
   try {
@@ -843,11 +873,11 @@ async function numberOfStillnessAlertsInIntervalOfTime(locationid, pgClient) {
       SELECT COUNT(*)
       FROM sessions
       WHERE alert_type = $1
-      AND locationid = $2
+      AND device_id = $2
       AND created_at BETWEEN NOW() - $3 * INTERVAL '1 minute'
       AND NOW()
       `,
-      [ALERT_TYPE.SENSOR_STILLNESS, locationid, intervalToCheckAlerts],
+      [ALERT_TYPE.SENSOR_STILLNESS, deviceId, intervalToCheckAlerts],
       pool,
       pgClient,
     )
@@ -889,16 +919,7 @@ async function updateLocation(
       WHERE locationid = $8
       RETURNING *
       `,
-      [
-        displayName,
-        radarCoreId,
-        phoneNumber,
-        isDisplayed,
-        isSendingAlerts,
-        isSendingVitals,
-        clientId,
-        locationid,
-      ],
+      [displayName, serialNumber, phoneNumber, isDisplayed, isSendingAlerts, isSendingVitals, clientId, locationid],
       pool,
       pgClient,
     )
@@ -1427,7 +1448,7 @@ async function clearTables(pgClient) {
   await clearSensorsVitalsCache(pgClient)
   await clearSensorsVitals(pgClient)
   await clearSessions(pgClient)
-  await clearLocations(pgClient)
+  await clearDevices(pgClient)
   await clearClients(pgClient)
 }
 
@@ -1487,8 +1508,8 @@ module.exports = {
   beginTransaction,
   clearClientWithDisplayName,
   clearClients,
+  clearDevices,
   clearLocation,
-  clearLocations,
   clearSensorsVitals,
   clearSensorsVitalsCache,
   clearSessions,
@@ -1501,7 +1522,7 @@ module.exports = {
   createLocation,
   createLocationFromBrowserForm,
   createSession,
-  getAllSessionsFromLocation,
+  getAllSessionsWithDeviceId,
   getClientWithClientId,
   getClientWithSessionId,
   getClients,
@@ -1511,16 +1532,17 @@ module.exports = {
   getDataForExport,
   getHistoryOfSessions,
   getLocationData,
-  getLocationFromParticleCoreID,
+  getLocationWithSerialNumber,
+  getLocationWithLocationid,
   getLocations,
   getLocationsFromClientId,
   getMostRecentSensorsVitalWithLocation,
-  getMostRecentSessionWithLocationid,
+  getMostRecentSessionWithDeviceId,
   getMostRecentSessionWithPhoneNumbers,
   getRecentSensorsVitals,
   getRecentSensorsVitalsWithClientId,
   getSessionWithSessionId,
-  getUnrespondedSessionWithLocationId,
+  getUnrespondedSessionWithDeviceId,
   logSensorsVital,
   numberOfStillnessAlertsInIntervalOfTime,
   rollbackTransaction,
