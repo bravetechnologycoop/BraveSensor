@@ -12,6 +12,7 @@
 // initialize door ID to agreed upon intial value
 IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
 os_queue_t bleQueue;
+bool usingExternalBLEAntenna = false;
 int missedDoorEventCount = 0;
 bool doorLowBatteryFlag = false;
 bool doorTamperedFlag = false;
@@ -34,7 +35,7 @@ void setupIM() {
 void initializeDoorID() {
     uint16_t initializeDoorIDFlag;
 
-    // Argon flash memory is initialized to all F's (1's)
+    // Boron flash memory is initialized to all F's (1's)
     EEPROM.get(ADDR_INITIALIZE_DOOR_ID_FLAG, initializeDoorIDFlag);
     Log.info("door ID flag is 0x%04X", initializeDoorIDFlag);
 
@@ -55,6 +56,32 @@ void initializeDoorID() {
         EEPROM.get((ADDR_IM_DOORID + 1), globalDoorID.byte2);
         EEPROM.get((ADDR_IM_DOORID + 2), globalDoorID.byte3);
         Log.info("Door ID was read from flash on bootup.");
+    }
+}
+
+void initializeAntennaType() {
+    uint16_t initializeBLEAntennaTypeFlag;
+
+    // Boron flash memory is initialized to all F's (1's)
+    EEPROM.get(ADDR_INITIALIZE_BLE_ANTENNA_TYPE_FLAG, initializeBLEAntennaTypeFlag);
+    Log.info("Antenna type flag is 0x%04X", initializeBLEAntennaTypeFlag);
+
+    if (initializeBLEAntennaTypeFlag != INITIALIZE_ANTENNA_TYPE_FLAG) {
+        bool externalBLEAntennaDefault = false;
+        EEPROM.put(ADDR_BLE_ANTENNA_TYPE, externalBLEAntennaDefault);
+        initializeBLEAntennaTypeFlag = INITIALIZE_ANTENNA_TYPE_FLAG;
+        EEPROM.put(ADDR_INITIALIZE_BLE_ANTENNA_TYPE_FLAG, initializeBLEAntennaTypeFlag);
+        Log.info("BLE antenna type was written to flash on bootup.");
+    }
+    else {
+        EEPROM.get(ADDR_BLE_ANTENNA_TYPE, usingExternalBLEAntenna);
+        if (usingExternalBLEAntenna == true) {
+            BLE.selectAntenna(BleAntennaType::EXTERNAL);
+        }
+        else {
+            BLE.selectAntenna(BleAntennaType::INTERNAL);
+        }
+        Log.info("BLE Antenna Type was read from flash on bootup");
     }
 }
 

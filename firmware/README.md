@@ -24,11 +24,13 @@
      - [WATCHDOG_PIN and WATCHDOG_PERIOD](#watchdog_pin-and-watchdog_period)
    - [State Machine Console Functions](#state-machine-console-functions)
      - [stillness_timer_set(String)](#stillness_timer_setString)
+     - [occupant_detection_timer_set(String)](#occupant_detection_timer_setString)
      - [initial_timer_set(String)](#initial_timer_setString)
      - [duration_timer_set(String)](#duration_timer_setString)
      - [ins_threshold_set(String)](<#ins_threshold_set(String)>)
      - [toggle_debugging_publishes(String)](#toggle_debugging_publishesString)
      - [im21_door_id_set(String)](#im21_door_id_setString)
+     - [use_external_ble_antenna](#use_external_ble_antenna)
      - [force_reset(String)](#force_resetString)
    - [State Machine Published Messages](#state-machine-published-messages)
      - [Stillness Alert](#stillness-alert)
@@ -443,6 +445,23 @@ The IM door sensors each have a sticker on them with their door IDs. On the bott
 - <The door ID converted to a decimal number> - if door ID was parsed and written to flash
 - <The door ID converted to a decimal number> - if door ID was echoed to the cloud
 - -1 - if bad input was received and door ID was neither parsed or echoed to the cloud
+
+### **use_external_ble_antenna(String)**
+
+**Description:**
+
+Use this console function to toggle usage of the internal/external BLE antenna. The external antenna provides improved BLE signal compared to the internal antenna. However, using the external antenna when one is not physically attached to the Boron will result in much poorer signal.
+
+**Argument(s):**
+
+1. Enter 1 to use the external antenna
+2. Enter 0 to use the internal antenna
+
+**Return(s):**
+
+- 1 or 0, the value that was inputted
+- 1 or 0, the current selection of the antenna if 'e' is inputted
+- -1, invalid input detected
 
 ### **force_reset(String)**
 

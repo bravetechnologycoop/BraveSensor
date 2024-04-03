@@ -6,7 +6,7 @@ setupFirmware.h
 .vscode/
 .vs/
 
-#ignore Argon binary files
+#ignore Boron binary files
 target/
 
 #ignore my logs
@@ -19,6 +19,8 @@ target/
 workspaceconfig.code-workspace
 
 ConsoleTests
+DoorSensorTests
+ins3331Tests
 
 #ignore generated files
 src/BraveSensorProductionFirmware.cpp

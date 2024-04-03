@@ -70,12 +70,24 @@ public:
 };
 
 // Fake class for BLE
+
+enum class BleAntennaType : uint8_t
+{
+    DEFAULT,
+    INTERNAL,
+    EXTERNAL
+};
+
 class MockBLE {
 public:
     MockBLE() {}
 
 public:
     int setScanTimeout(uint16_t timeout) const {
+        return 0;
+    }
+
+    int selectAntenna(BleAntennaType antenna) const {
         return 0;
     }
 

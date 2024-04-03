@@ -11,6 +11,13 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [10.9.0-beta]
+
+### Added
+
+- Console function to toggle between internal/external antenna type (CU-8678vcb9v).
+- Location in flash memory for antenna type and intialization of antenna type (CU-8678vcb9v).
+
 ## [10.8.0] - 2024-02-29
 
 ### Added
