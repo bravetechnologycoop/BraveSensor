@@ -66,7 +66,7 @@ describe('api.js integration tests: getAllSensors', () => {
     it('should return all the sensors', async () => {
       const sensors = this.response.body.data
       sensors.sort((a, b) => {
-        return a.locationid.localeCompare(b.localeCompare)
+        return a.locationid.localeCompare(b.locationid)
       })
 
       expect({
@@ -135,7 +135,7 @@ describe('api.js integration tests: getAllSensors', () => {
     it('should return all the sensors', async () => {
       const sensors = this.response.body.data
       sensors.sort((a, b) => {
-        return a.locationid.localeCompare(b.localeCompare)
+        return a.locationid.localeCompare(b.locationid)
       })
 
       expect({
