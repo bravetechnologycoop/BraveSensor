@@ -95,7 +95,8 @@ BEGIN
             gateway_id uuid REFERENCES gateways (id) NOT NULL,
             CONSTRAINT gateways_vitals_cache_gateway_id_key UNIQUE (gateway_id),
             last_seen_at timestamp with time zone NOT NULL,
-            created_at timestamp with time zone NOT NULL DEFAULT NOW()
+            created_at timestamp with time zone NOT NULL DEFAULT NOW(),
+            updated_at timestamp with time zone NOT NULL DEFAULT NOW()
         );
 
         -- gateways_vitals_cache_device_id_idx index for column gateway_id
