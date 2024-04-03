@@ -9,7 +9,6 @@ Please note that the date associated with a release is the date the code
 was committed to the `production` branch. This is not necessarily the date that
 the code was deployed.
 
-
 ## [Unreleased]
 
 ### Added
@@ -17,9 +16,19 @@ the code was deployed.
 - Console function to toggle between internal/external antenna type (CU-8678vcb9v).
 - Location in flash memory for antenna type and intialization of antenna type (CU-8678vcb9v).
 
+## [10.8.0] - 2024-02-29
+
+### Added
+
+- `number_of_alerts_published` variable which represents the number of alerts published while in state 2 and state 3 of firmware (CU-86drfmvrj).
+- Alert data in Stillness and Duration alerts published from sensors in state 2 or state 3 (CU-86drfmvrj).
+- `is_resettable` boolean column to sessions: represents if `numberOfAlertsPublished` in alert data exceeds the threshold `SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST` (CU-86drfmvrj).
+
 ### Changed
 
-- Travis CI PostgreSQL port from 5433 to 5432.
+- Chatbot reset flow to occur if and only if `is_resettable` column is true for a given session (CU-86drfmvrj).
+- Firmware to compile for Device OS 4.2.0 (CU-860r9cvdy).
+- Initial and reminder Sensor disconnection messages to specify a "15 to 20 minute" window instead of "shortly after" to expect a reconnection message (CU-86dquwxnu).
 
 ## [10.7.0] - 2024-01-30
 
@@ -734,7 +743,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.7.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.8.0...HEAD
+[10.8.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.7.0...v10.8.0
 [10.7.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.6.0...v10.7.0
 [10.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.5.0...v10.6.0
 [10.5.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.4.0...v10.5.0

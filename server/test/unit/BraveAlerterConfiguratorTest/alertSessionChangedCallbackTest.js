@@ -221,14 +221,14 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     })
   })
 
-  describe('if given alertState RESET and numberOfAlerts is less than SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST', () => {
+  describe('if given alertState RESET and the session is not resettable', () => {
     beforeEach(async () => {
       const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
       sandbox.stub(db, 'getSessionWithSessionId').returns(
         sessionFactory({
           id: sessionId,
           chatbotState: CHATBOT_STATE.STARTED,
-          numberOfAlerts: helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST') - 1,
+          isResettable: false,
         }),
       )
 
@@ -250,14 +250,14 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
     })
   })
 
-  describe('if given alertState RESET and numberOfAlerts is equal to SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST', () => {
+  describe('if given alertState RESET and the session is resettable', () => {
     beforeEach(async () => {
       const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
       sandbox.stub(db, 'getSessionWithSessionId').returns(
         sessionFactory({
           id: sessionId,
           chatbotState: CHATBOT_STATE.STARTED,
-          numberOfAlerts: helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST'),
+          isResettable: true,
         }),
       )
 
@@ -268,42 +268,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
       this.expectedSession = sessionFactory({
         id: sessionId,
         chatbotState: CHATBOT_STATE.RESET,
-        numberOfAlerts: helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST'),
-      })
-    })
-
-    it('should save the session in the database with chatbot state RESET and number of alerts unchanged', () => {
-      expect(db.saveSession).to.be.calledWith(this.expectedSession, sandbox.any)
-    })
-
-    it('should log that the location was reset', () => {
-      expect(helpers.log).to.be.calledWith('Reset the Brave Sensor for fakeLocationid')
-    })
-
-    it('should call the Force_Reset Particle function with the correct Device ID and Product ID', () => {
-      expect(particle.forceReset).to.be.calledWith('fakeRadarParticleId', helpers.getEnvVar('PARTICLE_PRODUCT_GROUP'))
-    })
-  })
-
-  describe('if given alertState RESET and numberOfAlerts is greater than SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST', () => {
-    beforeEach(async () => {
-      const sessionId = 'ca6e85b1-0a8c-4e1a-8d1e-7a35f838d7bc'
-      sandbox.stub(db, 'getSessionWithSessionId').returns(
-        sessionFactory({
-          id: sessionId,
-          chatbotState: CHATBOT_STATE.STARTED,
-          numberOfAlerts: helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST') + 1,
-        }),
-      )
-
-      const braveAlerterConfigurator = new BraveAlerterConfigurator()
-      const braveAlerter = braveAlerterConfigurator.createBraveAlerter()
-      await braveAlerter.alertSessionChangedCallback(new AlertSession(sessionId, CHATBOT_STATE.RESET, null))
-
-      this.expectedSession = sessionFactory({
-        id: sessionId,
-        chatbotState: CHATBOT_STATE.RESET,
-        numberOfAlerts: helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST') + 1,
+        isResettable: true,
       })
     })
 
