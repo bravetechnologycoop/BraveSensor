@@ -261,15 +261,13 @@ async function renderLocationDetailsPage(req, res) {
     // Needed for the navigation bar
     const clients = await db.getClients()
     const location = await db.getLocationWithLocationid(req.params.locationId)
-
     const recentSessions = await db.getHistoryOfSessions(location.id)
-    const currentLocation = await db.getLocationData(req.params.locationId)
 
     const viewParams = {
       clients: clients.filter(client => client.isDisplayed),
       recentSessions: [],
-      currentLocation,
-      clientid: currentLocation.client.id,
+      location,
+      clientid: location.client.id,
     }
 
     for (const recentSession of recentSessions) {
@@ -298,16 +296,16 @@ async function renderLocationDetailsPage(req, res) {
 async function renderLocationEditPage(req, res) {
   try {
     const clients = await db.getClients()
-    const currentLocation = await db.getLocationData(req.params.locationId)
+    const location = await db.getLocationWithLocationid(req.params.locationId)
 
     const viewParams = {
-      currentLocation,
+      location,
       clients: clients
         .filter(client => client.isDisplayed)
         .map(client => {
           return {
             ...client,
-            selected: client.id === currentLocation.client.id,
+            selected: client.id === location.client.id,
           }
         }),
     }
@@ -529,7 +527,7 @@ async function submitEditClient(req, res) {
   }
 }
 
-const validateNewLocation = Validator.body(['locationid', 'displayName', 'radarCoreID', 'phoneNumber', 'clientId']).trim().notEmpty()
+const validateNewLocation = Validator.body(['locationid', 'displayName', 'serialNumber', 'phoneNumber', 'clientId']).trim().notEmpty()
 
 async function submitNewLocation(req, res) {
   try {
@@ -559,7 +557,7 @@ async function submitNewLocation(req, res) {
         return res.status(400).send(errorMessage)
       }
 
-      await db.createLocationFromBrowserForm(data.locationid, data.displayName, data.radarCoreID, data.phoneNumber, data.clientId)
+      await db.createLocationFromBrowserForm(data.locationid, data.displayName, data.serialNumber, data.phoneNumber, data.clientId)
 
       res.redirect(`/locations/${data.locationid}`)
     } else {
@@ -575,12 +573,8 @@ async function submitNewLocation(req, res) {
 
 const validateEditLocation = Validator.body([
   'displayName',
-  'radarCoreID',
+  'serialNumber',
   'phoneNumber',
-  'movementThreshold',
-  'durationTimer',
-  'stillnessTimer',
-  'initialTimer',
   'isDisplayed',
   'isSendingAlerts',
   'isSendingVitals',
@@ -612,7 +606,7 @@ async function submitEditLocation(req, res) {
 
       await db.updateLocation(
         data.displayName,
-        data.radarCoreID,
+        data.serialNumber,
         data.phoneNumber,
         data.isDisplayed === 'true',
         data.isSendingAlerts === 'true',

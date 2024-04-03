@@ -753,32 +753,6 @@ async function saveSession(session, pgClient) {
   }
 }
 
-// Retrieves the data from the devices table for a given location
-async function getLocationData(locationid, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getLocationData',
-      `
-      SELECT *
-      FROM devices
-      WHERE locationid = $1
-      `,
-      [locationid],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return createDeviceFromRow(results.rows[0], allClients)
-  } catch (err) {
-    helpers.log(err.toString())
-  }
-}
-
 // Retrieves the location corresponding to a given Particle core ID (serial number)
 async function getLocationWithSerialNumber(serialNumber, pgClient) {
   try {
@@ -1531,7 +1505,6 @@ module.exports = {
   getCurrentTimeForHealthCheck,
   getDataForExport,
   getHistoryOfSessions,
-  getLocationData,
   getLocationWithSerialNumber,
   getLocationWithLocationid,
   getLocations,

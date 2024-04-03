@@ -61,7 +61,7 @@ async function getSensor(req, res) {
 
   try {
     if (validationErrors.isEmpty()) {
-      const location = await db.getLocationData(req.params.sensorId)
+      const location = await db.getLocationWithLocationid(req.params.sensorId)
 
       if (location === null) {
         res.status(400).send({ status: 'error' })

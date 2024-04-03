@@ -25,7 +25,7 @@ function setupVitals(braveAlerterObj) {
 }
 
 async function sendSingleAlert(locationid, message, pgClient) {
-  const location = await db.getLocationData(locationid, pgClient)
+  const location = await db.getLocationWithLocationid(locationid, pgClient)
 
   location.client.responderPhoneNumbers.forEach(async responderPhoneNumber => {
     await braveAlerter.sendSingleAlert(responderPhoneNumber, location.client.fromPhoneNumber, message)
@@ -166,7 +166,7 @@ async function sendLowBatteryAlert(locationid) {
       helpers.logError(`sendLowBatteryAlert: Error starting transaction`)
       return
     }
-    const location = await db.getLocationData(locationid, pgClient)
+    const location = await db.getLocationWithLocationid(locationid, pgClient)
 
     if (
       location.isSendingVitals &&

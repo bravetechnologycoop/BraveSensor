@@ -165,16 +165,16 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     })
 
     it('should not update sentLowBatteryAlertAt because access was not provided', async () => {
-      const testLocation = await db.getLocationData(testLocation1Id)
+      const testLocation = await db.getLocationWithLocationid(testLocation1Id)
       await normalHeartbeatWithIncorrectAPIKey(radar_coreID)
-      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      const locationAfterHeartbeat = await db.getLocationWithLocationid(testLocation1Id)
       expect(locationAfterHeartbeat.sentLowBatteryAlertAt).to.deep.equal(testLocation.sentLowBatteryAlertAt)
     })
 
     it('should not update sentLowBatteryAlertAt because access was not provided despite having a low battery level', async () => {
-      const testLocation = await db.getLocationData(testLocation1Id)
+      const testLocation = await db.getLocationWithLocationid(testLocation1Id)
       await lowBatteryHeartbeatWithIncorrectAPIKey(radar_coreID)
-      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      const locationAfterHeartbeat = await db.getLocationWithLocationid(testLocation1Id)
       expect(locationAfterHeartbeat.sentLowBatteryAlertAt).to.deep.equal(testLocation.sentLowBatteryAlertAt)
     })
 
@@ -251,9 +251,9 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     })
 
     it('should not update sentLowBatteryAlertAt if battery is normal', async () => {
-      const testLocation = await db.getLocationData(testLocation1Id)
+      const testLocation = await db.getLocationWithLocationid(testLocation1Id)
       await normalHeartbeat(radar_coreID)
-      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      const locationAfterHeartbeat = await db.getLocationWithLocationid(testLocation1Id)
       expect(locationAfterHeartbeat.sentLowBatteryAlertAt).to.deep.equal(testLocation.sentLowBatteryAlertAt)
     })
 
@@ -385,17 +385,17 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     })
 
     it('should update sentLowBatteryAlertAt if the period since the last alert is greater than the timeout', async () => {
-      const locationBeforeHeartbeat = await db.getLocationData(testLocation1Id)
+      const locationBeforeHeartbeat = await db.getLocationWithLocationid(testLocation1Id)
       await lowBatteryHeartbeat(radar_coreID)
-      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      const locationAfterHeartbeat = await db.getLocationWithLocationid(testLocation1Id)
       expect(locationBeforeHeartbeat.sentLowBatteryAlertAt).to.not.deep.equal(locationAfterHeartbeat.sentLowBatteryAlertAt)
     })
 
     it('should not update sentLowBatteryAlertAt if the period since the last alert is less than the timeout', async () => {
       await lowBatteryHeartbeat(radar_coreID)
-      const locationAfterHeartbeat = await db.getLocationData(testLocation1Id)
+      const locationAfterHeartbeat = await db.getLocationWithLocationid(testLocation1Id)
       await lowBatteryHeartbeat(radar_coreID)
-      const locationAfterTwoHeartbeats = await db.getLocationData(testLocation1Id)
+      const locationAfterTwoHeartbeats = await db.getLocationWithLocationid(testLocation1Id)
       expect(locationAfterTwoHeartbeats.sentLowBatteryAlertAt).to.deep.equal(locationAfterHeartbeat.sentLowBatteryAlertAt)
     })
 

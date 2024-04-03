@@ -207,7 +207,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
       const location = factories.locationFactory({
         client,
       })
-      sandbox.stub(db, 'getLocationData').returns(location)
+      sandbox.stub(db, 'getLocationWithLocationid').returns(location)
       sandbox.stub(db, 'getSessionWithSessionId').returns(
         factories.sessionFactory({
           id: sessionId,
@@ -240,7 +240,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
       const location = factories.locationFactory({
         client,
       })
-      sandbox.stub(db, 'getLocationData').returns(location)
+      sandbox.stub(db, 'getLocationWithLocationid').returns(location)
       sandbox
         .stub(db, 'getSessionWithSessionId')
         .returns(factories.sessionFactory({ id: sessionId, device: location, respondedByPhoneNumber: oldRespondedByPhoneNumber }))
