@@ -20,6 +20,7 @@ BEGIN
         -- drop these constraints so we can drop locationid as primary key
         ALTER TABLE sensors_vitals_cache DROP CONSTRAINT sensors_vitals_cache_locationid_fkey;
         ALTER TABLE sensors_vitals DROP CONSTRAINT sensors_vitals_locationid_fkey;
+        ALTER TABLE sessions DROP CONSTRAINT sessions_locationid_fkey;
 
         -- add, and alter columns
         ALTER TABLE locations DROP CONSTRAINT locations_pkey;
