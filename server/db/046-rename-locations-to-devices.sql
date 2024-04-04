@@ -17,10 +17,11 @@ BEGIN
 
         ALTER TABLE locations DISABLE TRIGGER set_locations_timestamp;
 
+        -- drop these constraints so we can drop locationid as primary key
+        ALTER TABLE sensors_vitals_cache DROP CONSTRAINT sensors_vitals_cache_locationid_fkey;
+        ALTER TABLE sensors_vitals DROP CONSTRAINT sensors_vitals_locationid_fkey;
+
         -- add, and alter columns
-        -- this cascades to sensors_vitals_locationid_fkey on sensors_vitals,
-        -- sensors_vitals_cache_locationid_fkey on sensors_vitals_cache,
-        -- and sessions_locationid_fkey on sessions.
         ALTER TABLE locations DROP CONSTRAINT locations_pkey;
         ALTER TABLE locations ALTER COLUMN locationid DROP NOT NULL;
         ALTER TABLE locations ADD COLUMN id uuid NOT NULL DEFAULT gen_random_uuid();
@@ -50,11 +51,11 @@ BEGIN
 
         -- sensors_vitals table changes
 
-        --ALTER TABLE sensors_vitals ADD CONSTRAINT sensors_vitals_locationid_fkey FOREIGN KEY (locationid) REFERENCES devices (locationid);
+        ALTER TABLE sensors_vitals ADD CONSTRAINT sensors_vitals_locationid_fkey FOREIGN KEY (locationid) REFERENCES devices (locationid);
 
         -- sensors_vitals_cache table changes
 
-        --ALTER TABLE sensors_vitals_cache ADD CONSTRAINT sensors_vitals_cache_locationid_fkey FOREIGN KEY (locationid) REFERENCES devices (locationid);
+        ALTER TABLE sensors_vitals_cache ADD CONSTRAINT sensors_vitals_cache_locationid_fkey FOREIGN KEY (locationid) REFERENCES devices (locationid);
 
         -- sessions table changes
 
