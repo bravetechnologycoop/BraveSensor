@@ -211,7 +211,7 @@ async function getClients(pgClient) {
 
     return await Promise.all(results.rows.map(r => createClientFromRow(r)))
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getClients query: ${err.toString()}`)
   }
 }
 
@@ -244,7 +244,7 @@ async function getActiveClients(pgClient) {
 
     return await Promise.all(results.rows.map(r => createClientFromRow(r)))
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getActiveClients query: ${err.toString()}`)
   }
 }
 
@@ -270,7 +270,7 @@ async function getDevices(pgClient) {
     const allClients = await getClients(pgClient)
     return results.rows.map(r => createDeviceFromRow(r, allClients))
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getDevices query: ${err.toString()}`)
   }
 }
 
@@ -297,7 +297,7 @@ async function getLocations(pgClient) {
     const allClients = await getClients(pgClient)
     return results.rows.map(r => createDeviceFromRow(r, allClients))
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getLocations query: ${err.toString()}`)
   }
 }
 
@@ -337,7 +337,7 @@ async function getDataForExport(pgClient) {
 
     return results.rows
   } catch (err) {
-    helpers.logError(err.toString())
+    helpers.log(`Error running the getDataForExport query: ${err.toString()}`)
   }
 }
 
@@ -355,7 +355,7 @@ async function getCurrentTime(pgClient) {
 
     return results.rows[0].now
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.logError(`Error running the getCurrentTime query: ${err.toString()}`)
   }
 }
 
@@ -415,7 +415,7 @@ async function getMostRecentSessionWithDeviceId(deviceId, pgClient) {
     const allDevices = await getDevices(pgClient)
     return createSessionFromRow(results.rows[0], allDevices)
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getMostRecentSessionWithDeviceId query: ${err.toString()}`)
   }
 }
 
@@ -441,7 +441,7 @@ async function getSessionWithSessionId(id, pgClient) {
     const allDevices = await getDevices(pgClient)
     return createSessionFromRow(results.rows[0], allDevices)
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getSessionWithSessionId query: ${err.toString()}`)
   }
 }
 
@@ -465,7 +465,7 @@ async function getClientWithClientId(id, pgClient) {
 
     return createClientFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getClientWithClientId query: ${err.toString()}`)
   }
 }
 
@@ -491,7 +491,7 @@ async function getClientWithSessionId(sessionid, pgClient) {
 
     return createClientFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getClientWithSessionId query: ${err.toString()}`)
   }
 }
 
@@ -522,7 +522,7 @@ async function getMostRecentSessionWithPhoneNumbers(devicePhoneNumber, responder
     const allDevices = await getDevices(pgClient)
     return createSessionFromRow(results.rows[0], allDevices)
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getMostRecentSessionWithPhoneNumbers query: ${err.toString()}`)
   }
 }
 
@@ -549,7 +549,7 @@ async function getHistoryOfSessions(deviceId, pgClient) {
     const allDevices = await getDevices(pgClient)
     return results.rows.map(r => createSessionFromRow(r, allDevices))
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getHistoryOfSessions query: ${err.toString()}`)
   }
 }
 
@@ -579,7 +579,7 @@ async function getUnrespondedSessionWithDeviceId(deviceId, pgClient) {
     const allDevices = await getDevices(pgClient)
     return createSessionFromRow(results.rows[0], allDevices)
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getUnrespondedSessionWithDeviceId query: ${err.toString()}`)
   }
 }
 
@@ -605,7 +605,7 @@ async function getAllSessionsWithDeviceId(deviceId, pgClient) {
     const allLocations = await getLocations(pgClient)
     return results.rows.map(r => createSessionFromRow(r, allLocations))
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getAllSessionsWithDeviceId query: ${err.toString()}`)
   }
 }
 
@@ -638,7 +638,7 @@ async function createSession(
       const allLocations = await getLocations(pgClient)
       return createSessionFromRow(results.rows[0], allLocations)
     } catch (err) {
-      helpers.log(err.toString())
+      helpers.log(`Error running the createSession query: ${err.toString()}`)
     }
   } else {
     try {
@@ -657,7 +657,7 @@ async function createSession(
       const allLocations = await getLocations(pgClient)
       return createSessionFromRow(results.rows[0], allLocations)
     } catch (err) {
-      helpers.log(err.toString())
+      helpers.log(`Error running the createSession query: ${err.toString()}`)
     }
   }
 }
@@ -687,7 +687,7 @@ async function updateSentAlerts(locationid, sentalerts, pgClient) {
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the updateSentAlerts query: ${err.toString()}`)
   }
 }
 
@@ -705,7 +705,7 @@ async function updateLowBatteryAlertTime(locationid, pgClient) {
       pgClient,
     )
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the updateLowBatteryAlertTime query: ${err.toString()}`)
   }
 }
 
@@ -735,7 +735,7 @@ async function saveSession(session, pgClient) {
       WHERE id = $9
       `,
       [
-        session.location.id,
+        session.device.id,
         session.incidentCategory,
         session.chatbotState,
         session.alertType,
@@ -749,7 +749,7 @@ async function saveSession(session, pgClient) {
       pgClient,
     )
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the saveSessionUpdate query: ${err.toString()}`)
   }
 }
 
@@ -775,7 +775,7 @@ async function getLocationWithSerialNumber(serialNumber, pgClient) {
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getLocationWithSerialNumber query: ${err.toString()}`)
   }
 
   return null
@@ -803,7 +803,7 @@ async function getLocationWithLocationid(locationid, pgClient) {
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getLocationWithLocationid query: ${err.toString()}`)
   }
 
   return null
@@ -833,7 +833,7 @@ async function getLocationsFromClientId(clientId, pgClient) {
     const allClients = await getClients(pgClient)
     return results.rows.map(r => createDeviceFromRow(r, allClients))
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getLocationsFromClientId query: ${err.toString()}`)
   }
 }
 
@@ -860,7 +860,7 @@ async function numberOfStillnessAlertsInIntervalOfTime(deviceId, pgClient) {
     }
     return results.rows[0].count
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the numberOfStillnessAlertsInIntervalOfTime query: ${err.toString()}`)
   }
 }
 
@@ -906,7 +906,7 @@ async function updateLocation(
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the updateLocation query: ${err.toString()}`)
   }
 }
 
@@ -962,7 +962,7 @@ async function updateClient(
 
     return await createClientFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the updateClient query: ${err.toString()}`)
   }
 }
 
@@ -1000,7 +1000,7 @@ async function createLocationFromBrowserForm(locationid, displayName, serialNumb
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the createLocationFromBrowserForm query: ${err.toString()}`)
   }
 }
 
@@ -1046,7 +1046,7 @@ async function createLocation(
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the createLocation query: ${err.toString()}`)
   }
 }
 
@@ -1093,7 +1093,7 @@ async function createClient(
 
     return createClientFromRow(results.rows[0])
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the createClient query: ${err.toString()}`)
   }
 
   return null
@@ -1120,7 +1120,7 @@ async function getRecentSensorsVitals(pgClient) {
       return results.rows.map(r => createSensorsVitalFromRow(r, allLocations))
     }
   } catch (err) {
-    helpers.logError(err.toString())
+    helpers.log(`Error running the getRecentSensorsVitals query: ${err.toString()}`)
   }
 
   return []
@@ -1147,7 +1147,7 @@ async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
       return results.rows.map(r => createSensorsVitalFromRow(r, allLocations))
     }
   } catch (err) {
-    helpers.logError(err.toString())
+    helpers.log(`Error running the getRecentSensorsVitalsWithClientId query: ${err.toString()}`)
   }
 
   return []
@@ -1173,7 +1173,7 @@ async function getMostRecentSensorsVitalWithLocation(location, pgClient) {
 
     return createSensorsVitalFromRow(results.rows[0], [location])
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the getMostRecentSensorsVitalWithLocation query: ${err.toString()}`)
     return null
   }
 }
@@ -1206,7 +1206,7 @@ async function logSensorsVital(
       return createSensorsVitalFromRow(results.rows[0], allLocations)
     }
   } catch (err) {
-    helpers.logError(err.toString())
+    helpers.log(`Error running the logSensorsVital query: ${err.toString()}`)
   }
 
   return null
@@ -1228,7 +1228,7 @@ async function clearSensorsVitals(pgClient) {
       pgClient,
     )
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the clearSensorsVitals query: ${err.toString()}`)
   }
 }
 
@@ -1248,7 +1248,7 @@ async function clearSensorsVitalsCache(pgClient) {
       pgClient,
     )
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the clearSensorsVitalsCache query: ${err.toString()}`)
   }
 }
 
@@ -1269,7 +1269,7 @@ async function clearSessions(pgClient) {
       pgClient,
     )
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the clearSessions query: ${err.toString()}`)
   }
 }
 
@@ -1286,7 +1286,7 @@ async function clearSessionsFromLocation(locationid, pgClient) {
       pgClient,
     )
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the clearSessionsFromLocation query: ${err.toString()}`)
   }
 }
 
@@ -1307,7 +1307,7 @@ async function clearDevices(pgClient) {
       pgClient,
     )
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the clearDevices query: ${err.toString()}`)
   }
 }
 
@@ -1346,7 +1346,7 @@ async function clearLocation(locationid, pgClient) {
       pgClient,
     )
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the clearLocation query: ${err.toString()}`)
   }
 }
 
@@ -1377,7 +1377,7 @@ async function clearClients(pgClient) {
       pgClient,
     )
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the clearClientsExtension query: ${err.toString()}`)
   }
 }
 
@@ -1409,7 +1409,7 @@ async function clearClientWithDisplayName(displayName, pgClient) {
       pgClient,
     )
   } catch (err) {
-    helpers.log(err.toString())
+    helpers.log(`Error running the clearClientWithDisplayName query: ${err.toString()}`)
   }
 }
 
@@ -1472,7 +1472,7 @@ async function createDevice(
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
-    helpers.logError(err.toString())
+    helpers.log(`Error running the createDevice query: ${err.toString()}`)
   }
 
   return null
