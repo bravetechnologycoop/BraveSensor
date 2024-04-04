@@ -50,11 +50,11 @@ BEGIN
 
         -- sensors_vitals table changes
 
-        ALTER TABLE sensors_vitals ADD CONSTRAINT sensors_vitals_locationid_fkey FOREIGN KEY (locationid) REFERENCES devices (locationid);
+        ALTER TABLE sensors_vitals ADD CONSTRAINT sensors_vitals_locationid_fkey FOREIGN KEY (locationid) REFERENCES devices (locationid) IF NOT EXISTS;
 
         -- sensors_vitals_cache table changes
 
-        ALTER TABLE sensors_vitals_cache ADD CONSTRAINT sensors_vitals_cache_locationid_fkey FOREIGN KEY (locationid) REFERENCES devices (locationid);
+        ALTER TABLE sensors_vitals_cache ADD CONSTRAINT sensors_vitals_cache_locationid_fkey FOREIGN KEY (locationid) REFERENCES devices (locationid) IF NOT EXISTS;
 
         -- sessions table changes
 
