@@ -445,6 +445,9 @@ async function submitNewClient(req, res) {
         data.language,
       )
 
+      // create a client extension row for the newly created client
+      await db.updateClientExtension(data.country || null, data.countrySubdivision || null, data.buildingType || null, newClient.id)
+
       res.redirect(`/clients/${newClient.id}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`

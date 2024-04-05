@@ -1023,6 +1023,33 @@ async function updateClient(
   }
 }
 
+async function createClientExtension(clientId, country, countrySubdivision, buildingType, pgClient) {
+  console.log(clientId)
+  try {
+    let results = await helpers.runQuery(
+      'createClientExtension',
+      `
+      INSERT INTO clients_extension (client_id, country, country_subdivision, building_type)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+      `,
+      [clientId, country, countrySubdivision, buildingType],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    helpers.log(`New client extension inserted into database for client ${clientId}`)
+
+    return createClientExtensionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.log(`Error running the createClientExtension query: ${err.toString()}`)
+  }
+}
+
 async function updateClientExtension(country, countrySubdivision, buildingType, clientId, pgClient) {
   try {
     let results = await helpers.runQuery(
@@ -1038,35 +1065,13 @@ async function updateClientExtension(country, countrySubdivision, buildingType, 
       pgClient,
     )
 
-    if (results === undefined) {
-      return null
-    }
-
-    if (results.rows.length === 0) {
-      // entry in clients_extension doesn't exist; attempt to create it
-      results = await helpers.runQuery(
-        'createClientExtension',
-        `
-        INSERT INTO clients_extension (client_id, country, country_subdivision, building_type)
-        VALUES ($1, $2, $3, $4)
-        RETURNING *
-        `,
-        [clientId, country, countrySubdivision, buildingType],
-        pool,
-        pgClient,
-      )
-
-      helpers.log(`New client extension inserted into database for client ${clientId}`)
-    } else {
-      helpers.log(`Client extension for client ${clientId} successfully updated`)
-    }
-
     if (results === undefined || results.rows.length === 0) {
-      // extraneous error :sadface:
-      return null
+      return await createClientExtension(clientId, country, countrySubdivision, buildingType)
     }
 
-    return await createClientExtensionFromRow(results.rows[0])
+    helpers.log(`Client extension for client ${clientId} successfully updated`)
+
+    return createClientExtensionFromRow(results.rows[0])
   } catch (err) {
     helpers.log(`Error running the updateClientExtension query: ${err.toString()}`)
   }
@@ -1216,7 +1221,7 @@ async function getRecentSensorsVitals(pgClient) {
       FROM devices d
       LEFT JOIN sensors_vitals_cache sv on d.locationid = sv.locationid
       WHERE d.device_type = $1
-      ORDER BY created_at
+      ORDER BY sv.created_at
       `,
       [DEVICE_TYPE.DEVICE_SENSOR],
       pool,
@@ -1600,6 +1605,7 @@ module.exports = {
   close,
   commitTransaction,
   createClient,
+  createClientExtension,
   createDevice,
   createLocation,
   createLocationFromBrowserForm,
