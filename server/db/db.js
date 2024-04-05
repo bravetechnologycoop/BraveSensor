@@ -1024,9 +1024,8 @@ async function updateClient(
 }
 
 async function createClientExtension(clientId, country, countrySubdivision, buildingType, pgClient) {
-  console.log(clientId)
   try {
-    let results = await helpers.runQuery(
+    const results = await helpers.runQuery(
       'createClientExtension',
       `
       INSERT INTO clients_extension (client_id, country, country_subdivision, building_type)
@@ -1052,7 +1051,7 @@ async function createClientExtension(clientId, country, countrySubdivision, buil
 
 async function updateClientExtension(country, countrySubdivision, buildingType, clientId, pgClient) {
   try {
-    let results = await helpers.runQuery(
+    const results = await helpers.runQuery(
       'updateClientExtension',
       `
       UPDATE clients_extension
