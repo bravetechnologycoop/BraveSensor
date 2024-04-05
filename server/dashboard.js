@@ -225,7 +225,7 @@ async function renderDashboardPage(req, res) {
         .map(location => {
           return {
             name: location.displayName,
-            id: location.locationid,
+            id: location.id,
             sessionStart: location.sessionStart,
             isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
             isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
@@ -260,13 +260,13 @@ async function renderLocationDetailsPage(req, res) {
   try {
     // Needed for the navigation bar
     const clients = await db.getClients()
-    const location = await db.getLocationWithLocationid(req.params.locationId)
-    const recentSessions = await db.getHistoryOfSessions(location.id)
+    const location = await db.getLocationWithDeviceId(req.params.id)
+    const recentSessions = await db.getHistoryOfSessions(req.params.id)
 
     const viewParams = {
       clients: clients.filter(client => client.isDisplayed),
       recentSessions: [],
-      location,
+      currentLocation: location,
       clientid: location.client.id,
     }
 
@@ -296,10 +296,10 @@ async function renderLocationDetailsPage(req, res) {
 async function renderLocationEditPage(req, res) {
   try {
     const clients = await db.getClients()
-    const location = await db.getLocationWithLocationid(req.params.locationId)
+    const location = await db.getLocationWithDeviceId(req.params.id)
 
     const viewParams = {
-      location,
+      currentLocation: location,
       clients: clients
         .filter(client => client.isDisplayed)
         .map(client => {
@@ -334,10 +334,16 @@ async function renderClientEditPage(req, res) {
   try {
     const clients = await db.getClients()
     const currentClient = clients.find(client => client.id === req.params.id)
+    const clientExtension = await db.getClientExtensionWithClientId(req.params.id)
 
     const viewParams = {
       clients: clients.filter(client => client.isDisplayed),
-      currentClient,
+      currentClient: {
+        ...currentClient,
+        country: clientExtension.country || '',
+        countrySubdivision: clientExtension.countrySubdivision || '',
+        buildingType: clientExtension.buildingType || '',
+      },
     }
 
     res.send(Mustache.render(updateClientTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
@@ -371,7 +377,7 @@ async function renderClientDetailsPage(req, res) {
         .map(location => {
           return {
             name: location.displayName,
-            id: location.locationid,
+            id: location.id,
             sessionStart: location.sessionStart,
             isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
             isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
@@ -515,6 +521,8 @@ async function submitEditClient(req, res) {
         req.params.id,
       )
 
+      await db.updateClientExtension(data.country || null, data.countrySubdivision || null, data.buildingType || null, req.params.id)
+
       res.redirect(`/clients/${req.params.id}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
@@ -557,9 +565,15 @@ async function submitNewLocation(req, res) {
         return res.status(400).send(errorMessage)
       }
 
-      await db.createLocationFromBrowserForm(data.locationid, data.displayName, data.serialNumber, data.phoneNumber, data.clientId)
+      const newLocation = await db.createLocationFromBrowserForm(
+        data.locationid,
+        data.displayName,
+        data.serialNumber,
+        data.phoneNumber,
+        data.clientId,
+      )
 
-      res.redirect(`/locations/${data.locationid}`)
+      res.redirect(`/locations/${newLocation.id}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.log(errorMessage)
@@ -595,7 +609,7 @@ async function submitEditLocation(req, res) {
 
     if (validationErrors.isEmpty()) {
       const data = req.body
-      data.locationid = req.params.locationId
+      data.deviceId = req.params.id
 
       const client = await db.getClientWithClientId(data.clientId)
       if (client === null) {
@@ -611,11 +625,11 @@ async function submitEditLocation(req, res) {
         data.isDisplayed === 'true',
         data.isSendingAlerts === 'true',
         data.isSendingVitals === 'true',
-        data.locationid,
+        data.deviceId,
         data.clientId,
       )
 
-      res.redirect(`/locations/${data.locationid}`)
+      res.redirect(`/locations/${data.deviceId}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.log(errorMessage)

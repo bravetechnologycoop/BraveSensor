@@ -29,7 +29,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     await db.clearTables()
 
     this.client = await factories.clientDBFactory(db)
-    await factories.locationDBFactory(db, {
+    this.test1 = await factories.locationDBFactory(db, {
       locationid: this.testLocationIdForEdit,
       clientId: this.client.id,
     })
@@ -60,7 +60,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         clientId: this.client.id,
       }
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send(this.goodRequest)
     })
 
     it('should return 200', () => {
@@ -97,7 +97,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         clientId: `   ${this.client.id}   `,
       }
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send(this.goodRequest)
     })
 
     it('should return 200', () => {
@@ -134,7 +134,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         clientId: this.client.id,
       }
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send(this.goodRequest)
     })
 
     it('should return 200', () => {
@@ -172,7 +172,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         clientId: this.clientId,
       }
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send(this.goodRequest)
     })
 
     it('should return 400', () => {
@@ -208,7 +208,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         clientId: '',
       }
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(badRequest)
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send(badRequest)
     })
 
     it('should return 400', () => {
@@ -221,7 +221,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/${this.test1.id}: displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -236,7 +236,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       // We are not testing any logs that happen because of the setup
       helpers.log.resetHistory()
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send({})
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send({})
     })
 
     afterEach(() => {
@@ -253,7 +253,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/${this.test1.id}: displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),clientId (Invalid value)`,
       )
     })
   })

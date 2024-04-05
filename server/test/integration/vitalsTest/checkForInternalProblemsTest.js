@@ -25,7 +25,7 @@ const oneMinuteBeforeIntervalDate = new Date(changedTime)
 describe('vitals.js integration tests: checkForInternalProblems', () => {
   beforeEach(async () => {
     await db.clearTables()
-    sandbox.stub(helpers, 'log')
+    sandbox.spy(helpers, 'log')
     sandbox.stub(helpers, 'logSentry')
   })
 

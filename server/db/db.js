@@ -3,6 +3,7 @@ const pg = require('pg')
 
 // In-house dependencies
 const { ALERT_TYPE, CHATBOT_STATE, Client, DEVICE_TYPE, Device, Session, helpers } = require('brave-alert-lib')
+const ClientExtension = require('../ClientExtension')
 const SensorsVital = require('../SensorsVital')
 
 const pool = new pg.Pool({
@@ -58,6 +59,10 @@ function createClientFromRow(r) {
     r.created_at,
     r.updated_at,
   )
+}
+
+function createClientExtensionFromRow(r) {
+  return new ClientExtension(r.client_id, r.country, r.country_subdivision, r.building_type, r.created_at, r.updated_at)
 }
 
 function createDeviceFromRow(r, allClients) {
@@ -309,10 +314,10 @@ async function getDataForExport(pgClient) {
       SELECT
         c.id AS "Client ID",
         c.display_name AS "Client Name",
-        l.locationid AS "Sensor ID",
-        l.display_name AS "Sensor Name",
+        d.locationid AS "Sensor ID",
+        d.display_name AS "Sensor Name",
         NULL AS "Radar Type",
-        (l.is_sending_vitals AND l.is_sending_alerts AND c.is_sending_vitals AND c.is_sending_alerts) AS "Active?",
+        (d.is_sending_vitals AND d.is_sending_alerts AND c.is_sending_vitals AND c.is_sending_alerts) AS "Active?",
         s.id AS "Session ID",
         TO_CHAR(s.created_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Start",
         TO_CHAR(s.responded_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Responded At",
@@ -466,6 +471,30 @@ async function getClientWithClientId(id, pgClient) {
     return createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.log(`Error running the getClientWithClientId query: ${err.toString()}`)
+  }
+}
+
+async function getClientExtensionWithClientId(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClientExtensionWithClientId',
+      `
+      SELECT *
+      FROM clients_extension
+      WHERE client_id = $1
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return createClientExtensionFromRow({}) // return empty ClientExtension object
+    }
+
+    return createClientExtensionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.log(`Error running the getClientExtensionWithClientId query: ${err.toString()}`)
   }
 }
 
@@ -809,6 +838,34 @@ async function getLocationWithLocationid(locationid, pgClient) {
   return null
 }
 
+// Retrieves the location corresponding to a given location ID
+async function getLocationWithDeviceId(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLocationWithDeviceId',
+      `
+      SELECT *
+      FROM devices
+      WHERE id = $1
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    const allClients = await getClients(pgClient)
+    return createDeviceFromRow(results.rows[0], allClients)
+  } catch (err) {
+    helpers.log(`Error running the getLocationWithDeviceId query: ${err.toString()}`)
+  }
+
+  return null
+}
+
 async function getLocationsFromClientId(clientId, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -873,7 +930,7 @@ async function updateLocation(
   isDisplayed,
   isSendingAlerts,
   isSendingVitals,
-  locationid,
+  deviceId,
   clientId,
   pgClient,
 ) {
@@ -890,10 +947,10 @@ async function updateLocation(
         is_sending_alerts = $5,
         is_sending_vitals = $6,
         client_id = $7
-      WHERE locationid = $8
+      WHERE id = $8
       RETURNING *
       `,
-      [displayName, serialNumber, phoneNumber, isDisplayed, isSendingAlerts, isSendingVitals, clientId, locationid],
+      [displayName, serialNumber, phoneNumber, isDisplayed, isSendingAlerts, isSendingVitals, clientId, deviceId],
       pool,
       pgClient,
     )
@@ -902,7 +959,7 @@ async function updateLocation(
       return null
     }
 
-    helpers.log(`Location '${locationid}' successfully updated`)
+    helpers.log(`Location '${deviceId}' successfully updated`)
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
@@ -966,6 +1023,55 @@ async function updateClient(
   }
 }
 
+async function updateClientExtension(country, countrySubdivision, buildingType, clientId, pgClient) {
+  try {
+    let results = await helpers.runQuery(
+      'updateClientExtension',
+      `
+      UPDATE clients_extension
+      SET country = $1, country_subdivision = $2, building_type = $3
+      WHERE client_id = $4
+      RETURNING *
+      `,
+      [country, countrySubdivision, buildingType, clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined) {
+      return null
+    }
+
+    if (results.rows.length === 0) {
+      // entry in clients_extension doesn't exist; attempt to create it
+      results = await helpers.runQuery(
+        'createClientExtension',
+        `
+        INSERT INTO clients_extension (client_id, country, country_subdivision, building_type)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+        `,
+        [clientId, country, countrySubdivision, buildingType],
+        pool,
+        pgClient,
+      )
+
+      helpers.log(`New client extension inserted into database for client ${clientId}`)
+    } else {
+      helpers.log(`Client extension for client ${clientId} successfully updated`)
+    }
+
+    if (results === undefined || results.rows.length === 0) {
+      // extraneous error :sadface:
+      return null
+    }
+
+    return await createClientExtensionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.log(`Error running the updateClientExtension query: ${err.toString()}`)
+  }
+}
+
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
 async function createLocationFromBrowserForm(locationid, displayName, serialNumber, phoneNumber, clientId, pgClient) {
@@ -995,7 +1101,7 @@ async function createLocationFromBrowserForm(locationid, displayName, serialNumb
       return null
     }
     
-    helpers.log(`New location inserted into Database: ${locationid}`)
+    helpers.log(`New location inserted into database: ${locationid}`)
 
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
@@ -1042,6 +1148,8 @@ async function createLocation(
       pool,
       pgClient,
     )
+
+    helpers.log(`New location inserted into database: ${locationid}`)
 
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
@@ -1497,6 +1605,7 @@ module.exports = {
   createLocationFromBrowserForm,
   createSession,
   getAllSessionsWithDeviceId,
+  getClientExtensionWithClientId,
   getClientWithClientId,
   getClientWithSessionId,
   getClients,
@@ -1505,6 +1614,7 @@ module.exports = {
   getCurrentTimeForHealthCheck,
   getDataForExport,
   getHistoryOfSessions,
+  getLocationWithDeviceId,
   getLocationWithSerialNumber,
   getLocationWithLocationid,
   getLocations,
@@ -1521,6 +1631,7 @@ module.exports = {
   rollbackTransaction,
   saveSession,
   updateClient,
+  updateClientExtension,
   updateLocation,
   updateLowBatteryAlertTime,
   updateSentAlerts,
