@@ -87,7 +87,7 @@ function createDeviceFromRow(r, allClients) {
 }
 
 function createSensorsVitalFromRow(r, allSensors) {
-  const device = allSensors.filter(d => d.locationid === r.locationid)
+  const device = allSensors.filter(d => d.locationid === r.locationid)[0]
 
   return new SensorsVital(
     r.id,
