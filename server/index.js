@@ -100,12 +100,14 @@ app.post('/smokeTest/setup', async (request, response) => {
 app.post('/smokeTest/teardown', async (request, response) => {
   try {
     const smokeTestLocation = await db.getLocationWithLocationid('SmokeTestLocation')
-    await db.clearSessionsFromLocation(smokeTestLocation.id)
+    if (smokeTestLocation !== null) {
+      await db.clearSessionsFromLocation(smokeTestLocation.id)
+    }
     await db.clearLocation('SmokeTestLocation')
     await db.clearClientWithDisplayName('SmokeTestClient')
     response.status(200).send()
   } catch (error) {
-    helpers.logError(`Smoke test setup error: ${error}`)
+    helpers.logError(`Smoke test teardown error: ${error}`)
   }
 })
 
