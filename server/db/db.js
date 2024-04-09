@@ -506,7 +506,7 @@ async function getClientWithSessionId(sessionid, pgClient) {
       SELECT c.*
       FROM clients AS c
       LEFT JOIN devices AS d ON c.id = d.client_id
-      LEFT JOIN sessions AS s ON d.locationid = s.locationid
+      LEFT JOIN sessions AS s ON d.id = s.device_id
       WHERE s.id = $1
       `,
       [sessionid],
@@ -1385,15 +1385,15 @@ async function clearSessions(pgClient) {
   }
 }
 
-async function clearSessionsFromLocation(locationid, pgClient) {
+async function clearSessionsFromLocation(deviceId, pgClient) {
   try {
     await helpers.runQuery(
       'clearSessionsFromLocation',
       `
       DELETE FROM sessions
-      WHERE locationid = $1
+      WHERE device_id = $1
       `,
-      [locationid],
+      [deviceId],
       pool,
       pgClient,
     )
