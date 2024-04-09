@@ -9,7 +9,6 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { locationDBFactory } = require('../../../testingHelpers')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -46,12 +45,12 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
       this.locationid = 'unusedID'
       this.displayName = 'locationName'
-      this.radarCoreId = 'radar_coreID'
+      this.serialNumber = 'radar_coreID'
       this.phoneNumber = '+15005550006'
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
-        radarCoreID: this.radarCoreId,
+        serialNumber: this.serialNumber,
         phoneNumber: this.phoneNumber,
         clientId: this.client.id,
       }
@@ -64,18 +63,18 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
     })
 
     it('should create a location in the database with the given values', async () => {
-      const newLocation = await db.getLocationData(this.locationid)
+      const newLocation = await db.getLocationWithLocationid(this.locationid)
 
       expect({
         locationid: newLocation.locationid,
         displayName: newLocation.displayName,
-        radarCoreId: newLocation.radarCoreId,
+        serialNumber: newLocation.serialNumber,
         phoneNumber: newLocation.phoneNumber,
         clientId: newLocation.client.id,
       }).to.eql({
         locationid: this.locationid,
         displayName: this.displayName,
-        radarCoreId: this.radarCoreId,
+        serialNumber: this.serialNumber,
         phoneNumber: this.phoneNumber,
         clientId: this.client.id,
       })
@@ -91,12 +90,12 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
       this.locationid = ' unusedID '
       this.displayName = '  locationName  '
-      this.radarCoreId = '    radar_coreID    '
+      this.serialNumber = '    radar_coreID    '
       this.phoneNumber = '   +15005550006    '
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
-        radarCoreID: this.radarCoreId,
+        serialNumber: this.serialNumber,
         phoneNumber: this.phoneNumber,
         clientId: `  ${this.client.id}   `,
       }
@@ -109,18 +108,18 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
     })
 
     it('should create a location in the database with the trimmed values', async () => {
-      const newLocation = await db.getLocationData(this.locationid.trim())
+      const newLocation = await db.getLocationWithLocationid(this.locationid.trim())
 
       expect({
         locationid: newLocation.locationid,
         displayName: newLocation.displayName,
-        radarCoreId: newLocation.radarCoreId,
+        serialNumber: newLocation.serialNumber,
         phoneNumber: newLocation.phoneNumber,
         clientId: newLocation.client.id,
       }).to.eql({
         locationid: this.locationid.trim(),
         displayName: this.displayName.trim(),
-        radarCoreId: this.radarCoreId.trim(),
+        serialNumber: this.serialNumber.trim(),
         phoneNumber: this.phoneNumber.trim(),
         clientId: this.client.id.trim(),
       })
@@ -140,7 +139,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       const goodRequest = {
         locationid: 'unusedID',
         displayName: 'locationName',
-        radarCoreID: 'radar_coreID',
+        serialNumber: 'radar_coreID',
         phoneNumber: '+15005550006',
         clientId: this.clientId,
       }
@@ -168,7 +167,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       const goodRequest = {
         locationid: 'unusedID',
         displayName: 'locationName',
-        radarCoreID: 'radar_coreID',
+        serialNumber: 'radar_coreID',
         phoneNumber: '+15005550006',
         clientId: '91ddc8f7-c2e7-490e-bfe9-3d2880a76108',
       }
@@ -201,7 +200,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       const badRequest = {
         locationid: '',
         displayName: '',
-        radarCoreID: '',
+        serialNumber: '',
         phoneNumber: '',
         clientId: '',
       }
@@ -219,7 +218,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -246,7 +245,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -256,7 +255,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       sandbox.spy(db, 'createLocationFromBrowserForm')
 
       this.locationid = 'existingLocationId'
-      await locationDBFactory(db, {
+      await factories.locationDBFactory(db, {
         locationid: this.locationid,
         clientId: this.client.id,
       })
@@ -269,7 +268,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       const duplicateLocationRequest = {
         locationid: this.locationid,
         displayName: 'locationName',
-        radarCoreID: 'radar_coreID',
+        serialNumber: 'radar_coreID',
         phoneNumber: '+15005550006',
         clientId: this.client.id,
       }

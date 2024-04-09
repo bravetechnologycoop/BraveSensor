@@ -25,7 +25,7 @@ function setupVitals(braveAlerterObj) {
 }
 
 async function sendSingleAlert(locationid, message, pgClient) {
-  const location = await db.getLocationData(locationid, pgClient)
+  const location = await db.getLocationWithLocationid(locationid, pgClient)
 
   location.client.responderPhoneNumbers.forEach(async responderPhoneNumber => {
     await braveAlerter.sendSingleAlert(responderPhoneNumber, location.client.fromPhoneNumber, message)
@@ -132,7 +132,7 @@ async function checkForInternalProblems() {
       continue
     }
     try {
-      const numberOfStillnessAlerts = await db.numberOfStillnessAlertsInIntervalOfTime(location.locationid)
+      const numberOfStillnessAlerts = await db.numberOfStillnessAlertsInIntervalOfTime(location.id)
       const tooManyStillnessAlerts = numberOfStillnessAlerts > maxStillnessAlerts
       if (tooManyStillnessAlerts) {
         helpers.logSentry(`Unusually frequent number of stillness alerts (${numberOfStillnessAlerts}) have been received at ${location.locationid}`)
@@ -166,7 +166,7 @@ async function sendLowBatteryAlert(locationid) {
       helpers.logError(`sendLowBatteryAlert: Error starting transaction`)
       return
     }
-    const location = await db.getLocationData(locationid, pgClient)
+    const location = await db.getLocationWithLocationid(locationid, pgClient)
 
     if (
       location.isSendingVitals &&
@@ -227,7 +227,7 @@ async function handleHeartbeat(req, res) {
 
       if (webhookAPIKey === apiKey) {
         const coreId = req.body.coreid
-        const location = await db.getLocationFromParticleCoreID(coreId)
+        const location = await db.getLocationWithSerialNumber(coreId)
         if (!location) {
           const errorMessage = `Bad request to ${req.path}: no location matches the coreID ${coreId}`
           helpers.log(errorMessage)

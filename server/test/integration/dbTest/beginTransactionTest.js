@@ -54,8 +54,8 @@ describe('db.js integration tests: beginTransaction', () => {
       expect(helpers.log).to.be.calledWith(`Retrying runBeginTransactionWithRetries.`)
     })
 
-    it('should lock the clients, sessions, and locations tables to reflect the retry', () => {
-      expect(clientStub.query).to.be.calledWith(`LOCK TABLE clients, sessions, locations`)
+    it('should lock the clients, sessions, and devices tables to reflect the retry', () => {
+      expect(clientStub.query).to.be.calledWith(`LOCK TABLE clients, sessions, devices`)
     })
 
     it('should return a valid pgClient', () => {
@@ -83,8 +83,8 @@ describe('db.js integration tests: beginTransaction', () => {
       expect(helpers.log).to.not.be.calledWith(`Retrying runBeginTransactionWithRetries.`)
     })
 
-    it('should lock the clients, sessions, and locations tables', () => {
-      expect(clientStub.query).to.be.calledWith(`LOCK TABLE clients, sessions, locations`)
+    it('should lock the clients, sessions, and devices tables', () => {
+      expect(clientStub.query).to.be.calledWith(`LOCK TABLE clients, sessions, devices`)
     })
 
     it('should return a valid pgClient', () => {

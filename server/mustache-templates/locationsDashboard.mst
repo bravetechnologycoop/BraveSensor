@@ -20,7 +20,7 @@
         {{#currentLocation}}
             <h3>{{displayName}}</h3>
             
-            <a href="/locations/{{locationid}}/edit" class="btn btn-secondary btn-sm" role="button">Edit Location</a>
+            <a href="/locations/{{id}}/edit" class="btn btn-secondary btn-sm" role="button">Edit Location</a>
             <a href="/clients/{{clientid}}" class="btn btn-secondary btn-sm" role="button">View Client</a>
             <br>
             <div class="table-responsive">
@@ -55,7 +55,10 @@
             </div>
         {{/currentLocation}}
         {{^currentLocation}}
-            <h5>Sorry, this location does not appear to exist. Please select one from the dropdown to continue.</h5>
+            <h5>
+                Sorry, this location does not appear to exist.
+                Please find its client from the dropdown menu.
+            </h5>
         {{/currentLocation}}
         </div>
     </div>

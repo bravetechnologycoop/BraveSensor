@@ -104,11 +104,12 @@ async function renderVitalsPage(req, res) {
     }
 
     const sensorsVitals = await db.getRecentSensorsVitals()
+
     for (const sensorsVital of sensorsVitals) {
-      if (sensorsVital.location.isDisplayed && sensorsVital.location.client.isDisplayed) {
+      if (sensorsVital.device.isDisplayed && sensorsVital.device.client.isDisplayed) {
         viewParams.sensors.push({
-          client: sensorsVital.location.client,
-          location: sensorsVital.location,
+          client: sensorsVital.device.client,
+          location: sensorsVital.device,
           sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
           sensorLastSeenAgo:
             sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
@@ -117,8 +118,8 @@ async function renderVitalsPage(req, res) {
             sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
           isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
           isTampered: sensorsVital.isTampered !== null ? sensorsVital.isTampered : 'unknown',
-          isSendingAlerts: sensorsVital.location.client.isSendingAlerts && sensorsVital.location.isSendingAlerts,
-          isSendingVitals: sensorsVital.location.client.isSendingVitals && sensorsVital.location.isSendingVitals,
+          isSendingAlerts: sensorsVital.device.client.isSendingAlerts && sensorsVital.device.isSendingAlerts,
+          isSendingVitals: sensorsVital.device.client.isSendingVitals && sensorsVital.device.isSendingVitals,
         })
       }
     }
@@ -147,9 +148,9 @@ async function renderClientVitalsPage(req, res) {
 
       const sensorsVitals = await db.getRecentSensorsVitalsWithClientId(currentClient.id)
       for (const sensorsVital of sensorsVitals) {
-        if (sensorsVital.location.isDisplayed) {
+        if (sensorsVital.device.isDisplayed) {
           viewParams.sensors.push({
-            location: sensorsVital.location,
+            location: sensorsVital.device,
             sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
             sensorLastSeenAgo:
               sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
@@ -158,8 +159,8 @@ async function renderClientVitalsPage(req, res) {
               sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
             isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
             isTampered: sensorsVital.isTampered !== null ? sensorsVital.isTampered : 'unknown',
-            isSendingAlerts: sensorsVital.location.client.isSendingAlerts && sensorsVital.location.isSendingAlerts,
-            isSendingVitals: sensorsVital.location.client.isSendingVitals && sensorsVital.location.isSendingVitals,
+            isSendingAlerts: sensorsVital.device.client.isSendingAlerts && sensorsVital.device.isSendingAlerts,
+            isSendingVitals: sensorsVital.device.client.isSendingVitals && sensorsVital.device.isSendingVitals,
           })
         }
       }
@@ -211,7 +212,7 @@ async function renderDashboardPage(req, res) {
     const allDisplayedLocations = (await db.getLocations()).filter(location => location.isDisplayed)
 
     for (const location of allDisplayedLocations) {
-      const recentSession = await db.getMostRecentSessionWithLocationid(location.locationid)
+      const recentSession = await db.getMostRecentSessionWithDeviceId(location.id)
       if (recentSession !== null) {
         const sessionCreatedAt = Date.parse(recentSession.createdAt)
         const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
@@ -225,7 +226,7 @@ async function renderDashboardPage(req, res) {
         .map(location => {
           return {
             name: location.displayName,
-            id: location.locationid,
+            id: location.id,
             sessionStart: location.sessionStart,
             isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
             isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
@@ -260,15 +261,14 @@ async function renderLocationDetailsPage(req, res) {
   try {
     // Needed for the navigation bar
     const clients = await db.getClients()
-
-    const recentSessions = await db.getHistoryOfSessions(req.params.locationId)
-    const currentLocation = await db.getLocationData(req.params.locationId)
+    const location = await db.getLocationWithDeviceId(req.params.id)
+    const recentSessions = await db.getHistoryOfSessions(req.params.id)
 
     const viewParams = {
       clients: clients.filter(client => client.isDisplayed),
       recentSessions: [],
-      currentLocation,
-      clientid: currentLocation.client.id,
+      currentLocation: location,
+      clientid: location.client.id,
     }
 
     for (const recentSession of recentSessions) {
@@ -297,16 +297,16 @@ async function renderLocationDetailsPage(req, res) {
 async function renderLocationEditPage(req, res) {
   try {
     const clients = await db.getClients()
-    const currentLocation = await db.getLocationData(req.params.locationId)
+    const location = await db.getLocationWithDeviceId(req.params.id)
 
     const viewParams = {
-      currentLocation,
+      currentLocation: location,
       clients: clients
         .filter(client => client.isDisplayed)
         .map(client => {
           return {
             ...client,
-            selected: client.id === currentLocation.client.id,
+            selected: client.id === location.client.id,
           }
         }),
     }
@@ -335,10 +335,16 @@ async function renderClientEditPage(req, res) {
   try {
     const clients = await db.getClients()
     const currentClient = clients.find(client => client.id === req.params.id)
+    const clientExtension = await db.getClientExtensionWithClientId(req.params.id)
 
     const viewParams = {
       clients: clients.filter(client => client.isDisplayed),
-      currentClient,
+      currentClient: {
+        ...currentClient,
+        country: clientExtension.country || '',
+        countrySubdivision: clientExtension.countrySubdivision || '',
+        buildingType: clientExtension.buildingType || '',
+      },
     }
 
     res.send(Mustache.render(updateClientTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
@@ -356,7 +362,7 @@ async function renderClientDetailsPage(req, res) {
     const locations = await db.getLocationsFromClientId(currentClient.id)
 
     for (const location of locations) {
-      const recentSession = await db.getMostRecentSessionWithLocationid(location.locationid)
+      const recentSession = await db.getMostRecentSessionWithDeviceId(location.id)
       if (recentSession !== null) {
         const sessionCreatedAt = Date.parse(recentSession.createdAt)
         const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
@@ -372,7 +378,7 @@ async function renderClientDetailsPage(req, res) {
         .map(location => {
           return {
             name: location.displayName,
-            id: location.locationid,
+            id: location.id,
             sessionStart: location.sessionStart,
             isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
             isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
@@ -439,6 +445,9 @@ async function submitNewClient(req, res) {
         false,
         data.language,
       )
+
+      // create a client extension row for the newly created client
+      await db.updateClientExtension(data.country || null, data.countrySubdivision || null, data.buildingType || null, newClient.id)
 
       res.redirect(`/clients/${newClient.id}`)
     } else {
@@ -516,6 +525,8 @@ async function submitEditClient(req, res) {
         req.params.id,
       )
 
+      await db.updateClientExtension(data.country || null, data.countrySubdivision || null, data.buildingType || null, req.params.id)
+
       res.redirect(`/clients/${req.params.id}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
@@ -528,7 +539,7 @@ async function submitEditClient(req, res) {
   }
 }
 
-const validateNewLocation = Validator.body(['locationid', 'displayName', 'radarCoreID', 'phoneNumber', 'clientId']).trim().notEmpty()
+const validateNewLocation = Validator.body(['locationid', 'displayName', 'serialNumber', 'phoneNumber', 'clientId']).trim().notEmpty()
 
 async function submitNewLocation(req, res) {
   try {
@@ -558,9 +569,15 @@ async function submitNewLocation(req, res) {
         return res.status(400).send(errorMessage)
       }
 
-      await db.createLocationFromBrowserForm(data.locationid, data.displayName, data.radarCoreID, data.phoneNumber, data.clientId)
+      const newLocation = await db.createLocationFromBrowserForm(
+        data.locationid,
+        data.displayName,
+        data.serialNumber,
+        data.phoneNumber,
+        data.clientId,
+      )
 
-      res.redirect(`/locations/${data.locationid}`)
+      res.redirect(`/locations/${newLocation.id}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.log(errorMessage)
@@ -574,12 +591,8 @@ async function submitNewLocation(req, res) {
 
 const validateEditLocation = Validator.body([
   'displayName',
-  'radarCoreID',
+  'serialNumber',
   'phoneNumber',
-  'movementThreshold',
-  'durationTimer',
-  'stillnessTimer',
-  'initialTimer',
   'isDisplayed',
   'isSendingAlerts',
   'isSendingVitals',
@@ -600,7 +613,7 @@ async function submitEditLocation(req, res) {
 
     if (validationErrors.isEmpty()) {
       const data = req.body
-      data.locationid = req.params.locationId
+      data.deviceId = req.params.id
 
       const client = await db.getClientWithClientId(data.clientId)
       if (client === null) {
@@ -611,20 +624,16 @@ async function submitEditLocation(req, res) {
 
       await db.updateLocation(
         data.displayName,
-        data.radarCoreID,
+        data.serialNumber,
         data.phoneNumber,
-        data.movementThreshold,
-        data.durationTimer,
-        data.stillnessTimer,
-        data.initialTimer,
         data.isDisplayed === 'true',
         data.isSendingAlerts === 'true',
         data.isSendingVitals === 'true',
-        data.locationid,
+        data.deviceId,
         data.clientId,
       )
 
-      res.redirect(`/locations/${data.locationid}`)
+      res.redirect(`/locations/${data.deviceId}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.log(errorMessage)

@@ -81,10 +81,6 @@ app.post('/smokeTest/setup', async (request, response) => {
     })
     await db.createLocation(
       'SmokeTestLocation',
-      17,
-      15,
-      150,
-      3,
       null,
       phoneNumber,
       'SmokeTestLocation',
@@ -93,8 +89,6 @@ app.post('/smokeTest/setup', async (request, response) => {
       true,
       true,
       '2021-03-09T19:37:28.176Z',
-      'AA11BB',
-      false,
       client.id,
     )
     response.status(200).send()
@@ -105,12 +99,15 @@ app.post('/smokeTest/setup', async (request, response) => {
 
 app.post('/smokeTest/teardown', async (request, response) => {
   try {
-    await db.clearSessionsFromLocation('SmokeTestLocation')
+    const smokeTestLocation = await db.getLocationWithLocationid('SmokeTestLocation')
+    if (smokeTestLocation !== null) {
+      await db.clearSessionsFromLocation(smokeTestLocation.id)
+    }
     await db.clearLocation('SmokeTestLocation')
     await db.clearClientWithDisplayName('SmokeTestClient')
     response.status(200).send()
   } catch (error) {
-    helpers.logError(`Smoke test setup error: ${error}`)
+    helpers.logError(`Smoke test teardown error: ${error}`)
   }
 })
 

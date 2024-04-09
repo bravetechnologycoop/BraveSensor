@@ -114,6 +114,27 @@
                         <small id="isSendingVitalsHelp" class="form-text text-muted">"true" or "false"</small>
                     </div>
                 </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="country" class="col-sm-3 col-form-label">Country</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="country" placeholder="Country" value="{{country}}">
+                        <small id="isSendingVitalsHelp" class="form-text text-muted">e.g., "Canada" or "USA"</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="countrySubdivision" class="col-sm-3 col-form-label">Country Subdivision</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="countrySubdivision" placeholder="Country Subdivision" value="{{countrySubdivision}}">
+                        <small id="isSendingVitalsHelp" class="form-text text-muted">e.g., "BC" or "OH"</small>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="buildingType" class="col-sm-3 col-form-label">Building Type</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="buildingType" placeholder="Building Type" value="{{buildingType}}">
+                        <small id="isSendingVitalsHelp" class="form-text text-muted">e.g., "Housing: Shelter" or "Medical: Community Health Care Facility"</small>
+                    </div>
+                </div>
                 <br>
                 <button type="submit" class="btn btn-primary btn-large">Submit</button>
               </form>

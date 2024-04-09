@@ -9,7 +9,6 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { locationDBFactory } = require('../../../testingHelpers')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -30,7 +29,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     await db.clearTables()
 
     this.client = await factories.clientDBFactory(db)
-    await locationDBFactory(db, {
+    this.test1 = await factories.locationDBFactory(db, {
       locationid: this.testLocationIdForEdit,
       clientId: this.client.id,
     })
@@ -53,19 +52,15 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       this.goodRequest = {
         displayName: 'New Name',
-        radarCoreID: 'new_radar_core',
+        serialNumber: 'new_radar_core',
         phoneNumber: '+11112223456',
-        movementThreshold: 15,
-        durationTimer: 90,
-        stillnessTimer: 10,
-        initialTimer: 9856,
         isDisplayed: 'true',
         isSendingAlerts: 'true',
         isSendingVitals: 'false',
         clientId: this.client.id,
       }
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send(this.goodRequest)
     })
 
     it('should return 200', () => {
@@ -73,20 +68,15 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     })
 
     it('should update the location in the database', async () => {
-      const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
+      const updatedLocation = await db.getLocationWithLocationid(this.testLocationIdForEdit)
 
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
-      expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
+      expect(updatedLocation.serialNumber).to.equal(this.goodRequest.serialNumber)
       expect(updatedLocation.phoneNumber).to.equal(this.goodRequest.phoneNumber)
       expect(updatedLocation.isDisplayed).to.be.true
       expect(updatedLocation.isSendingAlerts).to.be.true
       expect(updatedLocation.isSendingVitals).to.be.false
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
-
-      chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
-      chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
-      chai.assert.equal(updatedLocation.stillnessTimer, this.goodRequest.stillnessTimer)
-      chai.assert.equal(updatedLocation.initialTimer, this.goodRequest.initialTimer)
     })
   })
 
@@ -99,19 +89,15 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       this.goodRequest = {
         displayName: ' New Name ',
-        radarCoreID: '   new_radar_core ',
+        serialNumber: '   new_radar_core ',
         phoneNumber: '    +11112223456    ',
-        movementThreshold: '    15    ',
-        durationTimer: ' 90   ',
-        stillnessTimer: '   10   ',
-        initialTimer: ' 9856 ',
         isDisplayed: '    true     ',
         isSendingAlerts: '    true     ',
         isSendingVitals: '    false     ',
         clientId: `   ${this.client.id}   `,
       }
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send(this.goodRequest)
     })
 
     it('should return 200', () => {
@@ -119,20 +105,15 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     })
 
     it('should update the location in the database', async () => {
-      const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
+      const updatedLocation = await db.getLocationWithLocationid(this.testLocationIdForEdit)
 
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName.trim())
-      expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID.trim())
+      expect(updatedLocation.serialNumber).to.equal(this.goodRequest.serialNumber.trim())
       expect(updatedLocation.phoneNumber).to.equal(this.goodRequest.phoneNumber.trim())
       expect(updatedLocation.isDisplayed).to.be.true
       expect(updatedLocation.isSendingAlerts).to.be.true
       expect(updatedLocation.isSendingVitals).to.be.false
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId.trim())
-
-      chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold.trim())
-      chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer.trim())
-      chai.assert.equal(updatedLocation.stillnessTimer, this.goodRequest.stillnessTimer.trim())
-      chai.assert.equal(updatedLocation.initialTimer, this.goodRequest.initialTimer.trim())
     })
   })
 
@@ -145,19 +126,15 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       this.goodRequest = {
         displayName: 'New Name',
-        radarCoreID: 'new_radar_core',
+        serialNumber: 'new_radar_core',
         phoneNumber: '+11112223456',
-        movementThreshold: 15,
-        durationTimer: 90,
-        stillnessTimer: 10,
-        initialTimer: 9856,
         isDisplayed: 'false',
         isSendingAlerts: 'false',
         isSendingVitals: 'true',
         clientId: this.client.id,
       }
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send(this.goodRequest)
     })
 
     it('should return 200', () => {
@@ -165,20 +142,15 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     })
 
     it('should update the location in the database', async () => {
-      const updatedLocation = await db.getLocationData(this.testLocationIdForEdit)
+      const updatedLocation = await db.getLocationWithLocationid(this.testLocationIdForEdit)
 
       expect(updatedLocation.displayName).to.equal(this.goodRequest.displayName)
-      expect(updatedLocation.radarCoreId).to.equal(this.goodRequest.radarCoreID)
+      expect(updatedLocation.serialNumber).to.equal(this.goodRequest.serialNumber)
       expect(updatedLocation.phoneNumber).to.equal(this.goodRequest.phoneNumber)
       expect(updatedLocation.isDisplayed).to.be.false
       expect(updatedLocation.isSendingAlerts).to.be.false
       expect(updatedLocation.isSendingVitals).to.be.true
       expect(updatedLocation.client.id).to.equal(this.goodRequest.clientId)
-
-      chai.assert.equal(updatedLocation.movementThreshold, this.goodRequest.movementThreshold)
-      chai.assert.equal(updatedLocation.durationTimer, this.goodRequest.durationTimer)
-      chai.assert.equal(updatedLocation.stillnessTimer, this.goodRequest.stillnessTimer)
-      chai.assert.equal(updatedLocation.initialTimer, this.goodRequest.initialTimer)
     })
   })
 
@@ -192,19 +164,15 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       this.clientId = '8244c552-6753-4713-bbb6-07ad1c7fb8f8'
       this.goodRequest = {
         displayName: 'New Name',
-        radarCoreID: 'new_radar_core',
+        serialNumber: 'new_radar_core',
         phoneNumber: '+11112223456',
-        movementThreshold: 15,
-        durationTimer: 90,
-        stillnessTimer: 10,
-        initialTimer: 9856,
         isDisplayed: 'true',
         isSendingAlerts: 'true',
         isSendingVitals: 'false',
         clientId: this.clientId,
       }
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(this.goodRequest)
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send(this.goodRequest)
     })
 
     it('should return 400', () => {
@@ -232,19 +200,15 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
       const badRequest = {
         displayName: '',
-        radarCoreID: '',
+        serialNumber: '',
         phoneNumber: '',
-        movementThreshold: '',
-        durationTimer: '',
-        stillnessTimer: '',
-        initialTimer: '',
         isDisplayed: '',
         isSendingAlerts: '',
         isSendingVitals: '',
         clientId: '',
       }
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send(badRequest)
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send(badRequest)
     })
 
     it('should return 400', () => {
@@ -257,7 +221,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/${this.test1.id}: displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -272,7 +236,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       // We are not testing any logs that happen because of the setup
       helpers.log.resetHistory()
 
-      this.response = await this.agent.post(`/locations/${this.testLocationIdForEdit}`).send({})
+      this.response = await this.agent.post(`/locations/${this.test1.id}`).send({})
     })
 
     afterEach(() => {
@@ -289,7 +253,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations/test1: displayName (Invalid value),radarCoreID (Invalid value),phoneNumber (Invalid value),movementThreshold (Invalid value),durationTimer (Invalid value),stillnessTimer (Invalid value),initialTimer (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations/${this.test1.id}: displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),isDisplayed (Invalid value),isSendingAlerts (Invalid value),isSendingVitals (Invalid value),clientId (Invalid value)`,
       )
     })
   })

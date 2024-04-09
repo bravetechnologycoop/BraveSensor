@@ -7,8 +7,8 @@ const rewire = require('rewire')
 const { t } = require('i18next')
 
 // In-house dependencies
-const { CHATBOT_STATE, helpers } = require('brave-alert-lib')
-const { mockBraveAlerter, locationFactory, sessionFactory } = require('../../../testingHelpers')
+const { CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
+const { mockBraveAlerter } = require('../../../testingHelpers')
 const db = require('../../../db/db')
 
 const sensorAlerts = rewire('../../../sensorAlerts')
@@ -47,10 +47,10 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
 
   describe('given an alert for a new session', () => {
     beforeEach(async () => {
-      this.location = locationFactory({})
-      this.session = sessionFactory({ chatbotState: CHATBOT_STATE.STARTED, alertType })
+      this.location = factories.locationFactory({})
+      this.session = factories.sessionFactory({ chatbotState: CHATBOT_STATE.STARTED, alertType })
 
-      sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(null)
+      sandbox.stub(db, 'getUnrespondedSessionWithDeviceId').returns(null)
       sandbox.stub(db, 'getCurrentTime')
       sandbox.stub(db, 'createSession').returns(this.session)
       sandbox.stub(db, 'saveSession')
@@ -66,7 +66,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
 
     it('should create a new session with chatbot state STARTED', () => {
       expect(db.createSession).to.be.calledWithExactly(
-        this.location.locationid,
+        this.location.id,
         undefined,
         CHATBOT_STATE.STARTED,
         alertType,
@@ -108,22 +108,22 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
 
   describe('given an alert for a stale session that has not been responded to', () => {
     beforeEach(async () => {
-      this.location = locationFactory({})
-      this.staleSession = sessionFactory({
+      this.location = factories.locationFactory({})
+      this.staleSession = factories.sessionFactory({
         id: staleSessionId,
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T00:00:00.000Z'),
         updatedAt: new Date('2024-01-11T01:00:00.000Z'),
       })
-      this.session = sessionFactory({
+      this.session = factories.sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
         updatedAt: new Date('2024-01-11T12:00:00.000Z'),
       })
 
-      sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(this.staleSession)
+      sandbox.stub(db, 'getUnrespondedSessionWithDeviceId').returns(this.staleSession)
       // 12-hour difference between the stale session and this alert
       sandbox.stub(db, 'getCurrentTime').returns(this.session.createdAt)
       sandbox.stub(db, 'createSession').returns(this.session)
@@ -140,7 +140,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
 
     it('should create a new session with chatbot state STARTED', () => {
       expect(db.createSession).to.be.calledWithExactly(
-        this.location.locationid,
+        this.location.id,
         undefined,
         CHATBOT_STATE.STARTED,
         alertType,
@@ -182,8 +182,8 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
 
   describe('given an alert for an existing session that has not been responded to, with not enough (<) alerts to accept a reset request', () => {
     beforeEach(async () => {
-      this.location = locationFactory({})
-      this.session = sessionFactory({
+      this.location = factories.locationFactory({})
+      this.session = factories.sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
@@ -191,7 +191,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         numberOfAlerts: 1,
         isResettable: false,
       })
-      this.savedSession = sessionFactory({
+      this.savedSession = factories.sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
@@ -200,7 +200,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         isResettable: false,
       })
 
-      sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(this.session)
+      sandbox.stub(db, 'getUnrespondedSessionWithDeviceId').returns(this.session)
       // current time is just under the session reset threshold
       sandbox.stub(db, 'getCurrentTime').returns(new Date(this.session.updatedAt.getTime() + sessionResetThreshold - 1))
       sandbox.stub(db, 'createSession')
@@ -239,8 +239,8 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
 
   describe('given an alert for an existing session that has not been responded to, with enough (===) alerts to accept a reset request', () => {
     beforeEach(async () => {
-      this.location = locationFactory({})
-      this.session = sessionFactory({
+      this.location = factories.locationFactory({})
+      this.session = factories.sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
@@ -248,7 +248,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         numberOfAlerts: 1,
         isResettable: false,
       })
-      this.savedSession = sessionFactory({
+      this.savedSession = factories.sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
@@ -257,7 +257,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         isResettable: true,
       })
 
-      sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(this.session)
+      sandbox.stub(db, 'getUnrespondedSessionWithDeviceId').returns(this.session)
       // current time is just under the session reset threshold
       sandbox.stub(db, 'getCurrentTime').returns(new Date(this.session.updatedAt.getTime() + sessionResetThreshold - 1))
       sandbox.stub(db, 'createSession')
@@ -296,8 +296,8 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
 
   describe('given an alert for an existing session that has not been responded to, with more than enough (>) alerts to accept a reset request', () => {
     beforeEach(async () => {
-      this.location = locationFactory({})
-      this.session = sessionFactory({
+      this.location = factories.locationFactory({})
+      this.session = factories.sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
@@ -305,7 +305,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         numberOfAlerts: 1,
         isResettable: true,
       })
-      this.savedSession = sessionFactory({
+      this.savedSession = factories.sessionFactory({
         chatbotState: CHATBOT_STATE.STARTED,
         alertType,
         createdAt: new Date('2024-01-11T12:00:00.000Z'),
@@ -314,7 +314,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         isResettable: true,
       })
 
-      sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(this.session)
+      sandbox.stub(db, 'getUnrespondedSessionWithDeviceId').returns(this.session)
       // current time is just under the session reset threshold
       sandbox.stub(db, 'getCurrentTime').returns(new Date(this.session.updatedAt.getTime() + sessionResetThreshold - 1))
       sandbox.stub(db, 'createSession')
@@ -353,10 +353,10 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
 
   describe('given an alert for a new session from an old sensor, where alert data is "stillness alert!!!"', () => {
     beforeEach(async () => {
-      this.location = locationFactory({})
-      this.session = sessionFactory({ chatbotState: CHATBOT_STATE.STARTED, alertType })
+      this.location = factories.locationFactory({})
+      this.session = factories.sessionFactory({ chatbotState: CHATBOT_STATE.STARTED, alertType })
 
-      sandbox.stub(db, 'getUnrespondedSessionWithLocationId').returns(null)
+      sandbox.stub(db, 'getUnrespondedSessionWithDeviceId').returns(null)
       sandbox.stub(db, 'getCurrentTime')
       sandbox.stub(db, 'createSession').returns(this.session)
       sandbox.stub(db, 'saveSession')
@@ -372,7 +372,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
 
     it('should create a new session with chatbot state STARTED', () => {
       expect(db.createSession).to.be.calledWithExactly(
-        this.location.locationid,
+        this.location.id,
         undefined,
         CHATBOT_STATE.STARTED,
         alertType,
