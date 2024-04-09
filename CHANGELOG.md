@@ -11,6 +11,26 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Database type `device_type_enum` (CU-86791yyvg).
+- Database columns `id` and `device_type` to table `devices` (CU-86791yyvg).
+- Database tables `buttons_vitals`, `buttons_vitals_cache`, `gateways`, `gateways_vitals`, and `gateways_vitals_cache`, replicating the tables used by Brave Buttons (CU-86791yyvg).
+- Country, country subdivision, and building type fields to create and edit client dashboard pages (CU-86791yyvg).
+
+### Changed
+
+- Database table `locations` rename to `devices` (CU-86791yyvg).
+- Database column `radar_particlecoreid` rename to `serial_number` for table `devices` (CU-86791yyvg).
+- Database column `locationid` rename to `device_id` referencing `id` in `devices` for tables `sensors_vitals` and `sensors_vitals_cache` (CU-86791yyvg).
+- Various database indexes, constraints, and triggers with respect to all changes (CU-86791yyvg).
+- Dashboard to link locations with their device ID, not location ID (CU-86791yyvg).
+
+### Removed
+
+- Database columns `movement_threshold`, `duration_timer`, `stillness_timer`, `door_id`, and `is_in_debug_mode` from table `devices` (CU-86791yyvg).
+- Database table `notifications` (CU-86791yyvg).
+
 ## [10.8.0] - 2024-02-29
 
 ### Added
