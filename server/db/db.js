@@ -220,10 +220,10 @@ async function getClients(pgClient) {
   }
 }
 
-async function getActiveClients(pgClient) {
+async function getActiveSensorClients(pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getActiveClients',
+      'getActiveSensorClients',
       `
       SELECT c.*
       FROM clients c
@@ -249,7 +249,7 @@ async function getActiveClients(pgClient) {
 
     return await Promise.all(results.rows.map(r => createClientFromRow(r)))
   } catch (err) {
-    helpers.log(`Error running the getActiveClients query: ${err.toString()}`)
+    helpers.log(`Error running the getActiveSensorClients query: ${err.toString()}`)
   }
 }
 
@@ -752,6 +752,7 @@ async function saveSession(session, pgClient) {
       pool,
       pgClient,
     )
+
     if (results === undefined || results.rows === undefined || results.rows.length === 0) {
       throw new Error("Tried to save a session that doesn't exist yet. Use createSession() instead.")
     }
@@ -897,6 +898,7 @@ async function getLocationsFromClientId(clientId, pgClient) {
 async function numberOfStillnessAlertsInIntervalOfTime(deviceId, pgClient) {
   const intervalToCheckAlertsStr = helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS')
   const intervalToCheckAlerts = parseInt(intervalToCheckAlertsStr, 10)
+
   try {
     const results = await helpers.runQuery(
       'numberOfStillnessAlertsInIntervalOfTime',
@@ -930,8 +932,8 @@ async function updateLocation(
   isDisplayed,
   isSendingAlerts,
   isSendingVitals,
-  deviceId,
   clientId,
+  deviceId,
   pgClient,
 ) {
   try {
@@ -1064,6 +1066,7 @@ async function updateClientExtension(country, countrySubdivision, buildingType, 
       pgClient,
     )
 
+    // NOTE: this shouldn't happen, as insertion into clients_extension is a trigger for insertion into clients, but it's good to be safe!
     if (results === undefined || results.rows.length === 0) {
       return await createClientExtension(clientId, country, countrySubdivision, buildingType)
     }
@@ -1614,7 +1617,7 @@ module.exports = {
   getClientWithClientId,
   getClientWithSessionId,
   getClients,
-  getActiveClients,
+  getActiveSensorClients,
   getCurrentTime,
   getCurrentTimeForHealthCheck,
   getDataForExport,

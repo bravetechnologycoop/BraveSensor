@@ -629,8 +629,8 @@ async function submitEditLocation(req, res) {
         data.isDisplayed === 'true',
         data.isSendingAlerts === 'true',
         data.isSendingVitals === 'true',
-        data.deviceId,
         data.clientId,
+        data.deviceId,
       )
 
       res.redirect(`/locations/${data.deviceId}`)

@@ -153,7 +153,7 @@ async function handleMessageClients(req, res) {
 
   try {
     if (validationErrors.isEmpty()) {
-      const clients = await db.getActiveClients()
+      const clients = await db.getActiveSensorClients()
       const twilioMessage = req.body.twilioMessage
       const responseObject = {
         status: 'success',
