@@ -142,7 +142,7 @@ async function handleSensorEvent(request, response) {
         }
         const alertData = request.body.data
 
-        const location = await db.getLocationWithSerialNumber(coreId)
+        const location = await db.getDeviceWithSerialNumber(coreId)
         if (!location) {
           const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
           helpers.logError(errorMessage)

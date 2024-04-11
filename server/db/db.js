@@ -784,10 +784,10 @@ async function saveSession(session, pgClient) {
 }
 
 // Retrieves the location corresponding to a given Particle core ID (serial number)
-async function getLocationWithSerialNumber(serialNumber, pgClient) {
+async function getDeviceWithSerialNumber(serialNumber, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getLocationWithSerialNumber',
+      'getDeviceWithSerialNumber',
       `
       SELECT *
       FROM devices
@@ -805,7 +805,7 @@ async function getLocationWithSerialNumber(serialNumber, pgClient) {
     const allClients = await getClients(pgClient)
     return createDeviceFromRow(results.rows[0], allClients)
   } catch (err) {
-    helpers.log(`Error running the getLocationWithSerialNumber query: ${err.toString()}`)
+    helpers.log(`Error running the getDeviceWithSerialNumber query: ${err.toString()}`)
   }
 
   return null
@@ -1612,18 +1612,18 @@ module.exports = {
   createLocation,
   createLocationFromBrowserForm,
   createSession,
+  getActiveSensorClients,
   getAllSessionsWithDeviceId,
   getClientExtensionWithClientId,
   getClientWithClientId,
   getClientWithSessionId,
   getClients,
-  getActiveSensorClients,
   getCurrentTime,
   getCurrentTimeForHealthCheck,
   getDataForExport,
+  getDeviceWithSerialNumber,
   getHistoryOfSessions,
   getLocationWithDeviceId,
-  getLocationWithSerialNumber,
   getLocationWithLocationid,
   getLocations,
   getLocationsFromClientId,
