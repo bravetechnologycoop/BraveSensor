@@ -119,7 +119,7 @@ const sandbox = sinon.createSandbox()
 
 describe('pa.js unit tests: handleMessageClients', () => {
   beforeEach(() => {
-    sandbox.stub(db, 'getActiveClients').returns(activeClients)
+    sandbox.stub(db, 'getActiveSensorClients').returns(activeClients)
   })
 
   afterEach(() => {
