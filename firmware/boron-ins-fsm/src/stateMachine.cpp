@@ -15,6 +15,7 @@
 StateHandler stateHandler = state0_idle;
 
 // define global variables so they are allocated in memory
+unsigned int consecutiveDoorOpenHeartbeatCount;
 unsigned long state1_timer;
 unsigned long state2_duration_timer;
 unsigned long state3_stillness_timer;
@@ -436,6 +437,26 @@ void getHeartbeat() {
 
         // Add "isINSZero" field to the JSON message
         writer.name("isINSZero").value(isINSZero && lastHeartbeatPublish > 0);
+
+        // Checks if door is open during heartbeat, Adds to the counter if it is, resets counter if it isn't
+        doorData checkDoor = checkIM();
+        bool doorOpen = isDoorOpen(checkDoor.doorStatus);
+
+        if (doorOpen) {
+            consecutiveDoorOpenHeartbeatCount++;
+        } 
+        else {
+            consecutiveDoorOpenHeartbeatCount = 0;
+        }
+
+        // sends consecutive heartbeat count to server side to be handled
+        writer.name("consecutiveDoorOpenHeartbeatCount").value(consecutiveDoorOpenHeartbeatCount);
+
+        // alert should have been sent, reset counter
+        if (consecutiveDoorOpenHeartbeatCount >= 50)
+        {
+            consecutiveDoorOpenHeartbeatCount = 0;
+        }
 
         if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
             // if oldest value did miss; subtract from the current amount

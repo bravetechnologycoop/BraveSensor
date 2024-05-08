@@ -197,6 +197,16 @@ async function sendLowBatteryAlert(locationid) {
   }
 }
 
+async function sendFallOffAlert(location) {
+  await sendSingleAlert(
+    location.locationid,
+    t('sensorFallOff', {
+      lng: location.client.language,
+      deviceDisplayName: location.displayName,
+    }),
+  )
+}
+
 // Sends a isTampered alert if the previous heartbeat had the isTampered flag false (i.e. if the tampered status has just changed)
 async function sendIsTamperedAlert(location, currentIsTampered, previousIsTampered) {
   if (!location.client.isSendingVitals || !location.isSendingVitals) {
@@ -239,6 +249,7 @@ async function handleHeartbeat(req, res) {
           const doorMissedMessagesCount = message.doorMissedMsg
           const doorMissedFrequently = message.doorMissedFrequently
           const resetReason = message.resetReason
+          const consecutiveDoorOpenHeartbeatCount = message.consecutiveDoorOpenHeartbeatCount
           const stateTransitionsArray = message.states.map(convertStateArrayToObject)
           const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocation(location)
 
@@ -283,6 +294,10 @@ async function handleHeartbeat(req, res) {
 
           if (mostRecentSensorVitals !== null) {
             await sendIsTamperedAlert(location, isTamperedFlag, mostRecentSensorVitals.isTampered)
+          }
+
+          if (consecutiveDoorOpenHeartbeatCount >= 50) {
+            await sendFallOffAlert(location)
           }
 
           if (isINSZero) {
