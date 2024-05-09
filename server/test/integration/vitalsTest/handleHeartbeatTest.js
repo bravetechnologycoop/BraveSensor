@@ -96,6 +96,23 @@ async function lowBatteryHeartbeat(coreId) {
   }
 }
 
+// TODO: is this right?
+async function doorFallOffHeartbeat(coreId) {
+  try {
+    const response = await chai.request(server).post('/api/heartbeat').send({
+      coreid: coreId,
+      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveDoorOpenHeartbeatCount": 500}`,
+      api_key: webhookAPIKey,
+    })
+    await helpers.sleep(50)
+
+    return response
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
+// TODO: check if the rest of the async functions needs to have that data as well (set value to 0?)
 async function doorTamperedHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
@@ -408,6 +425,33 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       sandbox.stub(db, 'beginTransaction').returns(null)
       await lowBatteryHeartbeat(radar_coreID)
       expect(helpers.logError).to.be.calledWith(`sendLowBatteryAlert: Error starting transaction`)
+    })
+  })
+
+  // TODO: figure out how to do this, learn what the above 2 descibe functions does first
+  // TODO: fix describe comments because idt thats right
+  describe ('This heartbeat indicates that there has been multiple concecutive heartbeats where the door is open, with this heartbeat having an open door again', () => {
+    beforeEach(async() => {
+      await db.clearTables()
+
+      const client = await factories.clientDBFactory(db)
+      await factories.locationDBFactory(db, {
+        locationid: testLocation1Id,
+        serialNumber: radar_coreID,
+        sentLowBatteryAlertAt: firstLowBatteryAlert,
+        clientId: client.id,
+      })
+    })
+
+    afterEach(async () => {
+      await db.clearTables()
+      sandbox.restore()
+    })
+
+    // FIXME: is this the correct alert?
+    it('should send an alert for magnet sensor falling off', async () => {
+      await doorFallOffHeartbeat(radar_coreID)
+      expect(braveAlerter.sendSingleAlert).to.be.called
     })
   })
 
