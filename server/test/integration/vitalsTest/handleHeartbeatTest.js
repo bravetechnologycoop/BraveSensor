@@ -649,4 +649,3 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     })
   })
 })
-// test commit
