@@ -98,10 +98,11 @@ async function lowBatteryHeartbeat(coreId) {
 
 // TODO: is this right?
 async function doorFallOffHeartbeat(coreId) {
+  const fallOffHeartbeatTreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_TRESHOLD'), 10)
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": true, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveDoorOpenHeartbeatCount": 500}`,
+      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveDoorOpenHeartbeatCount": treshold + 1}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)
@@ -428,30 +429,24 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     })
   })
 
-  // TODO: figure out how to do this, learn what the above 2 descibe functions does first
-  // TODO: fix describe comments because idt thats right
+  // TODO: figure out how to do this, learn what the above 2 describe functions does first
   describe ('This heartbeat indicates that there has been multiple concecutive heartbeats where the door is open, with this heartbeat having an open door again', () => {
     beforeEach(async() => {
-      await db.clearTables()
-
-      const client = await factories.clientDBFactory(db)
-      await factories.locationDBFactory(db, {
-        locationid: testLocation1Id,
-        serialNumber: radar_coreID,
-        sentLowBatteryAlertAt: firstLowBatteryAlert,
-        clientId: client.id,
-      })
+      sandbox.stub(db, 'getDeviceWithSerialNumber').returns({ locationid: testLocation1Id })
+      sandbox.stub(db, 'logSensorsVital')
+      sandbox.stub(braveAlerter, 'sendSingleAlert').resolves()
     })
 
     afterEach(async () => {
-      await db.clearTables()
       sandbox.restore()
     })
 
     // FIXME: is this the correct alert?
     it('should send an alert for magnet sensor falling off', async () => {
-      await doorFallOffHeartbeat(radar_coreID)
+      this.response = await doorFallOffHeartbeat(radar_coreID)
+      expect(this.response).to.have.status(200)
       expect(braveAlerter.sendSingleAlert).to.be.called
+      expect(braveAlerter.sendSingleAlert).to.have.been.calledWith(sinon.match.any)
     })
   })
 
