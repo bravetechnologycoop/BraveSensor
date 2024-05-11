@@ -15,7 +15,7 @@
 StateHandler stateHandler = state0_idle;
 
 // define global variables so they are allocated in memory
-unsigned int consecutiveDoorOpenHeartbeatCount;
+unsigned long consecutiveDoorOpenHeartbeatCount;
 unsigned long state1_timer;
 unsigned long state2_duration_timer;
 unsigned long state3_stillness_timer;
@@ -453,6 +453,7 @@ void getHeartbeat() {
         writer.name("consecutiveDoorOpenHeartbeatCount").value(consecutiveDoorOpenHeartbeatCount);
 
         // alert should have been sent, reset counter
+        // FIXME: this number should be changed to the proper number (make it consistent with server side)
         if (consecutiveDoorOpenHeartbeatCount >= 50)
         {
             consecutiveDoorOpenHeartbeatCount = 0;

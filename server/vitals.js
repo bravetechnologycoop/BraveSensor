@@ -342,4 +342,5 @@ module.exports = {
   setupVitals,
   validateHeartbeat,
   checkForInternalProblems,
+  sendFallOffAlert,
 }
