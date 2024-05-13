@@ -444,7 +444,7 @@ void getHeartbeat() {
 
         if (doorOpen) {
             consecutiveDoorOpenHeartbeatCount++;
-        } 
+        }
         else {
             consecutiveDoorOpenHeartbeatCount = 0;
         }
