@@ -9,7 +9,6 @@ const sinon = require('sinon')
 const { factories, helpers } = require('brave-alert-lib')
 const { braveAlerter, db, server } = require('../../../index')
 const { sensorsVitalDBFactory } = require('../../../testingHelpers')
-const { clientId } = require('particle-api-js/src/Defaults')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)
@@ -99,13 +98,15 @@ async function lowBatteryHeartbeat(coreId) {
 
 async function doorFallOffHeartbeat(coreId) {
   const fallOffHeartbeatThreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD'), 10)
-  console.log(fallOffHeartbeatThreshold)
   try {
-    const response = await chai.request(server).post('/api/heartbeat').send({
-      coreid: coreId,
-      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveDoorOpenHeartbeatCount": ${fallOffHeartbeatThreshold}}`,
-      api_key: webhookAPIKey,
-    })
+    const response = await chai
+      .request(server)
+      .post('/api/heartbeat')
+      .send({
+        coreid: coreId,
+        data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveDoorOpenHeartbeatCount": ${fallOffHeartbeatThreshold}}`,
+        api_key: webhookAPIKey,
+      })
     await helpers.sleep(50)
 
     return response
@@ -429,9 +430,8 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     })
   })
 
-  describe ('This heartbeat indicates that there has been multiple concecutive heartbeats where the door is open, with this heartbeat having an open door again', () => {
-    
-    beforeEach(async() => {
+  describe('This heartbeat indicates that there has been multiple concecutive heartbeats where the door is open, with this heartbeat having an open door again', () => {
+    beforeEach(async () => {
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
