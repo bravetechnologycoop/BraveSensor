@@ -98,7 +98,7 @@ async function lowBatteryHeartbeat(coreId) {
 }
 
 async function doorFallOffHeartbeat(coreId) {
-  const fallOffHeartbeatTreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_TRESHOLD_TEST'), 10)
+  const fallOffHeartbeatTreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_TRESHOLD'), 10)
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
