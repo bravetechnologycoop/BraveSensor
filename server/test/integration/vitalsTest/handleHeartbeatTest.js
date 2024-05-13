@@ -98,11 +98,12 @@ async function lowBatteryHeartbeat(coreId) {
 }
 
 async function doorFallOffHeartbeat(coreId) {
-  const fallOffHeartbeatTreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_TRESHOLD'), 10)
+  const fallOffHeartbeatThreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD'), 10)
+  console.log(fallOffHeartbeatThreshold)
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
       coreid: coreId,
-      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveDoorOpenHeartbeatCount": ${fallOffHeartbeatTreshold}}`,
+      data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveDoorOpenHeartbeatCount": ${fallOffHeartbeatThreshold}}`,
       api_key: webhookAPIKey,
     })
     await helpers.sleep(50)

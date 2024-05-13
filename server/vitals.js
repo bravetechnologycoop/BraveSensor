@@ -296,7 +296,7 @@ async function handleHeartbeat(req, res) {
             await sendIsTamperedAlert(location, isTamperedFlag, mostRecentSensorVitals.isTampered)
           }
 
-          if (consecutiveDoorOpenHeartbeatCount >= helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_TRESHOLD')) {
+          if (consecutiveDoorOpenHeartbeatCount >= helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD')) {
             await sendFallOffAlert(location)
           }
 
