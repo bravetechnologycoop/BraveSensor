@@ -454,8 +454,7 @@ void getHeartbeat() {
 
         // alert should have been sent, reset counter
         // FIXME: this number should be changed to the proper number (make it consistent with server side)
-        if (consecutiveDoorOpenHeartbeatCount >= 50)
-        {
+        if (consecutiveDoorOpenHeartbeatCount >= 50) {
             consecutiveDoorOpenHeartbeatCount = 0;
         }
 
