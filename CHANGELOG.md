@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [10.9.0] - 2024-05-14
+
 ### Added
 
 - Database type `device_type_enum` (CU-86791yyvg).
@@ -758,7 +760,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.8.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.9.0...HEAD
+[10.9.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.8.0...v10.9.0
 [10.8.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.7.0...v10.8.0
 [10.7.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.6.0...v10.7.0
 [10.6.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.5.0...v10.6.0
