@@ -438,25 +438,8 @@ void getHeartbeat() {
         // Add "isINSZero" field to the JSON message
         writer.name("isINSZero").value(isINSZero && lastHeartbeatPublish > 0);
 
-        // Checks if door is open during heartbeat, Adds to the counter if it is, resets counter if it isn't
-        doorData checkDoor = checkIM();
-        bool doorOpen = isDoorOpen(checkDoor.doorStatus);
-
-        if (doorOpen) {
-            consecutiveDoorOpenHeartbeatCount++;
-        }
-        else {
-            consecutiveDoorOpenHeartbeatCount = 0;
-        }
-
         // sends consecutive heartbeat count to server side to be handled
         writer.name("consecutiveDoorOpenHeartbeatCount").value(consecutiveDoorOpenHeartbeatCount);
-
-        // alert should have been sent, reset counter
-        // FIXME: this number should be changed to the proper number (make it consistent with server side)
-        if (consecutiveDoorOpenHeartbeatCount >= 50) {
-            consecutiveDoorOpenHeartbeatCount = 0;
-        }
 
         if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
             // if oldest value did miss; subtract from the current amount

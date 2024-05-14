@@ -197,6 +197,7 @@ async function sendLowBatteryAlert(locationid) {
   }
 }
 
+// FIXME: the spanish message is google translated, needs fixing
 async function sendFallOffAlert(location) {
   await sendSingleAlert(
     location.locationid,

@@ -19,6 +19,7 @@ bool doorMessageReceivedFlag = false;
 unsigned long doorHeartbeatReceived = 0;
 unsigned long doorLastMessage = 0;
 unsigned long timeWhenDoorClosed = 0;
+unsigned long consecutiveDoorOpenHeartbeatCount = 0;
 
 //**********setup()******************
 
@@ -79,10 +80,18 @@ doorData checkIM() {
             if ((currentDoorData.doorStatus & 0b1000) == 0 || (previousDoorData.doorStatus & 0b0010) != 0) {
                 timeWhenDoorClosed = millis();
             }
+
+            // reset consecutive door open counter since the door is closed
+            consecutiveDoorOpenHeartbeatCount = 0;
         }
 
         // After a certain thereshold, the next door message received will trigger a boron heartbeat
         if (millis() - doorLastMessage >= MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD) {
+            // if the door is open upon sending this heartbeat, increment count
+            if (isDoorOpen(currentDoorData.doorStatus)) {
+                consecutiveDoorOpenHeartbeatCount++;
+            }
+
             doorMessageReceivedFlag = true;
         }
 
@@ -232,4 +241,9 @@ int isDoorOpen(int doorStatus) {
  */
 int isDoorStatusUnknown(int doorStatus) {
     return (doorStatus == INITIAL_DOOR_STATUS);
+}
+
+// returns the consecutive times a heartbeat with an open door has been sent
+unsigned long getConsecutiveHeartbeatCount() {
+    return consecutiveDoorOpenHeartbeatCount;
 }

@@ -449,7 +449,6 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       sandbox.restore()
     })
 
-    // FIXME: this test case is calling alert twice to 2 different phone numbers. looking at vitals I assume it's supposed to do that, need to double check
     it('should alert for magnet sensor falling off', async () => {
       await doorFallOffHeartbeat(radar_coreID)
       expect(braveAlerter.sendSingleAlert).to.be.called
