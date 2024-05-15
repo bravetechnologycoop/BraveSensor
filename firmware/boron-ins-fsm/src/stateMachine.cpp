@@ -15,7 +15,6 @@
 StateHandler stateHandler = state0_idle;
 
 // define global variables so they are allocated in memory
-unsigned long consecutiveDoorOpenHeartbeatCount;
 unsigned long state1_timer;
 unsigned long state2_duration_timer;
 unsigned long state3_stillness_timer;
