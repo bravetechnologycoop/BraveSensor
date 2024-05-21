@@ -54,7 +54,7 @@ extern bool doorMessageReceivedFlag;
 extern unsigned long doorHeartbeatReceived;
 extern unsigned long doorLastMessage;
 extern unsigned long timeWhenDoorClosed;
-extern unsigned long consecutiveDoorOpenHeartbeatCount;
+extern unsigned long consecutiveOpenDoorHeartbeatCount;
 
 // setup() functions
 void setupIM(void);

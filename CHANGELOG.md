@@ -11,6 +11,13 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- `consecutiveOpenDoorHeartbeatCount` variable which tracks the number of heartbeats in a row a door has been left open (CU-86794et47).
+- `sendFallOffAlert` function to send an alert when the the consecutive count meets a certain threshold (CU-86794et47).
+- `CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD` variable which is the threshold to needed to be met to send the alert (CU-86794et47).
+- English and (temporary) Spanish translations for `sensorFallOff` message (CU-86794et47).
+
 ## [10.9.0] - 2024-05-14
 
 ### Added
@@ -19,10 +26,6 @@ the code was deployed.
 - Database columns `id` and `device_type` to table `devices` (CU-86791yyvg).
 - Database tables `buttons_vitals`, `buttons_vitals_cache`, `gateways`, `gateways_vitals`, and `gateways_vitals_cache`, replicating the tables used by Brave Buttons (CU-86791yyvg).
 - Country, country subdivision, and building type fields to create and edit client dashboard pages (CU-86791yyvg).
-- `consecutiveDoorOpenHeartbeatCount` variable which tracks the number of heartbeats in a row a door has been left open (CU-86794et47).
-- `sendFallOffAlert` function to send an alert when the the consecutive count meets a certain threshold (CU-86794et47).
-- `CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD` variable which is the threshold to needed to be met to send the alert (CU-86794et47).
-- English and (temporary) Spanish translations for `sensorFallOff` message (CU-86794et47).
 
 ### Changed
 

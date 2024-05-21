@@ -438,7 +438,7 @@ void getHeartbeat() {
         writer.name("isINSZero").value(isINSZero && lastHeartbeatPublish > 0);
 
         // sends consecutive heartbeat count to server side to be handled
-        writer.name("consecutiveDoorOpenHeartbeatCount").value(consecutiveDoorOpenHeartbeatCount);
+        writer.name("consecutiveOpenDoorHeartbeatCount").value(consecutiveOpenDoorHeartbeatCount);
 
         if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
             // if oldest value did miss; subtract from the current amount

@@ -256,9 +256,11 @@ async function handleHeartbeat(req, res) {
           const doorMissedMessagesCount = message.doorMissedMsg
           const doorMissedFrequently = message.doorMissedFrequently
           const resetReason = message.resetReason
-          const consecutiveDoorOpenHeartbeatCount = message.consecutiveDoorOpenHeartbeatCount
+          const consecutiveOpenDoorHeartbeatCount = message.consecutiveOpenDoorHeartbeatCount
           const stateTransitionsArray = message.states.map(convertStateArrayToObject)
           const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocation(location)
+          const consecutiveOpenDoorHeartbeatThreshold = helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD')
+          const consecutiveOpenDoorFollowUp = helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP')
 
           let doorLastSeenAt
           let isTamperedFlag
@@ -304,10 +306,8 @@ async function handleHeartbeat(req, res) {
           }
 
           if (
-            consecutiveDoorOpenHeartbeatCount >= helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD') &&
-            (consecutiveDoorOpenHeartbeatCount - helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD')) %
-              helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP') ===
-              0
+            consecutiveOpenDoorHeartbeatCount >= consecutiveOpenDoorHeartbeatThreshold &&
+            (consecutiveOpenDoorHeartbeatCount - consecutiveOpenDoorHeartbeatThreshold) % consecutiveOpenDoorFollowUp === 0
           ) {
             await sendFallOffAlert(location)
           }

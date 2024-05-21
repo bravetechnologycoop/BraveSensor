@@ -104,7 +104,7 @@ async function doorFallOffHeartbeat(coreId) {
       .post('/api/heartbeat')
       .send({
         coreid: coreId,
-        data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveDoorOpenHeartbeatCount": ${fallOffHeartbeatThreshold}}`,
+        data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveOpenDoorHeartbeatCount": ${fallOffHeartbeatThreshold}}`,
         api_key: webhookAPIKey,
       })
     await helpers.sleep(50)
@@ -124,7 +124,7 @@ async function doorFallOffFollowUp(coreId) {
       .post('/api/heartbeat')
       .send({
         coreid: coreId,
-        data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveDoorOpenHeartbeatCount": ${fallOffHeartbeatThreshold}}`,
+        data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveOpenDoorHeartbeatCount": ${fallOffHeartbeatThreshold}}`,
         api_key: webhookAPIKey,
       })
     await helpers.sleep(50)
@@ -472,13 +472,11 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     it('should alert for magnet sensor falling off', async () => {
       await doorFallOffHeartbeat(radar_coreID)
       expect(braveAlerter.sendSingleAlert).to.be.called
-      expect(braveAlerter.sendSingleAlert).to.have.been.calledWith(sinon.match.any)
     })
 
     it('should alert for magnet sensor falling off again', async () => {
       await doorFallOffFollowUp(radar_coreID)
       expect(braveAlerter.sendSingleAlert).to.be.called
-      expect(braveAlerter.sendSingleAlert).to.have.been.calledWith(sinon.match.any)
     })
   })
 
