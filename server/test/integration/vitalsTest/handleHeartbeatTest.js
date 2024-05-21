@@ -115,6 +115,26 @@ async function doorFallOffHeartbeat(coreId) {
   }
 }
 
+async function doorFallOffFollowUp(coreId) {
+  const fallOffFollowUp = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP'), 10)
+  const fallOffHeartbeatThreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD'), 10) + fallOffFollowUp
+  try {
+    const response = await chai
+      .request(server)
+      .post('/api/heartbeat')
+      .send({
+        coreid: coreId,
+        data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveDoorOpenHeartbeatCount": ${fallOffHeartbeatThreshold}}`,
+        api_key: webhookAPIKey,
+      })
+    await helpers.sleep(50)
+
+    return response
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
 async function doorTamperedHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
@@ -451,6 +471,12 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
 
     it('should alert for magnet sensor falling off', async () => {
       await doorFallOffHeartbeat(radar_coreID)
+      expect(braveAlerter.sendSingleAlert).to.be.called
+      expect(braveAlerter.sendSingleAlert).to.have.been.calledWith(sinon.match.any)
+    })
+
+    it('should alert for magnet sensor falling off again', async () => {
+      await doorFallOffFollowUp(radar_coreID)
       expect(braveAlerter.sendSingleAlert).to.be.called
       expect(braveAlerter.sendSingleAlert).to.have.been.calledWith(sinon.match.any)
     })

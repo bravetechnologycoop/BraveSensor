@@ -305,7 +305,9 @@ async function handleHeartbeat(req, res) {
 
           if (
             consecutiveDoorOpenHeartbeatCount >= helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD') &&
-            consecutiveDoorOpenHeartbeatCount % helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD') === 0
+            (consecutiveDoorOpenHeartbeatCount - helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD')) %
+              helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP') ===
+              0
           ) {
             await sendFallOffAlert(location)
           }
