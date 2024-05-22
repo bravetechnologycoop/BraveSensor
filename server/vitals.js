@@ -259,8 +259,8 @@ async function handleHeartbeat(req, res) {
           const consecutiveOpenDoorHeartbeatCount = message.consecutiveOpenDoorHeartbeatCount
           const stateTransitionsArray = message.states.map(convertStateArrayToObject)
           const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocation(location)
-          const consecutiveOpenDoorHeartbeatThreshold = helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD')
-          const consecutiveOpenDoorFollowUp = helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP')
+          const consecutiveOpenDoorHeartbeatThreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD'), 10)
+          const consecutiveOpenDoorFollowUp = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP'), 10)
 
           let doorLastSeenAt
           let isTamperedFlag
