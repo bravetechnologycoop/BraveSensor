@@ -197,13 +197,12 @@ async function sendLowBatteryAlert(locationid) {
   }
 }
 
-// FIXME: the spanish message is google translated, needs fixing
 async function sendFallOffAlert(location) {
   if (!location.client.isSendingVitals || !location.isSendingVitals) {
     return
   }
 
-  helpers.logSentry(`Sending an door sensor fallOff alert for ${location.locationid}`)
+  helpers.logSentry(`Sending a door sensor fallOff alert for ${location.locationid}`)
 
   await sendSingleAlert(
     location.locationid,
