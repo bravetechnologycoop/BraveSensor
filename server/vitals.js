@@ -197,16 +197,16 @@ async function sendLowBatteryAlert(locationid) {
   }
 }
 
-async function sendFallOffAlert(location) {
+async function sendInactivityAlert(location) {
   if (!location.client.isSendingVitals || !location.isSendingVitals) {
     return
   }
 
-  helpers.logSentry(`Sending a door sensor fallOff alert for ${location.locationid}`)
+  helpers.logSentry(`Sending a door sensor inactivity alert for ${location.locationid}`)
 
   await sendSingleAlert(
     location.locationid,
-    t('sensorFallOff', {
+    t('sensorInactivity', {
       lng: location.client.language,
       deviceDisplayName: location.displayName,
     }),
@@ -308,7 +308,7 @@ async function handleHeartbeat(req, res) {
             consecutiveOpenDoorHeartbeatCount >= consecutiveOpenDoorHeartbeatThreshold &&
             (consecutiveOpenDoorHeartbeatCount - consecutiveOpenDoorHeartbeatThreshold) % consecutiveOpenDoorFollowUp === 0
           ) {
-            await sendFallOffAlert(location)
+            await sendInactivityAlert(location)
           }
 
           if (isINSZero) {
@@ -353,5 +353,5 @@ module.exports = {
   setupVitals,
   validateHeartbeat,
   checkForInternalProblems,
-  sendFallOffAlert,
+  sendInactivityAlert,
 }

@@ -75,8 +75,8 @@ doorData checkIM() {
         // Checks if the 0th bit (counting from 0) of doorStatus is 1
         doorTamperedFlag = (currentDoorData.doorStatus & 0b0001) != 0;
 
-        // Reset timer on receiving a door close message or transition from open to closed + heartbeat
         if ((currentDoorData.doorStatus & 0b0010) == 0) {
+            // Reset timer on receiving a door close message or transition from open to closed + heartbeat
             if ((currentDoorData.doorStatus & 0b1000) == 0 || (previousDoorData.doorStatus & 0b0010) != 0) {
                 timeWhenDoorClosed = millis();
             }

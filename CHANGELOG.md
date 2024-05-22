@@ -13,10 +13,10 @@ the code was deployed.
 
 ### Added
 
-- `consecutiveOpenDoorHeartbeatCount` variable which tracks the number of heartbeats in a row a door has been left open (CU-86794et47).
-- `sendFallOffAlert` function to send an alert when the the consecutive count meets a certain threshold (CU-86794et47).
-- `CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD` variable which is the threshold to needed to be met to send the alert (CU-86794et47).
-- English and (temporary) Spanish translations for `sensorFallOff` message (CU-86794et47).
+- `consecutiveOpenDoorHeartbeatCount` variable which tracks the number of heartbeats in a row a door has not been closed (CU-86794et47).
+- `sendInactivityAlert` function to send an alert when `consecutiveOpenDoorHeartbeatCount` meets a the threshold `CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD`, which may indicate that the door sensor has fallen off (CU-86794et47).
+- `CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD` variable which is the threshold needed to be met to send the alert `sendInactivityAlert` (CU-86794et47).
+- English and (temporary) Spanish translations for `sensorInactivity` message (CU-86794et47).
 
 ## [10.9.0] - 2024-05-14
 
