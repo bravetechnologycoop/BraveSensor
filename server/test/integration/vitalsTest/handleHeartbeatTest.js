@@ -96,6 +96,45 @@ async function lowBatteryHeartbeat(coreId) {
   }
 }
 
+async function doorInactivityHeartbeat(coreId) {
+  const inactivityHeartbeatThreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD'), 10)
+  try {
+    const response = await chai
+      .request(server)
+      .post('/api/heartbeat')
+      .send({
+        coreid: coreId,
+        data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveOpenDoorHeartbeatCount": ${inactivityHeartbeatThreshold}}`,
+        api_key: webhookAPIKey,
+      })
+    await helpers.sleep(50)
+
+    return response
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
+async function doorInactivityFollowUp(coreId) {
+  const inactivityFollowUp = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP'), 10)
+  const inactivityHeartbeatThreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD'), 10) + inactivityFollowUp
+  try {
+    const response = await chai
+      .request(server)
+      .post('/api/heartbeat')
+      .send({
+        coreid: coreId,
+        data: `{"isINSZero": false, "doorMissedMsg": 0, "doorMissedFrequently": false, "doorLowBatt": false, "doorTampered": false, "doorLastMessage": 1000, "resetReason": "NONE", "states":[], "consecutiveOpenDoorHeartbeatCount": ${inactivityHeartbeatThreshold}}`,
+        api_key: webhookAPIKey,
+      })
+    await helpers.sleep(50)
+
+    return response
+  } catch (e) {
+    helpers.log(e)
+  }
+}
+
 async function doorTamperedHeartbeat(coreId) {
   try {
     const response = await chai.request(server).post('/api/heartbeat').send({
@@ -408,6 +447,36 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       sandbox.stub(db, 'beginTransaction').returns(null)
       await lowBatteryHeartbeat(radar_coreID)
       expect(helpers.logError).to.be.calledWith(`sendLowBatteryAlert: Error starting transaction`)
+    })
+  })
+
+  describe('This heartbeat indicates that there has been multiple concecutive heartbeats where the door is open, with this heartbeat having an open door again', () => {
+    beforeEach(async () => {
+      await db.clearTables()
+
+      const client = await factories.clientDBFactory(db)
+      await factories.locationDBFactory(db, {
+        locationid: testLocation1Id,
+        serialNumber: radar_coreID,
+        clientId: client.id,
+      })
+
+      sandbox.stub(braveAlerter, 'sendSingleAlert').resolves()
+    })
+
+    afterEach(async () => {
+      await db.clearTables()
+      sandbox.restore()
+    })
+
+    it('should alert for magnet sensor falling off', async () => {
+      await doorInactivityHeartbeat(radar_coreID)
+      expect(braveAlerter.sendSingleAlert).to.be.called
+    })
+
+    it('should alert for magnet sensor falling off again', async () => {
+      await doorInactivityFollowUp(radar_coreID)
+      expect(braveAlerter.sendSingleAlert).to.be.called
     })
   })
 
