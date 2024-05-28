@@ -18,6 +18,10 @@ the code was deployed.
 - `CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD` variable which is the threshold needed to be met to send the alert `sendInactivityAlert` (CU-86794et47).
 - English and (temporary) Spanish translations for `sensorInactivity` message (CU-86794et47).
 
+### Changed
+
+- Updated the term "Ceiling Unit" to "Brave Sensor" for the English and Spanish translations of the `sensorDisconnectionInitial` and `sensorDisconnectionReminder` messages (CU-86dthh6wa). 
+
 ## [10.9.0] - 2024-05-14
 
 ### Added
