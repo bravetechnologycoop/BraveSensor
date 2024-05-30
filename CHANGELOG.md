@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Database column index to 'device_type' column in 'devices' table (CU-86dthbn9e).
+
 ## [10.9.0] - 2024-05-14
 
 ### Added
