@@ -197,6 +197,22 @@ async function sendLowBatteryAlert(locationid) {
   }
 }
 
+async function sendInactivityAlert(location) {
+  if (!location.client.isSendingVitals || !location.isSendingVitals) {
+    return
+  }
+
+  helpers.logSentry(`Sending a door sensor inactivity alert for ${location.locationid}`)
+
+  await sendSingleAlert(
+    location.locationid,
+    t('sensorInactivity', {
+      lng: location.client.language,
+      deviceDisplayName: location.displayName,
+    }),
+  )
+}
+
 // Sends a isTampered alert if the previous heartbeat had the isTampered flag false (i.e. if the tampered status has just changed)
 async function sendIsTamperedAlert(location, currentIsTampered, previousIsTampered) {
   if (!location.client.isSendingVitals || !location.isSendingVitals) {
@@ -239,8 +255,11 @@ async function handleHeartbeat(req, res) {
           const doorMissedMessagesCount = message.doorMissedMsg
           const doorMissedFrequently = message.doorMissedFrequently
           const resetReason = message.resetReason
+          const consecutiveOpenDoorHeartbeatCount = message.consecutiveOpenDoorHeartbeatCount
           const stateTransitionsArray = message.states.map(convertStateArrayToObject)
           const mostRecentSensorVitals = await db.getMostRecentSensorsVitalWithLocation(location)
+          const consecutiveOpenDoorHeartbeatThreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD'), 10)
+          const consecutiveOpenDoorFollowUp = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP'), 10)
 
           let doorLastSeenAt
           let isTamperedFlag
@@ -285,6 +304,13 @@ async function handleHeartbeat(req, res) {
             await sendIsTamperedAlert(location, isTamperedFlag, mostRecentSensorVitals.isTampered)
           }
 
+          if (
+            consecutiveOpenDoorHeartbeatCount >= consecutiveOpenDoorHeartbeatThreshold &&
+            (consecutiveOpenDoorHeartbeatCount - consecutiveOpenDoorHeartbeatThreshold) % consecutiveOpenDoorFollowUp === 0
+          ) {
+            await sendInactivityAlert(location)
+          }
+
           if (isINSZero) {
             helpers.logSentry(`INS sensor is equal to or less than zero at ${location.locationid}`)
           }
@@ -327,4 +353,5 @@ module.exports = {
   setupVitals,
   validateHeartbeat,
   checkForInternalProblems,
+  sendInactivityAlert,
 }

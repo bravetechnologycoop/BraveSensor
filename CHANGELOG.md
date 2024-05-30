@@ -14,6 +14,14 @@ the code was deployed.
 ### Added
 
 - Database column index to 'device_type' column in 'devices' table (CU-86dthbn9e).
+- `consecutiveOpenDoorHeartbeatCount` variable which tracks the number of heartbeats in a row a door has not been closed (CU-86794et47).
+- `sendInactivityAlert` function to send an alert when `consecutiveOpenDoorHeartbeatCount` meets a the threshold `CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD`, which may indicate that the door sensor has fallen off (CU-86794et47).
+- `CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD` variable which is the threshold needed to be met to send the alert `sendInactivityAlert` (CU-86794et47).
+- English and (temporary) Spanish translations for `sensorInactivity` message (CU-86794et47).
+
+### Changed
+
+- Updated the term "Ceiling Unit" to "Brave Sensor" for the English and Spanish translations of the `sensorDisconnectionInitial` and `sensorDisconnectionReminder` messages (CU-86dthh6wa). 
 
 ## [10.9.0] - 2024-05-14
 
