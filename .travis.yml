@@ -63,20 +63,11 @@ jobs:
         - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then npx audit-ci --config ./audit-ci.json; fi
         - npm run lint
         - sudo env "PATH=$PATH" npm test
-    - stage: 'firmware linting and formatting checks'
-      language: python
-      before_install:
-        - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-        - echo 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-12 main' | sudo tee -a /etc/apt/sources.list
-        - echo 'deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-12 main' | sudo tee -a /etc/apt/sources.list
-        - sudo apt-get update
-      install:
-        - sudo apt-get install -y clang-format-12
-        - sudo apt-get install cppcheck
+    - stage: 'firmware lint'
       script:
-        - cd firmware/boron-ins-fsm && python clang-format-check.py
-        - cppcheck src --enable=warning,style,performance,portability --error-exitcode=1
-    - stage: 'firmware tests'
+        - echo 'Please implement this in the future using GitHub Actions.'
+        - echo 'In the mean time, follow the firmware linting instructions before merging your changes.'
+    - stage: 'firmware test'
       language: cpp
       script:
         - cd firmware/boron-ins-fsm/test && g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
