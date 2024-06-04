@@ -13,6 +13,7 @@ the code was deployed.
 
 ### Added
 
+- Database column index to 'device_type' column in 'devices' table (CU-86dthbn9e).
 - `consecutiveOpenDoorHeartbeatCount` variable which tracks the number of heartbeats in a row a door has not been closed (CU-86794et47).
 - `sendInactivityAlert` function to send an alert when `consecutiveOpenDoorHeartbeatCount` meets a the threshold `CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD`, which may indicate that the door sensor has fallen off (CU-86794et47).
 - `CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD` variable which is the threshold needed to be met to send the alert `sendInactivityAlert` (CU-86794et47).
