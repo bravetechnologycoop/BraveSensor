@@ -63,6 +63,10 @@ jobs:
         - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then npx audit-ci --config ./audit-ci.json; fi
         - npm run lint
         - sudo env "PATH=$PATH" npm test
+    - stage: 'firmware lint'
+      script:
+        - echo 'Please implement this in the future using GitHub Actions.'
+        - echo 'In the mean time, follow the firmware linting instructions before merging your changes.'
     - stage: 'firmware test'
       language: cpp
       script:
