@@ -63,7 +63,7 @@ jobs:
         - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then npx audit-ci --config ./audit-ci.json; fi
         - npm run lint
         - sudo env "PATH=$PATH" npm test
-    - stage: 'firmware tests'
+    - stage: 'firmware test'
       language: cpp
       script:
         - cd firmware/boron-ins-fsm/test && g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
