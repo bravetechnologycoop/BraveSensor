@@ -397,10 +397,10 @@ async function getCurrentTimeForHealthCheck() {
 }
 
 // Gets the most recent session data in the table for a specified location
-async function getMostRecentSessionWithDeviceId(deviceId, pgClient) {
+async function getMostRecentSessionWithDevice(device, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getMostRecentSessionWithDeviceId',
+      'getMostRecentSessionWithDevice',
       `
       SELECT *
       FROM sessions
@@ -408,7 +408,7 @@ async function getMostRecentSessionWithDeviceId(deviceId, pgClient) {
       ORDER BY created_at DESC
       LIMIT 1
       `,
-      [deviceId],
+      [device.id],
       pool,
       pgClient,
     )
@@ -417,10 +417,9 @@ async function getMostRecentSessionWithDeviceId(deviceId, pgClient) {
       return null
     }
 
-    const allDevices = await getDevices(pgClient)
-    return createSessionFromRow(results.rows[0], allDevices)
+    return createSessionFromRow(results.rows[0], [device])
   } catch (err) {
-    helpers.logError(`Error running the getMostRecentSessionWithDeviceId query: ${err.toString()}`)
+    helpers.logError(`Error running the getMostRecentSessionWithDevice query: ${err.toString()}`)
   }
 }
 
@@ -1628,7 +1627,7 @@ module.exports = {
   getLocations,
   getLocationsFromClientId,
   getMostRecentSensorsVitalWithLocation,
-  getMostRecentSessionWithDeviceId,
+  getMostRecentSessionWithDevice,
   getMostRecentSessionWithPhoneNumbers,
   getRecentSensorsVitals,
   getRecentSensorsVitalsWithClientId,
