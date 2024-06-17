@@ -12,7 +12,7 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  ssl: { rejectUnauthorized: false },
+  ssl: false, // { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -1293,7 +1293,7 @@ async function getMostRecentSensorsVitalWithLocation(location, pgClient) {
 }
 
 async function logSensorsVital(
-  locationid,
+  location,
   missedDoorMessages,
   isDoorBatteryLow,
   doorLastSeenAt,
@@ -1306,18 +1306,17 @@ async function logSensorsVital(
     const results = await helpers.runQuery(
       'logSensorsVital',
       `
-      INSERT INTO sensors_vitals (locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions, is_tampered)
+      INSERT INTO sensors_vitals (location.locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions, is_tampered)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
       `,
-      [locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, isTampered],
+      [location.locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, isTampered],
       pool,
       pgClient,
     )
 
     if (results.rows.length > 0) {
-      const allLocations = await getLocations(pgClient)
-      return createSensorsVitalFromRow(results.rows[0], allLocations)
+      return createSensorsVitalFromRow(results.rows[0], [location])
     }
   } catch (err) {
     helpers.logError(`Error running the logSensorsVital query: ${err.toString()}`)
