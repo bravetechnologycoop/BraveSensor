@@ -4,7 +4,6 @@ const { fill } = require('lodash')
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
 const SensorsVital = require('./SensorsVital')
-const { locationFactory } = require('brave-alert-lib/lib/models/factories')
 
 function getRandomInt(minValue, maxValue) {
   const min = Math.ceil(minValue)
@@ -48,7 +47,7 @@ async function sensorsVitalDBFactory(db, overrides = {}) {
   }
 
   const sensorVital = await db.logSensorsVital(
-    overrides.location !== undefined ? overrides.location: location,
+    overrides.location !== undefined ? overrides.location : location,
     overrides.missedDoorMessages !== undefined ? overrides.missedDoorMessages : 0,
     overrides.isDoorBatteryLow !== undefined ? overrides.isDoorBatteryLow : false,
     overrides.doorLastSeenAt !== undefined ? overrides.doorLastSeenAt : new Date('2022-01-03T04:05:06'),

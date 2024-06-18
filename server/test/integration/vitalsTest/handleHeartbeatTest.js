@@ -366,7 +366,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
         isTampered: true,
         isDoorBatteryLow: false,
       })
-      
+
       await unknownDoorLastMessageHeartbeat(radar_coreID)
       expect(db.logSensorsVital).to.be.calledWithExactly(this.testLocation, 0, false, doorLastSeenAt, 'NONE', [], true)
     })

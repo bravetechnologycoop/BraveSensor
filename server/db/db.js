@@ -1292,16 +1292,7 @@ async function getMostRecentSensorsVitalWithLocation(location, pgClient) {
   }
 }
 
-async function logSensorsVital(
-  location,
-  missedDoorMessages,
-  isDoorBatteryLow,
-  doorLastSeenAt,
-  resetReason,
-  stateTransitions,
-  isTampered,
-  pgClient,
-) {
+async function logSensorsVital(location, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, isTampered, pgClient) {
   try {
     const results = await helpers.runQuery(
       'logSensorsVital',
