@@ -43,18 +43,12 @@ function sensorsVitalFactory(overrides = {}) {
 
 async function sensorsVitalDBFactory(db, overrides = {}) {
   // prettier-ignore
-  // FIXME: added location as logSensorsVital now uses location
-
-  // const locations = {
-  //   locationid: overrides.locationid || 'myLocation',
-  // }
-
-  const location = factories.locationFactory({
-    locationid: 'myLocation'
-  })
+  const location = {
+    locationid: overrides.locationid || 'myLocation',
+  }
 
   const sensorVital = await db.logSensorsVital(
-    location,
+    overrides.location !== undefined ? overrides.location: location,
     overrides.missedDoorMessages !== undefined ? overrides.missedDoorMessages : 0,
     overrides.isDoorBatteryLow !== undefined ? overrides.isDoorBatteryLow : false,
     overrides.doorLastSeenAt !== undefined ? overrides.doorLastSeenAt : new Date('2022-01-03T04:05:06'),

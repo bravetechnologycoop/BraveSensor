@@ -228,7 +228,6 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     })
   })
 
-  // FIXME: changes here
   describe('POST request heartbeat events with mock INS Firmware State Machine when battery level is normal', () => {
     beforeEach(async () => {
       await db.clearTables()
@@ -303,7 +302,6 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     })
   })
 
-  // FIXME: changes here
   describe('POST request heartbeat events with mock INS Firmware State machine when it has not seen a door message since the last restart and there have been no previous heartbeats', () => {
     beforeEach(async () => {
       await db.clearTables()
@@ -363,13 +361,12 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     it('should call logSensorsVital with the same doorLastSeen, isTampered, and isDoorBatteryLow values as the most recent heartbeat from the DB', async () => {
       const doorLastSeenAt = new Date('2022-06-06T15:03:15')
       await sensorsVitalDBFactory(db, {
-        locationid: testLocation1Id,
+        location: this.testLocation,
         doorLastSeenAt,
         isTampered: true,
         isDoorBatteryLow: false,
       })
       
-      // TODO: error here
       await unknownDoorLastMessageHeartbeat(radar_coreID)
       expect(db.logSensorsVital).to.be.calledWithExactly(this.testLocation, 0, false, doorLastSeenAt, 'NONE', [], true)
     })
@@ -377,13 +374,12 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     it('should call logSensorsVital with the same doorLastSeen, isTampered, and isDoorBatteryLow values as the most recent heartbeat from the DB with different values', async () => {
       const doorLastSeenAt = new Date('2023-01-01T15:03:15')
       await sensorsVitalDBFactory(db, {
-        locationid: testLocation1Id,
+        location: this.testLocation,
         doorLastSeenAt,
         isTampered: false,
         isDoorBatteryLow: true,
       })
 
-      // TODO: error here
       await unknownDoorLastMessageHeartbeat(radar_coreID)
       expect(db.logSensorsVital).to.be.calledWithExactly(this.testLocation, 0, true, doorLastSeenAt, 'NONE', [], false)
     })
