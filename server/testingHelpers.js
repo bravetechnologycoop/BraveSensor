@@ -4,6 +4,7 @@ const { fill } = require('lodash')
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
 const SensorsVital = require('./SensorsVital')
+const { locationFactory } = require('brave-alert-lib/lib/models/factories')
 
 function getRandomInt(minValue, maxValue) {
   const min = Math.ceil(minValue)
@@ -44,9 +45,13 @@ async function sensorsVitalDBFactory(db, overrides = {}) {
   // prettier-ignore
   // FIXME: added location as logSensorsVital now uses location
 
-  const location = {
-    locationid: overrides.locationid || 'myLocation',
-  }
+  // const locations = {
+  //   locationid: overrides.locationid || 'myLocation',
+  // }
+
+  const location = factories.locationFactory({
+    locationid: 'myLocation'
+  })
 
   const sensorVital = await db.logSensorsVital(
     location,
