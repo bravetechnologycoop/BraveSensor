@@ -1306,7 +1306,7 @@ async function logSensorsVital(
     const results = await helpers.runQuery(
       'logSensorsVital',
       `
-      INSERT INTO sensors_vitals (location.locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions, is_tampered)
+      INSERT INTO sensors_vitals (locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions, is_tampered)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
       `,
