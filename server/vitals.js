@@ -316,7 +316,7 @@ async function handleHeartbeat(req, res) {
           }
 
           await db.logSensorsVital(
-            location.locationid,
+            location,
             doorMissedMessagesCount,
             doorLowBatteryFlag,
             doorLastSeenAt,

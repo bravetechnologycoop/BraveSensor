@@ -233,7 +233,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
-      await factories.locationDBFactory(db, {
+      this.testLocation = await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
         serialNumber: radar_coreID,
         clientId: client.id,
@@ -281,7 +281,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await normalHeartbeat(radar_coreID)
 
       // 1000 ms before the current DB time
-      expect(db.logSensorsVital).to.be.calledOnceWithExactly(testLocation1Id, 0, false, new Date('2000-01-01T11:11:10Z'), 'NONE', [], false)
+      expect(db.logSensorsVital).to.be.calledOnceWithExactly(this.testLocation, 0, false, new Date('2000-01-01T11:11:10Z'), 'NONE', [], false)
     })
 
     it('should not call logSentry', async () => {
@@ -307,7 +307,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
-      await factories.locationDBFactory(db, {
+      this.testLocation = await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
         serialNumber: radar_coreID,
         clientId: client.id,
@@ -329,7 +329,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
 
     it('should call logSensorsVital with the current time from the DB and false for isTampered and isDoorBatteryLow', async () => {
       await unknownDoorLastMessageHeartbeat(radar_coreID)
-      expect(db.logSensorsVital).to.be.calledWithExactly(testLocation1Id, 0, false, this.currentTime, 'NONE', [], false)
+      expect(db.logSensorsVital).to.be.calledWithExactly(this.testLocation, 0, false, this.currentTime, 'NONE', [], false)
     })
   })
 
@@ -338,7 +338,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       await db.clearTables()
 
       const client = await factories.clientDBFactory(db)
-      await factories.locationDBFactory(db, {
+      this.testLocation = await factories.locationDBFactory(db, {
         locationid: testLocation1Id,
         serialNumber: radar_coreID,
         clientId: client.id,
@@ -361,27 +361,27 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
     it('should call logSensorsVital with the same doorLastSeen, isTampered, and isDoorBatteryLow values as the most recent heartbeat from the DB', async () => {
       const doorLastSeenAt = new Date('2022-06-06T15:03:15')
       await sensorsVitalDBFactory(db, {
-        locationid: testLocation1Id,
+        location: this.testLocation,
         doorLastSeenAt,
         isTampered: true,
         isDoorBatteryLow: false,
       })
 
       await unknownDoorLastMessageHeartbeat(radar_coreID)
-      expect(db.logSensorsVital).to.be.calledWithExactly(testLocation1Id, 0, false, doorLastSeenAt, 'NONE', [], true)
+      expect(db.logSensorsVital).to.be.calledWithExactly(this.testLocation, 0, false, doorLastSeenAt, 'NONE', [], true)
     })
 
     it('should call logSensorsVital with the same doorLastSeen, isTampered, and isDoorBatteryLow values as the most recent heartbeat from the DB with different values', async () => {
       const doorLastSeenAt = new Date('2023-01-01T15:03:15')
       await sensorsVitalDBFactory(db, {
-        locationid: testLocation1Id,
+        location: this.testLocation,
         doorLastSeenAt,
         isTampered: false,
         isDoorBatteryLow: true,
       })
 
       await unknownDoorLastMessageHeartbeat(radar_coreID)
-      expect(db.logSensorsVital).to.be.calledWithExactly(testLocation1Id, 0, true, doorLastSeenAt, 'NONE', [], false)
+      expect(db.logSensorsVital).to.be.calledWithExactly(this.testLocation, 0, true, doorLastSeenAt, 'NONE', [], false)
     })
   })
 
