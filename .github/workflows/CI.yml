@@ -6,25 +6,25 @@ on:
     pull_request:
     branches: ['*']
 
-  jobs:
-    server:
-      name: Server
-      runs-on: ubuntu-latest
+jobs:
+  server:
+    name: Server
+    runs-on: ubuntu-latest
 
-      services: 
-        postgres:
-          image: postgres:12
-          env:
-            POSTGRES_USER: brave
-            POSTGRES_DB: bravesensor
-            POSTGRES_PASSWORD: travispassword
-          ports:
-          - 5433:5432
-          options: >-
-            --health-cmd "pg_isready -U brave -d bravesensor"
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
+    services: 
+      postgres:
+        image: postgres:12
+        env:
+          POSTGRES_USER: brave
+          POSTGRES_DB: bravesensor
+          POSTGRES_PASSWORD: travispassword
+        ports:
+        - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U brave -d bravesensor"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
       WEB_USERNAME_TEST: TravisDashboardUsername # change these
