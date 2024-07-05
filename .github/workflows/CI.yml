@@ -25,6 +25,7 @@ on:
             --health-interval 10s
             --health-timeout 5s
             --health-retries 5
+            
     env:
     WEB_USERNAME_TEST: TravisDashboardUsername # change these
     PASSWORD_TEST: TravisDashboardPassword
@@ -57,6 +58,7 @@ on:
     TWILIO_SID_TEST: ${{ secrets.TWILIO_SID_TEST }}
     TWILIO_TOKEN_TEST: ${{ secrets.TWILIO_TOKEN_TEST }}
     DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
   steps:
     - name: Checkout repository
       uses: actions/checkout@v2
