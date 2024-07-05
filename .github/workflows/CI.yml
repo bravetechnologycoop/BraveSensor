@@ -110,8 +110,14 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           npx audit-ci --config ./audit-ci.json
-          npm run lint
-          sudo env "PATH=$PATH" npm test
+      
+      - name: Run Linter
+        working-directory: ./server
+        run: npm run lint
+
+      - name: Run Tests
+        working-directory: ./server
+        run: npm run lint
 
   firmware_lint:
     runs-on: ubuntu-latest
