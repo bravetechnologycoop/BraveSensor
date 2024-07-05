@@ -69,13 +69,13 @@ on:
         node-version: ./.nvmrc
 
     - name: Install npm dependencies
-        working-directory: ./server
-        run: npm ci
+      working-directory: ./server
+      run: npm ci
 
     - name: Install PostgreSQL
-        run: |
-          sudo apt-get update
-          sudo apt-get install postgresql-12 postgresql-client-12
+      run: |
+        sudo apt-get update
+        sudo apt-get install postgresql-12 postgresql-client-12
 
       - name: Setup PostgreSQL
         run: bash setup_postgresql_local.sh
