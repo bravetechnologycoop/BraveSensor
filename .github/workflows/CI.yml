@@ -72,10 +72,10 @@ jobs:
         working-directory: ./server
         run: npm ci
 
-      - name: Install PostgreSQL
-        run: |
-          sudo apt-get update
-          sudo apt-get install postgresql-14 postgresql-client-14
+      # - name: Install PostgreSQL
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install postgresql-14 postgresql-client-14
 
       - name: Setup PostgreSQL
         run: bash setup_postgresql_local.sh
