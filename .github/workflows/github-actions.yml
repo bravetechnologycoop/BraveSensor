@@ -3,10 +3,10 @@ name: test
 on:
   push:
     branches:
-    - 'ew/*'
+    - '*'
     pull_request:
     branches:
-    - 'ew/*'
+    - '*'
 
 env:
   WEB_USERNAME_TEST: TravisDashboardUsername # change these
