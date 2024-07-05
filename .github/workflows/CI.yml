@@ -35,6 +35,7 @@ jobs:
       PG_PASSWORD_TEST: travispassword
       PG_PORT_TEST: 5433
       PG_HOST_TEST: localhost
+      PG_USER: brave
       PG_DATABASE: brave
       PG_PASSWORD: travispassword
       PG_PORT: 5433
