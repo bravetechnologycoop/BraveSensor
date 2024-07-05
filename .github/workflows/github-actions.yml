@@ -74,12 +74,12 @@ on:
         npm ci
 
     - name: Check environment variables
-        run: |
-          echo "PG_USER=$PG_USER"
-          echo "PG_DATABASE=$PG_DATABASE"
-          echo "PG_PASSWORD=$PG_PASSWORD"
-          echo "PG_PORT=$PG_PORT"
-          echo "PG_HOST=$PG_HOST"
+      run: |
+        echo "PG_USER=$PG_USER"
+        echo "PG_DATABASE=$PG_DATABASE"
+        echo "PG_PASSWORD=$PG_PASSWORD"
+        echo "PG_PORT=$PG_PORT"
+        echo "PG_HOST=$PG_HOST"
 
     - name: Install PostgreSQL
       run: |
