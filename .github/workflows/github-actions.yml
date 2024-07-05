@@ -70,8 +70,7 @@ on:
 
     - name: Install npm dependencies
       working-directory: ./server
-      run: |
-        npm ci
+      run: npm ci
 
     # - name: Check environment variables
     #   run: |
