@@ -112,7 +112,7 @@ jobs:
 
       - name: Run Tests
         working-directory: ./server
-        run: npm run lint
+        run: npm run test
 
   firmware_lint:
     runs-on: ubuntu-latest
