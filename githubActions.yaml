@@ -9,7 +9,7 @@ on:
     - '*'
 
 env:
-  WEB_USERNAME_TEST: TravisDashboardUsername
+  WEB_USERNAME_TEST: TravisDashboardUsername # change these
   PASSWORD_TEST: TravisDashboardPassword
   SECRET_TEST: TravisCookieSecret
   PG_USER_TEST: brave
@@ -37,3 +37,58 @@ env:
   CONSECUTIVE_OPEN_DOOR_FOLLOW_UP_TEST: 144
   PGVER: 12
   PGPORT: 5433
+
+  jobs:
+    server_tests:
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+        node-version: [14.x] # add node version
+
+      steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version}}
+
+      - name: Install npm dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Install PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install postgresql-12 postgresql-client-12
+
+      - name: Setup PostgreSQL
+        run: bash setup_postgresql_local.sh
+
+      - name: Run security audit, linting, and tests
+        if: github.event_name == 'pull_request'
+        run: |
+          npx audit-ci --config ./audit-ci.json
+          npm run lint
+          sudo env "PATH=$PATH" npm test
+
+    firmware_lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print message for future implementation
+        run: echo 'Please implement this in the future using GitHub Actions.'
+
+    firmware_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build and test firmware
+        run: |
+          cd firmware/boron-ins-fsm/test
+          g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
+          g++ -std=c++11 -I../inc -I./ -I./mocks -I../lib/CircularBuffer/src -o ins3331Tests ins3331Tests.cpp -lstdc++ -lm && ./ins3331Tests -s
+          g++ -std=c++11 -I../inc -I./ -I./mocks -o DoorSensorTests imDoorSensorTests.cpp -lstdc++ -lm && ./DoorSensorTests -s
