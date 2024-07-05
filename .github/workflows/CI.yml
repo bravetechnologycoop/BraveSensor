@@ -13,7 +13,7 @@ jobs:
 
     services: 
       postgres:
-        image: postgres:12
+        image: postgres:14
         env:
           POSTGRES_USER: brave
           POSTGRES_DB: bravesensor
@@ -75,7 +75,7 @@ jobs:
       - name: Install PostgreSQL
         run: |
           sudo apt-get update
-          sudo apt-get install postgresql-12 postgresql-client-12
+          sudo apt-get install postgresql-14 postgresql-client-14
 
       - name: Setup PostgreSQL
         run: bash setup_postgresql_local.sh
