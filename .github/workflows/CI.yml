@@ -27,7 +27,7 @@ jobs:
     #       --health-retries 5
 
     env:
-      WEB_USERNAME_TEST: TravisDashboardUsername # change these
+      WEB_USERNAME_TEST: TravisDashboardUsername
       PASSWORD_TEST: TravisDashboardPassword
       SECRET_TEST: TravisCookieSecret
       PG_USER_TEST: brave
@@ -97,19 +97,14 @@ jobs:
             sleep 1
           done
 
-      # - name: Install PostgreSQL
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install postgresql-14 postgresql-client-14
-
       - name: Setup PostgreSQL
         working-directory: ./server
         run: ./setup_postgresql_local.sh
 
-      - name: Run security audit, linting, and tests
+      - name: Run Security Audit
+        working-directory: ./server
         if: github.event_name == 'pull_request'
-        run: |
-          npx audit-ci --config ./audit-ci.json
+        run: npx audit-ci --config ./audit-ci.json
       
       - name: Run Linter
         working-directory: ./server
@@ -136,5 +131,5 @@ jobs:
         cd firmware/boron-ins-fsm/test
         g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
         g++ -std=c++11 -I../inc -I./ -I./mocks -I../lib/CircularBuffer/src -o ins3331Tests ins3331Tests.cpp -lstdc++ -lm && ./ins3331Tests -s
-          g++ -std=c++11 -I../inc -I./ -I./mocks -o DoorSensorTests imDoorSensorTests.cpp -lstdc++ -lm && ./DoorSensorTests -s
+        g++ -std=c++11 -I../inc -I./ -I./mocks -o DoorSensorTests imDoorSensorTests.cpp -lstdc++ -lm && ./DoorSensorTests -s
 
