@@ -79,7 +79,7 @@ jobs:
 
       - name: Setup PostgreSQL
         working-directory: ./server
-        run: ./setup_postgresql_local.sh
+        run: ./setup_postgresql_local_dev.sh
 
       - name: Run security audit, linting, and tests
         if: github.event_name == 'pull_request'
