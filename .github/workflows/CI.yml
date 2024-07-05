@@ -33,11 +33,11 @@ jobs:
       PG_USER_TEST: brave
       PG_DATABASE_TEST: brave
       PG_PASSWORD_TEST: travispassword
-      PG_PORT_TEST: 5432
+      PG_PORT_TEST: 5433
       PG_HOST_TEST: localhost
       PG_DATABASE: brave
       PG_PASSWORD: travispassword
-      PG_PORT: 5432
+      PG_PORT: 5433
       PG_HOST: localhost
       SESSION_RESET_THRESHOLD_TEST: 2000
       SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST_TEST: 4
@@ -54,7 +54,7 @@ jobs:
       CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD_TEST: 432
       CONSECUTIVE_OPEN_DOOR_FOLLOW_UP_TEST: 144
       PGVER: 12
-      PGPORT: 5432
+      PGPORT: 5433
       TWILIO_SID_TEST: ${{ secrets.TWILIO_SID_TEST }}
       TWILIO_TOKEN_TEST: ${{ secrets.TWILIO_TOKEN_TEST }}
       DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
@@ -79,7 +79,6 @@ jobs:
           echo "PG_PASSWORD=$PG_PASSWORD"
           echo "PG_PORT=$PG_PORT"
           echo "PG_HOST=$PG_HOST"
-          echo "PGSSLMODE=$PGSSLMODE"
 
       - name: Wait for PostgreSQL to be ready
         run: |
