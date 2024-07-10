@@ -12,7 +12,6 @@
 1. [Logs](#logs)
 1. [Database](#database)
 1. [Local development](#local-development)
-1. [Github Actions](#github-actions)
 1. [Particle API Access](#particle-api-access)
 1. [Troubleshooting](#troubleshooting)
 
