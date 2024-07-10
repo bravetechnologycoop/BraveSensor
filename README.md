@@ -1,7 +1,7 @@
 # BraveSensor
 
-[![Build Status](https://app.travis-ci.com/bravetechnologycoop/BraveSensor.svg?branch=main)](https://app.travis-ci.com/bravetechnologycoop/BraveSensor)
-
+ [![Build Status](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/CI.yml/badge.svg)](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/CI.yml)
+ 
 This is the BraveSensors monorepo. The Firmware and Server directories each have their own README.
 
 NOTE: To interact with the firmware using the VSCode Particle Workbench, make sure to open the folder directly in VSCode (Open Folder -> BraveSensor/firmware/\<desired application\>)
