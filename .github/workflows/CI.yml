@@ -3,9 +3,7 @@ name: CI
 on:
   push:
     branches: ['*']
-  pull_request:
-    branches: ['*']
-
+    
 jobs:
   server:
     name: Server
@@ -88,7 +86,6 @@ jobs:
 
       - name: Run Security Audit
         working-directory: ./server
-        if: github.event_name == 'pull_request'
         run: npx audit-ci --config ./audit-ci.json
       
       - name: Run Linter
