@@ -1,6 +1,5 @@
 # BraveSensor
-
-[![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor.svg?branch=main)](https://travis-ci.com/bravetechnologycoop/BraveSensor)
+ [![Build Status](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/CI.yml/badge.svg)](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/CI.yml)
 
 # Table of Contents
 
