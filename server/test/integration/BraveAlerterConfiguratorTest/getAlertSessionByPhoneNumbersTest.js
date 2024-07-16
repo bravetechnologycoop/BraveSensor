@@ -15,7 +15,7 @@ describe('BraveAlerterConfigurator.js integration tests: getAlertSessionByPhoneN
     this.expectedIncidentCategory = 'No One Inside'
     this.expectedLocationDisplayName = 'TEST LOCATION'
     this.expectedSensorPhoneNumber = '+3336661234'
-    this.expectedIncidentCategoryKeys = ['1', '2', '3']
+    this.expectedIncidentCategoryKeys = ['0', '1', '2']
     this.expectedIncidentCategories = ['No One Inside', 'Person responded', 'None of the above']
     this.expectedRespondedByPhoneNumbers = ['+19995558888', '+15428884444']
     this.expectedLanguage = 'de'

@@ -21,6 +21,7 @@ the code was deployed.
 - Changed `getMostRecentSessionWithDeviceid`to `getMostRecentSessionWithDevice` to reflect the change of the function (CU-86dqq93dp).
 - Changed `sensorsVitalDBFactory` to use location instead of locationid in the logSensorsVital call (CU-86dqq93dp).
 - Modified several test cases in `handleHeartbeatTest.js` to reflect the changes of `logSensorsVital`, `getMostRecentSessionWithDevice`, and `sensorsVitalDBFactory` (CU-86dqq93dp).
+- Incident categories to index at 0, not 1 (CU-86dth9zt2).
 
 ## [10.10.0] - 2024-06-04
 
