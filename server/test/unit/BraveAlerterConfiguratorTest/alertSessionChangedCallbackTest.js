@@ -224,7 +224,7 @@ describe('BraveAlerterConfigurator.js unit tests: alertSessionChangedCallback', 
         id: sessionId,
         device: location,
         chatbotState: CHATBOT_STATE.COMPLETED,
-        incidentCategory: 'No One Inside',
+        incidentCategory: 'Overdose',
         respondedByPhoneNumber: oldRespondedByPhoneNumber,
       })
 

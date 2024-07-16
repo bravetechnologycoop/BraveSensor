@@ -109,7 +109,7 @@ class BraveAlerterConfigurator {
           }
 
           if (alertSession.incidentCategoryKey) {
-            session.incidentCategory = session.device.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10) - 1]
+            session.incidentCategory = session.device.client.incidentCategories[parseInt(alertSession.incidentCategoryKey, 10)]
           }
 
           if (alertSession.alertState === CHATBOT_STATE.RESET) {
@@ -229,7 +229,7 @@ class BraveAlerterConfigurator {
   createIncidentCategoryKeys(incidentCategories) {
     // Incident categories in Sensors are always 1-indexed
     const incidentCategoryKeys = []
-    for (let i = 1; i <= incidentCategories.length; i += 1) {
+    for (let i = 0; i < incidentCategories.length; i += 1) {
       incidentCategoryKeys.push(i.toString())
     }
 
