@@ -239,7 +239,7 @@ class BraveAlerterConfigurator {
   createResponseStringFromIncidentCategories(categories, language) {
     function reducer(accumulator, currentValue, currentIndex) {
       // Incident categories in Sensors are always 1-indexed
-      return `${accumulator}${currentIndex + 1} - ${t(currentValue, { lng: language })}\n`
+      return `${accumulator}${currentIndex} - ${t(currentValue, { lng: language })}\n`
     }
     return categories.reduce(reducer, '')
   }
