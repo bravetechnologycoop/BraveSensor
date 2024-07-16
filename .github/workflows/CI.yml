@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: ['*']
+    
+jobs:
+  server:
+    name: Server
+    runs-on: ubuntu-latest
+
+    env:
+      WEB_USERNAME_TEST: TravisDashboardUsername
+      PASSWORD_TEST: TravisDashboardPassword
+      SECRET_TEST: TravisCookieSecret
+      PG_USER_TEST: brave
+      PG_DATABASE_TEST: brave
+      PG_PASSWORD_TEST: travispassword
+      PG_PORT_TEST: 5433
+      PG_HOST_TEST: localhost
+      PG_USER: brave
+      PG_DATABASE: brave
+      PG_PASSWORD: travispassword
+      PG_PORT: 5433
+      PG_HOST: localhost
+      SESSION_RESET_THRESHOLD_TEST: 2000
+      SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST_TEST: 4
+      LOW_BATTERY_ALERT_TIMEOUT_TEST: 2
+      MAX_STILLNESS_ALERTS_TEST: 2
+      INTERVAL_TO_CHECK_ALERTS_TEST: 60
+      SUBSEQUENT_VITALS_ALERT_THRESHOLD_TEST: 2
+      IS_DB_LOGGING: false
+      PA_API_KEY_PRIMARY_TEST: primaryPAkey
+      PA_API_KEY_SECONDARY_TEST: secondaryPAkey
+      PA_CLIENT_ID: fakeclientid.apps.googleusercontent.com
+      PA_CLIENT_SECRET: fakeclientsecret
+      PARTICLE_WEBHOOK_API_KEY_TEST: webhookKey
+      CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD_TEST: 432
+      CONSECUTIVE_OPEN_DOOR_FOLLOW_UP_TEST: 144
+      PGVER: 12
+      PGPORT: 5433
+      TWILIO_SID_TEST: ${{ secrets.TWILIO_SID_TEST }}
+      TWILIO_TOKEN_TEST: ${{ secrets.TWILIO_TOKEN_TEST }}
+      DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ./.nvmrc
+
+      - name: Install npm dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Check environment variables
+        run: |
+          echo "PG_USER=$PG_USER"
+          echo "PG_DATABASE=$PG_DATABASE"
+          echo "PG_PASSWORD=$PG_PASSWORD"
+          echo "PG_PORT=$PG_PORT"
+          echo "PG_HOST=$PG_HOST"
+
+      - name: Set up PSQL
+        run: |
+          echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-12 postgresql-client-12
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          sudo service postgresql restart
+          until pg_isready -h localhost -p 5433 -U brave -d bravesensor; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 1
+          done
+
+      - name: Setup PostgreSQL
+        working-directory: ./server
+        run: ./setup_postgresql_local.sh
+
+      - name: Run Security Audit
+        working-directory: ./server
+        run: npx audit-ci --config ./audit-ci.json
+      
+      - name: Run Linter
+        working-directory: ./server
+        run: npm run lint
+
+      - name: Run Tests
+        working-directory: ./server
+        run: npm run test
+
+  firmware_lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print message for future implementation
+        run: echo 'Please implement this in the future using GitHub Actions.'
+
+  firmware_tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Build and test firmware
+      run: |
+        cd firmware/boron-ins-fsm/test
+        g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
+        g++ -std=c++11 -I../inc -I./ -I./mocks -I../lib/CircularBuffer/src -o ins3331Tests ins3331Tests.cpp -lstdc++ -lm && ./ins3331Tests -s
+        g++ -std=c++11 -I../inc -I./ -I./mocks -o DoorSensorTests imDoorSensorTests.cpp -lstdc++ -lm && ./DoorSensorTests -s
+

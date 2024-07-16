@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Configured repository to use Github Actions instead of Travis (CU-86dthadwg).
+
 ### Changed
 
 - Changed `logSensorsVital` and `getMostRecentSessionWithDeviceid` to use `location` instead of `locationid` (CU-86dqq93dp).

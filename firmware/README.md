@@ -708,11 +708,11 @@ If you need to include additional Particle header files, they can be located at 
 
 It is suggested that upon upgrading the Boron firmware version, the files in the `/inc` folder are also updated to the latest version.
 
-To compile and run the unit tests, see the .travis.yml file for the most up to date command.
+To compile and run the unit tests, see the github actions workflow for the most up to date command.
 
 # Firmware Code Linting and Formatting
 
-As a part of the second stage of the Travis CI process, the formatting of all firmware code located in the `/src` and `/test` folders is checked using clang-format, as specified in the .clang-format file. clang-format version 12.0.0 is used in order to be compatible with Travis. To format all code in these folders, run the clang-format-all.py script.
+ The formatting of all firmware code located in the `/src` and `/test` folders is checked using clang-format, as specified in the .clang-format file. To format all code in these folders, run the clang-format-all.py script.
 
 Additionally, all firmware code located in the `/src` folder is checked using cppcheck for potential problems. Both checks must be free of errors for the stage to pass.
 

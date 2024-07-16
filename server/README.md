@@ -1,6 +1,5 @@
 # BraveSensor
-
-[![Build Status](https://travis-ci.com/bravetechnologycoop/BraveSensor.svg?branch=main)](https://travis-ci.com/bravetechnologycoop/BraveSensor)
+ [![Build Status](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/CI.yml/badge.svg)](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/CI.yml)
 
 # Table of Contents
 
@@ -12,7 +11,6 @@
 1. [Logs](#logs)
 1. [Database](#database)
 1. [Local development](#local-development)
-1. [Travis](#travis)
 1. [Particle API Access](#particle-api-access)
 1. [Troubleshooting](#troubleshooting)
 
@@ -426,39 +424,7 @@ npm ci
 npm run test
 ```
 
-The tests run automatically on Travis on every push to GitHub and every time a pull request is created.
-
-# Travis
-
-## How to add or change an encrypted Travis environment variable
-
-Reference: https://docs.travis-ci.com/user/environment-variables/#encrypting-environment-variables
-
-1. Download the Travis CLI `gem install travis`
-
-1. cd to anywhere in this repo
-
-1. temporarily create a personal access token on GitHub https://github.com/settings/tokens with the following permissions:
-
-   - `repo`
-   - `read:packages`
-   - `read:org`
-   - `read:public_key`
-   - `read:repo_hook`
-   - `user`
-   - `read:discussion`
-   - `read:enterprise`
-
-1. login using `travis login --pro --github-token [token from github]`
-
-1. For a given `VAR_NAME` that you want to have value `secret_value`, run
-   `travis encrypt --pro VAR_NAME=secret_value`
-   which will ask for your GitHub username and password and then
-   output your encrypted variable
-
-1. Copy the encrypted variable into `.travis.yml`
-
-1. Delete your personal access token from GitHub
+The tests run automatically on Github Actions on every push 
 
 # Particle API access
 
