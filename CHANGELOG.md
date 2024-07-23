@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [10.11.0] - 2024-07-23
+
 ### Added
 
 - Added a migration script to drop unused tables from the database; `buttons_vitals`, `buttons_vitals_cache`, `gateways`, `gateways_vitals`, `gateways_vitals_cache` (CU-86du4nq8w).
@@ -787,7 +789,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.10.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...HEAD
+[10.11.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.10.0...v10.11.0
 [10.10.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.9.0...v10.10.0
 [10.9.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.8.0...v10.9.0
 [10.8.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.7.0...v10.8.0
