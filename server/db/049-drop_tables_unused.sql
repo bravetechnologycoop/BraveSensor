@@ -11,11 +11,11 @@ BEGIN
 
     -- Only execute this script if its migration ID is next after the last successful migration ID
     IF migrationId - lastSuccessfulMigrationId = 1 THEN
-        DROP TABLE buttons_vitals;
         DROP TABLE buttons_vitals_cache;
-        DROP TABLE gateways;
-        DROP TABLE gateways_vitals;
+        DROP TABLE buttons_vitals;
         DROP TABLE gateways_vitals_cache;
+        DROP TABLE gateways_vitals;
+        DROP TABLE gateways;
         -- Update the migration ID of the last file to be successfully run to the migration ID of this file
         INSERT INTO migrations (id)
         VALUES (migrationId);
