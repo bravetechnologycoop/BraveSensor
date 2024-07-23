@@ -13,7 +13,7 @@ the code was deployed.
 
 ### Added
 
-- Added a migration script to drop unused database tables; `buttons_vitals`, `buttons_vitals_cache`, `gateways`, `gateways_vitals`, `gateways_vitals_cache` (CU-86du4nq8w).
+- Added a migration script to drop unused tables from the database; `buttons_vitals`, `buttons_vitals_cache`, `gateways`, `gateways_vitals`, `gateways_vitals_cache` (CU-86du4nq8w).
 - Configured repository to use Github Actions instead of Travis (CU-86dthadwg).
 
 ### Changed
