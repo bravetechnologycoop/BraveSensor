@@ -18,18 +18,25 @@ StateHandler stateHandler = state0_idle;
 unsigned long state1_timer;
 unsigned long state2_duration_timer;
 unsigned long state3_stillness_timer;
+unsigned long state4_true_stillness_timer;
 // initialize constants to sensible default values
 unsigned long ins_threshold = INS_THRESHOLD;
 unsigned long state0_occupant_detection_timer = STATE0_OCCUPANT_DETECTION_TIMER;
 unsigned long state1_max_time = STATE1_MAX_TIME;
 unsigned long state2_max_duration = STATE2_MAX_DURATION;
 unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
+unsigned long high_conf_ins_threshold = HIGH_CONF_INS_THRESHOLD;
+unsigned long high_conf_max_stillness_time = HIGH_CONF_STILLNESS_TIME;
+unsigned long low_conf_ins_threshold = LOW_CONF_INS_THRESHOLD;
+unsigned long low_conf_max_stillness_time = LOW_CONF_STILLNESS_TIME;
 // By default, we use the same value for max_stillness_time and max_long_stillness_time
+// TODO: REMOVE
 unsigned long state3_max_long_stillness_time = STATE3_MAX_STILLNESS_TIME;
 int resetReason = System.resetReason();
 // record whether an alert has been sent within the same session
 bool hasDurationAlertBeenSent;
 bool hasStillnessAlertBeenSent;
+bool hasTrueStillnessAlertBeenSent;
 // which max stillness time are we currently comparing against
 // using pointers so that the value pointed to be max_stillness_time will be the correct values of state3_max_stillness_time or
 // state3_max_long_stillness_time even if they change due to a console function call during the session
@@ -140,7 +147,9 @@ void state0_idle() {
     // session is over in idle state, so reset the whether alert has been sent flags
     hasDurationAlertBeenSent = false;
     hasStillnessAlertBeenSent = false;
+    hasTrueStillnessAlertBeenSent = false;
     // set to compare against the shorter stillness threshold
+    // TODO: REMOVE
     max_stillness_time = &state3_max_stillness_time;
     // set the total number of alerts generated to 0
     number_of_alerts_published = 0;
@@ -156,7 +165,7 @@ void state0_idle() {
     publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, (millis() - timeWhenDoorClosed));
 
     // fix outputs and state exit conditions accordingly
-    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && ((unsigned long)checkINS.iAverage > ins_threshold) &&
+    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && ((unsigned long)checkINS.iAverage > low_conf_ins_threshold) &&
         !isDoorOpen(checkDoor.doorStatus) && !isDoorStatusUnknown(checkDoor.doorStatus)) {
         Log.warn("In state 0, door closed and seeing movement, heading to state 1");
         publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
@@ -190,7 +199,7 @@ void state1_15sCountdown() {
     publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
 
     // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
+    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < low_conf_ins_threshold) {
         Log.warn("no movement, you're going back to state 0 from state 1");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 1);
@@ -236,14 +245,23 @@ void state2_duration() {
     publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
 
     // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
-        Log.warn("Seeing stillness, going to state3_stillness from state2_duration");
+    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < low_conf_ins_threshold && (unsigned long)checkINS.iAverage > high_conf_ins_threshold) {
+        Log.warn("Seeing low confidence stillness, going to state3_stillness from state2_duration");
         publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 1);
         // zero the stillness timer
         state3_stillness_timer = millis();
         // go to stillness state
         stateHandler = state3_stillness;
+    }
+    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < high_conf_ins_threshold) {
+        Log.warn("Seeing high confidence stillness, going to state4_true_stillness from state2_duration");
+        publishStateTransition(2, 4, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(2, 6);
+        // zero the stillness timer
+        state4_true_stillness_timer = millis();
+        // go to stillness state
+        stateHandler = state4_true_stillness;
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("Door opened, session over, going to idle from state2_duration");
@@ -289,12 +307,19 @@ void state3_stillness() {
     publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
 
     // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > ins_threshold) {
-        Log.warn("motion spotted again, going from state3_stillness to state2_duration");
+    if ((unsigned long)checkINS.iAverage > low_conf_ins_threshold) {
+        Log.warn("high motion spotted, going from state3_stillness to state2_duration");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 0);
         // go back to state 2, duration
         stateHandler = state2_duration;
+    }
+    else if ((unsigned long)checkINS.iAverage < high_conf_ins_threshold) {
+        Log.warn("high confidence stillness detected, going from state3_stillness to state4_true_stillness");
+        publishStateTransition(3, 4, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(3, 6);
+        // go to state 4, true stillness
+        stateHandler = state4_true_stillness;
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("door opened, session over, going from state3_stillness to idle");
@@ -302,7 +327,7 @@ void state3_stillness() {
         saveStateChangeOrAlert(3, 2);
         stateHandler = state0_idle;
     }
-    else if (millis() - state3_stillness_timer >= *max_stillness_time) {
+    else if (millis() - state3_stillness_timer >= low_conf_max_stillness_time) {
         Log.warn("stillness alert, remaining in state3 after publish");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
@@ -312,7 +337,6 @@ void state3_stillness() {
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
         hasStillnessAlertBeenSent = true;
         state3_stillness_timer = millis();                     // reset the stillness timer
-        max_stillness_time = &state3_max_long_stillness_time;  // set to compare against the longer stillness threshold for the rest of this session
         stateHandler = state3_stillness;
     }
     else if (millis() - state2_duration_timer >= state2_max_duration) {
@@ -333,6 +357,90 @@ void state3_stillness() {
     }
 
 }  // end state3_stillness
+
+void state4_true_stillness() {
+    // scan inputs
+    doorData checkDoor;
+    filteredINSData checkINS;
+    // will contain the data for a Stillness Alert; max 622 chars as per Particle docs
+    char alertMessage[622];
+
+    // this returns the previous door event value until a new door event is received
+    // on code boot up it initializes to returning INITIAL_DOOR_STATUS
+    checkDoor = checkIM();
+    // this returns 0.0 if the INS has no new data to transmit
+    checkINS = checkINS3331();
+
+    // do stuff in the state
+    digitalWrite(D5, HIGH);
+    Log.info("You are in state 4, true stillness: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
+             (millis() - state4_true_stillness_timer));
+    publishDebugMessage(4, checkDoor.doorStatus, checkINS.iAverage, (millis() - state4_true_stillness_timer));
+    
+    // fix outputs and state exit conditions accordingly
+    if ((unsigned long)checkINS.iAverage > low_conf_ins_threshold) {
+        Log.warn("motion spotted above LCT, going from state4_true_stillness to state2_duration");
+        publishStateTransition(4, 2, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 0);
+        // go back to state 2, duration
+        stateHandler = state2_duration;
+    }
+    else if ((unsigned long)checkINS.iAverage > high_conf_ins_threshold && (unsigned long)checkINS.iAverage < low_conf_ins_threshold) {
+        Log.warn("motion spotted above HCT, but lower than LCT, going from state4_true_stillness to state3_stillness");
+        publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 1);
+        // go back to state 3, low conf stillness
+        stateHandler = state3_stillness;
+    }
+    else if (isDoorOpen(checkDoor.doorStatus)) {
+        Log.warn("door opened, session over, going from state3_stillness to idle");
+        publishStateTransition(4, 0, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 2);
+        stateHandler = state0_idle;
+    }
+    else if (millis() - state4_true_stillness_timer >= high_conf_max_stillness_time) {
+        Log.warn("high conf stillness alert, going to state3 after publish");
+        publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 5);
+        Log.error("True Stillness Alert!!");
+        number_of_alerts_published += 1;  // increment the number of alerts published
+        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
+        Particle.publish("Stillness Alert", alertMessage, PRIVATE);
+        hasStillnessAlertBeenSent = true;
+        hasTrueStillnessAlertBeenSent = true;
+        state4_true_stillness_timer = millis(); // reset the stillness timer
+        stateHandler = state3_stillness;
+    }
+    else if (millis() - state3_stillness_timer >= low_conf_max_stillness_time) {
+        Log.warn("low conf stillness alert, going to state3 after publish");
+        publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 5);
+        Log.error("Stillness Alert!!");
+        number_of_alerts_published += 1;  // increment the number of alerts published
+        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
+        Particle.publish("Stillness Alert", alertMessage, PRIVATE);
+        hasStillnessAlertBeenSent = true;
+        state3_stillness_timer = millis();                     // reset the stillness timer
+        stateHandler = state3_stillness;
+    }
+    else if (millis() - state2_duration_timer >= state2_max_duration) {
+        Log.warn("duration alert, going to state3 after publish");
+        publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 4);
+        Log.error("Duration Alert!!");
+        number_of_alerts_published += 1;  // increment the number of alerts published
+        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
+        Particle.publish("Duration Alert", alertMessage, PRIVATE);
+        hasDurationAlertBeenSent = true;
+        state2_duration_timer = millis();
+        stateHandler = state4_true_stillness;
+    }
+    else {
+        // if we don't meet the exit conditions above, we remain here
+        // stateHandler = state3_stillness;
+    }
+
+}
 
 void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue) {
     if (stateMachineDebugFlag) {
@@ -369,12 +477,13 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
  *
  * Reason Code | Meaning
  * -------------------------------
- * 0           | Movement surpasses threshold
- * 1           | Movement falls below threshold
+ * 0           | Movement surpasses low confidence threshold
+ * 1           | Movement between low confidence and high confidence threshold
  * 2           | Door opened
  * 3           | Initial timer surpassed
  * 4           | Duration alert
  * 5           | Stillness alert
+ * 6           | Movement below high confidence threshold
  **/
 void saveStateChangeOrAlert(int state, int reason) {
     stateQueue.push(state);

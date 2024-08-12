@@ -144,8 +144,8 @@ async function checkForInternalProblems() {
 }
 
 function convertStateArrayToObject(stateTransition) {
-  const statesTable = ['idle', 'initial_timer', 'duration_timer', 'stillness_timer']
-  const reasonsTable = ['movement', 'no_movement', 'door_open', 'initial_timer', 'duration_alert', 'stillness_alert']
+  const statesTable = ['idle', 'initial_timer', 'duration_timer', 'stillness_timer', 'true_stillness_timer']
+  const reasonsTable = ['high_movement', 'low_movement', 'door_open', 'initial_timer', 'duration_alert', 'stillness_alert', 'no_movement']
   const stateObject = {
     state: statesTable[stateTransition[0]],
     reason: reasonsTable[stateTransition[1]],

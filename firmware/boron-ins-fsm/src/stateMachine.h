@@ -11,16 +11,21 @@
 // ascii table goes up to 7F, so pick something greater than that
 // which is also unlikely to be part of a door ID or a threshold/timer const
 #define INITIALIZE_STATE_MACHINE_CONSTS_FLAG           0x8888
+//TODO: REMOVE
 #define INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG 0x8888
 #define INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG      0x8888
 
 // initial (default) values for state machine, can be changed via console function
 // or by writing something other than 0x8888 to the above flag in flash
 #define INS_THRESHOLD                   60
-#define STATE0_OCCUPANT_DETECTION_TIMER 172800000  // 2 days
-#define STATE1_MAX_TIME                 15000      // ms = 15s
-#define STATE2_MAX_DURATION             1200000    // ms = 20 min
-#define STATE3_MAX_STILLNESS_TIME       120000     // ms = 2 minutes
+#define STATE0_OCCUPANT_DETECTION_TIMER 120000     // 2 min
+#define STATE1_MAX_TIME                 5000       // 5s
+#define STATE2_MAX_DURATION             1200000    // 20 min
+#define STATE3_MAX_STILLNESS_TIME       120000     // 2 minutes
+#define HIGH_CONF_INS_THRESHOLD         20
+#define HIGH_CONF_STILLNESS_TIME        60         // 1 min
+#define LOW_CONF_INS_THRESHOLD          80
+#define LOW_CONF_STILLNESS_TIME         300        // 5 min
 
 // How often to publish Heartbeat messages
 #define SM_HEARTBEAT_INTERVAL 660000  // ms = 11 min
@@ -81,5 +86,6 @@ extern unsigned long state3_max_long_stillness_time;
 // whether or not the current session has sent alerts
 extern bool hasDurationAlertBeenSent;
 extern bool hasStillnessAlertBeenSent;
+extern bool hasTrueStillnessAlertBeenSent;
 
 #endif
