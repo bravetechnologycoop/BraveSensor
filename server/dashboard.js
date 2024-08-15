@@ -215,16 +215,14 @@ async function renderDashboardPage(req, res) {
       const recentSession = await db.getMostRecentSessionWithDevice(location)
       if (recentSession !== null) {
         const sessionCreatedAt = Date.parse(recentSession.createdAt)
-        //const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
-        //location.sessionStart = timeSinceLastSession
         try
         {
           location.sessionStart = new Date(sessionCreatedAt).toString()
           
         }
-        catch(err)
+        catch (err) 
         {
-          location.sessionStart = "INVALID DATE";
+          location.sessionStart = 'INVALID DATE';
         }
       }
     }
