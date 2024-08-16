@@ -10,10 +10,11 @@
 
 // ascii table goes up to 7F, so pick something greater than that
 // which is also unlikely to be part of a door ID or a threshold/timer const
-#define INITIALIZE_STATE_MACHINE_CONSTS_FLAG           0x8888
-//TODO: REMOVE
-#define INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG 0x8888
-#define INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG      0x8888
+// try to make them different, first 3 have already been written into memory on some live sensors
+#define INITIALIZE_STATE_MACHINE_CONSTS_FLAG                0x8888
+#define INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG 0x8888
+#define INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG           0x8888
+#define INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG             0x9999
 
 // initial (default) values for state machine, can be changed via console function
 // or by writing something other than 0x8888 to the above flag in flash
@@ -22,7 +23,7 @@
 #define STATE1_MAX_TIME                 5000       // 5s
 #define STATE2_MAX_DURATION             1200000    // 20 min
 #define STATE3_MAX_STILLNESS_TIME       120000     // 2 minutes
-#define HIGH_CONF_INS_THRESHOLD         20
+#define HIGH_CONF_INS_THRESHOLD         0          // disabled by default
 #define HIGH_CONF_STILLNESS_TIME        60         // 1 min
 #define LOW_CONF_INS_THRESHOLD          80
 #define LOW_CONF_STILLNESS_TIME         300        // 5 min
@@ -76,12 +77,13 @@ extern unsigned long state2_duration_timer;
 extern unsigned long state3_stillness_timer;
 
 // state machine constants stored in flash
-extern unsigned long ins_threshold;
+extern unsigned long low_conf_ins_threshold;
+extern unsigned long high_conf_ins_threshold;
 extern unsigned long state0_occupant_detection_timer;
 extern unsigned long state1_max_time;
 extern unsigned long state2_max_duration;
-extern unsigned long state3_max_stillness_time;
-extern unsigned long state3_max_long_stillness_time;
+extern unsigned long state3_low_conf_max_stillness_time;
+extern unsigned long state4_high_conf_max_stillness_time;
 
 // whether or not the current session has sent alerts
 extern bool hasDurationAlertBeenSent;

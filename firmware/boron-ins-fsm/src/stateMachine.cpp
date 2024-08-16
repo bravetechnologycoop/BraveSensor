@@ -20,27 +20,19 @@ unsigned long state2_duration_timer;
 unsigned long state3_stillness_timer;
 unsigned long state4_true_stillness_timer;
 // initialize constants to sensible default values
-unsigned long ins_threshold = INS_THRESHOLD;
 unsigned long state0_occupant_detection_timer = STATE0_OCCUPANT_DETECTION_TIMER;
 unsigned long state1_max_time = STATE1_MAX_TIME;
 unsigned long state2_max_duration = STATE2_MAX_DURATION;
-unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
 unsigned long high_conf_ins_threshold = HIGH_CONF_INS_THRESHOLD;
 unsigned long high_conf_max_stillness_time = HIGH_CONF_STILLNESS_TIME;
 unsigned long low_conf_ins_threshold = LOW_CONF_INS_THRESHOLD;
 unsigned long low_conf_max_stillness_time = LOW_CONF_STILLNESS_TIME;
 // By default, we use the same value for max_stillness_time and max_long_stillness_time
-// TODO: REMOVE
-unsigned long state3_max_long_stillness_time = STATE3_MAX_STILLNESS_TIME;
 int resetReason = System.resetReason();
 // record whether an alert has been sent within the same session
 bool hasDurationAlertBeenSent;
 bool hasStillnessAlertBeenSent;
 bool hasTrueStillnessAlertBeenSent;
-// which max stillness time are we currently comparing against
-// using pointers so that the value pointed to be max_stillness_time will be the correct values of state3_max_stillness_time or
-// state3_max_long_stillness_time even if they change due to a console function call during the session
-unsigned long *max_stillness_time = &state3_max_stillness_time;
 // the total number of alerts published while in state 2 or state 3
 // the number of alerts generated in a session should start at 0, resetting to 0 when in state 0
 unsigned long number_of_alerts_published = 0;
@@ -65,51 +57,52 @@ void setupStateMachine() {
 
     // default to no stillness alert sent
     hasStillnessAlertBeenSent = false;
+
+    // default to no high conf stillness alert
+    hasTrueStillnessAlertBeenSent = false;
 }
 
 void initializeStateMachineConsts() {
     uint16_t initializeConstsFlag;
-    uint16_t initializeState3MaxLongStillenssTimeFlag;
+    uint16_t initializeState4MaxStillenssTimeFlag;
     uint16_t initializeState0OccupationDetectionFlag;
+    uint16_t initializeHighConfINSThresholdFlag;
 
     // Boron flash memory is initialized to all F's (1's)
     EEPROM.get(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
     Log.info("state machine constants flag is 0x%04X", initializeConstsFlag);
 
     if (initializeConstsFlag != INITIALIZE_STATE_MACHINE_CONSTS_FLAG) {
-        EEPROM.put(ADDR_INS_THRESHOLD, ins_threshold);
+        EEPROM.put(ADDR_LOW_CONF_INS_THRESHOLD, low_conf_ins_threshold);
         EEPROM.put(ADDR_STATE1_MAX_TIME, state1_max_time);
         EEPROM.put(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
+        EEPROM.put(ADDR_STATE3_LOW_CONF_MAX_STILLNESS_TIME, state3_low_conf_max_stillness_time);
         initializeConstsFlag = INITIALIZE_STATE_MACHINE_CONSTS_FLAG;
         EEPROM.put(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
         Log.info("State machine constants were written to flash on bootup.");
     }
     else {
-        EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
+        EEPROM.get(ADDR_LOW_CONF_INS_THRESHOLD, low_conf_ins_threshold);
         EEPROM.get(ADDR_STATE1_MAX_TIME, state1_max_time);
         EEPROM.get(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        EEPROM.get(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
+        EEPROM.get(ADDR_STATE3_LOW_CONF_MAX_STILLNESS_TIME, state3_low_conf_max_stillness_time);
         Log.info("State machine constants were read from flash on bootup.");
     }
 
     // Boron flash memory is initialized to all F's (1's)
     // Needs separate intialization for Borons that had versions of the firmware <= 9.3.0
-    EEPROM.get(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
-    Log.info("state machine constant State3MaxLongStillnessTime flag is 0x%04X", initializeState3MaxLongStillenssTimeFlag);
+    EEPROM.get(ADDR_INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG, initializeState4MaxStillenssTimeFlag);
+    Log.info("state machine constant State4HighConfMaxStillnessTimeFlag is 0x%04X", initializeState4MaxStillenssTimeFlag);
 
-    if (initializeState3MaxLongStillenssTimeFlag != INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG) {
-        // By default, we use the same value for max_stillness_time and max_long_stillness_time
-        EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_stillness_time);
-        state3_max_long_stillness_time = state3_max_stillness_time;
-
-        initializeState3MaxLongStillenssTimeFlag = INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG;
-        EEPROM.put(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
-        Log.info("State machine constant State3MaxLongStillnessTime was written to flash on bootup.");
+    if (initializeState4MaxStillenssTimeFlag != INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG) {
+        EEPROM.put(ADDR_STATE4_HIGH_CONF_MAX_STILLNESS_TIME, state4_high_conf_max_stillness_time);
+        initializeState4MaxStillenssTimeFlag = INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG;
+        EEPROM.put(ADDR_INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG, initializeState4MaxStillenssTimeFlag);
+        Log.info("State machine constant State4HighConfMaxStillnessTime was written to flash on bootup.");
     }
     else {
-        EEPROM.get(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
-        Log.info("State machine constant State3MaxLongStillnessTime was read from flash on bootup.");
+        EEPROM.get(ADDR_STATE4_HIGH_CONF_MAX_STILLNESS_TIME, state4_high_conf_max_stillness_time);
+        Log.info("State machine constant State4HighConfMaxStillnessTime was read from flash on bootup.");
     }
 
     // Seperate initialization for State 0 Window
@@ -125,6 +118,21 @@ void initializeStateMachineConsts() {
     else {
         EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
         Log.info("State machine constant State0OccupationDetectionTimer was read from flash on bootup.");
+    }
+
+    // Initialization for State 4 High Confidence INS threshold
+    EEPROM.get(ADDR_INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG, initializeHighConfINSThresholdFlag);
+    Log.info("state machine constant HighConfINSThresholdFlag is 0x%04X", initializeHighConfINSThresholdFlag);
+
+    if (initializeHighConfINSThresholdFlag != INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG) {
+        EEPROM.put(ADDR_HIGH_CONF_INS_THRESHOLD, high_conf_ins_threshold);
+        initializeHighConfINSThresholdFlag = INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG;
+        EEPROM.put(ADDR_HIGH_CONF_INS_THRESHOLD, initializeHighConfINSThresholdFlag);
+        Log.info("State machine constant HighConfINSThreshold was written to flash on bootup.");
+    }
+    else {
+        EEPROM.get(ADDR_HIGH_CONF_INS_THRESHOLD, high_conf_ins_threshold);
+        Log.info("State machine constant HighConfINSThreshold was read from flash on bootup.");
     }
 }
 
@@ -148,9 +156,6 @@ void state0_idle() {
     hasDurationAlertBeenSent = false;
     hasStillnessAlertBeenSent = false;
     hasTrueStillnessAlertBeenSent = false;
-    // set to compare against the shorter stillness threshold
-    // TODO: REMOVE
-    max_stillness_time = &state3_max_stillness_time;
     // set the total number of alerts generated to 0
     number_of_alerts_published = 0;
 
@@ -463,9 +468,9 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
             char debugMessage[622];
             snprintf(debugMessage, sizeof(debugMessage),
                      "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
-                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
-                     state, doorStatus, INSValue, ins_threshold, timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
-                     *max_stillness_time);
+                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\", \"true_stillness_timer\":\"%lu\"}",
+                     state, doorStatus, INSValue, low_conf_ins_threshold, high_conf_ins_threshold,timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
+                     state3_low_conf_max_stillness_time, state4_high_conf_max_stillness_time);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
         }
