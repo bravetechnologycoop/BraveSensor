@@ -363,12 +363,12 @@ SCENARIO("Set Stillness Timer", "[stillness timer]") {
     }
 }
 
-SCENARIO("Set Long Stillness Timer", "[long stillness timer]") {
-    GIVEN("A starting long stillness timer of 10 milliseconds") {
-        state3_max_long_stillness_time = 10000;
+SCENARIO("Set True Stillness Timer", "[true stillness timer]") {
+    GIVEN("A starting true stillness timer of 10 milliseconds") {
+        state4_high_conf_max_stillness_time = 10000;
 
         WHEN("the function is called with 'e'") {
-            int returnFlag = long_stillness_timer_set("e");
+            int returnFlag = true_stillness_timer_set("e");
 
             THEN("the initial timer value should remain the same") {
                 REQUIRE(state3_max_long_stillness_time == 10000);
@@ -380,7 +380,7 @@ SCENARIO("Set Long Stillness Timer", "[long stillness timer]") {
         }
 
         WHEN("the function is called with a positive integer") {
-            int returnFlag = long_stillness_timer_set("15");
+            int returnFlag = true_stillness_timer_set("15");
 
             THEN("the initial timer value should be updated to the input * 1000") {
                 REQUIRE(state3_max_long_stillness_time == 15000);

@@ -39,7 +39,7 @@
 #define ADDR_STATE0_OCCUPANT_DETECTION_TIMER                 31  // uint32_t = 4 bytes
 
 #define ADDR_INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG         35 // uint16_t = 2 bytes
-#define ADDR_HIGH_CONF_INS_THRESHOLD                         37 // uint32_t = 4 bytes
+#define ADDR_HIGH_CONF_INS_THRESHOLD                        37 // uint32_t = 4 bytes
 
 // next available address is 37 + 4 = 41
 
