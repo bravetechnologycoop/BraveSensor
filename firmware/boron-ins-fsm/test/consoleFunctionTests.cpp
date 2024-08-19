@@ -202,7 +202,7 @@ SCENARIO("Set Occupation Detection Timer", "[occupation detection timer]") {
 }
 
 SCENARIO("Set Initial Timer", "[initial timer]") {
-    GIVEN("A starting initial timer of 10 milliseconds") {
+    GIVEN("A starting initial timer of 10 seconds") {
         state1_max_time = 10000;
 
         WHEN("the function is called with 'e'") {
@@ -256,7 +256,7 @@ SCENARIO("Set Initial Timer", "[initial timer]") {
 }
 
 SCENARIO("Set Duration Timer", "[duration timer]") {
-    GIVEN("A starting initial timer of 10 milliseconds") {
+    GIVEN("A starting initial timer of 10 seconds") {
         state2_max_duration = 10000;
 
         WHEN("the function is called with 'e'") {
@@ -311,13 +311,13 @@ SCENARIO("Set Duration Timer", "[duration timer]") {
 
 SCENARIO("Set Stillness Timer", "[stillness timer]") {
     GIVEN("A starting stillness timer of 10 milliseconds") {
-        state3_max_stillness_time = 10000;
+        state3_low_conf_max_stillness_time = 10000;
 
         WHEN("the function is called with 'e'") {
             int returnFlag = stillness_timer_set("e");
 
             THEN("the initial timer value should remain the same") {
-                REQUIRE(state3_max_stillness_time == 10000);
+                REQUIRE(state3_low_conf_max_stillness_time == 10000);
             }
 
             THEN("the function should return the stored value") {
@@ -329,7 +329,7 @@ SCENARIO("Set Stillness Timer", "[stillness timer]") {
             int returnFlag = stillness_timer_set("15");
 
             THEN("the initial timer value should be updated to the input * 1000") {
-                REQUIRE(state3_max_stillness_time == 15000);
+                REQUIRE(state3_low_conf_max_stillness_time == 15000);
             }
 
             THEN("the function should return the input") {
@@ -341,7 +341,7 @@ SCENARIO("Set Stillness Timer", "[stillness timer]") {
             int returnFlag = stillness_timer_set("-15");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(state3_max_stillness_time == 10000);
+                REQUIRE(state3_low_conf_max_stillness_time == 10000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -353,7 +353,7 @@ SCENARIO("Set Stillness Timer", "[stillness timer]") {
             int returnFlag = stillness_timer_set("nonint");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(state3_max_stillness_time == 10000);
+                REQUIRE(state3_low_conf_max_stillness_time == 10000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -364,14 +364,14 @@ SCENARIO("Set Stillness Timer", "[stillness timer]") {
 }
 
 SCENARIO("Set True Stillness Timer", "[true stillness timer]") {
-    GIVEN("A starting true stillness timer of 10 milliseconds") {
+    GIVEN("A starting true stillness timer of 10 seconds") {
         state4_high_conf_max_stillness_time = 10000;
 
         WHEN("the function is called with 'e'") {
             int returnFlag = true_stillness_timer_set("e");
 
             THEN("the initial timer value should remain the same") {
-                REQUIRE(state3_max_long_stillness_time == 10000);
+                REQUIRE(state4_high_conf_max_stillness_time == 10000);
             }
 
             THEN("the function should return the stored value") {
@@ -383,7 +383,7 @@ SCENARIO("Set True Stillness Timer", "[true stillness timer]") {
             int returnFlag = true_stillness_timer_set("15");
 
             THEN("the initial timer value should be updated to the input * 1000") {
-                REQUIRE(state3_max_long_stillness_time == 15000);
+                REQUIRE(state4_high_conf_max_stillness_time == 15000);
             }
 
             THEN("the function should return the input") {
@@ -392,10 +392,10 @@ SCENARIO("Set True Stillness Timer", "[true stillness timer]") {
         }
 
         WHEN("the function is called with a negative integer") {
-            int returnFlag = long_stillness_timer_set("-15");
+            int returnFlag = true_stillness_timer_set("-15");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(state3_max_long_stillness_time == 10000);
+                REQUIRE(state4_high_conf_max_stillness_time == 10000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -404,10 +404,10 @@ SCENARIO("Set True Stillness Timer", "[true stillness timer]") {
         }
 
         WHEN("the function is called with something other than 'e' or a positive integer") {
-            int returnFlag = long_stillness_timer_set("nonint");
+            int returnFlag = true_stillness_timer_set("nonint");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(state3_max_long_stillness_time == 10000);
+                REQUIRE(state4_high_conf_max_stillness_time == 10000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -417,15 +417,15 @@ SCENARIO("Set True Stillness Timer", "[true stillness timer]") {
     }
 }
 
-SCENARIO("Set INS Threshold", "[ins threshold]") {
+SCENARIO("Set Low Confidence INS Threshold", "[lc ins threshold]") {
     GIVEN("A starting initial threshold of 10") {
-        ins_threshold = 10;
+        lc_ins_threshold = 10;
 
         WHEN("the function is called with 'e'") {
-            int returnFlag = ins_threshold_set("e");
+            int returnFlag = lc_ins_threshold_set("e");
 
             THEN("the initial timer value should remain the same") {
-                REQUIRE(ins_threshold == 10);
+                REQUIRE(lc_ins_threshold == 10);
             }
 
             THEN("the function should return the stored value") {
@@ -434,10 +434,10 @@ SCENARIO("Set INS Threshold", "[ins threshold]") {
         }
 
         WHEN("the function is called with a positive integer") {
-            int returnFlag = ins_threshold_set("15");
+            int returnFlag = lc_ins_threshold_set("15");
 
             THEN("the initial timer value should be updated to the input") {
-                REQUIRE(ins_threshold == 15);
+                REQUIRE(lc_ins_threshold == 15);
             }
 
             THEN("the function should return the input") {
@@ -446,10 +446,10 @@ SCENARIO("Set INS Threshold", "[ins threshold]") {
         }
 
         WHEN("the function is called with a negative integer") {
-            int returnFlag = ins_threshold_set("-15");
+            int returnFlag = lc_ins_threshold_set("-15");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(ins_threshold == 10);
+                REQUIRE(lc_ins_threshold == 10);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -458,10 +458,64 @@ SCENARIO("Set INS Threshold", "[ins threshold]") {
         }
 
         WHEN("the function is called with something other than 'e' or a positive integer") {
-            int returnFlag = ins_threshold_set("nonint");
+            int returnFlag = lc_ins_threshold_set("nonint");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(ins_threshold == 10);
+                REQUIRE(lc_ins_threshold == 10);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+    }
+}
+
+SCENARIO("Set High Confidence INS Threshold", "[ins threshold]") {
+    GIVEN("A starting initial threshold of 10") {
+        hc_ins_threshold = 10;
+
+        WHEN("the function is called with 'e'") {
+            int returnFlag = hc_ins_threshold_set("e");
+
+            THEN("the initial timer value should remain the same") {
+                REQUIRE(hc_ins_threshold == 10);
+            }
+
+            THEN("the function should return the stored value") {
+                REQUIRE(returnFlag == 10);
+            }
+        }
+
+        WHEN("the function is called with a positive integer") {
+            int returnFlag = hc_ins_threshold_set("15");
+
+            THEN("the initial timer value should be updated to the input") {
+                REQUIRE(hc_ins_threshold == 15);
+            }
+
+            THEN("the function should return the input") {
+                REQUIRE(returnFlag == 15);
+            }
+        }
+
+        WHEN("the function is called with a negative integer") {
+            int returnFlag = hc_ins_threshold_set("-15");
+
+            THEN("the initial timer value should not be updated") {
+                REQUIRE(hc_ins_threshold == 10);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+
+        WHEN("the function is called with something other than 'e' or a positive integer") {
+            int returnFlag = hc_ins_threshold_set("nonint");
+
+            THEN("the initial timer value should not be updated") {
+                REQUIRE(hc_ins_threshold == 10);
             }
 
             THEN("the function should return -1 to indicate an error") {
