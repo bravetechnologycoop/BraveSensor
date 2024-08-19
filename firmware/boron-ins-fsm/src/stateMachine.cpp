@@ -332,7 +332,7 @@ void state3_stillness() {
         saveStateChangeOrAlert(3, 2);
         stateHandler = state0_idle;
     }
-    else if (millis() - state3_stillness_timer >= low_conf_max_stillness_time) {
+    else if (millis() - state3_stillness_timer >= state3_low_conf_max_stillness_time) {
         Log.warn("stillness alert, remaining in state3 after publish");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
@@ -403,7 +403,7 @@ void state4_true_stillness() {
         saveStateChangeOrAlert(4, 2);
         stateHandler = state0_idle;
     }
-    else if (millis() - state4_true_stillness_timer >= high_conf_max_stillness_time) {
+    else if (millis() - state4_true_stillness_timer >= state4_high_conf_max_stillness_time) {
         Log.warn("high conf stillness alert, going to state3 after publish");
         publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(4, 5);
@@ -416,7 +416,7 @@ void state4_true_stillness() {
         state4_true_stillness_timer = millis(); // reset the stillness timer
         stateHandler = state3_stillness;
     }
-    else if (millis() - state3_stillness_timer >= low_conf_max_stillness_time) {
+    else if (millis() - state3_stillness_timer >= state3_low_conf_max_stillness_time) {
         Log.warn("low conf stillness alert, going to state3 after publish");
         publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(4, 5);

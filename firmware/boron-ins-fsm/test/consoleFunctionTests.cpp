@@ -417,15 +417,15 @@ SCENARIO("Set True Stillness Timer", "[true stillness timer]") {
     }
 }
 
-SCENARIO("Set Low Confidence INS Threshold", "[lc ins threshold]") {
+SCENARIO("Set Low Confidence INS Threshold", "[low conf ins threshold]") {
     GIVEN("A starting initial threshold of 10") {
-        lc_ins_threshold = 10;
+        low_conf_ins_threshold = 10;
 
         WHEN("the function is called with 'e'") {
-            int returnFlag = lc_ins_threshold_set("e");
+            int returnFlag = low_conf_ins_threshold_set("e");
 
             THEN("the initial timer value should remain the same") {
-                REQUIRE(lc_ins_threshold == 10);
+                REQUIRE(low_conf_ins_threshold == 10);
             }
 
             THEN("the function should return the stored value") {
@@ -434,10 +434,10 @@ SCENARIO("Set Low Confidence INS Threshold", "[lc ins threshold]") {
         }
 
         WHEN("the function is called with a positive integer") {
-            int returnFlag = lc_ins_threshold_set("15");
+            int returnFlag = low_conf_ins_threshold_set("15");
 
             THEN("the initial timer value should be updated to the input") {
-                REQUIRE(lc_ins_threshold == 15);
+                REQUIRE(low_conf_ins_threshold == 15);
             }
 
             THEN("the function should return the input") {
@@ -446,10 +446,10 @@ SCENARIO("Set Low Confidence INS Threshold", "[lc ins threshold]") {
         }
 
         WHEN("the function is called with a negative integer") {
-            int returnFlag = lc_ins_threshold_set("-15");
+            int returnFlag = low_conf_ins_threshold_set("-15");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(lc_ins_threshold == 10);
+                REQUIRE(low_conf_ins_threshold == 10);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -458,10 +458,10 @@ SCENARIO("Set Low Confidence INS Threshold", "[lc ins threshold]") {
         }
 
         WHEN("the function is called with something other than 'e' or a positive integer") {
-            int returnFlag = lc_ins_threshold_set("nonint");
+            int returnFlag = low_conf_ins_threshold_set("nonint");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(lc_ins_threshold == 10);
+                REQUIRE(low_conf_ins_threshold == 10);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -471,15 +471,15 @@ SCENARIO("Set Low Confidence INS Threshold", "[lc ins threshold]") {
     }
 }
 
-SCENARIO("Set High Confidence INS Threshold", "[ins threshold]") {
+SCENARIO("Set High Confidence INS Threshold", "[high conf ins threshold]") {
     GIVEN("A starting initial threshold of 10") {
-        hc_ins_threshold = 10;
+        high_conf_ins_threshold = 10;
 
         WHEN("the function is called with 'e'") {
-            int returnFlag = hc_ins_threshold_set("e");
+            int returnFlag = high_conf_ins_threshold_set("e");
 
             THEN("the initial timer value should remain the same") {
-                REQUIRE(hc_ins_threshold == 10);
+                REQUIRE(high_conf_ins_threshold == 10);
             }
 
             THEN("the function should return the stored value") {
@@ -488,10 +488,10 @@ SCENARIO("Set High Confidence INS Threshold", "[ins threshold]") {
         }
 
         WHEN("the function is called with a positive integer") {
-            int returnFlag = hc_ins_threshold_set("15");
+            int returnFlag = high_conf_ins_threshold_set("15");
 
             THEN("the initial timer value should be updated to the input") {
-                REQUIRE(hc_ins_threshold == 15);
+                REQUIRE(high_conf_ins_threshold == 15);
             }
 
             THEN("the function should return the input") {
@@ -500,10 +500,10 @@ SCENARIO("Set High Confidence INS Threshold", "[ins threshold]") {
         }
 
         WHEN("the function is called with a negative integer") {
-            int returnFlag = hc_ins_threshold_set("-15");
+            int returnFlag = high_conf_ins_threshold_set("-15");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(hc_ins_threshold == 10);
+                REQUIRE(high_conf_ins_threshold == 10);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -512,10 +512,10 @@ SCENARIO("Set High Confidence INS Threshold", "[ins threshold]") {
         }
 
         WHEN("the function is called with something other than 'e' or a positive integer") {
-            int returnFlag = hc_ins_threshold_set("nonint");
+            int returnFlag = high_conf_ins_threshold_set("nonint");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(hc_ins_threshold == 10);
+                REQUIRE(high_conf_ins_threshold == 10);
             }
 
             THEN("the function should return -1 to indicate an error") {
