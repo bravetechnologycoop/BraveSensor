@@ -259,7 +259,7 @@ void state2_duration() {
         // go to stillness state
         stateHandler = state3_stillness;
     }
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < high_conf_ins_threshold) {
+    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < high_conf_ins_threshold && !hasTrueStillnessAlertBeenSent) {
         Log.warn("Seeing high confidence stillness, going to state4_true_stillness from state2_duration");
         publishStateTransition(2, 4, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 6);
@@ -319,7 +319,7 @@ void state3_stillness() {
         // go back to state 2, duration
         stateHandler = state2_duration;
     }
-    else if ((unsigned long)checkINS.iAverage < high_conf_ins_threshold) {
+    else if ((unsigned long)checkINS.iAverage < high_conf_ins_threshold && !hasTrueStillnessAlertBeenSent) {
         Log.warn("high confidence stillness detected, going from state3_stillness to state4_true_stillness");
         publishStateTransition(3, 4, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 6);
@@ -341,7 +341,7 @@ void state3_stillness() {
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
         hasStillnessAlertBeenSent = true;
-        state3_stillness_timer = millis();                     // reset the stillness timer
+        state3_stillness_timer = millis(); // reset the stillness timer
         stateHandler = state3_stillness;
     }
     else if (millis() - state2_duration_timer >= state2_max_duration) {

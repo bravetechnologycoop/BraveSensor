@@ -54,6 +54,7 @@ void state0_idle();
 void state1_15sCountdown();
 void state2_duration();
 void state3_stillness();
+void state4_true_stillness();
 
 void publishDebugMessage(int, unsigned char, float, unsigned long);
 void publishStateTransition(int, int, unsigned char, float);
