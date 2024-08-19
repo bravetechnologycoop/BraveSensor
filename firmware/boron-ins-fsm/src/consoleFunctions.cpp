@@ -28,8 +28,8 @@ void setupConsoleFunctions() {
     Particle.function("Change_Duration_Timer", duration_timer_set);
     Particle.function("Change_Stillness_Timer", stillness_timer_set);
     Particle.function("Change_True_Stillness_Timer", true_stillness_timer_set);
-    Particle.function("Change_LC_INS_Threshold", lc_ins_threshold_set);
-    Particle.function("Change_HC_INS_Threshold", hc_ins_threshold_set);
+    Particle.function("Change_Low_Conf_INS_Threshold", low_conf_ins_threshold_set);
+    Particle.function("Change_High_Conf_INS_Threshold", high_conf_ins_threshold_set);
     Particle.function("Change_IM21_Door_ID", im21_door_id_set);
     Particle.function("Reset_Stillness_Timer_For_Alerting_Session", reset_stillness_timer_for_alerting_session);
 }
@@ -92,8 +92,8 @@ int occupant_detection_timer_set(String input) {
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
-        returnFlag = state0_occupant_detection_timer / 1000;
+        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_max_time);
+        returnFlag = state0_occupant_detection_max_time / 1000;
     }
     // else parse new threshold
     else {
@@ -111,8 +111,8 @@ int occupant_detection_timer_set(String input) {
         }
         else {
             EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, timeout);
-            state0_occupant_detection_timer = timeout;
-            returnFlag = state0_occupant_detection_timer / 1000;
+            state0_occupant_detection_max_time = timeout;
+            returnFlag = state0_occupant_detection_max_time / 1000;
         }
     }
     return returnFlag;
@@ -270,7 +270,7 @@ int true_stillness_timer_set(String input) {
 }
 
 // returns low conf threshold if valid input is given, otherwise returns -1
-int lc_ins_threshold_set(String input) {
+int low_conf_ins_threshold_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
@@ -303,7 +303,7 @@ int lc_ins_threshold_set(String input) {
 }
 
 // returns high conf threshold if valid input is given, otherwise returns -1
-int hc_ins_threshold_set(String input) {
+int high_conf_ins_threshold_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();

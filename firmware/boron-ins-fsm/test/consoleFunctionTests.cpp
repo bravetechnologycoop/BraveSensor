@@ -149,13 +149,13 @@ SCENARIO("Change_IM21_Door_ID", "[change door id]") {
 
 SCENARIO("Set Occupation Detection Timer", "[occupation detection timer]") {
     GIVEN("A starting occupation detection timer of 1 minute") {
-        state0_occupant_detection_timer = 60000;
+        state0_occupant_detection_max_time = 60000;
 
         WHEN("the function is called with 'e'") {
             int returnFlag = occupant_detection_timer_set("e");
 
             THEN("the initial timer value should remain the same") {
-                REQUIRE(state0_occupant_detection_timer == 60000);
+                REQUIRE(state0_occupant_detection_max_time == 60000);
             }
 
             THEN("the function should return the stored value") {
@@ -167,7 +167,7 @@ SCENARIO("Set Occupation Detection Timer", "[occupation detection timer]") {
             int returnFlag = occupant_detection_timer_set("30");
 
             THEN("the initial timer value should be updated to the input * 1000") {
-                REQUIRE(state0_occupant_detection_timer == 30000);
+                REQUIRE(state0_occupant_detection_max_time == 30000);
             }
 
             THEN("the function should return the input") {
@@ -179,7 +179,7 @@ SCENARIO("Set Occupation Detection Timer", "[occupation detection timer]") {
             int returnFlag = occupant_detection_timer_set("-30");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(state0_occupant_detection_timer == 60000);
+                REQUIRE(state0_occupant_detection_max_time == 60000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -191,7 +191,7 @@ SCENARIO("Set Occupation Detection Timer", "[occupation detection timer]") {
             int returnFlag = occupant_detection_timer_set("nonInt");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(state0_occupant_detection_timer == 60000);
+                REQUIRE(state0_occupant_detection_max_time == 60000);
             }
 
             THEN("the function should return -1 to indicate an error") {

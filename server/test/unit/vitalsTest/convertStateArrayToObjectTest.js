@@ -20,7 +20,7 @@ describe('vitals.js unit tests: convertStateArrayToObject', () => {
       const stateTransitionsArrayReadable = [
         {
           state: 'idle',
-          reason: 'low_movement',
+          reason: 'high_movement',
           time: 1,
         },
       ]

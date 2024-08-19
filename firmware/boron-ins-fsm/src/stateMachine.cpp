@@ -20,14 +20,14 @@ unsigned long state2_duration_timer;
 unsigned long state3_stillness_timer;
 unsigned long state4_true_stillness_timer;
 // initialize constants to sensible default values
-unsigned long state0_occupant_detection_timer = STATE0_OCCUPANT_DETECTION_TIMER;
+unsigned long low_conf_ins_threshold = LOW_CONF_INS_THRESHOLD;
+unsigned long high_conf_ins_threshold = HIGH_CONF_INS_THRESHOLD;
+unsigned long state0_occupant_detection_max_time = STATE0_OCCUPANT_DETECTION_MAX_TIME;
 unsigned long state1_max_time = STATE1_MAX_TIME;
 unsigned long state2_max_duration = STATE2_MAX_DURATION;
-unsigned long high_conf_ins_threshold = HIGH_CONF_INS_THRESHOLD;
-unsigned long high_conf_max_stillness_time = HIGH_CONF_STILLNESS_TIME;
-unsigned long low_conf_ins_threshold = LOW_CONF_INS_THRESHOLD;
-unsigned long low_conf_max_stillness_time = LOW_CONF_STILLNESS_TIME;
-// By default, we use the same value for max_stillness_time and max_long_stillness_time
+unsigned long state3_low_conf_max_stillness_time = STATE3_LOW_CONF_MAX_STILLNESS_TIME;
+unsigned long state4_high_conf_max_stillness_time = STATE4_HIGH_CONF_MAX_STILLNESS_TIME;
+
 int resetReason = System.resetReason();
 // record whether an alert has been sent within the same session
 bool hasDurationAlertBeenSent;
@@ -110,13 +110,13 @@ void initializeStateMachineConsts() {
     Log.info("state machine constant State0OccupationDetectionFlag is 0x%04X", initializeState0OccupationDetectionFlag);
 
     if (initializeState0OccupationDetectionFlag != INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG) {
-        EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
+        EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_max_time);
         initializeState0OccupationDetectionFlag = INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG;
         EEPROM.put(ADDR_INITIALIZE_STATE0_OCCUPANT_DETECTION_TIMER_FLAG, initializeState0OccupationDetectionFlag);
         Log.info("State machine constant State0OccupationDetectionTimer was written to flash on bootup.");
     }
     else {
-        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
+        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_max_time);
         Log.info("State machine constant State0OccupationDetectionTimer was read from flash on bootup.");
     }
 
@@ -170,7 +170,7 @@ void state0_idle() {
     publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, (millis() - timeWhenDoorClosed));
 
     // fix outputs and state exit conditions accordingly
-    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && ((unsigned long)checkINS.iAverage > low_conf_ins_threshold) &&
+    if (millis() - timeWhenDoorClosed < state0_occupant_detection_max_time && ((unsigned long)checkINS.iAverage > low_conf_ins_threshold) &&
         !isDoorOpen(checkDoor.doorStatus) && !isDoorStatusUnknown(checkDoor.doorStatus)) {
         Log.warn("In state 0, door closed and seeing movement, heading to state 1");
         publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
@@ -467,9 +467,9 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
             // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
             char debugMessage[622];
             snprintf(debugMessage, sizeof(debugMessage),
-                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
+                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"low_conf_INS_threshold\":\"%lu\", \"high_conf_INS_threshold\":\"%lu\",\"timer_status\":\"%lu\", "
                      "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\", \"true_stillness_timer\":\"%lu\"}",
-                     state, doorStatus, INSValue, low_conf_ins_threshold, high_conf_ins_threshold,timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
+                     state, doorStatus, INSValue, low_conf_ins_threshold, high_conf_ins_threshold, timer, state0_occupant_detection_max_time, state1_max_time, state2_max_duration,
                      state3_low_conf_max_stillness_time, state4_high_conf_max_stillness_time);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
