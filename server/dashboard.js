@@ -211,18 +211,6 @@ async function renderDashboardPage(req, res) {
     const displayedClients = (await db.getClients()).filter(client => client.isDisplayed)
     const allDisplayedLocations = (await db.getLocations()).filter(location => location.isDisplayed)
 
-    for (const location of allDisplayedLocations) {
-      const recentSession = await db.getMostRecentSessionWithDevice(location)
-      if (recentSession !== null) {
-        const sessionCreatedAt = Date.parse(recentSession.createdAt)
-        try {
-          location.sessionStart = new Date(sessionCreatedAt).toString()
-        } catch (err) {
-          location.sessionStart = 'INVALID DATE'
-        }
-      }
-    }
-
     for (const client of displayedClients) {
       client.locations = allDisplayedLocations
         .filter(location => location.client.id === client.id)
