@@ -19,7 +19,7 @@
 // initial (default) values for state machine, can be changed via console function
 // or by writing something other than 0x8888 to the above flag in flash
 #define LOW_CONF_INS_THRESHOLD              80
-#define HIGH_CONF_INS_THRESHOLD             0          // disabled by default
+#define HIGH_CONF_INS_THRESHOLD             1          // disabled by default
 #define STATE0_OCCUPANT_DETECTION_MAX_TIME  120000     // 2 min
 #define STATE1_MAX_TIME                     5000       // 5s
 #define STATE2_MAX_DURATION                 1200000    // 20 min

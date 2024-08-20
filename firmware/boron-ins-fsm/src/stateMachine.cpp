@@ -64,7 +64,7 @@ void setupStateMachine() {
 
 void initializeStateMachineConsts() {
     uint16_t initializeConstsFlag;
-    uint16_t initializeState4MaxStillenssTimeFlag;
+    uint16_t initializeState4MaxStillnessTimeFlag;
     uint16_t initializeState0OccupationDetectionFlag;
     uint16_t initializeHighConfINSThresholdFlag;
 
@@ -91,13 +91,13 @@ void initializeStateMachineConsts() {
 
     // Boron flash memory is initialized to all F's (1's)
     // Needs separate intialization for Borons that had versions of the firmware <= 9.3.0
-    EEPROM.get(ADDR_INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG, initializeState4MaxStillenssTimeFlag);
-    Log.info("state machine constant State4HighConfMaxStillnessTimeFlag is 0x%04X", initializeState4MaxStillenssTimeFlag);
+    EEPROM.get(ADDR_INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG, initializeState4MaxStillnessTimeFlag);
+    Log.info("state machine constant State4HighConfMaxStillnessTimeFlag is 0x%04X", initializeState4MaxStillnessTimeFlag);
 
-    if (initializeState4MaxStillenssTimeFlag != INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG) {
+    if (initializeState4MaxStillnessTimeFlag != INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG) {
         EEPROM.put(ADDR_STATE4_HIGH_CONF_MAX_STILLNESS_TIME, state4_high_conf_max_stillness_time);
-        initializeState4MaxStillenssTimeFlag = INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG;
-        EEPROM.put(ADDR_INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG, initializeState4MaxStillenssTimeFlag);
+        initializeState4MaxStillnessTimeFlag = INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG;
+        EEPROM.put(ADDR_INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG, initializeState4MaxStillnessTimeFlag);
         Log.info("State machine constant State4HighConfMaxStillnessTime was written to flash on bootup.");
     }
     else {
@@ -319,10 +319,11 @@ void state3_stillness() {
         // go back to state 2, duration
         stateHandler = state2_duration;
     }
-    else if ((unsigned long)checkINS.iAverage < high_conf_ins_threshold && !hasTrueStillnessAlertBeenSent) {
+    else if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < high_conf_ins_threshold && !hasTrueStillnessAlertBeenSent) {
         Log.warn("high confidence stillness detected, going from state3_stillness to state4_true_stillness");
         publishStateTransition(3, 4, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 6);
+        state4_true_stillness_timer = millis();
         // go to state 4, true stillness
         stateHandler = state4_true_stillness;
     }
@@ -413,7 +414,7 @@ void state4_true_stillness() {
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
         hasStillnessAlertBeenSent = true;
         hasTrueStillnessAlertBeenSent = true;
-        state4_true_stillness_timer = millis(); // reset the stillness timer
+        state3_stillness_timer = millis(); // reset the stillness timer
         stateHandler = state3_stillness;
     }
     else if (millis() - state3_stillness_timer >= state3_low_conf_max_stillness_time) {
@@ -425,7 +426,7 @@ void state4_true_stillness() {
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
         hasStillnessAlertBeenSent = true;
-        state3_stillness_timer = millis();                     // reset the stillness timer
+        state3_stillness_timer = millis(); // reset the stillness timer
         stateHandler = state3_stillness;
     }
     else if (millis() - state2_duration_timer >= state2_max_duration) {
