@@ -209,21 +209,6 @@ async function downloadCsv(req, res) {
 async function renderDashboardPage(req, res) {
   try {
     const displayedClients = (await db.getClients()).filter(client => client.isDisplayed)
-    const allDisplayedLocations = (await db.getLocations()).filter(location => location.isDisplayed)
-
-    for (const client of displayedClients) {
-      client.locations = allDisplayedLocations
-        .filter(location => location.client.id === client.id)
-        .map(location => {
-          return {
-            name: location.displayName,
-            id: location.id,
-            sessionStart: location.sessionStart,
-            isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
-            isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
-          }
-        })
-    }
 
     const viewParams = {
       clients: displayedClients,
