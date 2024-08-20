@@ -13,6 +13,7 @@ the code was deployed.
 
 ### Added
 
+- Added `organization`, `funder`, and `postal_code` columns to the clients_extentions table (CU-86du6jp33).
 - Updated the incident categories on the new client dashboard (CU-86du7hv9b).
 - Set the default value of the `incident_categories` column in the `clients` table to `{"Overdose Event","No One Inside","Occupant Responded","None of the Above"}` (CU-86du7hv9b).
 
@@ -24,7 +25,6 @@ the code was deployed.
 
 ### Added
 
-- Added `organization`, `funder`, and `postal_code` columns to the clients_extentions table (CU-86du6jp33).
 - Added a migration script to drop unused tables from the database; `buttons_vitals`, `buttons_vitals_cache`, `gateways`, `gateways_vitals`, `gateways_vitals_cache` (CU-86du4nq8w).
 - Configured repository to use Github Actions instead of Travis (CU-86dthadwg).
 
