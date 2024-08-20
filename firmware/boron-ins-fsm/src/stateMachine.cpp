@@ -407,10 +407,10 @@ void state4_true_stillness() {
     else if (millis() - state4_true_stillness_timer >= state4_high_conf_max_stillness_time) {
         Log.warn("high conf stillness alert, going to state3 after publish");
         publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(4, 5);
+        saveStateChangeOrAlert(4, 7);
         Log.error("True Stillness Alert!!");
         number_of_alerts_published += 1;  // increment the number of alerts published
-        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
+        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu, \"isTrueStillnessAlert\": %s}", number_of_alerts_published, "true");
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
         hasStillnessAlertBeenSent = true;
         hasTrueStillnessAlertBeenSent = true;
@@ -443,10 +443,10 @@ void state4_true_stillness() {
     }
     else {
         // if we don't meet the exit conditions above, we remain here
-        // stateHandler = state3_stillness;
+        // stateHandler = state4_true_stillness;
     }
 
-}
+} //end state4_true_stillness
 
 void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue) {
     if (stateMachineDebugFlag) {
@@ -469,9 +469,9 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
             char debugMessage[622];
             snprintf(debugMessage, sizeof(debugMessage),
                      "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"low_conf_INS_threshold\":\"%lu\", \"high_conf_INS_threshold\":\"%lu\",\"timer_status\":\"%lu\", "
-                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\", \"true_stillness_timer\":\"%lu\"}",
+                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\", \"true_stillness_timer\":\"%lu\", \"hasTrueStillnessAlertBeenSent\":\"%s\"}",
                      state, doorStatus, INSValue, low_conf_ins_threshold, high_conf_ins_threshold, timer, state0_occupant_detection_max_time, state1_max_time, state2_max_duration,
-                     state3_low_conf_max_stillness_time, state4_high_conf_max_stillness_time);
+                     state3_low_conf_max_stillness_time, state4_high_conf_max_stillness_time, hasTrueStillnessAlertBeenSent?"true":"false");
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
         }
@@ -490,6 +490,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
  * 4           | Duration alert
  * 5           | Stillness alert
  * 6           | Movement below high confidence threshold
+ * 7           | True Stillness alert
  **/
 void saveStateChangeOrAlert(int state, int reason) {
     stateQueue.push(state);
