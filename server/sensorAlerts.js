@@ -52,7 +52,7 @@ async function handleAlert(location, alertType, alertData) {
       }
 
       if (parsedAlertData.isTrueStillnessAlert) {
-        helpers.logSentry("True Stillness alert at" + location.displayName)
+        helpers.logSentry(`True Stillness alert at ${location.displayName}`)
       }
     } catch (error) {
       // default to isResettable false
