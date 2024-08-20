@@ -127,7 +127,7 @@ void initializeStateMachineConsts() {
     if (initializeHighConfINSThresholdFlag != INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG) {
         EEPROM.put(ADDR_HIGH_CONF_INS_THRESHOLD, high_conf_ins_threshold);
         initializeHighConfINSThresholdFlag = INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG;
-        EEPROM.put(ADDR_HIGH_CONF_INS_THRESHOLD, initializeHighConfINSThresholdFlag);
+        EEPROM.put(ADDR_INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG, initializeHighConfINSThresholdFlag);
         Log.info("State machine constant HighConfINSThreshold was written to flash on bootup.");
     }
     else {
