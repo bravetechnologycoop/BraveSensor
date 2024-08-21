@@ -11,6 +11,18 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [10.12.0] - 2024-08-20
+
+### Added
+
+- Added `organization`, `funder`, and `postal_code` columns to the clients_extentions table (CU-86du6jp33).
+- Updated the incident categories on the new client dashboard (CU-86du7hv9b).
+- Set the default value of the `incident_categories` column in the `clients` table to `{"Overdose Event","No One Inside","Occupant Responded","None of the Above"}` (CU-86du7hv9b).
+
+### Changed
+
+- Some things in preperation for Johnny's True Stillness firmware update.
+
 ## [10.11.0] - 2024-07-23
 
 ### Added
@@ -789,7 +801,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...HEAD
+[10.12.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...v10.12.0
 [10.11.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.10.0...v10.11.0
 [10.10.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.9.0...v10.10.0
 [10.9.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.8.0...v10.9.0
