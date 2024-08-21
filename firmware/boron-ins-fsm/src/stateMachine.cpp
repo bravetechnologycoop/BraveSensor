@@ -412,7 +412,6 @@ void state4_true_stillness() {
         number_of_alerts_published += 1;  // increment the number of alerts published
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu, \"isTrueStillnessAlert\": %s}", number_of_alerts_published, "true");
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
-        hasStillnessAlertBeenSent = true;
         hasTrueStillnessAlertBeenSent = true;
         state3_stillness_timer = millis(); // reset the stillness timer
         stateHandler = state3_stillness;
@@ -467,11 +466,12 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
         else if ((millis() - lastDebugPublish) > DEBUG_PUBLISH_INTERVAL) {
             // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
             char debugMessage[622];
+            uint8_t alertsThatHaveBeenSent = (hasDurationAlertBeenSent << 2) + (hasStillnessAlertBeenSent << 1) + (hasTrueStillnessAlertBeenSent);
             snprintf(debugMessage, sizeof(debugMessage),
                      "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"low_conf_INS_threshold\":\"%lu\", \"high_conf_INS_threshold\":\"%lu\",\"timer_status\":\"%lu\", "
-                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\", \"true_stillness_timer\":\"%lu\", \"hasTrueStillnessAlertBeenSent\":\"%s\"}",
+                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\", \"true_stillness_timer\":\"%lu\", \"alertsThatHaveBeenSent\":\"0x%02X\"}",
                      state, doorStatus, INSValue, low_conf_ins_threshold, high_conf_ins_threshold, timer, state0_occupant_detection_max_time, state1_max_time, state2_max_duration,
-                     state3_low_conf_max_stillness_time, state4_high_conf_max_stillness_time, hasTrueStillnessAlertBeenSent?"true":"false");
+                     state3_low_conf_max_stillness_time, state4_high_conf_max_stillness_time, alertsThatHaveBeenSent);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
         }
