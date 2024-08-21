@@ -34,6 +34,7 @@ the code was deployed.
 
 ### Changed
 
+- Updated the dashboard to make the fallback phone numbers optional on the `newClient` and `updateClient` dashboard pages (CU-86du49q25).
 - Changed `logSensorsVital` and `getMostRecentSessionWithDeviceid` to use `location` instead of `locationid` (CU-86dqq93dp).
 - Changed `getMostRecentSessionWithDeviceid`to `getMostRecentSessionWithDevice` to reflect the change of the function (CU-86dqq93dp).
 - Changed `sensorsVitalDBFactory` to use location instead of locationid in the logSensorsVital call (CU-86dqq93dp).
