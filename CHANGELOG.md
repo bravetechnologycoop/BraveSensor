@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+- Removed clients from dashboard
+
 ## [10.12.0] - 2024-08-20
 
 ### Added
