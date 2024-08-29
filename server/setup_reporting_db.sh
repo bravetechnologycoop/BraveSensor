@@ -33,6 +33,7 @@ if [ $answer != "Y" ]; then
 	printf "OK - Won't do anything then.\n"
 	exit
 fi
+printf "\n"
 
 # try to use existing database dump file by default
 use_existing="Y"
@@ -48,10 +49,10 @@ else # file exists
 	read answer
 	use_existing=$answer
 
-	if [ answer = "Y" ]; then
-		printf "OK - Won't download again.\n"
+	if [ answer == "Y" ]; then
+		printf "OK - Won't download again.\n\n"
 	else
-		printf "OK - Downloading again.\n"
+		printf "OK - Downloading again.\n\n"
 		rm /tmp/sensor_reporting_db.sql
 	fi
 fi
@@ -64,6 +65,7 @@ if [ use_existing != "Y" ]; then
 	pg_dump $src_db -U $src_user -h $src_host -p $src_port -f /tmp/sensor_reporting_db.sql --clean --if-exists -T sensor_vitals
 fi
 
+printf "\n"
 printf "Note: The following password prompt is for the destination database.\n"
 
 # upload the dumped data to the destination database
