@@ -13,6 +13,7 @@
 1. [Local development](#local-development)
 1. [Particle API Access](#particle-api-access)
 1. [Troubleshooting](#troubleshooting)
+1. [How to migrate passwords and API keys for offboarding](#how-to-migrate-passwords-and-api-keys-for-offboarding)
 
 # Production Deployment
 
@@ -464,4 +465,60 @@ To generate this token:
 
 If the "Update Environment Variables" GitHub Action fails due to TailScale authentication, this is because the TailScale API key needs to be updated every 3 months. This can be done in AWS.
 
-# // TODO add section on viewing environment variables
+# How to migrate passwords and API keys for offboarding
+
+In all of the following tutorials, please reset the 1password entries where they exist.
+
+Make sure to turn off either the development or production environment as you are doing the password migrations,
+messaging clients before and after the downtime using PA.
+
+See the production deployment guide above for updating the environment variables in the BraveSensor-DevOps repository, for the production, staging, and development environments.
+
+## Twilio Token
+
+The same Twilio token is used between the development, staging, and production sensor servers, so replace the environment variable in all environments.
+
+1. Go to the [Twilio Console](https://console.twilio.com) and log in.
+1. Select **Sensor-Production** from the project drop down (top-left).
+1. Go to **Acount Management** from the Admin drop down (top-right).
+1. Go to **API keys & tokens** under **Keys & Credentials** (left).
+1. Scroll down to **Live credentials** and click **Request a secondary token**.
+1. There should be a prompt to use the secondary token as the primary token and remove the old one - click this.
+1. Set the `TWILIO_TOKEN` environment variable to the new primary token.
+
+## Dashboard Password
+
+1. Generate a new dashboard password with [a password generator](https://1password.com/password-generator).
+1. Set the `PASSWORD` environment variable to the generated password.
+
+## Database Password
+
+As the database is locked behind Tailscale access, there is no need to rotate the passwords directly.
+Reset the password for the Tailscale account if necessary.
+
+## PA API Key
+
+1. Rotating the PA API Keys should be done once for Brave Buttons and Brave Sensor migrations - see the Buttons README.
+1. Reset the `PA_API_KEY_PRIMARY` environment variable for all environments according to the values generated.
+
+## Particle Webhook API Key
+
+Repeat the following steps but under the **Sandbox** organisation in the Particle console,
+and for the **BetaTest Borons** product to set the `PARTICLE_WEBHOOK_API_KEY` for the development environment.
+The staging environment does not use a Particle Webhook API Key.
+
+1. Open the [Particle Console](https://console.particle.io) and log in.
+1. Select the **Brave Technology Coop** organisation from the organisation drop down (top-left).
+1. Select **Production Sensor Devices** from the list of products (centre).
+1. Select **Integrations** from the sidebar, which looks like a solar system (left).
+1. Generate a new Particle Webhook API Key with [a password generator](https://1password.com/password-generator).
+1. Note down the generated value for use in the following steps.
+1. For each of the **Duration**, **Heartbeat**, and **Stillness** alerts:
+
+   1. Open the alert integration by clicking on its name (left).
+   1. Click on **Edit** in the Webhook menu (right).
+   1. Scroll down and click on **Extra settings** (bottom).
+   1. Scroll down to **api_key** (bottom).
+   1. Set the **api_key** value to the generated Particle Webhook API key.
+
+1. Set the `PARTICLE_WEBHOOK_API_KEY` environment variable to the generated Particle Webhook API key.
