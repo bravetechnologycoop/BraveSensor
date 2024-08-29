@@ -518,7 +518,7 @@ The staging environment does not use a Particle Webhook API Key.
    1. Open the alert integration by clicking on its name (left).
    1. Click on **Edit** in the Webhook menu (right).
    1. Scroll down and click on **Extra settings** (bottom).
-   1. Scroll down to **api_key** 
+   1. Scroll down to **api_key** (bottom).
    1. Set the **api_key** value to the generated Particle Webhook API key.
 
 1. Set the `PARTICLE_WEBHOOK_API_KEY` environment variable to the generated Particle Webhook API key.
