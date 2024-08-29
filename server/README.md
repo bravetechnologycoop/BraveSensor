@@ -472,7 +472,7 @@ In all of the following tutorials, please reset the 1password entries where they
 Make sure to turn off either the development or production environment as you are doing the password migrations,
 messaging clients before and after the downtime using PA.
 
-See the production deployment guide above in the README for updating the environment variables in the BraveSensor-DevOps repository.
+See the production deployment guide above for updating the environment variables in the BraveSensor-DevOps repository, for the production, staging, and development environments.
 
 ## Twilio Token
 
@@ -491,18 +491,34 @@ The same Twilio token is used between the development, staging, and production s
 1. Generate a new dashboard password with [a password generator](https://1password.com/password-generator).
 1. Set the `PASSWORD` environment variable to the generated password.
 
+## Database Password
+
+As the database is locked behind Tailscale access, there is no need to rotate the passwords directly.
+Reset the password for the Tailscale account if necessary.
+
 ## PA API Key
 
 1. Rotating the PA API Keys should be done once for Brave Buttons and Brave Sensor migrations - see the Buttons README.
 1. Reset the `PA_API_KEY_PRIMARY` environment variable for all environments according to the values generated.
 
-## Particle Webhook
+## Particle Webhook API Key
+
+Repeat the following steps but under the **Sandbox** organisation in the Particle console,
+and for the **BetaTest Borons** product to set the `PARTICLE_WEBHOOK_API_KEY` for the development environment.
+The staging environment does not use a Particle Webhook API Key.
 
 1. Open the [Particle Console](https://console.particle.io) and log in.
 1. Select the **Brave Technology Coop** organisation from the organisation drop down (top-left).
 1. Select **Production Sensor Devices** from the list of products (centre).
 1. Select **Integrations** from the sidebar, which looks like a solar system (left).
+1. Generate a new Particle Webhook API Key with [a password generator](https://1password.com/password-generator).
+1. Note down the generated value for use in the following steps.
 1. For each of the **Duration**, **Heartbeat**, and **Stillness** alerts:
 
    1. Open the alert integration by clicking on its name (left).
-   1. Click on **Edit** 
+   1. Click on **Edit** in the Webhook menu (right).
+   1. Scroll down and click on **Extra settings** (bottom).
+   1. Scroll down to **api_key** 
+   1. Set the **api_key** value to the generated Particle Webhook API key.
+
+1. Set the `PARTICLE_WEBHOOK_API_KEY` environment variable to the generated Particle Webhook API key.
