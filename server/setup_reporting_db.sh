@@ -49,7 +49,7 @@ else # file exists
 	read answer
 	use_existing=$answer
 
-	if [ answer == "Y" ]; then
+	if [ $answer == "Y" ]; then
 		printf "OK - Won't download again.\n\n"
 	else
 		printf "OK - Downloading again.\n\n"
@@ -57,7 +57,7 @@ else # file exists
 	fi
 fi
 
-if [ use_existing != "Y" ]; then
+if [ $use_existing != "Y" ]; then
 	printf "Note: The following password prompt is for the source database.\n"
 
 	# dump all tables except sensor_vitals (too large) into /tmp/sensor_reporting_db.sql
