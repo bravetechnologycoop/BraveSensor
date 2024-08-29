@@ -53,7 +53,6 @@ else # file exists
 		printf "OK - Won't download again.\n\n"
 	else
 		printf "OK - Downloading again.\n\n"
-		rm /tmp/sensor_reporting_db.sql
 	fi
 fi
 
