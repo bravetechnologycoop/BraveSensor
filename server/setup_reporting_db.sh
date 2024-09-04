@@ -29,9 +29,9 @@ printf "Note: the source database should be a clone of the production database, 
 printf "Please look over the connection strings for the source and destination databases.\n"
 printf "Are you sure you want to proceed? (Y/n) "
 read answer
-if [ $answer != "Y" ]; then
-	printf "OK - Won't do anything then.\n"
-	exit
+if [ "$answer" != "Y" ]; then
+    printf "OK - Won't do anything then.\n"
+    exit
 fi
 printf "\n"
 
@@ -40,28 +40,38 @@ use_existing="Y"
 
 # check if the database dump file does not exist
 if [ ! -f /tmp/sensor_reporting_db.sql ]; then
-	use_existing="n" # don't use existing and move on
+    use_existing="n" # don't use existing and move on
 else # file exists
-	printf "The database dump file already exists.\n"
-	printf "Do you want to use the existing file (Y) or download the data again (n)? (Y/n) "
+    printf "The database dump file already exists.\n"
+    printf "Do you want to use the existing file (Y) or download the data again (n)? (Y/n) "
 
-	# read response
-	read answer
-	use_existing=$answer
+    # read response
+    read answer
+    use_existing=$answer
 
-	if [ $answer == "Y" ]; then
-		printf "OK - Won't download again.\n\n"
-	else
-		printf "OK - Downloading again.\n\n"
-	fi
+    if [ "$answer" == "Y" ]; then
+        printf "OK - Won't download again.\n\n"
+    else
+        printf "OK - Downloading again.\n\n"
+    fi
 fi
 
-if [ $use_existing != "Y" ]; then
-	printf "Note: The following password prompt is for the source database.\n"
+if [ "$use_existing" != "Y" ]; then
+    printf "Note: The following password prompt is for the source database.\n"
 
-	# dump all tables except sensor_vitals (too large) into /tmp/sensor_reporting_db.sql
-	# NOTE: the --clean option prepends the insert queries with drop queries to "clean" the necessary tables from the reporting db
-	pg_dump $src_db -U $src_user -h $src_host -p $src_port -f /tmp/sensor_reporting_db.sql --clean --if-exists -T sensor_vitals
+    # dump all tables except sensor_vitals (too large) into /tmp/sensor_reporting_db.sql
+    # NOTE: the --clean option prepends the insert queries with drop queries to "clean" the necessary tables from the reporting db
+    pg_dump $src_db -U $src_user -h $src_host -p $src_port -f /tmp/sensor_reporting_db.sql --clean --if-exists -T public.sensors_vitals
+
+    # Remove any lines related to pgcrypto extension
+    sed -i '/DROP EXTENSION IF EXISTS pgcrypto;/d' /tmp/sensor_reporting_db.sql
+    sed -i '/CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;/d' /tmp/sensor_reporting_db.sql
+
+    # Remove lines that reference the rdsadmin role
+    sed -i '/rdsadmin/d' /tmp/sensor_reporting_db.sql
+
+    # Remove lines that reference the root role
+    sed -i '/root/d' /tmp/sensor_reporting_db.sql
 fi
 
 printf "\n"
@@ -72,8 +82,8 @@ psql -U $dst_user -h $dst_host -p $dst_port -d $dst_db -v ON_ERROR_STOP=1 -f /tm
 psql_return_val=$?
 
 printf "\n----\n\n"
-if [ $psql_return_val != 0 ]; then
-	printf "Looks like something broke - you may need to do some investigating.\n"
+if [ "$psql_return_val" != 0]; then
+    printf "Looks like something broke - you may need to do some investigating.\n"
 else
-	printf "The destination database has been populated - check for yourself!\n"
+    printf "The destination database has been populated - check for yourself!\n"
 fi
