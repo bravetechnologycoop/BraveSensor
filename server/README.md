@@ -523,7 +523,7 @@ The staging environment does not use a Particle Webhook API Key.
 
 1. Set the `PARTICLE_WEBHOOK_API_KEY` environment variable to the generated Particle Webhook API key.
 
-## Update Environment Variables and Deploy Production
+## Update Environment Variables and Deploy
 1. After you have created your keys, and ensured the Twilio, PA and Particle, API keys have been updated, see [here]https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/deploy-production.yml for updating the environment variables.
 
 1. Once this is complete, ensure that DEVELOPMENT, PRODUCTION, and STAGING are run in the [github actions](https://github.com/bravetechnologycoop/BraveSensor/actions)
