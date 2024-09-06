@@ -11,6 +11,7 @@ the code was deployed.
 
 ## [Unreleased]
 
+- Add city, project to clients_extension through migration script
 - Removed clients from dashboard
 
 ## [10.12.0] - 2024-08-20
