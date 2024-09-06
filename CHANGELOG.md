@@ -11,6 +11,7 @@ the code was deployed.
 
 ## [Unreleased]
 
+- Update pw migration instructions (CU-86duhae9t)
 - Removed clients from dashboard
 
 ## [10.12.0] - 2024-08-20
