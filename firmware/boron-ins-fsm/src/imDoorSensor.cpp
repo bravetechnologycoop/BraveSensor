@@ -181,6 +181,8 @@ void threadBLEScanner(void *param) {
         // add device ID for IM24 to the filter
         sprintf(address, "AC:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
         filter.address(address);
+        sprintf(address, "80:FB:F1:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
+        filter.address(address);
 
         // scanning for IM21 and IM24 door sensors of correct device ID
         spark::Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter);

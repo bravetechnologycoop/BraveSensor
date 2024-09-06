@@ -11,7 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
-- Removed clients from dashboard
+- Removed clients from dashboard (CU-86dubpmbt).
+- Added new prefix for BLE door sensor ID's (CU-86duk2kpg).
 
 ## [10.12.0] - 2024-08-20
 
