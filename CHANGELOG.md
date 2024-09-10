@@ -11,13 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
-<<<<<<< jl-new-door-sensor-BLE-id
 - Removed clients from dashboard (CU-86dubpmbt).
 - Added new prefix for BLE door sensor ID's (CU-86duk2kpg).
-=======
 - Add city, project to clients_extension through migration script (CU-86du6jp33)
 - Removed clients from dashboard
->>>>>>> main
 
 ## [10.12.0] - 2024-08-20
 
