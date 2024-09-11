@@ -19,6 +19,7 @@ the code was deployed.
 - Sentry alert when a locatiion has triggered a True Stillness alert (CU-86dtnm6a5).
 - New state transition reasons for entry into state 4 and generation of a state 4 alert (CU-86dtnm6a5).
 - added alertsThatHaveBeenSent to debug pushlishes which tracks if duration, stillness or true stillness alerts have been sent in the session (CU-86dtnm6a5).
+- Added new prefix for BLE door sensor ID's (CU-86duk2kpg).
 
 ### Changed
 
@@ -29,18 +30,39 @@ the code was deployed.
 
 - Long stillness timer
 
+## [10.13.0] - 2024-09-10
+
+### Added
+
+- Add city, project to clients_extension through migration script (CU-86du6jp33)
+
+### Removed
+
+- Removed clients from dashboard (CU-86dubpmbt)
+
+## [10.12.0] - 2024-08-20
+
+### Added
+
+- Added `organization`, `funder`, and `postal_code` columns to the clients_extentions table (CU-86du6jp33).
+- Updated the incident categories on the new client dashboard (CU-86du7hv9b).
+- Set the default value of the `incident_categories` column in the `clients` table to `{"Overdose Event","No One Inside","Occupant Responded","None of the Above"}` (CU-86du7hv9b).
+
+### Changed
+
+- Some things in preperation for Johnny's True Stillness firmware update.
+>>>>>>> jl-new-door-sensor-BLE-id
+
 ## [10.11.0] - 2024-07-23
 
 ### Added
 
-- Updated the incident categories on the new client dashboard (CU-86du7hv9b).
-- Set the default value of the `incident_categories` column in the `clients` table to `{"Overdose Event","No One Inside","Occupant Responded","None of the Above"}` (CU-86du7hv9b).
-- Added `organization`, `funder`, and `postal_code` columns to the clients_extentions table (CU-86du6jp33).
 - Added a migration script to drop unused tables from the database; `buttons_vitals`, `buttons_vitals_cache`, `gateways`, `gateways_vitals`, `gateways_vitals_cache` (CU-86du4nq8w).
 - Configured repository to use Github Actions instead of Travis (CU-86dthadwg).
 
 ### Changed
 
+- Updated the dashboard to make the fallback phone numbers optional on the `newClient` and `updateClient` dashboard pages (CU-86du49q25).
 - Changed `logSensorsVital` and `getMostRecentSessionWithDeviceid` to use `location` instead of `locationid` (CU-86dqq93dp).
 - Changed `getMostRecentSessionWithDeviceid`to `getMostRecentSessionWithDevice` to reflect the change of the function (CU-86dqq93dp).
 - Changed `sensorsVitalDBFactory` to use location instead of locationid in the logSensorsVital call (CU-86dqq93dp).
@@ -810,7 +832,9 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...HEAD
+[10.13.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...v10.13.0
+[10.12.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...v10.12.0
 [10.11.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.10.0...v10.11.0
 [10.10.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.9.0...v10.10.0
 [10.9.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.8.0...v10.9.0
