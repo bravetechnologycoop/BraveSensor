@@ -24,7 +24,7 @@
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "execution-time": "^1.4.1",
-    "express": "^4.19.2",
+    "express": "^4.20.0",
     "express-session": "^1.17.1",
     "express-validator": "^6.10.0",
     "fs": "0.0.1-security",
@@ -55,7 +55,7 @@
     "nyc": "^15.1.0",
     "prettier": "^2.3.2",
     "rewire": "^6.0.0",
-    "sinon": "^9.2.4",
+    "sinon": "^18.0.1",
     "sinon-chai": "^3.5.0"
   },
   "repository": {

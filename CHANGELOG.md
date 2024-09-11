@@ -11,10 +11,17 @@ the code was deployed.
 
 ## [Unreleased]
 
-- Removed clients from dashboard (CU-86dubpmbt).
 - Added new prefix for BLE door sensor ID's (CU-86duk2kpg).
+
+## [10.13.0] - 2024-09-10
+
+### Added
+
 - Add city, project to clients_extension through migration script (CU-86du6jp33)
-- Removed clients from dashboard
+
+### Removed
+
+- Removed clients from dashboard (CU-86dubpmbt)
 
 ## [10.12.0] - 2024-08-20
 
@@ -807,7 +814,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...HEAD
+[10.13.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...v10.13.0
 [10.12.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...v10.12.0
 [10.11.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.10.0...v10.11.0
 [10.10.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.9.0...v10.10.0
