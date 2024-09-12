@@ -27,8 +27,9 @@ void setupConsoleFunctions() {
     Particle.function("Change_Initial_Timer", initial_timer_set);
     Particle.function("Change_Duration_Timer", duration_timer_set);
     Particle.function("Change_Stillness_Timer", stillness_timer_set);
-    Particle.function("Change_Long_Stillness_Timer", long_stillness_timer_set);
-    Particle.function("Change_INS_Threshold", ins_threshold_set);
+    Particle.function("Change_True_Stillness_Timer", true_stillness_timer_set);
+    Particle.function("Change_Low_Conf_INS_Threshold", low_conf_ins_threshold_set);
+    Particle.function("Change_High_Conf_INS_Threshold", high_conf_ins_threshold_set);
     Particle.function("Change_IM21_Door_ID", im21_door_id_set);
     Particle.function("Reset_Stillness_Timer_For_Alerting_Session", reset_stillness_timer_for_alerting_session);
 }
@@ -91,8 +92,8 @@ int occupant_detection_timer_set(String input) {
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
-        returnFlag = state0_occupant_detection_timer / 1000;
+        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_max_time);
+        returnFlag = state0_occupant_detection_max_time / 1000;
     }
     // else parse new threshold
     else {
@@ -110,8 +111,8 @@ int occupant_detection_timer_set(String input) {
         }
         else {
             EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, timeout);
-            state0_occupant_detection_timer = timeout;
-            returnFlag = state0_occupant_detection_timer / 1000;
+            state0_occupant_detection_max_time = timeout;
+            returnFlag = state0_occupant_detection_max_time / 1000;
         }
     }
     return returnFlag;
@@ -194,8 +195,8 @@ int stillness_timer_set(String input) {
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
-        returnFlag = state3_max_stillness_time / 1000;
+        EEPROM.get(ADDR_STATE3_LOW_CONF_MAX_STILLNESS_TIME, state3_low_conf_max_stillness_time);
+        returnFlag = state3_low_conf_max_stillness_time / 1000;
     }
     // else parse new threshold
     else {
@@ -212,9 +213,9 @@ int stillness_timer_set(String input) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, timeout);
-            state3_max_stillness_time = timeout;
-            returnFlag = state3_max_stillness_time / 1000;
+            EEPROM.put(ADDR_STATE3_LOW_CONF_MAX_STILLNESS_TIME, timeout);
+            state3_low_conf_max_stillness_time = timeout;
+            returnFlag = state3_low_conf_max_stillness_time / 1000;
         }
     }
 
@@ -234,15 +235,15 @@ int reset_stillness_timer_for_alerting_session(String input) {
 }
 
 // returns long stillness timer length if valid input is given, otherwise returns -1
-int long_stillness_timer_set(String input) {
+int true_stillness_timer_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
-        returnFlag = state3_max_long_stillness_time / 1000;
+        EEPROM.get(ADDR_STATE4_HIGH_CONF_MAX_STILLNESS_TIME, state4_high_conf_max_stillness_time);
+        returnFlag = state4_high_conf_max_stillness_time / 1000;
     }
     // else parse new threshold
     else {
@@ -259,25 +260,25 @@ int long_stillness_timer_set(String input) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, timeout);
-            state3_max_long_stillness_time = timeout;
-            returnFlag = state3_max_long_stillness_time / 1000;
+            EEPROM.put(ADDR_STATE4_HIGH_CONF_MAX_STILLNESS_TIME, timeout);
+            state4_high_conf_max_stillness_time = timeout;
+            returnFlag = state4_high_conf_max_stillness_time / 1000;
         }
     }
 
     return returnFlag;
 }
 
-// returns threshold if valid input is given, otherwise returns -1
-int ins_threshold_set(String input) {
+// returns low conf threshold if valid input is given, otherwise returns -1
+int low_conf_ins_threshold_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
-        returnFlag = ins_threshold;
+        EEPROM.get(ADDR_LOW_CONF_INS_THRESHOLD, low_conf_ins_threshold);
+        returnFlag = low_conf_ins_threshold;
     }
     // else parse new threshold
     else {
@@ -292,9 +293,42 @@ int ins_threshold_set(String input) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_INS_THRESHOLD, threshold);
-            ins_threshold = threshold;
-            returnFlag = ins_threshold;
+            EEPROM.put(ADDR_LOW_CONF_INS_THRESHOLD, threshold);
+            low_conf_ins_threshold = threshold;
+            returnFlag = low_conf_ins_threshold;
+        }
+    }
+
+    return returnFlag;
+}
+
+// returns high conf threshold if valid input is given, otherwise returns -1
+int high_conf_ins_threshold_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    // if e, echo the current threshold
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_HIGH_CONF_INS_THRESHOLD, high_conf_ins_threshold);
+        returnFlag = high_conf_ins_threshold;
+    }
+    // else parse new threshold
+    else {
+        int threshold = input.toInt();
+
+        if (threshold == 0) {
+            // string.toInt() returns 0 if input not an int
+            // and a threshold value of 0 makes no sense, so return -1
+            returnFlag = -1;
+        }
+        else if (threshold < 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_HIGH_CONF_INS_THRESHOLD, threshold);
+            high_conf_ins_threshold = threshold;
+            returnFlag = high_conf_ins_threshold;
         }
     }
 

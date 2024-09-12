@@ -18,22 +18,21 @@ StateHandler stateHandler = state0_idle;
 unsigned long state1_timer;
 unsigned long state2_duration_timer;
 unsigned long state3_stillness_timer;
+unsigned long state4_true_stillness_timer;
 // initialize constants to sensible default values
-unsigned long ins_threshold = INS_THRESHOLD;
-unsigned long state0_occupant_detection_timer = STATE0_OCCUPANT_DETECTION_TIMER;
+unsigned long low_conf_ins_threshold = LOW_CONF_INS_THRESHOLD;
+unsigned long high_conf_ins_threshold = HIGH_CONF_INS_THRESHOLD;
+unsigned long state0_occupant_detection_max_time = STATE0_OCCUPANT_DETECTION_MAX_TIME;
 unsigned long state1_max_time = STATE1_MAX_TIME;
 unsigned long state2_max_duration = STATE2_MAX_DURATION;
-unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
-// By default, we use the same value for max_stillness_time and max_long_stillness_time
-unsigned long state3_max_long_stillness_time = STATE3_MAX_STILLNESS_TIME;
+unsigned long state3_low_conf_max_stillness_time = STATE3_LOW_CONF_MAX_STILLNESS_TIME;
+unsigned long state4_high_conf_max_stillness_time = STATE4_HIGH_CONF_MAX_STILLNESS_TIME;
+
 int resetReason = System.resetReason();
 // record whether an alert has been sent within the same session
 bool hasDurationAlertBeenSent;
 bool hasStillnessAlertBeenSent;
-// which max stillness time are we currently comparing against
-// using pointers so that the value pointed to be max_stillness_time will be the correct values of state3_max_stillness_time or
-// state3_max_long_stillness_time even if they change due to a console function call during the session
-unsigned long *max_stillness_time = &state3_max_stillness_time;
+bool hasTrueStillnessAlertBeenSent;
 // the total number of alerts published while in state 2 or state 3
 // the number of alerts generated in a session should start at 0, resetting to 0 when in state 0
 unsigned long number_of_alerts_published = 0;
@@ -58,51 +57,52 @@ void setupStateMachine() {
 
     // default to no stillness alert sent
     hasStillnessAlertBeenSent = false;
+
+    // default to no high conf stillness alert
+    hasTrueStillnessAlertBeenSent = false;
 }
 
 void initializeStateMachineConsts() {
     uint16_t initializeConstsFlag;
-    uint16_t initializeState3MaxLongStillenssTimeFlag;
+    uint16_t initializeState4MaxStillnessTimeFlag;
     uint16_t initializeState0OccupationDetectionFlag;
+    uint16_t initializeHighConfINSThresholdFlag;
 
     // Boron flash memory is initialized to all F's (1's)
     EEPROM.get(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
     Log.info("state machine constants flag is 0x%04X", initializeConstsFlag);
 
     if (initializeConstsFlag != INITIALIZE_STATE_MACHINE_CONSTS_FLAG) {
-        EEPROM.put(ADDR_INS_THRESHOLD, ins_threshold);
+        EEPROM.put(ADDR_LOW_CONF_INS_THRESHOLD, low_conf_ins_threshold);
         EEPROM.put(ADDR_STATE1_MAX_TIME, state1_max_time);
         EEPROM.put(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
+        EEPROM.put(ADDR_STATE3_LOW_CONF_MAX_STILLNESS_TIME, state3_low_conf_max_stillness_time);
         initializeConstsFlag = INITIALIZE_STATE_MACHINE_CONSTS_FLAG;
         EEPROM.put(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
         Log.info("State machine constants were written to flash on bootup.");
     }
     else {
-        EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
+        EEPROM.get(ADDR_LOW_CONF_INS_THRESHOLD, low_conf_ins_threshold);
         EEPROM.get(ADDR_STATE1_MAX_TIME, state1_max_time);
         EEPROM.get(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        EEPROM.get(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
+        EEPROM.get(ADDR_STATE3_LOW_CONF_MAX_STILLNESS_TIME, state3_low_conf_max_stillness_time);
         Log.info("State machine constants were read from flash on bootup.");
     }
 
     // Boron flash memory is initialized to all F's (1's)
     // Needs separate intialization for Borons that had versions of the firmware <= 9.3.0
-    EEPROM.get(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
-    Log.info("state machine constant State3MaxLongStillnessTime flag is 0x%04X", initializeState3MaxLongStillenssTimeFlag);
+    EEPROM.get(ADDR_INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG, initializeState4MaxStillnessTimeFlag);
+    Log.info("state machine constant State4HighConfMaxStillnessTimeFlag is 0x%04X", initializeState4MaxStillnessTimeFlag);
 
-    if (initializeState3MaxLongStillenssTimeFlag != INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG) {
-        // By default, we use the same value for max_stillness_time and max_long_stillness_time
-        EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_stillness_time);
-        state3_max_long_stillness_time = state3_max_stillness_time;
-
-        initializeState3MaxLongStillenssTimeFlag = INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG;
-        EEPROM.put(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
-        Log.info("State machine constant State3MaxLongStillnessTime was written to flash on bootup.");
+    if (initializeState4MaxStillnessTimeFlag != INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG) {
+        EEPROM.put(ADDR_STATE4_HIGH_CONF_MAX_STILLNESS_TIME, state4_high_conf_max_stillness_time);
+        initializeState4MaxStillnessTimeFlag = INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG;
+        EEPROM.put(ADDR_INITIALIZE_STATE4_HIGH_CONF_MAX_STILLNESS_TIME_FLAG, initializeState4MaxStillnessTimeFlag);
+        Log.info("State machine constant State4HighConfMaxStillnessTime was written to flash on bootup.");
     }
     else {
-        EEPROM.get(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
-        Log.info("State machine constant State3MaxLongStillnessTime was read from flash on bootup.");
+        EEPROM.get(ADDR_STATE4_HIGH_CONF_MAX_STILLNESS_TIME, state4_high_conf_max_stillness_time);
+        Log.info("State machine constant State4HighConfMaxStillnessTime was read from flash on bootup.");
     }
 
     // Seperate initialization for State 0 Window
@@ -110,14 +110,29 @@ void initializeStateMachineConsts() {
     Log.info("state machine constant State0OccupationDetectionFlag is 0x%04X", initializeState0OccupationDetectionFlag);
 
     if (initializeState0OccupationDetectionFlag != INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG) {
-        EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
+        EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_max_time);
         initializeState0OccupationDetectionFlag = INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG;
         EEPROM.put(ADDR_INITIALIZE_STATE0_OCCUPANT_DETECTION_TIMER_FLAG, initializeState0OccupationDetectionFlag);
         Log.info("State machine constant State0OccupationDetectionTimer was written to flash on bootup.");
     }
     else {
-        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
+        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_max_time);
         Log.info("State machine constant State0OccupationDetectionTimer was read from flash on bootup.");
+    }
+
+    // Initialization for State 4 High Confidence INS threshold
+    EEPROM.get(ADDR_INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG, initializeHighConfINSThresholdFlag);
+    Log.info("state machine constant HighConfINSThresholdFlag is 0x%04X", initializeHighConfINSThresholdFlag);
+
+    if (initializeHighConfINSThresholdFlag != INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG) {
+        EEPROM.put(ADDR_HIGH_CONF_INS_THRESHOLD, high_conf_ins_threshold);
+        initializeHighConfINSThresholdFlag = INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG;
+        EEPROM.put(ADDR_INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG, initializeHighConfINSThresholdFlag);
+        Log.info("State machine constant HighConfINSThreshold was written to flash on bootup.");
+    }
+    else {
+        EEPROM.get(ADDR_HIGH_CONF_INS_THRESHOLD, high_conf_ins_threshold);
+        Log.info("State machine constant HighConfINSThreshold was read from flash on bootup.");
     }
 }
 
@@ -140,8 +155,7 @@ void state0_idle() {
     // session is over in idle state, so reset the whether alert has been sent flags
     hasDurationAlertBeenSent = false;
     hasStillnessAlertBeenSent = false;
-    // set to compare against the shorter stillness threshold
-    max_stillness_time = &state3_max_stillness_time;
+    hasTrueStillnessAlertBeenSent = false;
     // set the total number of alerts generated to 0
     number_of_alerts_published = 0;
 
@@ -156,7 +170,7 @@ void state0_idle() {
     publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, (millis() - timeWhenDoorClosed));
 
     // fix outputs and state exit conditions accordingly
-    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && ((unsigned long)checkINS.iAverage > ins_threshold) &&
+    if (millis() - timeWhenDoorClosed < state0_occupant_detection_max_time && ((unsigned long)checkINS.iAverage > low_conf_ins_threshold) &&
         !isDoorOpen(checkDoor.doorStatus) && !isDoorStatusUnknown(checkDoor.doorStatus)) {
         Log.warn("In state 0, door closed and seeing movement, heading to state 1");
         publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
@@ -190,7 +204,7 @@ void state1_15sCountdown() {
     publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
 
     // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
+    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < low_conf_ins_threshold) {
         Log.warn("no movement, you're going back to state 0 from state 1");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 1);
@@ -236,14 +250,23 @@ void state2_duration() {
     publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
 
     // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
-        Log.warn("Seeing stillness, going to state3_stillness from state2_duration");
+    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < low_conf_ins_threshold && (unsigned long)checkINS.iAverage > high_conf_ins_threshold) {
+        Log.warn("Seeing low confidence stillness, going to state3_stillness from state2_duration");
         publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 1);
         // zero the stillness timer
         state3_stillness_timer = millis();
         // go to stillness state
         stateHandler = state3_stillness;
+    }
+    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < high_conf_ins_threshold && !hasTrueStillnessAlertBeenSent) {
+        Log.warn("Seeing high confidence stillness, going to state4_true_stillness from state2_duration");
+        publishStateTransition(2, 4, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(2, 6);
+        // zero the stillness timer
+        state4_true_stillness_timer = millis();
+        // go to stillness state
+        stateHandler = state4_true_stillness;
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("Door opened, session over, going to idle from state2_duration");
@@ -289,12 +312,20 @@ void state3_stillness() {
     publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
 
     // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > ins_threshold) {
-        Log.warn("motion spotted again, going from state3_stillness to state2_duration");
+    if ((unsigned long)checkINS.iAverage > low_conf_ins_threshold) {
+        Log.warn("high motion spotted, going from state3_stillness to state2_duration");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 0);
         // go back to state 2, duration
         stateHandler = state2_duration;
+    }
+    else if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < high_conf_ins_threshold && !hasTrueStillnessAlertBeenSent) {
+        Log.warn("high confidence stillness detected, going from state3_stillness to state4_true_stillness");
+        publishStateTransition(3, 4, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(3, 6);
+        state4_true_stillness_timer = millis();
+        // go to state 4, true stillness
+        stateHandler = state4_true_stillness;
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("door opened, session over, going from state3_stillness to idle");
@@ -302,7 +333,7 @@ void state3_stillness() {
         saveStateChangeOrAlert(3, 2);
         stateHandler = state0_idle;
     }
-    else if (millis() - state3_stillness_timer >= *max_stillness_time) {
+    else if (millis() - state3_stillness_timer >= state3_low_conf_max_stillness_time) {
         Log.warn("stillness alert, remaining in state3 after publish");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
@@ -311,8 +342,7 @@ void state3_stillness() {
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
         hasStillnessAlertBeenSent = true;
-        state3_stillness_timer = millis();                     // reset the stillness timer
-        max_stillness_time = &state3_max_long_stillness_time;  // set to compare against the longer stillness threshold for the rest of this session
+        state3_stillness_timer = millis(); // reset the stillness timer
         stateHandler = state3_stillness;
     }
     else if (millis() - state2_duration_timer >= state2_max_duration) {
@@ -334,6 +364,89 @@ void state3_stillness() {
 
 }  // end state3_stillness
 
+void state4_true_stillness() {
+    // scan inputs
+    doorData checkDoor;
+    filteredINSData checkINS;
+    // will contain the data for a Stillness Alert; max 622 chars as per Particle docs
+    char alertMessage[622];
+
+    // this returns the previous door event value until a new door event is received
+    // on code boot up it initializes to returning INITIAL_DOOR_STATUS
+    checkDoor = checkIM();
+    // this returns 0.0 if the INS has no new data to transmit
+    checkINS = checkINS3331();
+
+    // do stuff in the state
+    digitalWrite(D5, HIGH);
+    Log.info("You are in state 4, true stillness: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
+             (millis() - state4_true_stillness_timer));
+    publishDebugMessage(4, checkDoor.doorStatus, checkINS.iAverage, (millis() - state4_true_stillness_timer));
+    
+    // fix outputs and state exit conditions accordingly
+    if ((unsigned long)checkINS.iAverage > low_conf_ins_threshold) {
+        Log.warn("motion spotted above LCT, going from state4_true_stillness to state2_duration");
+        publishStateTransition(4, 2, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 0);
+        // go back to state 2, duration
+        stateHandler = state2_duration;
+    }
+    else if ((unsigned long)checkINS.iAverage > high_conf_ins_threshold && (unsigned long)checkINS.iAverage < low_conf_ins_threshold) {
+        Log.warn("motion spotted above HCT, but lower than LCT, going from state4_true_stillness to state3_stillness");
+        publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 1);
+        // go back to state 3, low conf stillness
+        stateHandler = state3_stillness;
+    }
+    else if (isDoorOpen(checkDoor.doorStatus)) {
+        Log.warn("door opened, session over, going from state3_stillness to idle");
+        publishStateTransition(4, 0, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 2);
+        stateHandler = state0_idle;
+    }
+    else if (millis() - state4_true_stillness_timer >= state4_high_conf_max_stillness_time) {
+        Log.warn("high conf stillness alert, going to state3 after publish");
+        publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 7);
+        Log.error("True Stillness Alert!!");
+        number_of_alerts_published += 1;  // increment the number of alerts published
+        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu, \"isTrueStillnessAlert\": %s}", number_of_alerts_published, "true");
+        Particle.publish("Stillness Alert", alertMessage, PRIVATE);
+        hasTrueStillnessAlertBeenSent = true;
+        state3_stillness_timer = millis(); // reset the stillness timer
+        stateHandler = state3_stillness;
+    }
+    else if (millis() - state3_stillness_timer >= state3_low_conf_max_stillness_time) {
+        Log.warn("low conf stillness alert, going to state3 after publish");
+        publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 5);
+        Log.error("Stillness Alert!!");
+        number_of_alerts_published += 1;  // increment the number of alerts published
+        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
+        Particle.publish("Stillness Alert", alertMessage, PRIVATE);
+        hasStillnessAlertBeenSent = true;
+        state3_stillness_timer = millis(); // reset the stillness timer
+        stateHandler = state3_stillness;
+    }
+    else if (millis() - state2_duration_timer >= state2_max_duration) {
+        Log.warn("duration alert, going to state3 after publish");
+        publishStateTransition(4, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(4, 4);
+        Log.error("Duration Alert!!");
+        number_of_alerts_published += 1;  // increment the number of alerts published
+        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
+        Particle.publish("Duration Alert", alertMessage, PRIVATE);
+        hasDurationAlertBeenSent = true;
+        state2_duration_timer = millis();
+        stateHandler = state4_true_stillness;
+    }
+    else {
+        // if we don't meet the exit conditions above, we remain here
+        // stateHandler = state4_true_stillness;
+    }
+
+} //end state4_true_stillness
+
 void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue) {
     if (stateMachineDebugFlag) {
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
@@ -353,11 +466,12 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
         else if ((millis() - lastDebugPublish) > DEBUG_PUBLISH_INTERVAL) {
             // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
             char debugMessage[622];
+            uint8_t alertsThatHaveBeenSent = (hasDurationAlertBeenSent << 2) + (hasStillnessAlertBeenSent << 1) + (hasTrueStillnessAlertBeenSent);
             snprintf(debugMessage, sizeof(debugMessage),
-                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
-                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
-                     state, doorStatus, INSValue, ins_threshold, timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
-                     *max_stillness_time);
+                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"low_conf_INS_threshold\":\"%lu\", \"high_conf_INS_threshold\":\"%lu\",\"timer_status\":\"%lu\", "
+                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\", \"true_stillness_timer\":\"%lu\", \"alertsThatHaveBeenSent\":\"0x%02X\"}",
+                     state, doorStatus, INSValue, low_conf_ins_threshold, high_conf_ins_threshold, timer, state0_occupant_detection_max_time, state1_max_time, state2_max_duration,
+                     state3_low_conf_max_stillness_time, state4_high_conf_max_stillness_time, alertsThatHaveBeenSent);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
         }
@@ -369,12 +483,14 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
  *
  * Reason Code | Meaning
  * -------------------------------
- * 0           | Movement surpasses threshold
- * 1           | Movement falls below threshold
+ * 0           | Movement surpasses low confidence threshold
+ * 1           | Movement between low confidence and high confidence threshold
  * 2           | Door opened
  * 3           | Initial timer surpassed
  * 4           | Duration alert
  * 5           | Stillness alert
+ * 6           | Movement below high confidence threshold
+ * 7           | True Stillness alert
  **/
 void saveStateChangeOrAlert(int state, int reason) {
     stateQueue.push(state);

@@ -11,6 +11,25 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- State 4 - True Stillness (CU-86dtnm6a5).
+- Console function to edit High Confidence INS threshold (CU-86dtnm6a5).
+- Console function to edit True Stillness Timer (CU-86dtnm6a5).
+- Sentry alert when a locatiion has triggered a True Stillness alert (CU-86dtnm6a5).
+- New state transition reasons for entry into state 4 and generation of a state 4 alert (CU-86dtnm6a5).
+- added alertsThatHaveBeenSent to debug pushlishes which tracks if duration, stillness or true stillness alerts have been sent in the session (CU-86dtnm6a5).
+- Added new prefix for BLE door sensor ID's (CU-86duk2kpg).
+
+### Changed
+
+- State Transition Reasons have been updated to reflect new state (CU-86dtnm6a5).
+- 'movement' -> 'high movement', 'no_movement' -> 'low movement' (CU-86dtnm6a5).
+
+### Removed
+
+- Long stillness timer
+
 ## [10.14.0] - 2024-09-12
 
 ### Added 

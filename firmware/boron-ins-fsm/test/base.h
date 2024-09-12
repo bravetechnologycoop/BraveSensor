@@ -30,9 +30,10 @@ MockBLE BLE;
 
 bool stateMachineDebugFlag;
 unsigned long debugFlagTurnedOnAt;
-long unsigned state0_occupant_detection_timer;
+long unsigned low_conf_ins_threshold;
+long unsigned high_conf_ins_threshold;
+long unsigned state0_occupant_detection_max_time;
 long unsigned state1_max_time;
 long unsigned state2_max_duration;
-long unsigned state3_max_stillness_time;
-long unsigned state3_max_long_stillness_time;
-long unsigned ins_threshold;
+long unsigned state3_low_conf_max_stillness_time;
+long unsigned state4_high_conf_max_stillness_time;
