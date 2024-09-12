@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+- Added new prefix for BLE door sensor ID's (CU-86duk2kpg).
+
 ## [10.13.0] - 2024-09-10
 
 ### Added
