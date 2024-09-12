@@ -51,7 +51,6 @@ the code was deployed.
 ### Changed
 
 - Some things in preperation for Johnny's True Stillness firmware update.
->>>>>>> jl-new-door-sensor-BLE-id
 
 ## [10.11.0] - 2024-07-23
 
