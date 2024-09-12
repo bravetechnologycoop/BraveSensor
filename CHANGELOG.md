@@ -30,6 +30,12 @@ the code was deployed.
 
 - Long stillness timer
 
+## [10.14.0] - 2024-09-12
+
+### Added 
+
+- Added new prefix for BLE door sensor ID's (CU-86duk2kpg).
+
 ## [10.13.0] - 2024-09-10
 
 ### Added
@@ -38,7 +44,7 @@ the code was deployed.
 
 ### Removed
 
-- Removed clients from dashboard (CU-86dubpmbt)
+- Removed locations from dashboard main page (CU-86dubpmbt)
 
 ## [10.12.0] - 2024-08-20
 
@@ -831,7 +837,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...HEAD
+[10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...10.14.0
 [10.13.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...v10.13.0
 [10.12.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...v10.12.0
 [10.11.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.10.0...v10.11.0
