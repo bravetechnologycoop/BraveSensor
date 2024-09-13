@@ -6,6 +6,11 @@ class ClientExtension {
     this.buildingType = buildingType
     this.createdAt = createdAt
     this.updatedAt = updatedAt
+    this.organization = organization
+    this.funder = funder
+    this.postalCode = postalCode
+    this.city = city
+    this.project = project
   }
 }
 
