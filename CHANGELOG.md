@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Added new columns to the Sensor dashboard due to change in clients_extension table (CU-86dun4p2p).
+
 ## [10.14.0] - 2024-09-12
 
 ### Added 
