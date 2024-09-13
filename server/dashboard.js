@@ -423,7 +423,17 @@ async function submitNewClient(req, res) {
       )
 
       // create a client extension row for the newly created client
-      await db.updateClientExtension(newClient.id, data.country || null, data.countrySubdivision || null, data.buildingType || null, data.organization || null, data.funder || null, data.postal_code || null, data.postal_code || null, data.city || null, data.project || null)
+      await db.updateClientExtension(
+        newClient.id,
+        data.country || null,
+        data.countrySubdivision || null,
+        data.buildingType || null,
+        data.organization || null,
+        data.funder || null,
+        data.postal_code || null,
+        data.city || null,
+        data.project || null,
+      )
 
       res.redirect(`/clients/${newClient.id}`)
     } else {
@@ -501,7 +511,17 @@ async function submitEditClient(req, res) {
         req.params.id,
       )
 
-      await db.updateClientExtension(data.country || null, data.countrySubdivision || null, data.buildingType || null, req.params.id)
+      await db.updateClientExtension(
+        req.params.id,
+        data.country || null,
+        data.countrySubdivision || null,
+        data.buildingType || null,
+        data.organization || null,
+        data.funder || null,
+        data.postal_code || null,
+        data.city || null,
+        data.project || null,
+      )
 
       res.redirect(`/clients/${req.params.id}`)
     } else {

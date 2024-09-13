@@ -1,5 +1,5 @@
 class ClientExtension {
-  constructor(clientId, country, countrySubdivision, buildingType, createdAt, updatedAt) {
+  constructor(clientId, country, countrySubdivision, buildingType, createdAt, updatedAt, organization, funder, postalCode, city, project) {
     this.clientId = clientId
     this.country = country
     this.countrySubdivision = countrySubdivision

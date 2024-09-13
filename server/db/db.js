@@ -12,7 +12,6 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  // ssl: false,
   ssl: { rejectUnauthorized: false },
 })
 
@@ -64,17 +63,18 @@ function createClientFromRow(r) {
 
 function createClientExtensionFromRow(r) {
   return new ClientExtension(
-    r.client_id, 
-    r.country, 
-    r.country_subdivision, 
-    r.building_type, 
-    r.created_at, 
-    r.updated_at, 
-    r.organization, 
-    r.funder, 
-    r.postal_code, 
-    r.city, 
-    r.project)
+    r.client_id,
+    r.country,
+    r.country_subdivision,
+    r.building_type,
+    r.created_at,
+    r.updated_at,
+    r.organization,
+    r.funder,
+    r.postal_code,
+    r.city,
+    r.project,
+  )
 }
 
 function createDeviceFromRow(r, allClients) {
@@ -1068,7 +1068,7 @@ async function updateClientExtension(clientId, country, countrySubdivision, buil
       'updateClientExtension',
       `
       UPDATE clients_extension
-      SET country = $2, country_subdivision = $3, building_type = $4, organization = $5, funder = $6, postal_code = $7, city = $8, project = $9,
+      SET country = $2, country_subdivision = $3, building_type = $4, organization = $5, funder = $6, postal_code = $7, city = $8, project = $9
       WHERE client_id = $1
       RETURNING *
       `,
