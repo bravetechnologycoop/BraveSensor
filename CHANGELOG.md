@@ -16,6 +16,9 @@ the code was deployed.
 ### Added 
 
 - Added new prefix for BLE door sensor ID's (CU-86duk2kpg).
+- Added information about turning on and off the AWS environments for dev (CU-86du8ncph).
+- Added information about turning on and off the AWS environments for staging (CU-86du8ncph).
+- Added a section to message clients on the PA before and after production deployment (CU-86du8ncph).
 
 ## [10.13.0] - 2024-09-10
 
