@@ -104,17 +104,10 @@
                         <small id="isSendingVitalsHelp" class="form-text text-muted">e.g., "Housing: Shelter" or "Medical: Community Health Care Facility"</small>
                     </div>
                 </div>
-
-
-
-
-
-
                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="organization" class="col-sm-3 col-form-label">Organization</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="organization" placeholder="Organization">
-                        <small id="isSendingVitalsHelp" class="form-text text-muted">e.g., "" or ""</small>
                     </div>
                 </div>   
 
@@ -122,7 +115,6 @@
                     <label for="funder" class="col-sm-3 col-form-label">Funder</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="funder" placeholder="Funder">
-                        <small id="isSendingVitalsHelp" class="form-text text-muted">e.g., "" or ""</small>
                     </div>
                 </div>   
 
@@ -130,7 +122,6 @@
                     <label for="postalCode" class="col-sm-3 col-form-label">Postal Code</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="postalCode" placeholder="Postal Code">
-                        <small id="isSendingVitalsHelp" class="form-text text-muted">e.g., "" or ""</small>
                     </div>
                 </div>   
 
@@ -138,26 +129,14 @@
                     <label for="city" class="col-sm-3 col-form-label">City</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="city" placeholder="City">
-                        <small id="isSendingVitalsHelp" class="form-text text-muted">e.g., "" or ""</small>
                     </div>
                 </div>   
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="project" class="col-sm-3 col-form-label">Project</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="project" placeholder="Project">
-                        <small id="isSendingVitalsHelp" class="form-text text-muted">e.g., "" or ""</small>
                     </div>
                 </div>
-                
-
-
-
-
-
-
-
-
-
                 <br>
                 <p><em>*** Remember: New Clients are set to be Displayed, to not send Alerts, and to not send Vitals Messages ***</em></p>
                 <button type="submit" class="btn btn-primary btn-large">Submit</button>
