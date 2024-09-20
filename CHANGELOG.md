@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated the .env.example with the latest .env structure (CU-86dun7tc2).
+
 ## [10.14.0] - 2024-09-12
 
 ### Added 
