@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+- Update pw migration instructions (CU-86duhae9t)
+
 ### Changed
 
 - Updated the .env.example with the latest .env structure (CU-86dun7tc2).
