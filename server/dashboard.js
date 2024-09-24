@@ -374,6 +374,9 @@ const validateNewClient = [
     .trim()
     .notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
+  Validator.body(['country', 'countrySubdivision', 'buildingType', 'organization', 'funder', 'postalCode', 'city', 'project'])
+    .trim()
+    .optional({ nullable: true }),
 ]
 
 async function submitNewClient(req, res) {
@@ -422,7 +425,6 @@ async function submitNewClient(req, res) {
         data.language,
       )
 
-      // create a client extension row for the newly created client
       await db.updateClientExtension(
         newClient.id,
         data.country || null,
@@ -430,7 +432,7 @@ async function submitNewClient(req, res) {
         data.buildingType || null,
         data.organization || null,
         data.funder || null,
-        data.postal_code || null,
+        data.postalCode || null,
         data.city || null,
         data.project || null,
       )

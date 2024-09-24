@@ -50,6 +50,119 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.reminderTimeout = 5
       this.fallbackTimeout = 10
       this.language = 'en'
+
+      this.country = 'Canada'
+      this.countrySubdivision = 'BC'
+      this.buildingType = 'Housing'
+      this.organization = 'Brave'
+      this.funder = 'Cat'
+      this.postalCode = 'V12345'
+      this.city = 'Vancouver'
+      this.project = 'Cat'
+
+      const goodRequest = {
+        displayName: this.displayName,
+        fromPhoneNumber: this.fromPhoneNumber,
+        responderPhoneNumbers: this.responderPhoneNumbers.join(','),
+        fallbackPhoneNumbers: this.fallbackPhoneNumbers.join(','),
+        heartbeatPhoneNumbers: this.heartbeatPhoneNumbers.join(','),
+        incidentCategories: this.incidentCategories.join(','),
+        reminderTimeout: this.reminderTimeout,
+        fallbackTimeout: this.fallbackTimeout,
+        language: this.language,
+        country: this.country,
+        countrySubdivision: this.countrySubdivision,
+        buildingType: this.buildingType,
+        organization: this.organization,
+        funder: this.funder,
+        postalCode: this.postalCode,
+        city: this.city,
+        project: this.project,
+      }
+
+      this.response = await this.agent.post('/clients').send(goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should create a single client in the database with the given values', async () => {
+      const clients = await db.getClients()
+
+      expect(
+        clients.map(client => {
+          return {
+            displayName: client.displayName,
+            fromPhoneNumber: client.fromPhoneNumber,
+            responderPhoneNumbers: client.responderPhoneNumbers,
+            fallbackPhoneNumbers: client.fallbackPhoneNumbers,
+            heartbeatPhoneNumbers: client.heartbeatPhoneNumbers,
+            incidentCategories: client.incidentCategories,
+            reminderTimeout: client.reminderTimeout,
+            fallbackTimeout: client.fallbackTimeout,
+            isDisplayed: client.isDisplayed,
+            isSendingAlerts: client.isSendingAlerts,
+            isSendingVitals: client.isSendingVitals,
+            language: client.language,
+          }
+        }),
+      ).to.eql([
+        {
+          displayName: this.displayName,
+          fromPhoneNumber: this.fromPhoneNumber,
+          responderPhoneNumbers: this.responderPhoneNumbers,
+          fallbackPhoneNumbers: this.fallbackPhoneNumbers,
+          heartbeatPhoneNumbers: this.heartbeatPhoneNumbers,
+          incidentCategories: this.incidentCategories,
+          reminderTimeout: this.reminderTimeout,
+          fallbackTimeout: this.fallbackTimeout,
+          isDisplayed: true,
+          isSendingAlerts: false,
+          isSendingVitals: false,
+          language: this.language,
+        },
+      ])
+    })
+
+    it('should create corresponding client extension in the database with the given values', async () => {
+      const clients = await db.getClients()
+      const clientId = clients[0].id
+      const clientExtension = await db.getClientExtensionWithClientId(clientId)
+
+      expect(clientExtension).to.eql({
+        clientId,
+        country: this.country,
+        countrySubdivision: this.countrySubdivision,
+        buildingType: this.buildingType,
+        organization: this.organization,
+        funder: this.funder,
+        postalCode: this.postalCode,
+        city: this.city,
+        project: this.project,
+        createdAt: clientExtension.createdAt,
+        updatedAt: clientExtension.updatedAt,
+      })
+    })
+  })
+
+  describe('for a request that provides valid client but no client extension fields', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.displayName = 'myNewClient'
+      this.fromPhoneNumber = '+19998887777'
+      this.responderPhoneNumbers = ['+16665553333']
+      this.fallbackPhoneNumbers = ['+1', '+2', '+3']
+      this.heartbeatPhoneNumbers = ['+4', '+5']
+      this.incidentCategories = ['Cat1', 'Cat2']
+      this.reminderTimeout = 5
+      this.fallbackTimeout = 10
+      this.language = 'en'
+
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
@@ -106,6 +219,26 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         },
       ])
     })
+
+    it('should create a null client extension', async () => {
+      const clients = await db.getClients()
+      const clientId = clients[0].id
+      const clientExtension = await db.getClientExtensionWithClientId(clientId)
+
+      expect(clientExtension).to.eql({
+        clientId,
+        country: null,
+        countrySubdivision: null,
+        buildingType: null,
+        organization: null,
+        funder: null,
+        postalCode: null,
+        city: null,
+        project: null,
+        createdAt: clientExtension.createdAt,
+        updatedAt: clientExtension.updatedAt,
+      })
+    })
   })
 
   describe('for a request that contains all valid non-empty fields with leading and trailing whitespace', () => {
@@ -124,6 +257,16 @@ describe('dashboard.js integration tests: submitNewClient', () => {
       this.reminderTimeout = '   5   '
       this.fallbackTimeout = ' 10 '
       this.language = '    en    '
+
+      this.country = ' Canada  '
+      this.countrySubdivision = '  BC  '
+      this.buildingType = '  Housing  '
+      this.organization = ' Brave  '
+      this.funder = '  Cat  '
+      this.postalCode = '  V12345  '
+      this.city = '  Vancouver  '
+      this.project = '  Cat  '
+
       const goodRequest = {
         displayName: this.displayName,
         fromPhoneNumber: this.fromPhoneNumber,
@@ -134,6 +277,14 @@ describe('dashboard.js integration tests: submitNewClient', () => {
         reminderTimeout: this.reminderTimeout,
         fallbackTimeout: this.fallbackTimeout,
         language: this.language,
+        country: this.country,
+        countrySubdivision: this.countrySubdivision,
+        buildingType: this.buildingType,
+        organization: this.organization,
+        funder: this.funder,
+        postalCode: this.postalCode,
+        city: this.city,
+        project: this.project,
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
@@ -179,6 +330,26 @@ describe('dashboard.js integration tests: submitNewClient', () => {
           language: this.language.trim(),
         },
       ])
+    })
+
+    it('should create a corresponding client extension in the database with trimmed values', async () => {
+      const clients = await db.getClients()
+      const clientId = clients[0].id
+      const clientExtension = await db.getClientExtensionWithClientId(clientId)
+
+      expect(clientExtension).to.eql({
+        clientId,
+        country: this.country.trim(),
+        countrySubdivision: this.countrySubdivision.trim(),
+        buildingType: this.buildingType.trim(),
+        organization: this.organization.trim(),
+        funder: this.funder.trim(),
+        postalCode: this.postalCode.trim(),
+        city: this.city.trim(),
+        project: this.project.trim(),
+        createdAt: clientExtension.createdAt,
+        updatedAt: clientExtension.updatedAt,
+      })
     })
   })
 
