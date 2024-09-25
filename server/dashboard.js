@@ -320,6 +320,11 @@ async function renderClientEditPage(req, res) {
         country: clientExtension.country || '',
         countrySubdivision: clientExtension.countrySubdivision || '',
         buildingType: clientExtension.buildingType || '',
+        organization: clientExtension.organization || '',
+        funder: clientExtension.funder || '',
+        postalCode: clientExtension.postalCode || '',
+        city: clientExtension.city || '',
+        project: clientExtension.project || '',
       },
     }
 
@@ -464,6 +469,9 @@ const validateEditClient = [
     .trim()
     .notEmpty(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
+  Validator.body(['country', 'countrySubdivision', 'buildingType', 'organization', 'funder', 'postalCode', 'city', 'project'])
+    .trim()
+    .optional({ nullable: true }),
 ]
 
 async function submitEditClient(req, res) {
