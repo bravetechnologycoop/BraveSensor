@@ -520,7 +520,7 @@ async function submitEditClient(req, res) {
         data.buildingType || null,
         data.organization || null,
         data.funder || null,
-        data.postal_code || null,
+        data.postalCode || null,
         data.city || null,
         data.project || null,
       )
