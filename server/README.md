@@ -79,9 +79,23 @@
 
 1. Wait until both Actions have completed successfully
 
-## 3. Deploy the server and run the smoke tests on Staging
+## 3. Message Clients about Downtime
+
+1. Log in to the Particle Accelerator: https://pa.brave.coop/
+
+1. Go to the Message Clients tab
+
+1. Copy the downtime message for Brave Sensors
+
+1. Send the message to all Sensors clients
+
+## 4. Deploy the server and run the smoke tests on Staging
 
 Before updating Production, we deploy the server to Staging and run the smoke tests to verify that there's nothing obviously wrong with the release candidate.
+
+1. Go to the "Start AWS Environment" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/start-environment.yml)
+
+1. Click the dropdown "Run workflow", select the `production` branch and `staging` environment, and click "Run workflow". This step might take a couple minutes to complete
 
 1. Go to the "Deploy AWS Staging" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/deploy-staging.yml)
 
@@ -95,7 +109,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
 1. Verify that the deployment shows the expected behavior before proceeding
 
-## 4. Deploy the firmware changes and run a test on the BetaTest Borons
+## 5. Deploy the firmware changes and run a test on the BetaTest Borons
 
 1. On your local machine, open Visual Studio Code in the `firmware/boron-ins-fsm` directory and open the Particle Workbench extension
 
@@ -142,7 +156,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
    1. Read, verify, check the box, and click "Release this firmware"
 
 
-## 5. Deploy the server on Production
+## 6. Deploy the server on Production
 
 1. Go to the "Deploy AWS Production" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/deploy-production.yml)
 
@@ -150,7 +164,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
 1. Wait for it to complete successfully
 
-## 6. Deploy the firmware on Production
+## 7. Deploy the firmware on Production
 
 1. Locate the binary file generated in step 4.
 
@@ -184,7 +198,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
    1. Read, verify, check the box, and click "Release this firmware"
 
-## 7. Verify
+## 8. Verify
 
 1. Verify that the production Dashboard is working: https://api.production.bravecoopservices.com/
 
@@ -196,7 +210,23 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
    1. Choose the most recent log stream, look at the logs, and optionally "Start tailing" them
 
-## 8. Celebrate
+## 9. Message Clients about Uptime
+
+1. Log in to the Particle Accelerator: https://pa.brave.coop/
+
+1. Go to the Message Clients tab
+
+1. Copy the uptime message for Brave Sensors
+
+1. Send the message to all Sensors clients
+
+## 10. Turn off Staging Environment
+
+1. Go to the "Stop AWS Environment" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/stop-environment.yml)
+
+1. Click the dropdown "Run workflow", select the `production` branch and `staging` environment, and click "Run workflow".
+
+## 10. Celebrate
 
 1. Post a message to the `#sensor-aa-general` Slack channel letting everyone know that the deployment is finished and list the changes in this deployment from the `CHANGELOG`
 
@@ -205,6 +235,14 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 1. If appropriate, send a Feature Change Announcement email to the clients
 
 # Dev Deployment
+
+## Starting the AWS Environment
+
+Before deploying to development, ensure that the AWS Environment for dev is online. The environment is usually taken down at the end of the week, so you might need to start it beforehand
+
+1. Go to the "Start AWS Environment" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/start-environment.yml)
+
+1. Click the dropdown "Run workflow", select your branch and `development` environment, and click "Run workflow". This step might take a couple minutes to complete
 
 ## How to update the Environment Variables in Development
 
@@ -269,6 +307,14 @@ Before updating Production, we deploy the server to Staging and run the smoke te
    1. In the firmware dropdown, select the newly uploaded firmware, check the box "Flash now", and click "Save"
 
    1. After you see the Boron receive the `spark/flash/status` `success` message, force the Boron to restart by sending "1" to the `Force_Reset` cloud function to start using the latest firmware. Note that this will produce an error, this is expected, please ignore.
+
+## Stopping the AWS Environment
+
+If you turned on the AWS Environment, please turn it off at the end of the week.
+
+1. Go to the "Stop AWS Environment" action on [GitHub Actions](https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/stop-environment.yml)
+
+1. Click the dropdown "Run workflow", select your branch and `development` environment, and click "Run workflow". This step might take a couple minutes to complete
 
 # Taking the Dev, Staging, or Production server offline
 
@@ -522,3 +568,10 @@ The staging environment does not use a Particle Webhook API Key.
    1. Set the **api_key** value to the generated Particle Webhook API key.
 
 1. Set the `PARTICLE_WEBHOOK_API_KEY` environment variable to the generated Particle Webhook API key.
+
+## Update Environment Variables and Deploy
+1. After you have created your keys, and ensured the Twilio, PA and Particle, API keys have been updated, see [here]https://github.com/bravetechnologycoop/BraveSensor/actions/workflows/deploy-production.yml for updating the environment variables.
+
+1. Once this is complete, ensure that DEVELOPMENT, PRODUCTION, and STAGING are run in the [github actions](https://github.com/bravetechnologycoop/BraveSensor/actions)
+
+

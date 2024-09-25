@@ -14,12 +14,20 @@ the code was deployed.
 ### Added
 
 - Added new columns to the Sensor dashboard due to change in clients_extension table (CU-86dun4p2p).
+- Update pw migration instructions (CU-86duhae9t).
+
+### Changed
+
+- Updated the .env.example with the latest .env structure (CU-86dun7tc2).
 
 ## [10.14.0] - 2024-09-12
 
 ### Added 
 
 - Added new prefix for BLE door sensor ID's (CU-86duk2kpg).
+- Added information about turning on and off the AWS environments for dev (CU-86du8ncph).
+- Added information about turning on and off the AWS environments for staging (CU-86du8ncph).
+- Added a section to message clients on the PA before and after production deployment (CU-86du8ncph).
 
 ## [10.13.0] - 2024-09-10
 
