@@ -12,6 +12,7 @@ the code was deployed.
 ## [Unreleased]
 
 - Update pw migration instructions (CU-86duhae9t)
+- Make fallback number optional for Sensors dashboard (CU-86du49q25).
 
 ### Changed
 

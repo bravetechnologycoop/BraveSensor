@@ -370,9 +370,8 @@ async function renderClientDetailsPage(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'responderPhoneNumbers', 'fallbackPhoneNumbers', 'fromPhoneNumber', 'language', 'incidentCategories'])
-    .trim()
-    .notEmpty(),
+  Validator.body(['displayName', 'responderPhoneNumbers', 'fromPhoneNumber', 'language', 'incidentCategories']).trim().notEmpty(),
+  Validator.body(['fallbackPhoneNumbers']).trim(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
 ]
 
@@ -406,12 +405,14 @@ async function submitNewClient(req, res) {
         data.heartbeatPhoneNumbers !== undefined && data.heartbeatPhoneNumbers.trim() !== ''
           ? data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim())
           : []
+      const fallbackPhoneNumbers =
+        data.fallbackPhoneNumbers && data.fallbackPhoneNumbers.trim() !== '' ? data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()) : []
 
       const newClient = await db.createClient(
         data.displayName,
         newResponderPhoneNumbers,
         data.reminderTimeout,
-        data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()),
+        fallbackPhoneNumbers,
         data.fromPhoneNumber,
         data.fallbackTimeout,
         newHeartbeatPhoneNumbers,
@@ -441,7 +442,6 @@ const validateEditClient = [
   Validator.body([
     'displayName',
     'responderPhoneNumbers',
-    'fallbackPhoneNumbers',
     'fromPhoneNumber',
     'incidentCategories',
     'isDisplayed',
@@ -451,6 +451,7 @@ const validateEditClient = [
   ])
     .trim()
     .notEmpty(),
+  Validator.body(['fallbackPhoneNumbers']).trim(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
 ]
 
@@ -484,13 +485,15 @@ async function submitEditClient(req, res) {
         data.heartbeatPhoneNumbers !== undefined && data.heartbeatPhoneNumbers.trim() !== ''
           ? data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim())
           : []
+      const fallbackPhoneNumbers =
+        data.fallbackPhoneNumbers && data.fallbackPhoneNumbers.trim() !== '' ? data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()) : []
 
       await db.updateClient(
         data.displayName,
         data.fromPhoneNumber,
         newResponderPhoneNumbers,
         data.reminderTimeout,
-        data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()),
+        fallbackPhoneNumbers,
         data.fallbackTimeout,
         newHeartbeatPhoneNumbers,
         data.incidentCategories.split(',').map(category => category.trim()),
