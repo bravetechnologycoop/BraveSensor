@@ -11,12 +11,15 @@ the code was deployed.
 
 ## [Unreleased]
 
-- Update pw migration instructions (CU-86duhae9t)
-- Make fallback number optional for Sensors dashboard (CU-86du49q25).
+### Added
+
+- Added new columns to the Sensor dashboard due to change in clients_extension table (CU-86dun4p2p).
 
 ### Changed
 
 - Updated the .env.example with the latest .env structure (CU-86dun7tc2).
+- Update pw migration instructions (CU-86duhae9t).
+- Make fallback number optional for Sensors dashboard (CU-86du49q25).
 
 ## [10.14.0] - 2024-09-12
 

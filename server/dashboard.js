@@ -320,6 +320,11 @@ async function renderClientEditPage(req, res) {
         country: clientExtension.country || '',
         countrySubdivision: clientExtension.countrySubdivision || '',
         buildingType: clientExtension.buildingType || '',
+        organization: clientExtension.organization || '',
+        funder: clientExtension.funder || '',
+        postalCode: clientExtension.postalCode || '',
+        city: clientExtension.city || '',
+        project: clientExtension.project || '',
       },
     }
 
@@ -373,6 +378,9 @@ const validateNewClient = [
   Validator.body(['displayName', 'responderPhoneNumbers', 'fromPhoneNumber', 'language', 'incidentCategories']).trim().notEmpty(),
   Validator.body(['fallbackPhoneNumbers']).trim(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
+  Validator.body(['country', 'countrySubdivision', 'buildingType', 'organization', 'funder', 'postalCode', 'city', 'project'])
+    .trim()
+    .optional({ nullable: true }),
 ]
 
 async function submitNewClient(req, res) {
@@ -423,8 +431,17 @@ async function submitNewClient(req, res) {
         data.language,
       )
 
-      // create a client extension row for the newly created client
-      await db.updateClientExtension(data.country || null, data.countrySubdivision || null, data.buildingType || null, newClient.id)
+      await db.updateClientExtension(
+        newClient.id,
+        data.country || null,
+        data.countrySubdivision || null,
+        data.buildingType || null,
+        data.organization || null,
+        data.funder || null,
+        data.postalCode || null,
+        data.city || null,
+        data.project || null,
+      )
 
       res.redirect(`/clients/${newClient.id}`)
     } else {
@@ -453,6 +470,9 @@ const validateEditClient = [
     .notEmpty(),
   Validator.body(['fallbackPhoneNumbers']).trim(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
+  Validator.body(['country', 'countrySubdivision', 'buildingType', 'organization', 'funder', 'postalCode', 'city', 'project'])
+    .trim()
+    .optional({ nullable: true }),
 ]
 
 async function submitEditClient(req, res) {
@@ -504,7 +524,17 @@ async function submitEditClient(req, res) {
         req.params.id,
       )
 
-      await db.updateClientExtension(data.country || null, data.countrySubdivision || null, data.buildingType || null, req.params.id)
+      await db.updateClientExtension(
+        req.params.id,
+        data.country || null,
+        data.countrySubdivision || null,
+        data.buildingType || null,
+        data.organization || null,
+        data.funder || null,
+        data.postalCode || null,
+        data.city || null,
+        data.project || null,
+      )
 
       res.redirect(`/clients/${req.params.id}`)
     } else {
