@@ -291,6 +291,35 @@ async function getDevices(pgClient) {
   }
 }
 
+async function getClientDevices(displayName, pgClient) {
+  try {
+    helpers.log(`Getting all devices with client name: ${displayName}`)
+
+    const results = await helpers.runQuery(
+      'getClientDevices',
+      `
+      SELECT d.*
+      FROM devices AS d
+      LEFT JOIN clients AS c ON d.client_id = c.id
+      WHERE c.display_name = $1
+      ORDER BY c.display_name, d.display_name
+      `,
+      [displayName],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined) {
+      return null
+    }
+
+    const allClients = await getClients(pgClient)
+    return results.rows.map(r => createDeviceFromRow(r, allClients))
+  } catch (err) {
+    helpers.logError(`Error running the getDevices query: ${err.toString()}`)
+  }
+}
+
 async function getLocations(pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -1618,6 +1647,7 @@ module.exports = {
   getClientExtensionWithClientId,
   getClientWithClientId,
   getClientWithSessionId,
+  getClientDevices,
   getClients,
   getCurrentTime,
   getCurrentTimeForHealthCheck,

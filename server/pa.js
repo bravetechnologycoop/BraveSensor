@@ -119,6 +119,38 @@ async function handleGetSensorClients(req, res) {
   }
 }
 
+const validateGetClientDevices = Validator.body(['braveKey', 'googleIdToken', 'displayName']).trim().notEmpty()
+
+async function handleGetClientDevices(req, res) {
+  const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+
+  if (validationErrors.isEmpty()) {
+    const braveAPIKey = req.body.braveKey
+    const displayName = req.body.displayName
+
+    if (paApiKeys.includes(braveAPIKey)) {
+      try {
+        const clientDevices = await db.getClientDevices(displayName)
+
+        const processedClients = clientDevices.map(clientDevice => {
+          return { name: clientDevice.displayName, serial_number: clientDevice.serial_number }
+        })
+
+        res.status(200).send({ message: 'success', clients: processedClients })
+      } catch (err) {
+        helpers.logError(err)
+        res.status(500).send({ message: 'Error in Database Access' })
+      }
+    } else {
+      res.status(401).send({ message: 'Invalid API Key' })
+    }
+  } else {
+    const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
+    helpers.log(errorMessage)
+    res.status(400).send(errorMessage)
+  }
+}
+
 const validateSensorPhoneNumber = Validator.body(['braveKey', 'areaCode', 'locationID', 'googleIdToken']).trim().notEmpty()
 
 async function handleSensorPhoneNumber(req, res) {
@@ -242,10 +274,12 @@ module.exports = {
   getGooglePayload,
   handleCreateSensorLocation,
   handleGetSensorClients,
+  handleGetClientDevices,
   handleSensorPhoneNumber,
   handleMessageClients,
   validateCreateSensorLocation,
   validateGetSensorClients,
+  validateGetClientDevices,
   validateSensorPhoneNumber,
   validateMessageClients,
   validateCheckDatabaseConnection,
