@@ -313,8 +313,7 @@ async function getClientDevices(displayName, pgClient) {
       return null
     }
 
-    const allClients = await getClients(pgClient)
-    return results.rows.map(r => createDeviceFromRow(r, allClients))
+    return results.rows
   } catch (err) {
     helpers.logError(`Error running the getDevices query: ${err.toString()}`)
   }
