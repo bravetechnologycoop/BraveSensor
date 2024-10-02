@@ -8,17 +8,19 @@
 #define _THERMALCAMERA__H_
 using namespace std;
 #include "dataSource.h"
+#include "i2cInterface.h"
 
 #define T_CAMERA_NAME "Thermal Camera"
 
 class thermalCamera: public dataSource {
     public:
-        thermalCamera();
+        thermalCamera(i2cInterface * i2cBus, int i2cAddress);
         ~thermalCamera();
 
         string getData();
     private:
         int i2cAddress;
+        i2cInterface * i2cBus;
 };
 
 

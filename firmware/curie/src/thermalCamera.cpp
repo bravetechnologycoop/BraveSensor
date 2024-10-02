@@ -8,9 +8,16 @@
 #include "dataSource.h"
 #include "thermalCamera.h"
 
-thermalCamera::thermalCamera(){
+thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
     bDebug(TRACE, "Thermal Camera created");
     this->sourceName = T_CAMERA_NAME;
+
+    this->i2cBus = i2cBus;
+    if (NULL == i2cBus){
+        bDebug(ERROR, "No I2cBus assigned");
+    }
+
+    this->i2cAddress = i2cAddress;
 }
 
 thermalCamera::~thermalCamera(){
