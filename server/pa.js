@@ -133,7 +133,7 @@ async function handleGetClientDevices(req, res) {
         const clientDevices = await db.getClientDevices(displayName)
 
         const processedClients = clientDevices.map(clientDevice => {
-          return { name: clientDevice.displayName, serial_number: clientDevice.serial_number }
+          return { name: clientDevice.display_name, serial_number: clientDevice.serial_number }
         })
 
         res.status(200).send({ message: 'success', clients: processedClients })

@@ -293,8 +293,6 @@ async function getDevices(pgClient) {
 
 async function getClientDevices(displayName, pgClient) {
   try {
-    helpers.log(`Getting all devices with client name: ${displayName}`)
-
     const results = await helpers.runQuery(
       'getClientDevices',
       `
