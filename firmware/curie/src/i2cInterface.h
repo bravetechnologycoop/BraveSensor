@@ -6,6 +6,7 @@
  */
 #ifndef _I2CINTERFACE__H_
 #define _I2CINTERFACE__H_
+#include <string>
 using namespace std;
 
 class i2cInterface{
@@ -22,6 +23,7 @@ class i2cInterface{
 
     private:
         string busID;
+        int fileI2C;
 };
 
 #endif //_I2CINTERFACE__H_

@@ -28,11 +28,19 @@ thermalCamera::~thermalCamera(){
 
 string thermalCamera::getData(){
     bDebug(TRACE, "Thermal Camera getting Data");
-    string sqlChunk;
+    int err = 0;
+    string sqlChunk = "";
+    unsigned char readBuffer[128];
     //get the data
 
-    //format the data
-    sqlChunk = "This is some data";
+    err = this->i2cBus->readBytes(this->i2cAddress, readBuffer, 128);
+    if (!err){
+       // chew up the data and format it appropriately
+        
+    } else {
+        bDebug(ERROR, "Failed to read i2c buffer" + to_string(err));
+    }
+    
 
     return sqlChunk;
 
