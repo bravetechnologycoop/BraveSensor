@@ -15,7 +15,7 @@ thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
 
     this->i2cBus = i2cBus;
     if (NULL == i2cBus){
-        bDebug(ERROR, "No I2cBus assigned");
+        bDebug(ERROR, "No i2c Bus assigned");
         throw(BAD_PORT);
     }
 
@@ -26,23 +26,31 @@ thermalCamera::~thermalCamera(){
     bDebug(TRACE, "Thermal Camera destroyed");
 }
 
-string thermalCamera::getData(){
+int thermalCamera::getData(string * sqlBuf){
     bDebug(TRACE, "Thermal Camera getting Data");
-    int err = 0;
+    int err = BAD_SETTINGS;
+    int readlen = 0;
     string sqlChunk = "";
     unsigned char readBuffer[128];
     //get the data
 
-    err = this->i2cBus->readBytes(this->i2cAddress, readBuffer, 128);
-    if (!err){
-       // chew up the data and format it appropriately
-        
-    } else {
-        bDebug(ERROR, "Failed to read i2c buffer" + to_string(err));
+    if (NULL != sqlBuf){
+        readlen = this->i2cBus->readBytes(this->i2cAddress, readBuffer, 128);
+        if (!readlen){
+            err = OK;
+            // chew up the data and format it appropriately
+            for (int i = 0; i < readlen; i++){
+                    sqlChunk += to_string(readBuffer[i]);
+            }
+            
+        } else {
+            err = READ_ERROR;
+            bDebug(ERROR, "Failed to read i2c buffer" + to_string(err));
+        }
     }
     
 
-    return sqlChunk;
+    return err;
 
 }
 

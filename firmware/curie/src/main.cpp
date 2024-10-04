@@ -26,15 +26,16 @@ int main()
 
 		
 		//set up all the sensors
-		thermalCamera * sourceThermalCamera = new thermalCamera(fastI2C, 0x24);
+		thermalCamera * sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
 
 		//main execution loop
 		while (loop){
+			int err = OK;
 			string sqlString = "";
 
-			sqlString += sourceThermalCamera->getData();
+			err = sourceThermalCamera->getData(&sqlString);
 
-			cout << sqlString;
+			bDebug(TRACE, sqlString);
 
 			loop = false;
 		};

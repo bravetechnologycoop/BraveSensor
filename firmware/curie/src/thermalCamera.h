@@ -17,7 +17,7 @@ class thermalCamera: public dataSource {
         thermalCamera(i2cInterface * i2cBus, int i2cAddress);
         ~thermalCamera();
 
-        string getData();
+        int getData(string * sqlBuf);
     private:
         int i2cAddress;
         i2cInterface * i2cBus;

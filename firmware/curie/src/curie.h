@@ -14,6 +14,11 @@
 
 
 //error types
-#define BAD_PORT  0x20
+#define OK              0x00
+#define BAD_PORT        0x20
+#define BAD_SETTINGS    0x21
+#define WRITE_ERROR     0x22
+#define READ_ERROR      0x23
+
 
 #endif //_CURIE__H_

@@ -6,6 +6,7 @@
  */
 #include "i2cInterface.h"
 #include "braveDebug.h"
+#include "curie.h"
 #include <unistd.h>
 #include <cstring>
 #include <string>
@@ -16,6 +17,7 @@
 i2cInterface::i2cInterface(){
     bDebug(TRACE, "i2cInterface Created");
     this->fileI2C = 0;
+    this->busID = "";
 }
 
 i2cInterface::~i2cInterface(){
@@ -23,7 +25,7 @@ i2cInterface::~i2cInterface(){
 }
 
 int i2cInterface::setParams(string busID){
-    int err = 0;
+    int err = OK;
     bDebug(TRACE, "i2c params: " + busID);
     this->busID = busID;
 
@@ -31,16 +33,17 @@ int i2cInterface::setParams(string busID){
 }
 
 int i2cInterface::openBus(){
-    int err = 0;
+    int err = BAD_SETTINGS;
     bDebug(TRACE, "i2c Opening bus");
 
     //check if the param has been set
-    
-
-    this->fileI2C = open(this->busID.c_str(), O_RDWR);
-    if (0 > this->fileI2C){
-        err = -1;
-        this->fileI2C = 0;
+    if (0 < this->busID.length()){
+        err = OK;
+        this->fileI2C = open(this->busID.c_str(), O_RDWR);
+        if (0 > this->fileI2C){
+            err = BAD_PORT;
+            this->fileI2C = 0;
+        }
     }
 
     return err;
@@ -70,7 +73,7 @@ int i2cInterface::readBytes(int address, unsigned char * buffer, int buflen){
         {
             len = read(this->fileI2C, buffer, buflen);
             if (len != buflen){
-                err = -2;
+                err = 0;
             }
         }
     }
@@ -91,7 +94,7 @@ int i2cInterface::writeBytes(int address, unsigned char * buffer, int buflen){
         len = write(this->fileI2C, buffer, buflen);
         if (len != buflen){
             //this might not be an error, we might just need to drain but for now
-            err = -2;
+            err = WRITE_ERROR;
         }
     }
 
