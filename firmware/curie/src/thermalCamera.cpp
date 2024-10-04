@@ -7,6 +7,7 @@
 #include "braveDebug.h"
 #include "dataSource.h"
 #include "thermalCamera.h"
+#include "curie.h"
 
 thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
     bDebug(TRACE, "Thermal Camera created");
@@ -15,6 +16,7 @@ thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
     this->i2cBus = i2cBus;
     if (NULL == i2cBus){
         bDebug(ERROR, "No I2cBus assigned");
+        throw(BAD_PORT);
     }
 
     this->i2cAddress = i2cAddress;

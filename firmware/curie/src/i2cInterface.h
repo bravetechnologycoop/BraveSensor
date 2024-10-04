@@ -13,11 +13,15 @@ class i2cInterface{
         i2cInterface();
         ~i2cInterface();
 
-        int setParams(int bus);
+        int setParams(string busID);
         int openBus();
+        int closeBus();
+
+        int readBytes(int address, unsigned char * buffer, int buflen);
+        int writeBytes(int address, unsigned char * buffer, int buflen);
 
     private:
-        int bus;
+        string busID;
 };
 
 #endif //_I2CINTERFACE__H_

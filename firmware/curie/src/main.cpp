@@ -16,18 +16,23 @@ int main()
 {
 	bDebug(TRACE, "Starting Data Gathering");
 
-	//set up the busses
-	i2cInterface * fastI2C = new i2cInterface();
-	fastI2C->setParams(FAST_I2C);
+	try{
+		//set up the busses
+		i2cInterface * fastI2C = new i2cInterface();
+		fastI2C->setParams(FAST_I2C);
 
-	
-	//set up all the sensors
-	thermalCamera * sourceThermalCamera = new thermalCamera(fastI2C, 0x24);
+		
+		//set up all the sensors
+		thermalCamera * sourceThermalCamera = new thermalCamera(fastI2C, 0x24);
 
-	//main execution loop
+		//main execution loop
 
-	//cleanup
-	delete sourceThermalCamera;
+		//cleanup
+		delete sourceThermalCamera;
 
-	bDebug(TRACE, "Completed Data Gathering");
+		bDebug(TRACE, "Completed Data Gathering");
+	}
+	catch (){
+		bDebug(ERROR, "Caught at last possible place");
+	}
 }

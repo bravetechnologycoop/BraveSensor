@@ -6,6 +6,10 @@
  */
 #include "i2cInterface.h"
 #include "braveDebug.h"
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys.ioctl.h>
+#include <linux/i2c-dev.h>
 
 i2cInterface::i2cInterface(){
     bDebug(TRACE, "i2cInterface Created");
@@ -15,9 +19,10 @@ i2cInterface::~i2cInterface(){
     bDebug(TRACE, "i2cInterface destroyed");
 }
 
-int i2cInterface::setParams(int bus){
+int i2cInterface::setParams(string busID){
     int err = 0;
-    bDebug(TRACE, "i2c params: " + to_string(bus));
+    bDebug(TRACE, "i2c params: " + busID);
+    this->busID = busID;
 
     return err;
 }
