@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2024 Brave Coop - All Rights Reserved
  *
- * File created by:  Denis Londry 2024
+ * File created by:  Corey Cheng 2024
  */
 #ifndef _POSTGRESINTERFACE__H_
 #define _POSTGRESINTERFACE__H_
@@ -12,7 +12,11 @@ using namespace std;
 
 class postgresInterface{
     public:
-        postgresInterface(string connStringUser, string connStringPassword, string connStringHost, string connStringPort, string connStringdbName);
+        postgresInterface(  string connStringUser, 
+                            string connStringPassword, 
+                            string connStringHost, 
+                            string connStringPort, 
+                            string connStringdbName);
         ~postgresInterface();
         int openDB();
         int writeSQL(string sql);

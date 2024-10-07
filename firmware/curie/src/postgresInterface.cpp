@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2024 Brave Coop - All Rights Reserved
  *
- * File created by:  Denis Londry 2024
+ * File created by: Corey Cheng 2024
  */
 #include "braveDebug.h"
 #include "dataSource.h"
@@ -15,7 +15,12 @@
 using namespace std;
 using namespace pqxx;
 
-postgresInterface::postgresInterface(string connStringUser, string connStringPassword, string connStringHost, string connStringPort, string connStringdbName){
+postgresInterface::postgresInterface(   string connStringUser, 
+                                        string connStringPassword, 
+                                        string connStringHost, 
+                                        string connStringPort, 
+                                        string connStringdbName){
+    bDebug(TRACE, "Creating postgres interface");
 	this->connStringUser = connStringUser;
 	if (connStringUser.empty()){
         bDebug(ERROR, "No user assigned");
@@ -76,9 +81,6 @@ int postgresInterface::openDB(){
 	bDebug(TRACE, "Leaving function");
 	return err;
 }
-
-#include <pqxx/pqxx> // Make sure to include the pqxx header
-#include <string>
 
 int postgresInterface::writeSQL(string sql) {
     try {
