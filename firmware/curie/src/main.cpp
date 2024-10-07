@@ -12,7 +12,6 @@
 #include "i2cInterface.h"
 #include "thermalCamera.h"
 #include "postgresInterface.h"
-#include <pqxx/pqxx>
 
 using namespace std;
 
@@ -28,9 +27,9 @@ int main()
 		fastI2C->openBus();
 
 		//open postgres interface
-		postgresInterface pInterface(testUser, testPassword, testHost, testPort, testdbName);
+		postgresInterface pInterface(TESTUSER, TESTPASSWORD, TESTHOST, TESTPORT, TESTDBNAME);
 		pInterface.openDB();
-		pInterface.writeSQL(testSQL);
+		pInterface.writeSQL(TESTSQL);
 
 		
 		//set up all the sensors

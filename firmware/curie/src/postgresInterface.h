@@ -7,7 +7,6 @@
 #ifndef _POSTGRESINTERFACE__H_
 #define _POSTGRESINTERFACE__H_
 using namespace std;
-#include "i2cInterface.h"
 #include <pqxx/pqxx>
 
 class postgresInterface{
