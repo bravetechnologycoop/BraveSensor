@@ -83,6 +83,10 @@ int postgresInterface::openDB(){
 }
 
 int postgresInterface::writeSQL(string sql) {
+	if (connStringHost.empty()){
+        bDebug(ERROR, "No host assigned");
+        throw(BAD_SETTINGS);
+	}
     try {
         if (!conn->is_open() || conn == NULL) {
             bDebug(ERROR, "Database connection is not open, check connection parameters");

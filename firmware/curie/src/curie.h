@@ -20,5 +20,12 @@
 #define WRITE_ERROR     0x22
 #define READ_ERROR      0x23
 
+//test variables
+#define testUser "brave"
+#define testPassword "brave"
+#define testHost "localhost"
+#define testPort "5432"
+#define testdbName "testdb"
+#define testSQL "SELECT * FROM testtable"
 
 #endif //_CURIE__H_

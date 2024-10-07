@@ -26,9 +26,11 @@ int main()
 		i2cInterface * fastI2C = new i2cInterface();
 		fastI2C->setParams(FAST_I2C);
 		fastI2C->openBus();
-		postgresInterface pInterface("brave", "brave", "localhost", "5432", "testdb");
+
+		//open postgres interface
+		postgresInterface pInterface(testUser, testPassword, testHost, testPort, testdbName);
 		pInterface.openDB();
-		pInterface.writeSQL("SELECT * FROM testtable;");
+		pInterface.writeSQL(testSQL);
 
 		
 		//set up all the sensors
