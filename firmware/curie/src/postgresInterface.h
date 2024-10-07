@@ -8,15 +8,22 @@
 #define _POSTGRESINTERFACE__H_
 using namespace std;
 #include "i2cInterface.h"
+#include <pqxx/pqxx>
 
 class postgresInterface{
     public:
-        postgresInterface();
+        postgresInterface(string connStringUser, string connStringPassword, string connStringHost, string connStringPort, string connStringdbName);
         ~postgresInterface();
         int openDB();
         int writeSQL(string sql);
 
     private:
+        pqxx::connection * conn = NULL;
+        string connStringUser;
+        string connStringPassword;
+        string connStringHost;
+        string connStringPort;
+        string connStringdbName;
 };
 
 

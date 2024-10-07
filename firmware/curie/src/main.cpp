@@ -11,6 +11,9 @@
 #include "braveDebug.h"
 #include "i2cInterface.h"
 #include "thermalCamera.h"
+#include "postgresInterface.h"
+#include <pqxx/pqxx>
+
 using namespace std;
 
 int main()
@@ -23,6 +26,9 @@ int main()
 		i2cInterface * fastI2C = new i2cInterface();
 		fastI2C->setParams(FAST_I2C);
 		fastI2C->openBus();
+		postgresInterface pInterface("brave", "brave", "localhost", "5432", "testdb");
+		pInterface.openDB();
+		pInterface.writeSQL("SELECT * FROM testtable;");
 
 		
 		//set up all the sensors

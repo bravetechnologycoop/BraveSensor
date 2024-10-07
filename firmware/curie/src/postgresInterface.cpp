@@ -15,7 +15,32 @@
 using namespace std;
 using namespace pqxx;
 
-postgresInterface::postgresInterface(){
+postgresInterface::postgresInterface(string connStringUser, string connStringPassword, string connStringHost, string connStringPort, string connStringdbName){
+	this->connStringUser = connStringUser;
+	if (connStringUser.empty()){
+        bDebug(ERROR, "No user assigned");
+        throw(BAD_SETTINGS);
+    }
+	this->connStringPassword = connStringPassword;
+	if (connStringPassword.empty()){
+        bDebug(ERROR, "No password assigned");
+        throw(BAD_SETTINGS);
+	}
+	this->connStringHost = connStringHost;
+	if (connStringHost.empty()){
+        bDebug(ERROR, "No host assigned");
+        throw(BAD_SETTINGS);
+	}
+	this->connStringPort = connStringPort;
+	if (connStringPort.empty()){
+        bDebug(ERROR, "No port assigned");
+        throw(BAD_SETTINGS);
+	}
+	this->connStringdbName = connStringdbName;
+	if (connStringdbName.empty()){
+        bDebug(ERROR, "No database name assigned");
+        throw(BAD_SETTINGS);
+	}
 	bDebug(TRACE, "Postgres Interface Created");
 }
 
@@ -26,27 +51,20 @@ postgresInterface::~postgresInterface(){
 int postgresInterface::openDB(){
     int err = BAD_SETTINGS;
 	bDebug(TRACE, "Postgres Opening DB");
-    string user = "brave";
-    string password = "brave";
-    string host = "localhost";
-    string port = "5432";
-    string dbname = "testdb";
-
 
     try {
 		bDebug(TRACE, "Starting connection");
-		pqxx::connection * conn;
-		string connStr = "user=" + user +
-                         " password=" + password +
-                         " host=" + host +
-                         " port=" + port +
-                         " dbname=" + dbname;
-
+		string connStr = "user=" + connStringUser +
+                         " password=" + connStringPassword +
+                         " host=" + connStringHost +
+                         " port=" + connStringPort +
+                         " dbname=" + connStringdbName;
+		bDebug(TRACE, connStr);
 		conn = new pqxx::connection(connStr);
 
 		bDebug(TRACE, "About to test connection");
         if (conn->is_open()) {
-            bDebug(TRACE, "CONNECTED TO DB " + dbname);
+            bDebug(TRACE, "CONNECTED TO DB " + connStringdbName);
             err = OK;
         } 
 		bDebug(TRACE, "Got to here");
@@ -59,6 +77,33 @@ int postgresInterface::openDB(){
 	return err;
 }
 
-int postgresInterface::writeSQL(string sql){
-    return BAD_SETTINGS;
+#include <pqxx/pqxx> // Make sure to include the pqxx header
+#include <string>
+
+int postgresInterface::writeSQL(string sql) {
+    try {
+        if (!conn->is_open() || conn == NULL) {
+            bDebug(ERROR, "Database connection is not open, check connection parameters");
+            return BAD_SETTINGS;
+        }
+
+        pqxx::work txn(*conn);
+
+        pqxx::result result = txn.exec(sql);
+
+        txn.commit();
+
+        bDebug(TRACE, "SQL executed successfully, row data below:");
+		for (const pqxx::row& row : result) {
+            std::string rowData;
+            for (const auto& field : row) {
+                rowData += field.c_str() + std::string(" ");
+            }
+            bDebug(TRACE, rowData);
+        }
+
+        return OK;
+    } catch (...) {
+        return BAD_SETTINGS;
+    }
 }
