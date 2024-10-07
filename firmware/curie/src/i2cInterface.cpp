@@ -55,7 +55,7 @@ int i2cInterface::closeBus(){
     return err;
 }
 
-int i2cInterface::readBytes(int address, unsigned char * buffer, int buflen){
+int i2cInterface::readBytes(int address, char reg, unsigned char * buffer, int buflen){
     int err = 0;
     int len = 0;
     bDebug(TRACE, "i2c readBytes");
@@ -87,7 +87,7 @@ int i2cInterface::writeBytes(int address, unsigned char * buffer, int buflen){
         err = -1;
     }
 
-    if ( 0 != err){
+    if (0 != err){
         len = write(this->fileI2C, buffer, buflen);
         if (len != buflen){
             //this might not be an error, we might just need to drain but for now

@@ -18,7 +18,7 @@ class i2cInterface{
         int openBus();
         int closeBus();
 
-        int readBytes(int address, unsigned char * buffer, int buflen);
+        int readBytes(int address, char reg, unsigned char * buffer, int buflen);
         int writeBytes(int address, unsigned char * buffer, int buflen);
 
     private:
