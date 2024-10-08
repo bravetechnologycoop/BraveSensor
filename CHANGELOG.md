@@ -14,6 +14,7 @@ the code was deployed.
 ### Added
 
 - Added new columns to the Sensor dashboard due to change in clients_extension table (CU-86dun4p2p).
+- Added new pa route: /pa/get-client-devices for extracting all devices for client (CU-86duptq0k).
 
 ### Changed
 
