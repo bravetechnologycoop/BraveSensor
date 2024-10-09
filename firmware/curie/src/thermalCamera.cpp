@@ -54,3 +54,16 @@ int thermalCamera::getData(string * sqlBuf){
 
 }
 
+int thermalCamera::getTableDef(string * sqlBuf){
+    bDebug(TRACE, "Get Thermal Camera SQL table");
+    int err = BAD_PARAMS;
+
+    if (NULL != sqlBuf){
+        *sqlBuf = T_CAMERA_SQL_TABLE;
+        bDebug(TRACE, "thermalCamera Table: " + *sqlBuf);
+        err = OK;
+    }
+
+    return err;
+}
+

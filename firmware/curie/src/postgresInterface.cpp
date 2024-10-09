@@ -50,6 +50,11 @@ postgresInterface::postgresInterface(   string connStringUser,
 
 postgresInterface::~postgresInterface(){
     bDebug(TRACE, "Postgres Interface destroyed");
+
+    //!!! close db?
+
+    // release dataSources
+    this->dataVector.clear();
 }
 
 int postgresInterface::openDB(){
@@ -82,16 +87,14 @@ int postgresInterface::openDB(){
 }
 
 int postgresInterface::writeSQL(string sql) {
-	if (connStringHost.empty()){
-        bDebug(ERROR, "No host assigned");
-        throw(BAD_SETTINGS);
-	}
-    try {
-        if (!conn->is_open() || conn == NULL) {
-            bDebug(ERROR, "Database connection is not open, check connection parameters");
-            return BAD_SETTINGS;
-        }
+    int err = OK;
+	
+    if (connStringHost.empty()|| !conn->is_open() || conn == NULL) {
+        bDebug(ERROR, "Database connection is not open, check connection parameters");
+        err = BAD_SETTINGS;
+    }
 
+    if (OK == err){
         pqxx::work txn(*conn);
 
         pqxx::result result = txn.exec(sql);
@@ -99,16 +102,60 @@ int postgresInterface::writeSQL(string sql) {
         txn.commit();
 
         bDebug(TRACE, "SQL executed successfully, row data below:");
-		for (const pqxx::row& row : result) {
+        for (const pqxx::row& row : result) {
             std::string rowData;
             for (const auto& field : row) {
                 rowData += field.c_str() + std::string(" ");
             }
             bDebug(TRACE, rowData);
         }
-
-        return OK;
-    } catch (...) {
-        return BAD_SETTINGS;
     }
+    return err;
+}
+
+//create a vector that has all the dataSources available. 
+int postgresInterface::assignDataSources(vector dataVector<* dataSource>){
+    bDebug(TRACE, "assignDataSources");
+    int err = BAD_PARAMS;
+
+    if ((NULL != dataVector) && (0 < dataVector.size())){
+        err = OK;
+        this->dataVector = dataVector;
+    }
+    
+    return err;
+}
+
+//check to make sure the database is good, if not then create it
+int postgresInterface::testDataBaseIntegrity(){
+    bDebug(TRACE, "Testing the database for readiness");
+    int err = OK;
+
+    //make sure all the default tables exist and they are good
+    if ((NULL == this->dataVector) || (this->dataVector.empty())){
+        err = BAD_PARAMS;
+    } else {
+        for (dataSource * dv : this->dataVector){
+            string tableString;
+            dv->getTableDef(&tableString);
+            //do some tests if it goes bad, set err to something and break;
+        }
+        err = OK;
+    }
+
+    if (OK != err){
+        //resolve the problem
+        err = OK;
+    }
+
+    return err;
+}
+
+int postgresInterface::writeTables(){
+    bDebug(TRACE, "writeTables");
+    int err = OK;
+
+    //go through the dataVector and poll all the dataSources and write stuff to the db
+
+    return err;
 }

@@ -17,6 +17,7 @@ class dataSource{
         string getName();
         //provide the formatted string for db
         virtual int getData(string * sqlBuf) = 0;
+        virtual int getTableDef(string * sqlBuf) = 0;
     protected:
         string sourceName;
 };

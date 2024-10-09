@@ -11,6 +11,7 @@ using namespace std;
 #include "i2cInterface.h"
 
 #define T_CAMERA_NAME "Thermal Camera"
+#define T_CAMERA_SQL_TABLE "Break the table here"
 
 class thermalCamera: public dataSource {
     public:
@@ -18,6 +19,7 @@ class thermalCamera: public dataSource {
         ~thermalCamera();
 
         int getData(string * sqlBuf);
+        int getTableDef(string * sqlBuf);
     private:
         int i2cAddress;
         i2cInterface * i2cBus;

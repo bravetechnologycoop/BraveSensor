@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <vector>
 #include "curie.h"
 #include "braveDebug.h"
 #include "i2cInterface.h"
@@ -18,7 +19,10 @@ using namespace std;
 int main()
 {
 	bDebug(TRACE, "Starting Data Gathering");
+	postgresInterface * pInterface = NULL;
+	std::vector<* dataSource> vSources;
 	bool loop = true;
+	int err = OK;
 
 	try{
 		//set up the busses
@@ -26,14 +30,17 @@ int main()
 		fastI2C->setParams(FAST_I2C);
 		fastI2C->openBus();
 
-		//open postgres interface
-		postgresInterface pInterface(TESTUSER, TESTPASSWORD, TESTHOST, TESTPORT, TESTDBNAME);
-		pInterface.openDB();
-		pInterface.writeSQL(TESTSQL);
-
 		
 		//set up all the sensors
 		thermalCamera * sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
+		vSources.pushBack(sourceThermalCamera);
+
+		//open postgres interface
+		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
+		pInterface->openDB();
+		//test code
+		pInterface.writeSQL(BRAVESQL);
+		err = pInterface->assignDataSources(vSources);
 
 		//main execution loop
 		while (loop){
@@ -48,6 +55,9 @@ int main()
 		};
 
 		//cleanup
+		delete pInterface;
+		vSources.clear();
+
 		delete sourceThermalCamera;
 
 		fastI2C->closeBus();
