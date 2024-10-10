@@ -8,7 +8,7 @@
 #define _POSTGRESINTERFACE__H_
 using namespace std;
 #include <vector>
-#include <dataSource.h>
+#include "dataSource.h"
 #include <pqxx/pqxx>
 
 class postgresInterface{
@@ -20,7 +20,7 @@ class postgresInterface{
                             string connStringdbName);
         ~postgresInterface();
         int openDB();
-        int assignDataSources(vector dataVector<* dataSource>);
+        int assignDataSources(vector<dataSource> dataVector);
         int writeSQL(string sql);
         int testDataBaseIntegrity();
         int writeTables();
@@ -33,7 +33,7 @@ class postgresInterface{
         string connStringPort;
         string connStringdbName;
 
-        vector dataVector<* dataSource>;
+        vector<dataSource> dataVector;
 };
 
 

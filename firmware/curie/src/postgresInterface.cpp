@@ -10,6 +10,7 @@
 #include <string>
 #include <iostream>
 #include <pqxx/pqxx>
+#include <vector>
 
 using namespace std;
 using namespace pqxx;
@@ -114,11 +115,11 @@ int postgresInterface::writeSQL(string sql) {
 }
 
 //create a vector that has all the dataSources available. 
-int postgresInterface::assignDataSources(vector dataVector<* dataSource>){
+int postgresInterface::assignDataSources(vector<dataSource> dataVector){
     bDebug(TRACE, "assignDataSources");
     int err = BAD_PARAMS;
 
-    if ((NULL != dataVector) && (0 < dataVector.size())){
+    if (0 < dataVector.size()){
         err = OK;
         this->dataVector = dataVector;
     }
@@ -132,12 +133,12 @@ int postgresInterface::testDataBaseIntegrity(){
     int err = OK;
 
     //make sure all the default tables exist and they are good
-    if ((NULL == this->dataVector) || (this->dataVector.empty())){
+    if (this->dataVector.empty()){
         err = BAD_PARAMS;
     } else {
-        for (dataSource * dv : this->dataVector){
+        for (dataSource& dv : this->dataVector){
             string tableString;
-            dv->getTableDef(&tableString);
+            dv.getTableDef(&tableString);
             //do some tests if it goes bad, set err to something and break;
         }
         err = OK;

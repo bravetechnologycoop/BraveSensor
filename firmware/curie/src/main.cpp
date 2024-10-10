@@ -20,7 +20,7 @@ int main()
 {
 	bDebug(TRACE, "Starting Data Gathering");
 	postgresInterface * pInterface = NULL;
-	std::vector<* dataSource> vSources;
+	std::vector<dataSource> vSources;
 	bool loop = true;
 	int err = OK;
 
@@ -33,13 +33,13 @@ int main()
 		
 		//set up all the sensors
 		thermalCamera * sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
-		vSources.pushBack(sourceThermalCamera);
+		vSources.push_back(*sourceThermalCamera);
 
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
 		pInterface->openDB();
 		//test code
-		pInterface.writeSQL(BRAVESQL);
+		pInterface->writeSQL(BRAVESQL);
 		err = pInterface->assignDataSources(vSources);
 
 		//main execution loop
