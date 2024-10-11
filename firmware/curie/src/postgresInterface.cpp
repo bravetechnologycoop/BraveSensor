@@ -110,13 +110,12 @@ int postgresInterface::writeSQL(string sql) {
         pqxx::result result;
         try {
             result = txn.exec(sql);
+            txn.commit();
         }
         catch (...){
-        bDebug(TRACE, "Postgres did not like this query, please check SQL query.");
+        bDebug(ERROR, "Postgres did not like this query, please check SQL query.");
             err = BAD_SETTINGS;
         }
-
-        txn.commit();
 
         bDebug(TRACE, "SQL executed successfully, row data below (if you performed a SELECT query): ");
         for (const pqxx::row& row : result){
@@ -193,6 +192,9 @@ int postgresInterface::testDataBaseIntegrity(){
                 err = BAD_PARAMS;
             }
         }
+        else {
+            bDebug(TRACE, "Target database available, continuing...");
+        }
 
    bDebug(TRACE, "Adding tables from data array...");
    conn = new pqxx::connection(connStr); //This connection should always work due to function code above.
@@ -214,7 +216,6 @@ int postgresInterface::testDataBaseIntegrity(){
             query.pop_back();
             query += ");";
             err = writeSQL(query);
-            err = OK;
         }
     }
     
