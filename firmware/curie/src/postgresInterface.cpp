@@ -92,19 +92,19 @@ int postgresInterface::openDB(){
 	bDebug(TRACE, "Leaving function");
 	return err;
 }
-// Will probably end up being private, as a helper function for assignDataSources(), keeping public for development.
+// Will probably end up being private, as a helper function, keeping public for development.
 int postgresInterface::writeSQL(string sql) {
     int err = OK;
     bDebug(TRACE, "start writesql query: \n" + sql);
 	
-    
-    if (connStringHost.empty()|| !conn->is_open() || conn == NULL){
-        bDebug(ERROR, "Database connection is not open, check connection parameters");
+    if (connStringHost.empty() || conn == NULL || !conn->is_open()){
+        bDebug(TRACE, "Database connection is not open, check connection parameters");
         err = BAD_SETTINGS;
     }
 
-    if (OK == err){
-
+    if (err == OK){
+        bDebug(TRACE, "Opening connection...");
+        
         pqxx::work txn(*conn);
 
         pqxx::result result;
@@ -113,7 +113,7 @@ int postgresInterface::writeSQL(string sql) {
         }
         catch (...){
         bDebug(TRACE, "Postgres did not like this query, please check SQL query.");
-            return BAD_SETTINGS;
+            err = BAD_SETTINGS;
         }
 
         txn.commit();
@@ -155,30 +155,37 @@ int postgresInterface::testDataBaseIntegrity(){
     bDebug(TRACE, "Testing the database for readiness");
     int err = BAD_PARAMS;
 
-	bDebug(TRACE, "Starting connection");
+	bDebug(TRACE, "Starting connection...");
 	string connStr = "user=" + connStringUser +
                     " password=" + connStringPassword +
                     " host=" + connStringHost +
                     " port=" + connStringPort +
                     " dbname=" + connStringdbName;
         bDebug(TRACE, connStr);
-		conn = new pqxx::connection(connStr);
+        try{
+		    conn = new pqxx::connection(connStr);
+        }
+        catch(...){}
 
 		bDebug(TRACE, "About to test connection");
         if (conn == NULL || !conn->is_open()) {
             bDebug(TRACE, "DB not found, creating...");
-            string connStr2 = "user=" + connStringUser +
+            string connStr = "user=" + connStringUser +
                          " password=" + connStringPassword +
                          " host=" + connStringHost +
                          " port=" + connStringPort +
                          " dbname=template1";
-            
-            pqxx:connection * conn2;
-            conn2 = new pqxx::connection(connStr2);
-            if(conn2 != NULL || conn2->is_open())
+            bDebug(TRACE, connStr);
+            conn = new pqxx::connection(connStr);
+            if(conn != NULL || conn->is_open())
             {
-                string query = std::string("CREATE DATABASE ") + BRAVEDBNAME + " OWNER " + BRAVEUSER;
-                err = OK;
+                //We'll have to assume user, password, host, and port are correct
+                string query = std::string("CREATE DATABASE ") + connStringdbName + " WITH OWNER " + connStringUser + ";";
+                bDebug(TRACE, query);
+                pqxx::nontransaction W(reinterpret_cast<pqxx::lazyconnection&>(*conn));
+                W.exec(query);
+                bDebug(TRACE, "db created successfully");
+
             }
             else
             {
