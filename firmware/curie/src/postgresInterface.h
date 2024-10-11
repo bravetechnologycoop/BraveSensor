@@ -20,7 +20,8 @@ class postgresInterface{
                             string connStringdbName);
         ~postgresInterface();
         int openDB();
-        int assignDataSources(vector<dataSource> dataVector);
+        int assignDataSources(string dataArray[2][2]);
+        //int assignDataSources(vector<dataSource> dataVector);
         int writeSQL(string sql);
         int testDataBaseIntegrity();
         int writeTables();
@@ -32,8 +33,10 @@ class postgresInterface{
         string connStringHost;
         string connStringPort;
         string connStringdbName;
+        string dataArray[2][2] = {{"table1", "data1"}, {"table2", "data2"}};
 
-        vector<dataSource> dataVector;
+        void printDataArray(string dataArray[2][2]);
+        //vector<dataSource> dataVector;
 };
 
 

@@ -20,34 +20,34 @@ int main()
 {
 	bDebug(TRACE, "Starting Data Gathering");
 	postgresInterface * pInterface = NULL;
-	std::vector<dataSource> vSources;
-	bool loop = true;
-	int err = OK;
-
-	try{
-		//set up the busses
-		i2cInterface * fastI2C = new i2cInterface();
-		fastI2C->setParams(FAST_I2C);
-		fastI2C->openBus();
-
-		
-		//set up all the sensors
-		thermalCamera * sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
-		vSources.push_back(*sourceThermalCamera);
-
+	//std::vector<dataSource> vSources;
+    bool loop = true;
+    int err = OK;
+    try{
+        //set up the busses
+        i2cInterface * fastI2C = new i2cInterface();
+        fastI2C->setParams(FAST_I2C);
+        fastI2C->openBus();
+        //set up all the sensors
+        //thermalCamera sourceThermalCamera(fastI2C, 0x33);
+        //vSources.push_back(sourceThermalCamera);
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
+		std::string myArray[2][2] = {{"table1", "data1"}, {"table2", "data2"}};
+		pInterface->assignDataSources(myArray);
+	
 		pInterface->openDB();
-		//test code
-		pInterface->writeSQL(BRAVESQL);
-		err = pInterface->assignDataSources(vSources);
+		pInterface->writeTables();
+		//pInterface->writeSQL(BRAVESQL);
+		pInterface->writeSQL("SELECT * FROM fakeTable");
+		//err = pInterface->assignDataSources(vSources);
 
 		//main execution loop
 		while (loop){
 			int err = OK;
 			string sqlString = "";
 
-			err = sourceThermalCamera->getData(&sqlString);
+			//err = sourceThermalCamera.getData(&sqlString);
 
 			bDebug(TRACE, sqlString);
 
@@ -56,9 +56,9 @@ int main()
 
 		//cleanup
 		delete pInterface;
-		vSources.clear();
+		//vSources.clear();
 
-		delete sourceThermalCamera;
+		//delete sourceThermalCamera;
 
 		fastI2C->closeBus();
 		delete fastI2C;

@@ -28,4 +28,6 @@
 #define BRAVEDBNAME      "testdb"
 #define BRAVESQL         "SELECT * FROM testtable"
 
+#define DATAARRAY       {{"table1", "data1"}, {"table2", "data2"}}
+
 #endif //_CURIE__H_

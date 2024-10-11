@@ -50,19 +50,24 @@ postgresInterface::postgresInterface(   string connStringUser,
 }
 
 postgresInterface::~postgresInterface(){
+    try{
+        conn->disconnect();
+    }
+    catch(...){}
     bDebug(TRACE, "Postgres Interface destroyed");
 
     //!!! close db?
 
     // release dataSources
-    this->dataVector.clear();
+    //this->dataVector.clear();
 }
 
 int postgresInterface::openDB(){
     int err = BAD_SETTINGS;
-	bDebug(TRACE, "Postgres Opening DB");
-
-    try {
+	bDebug(TRACE, "Running testDataBaseIntegrity...");
+    testDataBaseIntegrity();
+    bDebug(TRACE, "Postgres Opening DB");
+    try{
 		bDebug(TRACE, "Starting connection");
 		string connStr = "user=" + connStringUser +
                          " password=" + connStringPassword +
@@ -73,37 +78,48 @@ int postgresInterface::openDB(){
 		conn = new pqxx::connection(connStr);
 
 		bDebug(TRACE, "About to test connection");
-        if (conn->is_open()) {
+        if (conn != NULL && conn->is_open()) {
             bDebug(TRACE, "CONNECTED TO DB " + connStringdbName);
             err = OK;
         } 
 		bDebug(TRACE, "Got to here");
-        return err;
-    }catch (const pqxx::broken_connection &){ 
+
+    } catch (const pqxx::broken_connection &){ 
+        err = BAD_SETTINGS;
 		bDebug(ERROR, "did not connect");
 	}
 
 	bDebug(TRACE, "Leaving function");
 	return err;
 }
-
+// Will probably end up being private, as a helper function for assignDataSources(), keeping public for development.
 int postgresInterface::writeSQL(string sql) {
     int err = OK;
+    bDebug(TRACE, "start writesql query: \n" + sql);
 	
-    if (connStringHost.empty()|| !conn->is_open() || conn == NULL) {
+    
+    if (connStringHost.empty()|| !conn->is_open() || conn == NULL){
         bDebug(ERROR, "Database connection is not open, check connection parameters");
         err = BAD_SETTINGS;
     }
 
     if (OK == err){
+
         pqxx::work txn(*conn);
 
-        pqxx::result result = txn.exec(sql);
+        pqxx::result result;
+        try {
+            result = txn.exec(sql);
+        }
+        catch (...){
+        bDebug(TRACE, "Postgres did not like this query, please check SQL query.");
+            return BAD_SETTINGS;
+        }
 
         txn.commit();
 
-        bDebug(TRACE, "SQL executed successfully, row data below:");
-        for (const pqxx::row& row : result) {
+        bDebug(TRACE, "SQL executed successfully, row data below (if you performed a SELECT query): ");
+        for (const pqxx::row& row : result){
             std::string rowData;
             for (const auto& field : row) {
                 rowData += field.c_str() + std::string(" ");
@@ -115,38 +131,89 @@ int postgresInterface::writeSQL(string sql) {
 }
 
 //create a vector that has all the dataSources available. 
-int postgresInterface::assignDataSources(vector<dataSource> dataVector){
-    bDebug(TRACE, "assignDataSources");
+/*int postgresInterface::assignDataSources(vector<dataSource> dataVector){
+    /*bDebug(TRACE, "assignDataSources");
     int err = BAD_PARAMS;
 
     if (0 < dataVector.size()){
         err = OK;
         this->dataVector = dataVector;
-    }
+    }*
     
     return err;
+}*/
+
+int postgresInterface::assignDataSources(string dataArray[2][2])
+{
+    //NOT FUNCTIONAL
+    //this->dataArray = dataArray;
+    return OK;
 }
 
 //check to make sure the database is good, if not then create it
 int postgresInterface::testDataBaseIntegrity(){
     bDebug(TRACE, "Testing the database for readiness");
-    int err = OK;
+    int err = BAD_PARAMS;
 
-    //make sure all the default tables exist and they are good
-    if (this->dataVector.empty()){
+	bDebug(TRACE, "Starting connection");
+	string connStr = "user=" + connStringUser +
+                    " password=" + connStringPassword +
+                    " host=" + connStringHost +
+                    " port=" + connStringPort +
+                    " dbname=" + connStringdbName;
+        bDebug(TRACE, connStr);
+		conn = new pqxx::connection(connStr);
+
+		bDebug(TRACE, "About to test connection");
+        if (conn == NULL || !conn->is_open()) {
+            bDebug(TRACE, "DB not found, creating...");
+            string connStr2 = "user=" + connStringUser +
+                         " password=" + connStringPassword +
+                         " host=" + connStringHost +
+                         " port=" + connStringPort +
+                         " dbname=template1";
+            
+            pqxx:connection * conn2;
+            conn2 = new pqxx::connection(connStr2);
+            if(conn2 != NULL || conn2->is_open())
+            {
+                string query = std::string("CREATE DATABASE ") + BRAVEDBNAME + " OWNER " + BRAVEUSER;
+                err = OK;
+            }
+            else
+            {
+                bDebug(TRACE, "Could not connect to Postgres, please check parameters");
+                err = BAD_PARAMS;
+            }
+        }
+
+   bDebug(TRACE, "Adding tables from data array...");
+   conn = new pqxx::connection(connStr); //This connection should always work due to function code above.
+   if (this->dataArray == NULL){
         err = BAD_PARAMS;
     } else {
-        for (dataSource& dv : this->dataVector){
-            string tableString;
-            dv.getTableDef(&tableString);
-            //do some tests if it goes bad, set err to something and break;
+        //printDataArray(dataArray);
+        string query = "";
+        for (auto& row: dataArray){
+            //THIS QUERY IS BASED OFF AN ASSUMED DATA ARRAY, IT WILL MAKE DUMB COLUMN NAMES
+            string query = "CREATE TABLE " + row[0] + " (";
+            int i = 0;
+            for(auto& column: row){
+                if(i != 0){
+                    query += "value" + std::to_string(i) + " text,";
+                }
+                i++;
+            }
+            query.pop_back();
+            query += ");";
+            err = writeSQL(query);
+            err = OK;
         }
-        err = OK;
     }
-
+    
     if (OK != err){
-        //resolve the problem
-        err = OK;
+        //"resolve the problem" -> changed to send debug message
+        bDebug(ERROR, "looks like the data vector is improper, please check");
     }
 
     return err;
@@ -156,7 +223,51 @@ int postgresInterface::writeTables(){
     bDebug(TRACE, "writeTables");
     int err = OK;
 
+    if (this->dataArray == NULL){
+        err = BAD_PARAMS;
+    } else {
+        printDataArray(dataArray);
+        string query = "";
+        for (auto& row: dataArray){
+            //THIS QUERY IS BASED OFF AN ASSUMED DATA ARRAY
+            string query = "INSERT INTO " + row[0] + " VALUES (";
+            int i = 0;
+            for(auto& column: row){
+                if(i != 0){
+                    query += "'" + column + "',"; //assumes datatype text
+                }
+                i++;
+            }
+            query.pop_back();
+            query += ");";
+            writeSQL(query);
+        }
+        err = OK;
+    }
+
+    if (OK != err){
+        //"resolve the problem" -> changed to send debug message
+        bDebug(ERROR, "looks like the data vector is improper, please check");
+    }
     //go through the dataVector and poll all the dataSources and write stuff to the db
 
     return err;
+}
+//FUNCTION FOR DEBUGGING, TO BE DELETED
+void postgresInterface::printDataArray(string dataArray[2][2])
+{
+    bDebug(TRACE, "result");
+		std::string result;
+        for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                result += dataArray[i][j];
+                if (j < 1) {
+                    result += ", ";
+                }
+            }
+            if (i < 1) {
+                result += " | ";
+            }
+        }
+		bDebug(TRACE, result);
 }
