@@ -110,37 +110,39 @@ int postgresInterface::writeSQL(string sql) {
         pqxx::result result;
         try {
             result = txn.exec(sql);
+
             txn.commit();
+
+            bDebug(TRACE, "SQL executed successfully, row data below (if you performed a SELECT query): ");
+            for (const pqxx::row& row : result){
+                std::string rowData;
+                for (const auto& field : row) {
+                    rowData += field.c_str() + std::string(" ");
+                }
+                bDebug(TRACE, rowData);
+            }
         }
         catch (...){
-        bDebug(ERROR, "Postgres did not like this query, please check SQL query.");
+            bDebug(TRACE, "Postgres did not like this query, please check SQL query.");
             err = BAD_SETTINGS;
         }
-
-        bDebug(TRACE, "SQL executed successfully, row data below (if you performed a SELECT query): ");
-        for (const pqxx::row& row : result){
-            std::string rowData;
-            for (const auto& field : row) {
-                rowData += field.c_str() + std::string(" ");
-            }
-            bDebug(TRACE, rowData);
-        }
+       
     }
     return err;
 }
 
 //create a vector that has all the dataSources available. 
-/*int postgresInterface::assignDataSources(vector<dataSource> dataVector){
-    /*bDebug(TRACE, "assignDataSources");
+int postgresInterface::assignDataSources(vector<dataSource*> dataVector){
+    bDebug(TRACE, "assignDataSources");
     int err = BAD_PARAMS;
 
     if (0 < dataVector.size()){
         err = OK;
         this->dataVector = dataVector;
-    }*
+    }
     
     return err;
-}*/
+}
 
 int postgresInterface::assignDataSources(string dataArray[2][2])
 {
@@ -192,9 +194,6 @@ int postgresInterface::testDataBaseIntegrity(){
                 err = BAD_PARAMS;
             }
         }
-        else {
-            bDebug(TRACE, "Target database available, continuing...");
-        }
 
    bDebug(TRACE, "Adding tables from data array...");
    conn = new pqxx::connection(connStr); //This connection should always work due to function code above.
@@ -216,6 +215,7 @@ int postgresInterface::testDataBaseIntegrity(){
             query.pop_back();
             query += ");";
             err = writeSQL(query);
+            err = OK;
         }
     }
     
@@ -251,6 +251,17 @@ int postgresInterface::writeTables(){
             writeSQL(query);
         }
         err = OK;
+    }
+
+    if (!this->dataVector.empty()){
+        bDebug(TRACE, "About to run through the data vector");
+
+        for (dataSource * dS : this->dataVector){
+            string sqlString = "";
+            dS->getData(&sqlString);
+        }
+    } else {
+        bDebug(TRACE, "dataVector is empty");
     }
 
     if (OK != err){
