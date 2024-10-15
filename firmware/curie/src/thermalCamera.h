@@ -9,7 +9,7 @@
 using namespace std;
 #include <vector>
 #include "dataSource.h"
-#include "i2cInterface.h"
+#include <i2cInterface.h>
 
 #define T_CAMERA_NAME "Thermal Camera"
 #define T_CAMERA_SQL_TABLE "ThermalCamera"
@@ -25,6 +25,7 @@ class thermalCamera: public dataSource {
     private:
         int i2cAddress;
         i2cInterface * i2cBus;
+
 };
 
 

@@ -18,8 +18,10 @@
 #define _MLX90640_I2C_Driver_H_
 
 #include <stdint.h>
+#include <i2cInterface.h>
 #include "MLX90640_API.h"
 
+    extern void MLX90640_I2CClass(i2cInterface * i2c);
     extern void MLX90640_I2CInit(void);
     extern int MLX90640_I2CGeneralReset(void);
     extern int MLX90640_I2CRead(uint8_t slaveAddr,uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data);

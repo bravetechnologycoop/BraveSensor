@@ -18,8 +18,8 @@ class i2cInterface{
         int openBus();
         int closeBus();
 
-        int readBytes(int address, unsigned char * buffer, int buflen);
-        int writeBytes(int address, unsigned char * buffer, int buflen);
+        int readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data);
+        int writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data);
 
     private:
         string busID;

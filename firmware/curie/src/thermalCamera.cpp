@@ -7,6 +7,8 @@
 #include "braveDebug.h"
 #include "dataSource.h"
 #include "thermalCamera.h"
+#include <MLX90640_API.h>
+#include <MLX90640_I2C_Driver.h>
 #include "curie.h"
 
 thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
@@ -20,6 +22,8 @@ thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
     }
 
     this->i2cAddress = i2cAddress;
+
+     MLX90640_I2CClass(this->i2cBus);
 }
 
 thermalCamera::~thermalCamera(){
@@ -36,21 +40,7 @@ int thermalCamera::getData(string * sqlBuf){
     //get the data
 
     if (NULL != sqlBuf){
-        readlen = this->i2cBus->readBytes(this->i2cAddress, readBuffer, 128);
-        if (!readlen){
-            err = OK;
-            // chew up the data and format it appropriately
-            for (int i = 0; i < readlen; i++){
-                    sqlChunk += to_string(readBuffer[i]);
-            }
-
-            //fill up the sqBuf
-            *sqlBuf = "INSERT INTO  TABLE";
-            
-        } else {
-            err = READ_ERROR;
-            bDebug(ERROR, "Failed to read i2c buffer" + to_string(err));
-        }
+       
     }
     
 
