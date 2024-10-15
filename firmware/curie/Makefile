@@ -7,8 +7,8 @@ OBJ_DIR  := $(BUILD)/objects
 BIN_DIR  := $(BUILD)/bin
 TARGET   := curie
 INCLUDE  := -Iinclude/
-SRC      :=                      \
-   $(wildcard src/*.cpp)         \
+SRC      :=						\
+	$(wildcard src/*.cpp)		\
 
 OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES \
