@@ -134,7 +134,7 @@ async function handleGetClientDevices(req, res) {
 
         const processedClients = clientDevices.map(clientDevice => {
           return {
-            locationID: clientDevice.locationID,
+            locationID: clientDevice.locationid,
             displayName: clientDevice.display_name,
             serial_number: clientDevice.serial_number,
             deviceID: clientDevice.id,
