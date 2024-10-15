@@ -136,6 +136,7 @@ async function handleGetClientDevices(req, res) {
           return {
             locationID: clientDevice.locationID,
             displayName: clientDevice.display_name,
+            serial_number: clientDevice.serial_number,
             deviceID: clientDevice.id,
           }
         })
