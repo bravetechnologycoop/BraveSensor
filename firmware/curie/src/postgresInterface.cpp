@@ -199,28 +199,6 @@ int postgresInterface::testDataBaseIntegrity(){
             bDebug(TRACE, "Target database available, continuing...");
         }
 
-   bDebug(TRACE, "Adding tables from data array...");
-   conn = new pqxx::connection(connStr); //This connection should always work due to function code above.
-   if (this->dataArray == NULL){
-        err = BAD_PARAMS;
-    } else {
-        //printDataArray(dataArray);
-        string query = "";
-        for (auto& row: dataArray){
-            //THIS QUERY IS BASED OFF AN ASSUMED DATA ARRAY, IT WILL MAKE DUMB COLUMN NAMES
-            string query = "CREATE TABLE " + row[0] + " (";
-            int i = 0;
-            for(auto& column: row){
-                if(i != 0){
-                    query += "value" + std::to_string(i) + " text,";
-                }
-                i++;
-            }
-            query.pop_back();
-            query += ");";
-            err = writeSQL(query);
-        }
-    }
     
     if (OK != err){
         //"resolve the problem" -> changed to send debug message
@@ -234,10 +212,9 @@ int postgresInterface::writeTables(){
     bDebug(TRACE, "writeTables");
     int err = OK;
 
-    if (this->dataArray == NULL){
+    /*if (this->dataArray == NULL){
         err = BAD_PARAMS;
     } else {
-        printDataArray(dataArray);
         string query = "";
         for (auto& row: dataArray){
             //THIS QUERY IS BASED OFF AN ASSUMED DATA ARRAY
@@ -245,7 +222,7 @@ int postgresInterface::writeTables(){
             int i = 0;
             for(auto& column: row){
                 if(i != 0){
-                    query += "'" + column + "',"; //assumes datatype text
+                    query += "'" + column + "',";
                 }
                 i++;
             }
@@ -254,15 +231,19 @@ int postgresInterface::writeTables(){
             writeSQL(query);
         }
         err = OK;
-    }
+    }*/
 
     if (!this->dataVector.empty()){
         bDebug(TRACE, "About to run through the data vector");
 
         for (dataSource * dS : this->dataVector){
-            string sqlString = "";
-            dS->getData(&sqlString);
-            writeSQL(sqlString);
+            bDebug(TRACE, "data vector is not empty, about to get data");
+            string sqlTable = "";
+            std::vector<string>  vData;
+            dS->getData(&sqlTable, &vData);
+            bDebug(TRACE, "got data, about to write");
+            bDebug(TRACE, "table: " + sqlTable);
+            writeVectorSQL(sqlTable, vData);
         }
     } else {
         bDebug(TRACE, "dataVector is empty");
@@ -276,21 +257,27 @@ int postgresInterface::writeTables(){
 
     return err;
 }
-//FUNCTION FOR DEBUGGING, TO BE DELETED
-void postgresInterface::printDataArray(string dataArray[2][2])
+
+int postgresInterface::writeVectorSQL(string sqlTable, std::vector<string> vData)
 {
-    bDebug(TRACE, "result");
-		std::string result;
-        for (int i = 0; i < 2; ++i) {
-            for (int j = 0; j < 2; ++j) {
-                result += dataArray[i][j];
-                if (j < 1) {
-                    result += ", ";
-                }
-            }
-            if (i < 1) {
-                result += " | ";
-            }
-        }
-		bDebug(TRACE, result);
+    bDebug(TRACE, "enter writeVectorSQL");
+    int err = OK;
+    string query = "";
+    query += "INSERT INTO " + sqlTable + " VALUES (";
+    while(!vData.empty())
+    {
+        string vectorValue = vData.back();
+        vData.pop_back();
+        query += "'" + vectorValue + "',";
+    }
+    query.pop_back();
+    query += ");";
+    bDebug(TRACE, "data vector query:" + query);
+    writeSQL(query);
+    return err;
+}
+
+int postgresInterface::createDefaultTable(string sqlTable, std::vector<string> vData)
+{
+
 }

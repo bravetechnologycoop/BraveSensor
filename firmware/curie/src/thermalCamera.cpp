@@ -85,3 +85,10 @@ int thermalCamera::getTableDef(string * sqlBuf){
     return err;
 }
 
+int getDatabaseParams(string * sqlBuf){
+    bDebug(TRACE, "Get database params");
+    
+    int err = BAD_PARAMS;
+
+}
+

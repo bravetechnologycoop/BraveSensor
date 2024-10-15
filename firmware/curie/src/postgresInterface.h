@@ -37,6 +37,7 @@ class postgresInterface{
 
         void printDataArray(string dataArray[2][2]);
         vector<dataSource*> dataVector;
+        int writeVectorSQL(string sqlTable, std::vector<string> vData);
 };
 
 

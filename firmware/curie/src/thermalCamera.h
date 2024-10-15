@@ -13,6 +13,9 @@ using namespace std;
 
 #define T_CAMERA_NAME "Thermal Camera"
 #define T_CAMERA_SQL_TABLE "ThermalCamera"
+#define T_CAMERA_COLUMNS {{"moo", "text"}}
+//#define T_CAMERA_TEST_INTEGRITY_QUERY
+
 
 class thermalCamera: public dataSource {
     public:
@@ -22,6 +25,7 @@ class thermalCamera: public dataSource {
         int getData(string * sqlBuf);
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);
+        int getDatabaseParams(string * sqlBuf);
     private:
         int i2cAddress;
         i2cInterface * i2cBus;
