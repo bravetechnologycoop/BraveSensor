@@ -110,13 +110,9 @@ int postgresInterface::writeSQL(string sql) {
         pqxx::result result;
         try {
             result = txn.exec(sql);
-        }
-        catch (...){
-        bDebug(TRACE, "Postgres did not like this query, please check SQL query.");
-            err = BAD_SETTINGS;
-        }
+        
 
-        txn.commit();
+            txn.commit();
 
             bDebug(TRACE, "SQL executed successfully, row data below (if you performed a SELECT query): ");
             for (const pqxx::row& row : result){

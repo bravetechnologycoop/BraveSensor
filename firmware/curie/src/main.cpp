@@ -38,11 +38,11 @@ int main()
 		std::string myArray[2][2] = {{"table1", "data1"}, {"table2", "data2"}};
 		pInterface->assignDataSources(myArray);
 		pInterface->assignDataSources(vSources);
-	
+		
 		pInterface->openDB();
-		//pInterface->writeTables();
+		pInterface->writeTables();
 		//pInterface->writeSQL(BRAVESQL);
-		//pInterface->writeSQL("SELECT * FROM fakeTable");
+		pInterface->writeSQL("SELECT * FROM fakeTable");
 		//err = pInterface->assignDataSources(vSources);
 
 		//main execution loop
