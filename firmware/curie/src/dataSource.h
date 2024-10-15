@@ -8,6 +8,7 @@
 #define _DATASOURCE__H_
 using namespace std;
 #include <string>
+#include <vector>
 
 class dataSource{
     public:
@@ -18,6 +19,7 @@ class dataSource{
         //provide the formatted string for db
         virtual int getData(string * sqlBuf) = 0;
         virtual int getTableDef(string * sqlBuf) = 0;
+        virtual int getData(string *sqlTable, std::vector<string> * vData) = 0;
     protected:
         string sourceName;
 };

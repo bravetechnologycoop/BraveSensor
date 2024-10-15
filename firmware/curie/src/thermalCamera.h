@@ -7,11 +7,12 @@
 #ifndef _THERMALCAMERA__H_
 #define _THERMALCAMERA__H_
 using namespace std;
+#include <vector>
 #include "dataSource.h"
 #include "i2cInterface.h"
 
 #define T_CAMERA_NAME "Thermal Camera"
-#define T_CAMERA_SQL_TABLE "Break the table here"
+#define T_CAMERA_SQL_TABLE "ThermalCamera"
 
 class thermalCamera: public dataSource {
     public:
@@ -19,6 +20,7 @@ class thermalCamera: public dataSource {
         ~thermalCamera();
 
         int getData(string * sqlBuf);
+        int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);
     private:
         int i2cAddress;

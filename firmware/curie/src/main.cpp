@@ -31,7 +31,6 @@ int main()
         //set up all the sensors
         thermalCamera sourceThermalCamera(fastI2C, 0x33);
         vSources.push_back(&sourceThermalCamera);
-		vSources.push_back(&sourceThermalCamera);
 		
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);

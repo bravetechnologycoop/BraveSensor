@@ -26,6 +26,7 @@ thermalCamera::~thermalCamera(){
     bDebug(TRACE, "Thermal Camera destroyed");
 }
 
+// Thermal
 int thermalCamera::getData(string * sqlBuf){
     bDebug(TRACE, "Thermal Camera getting Data");
     int err = BAD_SETTINGS;
@@ -42,6 +43,9 @@ int thermalCamera::getData(string * sqlBuf){
             for (int i = 0; i < readlen; i++){
                     sqlChunk += to_string(readBuffer[i]);
             }
+
+            //fill up the sqBuf
+            *sqlBuf = "INSERT INTO  TABLE";
             
         } else {
             err = READ_ERROR;
@@ -52,6 +56,20 @@ int thermalCamera::getData(string * sqlBuf){
 
     return err;
 
+}
+
+int thermalCamera::getData(string * sqlTable, std::vector<string> * vData){
+    bDebug(TRACE, "Thermal Camera getData");
+    int err = OK;
+
+    //check incoming pointers
+    *sqlTable = T_CAMERA_SQL_TABLE;
+
+    //in some sort of loop or process
+    vData->push_back("Moooooo");
+
+
+    return err;
 }
 
 int thermalCamera::getTableDef(string * sqlBuf){

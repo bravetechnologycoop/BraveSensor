@@ -262,6 +262,7 @@ int postgresInterface::writeTables(){
         for (dataSource * dS : this->dataVector){
             string sqlString = "";
             dS->getData(&sqlString);
+            writeSQL(sqlString);
         }
     } else {
         bDebug(TRACE, "dataVector is empty");
