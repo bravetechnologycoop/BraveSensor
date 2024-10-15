@@ -18,7 +18,7 @@ thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
         bDebug(ERROR, "No i2c Bus assigned");
         throw(BAD_PORT);
     }
-
+    setTableParams();
     this->i2cAddress = i2cAddress;
 }
 
@@ -85,10 +85,29 @@ int thermalCamera::getTableDef(string * sqlBuf){
     return err;
 }
 
-int getDatabaseParams(string * sqlBuf){
-    bDebug(TRACE, "Get database params");
-    
-    int err = BAD_PARAMS;
+int thermalCamera::setTableParams(){
+    bDebug(TRACE, "Set table params");
 
+    int err = OK;
+
+    try {
+        this->dbParams.emplace_back("moo", "text");
+        this->dbParams.emplace_back("num", "integer");
+    }
+    catch(...) {
+        int err = BAD_PARAMS;
+    }
+
+    return err;
 }
 
+int thermalCamera::getTableParams(std::vector<std::pair<const char*, const char*>> * tableData){
+    bDebug(TRACE, "Get table params");
+    int err = BAD_SETTINGS;
+    if(!dbParams.empty())
+    {
+        *tableData = dbParams;
+        err = OK;
+    }
+    return err;
+}

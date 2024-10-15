@@ -145,13 +145,6 @@ int postgresInterface::assignDataSources(vector<dataSource*> dataVector){
     return err;
 }
 
-int postgresInterface::assignDataSources(string dataArray[2][2])
-{
-    //NOT FUNCTIONAL
-    //this->dataArray = dataArray;
-    return OK;
-}
-
 //check to make sure the database is good, if not then create it
 int postgresInterface::testDataBaseIntegrity(){
     bDebug(TRACE, "Testing the database for readiness");
@@ -212,27 +205,6 @@ int postgresInterface::writeTables(){
     bDebug(TRACE, "writeTables");
     int err = OK;
 
-    /*if (this->dataArray == NULL){
-        err = BAD_PARAMS;
-    } else {
-        string query = "";
-        for (auto& row: dataArray){
-            //THIS QUERY IS BASED OFF AN ASSUMED DATA ARRAY
-            string query = "INSERT INTO " + row[0] + " VALUES (";
-            int i = 0;
-            for(auto& column: row){
-                if(i != 0){
-                    query += "'" + column + "',";
-                }
-                i++;
-            }
-            query.pop_back();
-            query += ");";
-            writeSQL(query);
-        }
-        err = OK;
-    }*/
-
     if (!this->dataVector.empty()){
         bDebug(TRACE, "About to run through the data vector");
 
@@ -243,6 +215,7 @@ int postgresInterface::writeTables(){
             dS->getData(&sqlTable, &vData);
             bDebug(TRACE, "got data, about to write");
             bDebug(TRACE, "table: " + sqlTable);
+            createDefaultTable(sqlTable); //TO BE DELETED, WILL BE CALLED IN TESTDBINTEGRITY
             writeVectorSQL(sqlTable, vData);
         }
     } else {
@@ -277,7 +250,30 @@ int postgresInterface::writeVectorSQL(string sqlTable, std::vector<string> vData
     return err;
 }
 
-int postgresInterface::createDefaultTable(string sqlTable, std::vector<string> vData)
+int postgresInterface::createDefaultTable(string sqlTable)
 {
+    int err = OK;
+     if (!this->dataVector.empty()){
+        bDebug(TRACE, "About to run through the data vector");
 
+        for (dataSource * dS : this->dataVector){
+            std::vector<std::pair<const char*, const char*>> tableData;
+            dS->getTableParams(&tableData);
+            bDebug(TRACE, "got data, about to write");
+            bDebug(TRACE, "table: " + sqlTable);
+            string query = "CREATE TABLE " + sqlTable + " (";
+            for(const auto& p : tableData){
+                query += std::string(p.first) + " " + p.second + ",";
+            }
+            query += "epochtime TIMESTAMP DEFAULT NOW();";
+            query.pop_back();
+            query += ");";
+            err = writeSQL(query);
+            
+        }
+    } else {
+        bDebug(TRACE, "dataVector is empty");
+    }
+
+    return err;
 }

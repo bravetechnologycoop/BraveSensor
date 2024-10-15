@@ -20,7 +20,6 @@ class postgresInterface{
                             string connStringdbName);
         ~postgresInterface();
         int openDB();
-        int assignDataSources(string dataArray[2][2]);
         int assignDataSources(vector<dataSource*> dataVector);
         int writeSQL(string sql);
         int testDataBaseIntegrity();
@@ -33,11 +32,10 @@ class postgresInterface{
         string connStringHost;
         string connStringPort;
         string connStringdbName;
-        string dataArray[2][2] = {{"table1", "data1"}, {"table2", "data2"}};
 
-        void printDataArray(string dataArray[2][2]);
         vector<dataSource*> dataVector;
         int writeVectorSQL(string sqlTable, std::vector<string> vData);
+        int createDefaultTable(string sqlTable);
 };
 
 
