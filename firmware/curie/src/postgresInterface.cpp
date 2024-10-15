@@ -110,37 +110,44 @@ int postgresInterface::writeSQL(string sql) {
         pqxx::result result;
         try {
             result = txn.exec(sql);
-            txn.commit();
         }
         catch (...){
-        bDebug(ERROR, "Postgres did not like this query, please check SQL query.");
+        bDebug(TRACE, "Postgres did not like this query, please check SQL query.");
             err = BAD_SETTINGS;
         }
 
-        bDebug(TRACE, "SQL executed successfully, row data below (if you performed a SELECT query): ");
-        for (const pqxx::row& row : result){
-            std::string rowData;
-            for (const auto& field : row) {
-                rowData += field.c_str() + std::string(" ");
+        txn.commit();
+
+            bDebug(TRACE, "SQL executed successfully, row data below (if you performed a SELECT query): ");
+            for (const pqxx::row& row : result){
+                std::string rowData;
+                for (const auto& field : row) {
+                    rowData += field.c_str() + std::string(" ");
+                }
+                bDebug(TRACE, rowData);
             }
-            bDebug(TRACE, rowData);
         }
+        catch (...){
+            bDebug(TRACE, "Postgres did not like this query, please check SQL query.");
+            err = BAD_SETTINGS;
+        }
+       
     }
     return err;
 }
 
 //create a vector that has all the dataSources available. 
-/*int postgresInterface::assignDataSources(vector<dataSource> dataVector){
-    /*bDebug(TRACE, "assignDataSources");
+int postgresInterface::assignDataSources(vector<dataSource*> dataVector){
+    bDebug(TRACE, "assignDataSources");
     int err = BAD_PARAMS;
 
     if (0 < dataVector.size()){
         err = OK;
         this->dataVector = dataVector;
-    }*
+    }
     
     return err;
-}*/
+}
 
 int postgresInterface::assignDataSources(string dataArray[2][2])
 {
@@ -251,6 +258,17 @@ int postgresInterface::writeTables(){
             writeSQL(query);
         }
         err = OK;
+    }
+
+    if (!this->dataVector.empty()){
+        bDebug(TRACE, "About to run through the data vector");
+
+        for (dataSource * dS : this->dataVector){
+            string sqlString = "";
+            dS->getData(&sqlString);
+        }
+    } else {
+        bDebug(TRACE, "dataVector is empty");
     }
 
     if (OK != err){
