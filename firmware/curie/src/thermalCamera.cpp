@@ -30,23 +30,6 @@ thermalCamera::~thermalCamera(){
     bDebug(TRACE, "Thermal Camera destroyed");
 }
 
-// Thermal
-int thermalCamera::getData(string * sqlBuf){
-    bDebug(TRACE, "Thermal Camera getting Data");
-    int err = BAD_SETTINGS;
-    int readlen = 0;
-    string sqlChunk = "";
-    unsigned char readBuffer[128];
-    //get the data
-
-    if (NULL != sqlBuf){
-       
-    }
-    
-
-    return err;
-
-}
 
 int thermalCamera::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "Thermal Camera getData");

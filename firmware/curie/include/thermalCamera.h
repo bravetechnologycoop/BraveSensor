@@ -19,8 +19,7 @@ class thermalCamera: public dataSource {
     public:
         thermalCamera(i2cInterface * i2cBus, int i2cAddress);
         ~thermalCamera();
-
-        int getData(string * sqlBuf);
+        
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);
         int setTableParams();
