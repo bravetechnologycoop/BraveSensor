@@ -43,6 +43,8 @@ int thermalCamera::getData(string * sqlTable, std::vector<string> * vData){
     //check incoming pointers
     *sqlTable = T_CAMERA_SQL_TABLE;
 
+    this->getTempData();
+
     //in some sort of loop or process
     vData->push_back("Moooooo");
 
@@ -94,7 +96,13 @@ int thermalCamera::getTempData(){
     bDebug(TRACE, "Get Temperature Data");
     int err = OK;
 
+    MLX90640_GetFrameData(this->i2cAddress, this->frame);
 
+    this->eTa = MLX90640_GetTa(this->frame, &(this->mlx90640));
+    MLX90640_CalculateTo(this->frame, &(this->mlx90640), this->emissivity, this->eTa, this->mlx90640To);
+
+    MLX90640_BadPixelsCorrection((&(this->mlx90640))->brokenPixels, this->mlx90640To, 1, &(this->mlx90640));
+    MLX90640_BadPixelsCorrection((&(this->mlx90640))->outlierPixels, this->mlx90640To, 1, &(this->mlx90640));
 
     return err;
 }

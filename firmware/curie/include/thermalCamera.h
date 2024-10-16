@@ -33,8 +33,7 @@ class thermalCamera: public dataSource {
         paramsMLX90640 mlx90640;
         float emissivity = 1;
         uint16_t frame[834];
-        static float image[768];
-        static float mlx90640To[768];
+        float mlx90640To[768];
         float eTa;
 
         int getTempData();
