@@ -11,6 +11,7 @@
 #include <iostream>
 #include <pqxx/pqxx>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 using namespace pqxx;
@@ -66,25 +67,16 @@ int postgresInterface::openDB(){
     int err = BAD_SETTINGS;
 	bDebug(TRACE, "Running testDataBaseIntegrity...");
     testDataBaseIntegrity();
+    bDebug(TRACE, "Checking table integrity..");
+    testTableIntegrity();
     bDebug(TRACE, "Postgres Opening DB");
-    try{
-		bDebug(TRACE, "Starting connection");
-		string connStr = "user=" + connStringUser +
-                         " password=" + connStringPassword +
-                         " host=" + connStringHost +
-                         " port=" + connStringPort +
-                         " dbname=" + connStringdbName;
-		bDebug(TRACE, connStr);
-		conn = new pqxx::connection(connStr);
-
-		bDebug(TRACE, "About to test connection");
-        if (conn != NULL && conn->is_open()) {
-            bDebug(TRACE, "CONNECTED TO DB " + connStringdbName);
-            err = OK;
-        } 
-		bDebug(TRACE, "Got to here");
-
-    } catch (const pqxx::broken_connection &){ 
+    int dbTest = dbConnect();
+	bDebug(TRACE, "About to test connection");
+    if (dbTest == OK) {
+        bDebug(TRACE, "CONNECTED TO DB " + connStringdbName);
+        err = OK;
+    } 
+	else { 
         err = BAD_SETTINGS;
 		bDebug(ERROR, "did not connect");
 	}
@@ -95,7 +87,7 @@ int postgresInterface::openDB(){
 // Will probably end up being private, as a helper function, keeping public for development.
 int postgresInterface::writeSQL(string sql) {
     int err = OK;
-    bDebug(TRACE, "start writesql query: \n" + sql);
+    bDebug(TRACE, "Start writesql query: \n" + sql);
 	
     if (connStringHost.empty() || conn == NULL || !conn->is_open()){
         bDebug(TRACE, "Database connection is not open, check connection parameters");
@@ -110,7 +102,6 @@ int postgresInterface::writeSQL(string sql) {
         pqxx::result result;
         try {
             result = txn.exec(sql);
-        
 
             txn.commit();
 
@@ -149,21 +140,9 @@ int postgresInterface::assignDataSources(vector<dataSource*> dataVector){
 int postgresInterface::testDataBaseIntegrity(){
     bDebug(TRACE, "Testing the database for readiness");
     int err = BAD_PARAMS;
-
-	bDebug(TRACE, "Starting connection...");
-	string connStr = "user=" + connStringUser +
-                    " password=" + connStringPassword +
-                    " host=" + connStringHost +
-                    " port=" + connStringPort +
-                    " dbname=" + connStringdbName;
-        bDebug(TRACE, connStr);
-        try{
-		    conn = new pqxx::connection(connStr);
-        }
-        catch(...){}
-
-		bDebug(TRACE, "About to test connection");
-        if (conn == NULL || !conn->is_open()) {
+    int dbTest = dbConnect();
+	bDebug(TRACE, "About to test connection");
+        if (dbTest == BAD_SETTINGS) {
             bDebug(TRACE, "DB not found, creating...");
             string connStr = "user=" + connStringUser +
                          " password=" + connStringPassword +
@@ -172,8 +151,7 @@ int postgresInterface::testDataBaseIntegrity(){
                          " dbname=template1";
             bDebug(TRACE, connStr);
             conn = new pqxx::connection(connStr);
-            if(conn != NULL || conn->is_open())
-            {
+            if(conn != NULL || conn->is_open()) {
                 //We'll have to assume user, password, host, and port are correct
                 string query = std::string("CREATE DATABASE ") + connStringdbName + " WITH OWNER " + connStringUser + ";";
                 bDebug(TRACE, query);
@@ -182,19 +160,16 @@ int postgresInterface::testDataBaseIntegrity(){
                 bDebug(TRACE, "db created successfully");
 
             }
-            else
-            {
+            else {
                 bDebug(TRACE, "Could not connect to Postgres, please check parameters");
                 err = BAD_PARAMS;
             }
         }
         else {
             bDebug(TRACE, "Target database available, continuing...");
-        }
-
+        };
     
     if (OK != err){
-        //"resolve the problem" -> changed to send debug message
         bDebug(ERROR, "looks like the data vector is improper, please check");
     }
 
@@ -223,10 +198,8 @@ int postgresInterface::writeTables(){
     }
 
     if (OK != err){
-        //"resolve the problem" -> changed to send debug message
         bDebug(ERROR, "looks like the data vector is improper, please check");
     }
-    //go through the dataVector and poll all the dataSources and write stuff to the db
 
     return err;
 }
@@ -275,5 +248,79 @@ int postgresInterface::createDefaultTable(string sqlTable)
         bDebug(TRACE, "dataVector is empty");
     }
 
+    return err;
+}
+
+int postgresInterface::dbConnect(){
+    int err = OK;
+    bDebug(TRACE, "Starting connection...");
+	string connStr = "user=" + connStringUser +
+                    " password=" + connStringPassword +
+                    " host=" + connStringHost +
+                    " port=" + connStringPort +
+                    " dbname=" + connStringdbName;
+        bDebug(TRACE, connStr);
+        try{
+		    conn = new pqxx::connection(connStr);
+        }
+    catch (const pqxx::broken_connection &){ 
+        err = BAD_SETTINGS;
+		bDebug(ERROR, "did not connect");
+	}
+    return err;
+}
+
+int postgresInterface::testTableIntegrity()
+{
+    int err = OK;
+    for (dataSource * dS : this->dataVector){
+        pqxx::work txn(*conn);
+
+        pqxx::result result;
+        try {
+            string tableName;
+            dS->getTableDef(&tableName);
+            string sql = "SELECT column_name FROM information_schema.columns WHERE table_name = '" + tableName + "';";
+            result = txn.exec(sql);
+            txn.commit();
+
+            bDebug(TRACE, "SQL executed successfully, reading information_schema...");
+            std::vector<std::string> schemaColumns;
+            for (const pqxx::row& row : result){
+                int i = 0;
+                for (const auto& field : row) {
+                    schemaColumns.push_back(field.c_str());
+                }
+                i++;
+            }
+        
+
+            std::vector<std::pair<const char*, const char*>> tableData;
+            dS->getTableParams(&tableData);
+            for(const auto& p : tableData){
+                string s = std::string(p.first);
+                bool flag = false;
+                for (const auto& str : schemaColumns) {
+                    bDebug(TRACE, "COMPARING " + str + " TO " + s);
+                    if(str == s){
+                        flag = true;
+                    }
+                }
+                if(flag == false) {
+                    err = BAD_SETTINGS;
+                    bDebug(TRACE, "Table integrity did not pass, do stuff.");
+                    break;
+                }
+                else {
+                    bDebug(TRACE, "Integrity passed on this column: " + s);
+                }
+            }
+
+        }
+        catch (...){
+            bDebug(TRACE, "Postgres did not like this query, please check SQL query.");
+            err = BAD_SETTINGS;
+        }
+    }
     return err;
 }

@@ -36,6 +36,7 @@ thermalCamera::~thermalCamera(){
     bDebug(TRACE, "Thermal Camera destroyed");
 }
 
+
 int thermalCamera::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "Thermal Camera getData");
     int err = OK;
