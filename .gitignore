@@ -37,3 +37,4 @@
 ehthumbs.db
 Thumbs.db
 firmware/curie/build/bin/*
+firmware/curie/build/bin/curie
