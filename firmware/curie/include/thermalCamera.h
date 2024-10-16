@@ -8,7 +8,7 @@
 #define _THERMALCAMERA__H_
 using namespace std;
 #include <vector>
-#include "dataSource.h"
+#include <dataSource.h>
 #include <i2cInterface.h>
 #include <MLX90640_API.h>
 

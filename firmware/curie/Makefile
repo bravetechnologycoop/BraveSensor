@@ -1,7 +1,7 @@
 CXX      := -c++
 #CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror
 CXXFLAGS := -Wall
-LDFLAGS  := -L/usr/lib -L/usr/lib/aarch64-linux-gnu/ -lstdc++ -lm -lpqxx -lpq
+LDFLAGS  := -L/usr/lib -L/usr/lib/aarch64-linux-gnu/ -lstdc++ -lm -lpqxx -lpq -lgpiod
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 BIN_DIR  := $(BUILD)/bin

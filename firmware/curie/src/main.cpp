@@ -11,7 +11,9 @@
 #include <curie.h>
 #include <braveDebug.h>
 #include <i2cInterface.h>
+#include <gpioInterface.h>
 #include <thermalCamera.h>
+#include <passiveIR.h>
 #include <postgresInterface.h>
 
 using namespace std;
@@ -28,10 +30,15 @@ int main()
         i2cInterface * fastI2C = new i2cInterface();
         fastI2C->setParams(FAST_I2C);
         fastI2C->openBus();
+
+		gpioInterface * gpioPIR = new gpioInterface(); 
+
         //set up all the sensors
         thermalCamera sourceThermalCamera(fastI2C, 0x33);
         vSources.push_back(&sourceThermalCamera);
-		
+		passiveIR sourcePIR(gpioPIR);
+		vSources.push_back(&sourcePIR);
+
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
 		pInterface->assignDataSources(vSources);
