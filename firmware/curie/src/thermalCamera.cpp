@@ -52,7 +52,7 @@ int thermalCamera::getData(string * sqlTable, std::vector<string> * vData){
             szTempOutput += " " + to_string(this->mlx90640To[cell]);
             cell ++;
         }
-        bDebug(TRACE, szTempOutput);
+        //bDebug(TRACE, szTempOutput);
     }
 
     //in some sort of loop or process
