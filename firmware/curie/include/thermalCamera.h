@@ -12,7 +12,8 @@ using namespace std;
 #include <i2cInterface.h>
 
 #define T_CAMERA_NAME "Thermal Camera"
-#define T_CAMERA_SQL_TABLE "ThermalCamera"
+#define T_CAMERA_SQL_TABLE "thermalcamera"
+
 
 class thermalCamera: public dataSource {
     public:
@@ -22,8 +23,11 @@ class thermalCamera: public dataSource {
         int getData(string * sqlBuf);
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);
+        int setTableParams();
+        int getTableParams(std::vector<std::pair<const char*, const char*>> * dbParams);
     private:
         int i2cAddress;
+        std::vector<std::pair<const char*, const char*>> dbParams;
         i2cInterface * i2cBus;
 
 };

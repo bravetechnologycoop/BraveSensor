@@ -7,7 +7,7 @@
  */
 #include <MLX90640_I2C_Driver.h>
 #include <i2cInterface.h>
-#include "braveDebug.h"
+#include <braveDebug.h>
 
 i2cInterface * g_i2c;
 

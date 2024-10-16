@@ -8,11 +8,11 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
-#include "curie.h"
-#include "braveDebug.h"
-#include "i2cInterface.h"
-#include "thermalCamera.h"
-#include "postgresInterface.h"
+#include <curie.h>
+#include <braveDebug.h>
+#include <i2cInterface.h>
+#include <thermalCamera.h>
+#include <postgresInterface.h>
 
 using namespace std;
 
@@ -34,14 +34,14 @@ int main()
 		
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
-		std::string myArray[2][2] = {{"table1", "data1"}, {"table2", "data2"}};
-		pInterface->assignDataSources(myArray);
 		pInterface->assignDataSources(vSources);
-		
+
 		pInterface->openDB();
 		pInterface->writeTables();
 		//pInterface->writeSQL(BRAVESQL);
 		pInterface->writeSQL("SELECT * FROM fakeTable");
+
+		pInterface->writeSQL("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'thermalcamera';");
 		//err = pInterface->assignDataSources(vSources);
 
 		//main execution loop
