@@ -20,6 +20,7 @@ the code was deployed.
 - Updated the .env.example with the latest .env structure (CU-86dun7tc2).
 - Update pw migration instructions (CU-86duhae9t).
 - Make fallback number optional for Sensors dashboard (CU-86du49q25).
+- Updated styling for landing page to match the other pages and button dashboard (CU-86dup4ghg).
 
 ## [10.14.0] - 2024-09-12
 

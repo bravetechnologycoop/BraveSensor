@@ -30,7 +30,7 @@
                     </thead>
                     <tbody>
                     {{#clients}}
-                        <tr class="table-data table-secondary">
+                        <tr class="table-data">
                             <th scope="row"><a href="/clients/{{id}}">{{displayName}}</a></th>
                             <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
                             <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
