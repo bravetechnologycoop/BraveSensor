@@ -19,6 +19,7 @@
 #define WRITE_ERROR     0x22
 #define READ_ERROR      0x23
 #define BAD_PARAMS      0x24
+#define FILE_ERROR      -1
 
 //DATABASE VARIABLES
 #define BRAVEUSER        "brave"
