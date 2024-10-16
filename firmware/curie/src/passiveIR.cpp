@@ -1,0 +1,82 @@
+/* passiveIR.cpp - Class the retrieves and process passive IR range device
+ *
+ * Copyright (C) 2024 Brave Coop - All Rights Reserved
+ *
+ * File created by:  Denis Londry 2024
+ */
+#include <braveDebug.h>
+#include <dataSource.h>
+#include <curie.h>
+#include <passiveIR.h>
+
+passiveIR::passiveIR(gpioInterface * gpio){
+    bDebug(TRACE, "Creating passiveIR");
+
+    //!!! check and barf if this is bad
+    this->gpio = gpio;
+    this->gpio->setParams("gpiochip0", 24);
+    this->gpio->open(false);
+}
+
+passiveIR::~passiveIR(){
+    bDebug(TRACE, "Deleting passiveIR");
+}
+
+int passiveIR::getData(string * sqlTable, std::vector<string> * vData){
+    bDebug(TRACE, "passiveIR getData");
+    int err = OK;
+    bool data = false;
+
+    //check incoming pointers
+    *sqlTable = T_PIR_SQL_TABLE;
+
+    err = this->gpio->readPin(&data);
+    if (OK == err){
+        bDebug(TRACE, ("Pin Value :" + to_string((int)data)));
+        vData->push_back("Moooooo");
+    }
+    
+
+
+    return err;
+}
+
+int passiveIR::getTableDef(string * sqlBuf){
+    bDebug(TRACE, "Get passiveIR SQL table");
+    int err = BAD_PARAMS;
+
+    if (NULL != sqlBuf){
+        *sqlBuf = T_PIR_SQL_TABLE;
+        bDebug(TRACE, "passiveIR Table: " + *sqlBuf);
+        err = OK;
+    }
+
+    return err;
+}
+
+int passiveIR::setTableParams(){
+    bDebug(TRACE, "passiveIR Set table params");
+
+    int err = OK;
+
+    try {
+        this->dbParams.emplace_back("moo", "text");
+        this->dbParams.emplace_back("num", "integer");
+    }
+    catch(...) {
+        err = BAD_PARAMS;
+    }
+
+    return err;
+}
+
+int passiveIR::getTableParams(std::vector<std::pair<const char*, const char*>> * tableData){
+    bDebug(TRACE, "passiveIRGet table params");
+    int err = BAD_SETTINGS;
+    if(!dbParams.empty())
+    {
+        *tableData = dbParams;
+        err = OK;
+    }
+    return err;
+}
