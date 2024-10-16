@@ -23,13 +23,18 @@ thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
     setTableParams();
     this->i2cAddress = i2cAddress;
 
-     MLX90640_I2CClass(this->i2cBus);
+    MLX90640_I2CClass(this->i2cBus);
+
+     //initialize the camera
+    MLX90640_SetRefreshRate(this->i2cAddress, 0b001);  //slow speed
+    MLX90640_SetChessMode(this->i2cAddress);
+    MLX90640_DumpEE(this->i2cAddress, this->eeMLX90640);
+    MLX90640_ExtractParameters(this->eeMLX90640, &(this->mlx90640));
 }
 
 thermalCamera::~thermalCamera(){
     bDebug(TRACE, "Thermal Camera destroyed");
 }
-
 
 int thermalCamera::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "Thermal Camera getData");
@@ -68,7 +73,7 @@ int thermalCamera::setTableParams(){
         this->dbParams.emplace_back("num", "integer");
     }
     catch(...) {
-        int err = BAD_PARAMS;
+        err = BAD_PARAMS;
     }
 
     return err;
@@ -82,5 +87,14 @@ int thermalCamera::getTableParams(std::vector<std::pair<const char*, const char*
         *tableData = dbParams;
         err = OK;
     }
+    return err;
+}
+
+int thermalCamera::getTempData(){
+    bDebug(TRACE, "Get Temperature Data");
+    int err = OK;
+
+
+
     return err;
 }
