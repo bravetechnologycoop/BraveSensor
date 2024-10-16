@@ -190,7 +190,6 @@ int postgresInterface::writeTables(){
             dS->getData(&sqlTable, &vData);
             bDebug(TRACE, "got data, about to write");
             bDebug(TRACE, "table: " + sqlTable);
-            createDefaultTable(sqlTable); //TO BE DELETED, WILL BE CALLED IN TESTDBINTEGRITY
             writeVectorSQL(sqlTable, vData);
         }
     } else {
