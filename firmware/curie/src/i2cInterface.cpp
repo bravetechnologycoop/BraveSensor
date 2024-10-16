@@ -4,15 +4,22 @@
  *
  * File created by:  Denis Londry 2024
  */
-#include "i2cInterface.h"
+#include <i2cInterface.h>
 #include "braveDebug.h"
 #include "curie.h"
+#include <iostream>
 #include <unistd.h>
 #include <cstring>
 #include <string>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
+
+//#define I2C_MSG_FMT char
+#ifndef I2C_FUNC_I2C
+#include <linux/i2c.h>
+#define I2C_MSG_FMT __u8
+#endif
 
 i2cInterface::i2cInterface(){
     bDebug(TRACE, "i2cInterface Created");
@@ -58,46 +65,76 @@ int i2cInterface::closeBus(){
     return err;
 }
 
-int i2cInterface::readBytes(int address, unsigned char * buffer, int buflen){
-    int err = 0;
-    int len = 0;
+int i2cInterface::readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data){
     bDebug(TRACE, "i2c readBytes");
+    int err = 0;
+    char cmd[2] = {(char)(startAddress >> 8), (char)(startAddress & 0xFF)};
+    char buf[1664];
+    uint16_t *p = data;
+    struct i2c_msg i2c_messages[2];
+    struct i2c_rdwr_ioctl_data i2c_messageset[1];
 
-    if ((NULL == buffer) || (0 >= buflen) || (this->fileI2C == 0)) {
-        err = -1;
+        
+    if (!this->fileI2C) 
+    {
+        err = this->openBus();
     }
 
-    if (0 != err){
-        err = ioctl(this->fileI2C, I2C_SLAVE, address);
-        if (err > 0)
-        {
-            len = read(this->fileI2C, buffer, buflen);
-            if (len != buflen){
-                err = 0;
-            }
-        }
+    i2c_messages[0].addr = slaveAddr;
+    i2c_messages[0].flags = 0;
+    i2c_messages[0].len = 2;
+    i2c_messages[0].buf = (I2C_MSG_FMT *)cmd;
+
+    i2c_messages[1].addr = slaveAddr;
+    i2c_messages[1].flags = I2C_M_RD | I2C_M_NOSTART;
+    i2c_messages[1].len = nMemAddressRead * 2;
+    i2c_messages[1].buf = (I2C_MSG_FMT *)buf;
+
+    i2c_messageset[0].msgs = i2c_messages;
+    i2c_messageset[0].nmsgs = 2;
+
+    memset(buf, 0, nMemAddressRead * 2);
+
+    if (ioctl(this->fileI2C, I2C_RDWR, &i2c_messageset) < 0) 
+    {
+        bDebug(ERROR, "i2c read error");
+        return -1;
+    }
+
+    for (int count = 0; count < nMemAddressRead; count++) 
+    {
+        int i = count << 1;
+        *p++ = ((uint16_t)buf[i] << 8) | buf[i + 1];
     }
 
     return err;
+
 }
 
-int i2cInterface::writeBytes(int address, unsigned char * buffer, int buflen){
-    int err = 0;
-    int len = 0;
+//!!! change to single return
+int i2cInterface::writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data){
     bDebug(TRACE, "i2c writeBytes");
+    int err = 0;
+    char cmd[4] = {(char)(writeAddress >> 8), (char)(writeAddress & 0x00FF), (char)(data >> 8), (char)(data & 0x00FF)};
 
-    if ((NULL == buffer) || (0 >= buflen) || (this->fileI2C == 0)) {
-        err = -1;
+    struct i2c_msg i2c_messages[1];
+    struct i2c_rdwr_ioctl_data i2c_messageset[1];
+
+    // !!! check that we have the file handle before doing anything
+
+    i2c_messages[0].addr = slaveAddr;
+    i2c_messages[0].flags = 0;
+    i2c_messages[0].len = 4;
+    i2c_messages[0].buf = (I2C_MSG_FMT *)cmd;
+
+    i2c_messageset[0].msgs = i2c_messages;
+    i2c_messageset[0].nmsgs = 1;
+
+    if (ioctl(this->fileI2C, I2C_RDWR, &i2c_messageset) < 0) 
+    {
+        bDebug(ERROR, "I2C Write Error");
+        return -1;
     }
-
-    if ( 0 != err){
-        len = write(this->fileI2C, buffer, buflen);
-        if (len != buflen){
-            //this might not be an error, we might just need to drain but for now
-            err = WRITE_ERROR;
-        }
-    }
-
 
     return err;
 }
