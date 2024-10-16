@@ -32,8 +32,9 @@ i2cInterface::~i2cInterface(){
 }
 
 int i2cInterface::setParams(string busID){
-    int err = OK;
     bDebug(TRACE, "i2c params: " + busID);
+    int err = OK;
+    
     this->busID = busID;
 
     return err;
@@ -66,7 +67,7 @@ int i2cInterface::closeBus(){
 }
 
 int i2cInterface::readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data){
-    bDebug(TRACE, "i2c readBytes");
+    //bDebug(TRACE, "i2c readBytes");
     int err = 0;
     char cmd[2] = {(char)(startAddress >> 8), (char)(startAddress & 0xFF)};
     char buf[1664];
@@ -98,22 +99,21 @@ int i2cInterface::readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t n
     if (ioctl(this->fileI2C, I2C_RDWR, &i2c_messageset) < 0) 
     {
         bDebug(ERROR, "i2c read error");
-        return -1;
-    }
-
-    for (int count = 0; count < nMemAddressRead; count++) 
-    {
-        int i = count << 1;
-        *p++ = ((uint16_t)buf[i] << 8) | buf[i + 1];
+        err = -1;
+    } else {
+        for (int count = 0; count < nMemAddressRead; count++) 
+        {
+            int i = count << 1;
+            *p++ = ((uint16_t)buf[i] << 8) | buf[i + 1];
+        }
     }
 
     return err;
 
 }
 
-//!!! change to single return
 int i2cInterface::writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data){
-    bDebug(TRACE, "i2c writeBytes");
+    //bDebug(TRACE, "i2c writeBytes");
     int err = 0;
     char cmd[4] = {(char)(writeAddress >> 8), (char)(writeAddress & 0x00FF), (char)(data >> 8), (char)(data & 0x00FF)};
 
@@ -133,7 +133,7 @@ int i2cInterface::writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t 
     if (ioctl(this->fileI2C, I2C_RDWR, &i2c_messageset) < 0) 
     {
         bDebug(ERROR, "I2C Write Error");
-        return -1;
+        err = -1;
     }
 
     return err;
