@@ -44,6 +44,15 @@ int thermalCamera::getData(string * sqlTable, std::vector<string> * vData){
     *sqlTable = T_CAMERA_SQL_TABLE;
 
     this->getTempData();
+    int cell = 0;
+    for (int i = 0; i < 24; i++){
+        string szTempOutput = "Line " + to_string(i);
+        for (int j = 0; j < 32; j++){
+            szTempOutput += " " + to_string(this->mlx90640To[cell]);
+            cell ++;
+        }
+        bDebug(TRACE, szTempOutput);
+    }
 
     //in some sort of loop or process
     vData->push_back("Moooooo");
