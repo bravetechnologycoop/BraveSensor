@@ -205,24 +205,6 @@ int postgresInterface::writeTables(){
     bDebug(TRACE, "writeTables");
     int err = OK;
 
-    printDataArray(dataArray);
-    string query = "";
-    for (auto& row: dataArray){
-        //THIS QUERY IS BASED OFF AN ASSUMED DATA ARRAY
-        string query = "INSERT INTO " + row[0] + " VALUES (";
-        int i = 0;
-        for(auto& column: row){
-            if(i != 0){
-                query += "'" + column + "',"; //assumes datatype text
-            }
-            i++;
-        }
-        query.pop_back();
-        query += ");";
-        writeSQL(query);
-    }
-    err = OK;
-
     if (!this->dataVector.empty()){
         bDebug(TRACE, "About to run through the data vector");
 
