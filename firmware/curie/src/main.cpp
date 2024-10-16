@@ -34,14 +34,14 @@ int main()
 		
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
-		std::string myArray[2][2] = {{"table1", "data1"}, {"table2", "data2"}};
-		pInterface->assignDataSources(myArray);
 		pInterface->assignDataSources(vSources);
-		
+
 		pInterface->openDB();
 		pInterface->writeTables();
 		//pInterface->writeSQL(BRAVESQL);
 		pInterface->writeSQL("SELECT * FROM fakeTable");
+
+		pInterface->writeSQL("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'thermalcamera';");
 		//err = pInterface->assignDataSources(vSources);
 
 		//main execution loop
