@@ -5,8 +5,8 @@
  * File created by:  Denis Londry 2024
  */
 #include <i2cInterface.h>
-#include "braveDebug.h"
-#include "curie.h"
+#include <braveDebug.h>
+#include <curie.h>
 #include <iostream>
 #include <unistd.h>
 #include <cstring>

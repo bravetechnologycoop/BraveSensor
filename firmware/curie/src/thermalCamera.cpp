@@ -4,12 +4,12 @@
  *
  * File created by:  Denis Londry 2024
  */
-#include "braveDebug.h"
-#include "dataSource.h"
-#include "thermalCamera.h"
+#include <braveDebug.h>
+#include <dataSource.h>
+#include <thermalCamera.h>
 #include <MLX90640_API.h>
 #include <MLX90640_I2C_Driver.h>
-#include "curie.h"
+#include <curie.h>
 
 thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
     bDebug(TRACE, "Thermal Camera created");

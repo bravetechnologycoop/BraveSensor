@@ -4,9 +4,9 @@
  *
  * File created by: Corey Cheng 2024
  */
-#include "braveDebug.h"
-#include "postgresInterface.h"
-#include "curie.h"
+#include <braveDebug.h>
+#include <postgresInterface.h>
+#include <curie.h>
 #include <string>
 #include <iostream>
 #include <pqxx/pqxx>

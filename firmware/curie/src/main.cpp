@@ -8,11 +8,11 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
-#include "curie.h"
-#include "braveDebug.h"
-#include "i2cInterface.h"
-#include "thermalCamera.h"
-#include "postgresInterface.h"
+#include <curie.h>
+#include <braveDebug.h>
+#include <i2cInterface.h>
+#include <thermalCamera.h>
+#include <postgresInterface.h>
 
 using namespace std;
 
