@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [10.15.0] - 2024-10-17
+
 ### Added
 
 - Added new columns to the Sensor dashboard due to change in clients_extension table (CU-86dun4p2p).
@@ -834,7 +836,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...HEAD
+[10.15.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...10.15.0
 [10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...10.14.0
 [10.13.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...v10.13.0
 [10.12.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...v10.12.0
