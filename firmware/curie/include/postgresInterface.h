@@ -38,6 +38,7 @@ class postgresInterface{
         int createDefaultTable();
         int dbConnect();
         int testTableIntegrity();
+        int rename_table(string tableName);
 };
 
 

@@ -64,6 +64,9 @@ int passiveIR::setTableParams(){
     try {
         this->dbParams.emplace_back("moo", "text");
         this->dbParams.emplace_back("num", "integer");
+        this->dbParams.emplace_back("meow", "text");
+        this->dbParams.emplace_back("bark", "text");
+        this->dbParams.emplace_back("woof", "text");
     }
     catch(...) {
         err = BAD_PARAMS;

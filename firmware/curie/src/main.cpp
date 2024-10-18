@@ -44,10 +44,6 @@ int main()
 		pInterface->assignDataSources(vSources);
 
 		pInterface->openDB();
-		//pInterface->writeTables();
-		//pInterface->writeSQL(BRAVESQL);
-		//pInterface->writeSQL("SELECT * FROM fakeTable");
-		//err = pInterface->assignDataSources(vSources);
 
 		//main execution loop
 		while (loop){
