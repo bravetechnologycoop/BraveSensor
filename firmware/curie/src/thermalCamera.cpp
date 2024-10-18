@@ -30,12 +30,18 @@ thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
     MLX90640_SetChessMode(this->i2cAddress);
     MLX90640_DumpEE(this->i2cAddress, this->eeMLX90640);
     MLX90640_ExtractParameters(this->eeMLX90640, &(this->mlx90640));
+    MLX90640_I2CClass(this->i2cBus);
+
+     //initialize the camera
+    MLX90640_SetRefreshRate(this->i2cAddress, 0b001);  //slow speed
+    MLX90640_SetChessMode(this->i2cAddress);
+    MLX90640_DumpEE(this->i2cAddress, this->eeMLX90640);
+    MLX90640_ExtractParameters(this->eeMLX90640, &(this->mlx90640));
 }
 
 thermalCamera::~thermalCamera(){
     bDebug(TRACE, "Thermal Camera destroyed");
 }
-
 
 int thermalCamera::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "Thermal Camera getData");
@@ -50,13 +56,14 @@ int thermalCamera::getData(string * sqlTable, std::vector<string> * vData){
         string szTempOutput = "Line " + to_string(i);
         for (int j = 0; j < 32; j++){
             szTempOutput += " " + to_string(this->mlx90640To[cell]);
-            cell ++;
+            vData->push_back(to_string(this->mlx90640To[cell]));
+            cell++;
         }
-        //bDebug(TRACE, szTempOutput);
+    //    bDebug(TRACE, szTempOutput);
     }
 
     //in some sort of loop or process
-    vData->push_back("Moooooo");
+    //vData->push_back("Moooooo");
 
 
     return err;
@@ -74,15 +81,22 @@ int thermalCamera::getTableDef(string * sqlBuf){
 
     return err;
 }
-
+//32 columns 24 rows
 int thermalCamera::setTableParams(){
     bDebug(TRACE, "Set table params");
 
     int err = OK;
 
     try {
-        this->dbParams.emplace_back("moo", "text");
-        this->dbParams.emplace_back("num", "integer");
+
+        for (int i = 0; i < 768; ++i) 
+        {
+           // char[32] 
+             string szType = "col" + to_string(i);
+           // bDebug(TRACE, szType);
+            this->dbParams.emplace_back(szType, "float8");
+        }
+        
     }
     catch(...) {
         err = BAD_PARAMS;
@@ -91,7 +105,7 @@ int thermalCamera::setTableParams(){
     return err;
 }
 
-int thermalCamera::getTableParams(std::vector<std::pair<const char*, const char*>> * tableData){
+int thermalCamera::getTableParams(std::vector<std::pair<std::string, std::string>> * tableData){
     bDebug(TRACE, "Get table params");
     int err = BAD_SETTINGS;
     if(!dbParams.empty())

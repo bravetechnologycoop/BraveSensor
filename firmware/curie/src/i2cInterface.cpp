@@ -35,6 +35,8 @@ int i2cInterface::setParams(string busID){
     bDebug(TRACE, "i2c params: " + busID);
     int err = OK;
     
+    int err = OK;
+    
     this->busID = busID;
 
     return err;
@@ -67,7 +69,7 @@ int i2cInterface::closeBus(){
 }
 
 int i2cInterface::readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data){
-    //bDebug(TRACE, "i2c readBytes");
+    bDebug(TRACE, "i2c readBytes");
     int err = 0;
     char cmd[2] = {(char)(startAddress >> 8), (char)(startAddress & 0xFF)};
     char buf[1664];
@@ -115,7 +117,7 @@ int i2cInterface::readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t n
 }
 
 int i2cInterface::writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data){
-    //bDebug(TRACE, "i2c writeBytes");
+    bDebug(TRACE, "i2c writeBytes");
     int err = 0;
     char cmd[4] = {(char)(writeAddress >> 8), (char)(writeAddress & 0x00FF), (char)(data >> 8), (char)(data & 0x00FF)};
 
