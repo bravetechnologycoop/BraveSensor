@@ -35,7 +35,7 @@ class postgresInterface{
 
         vector<dataSource*> dataVector;
         int writeVectorSQL(string sqlTable, std::vector<string> vData);
-        int createDefaultTable(string sqlTable);
+        int createDefaultTable();
         int dbConnect();
         int testTableIntegrity();
 };

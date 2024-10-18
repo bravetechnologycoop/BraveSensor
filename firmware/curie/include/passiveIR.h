@@ -13,7 +13,7 @@ using namespace std;
 #include <gpioInterface.h>
 
 #define T_PIR_NAME "Passive IR detector"
-#define T_PIR_SQL_TABLE "passiveIR"
+#define T_PIR_SQL_TABLE "passiveir"
 
 
 class passiveIR: public dataSource {
@@ -24,10 +24,10 @@ class passiveIR: public dataSource {
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);
         int setTableParams();
-        int getTableParams(std::vector<std::pair<const char*, const char*>> * dbParams);
+        int getTableParams(std::vector<std::pair<std::string, std::string>> * tableData);
     private:
         gpioInterface * gpio;
-        std::vector<std::pair<const char*, const char*>> dbParams;
+        std::vector<std::pair<std::string, std::string>> dbParams;
 
 };
 

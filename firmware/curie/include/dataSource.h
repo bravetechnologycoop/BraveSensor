@@ -19,7 +19,7 @@ class dataSource{
         //provide the formatted string for db
         virtual int getTableDef(string * sqlBuf) = 0;
         virtual int getData(string *sqlTable, std::vector<string> * vData) = 0;
-        virtual int getTableParams(std::vector<std::pair<const char*, const char*>> * dbParams) = 0;
+        virtual int getTableParams(std::vector<std::pair<std::string, std::string>> * dbParams) = 0;
     protected:
         string sourceName;
 };

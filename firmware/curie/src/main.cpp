@@ -44,11 +44,9 @@ int main()
 		pInterface->assignDataSources(vSources);
 
 		pInterface->openDB();
-		pInterface->writeTables();
+		//pInterface->writeTables();
 		//pInterface->writeSQL(BRAVESQL);
-		pInterface->writeSQL("SELECT * FROM fakeTable");
-
-		pInterface->writeSQL("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'thermalcamera';");
+		//pInterface->writeSQL("SELECT * FROM fakeTable");
 		//err = pInterface->assignDataSources(vSources);
 
 		//main execution loop

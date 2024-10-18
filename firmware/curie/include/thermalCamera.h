@@ -24,10 +24,10 @@ class thermalCamera: public dataSource {
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);
         int setTableParams();
-        int getTableParams(std::vector<std::pair<const char*, const char*>> * dbParams);
+        int getTableParams(std::vector<std::pair<std::string, std::string>> * tableData);
     private:
         int i2cAddress;
-        std::vector<std::pair<const char*, const char*>> dbParams;
+        std::vector<std::pair<std::string, std::string>> dbParams;
         i2cInterface * i2cBus;
         uint16_t eeMLX90640[832];
         paramsMLX90640 mlx90640;

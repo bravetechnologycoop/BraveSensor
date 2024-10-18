@@ -67,10 +67,16 @@ int postgresInterface::openDB(){
     int err = BAD_SETTINGS;
 	bDebug(TRACE, "Running testDataBaseIntegrity...");
     testDataBaseIntegrity();
-    bDebug(TRACE, "Checking table integrity..");
-    testTableIntegrity();
     bDebug(TRACE, "Postgres Opening DB");
     int dbTest = dbConnect();
+    bDebug(TRACE, "Checking table integrity..");
+    int integrity = testTableIntegrity();
+    if(integrity == BAD_SETTINGS){
+        bDebug(TRACE, "Table integrity failed, trying to create default tables...");
+        createDefaultTable();
+    }
+    
+
 	bDebug(TRACE, "About to test connection");
     if (dbTest == OK) {
         bDebug(TRACE, "CONNECTED TO DB " + connStringdbName);
@@ -124,7 +130,7 @@ int postgresInterface::writeSQL(string sql) {
 }
 
 //create a vector that has all the dataSources available. 
-int postgresInterface::assignDataSources(vector<dataSource*> dataVector){
+int postgresInterface::assignDataSources(vector<dataSource*> dataVector){\
     bDebug(TRACE, "assignDataSources");
     int err = BAD_PARAMS;
 
@@ -158,6 +164,7 @@ int postgresInterface::testDataBaseIntegrity(){
                 pqxx::nontransaction W(reinterpret_cast<pqxx::lazyconnection&>(*conn));
                 W.exec(query);
                 bDebug(TRACE, "db created successfully");
+                conn->disconnect();
 
             }
             else {
@@ -209,11 +216,8 @@ int postgresInterface::writeVectorSQL(string sqlTable, std::vector<string> vData
     int err = OK;
     string query = "";
     query += "INSERT INTO " + sqlTable + " VALUES (";
-    while(!vData.empty())
-    {
-        string vectorValue = vData.back();
-        vData.pop_back();
-        query += "'" + vectorValue + "',";
+    for (string vStr : vData) {
+        query += vStr + ",";
     }
     query.pop_back();
     query += ");";
@@ -222,20 +226,20 @@ int postgresInterface::writeVectorSQL(string sqlTable, std::vector<string> vData
     return err;
 }
 
-int postgresInterface::createDefaultTable(string sqlTable)
-{
+int postgresInterface::createDefaultTable(){
     int err = OK;
      if (!this->dataVector.empty()){
         bDebug(TRACE, "About to run through the data vector");
-
         for (dataSource * dS : this->dataVector){
-            std::vector<std::pair<const char*, const char*>> tableData;
+            string tableName;
+            dS->getTableDef(&tableName);
+            std::vector<std::pair<std::string, std::string>> tableData;
             dS->getTableParams(&tableData);
             bDebug(TRACE, "got data, about to write");
-            bDebug(TRACE, "table: " + sqlTable);
-            string query = "CREATE TABLE " + sqlTable + " (";
+            bDebug(TRACE, "table: " + tableName);
+            string query = "CREATE TABLE " + tableName + " (";
             for(const auto& p : tableData){
-                query += std::string(p.first) + " " + p.second + ",";
+                query += p.first + " " + p.second + ",";
             }
             query += "epochtime TIMESTAMP DEFAULT NOW();";
             query.pop_back();
@@ -245,6 +249,7 @@ int postgresInterface::createDefaultTable(string sqlTable)
         }
     } else {
         bDebug(TRACE, "dataVector is empty");
+        err = BAD_SETTINGS;
     }
 
     return err;
@@ -294,13 +299,13 @@ int postgresInterface::testTableIntegrity()
             }
         
 
-            std::vector<std::pair<const char*, const char*>> tableData;
+            std::vector<std::pair<std::string, std::string>> tableData;
             dS->getTableParams(&tableData);
             for(const auto& p : tableData){
                 string s = std::string(p.first);
                 bool flag = false;
                 for (const auto& str : schemaColumns) {
-                    bDebug(TRACE, "COMPARING " + str + " TO " + s);
+                    //bDebug(TRACE, "COMPARING " + str + " TO " + s);
                     if(str == s){
                         flag = true;
                     }
@@ -311,13 +316,12 @@ int postgresInterface::testTableIntegrity()
                     break;
                 }
                 else {
-                    bDebug(TRACE, "Integrity passed on this column: " + s);
+                    //bDebug(TRACE, "Integrity passed on this column: " + s);
                 }
             }
-
         }
         catch (...){
-            bDebug(TRACE, "Postgres did not like this query, please check SQL query.");
+            bDebug(TRACE, "Table Integrity failed. Please check table columns.");
             err = BAD_SETTINGS;
         }
     }

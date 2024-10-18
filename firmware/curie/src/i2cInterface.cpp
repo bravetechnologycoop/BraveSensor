@@ -68,8 +68,6 @@ int i2cInterface::closeBus(){
 
 int i2cInterface::readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data){
     //bDebug(TRACE, "i2c readBytes");
-    int err = 0;
-    bDebug(TRACE, "i2c readBytes");
     int err = OK;
     char cmd[2] = {(char)(startAddress >> 8), (char)(startAddress & 0xFF)};
     char buf[1664];
