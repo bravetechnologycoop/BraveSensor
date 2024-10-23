@@ -250,7 +250,7 @@ async function getActiveSensorClients(pgClient) {
       WHERE c.is_sending_alerts AND c.is_sending_vitals
       ORDER BY c.display_name;
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR],
+      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL],
       pool,
       pgClient,
     )
@@ -328,7 +328,7 @@ async function getLocations(pgClient) {
       WHERE d.device_type = $1
       ORDER BY c.display_name, d.display_name
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR],
+      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL],
       pool,
       pgClient,
     )
@@ -373,7 +373,7 @@ async function getDataForExport(pgClient) {
         LEFT JOIN clients_extension x on x.client_id = c.id
         WHERE d.device_type = $1
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR],
+      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL],
       pool,
       pgClient,
     )
@@ -915,7 +915,7 @@ async function getLocationsFromClientId(clientId, pgClient) {
       AND device_type = $2
       ORDER BY display_name
       `,
-      [clientId, DEVICE_TYPE.DEVICE_SENSOR],
+      [clientId, DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL],
       pool,
       pgClient,
     )
@@ -1127,7 +1127,7 @@ async function createLocationFromBrowserForm(locationid, displayName, serialNumb
       RETURNING *
       `,
       [
-        DEVICE_TYPE.DEVICE_SENSOR,
+        DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL,
         locationid,
         displayName,
         serialNumber,
@@ -1177,7 +1177,7 @@ async function createLocation(
       RETURNING *
       `,
       [
-        DEVICE_TYPE.DEVICE_SENSOR,
+        DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL,
         locationid,
         sentVitalsAlertAt,
         phoneNumber,
@@ -1262,7 +1262,7 @@ async function getRecentSensorsVitals(pgClient) {
       WHERE d.device_type = $1
       ORDER BY sv.created_at
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR],
+      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL],
       pool,
       pgClient,
     )
