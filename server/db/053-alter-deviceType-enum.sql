@@ -1,52 +1,3 @@
-BEGIN;
-
-DO $testdevice$
-DECLARE
-    client_id UUID;
-BEGIN
-    -- fetch the client_id from the clients table
-    SELECT id INTO client_id
-    FROM public.clients
-    WHERE display_name = 'TempInitialClient'
-    LIMIT 1;
-
-    -- insert a new device using the fetched client_id
-    INSERT INTO public.devices (
-        locationid,
-        phone_number,
-        display_name,
-        serial_number,
-        client_id,
-        sent_low_battery_alert_at,
-        sent_vitals_alert_at,
-        created_at,
-        updated_at,
-        is_displayed,
-        is_sending_alerts,
-        is_sending_vitals,
-        id,
-        device_type
-    ) VALUES (
-        'TEST_1',                                -- locationid
-        '+15555555555',                          -- phone_number
-        'Test_1',                                -- display_name
-        'e00123456789123456789123',              -- serial_number
-        client_id,                               -- dynamically fetched client_id
-        NULL,                                    -- sent_low_battery_alert_at
-        NULL,                                    -- sent_vitals_alert_at
-        NOW(),                                   -- created_at
-        NOW(),                                   -- updated_at
-        TRUE,                                    -- is_displayed
-        TRUE,                                    -- is_sending_alerts
-        TRUE,                                    -- is_sending_vitals
-        gen_random_uuid(),                       -- id
-        'DEVICE_SENSOR'                          -- device_type
-    );
-END $testdevice$;
-
--- show inserted test devices before migration 
-SELECT * FROM devices;
-
 DO $migration$
     DECLARE migrationId INT;
     DECLARE lastSuccessfulMigrationId INT;
@@ -87,9 +38,3 @@ BEGIN
         VALUES (migrationId);
     END IF;
 END $migration$;
-
--- show all devices after the migration
-SELECT * FROM devices;
-
--- don't commit the transaction, undo this script
-ROLLBACK;
