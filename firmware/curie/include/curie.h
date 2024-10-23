@@ -7,10 +7,13 @@
 #ifndef _CURIE__H_
 #define _CURIE__H_
 
-#define FAST_I2C    "/dev/i2c-1"
-#define FAST_SPEED  1000
-#define SLOW_I2C    0
-#define SLOW_SPEED   100
+#define FAST_I2C        "/dev/i2c-1"
+#define FAST_SPEED      400000
+#define SLOW_I2C_SDA    27
+#define SLOW_I2C_SCL    28
+#define SLOW_SPEED      100000
+
+#define LOOP_TIMER      1000
 
 //error types
 #define OK              0x00
