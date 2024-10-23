@@ -35,8 +35,6 @@ int i2cInterface::setParams(string busID){
     bDebug(TRACE, "i2c params: " + busID);
     int err = OK;
     
-    int err = OK;
-    
     this->busID = busID;
 
     return err;

@@ -24,6 +24,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
+	int tmpcount = 2;
     int err = OK;
     try{
         //set up the busses
@@ -44,10 +45,6 @@ int main()
 		pInterface->assignDataSources(vSources);
 
 		pInterface->openDB();
-		//pInterface->writeTables();
-		//pInterface->writeSQL(BRAVESQL);
-		//pInterface->writeSQL("SELECT * FROM fakeTable");
-		//err = pInterface->assignDataSources(vSources);
 
 		//main execution loop
 		while (loop){
@@ -59,7 +56,10 @@ int main()
 				loop = false;
 			}
 
-			loop = false;
+			if (tmpcount <= 0){
+				loop = false;
+			}
+			tmpcount--;
 		};
 
 		//cleanup
