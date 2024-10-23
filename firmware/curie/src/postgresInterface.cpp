@@ -87,7 +87,6 @@ int postgresInterface::openDB(){
 int postgresInterface::writeSQL(string sql) {
     int err = OK;
     bDebug(TRACE, "Start writesql query: \n" + sql.substr(0, 100));
-    bDebug(ERROR, sql);
 	
     if (connStringHost.empty() || conn == NULL || !conn->is_open()){
         bDebug(TRACE, "Database connection is not open, check connection parameters");
