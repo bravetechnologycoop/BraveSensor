@@ -24,6 +24,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
+	int tmpcount = 2;
     int err = OK;
     try{
         //set up the busses
@@ -55,7 +56,10 @@ int main()
 				loop = false;
 			}
 
-			loop = false;
+			if (tmpcount <= 0){
+				loop = false;
+			}
+			tmpcount--;
 		};
 
 		//cleanup
