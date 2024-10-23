@@ -54,6 +54,9 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     sandbox.restore()
   })
 
+  // Possibly add seperate test cases here specifially for multistall sensors
+  // Should not matter at all as both are same devices so default singlestall test cases are completely fine
+
   describe('when a device with a firmware state machine and no existing alerts notices that the latest radar message was longer than the threshold', () => {
     beforeEach(async () => {
       const client = factories.clientFactory({ isSendingVitals: true })

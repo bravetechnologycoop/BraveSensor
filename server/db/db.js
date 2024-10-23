@@ -326,10 +326,10 @@ async function getLocations(pgClient) {
       SELECT d.*
       FROM devices AS d
       LEFT JOIN clients AS c ON d.client_id = c.id
-      WHERE d.device_type = $1
+      WHERE device_type IN ($1, $2)
       ORDER BY c.display_name, d.display_name
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL],
+      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
