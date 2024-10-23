@@ -12,7 +12,8 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  ssl: { rejectUnauthorized: false },
+  ssl: false,
+  // ssl: { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -242,7 +243,7 @@ async function getActiveSensorClients(pgClient) {
       INNER JOIN (
         SELECT DISTINCT client_id AS id
         FROM devices
-        WHERE device_type = $1
+        WHERE device_type IN ($1, $2)
         AND is_sending_alerts
         AND is_sending_vitals
       ) AS d
@@ -250,7 +251,7 @@ async function getActiveSensorClients(pgClient) {
       WHERE c.is_sending_alerts AND c.is_sending_vitals
       ORDER BY c.display_name;
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL],
+      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
