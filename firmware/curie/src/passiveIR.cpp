@@ -11,7 +11,7 @@
 
 passiveIR::passiveIR(gpioInterface * gpio){
     bDebug(TRACE, "Creating passiveIR");
-
+    setTableParams();
     //!!! check and barf if this is bad
     this->gpio = gpio;
     this->gpio->setParams("gpiochip0", 24);
