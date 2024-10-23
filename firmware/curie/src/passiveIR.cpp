@@ -16,8 +16,6 @@ passiveIR::passiveIR(gpioInterface * gpio){
     this->gpio = gpio;
     this->gpio->setParams("gpiochip0", 24);
     this->gpio->open(false);
-
-    setTableParams();
 }
 
 passiveIR::~passiveIR(){
@@ -35,7 +33,7 @@ int passiveIR::getData(string * sqlTable, std::vector<string> * vData){
     err = this->gpio->readPin(&data);
     if (OK == err){
         bDebug(TRACE, ("Pin Value :" + to_string((int)data)));
-        vData->push_back("'Moooooo'");
+        vData->push_back("Moooooo");
     }
     
 
@@ -75,8 +73,8 @@ int passiveIR::setTableParams(){
     return err;
 }
 
-int passiveIR::getTableParams(std::vector<std::pair<std::string, std::string>> * tableData){
-    bDebug(TRACE, "passiveIR Get table params");
+int passiveIR::getTableParams(std::vector<std::pair<const char*, const char*>> * tableData){
+    bDebug(TRACE, "passiveIRGet table params");
     int err = BAD_SETTINGS;
     if(!dbParams.empty())
     {

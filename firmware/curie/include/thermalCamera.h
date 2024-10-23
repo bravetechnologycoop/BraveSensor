@@ -9,7 +9,9 @@
 using namespace std;
 #include <vector>
 #include <dataSource.h>
+#include <dataSource.h>
 #include <i2cInterface.h>
+#include <MLX90640_API.h>
 #include <MLX90640_API.h>
 
 #define T_CAMERA_NAME "Thermal Camera"
@@ -29,6 +31,14 @@ class thermalCamera: public dataSource {
         int i2cAddress;
         std::vector<std::pair<std::string, std::string>> dbParams;
         i2cInterface * i2cBus;
+        uint16_t eeMLX90640[832];
+        paramsMLX90640 mlx90640;
+        float emissivity = 1;
+        uint16_t frame[834];
+        float mlx90640To[768];
+        float eTa;
+
+        int getTempData();
         uint16_t eeMLX90640[832];
         paramsMLX90640 mlx90640;
         float emissivity = 1;
