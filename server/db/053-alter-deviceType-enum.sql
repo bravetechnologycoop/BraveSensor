@@ -38,3 +38,4 @@ BEGIN
         VALUES (migrationId);
     END IF;
 END $migration$;
+
