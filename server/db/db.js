@@ -372,9 +372,9 @@ async function getDataForExport(pgClient) {
         LEFT JOIN devices d ON s.device_id = d.id
         LEFT JOIN clients c on d.client_id = c.id
         LEFT JOIN clients_extension x on x.client_id = c.id
-        WHERE d.device_type = $1
+        WHERE device_type IN ($1, $2)
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL],
+      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
