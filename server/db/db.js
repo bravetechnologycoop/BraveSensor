@@ -913,10 +913,10 @@ async function getLocationsFromClientId(clientId, pgClient) {
       SELECT *
       FROM devices
       WHERE client_id = $1
-      AND device_type = $2
+      AND device_type IN ($2, $3)
       ORDER BY display_name
       `,
-      [clientId, DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL],
+      [clientId, DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
