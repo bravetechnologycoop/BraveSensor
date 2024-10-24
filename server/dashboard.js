@@ -548,7 +548,7 @@ async function submitEditClient(req, res) {
   }
 }
 
-const validateNewLocation = Validator.body(['locationid', 'displayName', 'serialNumber', 'phoneNumber', 'clientId']).trim().notEmpty()
+const validateNewLocation = Validator.body(['locationid', 'displayName', 'deviceType', 'serialNumber', 'phoneNumber', 'clientId']).trim().notEmpty()
 
 async function submitNewLocation(req, res) {
   try {
@@ -584,6 +584,7 @@ async function submitNewLocation(req, res) {
         data.serialNumber,
         data.phoneNumber,
         data.clientId,
+        data.deviceType,
       )
 
       res.redirect(`/locations/${newLocation.id}`)

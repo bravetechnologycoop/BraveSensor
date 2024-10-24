@@ -35,6 +35,15 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="deviceType" class="col-sm-3 col-form-label">Device Type:</label>
+                    <div class="col-sm-5">
+                        <select class="form-control" name="deviceType" required>
+                            <option value="DEVICE_SENSOR_SINGLESTALL">Single-Stall Sensor</option>
+                            <option value="DEVICE_SENSOR_MULTISTALL">Multi-Stall Sensor</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="clientId" class="col-sm-3 col-form-label">Client:</label>
                     <div class="col-sm-5">
                         <select class="form-control" name="clientId" required>
