@@ -49,18 +49,29 @@ int bbi2cInterface::closeBus(){
     return OK;
 }
 
-int bbi2cInterface::readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data){
-    bDebug(INFO, "bbi2c readBytes");
+int bbi2cInterface::read(uint8_t iAddr, uint8_t *pData, int iLen){
+    bDebug(INFO, "bbi2c read");
     int err = OK;
 
+    err = I2CRead(&(this->bbI2C), iAddr, pData, iLen);
 
     return err;
 }
 
-int bbi2cInterface::writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data){
-    bDebug(INFO, "bbi2cInterface writeBytes");
+int bbi2cInterface::readRegister(uint8_t iAddr, uint8_t u8Register, uint8_t *pData, int iLen){
+    bDebug(INFO, "bbi2c readRegister");
     int err = OK;
 
+    err = I2CReadRegister(&(this->bbI2C), iAddr, u8Register, pData, iLen);
+
+    return err;
+}
+
+int bbi2cInterface::write(uint8_t iAddr, uint8_t *pData, int iLen){
+    bDebug(INFO, "bbi2c write");
+    int err = OK;
+
+    err = I2CWrite(&(this->bbI2C), iAddr, pData, iLen);
 
     return err;
 }

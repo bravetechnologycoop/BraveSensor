@@ -20,8 +20,9 @@ class bbi2cInterface{
         int openBus();
         int closeBus();
 
-        int readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data);
-        int writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data);
+        int read(uint8_t iAddr, uint8_t *pData, int iLen);
+        int readRegister(uint8_t iAddr, uint8_t u8Register, uint8_t *pData, int iLen);
+        int write(uint8_t iAddr, uint8_t *pData, int iLen);
 
     private:
         BBI2C bbI2C;

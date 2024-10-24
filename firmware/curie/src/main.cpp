@@ -16,6 +16,7 @@
 #include <gpioInterface.h>
 #include <thermalCamera.h>
 #include <passiveIR.h>
+#include <usonicRange.h>
 #include <postgresInterface.h>
 
 using namespace std;
@@ -44,6 +45,8 @@ int main()
         vSources.push_back(&sourceThermalCamera);
 		passiveIR sourcePIR(gpioPIR);
 		vSources.push_back(&sourcePIR);
+		usonicRange sourceUSonic(slowI2C, 0xe0);
+		vSources.push_back(&sourceUSonic);
 
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
@@ -72,6 +75,9 @@ int main()
 		delete pInterface;
 		vSources.clear();
 
+		delete gpioPIR;
+		slowI2C->closeBus();
+		delete slowI2C;
 		fastI2C->closeBus();
 		delete fastI2C;
 
