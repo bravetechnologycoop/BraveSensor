@@ -83,7 +83,7 @@ int thermalCamera::getTableDef(string * sqlBuf){
 }
 //32 columns 24 rows
 int thermalCamera::setTableParams(){
-    bDebug(TRACE, "Set table params");
+    bDebug(TRACE, "thermalCamera Set table params");
 
     int err = OK;
 
@@ -106,7 +106,7 @@ int thermalCamera::setTableParams(){
 }
 
 int thermalCamera::getTableParams(std::vector<std::pair<std::string, std::string>> * tableData){
-    bDebug(TRACE, "Get table params");
+    bDebug(TRACE, "thermalCamera Get table params");
     int err = BAD_SETTINGS;
     if(!dbParams.empty())
     {
@@ -117,7 +117,7 @@ int thermalCamera::getTableParams(std::vector<std::pair<std::string, std::string
 }
 
 int thermalCamera::getTempData(){
-    bDebug(TRACE, "Get Temperature Data");
+    bDebug(TRACE, "thermalCamera Get Temperature Data");
     int err = OK;
 
     MLX90640_GetFrameData(this->i2cAddress, this->frame);

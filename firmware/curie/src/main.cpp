@@ -10,11 +10,6 @@
 #include <vector>
 #include <curie.h>
 #include <braveDebug.h>
-#include <i2cInterface.h>
-#include <gpioInterface.h>
-#include <thermalCamera.h>
-#include <passiveIR.h>
-#include <postgresInterface.h>
 
 using namespace std;
 
@@ -25,6 +20,7 @@ int main()
 	std::vector<dataSource*> vSources;
     bool loop = true;
     int err = OK;
+	int tempcnt = 1;
     try{
         //set up the busses
         i2cInterface * fastI2C = new i2cInterface();
@@ -32,6 +28,13 @@ int main()
         fastI2C->openBus();
 
 		gpioInterface * gpioPIR = new gpioInterface(); 
+
+		serialib * usbSer = new serialib();
+		multiMotionSensor * sourceMM;
+		if (1 == usbSer->openDevice(DLP_SER, DLP_BAUD)){  //8N1
+			sourceMM = new multiMotionSensor(usbSer);
+			vSources.push_back(sourceMM);
+		}
 
         //set up all the sensors
         thermalCamera sourceThermalCamera(fastI2C, 0x33);
@@ -44,14 +47,11 @@ int main()
 		pInterface->assignDataSources(vSources);
 
 		pInterface->openDB();
-		//pInterface->writeTables();
-		//pInterface->writeSQL(BRAVESQL);
-		//pInterface->writeSQL("SELECT * FROM fakeTable");
-		//err = pInterface->assignDataSources(vSources);
 
 		//main execution loop
+		usleep(LOOP_TIMER);
+
 		while (loop){
-			string sqlString = "";
 
 			err = pInterface->writeTables();
 			if (OK != err){
@@ -59,7 +59,11 @@ int main()
 				loop = false;
 			}
 
-			loop = false;
+			tempcnt--;
+			if (!tempcnt){
+				loop = false;
+			}
+			usleep(LOOP_TIMER);
 		};
 
 		//cleanup

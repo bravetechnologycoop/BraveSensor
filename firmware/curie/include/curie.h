@@ -7,10 +7,24 @@
 #ifndef _CURIE__H_
 #define _CURIE__H_
 
-#define FAST_I2C    "/dev/i2c-1"
-#define FAST_SPEED  1000
-#define SLOW_I2C    0
-#define SLOW_SPEED   100
+#include <unistd.h>
+#include <i2cInterface.h>
+#include <gpioInterface.h>
+#include <serialib.h>
+#include <thermalCamera.h>
+#include <passiveIR.h>
+#include <multiMotionSensor.h>
+#include <postgresInterface.h>
+
+#define FAST_I2C        "/dev/i2c-1"
+#define FAST_SPEED      1000
+#define SLOW_I2C        0
+#define SLOW_SPEED      100
+
+#define DLP_SER         "/dev/ttyACM0"
+#define DLP_BAUD        57600
+
+#define LOOP_TIMER      1000
 
 //error types
 #define OK              0x00

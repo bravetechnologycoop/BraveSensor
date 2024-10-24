@@ -70,7 +70,7 @@ int passiveIR::setTableParams(){
     return err;
 }
 
-int passiveIR::getTableParams(std::vector<std::pair<const char*, const char*>> * tableData){
+int passiveIR::getTableParams(std::vector<std::pair<std::string, std::string>> * tableData){
     bDebug(TRACE, "passiveIRGet table params");
     int err = BAD_SETTINGS;
     if(!dbParams.empty())
