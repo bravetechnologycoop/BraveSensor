@@ -971,6 +971,7 @@ async function updateLocation(
   isSendingAlerts,
   isSendingVitals,
   clientId,
+  deviceType,
   deviceId,
   pgClient,
 ) {
@@ -986,11 +987,12 @@ async function updateLocation(
         is_displayed = $4,
         is_sending_alerts = $5,
         is_sending_vitals = $6,
-        client_id = $7
-      WHERE id = $8
+        client_id = $7,
+        device_type = $8
+      WHERE id = $9
       RETURNING *
       `,
-      [displayName, serialNumber, phoneNumber, isDisplayed, isSendingAlerts, isSendingVitals, clientId, deviceId],
+      [displayName, serialNumber, phoneNumber, isDisplayed, isSendingAlerts, isSendingVitals, clientId, deviceType, deviceId],
       pool,
       pgClient,
     )

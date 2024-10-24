@@ -607,6 +607,7 @@ const validateEditLocation = Validator.body([
   'isSendingAlerts',
   'isSendingVitals',
   'clientId',
+  'deviceType',
 ])
   .trim()
   .notEmpty()
@@ -640,6 +641,7 @@ async function submitEditLocation(req, res) {
         data.isSendingAlerts === 'true',
         data.isSendingVitals === 'true',
         data.clientId,
+        data.deviceType,
         data.deviceId,
       )
 
