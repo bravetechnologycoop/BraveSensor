@@ -193,6 +193,7 @@ int postgresInterface::writeTables(){
         }
     } else {
         bDebug(ERROR, "dataVector is empty");
+        err = BAD_SETTINGS;
     }
 
     if (OK != err){
@@ -310,11 +311,7 @@ int postgresInterface::testTableIntegrity()
         }
         if(err == BAD_SETTINGS){
             bDebug(TRACE, "Table integrity failed, current table will be stored (if exists) and we will create a new one.");
-            int tableExists = rename_table(tableName);
-            if(tableExists == BAD_SETTINGS){ //this will happen if the table does not exist.
-                
-            }
-            
+            rename_table(tableName);
         }
 
     }
