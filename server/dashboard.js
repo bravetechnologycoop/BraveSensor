@@ -360,6 +360,7 @@ async function renderClientDetailsPage(req, res) {
           return {
             name: location.displayName,
             id: location.id,
+            deviceType: location.deviceType,
             sessionStart: location.sessionStart,
             isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
             isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
