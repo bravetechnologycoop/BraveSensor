@@ -1119,16 +1119,15 @@ async function updateClientExtension(clientId, country, countrySubdivision, buil
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, serialNumber, phoneNumber, clientId, pgClient) {
+async function createLocationFromBrowserForm(locationid, displayName, serialNumber, phoneNumber, clientId, deviceType, pgClient) {
   try {
     const results = await helpers.runQuery('createLocationFromBrowserForm',
       `
-      INSERT INTO devices(device_type, locationid, display_name, serial_number, phone_number, is_displayed, is_sending_alerts, is_sending_vitals, client_id)
+      INSERT INTO devices(locationid, display_name, serial_number, phone_number, is_displayed, is_sending_alerts, is_sending_vitals, client_id, device_type)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
       `,
       [
-        DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL,
         locationid,
         displayName,
         serialNumber,
@@ -1137,6 +1136,7 @@ async function createLocationFromBrowserForm(locationid, displayName, serialNumb
         false,
         false,
         clientId,
+        deviceType,
       ],
       pool,
       pgClient,
