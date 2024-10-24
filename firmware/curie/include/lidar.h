@@ -2,7 +2,7 @@
  *
  * Copyright (C) 2024 Brave Coop - All Rights Reserved
  *
- * File created by:  Denis Londry 2024
+ * File created by:  Corey Cheng 2024
  */
 #ifndef _LIDAR__H_
 #define _LIDAR__H_
@@ -29,7 +29,7 @@ class lidar: public dataSource {
 
     private:
         VL53L0X_Dev_t MyDevice;
-        VL53L0X_Dev_t *pMyDevice = &MyDevice;
+        VL53L0X_Dev_t *pMyDevice;
         int i2cAddress;
         i2cInterface * i2cBus;
         std::vector<std::pair<std::string, std::string>> dbParams;

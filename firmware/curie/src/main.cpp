@@ -46,7 +46,7 @@ int main()
 		passiveIR sourcePIR(gpioPIR);
 		vSources.push_back(&sourcePIR);
 
-		lidar sourceLidar(fastI2C, 0x52);
+		lidar sourceLidar(fastI2C, 0x29); //currently second argument unused
 		vSources.push_back(&sourceLidar);
 
 

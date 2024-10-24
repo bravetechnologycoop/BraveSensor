@@ -13,8 +13,12 @@
 
 lidar::lidar(i2cInterface * i2cBus, int i2cAddress){
     bDebug(TRACE, "Lidar created");
-    this->sourceName = T_LIDAR_NAME;
+    VL53L0X_Dev_t MyDevice; 
+    this->MyDevice = VL53L0X_Dev_t();
+    this->pMyDevice = &MyDevice;
 
+
+    this->sourceName = T_LIDAR_NAME;
     this->i2cBus = i2cBus;
     if (NULL == i2cBus){
         bDebug(ERROR, "No i2c Bus assigned");
@@ -32,16 +36,17 @@ lidar::~lidar(){
 int lidar::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "Lidar getData");
     int err = OK;
-
+    VL53L0X_SetDeviceMode(pMyDevice, VL53L0X_DEVICEMODE_SINGLE_RANGING);
     //check incoming pointers
     *sqlTable = T_LIDAR_SQL_TABLE;
     VL53L0X_RangingMeasurementData_t RangingMeasurementData;
-    VL53L0X_PerformSingleRangingMeasurement(&MyDevice, &RangingMeasurementData);
+    VL53L0X_Error Status;
 
+    Status = VL53L0X_PerformSingleRangingMeasurement(pMyDevice, &RangingMeasurementData);
+    bDebug(TRACE, std::to_string(Status));
     uint16_t rangestatus = RangingMeasurementData.RangeMilliMeter;
-    char buf[VL53L0X_MAX_STRING_LENGTH];
-    VL53L0X_GetRangeStatusString(rangestatus, buf);
-
+    uint32_t rangeTime = RangingMeasurementData.TimeStamp;
+    bDebug(TRACE, std::to_string(rangeTime));// To be removed, just for debugging
     bDebug(TRACE, std::to_string(rangestatus));
     vData->push_back(std::to_string(rangestatus));
     
@@ -64,7 +69,7 @@ int lidar::getTableDef(string * sqlBuf){
 
     return err;
 }
-//32 columns 24 rows
+
 int lidar::setTableParams(){
     bDebug(TRACE, "Set table params");
     int err = OK;
@@ -94,10 +99,10 @@ int lidar::initDevice()
 {
     int err = OK;
     bDebug(TRACE, "init");
-    char devicePath[] = "/dev/i2c-1";
-    this->pMyDevice->fd = VL53L0X_i2c_init(devicePath, 0x29);
+    char devicePath[] = "/dev/i2c-1"; 
+    pMyDevice->fd = VL53L0X_i2c_init(devicePath, 0x29);// TODO, dont hard code path
     bDebug(TRACE, "1");
-    VL53L0X_DataInit(&this->MyDevice);
+    VL53L0X_DataInit(&MyDevice);
     bDebug(TRACE, "2");
     return err;
 }
