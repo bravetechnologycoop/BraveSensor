@@ -12,9 +12,9 @@
 #include <map>
 using namespace std;
 
-debugLevel g_dbgLevel = TRACE;
+debugLevel g_dbgLevel = INFO;
 
-map<debugLevel, string> debugLevelToString = { {TRACE, "T: "}, {WARN, "W: "}, {ERROR, "E: "}};
+map<debugLevel, string> debugLevelToString = { {TRACE, "T: "}, {INFO, "I: "}, {WARN, "W: "}, {ERROR, "E: "}};
 
 string enumToString(debugLevel level){
 	return debugLevelToString[level];
@@ -25,7 +25,7 @@ string enumToString(debugLevel level){
 ******************************************/
 void bDebug(debugLevel level, string output){
 
-	if (g_dbgLevel >= level){
+	if (g_dbgLevel <= level){
 		cout << enumToString(level) << output << endl;
 	}
 }

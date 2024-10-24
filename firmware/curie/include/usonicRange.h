@@ -1,36 +1,35 @@
-/* multiMotionSensor.h - Class the retrieves and process multimotion sensor data
+/* usonicRange.h - Class the retrieves and process passive IR range device data
  *
  * Copyright (C) 2024 Brave Coop - All Rights Reserved
  *
  * File created by:  Denis Londry 2024
  */
-#ifndef _MULTIMOTIONSENSOR__H_
-#define _MULTIMOTIONSENSOR__H_
+#ifndef _USONICRANGE__H_
+#define _USONICRANGE__H_
 using namespace std;
 #include <vector>
 #include <dataSource.h>
-#include <serialib.h>
-#include <curie.h>
+#include <bbi2cInterface.h>
 
-#define T_MULTIMOTION_NAME "Multimotion sensor"
-#define T_MULTIMOTION_SQL_TABLE "multimotionsensor"
+#define T_USONIC_NAME "Ultrasonic Range Sensor"
+#define T_USONIC_SQL_TABLE "usonicrange"
 
 
-class multiMotionSensor: public dataSource {
+class usonicRange: public dataSource {
     public:
-        multiMotionSensor(serialib * serialPort);
-        ~multiMotionSensor();
+        usonicRange(bbi2cInterface *bbi2c, int i2cAddress);
+        ~usonicRange();
 
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);
         int setTableParams();
         int getTableParams(std::vector<std::pair<std::string, std::string>> * tableData);
     private:
+        bbi2cInterface * bbi2c;
         std::vector<std::pair<std::string, std::string>> dbParams;
+        int i2cAddress;
 
-        serialib * serialPort;
 };
-        
 
 
-#endif //_MULTIMOTIONSENSOR__H_
+#endif //_USONICRANGE__H_

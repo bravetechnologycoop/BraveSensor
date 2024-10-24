@@ -9,23 +9,36 @@
 #include <iostream>
 #include <vector>
 #include <curie.h>
+#include <unistd.h>
 #include <braveDebug.h>
+#include <i2cInterface.h>
+#include <bbi2cInterface.h>
+#include <gpioInterface.h>
+#include <serialib.h>
+#include <thermalCamera.h>
+#include <passiveIR.h>
+#include <usonicRange.h>
+#include <multiMotionSensor.h>
+#include <postgresInterface.h>
 
 using namespace std;
 
 int main()
 {
-	bDebug(TRACE, "Starting Data Gathering");
+	bDebug(INFO, "Starting Data Gathering");
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
+	int tmpcount = 2;
     int err = OK;
-	int tempcnt = 1;
     try{
         //set up the busses
         i2cInterface * fastI2C = new i2cInterface();
         fastI2C->setParams(FAST_I2C);
         fastI2C->openBus();
+
+		bbi2cInterface * slowI2C = new bbi2cInterface();
+		slowI2C->setParams(SLOW_I2C_SDA, SLOW_I2C_SCL, SLOW_SPEED);
 
 		gpioInterface * gpioPIR = new gpioInterface(); 
 
@@ -41,6 +54,8 @@ int main()
         vSources.push_back(&sourceThermalCamera);
 		passiveIR sourcePIR(gpioPIR);
 		vSources.push_back(&sourcePIR);
+		usonicRange sourceUSonic(slowI2C, 0xe0);
+		vSources.push_back(&sourceUSonic);
 
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
@@ -59,8 +74,8 @@ int main()
 				loop = false;
 			}
 
-			tempcnt--;
-			if (!tempcnt){
+			tmpcount--;
+			if (!tmpcount){
 				loop = false;
 			}
 			usleep(LOOP_TIMER);
@@ -70,10 +85,13 @@ int main()
 		delete pInterface;
 		vSources.clear();
 
+		delete gpioPIR;
+		slowI2C->closeBus();
+		delete slowI2C;
 		fastI2C->closeBus();
 		delete fastI2C;
 
-		bDebug(TRACE, "Completed Data Gathering");
+		bDebug(INFO, "Completed Data Gathering");
 	}
 	catch (...){
 		bDebug(ERROR, "Caught at last possible place");

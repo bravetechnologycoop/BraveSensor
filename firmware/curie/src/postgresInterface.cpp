@@ -57,10 +57,8 @@ postgresInterface::~postgresInterface(){
     catch(...){}
     bDebug(TRACE, "Postgres Interface destroyed");
 
-    //!!! close db?
-
     // release dataSources
-    //this->dataVector.clear();
+    this->dataVector.clear();
 }
 
 int postgresInterface::openDB(){
@@ -70,12 +68,7 @@ int postgresInterface::openDB(){
     bDebug(TRACE, "Postgres Opening DB");
     int dbTest = dbConnect();
     bDebug(TRACE, "Checking table integrity..");
-    int integrity = testTableIntegrity();
-    if(integrity == BAD_SETTINGS){
-        bDebug(TRACE, "Table integrity failed, trying to create default tables...");
-        createDefaultTable();
-    }
-    
+    testTableIntegrity();
 
 	bDebug(TRACE, "About to test connection");
     if (dbTest == OK) {
@@ -93,7 +86,7 @@ int postgresInterface::openDB(){
 // Will probably end up being private, as a helper function, keeping public for development.
 int postgresInterface::writeSQL(string sql) {
     int err = OK;
-    bDebug(TRACE, "Start writesql query: \n" + sql);
+    bDebug(TRACE, "Start writesql query: \n" + sql.substr(0, 100));
 	
     if (connStringHost.empty() || conn == NULL || !conn->is_open()){
         bDebug(TRACE, "Database connection is not open, check connection parameters");
@@ -117,7 +110,7 @@ int postgresInterface::writeSQL(string sql) {
                 for (const auto& field : row) {
                     rowData += field.c_str() + std::string(" ");
                 }
-                bDebug(TRACE, rowData);
+                bDebug(TRACE, rowData.substr(0, 100));
             }
         }
         catch (...){
@@ -191,16 +184,14 @@ int postgresInterface::writeTables(){
         bDebug(TRACE, "About to run through the data vector");
 
         for (dataSource * dS : this->dataVector){
-            bDebug(TRACE, "data vector is not empty, about to get data");
             string sqlTable = "";
             std::vector<string>  vData;
             dS->getData(&sqlTable, &vData);
-            bDebug(TRACE, "got data, about to write");
-            bDebug(TRACE, "table: " + sqlTable);
+            bDebug(TRACE, "Data found for table: " + sqlTable + " about to write..");
             writeVectorSQL(sqlTable, vData);
         }
     } else {
-        bDebug(TRACE, "dataVector is empty");
+        bDebug(ERROR, "dataVector is empty");
     }
 
     if (OK != err){
@@ -221,7 +212,6 @@ int postgresInterface::writeVectorSQL(string sqlTable, std::vector<string> vData
     }
     query.pop_back();
     query += ");";
-    bDebug(TRACE, "data vector query:" + query);
     writeSQL(query);
     return err;
 }
@@ -235,8 +225,7 @@ int postgresInterface::createDefaultTable(){
             dS->getTableDef(&tableName);
             std::vector<std::pair<std::string, std::string>> tableData;
             dS->getTableParams(&tableData);
-            bDebug(TRACE, "got data, about to write");
-            bDebug(TRACE, "table: " + tableName);
+            bDebug(TRACE, "Creating default table for: " + tableName);
             string query = "CREATE TABLE " + tableName + " (";
             for(const auto& p : tableData){
                 query += p.first + " " + p.second + ",";
@@ -269,7 +258,7 @@ int postgresInterface::dbConnect(){
         }
     catch (const pqxx::broken_connection &){ 
         err = BAD_SETTINGS;
-		bDebug(ERROR, "did not connect");
+		bDebug(ERROR, "Could not connect to DB, please check settings.");
 	}
     return err;
 }
@@ -279,10 +268,9 @@ int postgresInterface::testTableIntegrity()
     int err = OK;
     for (dataSource * dS : this->dataVector){
         pqxx::work txn(*conn);
-
+        string tableName;
         pqxx::result result;
         try {
-            string tableName;
             dS->getTableDef(&tableName);
             string sql = "SELECT column_name FROM information_schema.columns WHERE table_name = '" + tableName + "';";
             result = txn.exec(sql);
@@ -305,25 +293,59 @@ int postgresInterface::testTableIntegrity()
                 string s = std::string(p.first);
                 bool flag = false;
                 for (const auto& str : schemaColumns) {
-                    //bDebug(TRACE, "COMPARING " + str + " TO " + s);
                     if(str == s){
                         flag = true;
                     }
                 }
                 if(flag == false) {
                     err = BAD_SETTINGS;
-                    bDebug(TRACE, "Table integrity did not pass, do stuff.");
                     break;
                 }
-                else {
-                    //bDebug(TRACE, "Integrity passed on this column: " + s);
-                }
             }
+
         }
         catch (...){
-            bDebug(TRACE, "Table Integrity failed. Please check table columns.");
             err = BAD_SETTINGS;
         }
+        if(err == BAD_SETTINGS){
+            bDebug(TRACE, "Table integrity failed, current table will be stored (if exists) and we will create a new one.");
+            int tableExists = rename_table(tableName);
+            if(tableExists == BAD_SETTINGS){ //this will happen if the table does not exist.
+                
+            }
+            
+        }
+
     }
+    return err;
+}
+
+int postgresInterface::rename_table(string tableName) {
+    int err = OK;
+
+    pqxx::work txn(*conn);
+    std::string newTableName = tableName;
+    int suffix = 1;
+    try {
+        while (true) {
+            std::string query = "SELECT to_regclass('" + newTableName + "')";
+            pqxx::result result = txn.exec(query);
+            if (result[0][0].is_null()) {
+                break; //Exit loop, table does not exist, so we will use this name.
+            }
+            newTableName = tableName + std::to_string(suffix++);
+        }
+        // Now we can rename the original table to the new table name
+        bDebug(TRACE, "Renaming " + tableName + " to " + newTableName);
+        std::string rename_query = "ALTER TABLE " + tableName + " RENAME TO " + newTableName;
+        txn.exec(rename_query);
+        txn.commit();
+    }
+    catch(...){
+        bDebug(TRACE, "Could not find table: " + tableName + " we will create the original");
+        err = BAD_SETTINGS;
+    }
+    //The table at this point will be either moved, or didn't exist, create defaults.
+    createDefaultTable();
     return err;
 }

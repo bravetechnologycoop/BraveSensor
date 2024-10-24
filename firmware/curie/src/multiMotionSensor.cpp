@@ -7,6 +7,7 @@
 #include <braveDebug.h>
 #include <dataSource.h>
 #include <multiMotionSensor.h>
+#include <serialib.h>
 #include <curie.h>
 
 multiMotionSensor::multiMotionSensor(serialib * serialPort){
