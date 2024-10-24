@@ -12,6 +12,7 @@ using namespace std;
 
 enum  debugLevel {
 TRACE,
+INFO,
 WARN,
 ERROR,
 NONE};

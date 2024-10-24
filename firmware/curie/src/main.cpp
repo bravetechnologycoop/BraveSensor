@@ -9,8 +9,10 @@
 #include <iostream>
 #include <vector>
 #include <curie.h>
+#include <unistd.h>
 #include <braveDebug.h>
 #include <i2cInterface.h>
+#include <bbi2cInterface.h>
 #include <gpioInterface.h>
 #include <thermalCamera.h>
 #include <passiveIR.h>
@@ -20,7 +22,7 @@ using namespace std;
 
 int main()
 {
-	bDebug(TRACE, "Starting Data Gathering");
+	bDebug(INFO, "Starting Data Gathering");
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
@@ -31,6 +33,9 @@ int main()
         i2cInterface * fastI2C = new i2cInterface();
         fastI2C->setParams(FAST_I2C);
         fastI2C->openBus();
+
+		bbi2cInterface * slowI2C = new bbi2cInterface();
+		slowI2C->setParams(SLOW_I2C_SDA, SLOW_I2C_SCL, SLOW_SPEED);
 
 		gpioInterface * gpioPIR = new gpioInterface(); 
 
@@ -60,6 +65,7 @@ int main()
 				loop = false;
 			}
 			tmpcount--;
+			usleep(1000);
 		};
 
 		//cleanup
@@ -69,7 +75,7 @@ int main()
 		fastI2C->closeBus();
 		delete fastI2C;
 
-		bDebug(TRACE, "Completed Data Gathering");
+		bDebug(INFO, "Completed Data Gathering");
 	}
 	catch (...){
 		bDebug(ERROR, "Caught at last possible place");
