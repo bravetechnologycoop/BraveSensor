@@ -47,12 +47,14 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.displayName = 'locationName'
       this.serialNumber = 'radar_coreID'
       this.phoneNumber = '+15005550006'
+      this.deviceType = 'DEVICE_SENSOR_SINGLESTALL'
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
         serialNumber: this.serialNumber,
         phoneNumber: this.phoneNumber,
         clientId: this.client.id,
+        deviceType: this.deviceType,
       }
 
       this.response = await this.agent.post('/locations').send(goodRequest)
@@ -71,12 +73,63 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         serialNumber: newLocation.serialNumber,
         phoneNumber: newLocation.phoneNumber,
         clientId: newLocation.client.id,
+        deviceType: newLocation.deviceType,
       }).to.eql({
         locationid: this.locationid,
         displayName: this.displayName,
         serialNumber: this.serialNumber,
         phoneNumber: this.phoneNumber,
         clientId: this.client.id,
+        deviceType: this.deviceType,
+      })
+    })
+  })
+
+  describe('for a multistall location with all valid non-empty fields', () => {
+    beforeEach(async () => {
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('PASSWORD'),
+      })
+
+      this.locationid = 'unusedID'
+      this.displayName = 'locationName'
+      this.serialNumber = 'radar_coreID'
+      this.phoneNumber = '+15005550006'
+      this.deviceType = 'DEVICE_SENSOR_MULTISTALL'
+      const goodRequest = {
+        locationid: this.locationid,
+        displayName: this.displayName,
+        serialNumber: this.serialNumber,
+        phoneNumber: this.phoneNumber,
+        clientId: this.client.id,
+        deviceType: this.deviceType,
+      }
+
+      this.response = await this.agent.post('/locations').send(goodRequest)
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should create a mustistall location in the database with the given values', async () => {
+      const newLocation = await db.getLocationWithLocationid(this.locationid)
+
+      expect({
+        locationid: newLocation.locationid,
+        displayName: newLocation.displayName,
+        serialNumber: newLocation.serialNumber,
+        phoneNumber: newLocation.phoneNumber,
+        clientId: newLocation.client.id,
+        deviceType: newLocation.deviceType,
+      }).to.eql({
+        locationid: this.locationid,
+        displayName: this.displayName,
+        serialNumber: this.serialNumber,
+        phoneNumber: this.phoneNumber,
+        clientId: this.client.id,
+        deviceType: this.deviceType,
       })
     })
   })
@@ -92,12 +145,14 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.displayName = '  locationName  '
       this.serialNumber = '    radar_coreID    '
       this.phoneNumber = '   +15005550006    '
+      this.deviceType = '  DEVICE_SENSOR_SINGLESTALL  '
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
         serialNumber: this.serialNumber,
         phoneNumber: this.phoneNumber,
         clientId: `  ${this.client.id}   `,
+        deviceType: this.deviceType,
       }
 
       this.response = await this.agent.post('/locations').send(goodRequest)
@@ -116,12 +171,14 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         serialNumber: newLocation.serialNumber,
         phoneNumber: newLocation.phoneNumber,
         clientId: newLocation.client.id,
+        deviceType: newLocation.deviceType,
       }).to.eql({
         locationid: this.locationid.trim(),
         displayName: this.displayName.trim(),
         serialNumber: this.serialNumber.trim(),
         phoneNumber: this.phoneNumber.trim(),
         clientId: this.client.id.trim(),
+        deviceType: this.deviceType.trim(),
       })
     })
   })
@@ -142,6 +199,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         serialNumber: 'radar_coreID',
         phoneNumber: '+15005550006',
         clientId: this.clientId,
+        deviceType: 'DEVICE_SENSOR_SINGLESTALL',
       }
 
       this.response = await this.agent.post('/locations').send(goodRequest)
@@ -170,6 +228,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         serialNumber: 'radar_coreID',
         phoneNumber: '+15005550006',
         clientId: '91ddc8f7-c2e7-490e-bfe9-3d2880a76108',
+        deviceType: 'DEVICE_SENSOR_SINGLESTALL',
       }
 
       this.response = await chai.request(server).post('/locations').send(goodRequest)
@@ -203,6 +262,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         serialNumber: '',
         phoneNumber: '',
         clientId: '',
+        deviceType: '',
       }
 
       this.response = await this.agent.post('/locations').send(badRequest)
@@ -218,7 +278,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),deviceType (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -245,7 +305,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),deviceType (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
       )
     })
   })
@@ -271,6 +331,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         serialNumber: 'radar_coreID',
         phoneNumber: '+15005550006',
         clientId: this.client.id,
+        deviceType: 'DEVICE_SENSOR_SINGLESTALL',
       }
 
       this.response = await this.agent.post('/locations').send(duplicateLocationRequest)
