@@ -1263,10 +1263,10 @@ async function getRecentSensorsVitals(pgClient) {
       SELECT d.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at, sv.is_tampered
       FROM devices d
       LEFT JOIN sensors_vitals_cache sv on d.locationid = sv.locationid
-      WHERE d.device_type = $1
+      WHERE d.device_type IN ($1, $2)
       ORDER BY sv.created_at
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL],
+      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -1291,9 +1291,10 @@ async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
       FROM devices d
       LEFT JOIN sensors_vitals_cache sv on sv.locationid = d.locationid
       WHERE d.client_id = $1
+      AND d.device_type IN ($2, $3)
       ORDER BY sv.created_at
       `,
-      [clientId],
+      [clientId, DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
