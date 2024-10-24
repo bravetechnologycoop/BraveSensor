@@ -278,7 +278,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),deviceType (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),clientId (Invalid value),deviceType (Invalid value)`,
       )
     })
   })
@@ -305,7 +305,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
 
     it('should log the error', () => {
       expect(helpers.log).to.have.been.calledWith(
-        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),deviceType (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),clientId (Invalid value)`,
+        `Bad request to /locations: locationid (Invalid value),displayName (Invalid value),serialNumber (Invalid value),phoneNumber (Invalid value),clientId (Invalid value),deviceType (Invalid value)`,
       )
     })
   })
