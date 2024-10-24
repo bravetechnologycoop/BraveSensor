@@ -12,7 +12,7 @@
 #include <map>
 using namespace std;
 
-debugLevel g_dbgLevel = INFO;
+debugLevel g_dbgLevel = TRACE;
 
 map<debugLevel, string> debugLevelToString = { {TRACE, "T: "}, {INFO, "I: "}, {WARN, "W: "}, {ERROR, "E: "}};
 

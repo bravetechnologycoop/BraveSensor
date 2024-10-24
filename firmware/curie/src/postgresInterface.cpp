@@ -167,9 +167,10 @@ int postgresInterface::testDataBaseIntegrity(){
         }
         else {
             bDebug(TRACE, "Target database available, continuing...");
+            err = OK;
         };
     
-    if (OK != err){
+    if (err != OK){
         bDebug(ERROR, "looks like the data vector is improper, please check");
     }
 

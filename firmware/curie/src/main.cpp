@@ -17,6 +17,7 @@
 #include <thermalCamera.h>
 #include <passiveIR.h>
 #include <postgresInterface.h>
+#include <lidar.h>
 
 using namespace std;
 
@@ -45,6 +46,14 @@ int main()
 		passiveIR sourcePIR(gpioPIR);
 		vSources.push_back(&sourcePIR);
 
+		lidar sourceLidar(fastI2C, 0x52);
+		vSources.push_back(&sourceLidar);
+
+
+
+
+
+
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
 		pInterface->assignDataSources(vSources);
@@ -65,7 +74,7 @@ int main()
 				loop = false;
 			}
 			tmpcount--;
-			usleep(1000);
+			//usleep(1000);
 		};
 
 		//cleanup
