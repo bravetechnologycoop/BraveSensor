@@ -41,22 +41,34 @@ int main()
 		slowI2C->setParams(SLOW_I2C_SDA, SLOW_I2C_SCL, SLOW_SPEED);
 
 		gpioInterface * gpioPIR = new gpioInterface(); 
-
 		serialib * usbSer = new serialib();
-		multiMotionSensor * sourceMM;
-		if (1 == usbSer->openDevice(DLP_SER, DLP_BAUD)){  //8N1
-			sourceMM = new multiMotionSensor(usbSer);
-			vSources.push_back(sourceMM);
-		}
 
+		
         //set up all the sensors
-        thermalCamera sourceThermalCamera(fastI2C, 0x33);
-        vSources.push_back(&sourceThermalCamera);
-		passiveIR sourcePIR(gpioPIR);
-		vSources.push_back(&sourcePIR);
-		usonicRange sourceUSonic(slowI2C, 0xe0);
-		vSources.push_back(&sourceUSonic);
+		#ifdef USB_SER
+			multiMotionSensor * sourceMM;
+			if (1 == usbSer->openDevice(DLP_SER, DLP_BAUD)){  //8N1
+				sourceMM = new multiMotionSensor(usbSer);
+				vSources.push_back(sourceMM);
+			}
+		#endif
 
+		#ifdef NATIVE_I2C
+			thermalCamera sourceThermalCamera(fastI2C, 0x33);
+			vSources.push_back(&sourceThermalCamera);
+		#endif
+
+		#ifdef GPIO_DEV
+			passiveIR sourcePIR(gpioPIR);
+			vSources.push_back(&sourcePIR);
+		#endif
+
+		#ifdef BB_I2C
+			usonicRange sourceUSonic(slowI2C, 0xe0);
+			vSources.push_back(&sourceUSonic);
+		#endif
+
+		bDebug(WARN, "Devices made about to create or access DB");
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
 		pInterface->assignDataSources(vSources);
@@ -67,7 +79,7 @@ int main()
 		usleep(LOOP_TIMER);
 
 		while (loop){
-
+			bDebug(WARN, "Main Loop");
 			err = pInterface->writeTables();
 			if (OK != err){
 				bDebug(ERROR, "Failed to writeTables Bailing");

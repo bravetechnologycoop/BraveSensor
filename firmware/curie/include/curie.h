@@ -15,6 +15,12 @@
 #define DLP_SER         "/dev/ttyACM0"
 #define DLP_BAUD        57600
 
+//device classes
+#define USB_SER
+//#define NATIVE_I2C
+#define BB_I2C
+//#define GPIO_DEV
+
 #define LOOP_TIMER      1000
 
 //error types

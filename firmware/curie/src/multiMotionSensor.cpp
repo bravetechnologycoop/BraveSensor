@@ -11,7 +11,7 @@
 #include <curie.h>
 
 multiMotionSensor::multiMotionSensor(serialib * serialPort){
-    bDebug(TRACE, "multiMotionSensor");
+    bDebug(INFO, "multiMotionSensor");
 
     if (NULL == serialPort){
         throw(BAD_PARAMS);
@@ -21,11 +21,11 @@ multiMotionSensor::multiMotionSensor(serialib * serialPort){
 }
 
 multiMotionSensor::~multiMotionSensor(){
-    bDebug(TRACE, "~multiMotionSensor");
+    bDebug(INFO, "~multiMotionSensor");
 }
 
 int multiMotionSensor::getData(string *sqlTable, std::vector<string> * vData){
-    bDebug(TRACE, "multiMotionSensor GetData");
+    bDebug(INFO, "multiMotionSensor GetData");
     int err = OK;
 
 
@@ -33,7 +33,7 @@ int multiMotionSensor::getData(string *sqlTable, std::vector<string> * vData){
 }
 
 int multiMotionSensor::getTableDef(string * sqlBuf){
-    bDebug(TRACE, "multiMotionSensor getTableDef");
+    bDebug(INFO, "multiMotionSensor getTableDef");
     int err = OK;
 
 
@@ -41,14 +41,14 @@ int multiMotionSensor::getTableDef(string * sqlBuf){
 }
 
 int multiMotionSensor::setTableParams(){
-    bDebug(TRACE, "multiMotionSensor setTableParams");
+    bDebug(INFO, "multiMotionSensor setTableParams");
     int err = OK;
 
 
     return err;
 }
 int multiMotionSensor::getTableParams(std::vector<std::pair<std::string, std::string>> * tableData){
-    bDebug(TRACE, "multiMotionSensor getTableParams");
+    bDebug(INFO, "multiMotionSensor getTableParams");
     int err = OK;
 
 

@@ -31,12 +31,6 @@ thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
     MLX90640_DumpEE(this->i2cAddress, this->eeMLX90640);
     MLX90640_ExtractParameters(this->eeMLX90640, &(this->mlx90640));
     MLX90640_I2CClass(this->i2cBus);
-
-     //initialize the camera
-    MLX90640_SetRefreshRate(this->i2cAddress, 0b001);  //slow speed
-    MLX90640_SetChessMode(this->i2cAddress);
-    MLX90640_DumpEE(this->i2cAddress, this->eeMLX90640);
-    MLX90640_ExtractParameters(this->eeMLX90640, &(this->mlx90640));
 }
 
 thermalCamera::~thermalCamera(){
