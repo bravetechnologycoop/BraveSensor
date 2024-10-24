@@ -1157,7 +1157,7 @@ async function createLocationFromBrowserForm(locationid, displayName, serialNumb
   }
 }
 
-// Adds a location table entry
+// Adds a singlestall location table entry
 async function createLocation(
   locationid,
   sentVitalsAlertAt,
@@ -1169,18 +1169,18 @@ async function createLocation(
   isSendingVitals,
   sentLowBatteryAlertAt,
   clientId,
+  deviceType,
   pgClient,
 ) {
   try {
     const results = await helpers.runQuery(
       'createLocation',
       `
-      INSERT INTO devices(device_type, locationid, sent_vitals_alert_at, phone_number, display_name, serial_number, is_displayed, is_sending_alerts, is_sending_vitals, sent_low_battery_alert_at, client_id)
+      INSERT INTO devices(locationid, sent_vitals_alert_at, phone_number, display_name, serial_number, is_displayed, is_sending_alerts, is_sending_vitals, sent_low_battery_alert_at, client_id, device_type)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
       `,
       [
-        DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL,
         locationid,
         sentVitalsAlertAt,
         phoneNumber,
@@ -1191,6 +1191,7 @@ async function createLocation(
         isSendingVitals,
         sentLowBatteryAlertAt,
         clientId,
+        deviceType,
       ],
       pool,
       pgClient,

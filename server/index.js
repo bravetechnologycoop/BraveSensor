@@ -90,6 +90,7 @@ app.post('/smokeTest/setup', async (request, response) => {
       true,
       '2021-03-09T19:37:28.176Z',
       client.id,
+      'DEVICE_SENSOR_SINGLESTALL'
     )
     response.status(200).send()
   } catch (error) {
