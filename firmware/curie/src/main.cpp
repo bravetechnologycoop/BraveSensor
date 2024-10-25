@@ -63,7 +63,7 @@ int main()
 		//main execution loop
 		while (loop){
 			string sqlString = "";
-
+	
 			err = pInterface->writeTables();
 			if (OK != err){
 				bDebug(ERROR, "Failed to writeTables Bailing");
@@ -74,7 +74,7 @@ int main()
 				loop = false;
 			}
 			tmpcount--;
-			//usleep(1000);
+			usleep(1000);
 		};
 
 		//cleanup

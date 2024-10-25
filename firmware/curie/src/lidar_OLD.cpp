@@ -8,15 +8,15 @@
 #include <dataSource.h>
 #include <lidar.h>
 #include <curie.h>
-#include "VL53L1X_api.h"
-#include "VL53L1X_calibration.h"
-#include "vl53l1_platform.h"
+#include "vl53l0x_api.h"
+#include "vl53l0x_platform.h"
 
 lidar::lidar(i2cInterface * i2cBus, int i2cAddress){
     bDebug(TRACE, "Lidar created");
-    this->Dev;
-    this->adapter_nr = 1;
-    
+    VL53L0X_Dev_t MyDevice; 
+    this->MyDevice = VL53L0X_Dev_t();
+    this->pMyDevice = &MyDevice;
+
 
     this->sourceName = T_LIDAR_NAME;
     this->i2cBus = i2cBus;
@@ -38,7 +38,6 @@ int lidar::getData(string * sqlTable, std::vector<string> * vData){
     int err = OK;
     //check incoming pointers
     *sqlTable = T_LIDAR_SQL_TABLE;
-    /*
     VL53L0X_RangingMeasurementData_t RangingMeasurementData;
     VL53L0X_Error Status;
 
@@ -48,7 +47,7 @@ int lidar::getData(string * sqlTable, std::vector<string> * vData){
     uint32_t rangeTime = RangingMeasurementData.TimeStamp;
     bDebug(TRACE, std::to_string(rangeTime));// To be removed, just for debugging
     bDebug(TRACE, std::to_string(rangeMillimeter));
-    vData->push_back(std::to_string(rangeMillimeter));*/
+    vData->push_back(std::to_string(rangeMillimeter));
     
     //in some sort of loop or process
     //vData->push_back("Moooooo");
@@ -99,8 +98,27 @@ int lidar::initDevice()
 {
     int err = OK;
     bDebug(TRACE, "init");
-
-    VL53L1X_UltraLite_Linux_I2C_Init(Dev, adapter_nr, )
-
+    char devicePath[] = "/dev/i2c-1"; 
+    MyDevice.fd = VL53L0X_i2c_init(devicePath, 0x29);// TODO, dont hard code path
+    err = VL53L0X_ResetDevice(&MyDevice);
+    if (OK == err){
+        bDebug(TRACE, "1");
+        //VL53L0X_WaitDeviceBooted(&MyDevice);
+        bDebug(TRACE, "2");
+        err = VL53L0X_DataInit(&MyDevice);
+        VL53L0X_DeviceError DeviceError;
+        err = VL53L0X_GetDeviceErrorStatus(&MyDevice, &DeviceError);
+        string outStr = "Lidar device error state= " + to_string(DeviceError);
+        bDebug(TRACE, outStr);
+    }
+    
+    if (OK != err){
+        char errStr[128];
+        VL53L0X_GetDeviceErrorString(err, errStr);
+        string outStr = "Lidar failure";
+        outStr.append(errStr);
+        bDebug (ERROR, errStr);
+    }
+    
     return err;
 }
