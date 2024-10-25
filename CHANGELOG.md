@@ -13,13 +13,16 @@ the code was deployed.
 
 ### Added
 
-- Added migration script to update device_type_enum to handle multistall and singlestall sensors seperately (CU-86duvwbq2).
+- Added migration script to update device_type_enum to handle multistall and singlestall sensors separately (CU-86duvwbq2).
+- Added dashboard functionality for submit new location and edit location to handle different device_types using dropdown (CU-86duvwbq2).
+- Added new integration tests for inserting a multi-stall sensor and editing single-stall to multi-stall (CU-86duvwbq2).
 
 ### Changed
 
 - Updated brave-alert-lib to v15.0.3 for deviceType enum change (CU-86duvwbq2).
-- Updated db functions to use 'DEVICE_SENSOR_SINGLESTALL' instead of 'DEVICE_SENSOR' (CU-86duvwbq2).
 - Updated device_type_enum to have 'DEVICE_SENSOR_SINGLESTALL' and 'DEVICE_SENSOR_MULTISTALL' instead of 'DEVICE_SENSOR' (CU-86duvwbq2).
+- Updated test cases for newLocation and updateLocation to use new device types (CU-86duvwbq2).
+- Updated the /pa/create-sensor-location route due to createLocationFromBrowserForm() db function change (CU-86duvwbq2).
 
 ## [10.15.0] - 2024-10-17
 
