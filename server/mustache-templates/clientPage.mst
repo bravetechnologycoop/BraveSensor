@@ -30,7 +30,7 @@
                         <thead>
                             <tr class="table-header" scope="row">
                                 <th scope="col"><h5>Location</h5></th>
-                                <th scope="col"><h5>Location Type</h5></th>
+                                <th scope="col"><h5>Device Type</h5></th>
                                 <th scope="col"><h5>Last Session Started</h5></th>
                                 <th scope="col">Sends Alerts?</th>
                                 <th scope="col">Sends Vitals?</th>

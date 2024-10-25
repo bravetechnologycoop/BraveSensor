@@ -45,6 +45,15 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="deviceType" class="col-sm-3 col-form-label">Device Type:</label>
+                    <div class="col-sm-5">
+                        <select class="form-control" name="deviceType" required>
+                            <option value="DEVICE_SENSOR_SINGLESTALL">Single-Stall Sensor</option>
+                            <option value="DEVICE_SENSOR_MULTISTALL">Multi-Stall Sensor</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="radarCoreID" class="col-sm-3 col-form-label">Radar Particle Core ID:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="serialNumber" placeholder="Radar Particle Core ID" required>
@@ -55,15 +64,6 @@
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="phoneNumber" value="+1" required pattern="[+][1]\d{10}">
                         <small id="phoneNumberHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="deviceType" class="col-sm-3 col-form-label">Device Type:</label>
-                    <div class="col-sm-5">
-                        <select class="form-control" name="deviceType" required>
-                            <option value="DEVICE_SENSOR_SINGLESTALL">Single-Stall Sensor</option>
-                            <option value="DEVICE_SENSOR_MULTISTALL">Multi-Stall Sensor</option>
-                        </select>
                     </div>
                 </div>
                 <br>

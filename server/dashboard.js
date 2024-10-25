@@ -285,6 +285,8 @@ async function renderLocationEditPage(req, res) {
             selected: client.id === location.client.id,
           }
         }),
+      isSingleStallSelected: location.deviceType === "DEVICE_SENSOR_SINGLESTALL",
+      isMultiStallSelected: location.deviceType === "DEVICE_SENSOR_MULTISTALL",
     }
 
     res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))

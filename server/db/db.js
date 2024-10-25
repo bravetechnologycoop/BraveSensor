@@ -326,7 +326,7 @@ async function getLocations(pgClient) {
       SELECT d.*
       FROM devices AS d
       LEFT JOIN clients AS c ON d.client_id = c.id
-      WHERE device_type IN ($1, $2)
+      WHERE d.device_type IN ($1, $2)
       ORDER BY c.display_name, d.display_name
       `,
       [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
@@ -372,7 +372,7 @@ async function getDataForExport(pgClient) {
         LEFT JOIN devices d ON s.device_id = d.id
         LEFT JOIN clients c on d.client_id = c.id
         LEFT JOIN clients_extension x on x.client_id = c.id
-        WHERE device_type IN ($1, $2)
+        WHERE d.device_type IN ($1, $2)
       `,
       [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
       pool,
