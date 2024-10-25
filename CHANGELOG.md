@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Added search bar for clients and locations in the dashboard (CU-86dup4jg7).
+
 ## [10.15.0] - 2024-10-17
 
 ### Added
