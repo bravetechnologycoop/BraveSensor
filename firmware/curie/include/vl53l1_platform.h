@@ -80,8 +80,7 @@ int8_t VL53L1X_UltraLite_Linux_Interrupt_Init(void);
 
 int8_t VL53L1X_UltraLite_WaitForInterrupt(int IoctlWfiNumber);
 
-int8_t VL53L1X_UltraLite_Linux_I2C_Init(uint16_t dev,
-		int i2c_adapter_nr, uint8_t i2c_Addr);
+int8_t VL53L1X_UltraLite_Linux_I2C_Init(i2cInterface * i2c, uint16_t i2caddress);
 
 #ifdef __cplusplus
 }

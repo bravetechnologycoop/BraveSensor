@@ -14,7 +14,7 @@
 
 lidar::lidar(i2cInterface * i2cBus, int i2cAddress){
     bDebug(TRACE, "Lidar created");
-    this->Dev;
+    
     this->adapter_nr = 1;
     
 
@@ -100,7 +100,7 @@ int lidar::initDevice()
     int err = OK;
     bDebug(TRACE, "init");
 
-    VL53L1X_UltraLite_Linux_I2C_Init(Dev, adapter_nr, )
+    VL53L1X_UltraLite_Linux_I2C_Init(this->i2cBus, this->i2cAddress);
 
     return err;
 }

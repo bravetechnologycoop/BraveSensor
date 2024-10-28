@@ -32,7 +32,7 @@ static uint8_t buffer[VL53L1_MAX_I2C_XFER_SIZE + 2];/* GLOBAL I2C comm buff */
 
 static int i2c_hdl = -1;
 static int st_tof_dev = -1;
-i2cInterface * g_i2c;
+i2cInterface * g_i2cVL;
 uint16_t g_sAddress;
 
 static int8_t Linux_I2CRead(uint8_t *buff, uint8_t len)
@@ -65,18 +65,17 @@ int8_t VL53L1_WriteMulti(uint16_t dev, uint16_t RegisterAddress,
 	int8_t Status = 0;
 
 	//check that pdata is good
-	if(NULL != pdata && NULL != g_i2c)
+	if(NULL != pdata && NULL != g_i2cVL)
 	{
-		for(int i = 0; i <= count; i+=2){
-			Status = g_i2c->writeBytes(g_sAddress, RegisterAddress, (uint16_t)pdata);
-		}
-	}
+		
+			//generic write with leading address
+	}		
 	else
 	{
 		Status = 1;
 	}
 	
-	return Status
+	return Status;
 }
 
 int8_t VL53L1_ReadMulti(uint16_t dev, uint16_t RegisterAddress,
@@ -85,11 +84,11 @@ int8_t VL53L1_ReadMulti(uint16_t dev, uint16_t RegisterAddress,
 	int8_t Status = 0;
 
 	//check that pdata is good
-	if(NULL != pdata && NULL != g_i2c)
+	if(NULL != pdata && NULL != g_i2cVL)
 	{
 		for(int i = 0; i <= count; i+=2){
 
-			Status = g_i2c->readBytes(g_sAddress, RegisterAddress, count, (uint16_t)pdata);
+			Status = g_i2cVL->readBytes(g_sAddress, RegisterAddress, count, (uint16_t*)pdata);
 		}
 	}
 	
@@ -108,7 +107,7 @@ int8_t VL53L1X_UltraLite_Linux_I2C_Init(i2cInterface * i2c, uint16_t i2caddress)
 	//log some stuff
 
 	//test if inputs make sense
-	g_i2c = i2c;
+	g_i2cVL = i2c;
 	g_sAddress = i2caddress;
 
 	return 0;

@@ -58,10 +58,53 @@ int i2cInterface::openBus(){
 }
 
 int i2cInterface::closeBus(){
-    int err = 0;
+    int err = OK;
     bDebug(TRACE, "i2c Closing bus");
 
     close(this->fileI2C);
+
+    return err;
+}
+
+int i2cInterface::readBuf(uint8_t slaveAddr, uint8_t *data, uint8_t len){
+    int err = OK;
+
+    
+    //!! fix this for cleanliness
+    if (ioctl(this->fileI2C, I2C_SLAVE, slaveAddr) < 0) {
+        string szErr = "ioctl error: ";
+        szErr.append(strerror(errno));
+        bDebug(ERROR, szErr);
+        return -1;
+    }   
+    //!!! check on file handles etc
+    int ret = read(this->fileI2C, data, len);
+	if (ret != len) {
+        string szErr = "ioctl error: " + to_string(ret);
+		bDebug(ERROR, szErr);
+		return -1;
+	}
+
+    return err;
+}
+
+int i2cInterface::writeBuf(uint8_t slaveAddr, uint8_t *data, uint8_t len){
+    int err = OK;
+
+    //!! fix this for cleanliness
+    if (ioctl(this->fileI2C, I2C_SLAVE, slaveAddr) < 0) {
+        string szErr = "ioctl error: ";
+        szErr.append(strerror(errno));
+        bDebug(ERROR, szErr);
+        return -1;
+    }   
+    //!!! check on file handles etc
+    int ret = write(this->fileI2C, data, len);
+	if (ret != len) {
+		string szErr = "ioctl error: " + to_string(ret);
+		bDebug(ERROR, szErr);
+		err = -1;
+	}
 
     return err;
 }
