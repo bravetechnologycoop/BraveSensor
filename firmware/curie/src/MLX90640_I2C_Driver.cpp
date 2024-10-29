@@ -40,7 +40,7 @@ int MLX90640_I2CRead(uint8_t slaveAddr,uint16_t startAddress, uint16_t nMemAddre
     int err = -1;
 
     if (NULL != g_i2c){
-        err = g_i2c->readBytes(slaveAddr, startAddress, nMemAddressRead, data);
+        g_i2c->readRegister(slaveAddr, startAddress, (uint8_t *)data, nMemAddressRead);
     }
 
     return err;
@@ -51,7 +51,7 @@ int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data){
     int err = -1;
 
     if (NULL != g_i2c){
-        err = g_i2c->writeBytes(slaveAddr, writeAddress, data);
+        err = g_i2c->writeByte(slaveAddr, writeAddress, data);
     }
 
     return err;

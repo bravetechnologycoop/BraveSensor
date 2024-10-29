@@ -4,26 +4,34 @@
  *
  * File created by:  Denis Londry 2024
  */
-#ifndef _I2CINTERFACE__H_
-#define _I2CINTERFACE__H_
+#ifndef I2CINTERFACE_H
+#define I2CINTERFACE_H
+
 #include <string>
-using namespace std;
+#include <cstdint>
 
-class i2cInterface{
-    public:
-        i2cInterface();
-        ~i2cInterface();
+class i2cInterface {
+public:
+    i2cInterface(uint16_t bus);
+    ~i2cInterface();
 
-        int setParams(string busID);
-        int openBus();
-        int closeBus();
+    bool openDevice();
+    void closeDevice();
+    bool writeByte(uint16_t address, uint16_t reg, uint8_t data);
+    bool writeBytes(uint16_t address, uint16_t reg, const uint8_t* data, size_t length);
+    bool readByte(uint16_t address, uint16_t reg, uint8_t &data);
+    bool readBytes(uint16_t address, uint16_t reg, uint8_t* buffer, size_t length);
 
-        int readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data);
-        int writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data);
+    // New methods for multi-register read and write
+    bool writeRegister(uint16_t address, uint16_t startReg, const uint8_t* data, size_t length);
+    bool readRegister(uint16_t address, uint16_t startReg, uint8_t* buffer, size_t length);
 
-    private:
-        string busID;
-        int fileI2C;
+private:
+    uint16_t bus_;
+    int file_;
+    std::string filename_;
+
+    bool setI2CAddress(uint16_t address);
 };
 
-#endif //_I2CINTERFACE__H_
+#endif //I2CINTERFACE_H

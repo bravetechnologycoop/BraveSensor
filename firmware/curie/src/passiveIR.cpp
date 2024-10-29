@@ -34,7 +34,7 @@ int passiveIR::getData(string * sqlTable, std::vector<string> * vData){
     err = this->gpio->readPin(&data);
     if (OK == err){
         bDebug(TRACE, ("Pin Value :" + to_string((int)data)));
-        vData->push_back(to_string((int)data));
+        vData->push_back("'" + to_string((int)data) + "'");
     }
     
 
@@ -61,7 +61,7 @@ int passiveIR::setTableParams(){
     int err = OK;
 
     try {
-        this->dbParams.emplace_back("pIRbool", "boolean");
+        this->dbParams.emplace_back("pirbool", "boolean");
     }
     catch(...) {
         err = BAD_PARAMS;

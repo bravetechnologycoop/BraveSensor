@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <braveDebug.h>
 #include <i2cInterface.h>
-#include <bbi2cInterface.h>
 #include <gpioInterface.h>
 #include <serialib.h>
 #include <thermalCamera.h>
@@ -20,6 +19,7 @@
 #include <usonicRange.h>
 #include <multiMotionSensor.h>
 #include <postgresInterface.h>
+#include <lidarL1.h>
 
 using namespace std;
 
@@ -33,42 +33,26 @@ int main()
     int err = OK;
     try{
         //set up the busses
-        i2cInterface * fastI2C = new i2cInterface();
-        fastI2C->setParams(FAST_I2C);
-        fastI2C->openBus();
+        i2cInterface * fastI2C = new i2cInterface(FAST_I2C);
+        if (fastI2C->openDevice()){
+			thermalCamera sourceThermalCamera(fastI2C, 0x33);
+        	vSources.push_back(&sourceThermalCamera);
+			lidarL1 sourceLidarL1(fastI2C, 0x29); //currently second argument unused
+			vSources.push_back(&sourceLidarL1);
+		}
 
-		bbi2cInterface * slowI2C = new bbi2cInterface();
-		slowI2C->setParams(SLOW_I2C_SDA, SLOW_I2C_SCL, SLOW_SPEED);
+		i2cInterface * slowI2C = new i2cInterface(SLOW_I2C);
+		if (slowI2C->openDevice()){
+			bDebug(TRACE, "Got the slow i2c");
+		}
+	
 
 		gpioInterface * gpioPIR = new gpioInterface(); 
-		serialib * usbSer = new serialib();
+		passiveIR sourcePIR(gpioPIR);
+		vSources.push_back(&sourcePIR);
 
-		
-        //set up all the sensors
-		#ifdef USB_SER
-			multiMotionSensor * sourceMM;
-			if (1 == usbSer->openDevice(DLP_SER, DLP_BAUD)){  //8N1
-				sourceMM = new multiMotionSensor(usbSer);
-				vSources.push_back(sourceMM);
-			}
-		#endif
 
-		#ifdef NATIVE_I2C
-			thermalCamera sourceThermalCamera(fastI2C, 0x33);
-			vSources.push_back(&sourceThermalCamera);
-		#endif
 
-		#ifdef GPIO_DEV
-			passiveIR sourcePIR(gpioPIR);
-			vSources.push_back(&sourcePIR);
-		#endif
-
-		#ifdef BB_I2C
-			usonicRange sourceUSonic(slowI2C, 0xe0);
-			vSources.push_back(&sourceUSonic);
-		#endif
-
-		bDebug(WARN, "Devices made about to create or access DB");
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
 		pInterface->assignDataSources(vSources);
@@ -97,11 +81,10 @@ int main()
 		delete pInterface;
 		vSources.clear();
 
-		delete gpioPIR;
-		slowI2C->closeBus();
-		delete slowI2C;
-		fastI2C->closeBus();
+		fastI2C->closeDevice();
 		delete fastI2C;
+		slowI2C->closeDevice();
+		delete slowI2C;
 
 		bDebug(INFO, "Completed Data Gathering");
 	}

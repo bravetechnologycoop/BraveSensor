@@ -11,15 +11,20 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [10.15.0] - 2024-10-17
+
 ### Added
 
 - Added new columns to the Sensor dashboard due to change in clients_extension table (CU-86dun4p2p).
+- Added new pa route: /pa/get-client-devices for extracting all devices for client (CU-86due80fw).
+- Created a new database function - getClientDevices; for retrieving all devices owned by client (CU-86due80fw).
 
 ### Changed
 
 - Updated the .env.example with the latest .env structure (CU-86dun7tc2).
 - Update pw migration instructions (CU-86duhae9t).
 - Make fallback number optional for Sensors dashboard (CU-86du49q25).
+- Updated styling for landing page to match the other pages and button dashboard (CU-86dup4ghg).
 
 ## [10.14.0] - 2024-09-12
 
@@ -831,7 +836,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...HEAD
+[10.15.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...10.15.0
 [10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...10.14.0
 [10.13.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...v10.13.0
 [10.12.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...v10.12.0
