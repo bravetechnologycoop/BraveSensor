@@ -20,6 +20,7 @@
 #include <multiMotionSensor.h>
 #include <postgresInterface.h>
 #include <lidarL1.h>
+#include <usonicRange.h>
 
 using namespace std;
 
@@ -34,16 +35,21 @@ int main()
     try{
         //set up the busses
         i2cInterface * fastI2C = new i2cInterface(FAST_I2C);
+		thermalCamera * sourceThermalCamera = NULL;
+		lidarL1 *sourceLidarL1 = NULL;
         if (fastI2C->openDevice()){
-			thermalCamera sourceThermalCamera(fastI2C, 0x33);
-        	vSources.push_back(&sourceThermalCamera);
-			lidarL1 sourceLidarL1(fastI2C, 0x29); //currently second argument unused
-			vSources.push_back(&sourceLidarL1);
+			sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
+        	vSources.push_back(sourceThermalCamera);
+			sourceLidarL1 = new lidarL1(fastI2C, 0x29); 
+			vSources.push_back(sourceLidarL1);
 		}
 
 		i2cInterface * slowI2C = new i2cInterface(SLOW_I2C);
+		usonicRange * sourceUSonic = NULL;
 		if (slowI2C->openDevice()){
 			bDebug(TRACE, "Got the slow i2c");
+			sourceUSonic = new usonicRange(slowI2C, 0x70);
+			vSources.push_back(sourceUSonic);
 		}
 	
 

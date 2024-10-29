@@ -10,12 +10,12 @@
 #include <usonicRange.h>
 #include <unistd.h>
 
-usonicRange::usonicRange(bbi2cInterface *bbi2c, int i2cAddress){
+usonicRange::usonicRange(i2cInterface *i2c, int i2cAddress){
     bDebug(TRACE, "Creating usonicRange");
     setTableParams();
 
     //!!! check and barf if this is bad
-    this->bbi2c = bbi2c;
+    this->i2c = i2c;
     this->i2cAddress = i2cAddress;
 }
 
@@ -31,9 +31,9 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
 
     //check incoming pointers
     *sqlTable = T_USONIC_SQL_TABLE;
-    err = this->bbi2c->write(this->i2cAddress, &rangeCmd, 1);
+    //err = this->i2c->writeByte(this->i2cAddress, &rangeCmd, 1);
     usleep(100);  //let the range be read
-    err = this->bbi2c->read(this->i2cAddress, &range, 1);
+    //err = this->i2c->readByte(this->i2cAddress, &range, 1);
 
     if (OK == err){
         bDebug(INFO, ("range :" + to_string((int)range)));
