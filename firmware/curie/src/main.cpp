@@ -12,12 +12,11 @@
 #include <unistd.h>
 #include <braveDebug.h>
 #include <i2cInterface.h>
-#include <bbi2cInterface.h>
 #include <gpioInterface.h>
 #include <thermalCamera.h>
 #include <passiveIR.h>
 #include <postgresInterface.h>
-#include <lidar.h>
+#include <lidarL1.h>
 
 using namespace std;
 
@@ -31,26 +30,23 @@ int main()
     int err = OK;
     try{
         //set up the busses
-        i2cInterface * fastI2C = new i2cInterface();
-        fastI2C->setParams(FAST_I2C);
-        fastI2C->openBus();
+        i2cInterface * fastI2C = new i2cInterface(FAST_I2C);
+        if (fastI2C->openDevice()){
+			thermalCamera sourceThermalCamera(fastI2C, 0x33);
+        	vSources.push_back(&sourceThermalCamera);
+			lidarL1 sourceLidarL1(fastI2C, 0x29); //currently second argument unused
+			vSources.push_back(&sourceLidarL1);
+		}
 
-		bbi2cInterface * slowI2C = new bbi2cInterface();
-		slowI2C->setParams(SLOW_I2C_SDA, SLOW_I2C_SCL, SLOW_SPEED);
+		i2cInterface * slowI2C = new i2cInterface(SLOW_I2C);
+		if (slowI2C->openDevice()){
+			bDebug(TRACE, "Got the slow i2c");
+		}
+	
 
 		gpioInterface * gpioPIR = new gpioInterface(); 
-
-        //set up all the sensors
-        thermalCamera sourceThermalCamera(fastI2C, 0x33);
-        vSources.push_back(&sourceThermalCamera);
 		passiveIR sourcePIR(gpioPIR);
 		vSources.push_back(&sourcePIR);
-
-		lidar sourceLidar(fastI2C, 0x29); //currently second argument unused
-		vSources.push_back(&sourceLidar);
-
-
-
 
 
 
@@ -81,8 +77,10 @@ int main()
 		delete pInterface;
 		vSources.clear();
 
-		fastI2C->closeBus();
+		fastI2C->closeDevice();
 		delete fastI2C;
+		slowI2C->closeDevice();
+		delete slowI2C;
 
 		bDebug(INFO, "Completed Data Gathering");
 	}
