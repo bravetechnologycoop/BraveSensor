@@ -19,7 +19,7 @@ the code was deployed.
 
 ### Changed
 
-- Updated brave-alert-lib to v15.0.3 for deviceType enum change (CU-86duvwbq2).
+- Updated brave-alert-lib to v15.0.4 for deviceType enum change (CU-86duvwbq2).
 - Updated device_type_enum to have 'DEVICE_SENSOR_SINGLESTALL' and 'DEVICE_SENSOR_MULTISTALL' instead of 'DEVICE_SENSOR' (CU-86duvwbq2).
 - Updated test cases for newLocation and updateLocation to use new device types (CU-86duvwbq2).
 - Updated the /pa/create-sensor-location route due to createLocationFromBrowserForm() db function change (CU-86duvwbq2).
