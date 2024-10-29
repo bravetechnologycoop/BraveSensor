@@ -272,6 +272,7 @@ int postgresInterface::testTableIntegrity()
         pqxx::work txn(*conn);
         string tableName;
         pqxx::result result;
+        bool integrityFailed = false;
         try {
             dS->getTableDef(&tableName);
             string sql = "SELECT column_name FROM information_schema.columns WHERE table_name = '" + tableName + "';";
@@ -300,7 +301,7 @@ int postgresInterface::testTableIntegrity()
                     }
                 }
                 if(flag == false) {
-                    err = BAD_SETTINGS;
+                    integrityFailed = true;
                     break;
                 }
             }
@@ -309,7 +310,7 @@ int postgresInterface::testTableIntegrity()
         catch (...){
             err = BAD_SETTINGS;
         }
-        if(err == BAD_SETTINGS){
+        if(integrityFailed){
             bDebug(TRACE, "Table integrity failed, current table will be stored (if exists) and we will create a new one.");
             rename_table(tableName);
         }

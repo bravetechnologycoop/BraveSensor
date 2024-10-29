@@ -8,9 +8,10 @@
 #include <dataSource.h>
 #include <lidarL1.h>
 #include <curie.h>
-#include "VL53L1X_api.h"
-#include "VL53L1X_calibration.h"
-#include "vl53l1_platform.h"
+#include <VL53L1X_api.h>
+#include <VL53L1X_calibration.h>
+#include <vl53l1_platform.h>
+#include <unistd.h>
 
 lidarL1::lidarL1(i2cInterface * i2cBus, int i2cAddress){
     bDebug(TRACE, "LidarL1 created");
@@ -38,22 +39,36 @@ int lidarL1::getData(string * sqlTable, std::vector<string> * vData){
     int err = OK;
     //check incoming pointers
     *sqlTable = T_LIDAR_SQL_TABLE;
-    /*
-    VL53L0X_RangingMeasurementData_t RangingMeasurementData;
-    VL53L0X_Error Status;
+    uint16_t Dev = (uint16_t)i2cAddress;
+    int status;
+    uint8_t dataReady = 0;
+	while (dataReady == 0) 
+    {
+			status = VL53L1X_CheckForDataReady(Dev, &dataReady);
+			usleep(1);
+	}
+    VL53L1X_Result_t Results;
+    status += VL53L1X_GetResult(Dev, &Results);
 
-    Status = VL53L0X_PerformSingleRangingMeasurement(&MyDevice, &RangingMeasurementData);
-    bDebug(TRACE, std::to_string(Status));
-    uint16_t rangeMillimeter = RangingMeasurementData.RangeMilliMeter;
-    uint32_t rangeTime = RangingMeasurementData.TimeStamp;
-    bDebug(TRACE, std::to_string(rangeTime));// To be removed, just for debugging
-    bDebug(TRACE, std::to_string(rangeMillimeter));
-    vData->push_back(std::to_string(rangeMillimeter));*/
-    
-    //in some sort of loop or process
-    //vData->push_back("Moooooo");
+		printf("Status = %2d, dist = %5d, Ambient = %2d, Signal = %5d, #ofSpads = %5d\n",
+			Results.Status, Results.Distance, Results.Ambient,
+                                Results.SigPerSPAD, Results.NumSPADs);
+        vData->push_back(std::to_string(Results.Status));                       
+        vData->push_back(std::to_string(Results.Distance));
+        vData->push_back(std::to_string(Results.Ambient));
+        vData->push_back(std::to_string(Results.SigPerSPAD));
+        vData->push_back(std::to_string(Results.NumSPADs));
 
-
+		/* trigger next ranging */
+        uint8_t first_range = 1;
+		status += VL53L1X_ClearInterrupt(Dev);
+		if (first_range) {
+			/* very first measurement shall be ignored
+			 * thus requires twice call
+			 */
+			status += VL53L1X_ClearInterrupt(Dev);
+			first_range = 0;
+		}
     return err;
 }
 
@@ -75,7 +90,11 @@ int lidarL1::setTableParams(){
     int err = OK;
 
     try {
+        this->dbParams.emplace_back("status", "int");
         this->dbParams.emplace_back("distance", "int");
+        this->dbParams.emplace_back("ambient", "int");
+        this->dbParams.emplace_back("sigperspad", "int");
+        this->dbParams.emplace_back("numspads", "int");
     }
     catch(...) {
         err = BAD_PARAMS;
@@ -100,7 +119,33 @@ int lidarL1::initDevice()
     int err = OK;
     bDebug(TRACE, "init");
 
-    VL53L1X_UltraLite_Linux_I2C_Init(this->i2cBus, this->i2cAddress);
+    int file = VL53L1X_UltraLite_Linux_I2C_Init(i2cBus, i2cAddress);
+	if (file == -1){
+		err = BAD_SETTINGS;
+    }
+    uint16_t Dev = (uint16_t)i2cAddress;
+    int status;
+    uint8_t byteData, sensorState = 0;
+	uint16_t wordData;
+    status = VL53L1_RdByte(Dev, 0x010F, &byteData);
+	bDebug(TRACE, "VL53L1X Model_ID:" + byteData);
+	status += VL53L1_RdByte(Dev, 0x0110, &byteData);
+	bDebug(TRACE, "VL53L1X Module_Type:" + byteData);
+	status += VL53L1_RdWord(Dev, 0x010F, &wordData);
+	bDebug(TRACE, "VL53L1X: " + wordData);
+	while (sensorState == 0) {
+		status += VL53L1X_BootState(Dev, &sensorState);
+		VL53L1_WaitMs(Dev, 2);
+	}
+	printf("Chip booted\n");
+
+	status = VL53L1X_SensorInit(Dev);
+	/* status += VL53L1X_SetInterruptPolarity(Dev, 0); */
+	status += VL53L1X_SetDistanceMode(Dev, 2); /* 1=short, 2=long */
+	status += VL53L1X_SetTimingBudgetInMs(Dev, 100);
+	status += VL53L1X_SetInterMeasurementInMs(Dev, 100);
+	status += VL53L1X_StartRanging(Dev);
+
 
     return err;
 }

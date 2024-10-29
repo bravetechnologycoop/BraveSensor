@@ -31,7 +31,6 @@ class lidarL1: public dataSource {
         std::vector<std::pair<std::string, std::string>> dbParams;
         int getTempData();
         int initDevice();
-        uint16_t Dev;
         uint8_t I2cDevAddr;
         int adapter_nr;
 };

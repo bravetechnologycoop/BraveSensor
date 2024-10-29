@@ -31,11 +31,13 @@ int main()
     try{
         //set up the busses
         i2cInterface * fastI2C = new i2cInterface(FAST_I2C);
+		//thermalCamera * sourceThermalCamera;
+		lidarL1  * sourceLidarL1;
         if (fastI2C->openDevice()){
-			thermalCamera sourceThermalCamera(fastI2C, 0x33);
-        	vSources.push_back(&sourceThermalCamera);
-			lidarL1 sourceLidarL1(fastI2C, 0x29); //currently second argument unused
-			vSources.push_back(&sourceLidarL1);
+			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
+        	//vSources.push_back(sourceThermalCamera);
+			sourceLidarL1 = new lidarL1(fastI2C, 0x29); //currently second argument unused
+			vSources.push_back(sourceLidarL1);
 		}
 
 		i2cInterface * slowI2C = new i2cInterface(SLOW_I2C);
