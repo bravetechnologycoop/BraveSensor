@@ -47,7 +47,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.displayName = 'locationName'
       this.serialNumber = 'radar_coreID'
       this.phoneNumber = '+15005550006'
-      this.deviceType = 'DEVICE_SENSOR_SINGLESTALL'
+      this.deviceType = 'SENSOR_SINGLESTALL'
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
@@ -96,7 +96,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.displayName = 'locationName'
       this.serialNumber = 'radar_coreID'
       this.phoneNumber = '+15005550006'
-      this.deviceType = 'DEVICE_SENSOR_MULTISTALL'
+      this.deviceType = 'SENSOR_MULTISTALL'
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
@@ -145,7 +145,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
       this.displayName = '  locationName  '
       this.serialNumber = '    radar_coreID    '
       this.phoneNumber = '   +15005550006    '
-      this.deviceType = '  DEVICE_SENSOR_SINGLESTALL  '
+      this.deviceType = '  SENSOR_SINGLESTALL  '
       const goodRequest = {
         locationid: this.locationid,
         displayName: this.displayName,
@@ -199,7 +199,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         serialNumber: 'radar_coreID',
         phoneNumber: '+15005550006',
         clientId: this.clientId,
-        deviceType: 'DEVICE_SENSOR_SINGLESTALL',
+        deviceType: 'SENSOR_SINGLESTALL',
       }
 
       this.response = await this.agent.post('/locations').send(goodRequest)
@@ -228,7 +228,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         serialNumber: 'radar_coreID',
         phoneNumber: '+15005550006',
         clientId: '91ddc8f7-c2e7-490e-bfe9-3d2880a76108',
-        deviceType: 'DEVICE_SENSOR_SINGLESTALL',
+        deviceType: 'SENSOR_SINGLESTALL',
       }
 
       this.response = await chai.request(server).post('/locations').send(goodRequest)
@@ -331,7 +331,7 @@ describe('dashboard.js integration tests: submitNewLocation', () => {
         serialNumber: 'radar_coreID',
         phoneNumber: '+15005550006',
         clientId: this.client.id,
-        deviceType: 'DEVICE_SENSOR_SINGLESTALL',
+        deviceType: 'SENSOR_SINGLESTALL',
       }
 
       this.response = await this.agent.post('/locations').send(duplicateLocationRequest)

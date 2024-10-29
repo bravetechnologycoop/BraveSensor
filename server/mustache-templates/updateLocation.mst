@@ -53,8 +53,8 @@
                     <label for="deviceType" class="col-sm-3 col-form-label">Device Type:</label>
                     <div class="col-sm-5">
                         <select class="form-control" name="deviceType" required>
-                            <option {{#isSingleStallSelected}} selected {{/isSingleStallSelected}} value="DEVICE_SENSOR_SINGLESTALL">Single-Stall Sensor</option>
-                            <option {{#isMultiStallSelected}} selected {{/isMultiStallSelected}} value="DEVICE_SENSOR_MULTISTALL">Multi-Stall Sensor</option>
+                            <option {{#isSingleStallSelected}} selected {{/isSingleStallSelected}} value="SENSOR_SINGLESTALL">Single-Stall Sensor</option>
+                            <option {{#isMultiStallSelected}} selected {{/isMultiStallSelected}} value="SENSOR_MULTISTALL">Multi-Stall Sensor</option>
                         </select>
                     </div>
                 </div>

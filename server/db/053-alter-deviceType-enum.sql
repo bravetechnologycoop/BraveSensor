@@ -12,7 +12,7 @@ BEGIN
     -- Only execute this script if its migration ID is next after the last successful migration ID
     IF migrationId - lastSuccessfulMigrationId = 1 THEN
         -- create a new enum type
-        CREATE TYPE device_type_enum_new AS ENUM ('DEVICE_BUTTON', 'DEVICE_SENSOR_SINGLESTALL', 'DEVICE_SENSOR_MULTISTALL');
+        CREATE TYPE device_type_enum_new AS ENUM ('BUTTON', 'SENSOR_SINGLESTALL', 'SENSOR_MULTISTALL');
 
         -- add a temporary column with the new enum type
         ALTER TABLE devices ADD COLUMN device_type_new device_type_enum_new;
@@ -21,7 +21,7 @@ BEGIN
         UPDATE devices
         SET device_type_new = 
             CASE 
-                WHEN device_type = 'DEVICE_SENSOR' THEN 'DEVICE_SENSOR_SINGLESTALL'
+                WHEN device_type = 'DEVICE_SENSOR' THEN 'SENSOR_SINGLESTALL'
                 ELSE device_type::text::device_type_enum_new
             END;
 

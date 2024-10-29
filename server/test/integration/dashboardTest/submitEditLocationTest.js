@@ -25,7 +25,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
     sandbox.spy(db, 'updateLocation')
 
     this.testLocationIdForEdit = 'test1'
-    this.testLocationDeviceType = 'DEVICE_SENSOR_SINGLESTALL'
+    this.testLocationDeviceType = 'SENSOR_SINGLESTALL'
 
     await db.clearTables()
 
@@ -59,7 +59,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       this.isSendingAlerts = true
       this.isSendingVitals = false
       this.clientId = this.client.id
-      this.deviceType = 'DEVICE_SENSOR_SINGLESTALL'
+      this.deviceType = 'SENSOR_SINGLESTALL'
       this.goodRequest = {
         displayName: this.displayName,
         serialNumber: this.serialNumber,
@@ -117,7 +117,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       this.isSendingAlerts = '    true     '
       this.isSendingVitals = '    true     '
       this.clientId = `   ${this.client.id}   `
-      this.deviceType = '   DEVICE_SENSOR_SINGLESTALL   '
+      this.deviceType = '   SENSOR_SINGLESTALL   '
       this.goodRequest = {
         displayName: this.displayName,
         serialNumber: this.serialNumber,
@@ -175,7 +175,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       this.isSendingAlerts = false
       this.isSendingVitals = true
       this.clientId = this.client.id
-      this.deviceType = 'DEVICE_SENSOR_SINGLESTALL'
+      this.deviceType = 'SENSOR_SINGLESTALL'
       this.goodRequest = {
         displayName: this.displayName,
         serialNumber: this.serialNumber,
@@ -233,7 +233,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
       this.isSendingAlerts = true
       this.isSendingVitals = false
       this.clientId = this.client.id
-      this.deviceType = 'DEVICE_SENSOR_MULTISTALL'
+      this.deviceType = 'SENSOR_MULTISTALL'
       this.goodRequest = {
         displayName: this.displayName,
         serialNumber: this.serialNumber,
@@ -293,7 +293,7 @@ describe('dashboard.js integration tests: submitEditLocation', () => {
         isSendingAlerts: 'true',
         isSendingVitals: 'false',
         clientId: this.clientId,
-        deviceType: 'DEVICE_SENSOR_SINGLESTALL',
+        deviceType: 'SENSOR_SINGLESTALL',
       }
 
       this.response = await this.agent.post(`/locations/${this.test1.id}`).send(this.goodRequest)

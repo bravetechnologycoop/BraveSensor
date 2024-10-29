@@ -250,7 +250,7 @@ async function getActiveSensorClients(pgClient) {
       WHERE c.is_sending_alerts AND c.is_sending_vitals
       ORDER BY c.display_name;
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
+      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -328,7 +328,7 @@ async function getLocations(pgClient) {
       WHERE d.device_type IN ($1, $2)
       ORDER BY c.display_name, d.display_name
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
+      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -373,7 +373,7 @@ async function getDataForExport(pgClient) {
         LEFT JOIN clients_extension x on x.client_id = c.id
         WHERE d.device_type IN ($1, $2)
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
+      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -915,7 +915,7 @@ async function getLocationsFromClientId(clientId, pgClient) {
       AND device_type IN ($2, $3)
       ORDER BY display_name
       `,
-      [clientId, DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
+      [clientId, DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -1265,7 +1265,7 @@ async function getRecentSensorsVitals(pgClient) {
       WHERE d.device_type IN ($1, $2)
       ORDER BY sv.created_at
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
+      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -1293,7 +1293,7 @@ async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
       AND d.device_type IN ($2, $3)
       ORDER BY sv.created_at
       `,
-      [clientId, DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL, DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL],
+      [clientId, DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )

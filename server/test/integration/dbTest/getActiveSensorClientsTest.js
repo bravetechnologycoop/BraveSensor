@@ -22,7 +22,7 @@ async function dbInsertActiveClients() {
 
     // create a singlestall location for this client that is sending alerts and vitals
     await factories.locationDBFactory(db, {
-      deviceType: DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL,
+      deviceType: DEVICE_TYPE.SENSOR_SINGLESTALL,
       locationid: `active-client-singlestall-location-${index}`,
       displayName: `Active Client Singlestall Location ${index}`,
       clientId: client.id,
@@ -32,7 +32,7 @@ async function dbInsertActiveClients() {
 
     // create a multistall location for this client that is sending alerts and vitals
     await factories.locationDBFactory(db, {
-      deviceType: DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL,
+      deviceType: DEVICE_TYPE.SENSOR_MULTISTALL,
       locationid: `active-client-multistall-location-${index}`,
       displayName: `Active Client Multistall Location ${index}`,
       clientId: client.id,
@@ -187,7 +187,7 @@ async function dbInsertInactiveClients() {
     if (options.clientHasLocation) {
       // create a singlestall location for this client that is sending alerts and vitals
       await factories.locationDBFactory(db, {
-        deviceType: DEVICE_TYPE.DEVICE_SENSOR_SINGLESTALL,
+        deviceType: DEVICE_TYPE.SENSOR_SINGLESTALL,
         locationid: `inactive-client-singlestall-location-${index}`,
         displayName: `Inactive Client Singlestall Location ${index}`,
         clientId: client.id,
@@ -197,7 +197,7 @@ async function dbInsertInactiveClients() {
 
       // create a multistall location for this client that is sending alerts and vitals
       await factories.locationDBFactory(db, {
-        deviceType: DEVICE_TYPE.DEVICE_SENSOR_MULTISTALL,
+        deviceType: DEVICE_TYPE.SENSOR_MULTISTALL,
         locationid: `inactive-client-mutlistall-location-${index}`,
         displayName: `Inactive Client Multistall Location ${index}`,
         clientId: client.id,
