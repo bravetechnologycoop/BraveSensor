@@ -22,6 +22,7 @@ BEGIN
         SET device_type_new = 
             CASE 
                 WHEN device_type = 'DEVICE_SENSOR' THEN 'SENSOR_SINGLESTALL'
+                WHEN device_type = 'DEVICE_BUTTON' THEN 'BUTTON'
                 ELSE device_type::text::device_type_enum_new
             END;
 
