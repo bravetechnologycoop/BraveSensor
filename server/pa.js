@@ -60,16 +60,17 @@ async function handleCreateSensorLocation(req, res) {
   if (validationErrors.isEmpty()) {
     const braveAPIKey = req.body.braveKey
     const password = req.body.password
+
     const locationID = req.body.locationID
     const displayName = req.body.displayName
-    const deviceType = req.body.deviceType
-    const particleDeviceID = req.body.particleDeviceID
+    const serialNumber = req.body.particleDeviceID
     const phoneNumber = req.body.twilioNumber
     const clientID = req.body.clientID
+    const deviceType = req.body.deviceType
 
     if (paApiKeys.includes(braveAPIKey) && paPasswords.includes(password)) {
       try {
-        const results = await db.createLocationFromBrowserForm(locationID, displayName, deviceType, particleDeviceID, phoneNumber, clientID)
+        const results = await db.createLocationFromBrowserForm(locationID, displayName, serialNumber, phoneNumber, clientID, deviceType)
 
         if (results === null) {
           res.status(400).send({ message: 'Error in database insert' })
