@@ -3,7 +3,7 @@
         {
             "name": "Linux",
             "includePath": [
-                "/home/corey/BraveSensor/firmware/curie/include"
+                "include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

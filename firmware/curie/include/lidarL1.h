@@ -9,11 +9,10 @@
 using namespace std;
 #include <vector>
 #include <dataSource.h>
-#include <dataSource.h>
 #include <i2cInterface.h>
 
-#define T_LIDAR_NAME "lidar"
-#define T_LIDAR_SQL_TABLE "lidar"
+#define T_LIDAR1_NAME "lidar1"
+#define T_LIDAR1_SQL_TABLE "lidar1"
 
 
 class lidarL1: public dataSource {

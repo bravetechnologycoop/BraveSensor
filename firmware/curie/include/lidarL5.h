@@ -9,34 +9,32 @@
 using namespace std;
 #include <vector>
 #include <dataSource.h>
-#include <dataSource.h>
 #include <i2cInterface.h>
-#include "vl53l0x_api.h"
-#include "vl53l0x_platform.h"
+#include <vl53l5cx_api.h>
+#include <vl53l5cx_plugin_motion_indicator.h>
+#include <vl53l5cx_plugin_detection_thresholds.h>
 
-#define T_LIDAR_NAME "lidar"
-#define T_LIDAR_SQL_TABLE "lidar"
+#define T_LIDAR5_NAME "lidar5"
+#define T_LIDAR5_SQL_TABLE "lidar5"
 
 
-class lidar: public dataSource {
+class lidarL5: public dataSource {
     public:
-        lidar(i2cInterface * i2cBus, int i2cAddress);
-        ~lidar();
+        lidarL5(i2cInterface * i2cBus, int i2cAddress, int threshold);
+        ~lidarL5();
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);
         int setTableParams();
         int getTableParams(std::vector<std::pair<std::string, std::string>> * tableData);
 
     private:
-        VL53L0X_Dev_t MyDevice;
-        VL53L0X_Dev_t *pMyDevice;
         int i2cAddress;
         i2cInterface * i2cBus;
         std::vector<std::pair<std::string, std::string>> dbParams;
         int getTempData();
         int initDevice();
-        uint8_t threshold;
-        uint16_t p_dev;
+        uint8_t nb_threshold;
+        VL53L5CX_Configuration * pdev;
 };
 
 

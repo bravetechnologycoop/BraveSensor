@@ -17,6 +17,7 @@
 #include <passiveIR.h>
 #include <postgresInterface.h>
 #include <lidarL1.h>
+#include <lidarL5.h>
 
 using namespace std;
 
@@ -32,12 +33,15 @@ int main()
         //set up the busses
         i2cInterface * fastI2C = new i2cInterface(FAST_I2C);
 		//thermalCamera * sourceThermalCamera;
-		lidarL1  * sourceLidarL1;
+		//lidarL1  * sourceLidarL1;
+		lidarL5  * sourceLidarL5;
         if (fastI2C->openDevice()){
 			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
         	//vSources.push_back(sourceThermalCamera);
-			sourceLidarL1 = new lidarL1(fastI2C, 0x29); //currently second argument unused
-			vSources.push_back(sourceLidarL1);
+			//sourceLidarL1 = new lidarL1(fastI2C, 0x29); //currently second argument unused
+			//vSources.push_back(sourceLidarL1);
+			sourceLidarL5 = new lidarL5(fastI2C, 0x29, 8);
+			vSources.push_back(sourceLidarL5);
 		}
 
 		i2cInterface * slowI2C = new i2cInterface(SLOW_I2C);
