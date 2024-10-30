@@ -35,6 +35,8 @@ class lidar: public dataSource {
         std::vector<std::pair<std::string, std::string>> dbParams;
         int getTempData();
         int initDevice();
+        uint8_t threshold;
+        uint16_t p_dev;
 };
 
 
