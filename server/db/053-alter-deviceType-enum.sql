@@ -12,7 +12,7 @@ BEGIN
     -- Only execute this script if its migration ID is next after the last successful migration ID
     IF migrationId - lastSuccessfulMigrationId = 1 THEN
         -- create a new enum type
-        -- note: BUTTON device type is noddt currently used in sensors db as database merge was retracted
+        -- note: BUTTON device type is not currently used in sensors db as database merge was retracted
         CREATE TYPE device_type_enum_new AS ENUM ('BUTTON', 'SENSOR_SINGLESTALL', 'SENSOR_MULTISTALL');
 
         -- add a temporary column with the new enum type
