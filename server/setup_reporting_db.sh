@@ -2,7 +2,6 @@
 # setup_reporting_db.sh
 #
 # Sets up the reporting database given a source and destination database.
-a
 # read arguments into variables
 src_user=$1
 src_host=$2
