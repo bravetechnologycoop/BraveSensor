@@ -33,7 +33,8 @@ int main()
 	int tmpcount = 2;
     int err = OK;
     try{
-        //set up the busses
+        /*
+		//set up the busses
         i2cInterface * fastI2C = new i2cInterface(FAST_I2C);
 		thermalCamera * sourceThermalCamera = NULL;
 		lidarL1 *sourceLidarL1 = NULL;
@@ -51,12 +52,18 @@ int main()
 			sourceUSonic = new usonicRange(slowI2C, 0x70);
 			vSources.push_back(sourceUSonic);
 		}
-	
+		*/
 
 		gpioInterface * gpioPIR = new gpioInterface(); 
 		passiveIR sourcePIR(gpioPIR);
 		vSources.push_back(&sourcePIR);
 
+		serialib * usbSerial = new serialib();
+		multiMotionSensor * motionSensor = NULL;
+		if (1 == usbSerial->openDevice(DLP_SER, DLP_BAUD)) {
+			motionSensor = new multiMotionSensor(usbSerial);
+			vSources.push_back(motionSensor);
+		}
 
 
 		//open postgres interface
