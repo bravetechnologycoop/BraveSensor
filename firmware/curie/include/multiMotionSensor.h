@@ -29,6 +29,8 @@ class multiMotionSensor: public dataSource {
         std::vector<std::pair<std::string, std::string>> dbParams;
 
         serialib * serialPort;
+        int getTemperature();
+        uint32_t getHumidity();
 };
         
 
