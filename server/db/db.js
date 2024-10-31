@@ -242,7 +242,7 @@ async function getActiveSensorClients(pgClient) {
       INNER JOIN (
         SELECT DISTINCT client_id AS id
         FROM devices
-        WHERE device_type = $1
+        WHERE device_type IN ($1, $2)
         AND is_sending_alerts
         AND is_sending_vitals
       ) AS d
@@ -250,7 +250,7 @@ async function getActiveSensorClients(pgClient) {
       WHERE c.is_sending_alerts AND c.is_sending_vitals
       ORDER BY c.display_name;
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR],
+      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -325,10 +325,10 @@ async function getLocations(pgClient) {
       SELECT d.*
       FROM devices AS d
       LEFT JOIN clients AS c ON d.client_id = c.id
-      WHERE d.device_type = $1
+      WHERE d.device_type IN ($1, $2)
       ORDER BY c.display_name, d.display_name
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR],
+      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -371,9 +371,9 @@ async function getDataForExport(pgClient) {
         LEFT JOIN devices d ON s.device_id = d.id
         LEFT JOIN clients c on d.client_id = c.id
         LEFT JOIN clients_extension x on x.client_id = c.id
-        WHERE d.device_type = $1
+        WHERE d.device_type IN ($1, $2)
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR],
+      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -912,10 +912,10 @@ async function getLocationsFromClientId(clientId, pgClient) {
       SELECT *
       FROM devices
       WHERE client_id = $1
-      AND device_type = $2
+      AND device_type IN ($2, $3)
       ORDER BY display_name
       `,
-      [clientId, DEVICE_TYPE.DEVICE_SENSOR],
+      [clientId, DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -970,6 +970,7 @@ async function updateLocation(
   isSendingAlerts,
   isSendingVitals,
   clientId,
+  deviceType,
   deviceId,
   pgClient,
 ) {
@@ -985,11 +986,12 @@ async function updateLocation(
         is_displayed = $4,
         is_sending_alerts = $5,
         is_sending_vitals = $6,
-        client_id = $7
-      WHERE id = $8
+        client_id = $7,
+        device_type = $8
+      WHERE id = $9
       RETURNING *
       `,
-      [displayName, serialNumber, phoneNumber, isDisplayed, isSendingAlerts, isSendingVitals, clientId, deviceId],
+      [displayName, serialNumber, phoneNumber, isDisplayed, isSendingAlerts, isSendingVitals, clientId, deviceType, deviceId],
       pool,
       pgClient,
     )
@@ -1118,16 +1120,15 @@ async function updateClientExtension(clientId, country, countrySubdivision, buil
 
 // Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
 // prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, serialNumber, phoneNumber, clientId, pgClient) {
+async function createLocationFromBrowserForm(locationid, displayName, serialNumber, phoneNumber, clientId, deviceType, pgClient) {
   try {
     const results = await helpers.runQuery('createLocationFromBrowserForm',
       `
-      INSERT INTO devices(device_type, locationid, display_name, serial_number, phone_number, is_displayed, is_sending_alerts, is_sending_vitals, client_id)
+      INSERT INTO devices(locationid, display_name, serial_number, phone_number, is_displayed, is_sending_alerts, is_sending_vitals, client_id, device_type)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
       `,
       [
-        DEVICE_TYPE.DEVICE_SENSOR,
         locationid,
         displayName,
         serialNumber,
@@ -1136,6 +1137,7 @@ async function createLocationFromBrowserForm(locationid, displayName, serialNumb
         false,
         false,
         clientId,
+        deviceType,
       ],
       pool,
       pgClient,
@@ -1154,7 +1156,7 @@ async function createLocationFromBrowserForm(locationid, displayName, serialNumb
   }
 }
 
-// Adds a location table entry
+// Adds a singlestall location table entry
 async function createLocation(
   locationid,
   sentVitalsAlertAt,
@@ -1166,18 +1168,18 @@ async function createLocation(
   isSendingVitals,
   sentLowBatteryAlertAt,
   clientId,
+  deviceType,
   pgClient,
 ) {
   try {
     const results = await helpers.runQuery(
       'createLocation',
       `
-      INSERT INTO devices(device_type, locationid, sent_vitals_alert_at, phone_number, display_name, serial_number, is_displayed, is_sending_alerts, is_sending_vitals, sent_low_battery_alert_at, client_id)
+      INSERT INTO devices(locationid, sent_vitals_alert_at, phone_number, display_name, serial_number, is_displayed, is_sending_alerts, is_sending_vitals, sent_low_battery_alert_at, client_id, device_type)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
       `,
       [
-        DEVICE_TYPE.DEVICE_SENSOR,
         locationid,
         sentVitalsAlertAt,
         phoneNumber,
@@ -1188,6 +1190,7 @@ async function createLocation(
         isSendingVitals,
         sentLowBatteryAlertAt,
         clientId,
+        deviceType,
       ],
       pool,
       pgClient,
@@ -1259,10 +1262,10 @@ async function getRecentSensorsVitals(pgClient) {
       SELECT d.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at, sv.is_tampered
       FROM devices d
       LEFT JOIN sensors_vitals_cache sv on d.locationid = sv.locationid
-      WHERE d.device_type = $1
+      WHERE d.device_type IN ($1, $2)
       ORDER BY sv.created_at
       `,
-      [DEVICE_TYPE.DEVICE_SENSOR],
+      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
@@ -1287,9 +1290,10 @@ async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
       FROM devices d
       LEFT JOIN sensors_vitals_cache sv on sv.locationid = d.locationid
       WHERE d.client_id = $1
+      AND d.device_type IN ($2, $3)
       ORDER BY sv.created_at
       `,
-      [clientId],
+      [clientId, DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
       pool,
       pgClient,
     )
