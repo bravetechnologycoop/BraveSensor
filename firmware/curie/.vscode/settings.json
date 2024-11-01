@@ -51,5 +51,6 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "lidarl0": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "enabled"
 }
