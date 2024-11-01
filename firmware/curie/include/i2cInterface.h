@@ -22,7 +22,6 @@ public:
     bool readByte(uint16_t address, uint16_t reg, uint8_t &data);
     bool readBytes(uint16_t address, uint16_t reg, uint8_t* buffer, size_t length);
 
-    // New methods for multi-register read and write
     bool writeRegister(uint16_t address, uint16_t startReg, const uint8_t* data, size_t length);
     bool readRegister(uint16_t address, uint16_t startReg, uint8_t* buffer, size_t length);
 

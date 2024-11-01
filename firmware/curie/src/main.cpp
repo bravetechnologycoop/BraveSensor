@@ -13,11 +13,14 @@
 #include <braveDebug.h>
 #include <i2cInterface.h>
 #include <gpioInterface.h>
+#include <serialib.h>
 #include <thermalCamera.h>
 #include <passiveIR.h>
+#include <usonicRange.h>
+#include <multiMotionSensor.h>
 #include <postgresInterface.h>
 #include <lidarL1.h>
-#include <lidarL5.h>
+#include <usonicRange.h>
 
 using namespace std;
 
@@ -30,30 +33,37 @@ int main()
 	int tmpcount = 2;
     int err = OK;
     try{
-        //set up the busses
+        /*
+		//set up the busses
         i2cInterface * fastI2C = new i2cInterface(FAST_I2C);
-		//thermalCamera * sourceThermalCamera;
-		//lidarL1  * sourceLidarL1;
-		lidarL5  * sourceLidarL5;
+		thermalCamera * sourceThermalCamera = NULL;
+		lidarL1 *sourceLidarL1 = NULL;
         if (fastI2C->openDevice()){
-			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
-        	//vSources.push_back(sourceThermalCamera);
-			//sourceLidarL1 = new lidarL1(fastI2C, 0x29); //currently second argument unused
-			//vSources.push_back(sourceLidarL1);
-			sourceLidarL5 = new lidarL5(fastI2C, 0x29, 8);
-			vSources.push_back(sourceLidarL5);
+			sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
+        	vSources.push_back(sourceThermalCamera);
+			sourceLidarL1 = new lidarL1(fastI2C, 0x29); 
+			vSources.push_back(sourceLidarL1);
 		}
 
 		i2cInterface * slowI2C = new i2cInterface(SLOW_I2C);
+		usonicRange * sourceUSonic = NULL;
 		if (slowI2C->openDevice()){
 			bDebug(TRACE, "Got the slow i2c");
+			sourceUSonic = new usonicRange(slowI2C, 0x70);
+			vSources.push_back(sourceUSonic);
 		}
-	
+		*/
 
 		gpioInterface * gpioPIR = new gpioInterface(); 
 		passiveIR sourcePIR(gpioPIR);
 		vSources.push_back(&sourcePIR);
 
+		serialib * usbSerial = new serialib();
+		multiMotionSensor * motionSensor = NULL;
+		if (1 == usbSerial->openDevice(DLP_SER, DLP_BAUD)) {
+			motionSensor = new multiMotionSensor(usbSerial);
+			vSources.push_back(motionSensor);
+		}
 
 
 		//open postgres interface
@@ -63,20 +73,21 @@ int main()
 		pInterface->openDB();
 
 		//main execution loop
+		usleep(LOOP_TIMER);
+
 		while (loop){
-			string sqlString = "";
-	
+			bDebug(WARN, "Main Loop");
 			err = pInterface->writeTables();
 			if (OK != err){
 				bDebug(ERROR, "Failed to writeTables Bailing");
 				loop = false;
 			}
 
-			if (tmpcount <= 0){
+			tmpcount--;
+			if (!tmpcount){
 				loop = false;
 			}
-			tmpcount--;
-			usleep(1000);
+			usleep(LOOP_TIMER);
 		};
 
 		//cleanup

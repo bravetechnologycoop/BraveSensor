@@ -11,6 +11,14 @@
 #define FAST_SPEED      400000
 #define SLOW_I2C        22
 #define SLOW_SPEED      100000
+#define DLP_SER         "/dev/ttyACM0"
+#define DLP_BAUD        57600
+
+//device classes
+#define USB_SER
+//#define NATIVE_I2C
+#define BB_I2C
+//#define GPIO_DEV
 
 #define LOOP_TIMER      1000
 
