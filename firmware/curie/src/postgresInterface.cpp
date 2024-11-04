@@ -86,7 +86,7 @@ int postgresInterface::openDB(){
 // Will probably end up being private, as a helper function, keeping public for development.
 int postgresInterface::writeSQL(string sql) {
     int err = OK;
-    bDebug(TRACE, "Start writesql query: \n" + sql.substr(0, 100));
+    bDebug(TRACE, "Start writesql query: \n" + sql);// + sql.substr(0, 100));
 	
     if (connStringHost.empty() || conn == NULL || !conn->is_open()){
         bDebug(TRACE, "Database connection is not open, check connection parameters");
@@ -278,7 +278,6 @@ int postgresInterface::testTableIntegrity()
             string sql = "SELECT column_name FROM information_schema.columns WHERE table_name = '" + tableName + "';";
             result = txn.exec(sql);
             txn.commit();
-
             bDebug(TRACE, "SQL executed successfully, reading information_schema...");
             std::vector<std::string> schemaColumns;
             for (const pqxx::row& row : result){

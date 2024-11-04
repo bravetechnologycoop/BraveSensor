@@ -12,6 +12,7 @@
 
 multiMotionSensor::multiMotionSensor(serialib * serialPort){
     bDebug(INFO, "multiMotionSensor");
+    setTableParams();
 
     if (NULL == serialPort){
         throw(BAD_PARAMS);
@@ -26,6 +27,7 @@ multiMotionSensor::~multiMotionSensor(){
 
 int multiMotionSensor::getData(string *sqlTable, std::vector<string> * vData){
     bDebug(INFO, "multiMotionSensor GetData");
+    *sqlTable = T_MULTIMOTION_SQL_TABLE;
     int err = OK;
     int temp, humidity, xFreq, yFreq, zFreq, sFreq;
     float pressure, xAmp, yAmp, zAmp, sAmp, soundBroadband;
@@ -43,22 +45,22 @@ int multiMotionSensor::getData(string *sqlTable, std::vector<string> * vData){
     if(this->getSoundwave(&sFreq, &sAmp) == -200){err = BAD_SETTINGS;}
     soundBroadband = this->getSoundBroadband();
 
-    vData->push_back(temp);
-    vData->push_back(humidity);
-    vData->push_back(pressure);
-    vData->push_back(tilt[0]); //x
-    vData->push_back(tilt[1]); //y
-    vData->push_back(tilt[2]); //z
-    vData->push_back(xFreq);
-    vData->push_back(xAmp);
-    vData->push_back(yFreq);
-    vData->push_back(yAmp);
-    vData->push_back(zFreq);
-    vData->push_back(zAmp);
-    vData->push_back(light);
-    vData->push_back(sFreq);
-    vData->push_back(sAmp);
-    vData->push_back(soundBroadband);
+    vData->push_back(to_string(temp));
+    vData->push_back(to_string(humidity));
+    vData->push_back(to_string(pressure));
+    vData->push_back(to_string(tilt[0])); //x
+    vData->push_back(to_string(tilt[1])); //y
+    vData->push_back(to_string(tilt[2])); //z
+    vData->push_back(to_string(xFreq));
+    vData->push_back(to_string(xAmp));
+    vData->push_back(to_string(yFreq));
+    vData->push_back(to_string(yAmp));
+    vData->push_back(to_string(zFreq));
+    vData->push_back(to_string(zAmp));
+    vData->push_back(to_string(light));
+    vData->push_back(to_string(sFreq));
+    vData->push_back(to_string(sAmp));
+    vData->push_back(to_string(soundBroadband));
     
 
     /*string szOut = "Read from sensor: ";
@@ -87,21 +89,22 @@ int multiMotionSensor::setTableParams(){
     int err = OK;
 
     try {
-        this->dbParams.emplace_back("temp", "int");
+        this->dbParams.emplace_back("temp", "float");
         this->dbParams.emplace_back("humidity", "int");
         this->dbParams.emplace_back("pressure", "float");
-        this->dbParams.emplace_back("xTilt", "int");
-        this->dbParams.emplace_back("yTilt", "int");
-        this->dbParams.emplace_back("xFreq", "int");
-        this->dbParams.emplace_back("xAmp", "float");
-        this->dbParams.emplace_back("yFreq", "int");
-        this->dbParams.emplace_back("yAmp", "float");
-        this->dbParams.emplace_back("zFreq", "int");
-        this->dbParams.emplace_back("zAmp", "float");
+        this->dbParams.emplace_back("xtilt", "int");
+        this->dbParams.emplace_back("ytilt", "int");
+        this->dbParams.emplace_back("ztilt", "int");
+        this->dbParams.emplace_back("xfreq", "int");
+        this->dbParams.emplace_back("xamp", "float");
+        this->dbParams.emplace_back("yfreq", "int");
+        this->dbParams.emplace_back("yamp", "float");
+        this->dbParams.emplace_back("zfreq", "int");
+        this->dbParams.emplace_back("zamp", "float");
         this->dbParams.emplace_back("light", "int");
-        this->dbParams.emplace_back("sFreq", "int");
-        this->dbParams.emplace_back("sAmp", "float");
-        this->dbParams.emplace_back("soundBroadband", "float");
+        this->dbParams.emplace_back("sfreq", "int");
+        this->dbParams.emplace_back("samp", "float");
+        this->dbParams.emplace_back("soundbroadband", "float");
     }
     catch(...) {
         err = BAD_PARAMS;
@@ -111,7 +114,6 @@ int multiMotionSensor::setTableParams(){
 }
 int multiMotionSensor::getTableParams(std::vector<std::pair<std::string, std::string>> * tableData){
     bDebug(INFO, "multiMotionSensor getTableParams");
-    int err = OK;
     int err = BAD_SETTINGS;
     if(!dbParams.empty())
     {
@@ -124,19 +126,39 @@ int multiMotionSensor::getTableParams(std::vector<std::pair<std::string, std::st
 float multiMotionSensor::getTemperature(){
     bDebug(TRACE, "multiMotionSensor getting temp");
     float temp = SENSOR_FAULT;
-
     if (this->serialPort->isDeviceOpen()){
         char buffer[64];
         this->serialPort->writeString("T/n");
-        this->serialPort->readBytes(buffer, 2);
-        
-        temp = 0;
-        temp = (buffer[1] + (buffer[0] << 8))/100;
-
+        this->serialPort->writeBytes(buffer, 2);
+        bDebug(TRACE, "Raw bytes temp:" + to_string(buffer[0]) + " " + to_string(buffer[1]));
+        temp = ((buffer[0] << 8)  | (buffer[1])) / 100.0;
+        bDebug(TRACE, "Full temp:" + to_string(temp));
     }
 
     return temp;
 }
+// Human readable output
+/*float multiMotionSensor::getTemperature(){
+    bDebug(TRACE, "multiMotionSensor getting temp");
+    float temp = SENSOR_FAULT;
+    if (this->serialPort->isDeviceOpen()){
+        char buffer[64];
+        this->serialPort->writeString("t/n");
+        char currentChar;
+        string mystring = "";
+        while(currentChar != '\r')
+        {
+            this->serialPort->readChar(&currentChar, 1000);
+            mystring+=currentChar;
+        }
+
+        bDebug(TRACE, mystring);
+        temp = (static_cast<unsigned char>(buffer[0]) << 8) + static_cast<unsigned char>(buffer[1]);
+        bDebug(TRACE, "Full temp:" + to_string(temp));
+    }
+
+    return temp;
+}*/
 
 float multiMotionSensor::getHumidity(){
     bDebug(TRACE, "multiMotionSensor getting humidity");
@@ -146,7 +168,7 @@ float multiMotionSensor::getHumidity(){
         char buffer[64];
         this->serialPort->writeString("H/n");
         this->serialPort->readBytes(buffer, 3);
-        humidity = (buffer[3] + (buffer[2] << 8) + (buffer[0] << 16))/1024;
+        humidity = (buffer[0] + (buffer[1] << 8) + (buffer[2] << 16))/1024.00;
     }
 
     return humidity;
@@ -191,7 +213,7 @@ int multiMotionSensor::getVibrationX(int* xFreq, float* xAmp){
         this->serialPort->readBytes(buffer, 4);
         *xFreq = (buffer[1] + (buffer[0] << 8));
         err = *xFreq;
-        *xAmp = (buffer[2] + (buffer[3] << 8))/100;
+        *xAmp = (buffer[2] + (buffer[3] << 8))/100.0;
     }
 
     return err;
@@ -207,7 +229,7 @@ int multiMotionSensor::getVibrationY(int* yFreq, float* yAmp){
         this->serialPort->readBytes(buffer, 4);
         *yFreq = (buffer[1] + (buffer[0] << 8));
         err = *yFreq;
-        *yAmp = (buffer[2] + (buffer[3] << 8))/100;
+        *yAmp = (buffer[2] + (buffer[3] << 8))/100.0;
     }
 
     return err;
@@ -223,7 +245,7 @@ int multiMotionSensor::getVibrationZ(int* zFreq, float* zAmp){
         this->serialPort->readBytes(buffer, 4);
         *zFreq = (buffer[1] + (buffer[0] << 8));
         err = *zFreq;
-        *zAmp = (buffer[2] + (buffer[3] << 8))/100;
+        *zAmp = (buffer[2] + (buffer[3] << 8))/100.0;
     }
 
     return err;

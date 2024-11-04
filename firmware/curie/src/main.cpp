@@ -33,10 +33,10 @@ int main()
 	int tmpcount = 2;
     int err = OK;
     try{
-        /*
+        
 		//set up the busses
         i2cInterface * fastI2C = new i2cInterface(FAST_I2C);
-		thermalCamera * sourceThermalCamera = NULL;
+		/*thermalCamera * sourceThermalCamera = NULL;
 		lidarL1 *sourceLidarL1 = NULL;
         if (fastI2C->openDevice()){
 			sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
@@ -44,16 +44,15 @@ int main()
 			sourceLidarL1 = new lidarL1(fastI2C, 0x29); 
 			vSources.push_back(sourceLidarL1);
 		}
-
+*/
 		i2cInterface * slowI2C = new i2cInterface(SLOW_I2C);
-		usonicRange * sourceUSonic = NULL;
+		/*usonicRange * sourceUSonic = NULL;
 		if (slowI2C->openDevice()){
 			bDebug(TRACE, "Got the slow i2c");
 			sourceUSonic = new usonicRange(slowI2C, 0x70);
 			vSources.push_back(sourceUSonic);
 		}
 		*/
-
 		gpioInterface * gpioPIR = new gpioInterface(); 
 		passiveIR sourcePIR(gpioPIR);
 		vSources.push_back(&sourcePIR);
@@ -87,7 +86,7 @@ int main()
 			if (!tmpcount){
 				loop = false;
 			}
-			usleep(LOOP_TIMER);
+			usleep(10000);
 		};
 
 		//cleanup
