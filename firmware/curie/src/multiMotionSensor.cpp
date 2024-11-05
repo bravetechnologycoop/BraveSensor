@@ -127,11 +127,15 @@ float multiMotionSensor::getTemperature(){
     bDebug(TRACE, "multiMotionSensor getting temp");
     float temp = SENSOR_FAULT;
     if (this->serialPort->isDeviceOpen()){
-        char buffer[64];
+        uint8_t buffer[64];
+        uint16_t rawtemp = 0;
         this->serialPort->writeString("T/n");
         this->serialPort->writeBytes(buffer, 2);
         bDebug(TRACE, "Raw bytes temp:" + to_string(buffer[0]) + " " + to_string(buffer[1]));
-        temp = ((buffer[0] << 8)  | (buffer[1])) / 100.0;
+        rawtemp = buffer[0];
+        rawtemp << 8;
+        rawtemp |= buffer[1];
+        temp = rawtemp / 100.0;
         bDebug(TRACE, "Full temp:" + to_string(temp));
     }
 
