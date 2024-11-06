@@ -22,15 +22,16 @@
 void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
     Particle.function("Force_Reset", force_reset);
+    Particle.function("Reset_State_To_Zero", reset_state_to_zero);
     Particle.function("Turn_Debugging_Publishes_On_Off", toggle_debugging_publishes);
     Particle.function("Change_Occupant_Detection_Timer", occupant_detection_timer_set);
     Particle.function("Change_Initial_Timer", initial_timer_set);
     Particle.function("Change_Duration_Timer", duration_timer_set);
     Particle.function("Change_Stillness_Timer", stillness_timer_set);
     Particle.function("Change_Long_Stillness_Timer", long_stillness_timer_set);
+    Particle.function("Reset_Stillness_Timer_For_Alerting_Session", reset_stillness_timer_for_alerting_session);
     Particle.function("Change_INS_Threshold", ins_threshold_set);
     Particle.function("Change_IM21_Door_ID", im21_door_id_set);
-    Particle.function("Reset_Stillness_Timer_For_Alerting_Session", reset_stillness_timer_for_alerting_session);
 }
 
 bool isValidIM21Id(String input) {
@@ -383,6 +384,30 @@ int force_reset(String command) {
     }
     else {
         // anything else is bad input so
+        returnFlag = -1;
+    }
+
+    return returnFlag;
+}
+
+int reset_state_to_zero(String command) {
+    // default to invalid input
+    int returnFlag = -1;
+
+    const char* holder = command.c_str();
+
+    if (*(holder + 1) != 0) {
+        // any string longer than 1 char is invalid input
+        returnFlag = -1;
+    } else if (*holder == '1') {
+        returnFlag = 1;
+
+        // reset the state handler to point to state 0
+        stateHandler = state0_idle;
+
+        Particle.publish("State Reset", "State has been reset to 0.", PRIVATE | WITH_ACK);
+    } else {
+        // anything else is bad input
         returnFlag = -1;
     }
 
