@@ -86,7 +86,7 @@ int main()
 			if (!tmpcount){
 				loop = false;
 			}
-			usleep(10000);
+			usleep(100000);
 		};
 
 		//cleanup

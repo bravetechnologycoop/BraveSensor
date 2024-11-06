@@ -31,12 +31,12 @@ class multiMotionSensor: public dataSource {
         float getTemperature();
         float getHumidity();
         float getPressure();
-        int getTilt(int* xyz);
-        int getVibrationX(int* xFreq, float* xAmp);
-        int getVibrationY(int* yFreq, float* yAmp);
-        int getVibrationZ(int* zFreq, float* zAmp);
-        uint8_t getLight();
-        int getSoundwave(int* sFreq, float* sAmp);
+        int getTilt(int8_t* xyz);
+        int getVibrationX(uint16_t* xFreq, float* xAmp);
+        int getVibrationY(uint16_t* yFreq, float* yAmp);
+        int getVibrationZ(uint16_t* zFreq, float* zAmp);
+        int8_t getLight();
+        int getSoundwave(uint16_t* sFreq, float* sAmp);
         float getSoundBroadband();
 
         serialib * serialPort;
