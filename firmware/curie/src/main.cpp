@@ -35,19 +35,21 @@ int main()
     try{
         
 		//set up the busses
-        i2cInterface * fastI2C = new i2cInterface(FAST_I2C);
-		//thermalCamera * sourceThermalCamera = NULL;
+        i2cInterface * fastI2C = new i2cInterface();
+		fastI2C->setParams("/dev/i2c-1");
+		thermalCamera * sourceThermalCamera = NULL;
 		//lidarL1 *sourceLidarL1 = NULL;
-        if (fastI2C->openDevice()){
-			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
-        	//vSources.push_back(sourceThermalCamera);
+        if (OK == fastI2C->openBus()){
+			sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
+        	vSources.push_back(sourceThermalCamera);
 			//sourceLidarL1 = new lidarL1(fastI2C, 0x29); 
 			//vSources.push_back(sourceLidarL1);
 		}
 
-		i2cInterface * slowI2C = new i2cInterface(SLOW_I2C);
+		i2cInterface * slowI2C = new i2cInterface();
+		slowI2C->setParams("/dev/i2c-22");
 		//usonicRange * sourceUSonic = NULL;
-		if (slowI2C->openDevice()){
+		if (OK == slowI2C->openBus()){
 			bDebug(TRACE, "Got the slow i2c");
 			//sourceUSonic = new usonicRange(slowI2C, 0x70);
 			//vSources.push_back(sourceUSonic);
@@ -95,9 +97,9 @@ int main()
 		delete pInterface;
 		vSources.clear();
 
-		fastI2C->closeDevice();
+		fastI2C->closeBus();
 		delete fastI2C;
-		slowI2C->closeDevice();
+		slowI2C->closeBus();
 		delete slowI2C;
 
 		bDebug(INFO, "Completed Data Gathering");
