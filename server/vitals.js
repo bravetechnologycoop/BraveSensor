@@ -36,6 +36,7 @@ async function sendSingleAlert(locationid, message, pgClient) {
   })
 }
 
+// TODO: remove this
 async function sendDisconnectionMessage(locationid, deviceDisplayName, language, clientDisplayName) {
   await sendSingleAlert(
     locationid,
@@ -48,10 +49,63 @@ async function sendDisconnectionMessage(locationid, deviceDisplayName, language,
   )
 }
 
+// TODO: shorten messages
+async function sendRadarDisconnectionMessage(locationid, deviceDisplayName, language, clientDisplayName) {
+  await sendSingleAlert(
+    locationid,
+    t('sensorRadarDisconnectionInitial', {
+      lng: language,
+      deviceDisplayName,
+      locationid,
+      clientDisplayName,
+    }),
+  )
+}
+
+async function sendDoorDisconnectionMessage(locationid, deviceDisplayName, language, clientDisplayName) {
+  await sendSingleAlert(
+    locationid,
+    t('sensorDoorDisconnectionInitial', {
+      lng: language,
+      deviceDisplayName,
+      locationid,
+      clientDisplayName,
+    }),
+  )
+}
+
+// TODO: remove this
 async function sendDisconnectionReminder(locationid, deviceDisplayName, language, clientDisplayName) {
   await sendSingleAlert(
     locationid,
     t('sensorDisconnectionReminder', {
+      lng: language,
+      deviceDisplayName,
+      locationid,
+      language,
+      clientDisplayName,
+    }),
+  )
+}
+
+// TODO: make messages
+async function sendRadarDisconnectionReminder(locationid, deviceDisplayName, language, clientDisplayName) {
+  await sendSingleAlert(
+    locationid,
+    t('sensorRadarDisconnectionReminder', {
+      lng: language,
+      deviceDisplayName,
+      locationid,
+      language,
+      clientDisplayName,
+    }),
+  )
+}
+
+async function sendDoorDisconnectionReminder(locationid, deviceDisplayName, language, clientDisplayName) {
+  await sendSingleAlert(
+    locationid,
+    t('sensorDoorDisconnectionReminder', {
       lng: language,
       deviceDisplayName,
       locationid,
@@ -98,18 +152,28 @@ async function checkHeartbeat() {
         const doorHeartbeatExceeded = doorDelayInSeconds > doorThresholdSeconds
 
         if (doorHeartbeatExceeded || radarHeartbeatExceeded) {
+
+          let sentRadar = false
           if (location.sentVitalsAlertAt === null) {
-            if (doorHeartbeatExceeded) {
-              helpers.logSentry(`Door sensor down at ${location.locationid}`)
-            }
             if (radarHeartbeatExceeded) {
               helpers.logSentry(`Radar sensor down at ${location.locationid}`)
+              sendRadarDisconnectionMessage(location.locationid, location.displayName, location.client.language, location.client.displayName)
+              sentRadar = true
+            }
+            if (doorHeartbeatExceeded && sentRadar === false) {
+              helpers.logSentry(`Door sensor down at ${location.locationid}`)
+              sendDoorDisconnectionMessage(location.locationid, location.displayName, location.client.language, location.client.displayName)
             }
             await db.updateSentAlerts(location.locationid, true)
-            sendDisconnectionMessage(location.locationid, location.displayName, location.client.language, location.client.displayName)
           } else if (currentDBTime - location.sentVitalsAlertAt > subsequentVitalsAlertThresholdSeconds * 1000) {
+            if (radarHeartbeatExceeded) {
+              sendRadarDisconnectionReminder(location.locationid, location.displayName, location.client.language, location.client.displayName)
+              sentRadar = true
+            }
+            if (doorHeartbeatExceeded && sentRadar === false) {
+              sendDoorDisconnectionReminder(location.locationid, location.displayName, location.client.language, location.client.displayName)
+            }
             await db.updateSentAlerts(location.locationid, true)
-            sendDisconnectionReminder(location.locationid, location.displayName, location.client.language, location.client.displayName)
           }
         } else if (location.sentVitalsAlertAt !== null) {
           helpers.logSentry(`${location.locationid} reconnected after reason: ${sensorsVital.resetReason}`)
