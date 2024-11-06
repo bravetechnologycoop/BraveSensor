@@ -42,7 +42,7 @@ describe('BraveAlerterConfigurator.js integration tests: getReturnMessageToRespo
     ])
 
     expect(returnMessage).to.equal(
-      "The Brave Sensor has been reset. No further alerts will be generated until another occupant is detected. Please check the location if needed. Session complete (no reply needed).",
+      'The Brave Sensor has been reset. No further alerts will be generated until another occupant is detected. Please check the location if needed. Session complete (no reply needed).',
     )
   })
 
@@ -66,7 +66,7 @@ describe('BraveAlerterConfigurator.js integration tests: getReturnMessageToRespo
     )
 
     expect(returnMessage).to.equal(
-      "The Brave Sensor has been reset. No further alerts will be generated until another occupant is detected. Please check the location if needed. Session complete (no reply needed).",
+      'The Brave Sensor has been reset. No further alerts will be generated until another occupant is detected. Please check the location if needed. Session complete (no reply needed).',
     )
   })
 

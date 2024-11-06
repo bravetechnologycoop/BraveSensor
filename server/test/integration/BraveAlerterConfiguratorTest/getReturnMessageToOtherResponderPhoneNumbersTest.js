@@ -37,7 +37,7 @@ describe('BraveAlerterConfigurator.js integration tests: getReturnMessageToOther
     const returnMessage = this.alertStateMachine.getReturnMessageToOtherResponderPhoneNumbers('en', CHATBOT_STATE.STARTED, CHATBOT_STATE.RESET)
 
     expect(returnMessage).to.equal(
-      "Another Responder reset the Brave Sensor. No further alerts will be generated until another occupant is detected. Please check the location if needed. Session complete (no response needed).",
+      'Another Responder reset the Brave Sensor. No further alerts will be generated until another occupant is detected. Please check the location if needed. Session complete (no response needed).',
     )
   })
 
@@ -60,7 +60,7 @@ describe('BraveAlerterConfigurator.js integration tests: getReturnMessageToOther
     )
 
     expect(returnMessage).to.equal(
-      "Another Responder reset the Brave Sensor. No further alerts will be generated until another occupant is detected. Please check the location if needed. Session complete (no response needed).",
+      'Another Responder reset the Brave Sensor. No further alerts will be generated until another occupant is detected. Please check the location if needed. Session complete (no response needed).',
     )
   })
 
