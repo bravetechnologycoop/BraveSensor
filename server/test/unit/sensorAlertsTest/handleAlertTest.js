@@ -289,7 +289,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         this.session.id,
         this.location.client.responderPhoneNumbers,
         this.location.phoneNumber,
-        "An additional Test alert was generated at fakeLocationName.\n\nWe noticed that many alerts are being sent from fakeLocationName. Please respond with 'ok' once you have checked on it, or 'reset' to reset the device if you believe these to be false alerts.",
+        "An additional Test alert was generated at fakeLocationName.\n\nWe notice that many alerts are coming from this sensor. Please respond with 'ok' once you have checked on it, or 'reset' to reset the device if you believe these to be false alerts.",
       )
     })
   })
@@ -346,7 +346,7 @@ describe('sensorAlerts.js unit tests: handleAlert', () => {
         this.session.id,
         this.location.client.responderPhoneNumbers,
         this.location.phoneNumber,
-        "An additional Test alert was generated at fakeLocationName.\n\nWe noticed that many alerts are being sent from fakeLocationName. Please respond with 'ok' once you have checked on it, or 'reset' to reset the device if you believe these to be false alerts.",
+        "An additional Test alert was generated at fakeLocationName.\n\nWe notice that many alerts are coming from this sensor. Please respond with 'ok' once you have checked on it, or 'reset' to reset the device if you believe these to be false alerts.",
       )
     })
   })
