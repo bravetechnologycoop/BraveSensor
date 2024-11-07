@@ -25,6 +25,8 @@ the code was deployed.
 - Updated device_type_enum to have 'DEVICE_SENSOR_SINGLESTALL' and 'DEVICE_SENSOR_MULTISTALL' instead of 'DEVICE_SENSOR' (CU-86duvwbq2).
 - Updated test cases for newLocation and updateLocation to use new device types (CU-86duvwbq2).
 - Updated the /pa/create-sensor-location route due to createLocationFromBrowserForm() db function change (CU-86duvwbq2).
+- Changed english messages `alertAdditionalAlertAcceptResetRequest`, `alertStartAcceptResetRequest`, `resetNoticeToRequester`, `resetNoticeToOtherResponders`, `resetRequestRejected`, `sensorDisconnectionInitial`, `sensorDisconnectionReminder`, `sensorIsTampered`, `sensorInactivity` to reduce twilio message segments (CU-86duzccj5).
+- Changed messages in test cases to match the new ones (CU-86duzccj5).
 - Updated integration tests that uses the disconnection messages to reflect the new outcomes (CU-86duu0vdu).
 - Updated `checkHeartbeat` function in `vitals.js` to send the 2 different messages (CU-86duu0vdu).
 - Removed `sendDisconnectionMessage` and `sendDisconnectionReminder`function in `vitals.js` (CU-86duu0vdu).
