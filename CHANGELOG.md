@@ -23,6 +23,8 @@ the code was deployed.
 - Updated device_type_enum to have 'DEVICE_SENSOR_SINGLESTALL' and 'DEVICE_SENSOR_MULTISTALL' instead of 'DEVICE_SENSOR' (CU-86duvwbq2).
 - Updated test cases for newLocation and updateLocation to use new device types (CU-86duvwbq2).
 - Updated the /pa/create-sensor-location route due to createLocationFromBrowserForm() db function change (CU-86duvwbq2).
+- Changed english messages `alertAdditionalAlertAcceptResetRequest`, `alertStartAcceptResetRequest`, `resetNoticeToRequester`, `resetNoticeToOtherResponders`, `resetRequestRejected`, `sensorDisconnectionInitial`, `sensorDisconnectionReminder`, `sensorIsTampered`, `sensorInactivity` to reduce twilio message segments (CU-86duzccj5).
+- Changed messages in test cases to match the new ones (CU-86duzccj5).
 
 ## [10.15.0] - 2024-10-17
 
