@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <braveDebug.h>
 #include <i2cInterface.h>
+#include <smbInterface.h>
 #include <gpioInterface.h>
 #include <serialib.h>
 #include <thermalCamera.h>
@@ -47,7 +48,7 @@ int main()
 			//vSources.push_back(sourceLidarL1);
 		}
 
-		i2cInterface * slowI2C = new i2cInterface();
+		smbInterface * slowI2C = new smbInterface();
 		slowI2C->setParams("/dev/i2c-22");
 		//usonicRange * sourceUSonic = NULL;
 		if (OK == slowI2C->openBus()){

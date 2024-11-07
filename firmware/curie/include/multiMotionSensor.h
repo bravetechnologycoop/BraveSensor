@@ -40,8 +40,6 @@ class multiMotionSensor: public dataSource {
         float getSoundBroadband();
 
         serialib * serialPort;
-        int getTemperature();
-        uint32_t getHumidity();
 };
         
 
