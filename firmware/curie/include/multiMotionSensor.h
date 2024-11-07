@@ -28,6 +28,17 @@ class multiMotionSensor: public dataSource {
     private:
         std::vector<std::pair<std::string, std::string>> dbParams;
 
+        float getTemperature();
+        float getHumidity();
+        float getPressure();
+        int getTilt(int8_t* xyz);
+        int getVibrationX(uint16_t* xFreq, float* xAmp);
+        int getVibrationY(uint16_t* yFreq, float* yAmp);
+        int getVibrationZ(uint16_t* zFreq, float* zAmp);
+        int8_t getLight();
+        int getSoundwave(uint16_t* sFreq, float* sAmp);
+        float getSoundBroadband();
+
         serialib * serialPort;
         int getTemperature();
         uint32_t getHumidity();

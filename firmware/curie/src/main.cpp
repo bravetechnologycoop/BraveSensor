@@ -34,6 +34,7 @@ int main()
     int err = OK;
     try{
         
+        
 		//set up the busses
         i2cInterface * fastI2C = new i2cInterface();
 		fastI2C->setParams("/dev/i2c-1");
@@ -90,7 +91,7 @@ int main()
 			if (!tmpcount){
 				loop = false;
 			}
-			usleep(LOOP_TIMER);
+			usleep(100000);
 		};
 
 		//cleanup

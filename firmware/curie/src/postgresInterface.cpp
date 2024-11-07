@@ -86,7 +86,7 @@ int postgresInterface::openDB(){
 // Will probably end up being private, as a helper function, keeping public for development.
 int postgresInterface::writeSQL(string sql) {
     int err = OK;
-    bDebug(TRACE, "Start writesql query: \n" + sql.substr(0, 100));
+    bDebug(TRACE, "Start writesql query: \n" + sql);// + sql.substr(0, 100));
 	
     if (connStringHost.empty() || conn == NULL || !conn->is_open()){
         bDebug(TRACE, "Database connection is not open, check connection parameters");
@@ -272,12 +272,12 @@ int postgresInterface::testTableIntegrity()
         pqxx::work txn(*conn);
         string tableName;
         pqxx::result result;
+        bool integrityFailed = false;
         try {
             dS->getTableDef(&tableName);
             string sql = "SELECT column_name FROM information_schema.columns WHERE table_name = '" + tableName + "';";
             result = txn.exec(sql);
             txn.commit();
-
             bDebug(TRACE, "SQL executed successfully, reading information_schema...");
             std::vector<std::string> schemaColumns;
             for (const pqxx::row& row : result){
@@ -300,7 +300,7 @@ int postgresInterface::testTableIntegrity()
                     }
                 }
                 if(flag == false) {
-                    err = BAD_SETTINGS;
+                    integrityFailed = true;
                     break;
                 }
             }
@@ -309,7 +309,7 @@ int postgresInterface::testTableIntegrity()
         catch (...){
             err = BAD_SETTINGS;
         }
-        if(err == BAD_SETTINGS){
+        if(integrityFailed){
             bDebug(TRACE, "Table integrity failed, current table will be stored (if exists) and we will create a new one.");
             rename_table(tableName);
         }
