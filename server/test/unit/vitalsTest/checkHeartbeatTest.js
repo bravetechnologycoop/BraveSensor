@@ -12,7 +12,7 @@ const { sensorsVitalFactory } = require('../../../testingHelpers')
 
 const vitals = rewire('../../../vitals')
 
-// Configure Chaio
+// Configure Chai
 use(sinonChai)
 
 const sandbox = sinon.createSandbox()
