@@ -36,20 +36,6 @@ async function sendSingleAlert(locationid, message, pgClient) {
   })
 }
 
-// TODO: remove this
-async function sendDisconnectionMessage(locationid, deviceDisplayName, language, clientDisplayName) {
-  await sendSingleAlert(
-    locationid,
-    t('sensorDisconnectionInitial', {
-      lng: language,
-      deviceDisplayName,
-      locationid,
-      clientDisplayName,
-    }),
-  )
-}
-
-// TODO: shorten messages
 async function sendRadarDisconnectionMessage(locationid, deviceDisplayName, language, clientDisplayName) {
   await sendSingleAlert(
     locationid,
@@ -74,21 +60,6 @@ async function sendDoorDisconnectionMessage(locationid, deviceDisplayName, langu
   )
 }
 
-// TODO: remove this
-async function sendDisconnectionReminder(locationid, deviceDisplayName, language, clientDisplayName) {
-  await sendSingleAlert(
-    locationid,
-    t('sensorDisconnectionReminder', {
-      lng: language,
-      deviceDisplayName,
-      locationid,
-      language,
-      clientDisplayName,
-    }),
-  )
-}
-
-// TODO: make messages
 async function sendRadarDisconnectionReminder(locationid, deviceDisplayName, language, clientDisplayName) {
   await sendSingleAlert(
     locationid,
@@ -152,7 +123,6 @@ async function checkHeartbeat() {
         const doorHeartbeatExceeded = doorDelayInSeconds > doorThresholdSeconds
 
         if (doorHeartbeatExceeded || radarHeartbeatExceeded) {
-
           let sentRadar = false
           if (location.sentVitalsAlertAt === null) {
             if (radarHeartbeatExceeded) {

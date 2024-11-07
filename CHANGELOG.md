@@ -16,6 +16,8 @@ the code was deployed.
 - Added migration script to update device_type_enum to handle multistall and singlestall sensors separately (CU-86duvwbq2).
 - Added dashboard functionality for submit new location and edit location to handle different device_types using dropdown (CU-86duvwbq2).
 - Added new integration tests for inserting a multi-stall sensor and editing single-stall to multi-stall (CU-86duvwbq2).
+- Added `sensorDoorDisconnectionInitial`, `sensorRadarDisconnectionInitial`, `sensorDoorDisconnectionReminder` and `sensorRadarDisconnectionReminder` to english and spanish messages (CU-86duu0vdu).
+- Added functions for the above messages in `vitals.js` (CU-86duu0vdu).
 
 ### Changed
 
@@ -23,6 +25,9 @@ the code was deployed.
 - Updated device_type_enum to have 'DEVICE_SENSOR_SINGLESTALL' and 'DEVICE_SENSOR_MULTISTALL' instead of 'DEVICE_SENSOR' (CU-86duvwbq2).
 - Updated test cases for newLocation and updateLocation to use new device types (CU-86duvwbq2).
 - Updated the /pa/create-sensor-location route due to createLocationFromBrowserForm() db function change (CU-86duvwbq2).
+- Updated integration tests that uses the disconnection messages to reflect the new outcomes (CU-86duu0vdu).
+- Updated `checkHeartbeat` function in `vitals.js` to send the 2 different messages (CU-86duu0vdu).
+- Removed `sendDisconnectionMessage` and `sendDisconnectionReminder`function in `vitals.js` (CU-86duu0vdu).
 
 ## [10.15.0] - 2024-10-17
 
