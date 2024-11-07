@@ -70,7 +70,7 @@ int8_t VL53L1_WriteMulti(uint16_t dev, uint16_t RegisterAddress,
 	if(NULL != pdata && NULL != g_i2cVL)
 	{		
 			//generic write with leading address
-			if(g_i2cVL->writeRegister(dev, RegisterAddress, pdata, count)) {
+			if(g_i2cVL->writeBytes(dev, RegisterAddress, *((uint16_t *) pdata))) {
 				Status = 0;
 			}
 	}		
@@ -88,7 +88,7 @@ int8_t VL53L1_ReadMulti(uint16_t dev, uint16_t RegisterAddress,
 	{
 		for(uint32_t i = 0; i <= count; i+=2){
 
-			if (g_i2cVL->readRegister(dev, RegisterAddress, pdata, count)){
+			if (g_i2cVL->readBytes(dev, RegisterAddress, count, (uint16_t*)pdata)){
 				Status = 0;
 			}
 		}

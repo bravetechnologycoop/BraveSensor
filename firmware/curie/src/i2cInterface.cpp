@@ -6,130 +6,138 @@
  */
 #include <i2cInterface.h>
 #include <braveDebug.h>
+#include <curie.h>
 #include <iostream>
-#include <fcntl.h>
 #include <unistd.h>
+#include <cstring>
+#include <string>
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 
-i2cInterface::i2cInterface(uint16_t bus) : bus_(bus), file_(-1) {
-    filename_ = "/dev/i2c-" + std::to_string(bus_);
-    bDebug(TRACE, "i2cInterface " + filename_);
-}    
+//#define I2C_MSG_FMT char
+#ifndef I2C_FUNC_I2C
+#include <linux/i2c.h>
+#define I2C_MSG_FMT __u8
+#endif
 
-
-i2cInterface::~i2cInterface() {
-    bDebug(TRACE, "~i2cInterface ");
-    closeDevice();
+i2cInterface::i2cInterface(){
+    bDebug(TRACE, "i2cInterface Created");
+    this->fileI2C = 0;
+    this->busID = "";
 }
 
-bool i2cInterface::openDevice() {
-    file_ = open(filename_.c_str(), O_RDWR);
-    if (file_ < 0) {
-        bDebug(ERROR, "Failed to open I2C bus " + filename_);
-        return false;
-    }
-    return true;
+i2cInterface::~i2cInterface(){
+    bDebug(TRACE, "i2cInterface destroyed");
 }
 
-void i2cInterface::closeDevice() {
-    if (file_ >= 0) {
-        close(file_);
-        file_ = -1;
-    }
+int i2cInterface::setParams(string busID){
+    bDebug(TRACE, "i2c params: " + busID);
+    int err = OK;
+    
+    this->busID = busID;
+
+    return err;
 }
 
-bool i2cInterface::setI2CAddress(uint16_t address) {
-    if (ioctl(file_, I2C_SLAVE, address) < 0) {
-        bDebug(ERROR, "Failed to set I2C address to " + (int)address);
-        return false;
+int i2cInterface::openBus(){
+    int err = BAD_SETTINGS;
+    bDebug(TRACE, "i2c Opening bus");
+
+    //check if the param has been set
+    if (0 < this->busID.length()){
+        err = OK;
+        this->fileI2C = open(this->busID.c_str(), O_RDWR);
+        if (0 > this->fileI2C){
+            err = BAD_PORT;
+            this->fileI2C = 0;
+        }
     }
-    return true;
+
+    return err;
 }
 
-bool i2cInterface::writeByte(uint16_t address, uint16_t reg, uint8_t data) {
-    if (!setI2CAddress(address)) return false;
+int i2cInterface::closeBus(){
+    int err = 0;
+    bDebug(TRACE, "i2c Closing bus");
 
-    uint8_t buffer[3] = { static_cast<uint8_t>(reg >> 8), static_cast<uint8_t>(reg & 0xFF), data };
-    if (write(file_, buffer, 3) != 3) {
-        bDebug(ERROR, "Failed to write byte to I2C device");
-        return false;
-    }
-    return true;
+    close(this->fileI2C);
+
+    return err;
 }
 
-bool i2cInterface::writeBytes(uint16_t address, uint16_t reg, const uint8_t* data, size_t length) {
-    if (!setI2CAddress(address)) return false;
+int i2cInterface::readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data){
+    bDebug(TRACE, "i2c readBytes");
+    int err = 0;
+    char cmd[2] = {(char)(startAddress >> 8), (char)(startAddress & 0xFF)};
+    char buf[1664];
+    uint16_t *p = data;
+    struct i2c_msg i2c_messages[2];
+    struct i2c_rdwr_ioctl_data i2c_messageset[1];
 
-    uint8_t buffer[length + 2];
-    buffer[0] = static_cast<uint8_t>(reg >> 8);
-    buffer[1] = static_cast<uint8_t>(reg & 0xFF);
-    std::copy(data, data + length, buffer + 2);
-    if (write(file_, buffer, length + 2) != (ssize_t)length + 2) {
-        bDebug(ERROR, "Failed to write byte to I2C device");
-        return false;
+        
+    if (!this->fileI2C) 
+    {
+        err = this->openBus();
     }
-    return true;
+
+    if (!err){
+        i2c_messages[0].addr = slaveAddr;
+        i2c_messages[0].flags = 0;
+        i2c_messages[0].len = 2;
+        i2c_messages[0].buf = (I2C_MSG_FMT *)cmd;
+
+        i2c_messages[1].addr = slaveAddr;
+        i2c_messages[1].flags = I2C_M_RD | I2C_M_NOSTART;
+        i2c_messages[1].len = nMemAddressRead * 2;
+        i2c_messages[1].buf = (I2C_MSG_FMT *)buf;
+
+        i2c_messageset[0].msgs = i2c_messages;
+        i2c_messageset[0].nmsgs = 2;
+
+        memset(buf, 0, nMemAddressRead * 2);
+
+        if (ioctl(this->fileI2C, I2C_RDWR, &i2c_messageset) < 0) 
+        {
+            bDebug(ERROR, "i2c read error");
+            err = FILE_ERROR;
+        } else {
+            for (int count = 0; count < nMemAddressRead; count++) 
+            {
+                int i = count << 1;
+                *p++ = ((uint16_t)buf[i] << 8) | buf[i + 1];
+            }
+        }
+    }
+
+    return err;
+
 }
 
-bool i2cInterface::readByte(uint16_t address, uint16_t reg, uint8_t &data) {
-    if (!setI2CAddress(address)) return false;
+int i2cInterface::writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data){
+    bDebug(TRACE, "i2c writeBytes");
+    int err = 0;
+    char cmd[4] = {(char)(writeAddress >> 8), (char)(writeAddress & 0x00FF), (char)(data >> 8), (char)(data & 0x00FF)};
 
-    uint8_t regBuffer[2] = { static_cast<uint8_t>(reg >> 8), static_cast<uint8_t>(reg & 0xFF) };
-    if (write(file_, regBuffer, 2) != 2) {
-        bDebug(ERROR, "Failed to set register for read");
-        return false;
+    struct i2c_msg i2c_messages[1];
+    struct i2c_rdwr_ioctl_data i2c_messageset[1];
+
+    if (this->fileI2C){
+        err = OK;
+        i2c_messages[0].addr = slaveAddr;
+        i2c_messages[0].flags = 0;
+        i2c_messages[0].len = 4;
+        i2c_messages[0].buf = (I2C_MSG_FMT *)cmd;
+
+        i2c_messageset[0].msgs = i2c_messages;
+        i2c_messageset[0].nmsgs = 1;
+
+        if (ioctl(this->fileI2C, I2C_RDWR, &i2c_messageset) < 0) 
+        {
+            bDebug(ERROR, "I2C Write Error");
+            err = FILE_ERROR;
+        }
     }
-    if (read(file_, &data, 1) != 1) {
-        bDebug(ERROR, "Failed to read byte from I2C device");
-        return false;
-    }
-    return true;
+
+    return err;
 }
-
-bool i2cInterface::readBytes(uint16_t address, uint16_t reg, uint8_t* buffer, size_t length) {
-    if (!setI2CAddress(address)) return false;
-
-    uint8_t regBuffer[2] = { static_cast<uint8_t>(reg >> 8), static_cast<uint8_t>(reg & 0xFF) };
-    if (write(file_, regBuffer, 2) != 2) {
-        bDebug(ERROR, "Failed to set register for read");
-        return false;
-    }
-    if (read(file_, buffer, length) != (ssize_t)length) {
-        bDebug(ERROR, "Failed to read byte from I2C device");
-        return false;
-    }
-    return true;
-}
-
-bool i2cInterface::writeRegister(uint16_t address, uint16_t startReg, const uint8_t* data, size_t length) {
-    if (!setI2CAddress(address)) return false;
-
-    uint8_t buffer[length + 2];
-    buffer[0] = static_cast<uint8_t>(startReg >> 8);
-    buffer[1] = static_cast<uint8_t>(startReg & 0xFF);
-    std::copy(data, data + length, buffer + 2);
-    if (write(file_, buffer, length + 2) != (ssize_t)length + 2) {
-        bDebug(ERROR, "Failed to write to multiple registers");
-        return false;
-    }
-    return true;
-}
-
-bool i2cInterface::readRegister(uint16_t address, uint16_t startReg, uint8_t* buffer, size_t length) {
-    if (!setI2CAddress(address)) return false;
-
-    uint8_t regBuffer[2] = { static_cast<uint8_t>(startReg >> 8), static_cast<uint8_t>(startReg & 0xFF) };
-    if (write(file_, regBuffer, 2) != 2) {
-        bDebug(ERROR, "Failed to set start register for read");
-        return false;
-    }
-    if (read(file_, buffer, length) != (ssize_t)length) {
-        bDebug(ERROR, "Failed to read from multiple registers");
-        return false;
-    }
-    return true;
-}
-
-
-
