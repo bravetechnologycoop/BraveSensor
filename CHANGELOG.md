@@ -14,6 +14,18 @@ the code was deployed.
 ### Added
 
 - Added search bar for clients and locations in the dashboard (CU-86dup4jg7).
+- Added migration script to update device_type_enum to handle multistall and singlestall sensors separately (CU-86duvwbq2).
+- Added dashboard functionality for submit new location and edit location to handle different device_types using dropdown (CU-86duvwbq2).
+- Added new integration tests for inserting a multi-stall sensor and editing single-stall to multi-stall (CU-86duvwbq2).
+
+### Changed
+
+- Updated brave-alert-lib to v15.0.4 for deviceType enum change (CU-86duvwbq2).
+- Updated device_type_enum to have 'DEVICE_SENSOR_SINGLESTALL' and 'DEVICE_SENSOR_MULTISTALL' instead of 'DEVICE_SENSOR' (CU-86duvwbq2).
+- Updated test cases for newLocation and updateLocation to use new device types (CU-86duvwbq2).
+- Updated the /pa/create-sensor-location route due to createLocationFromBrowserForm() db function change (CU-86duvwbq2).
+- Changed english messages `alertAdditionalAlertAcceptResetRequest`, `alertStartAcceptResetRequest`, `resetNoticeToRequester`, `resetNoticeToOtherResponders`, `resetRequestRejected`, `sensorDisconnectionInitial`, `sensorDisconnectionReminder`, `sensorIsTampered`, `sensorInactivity` to reduce twilio message segments (CU-86duzccj5).
+- Changed messages in test cases to match the new ones (CU-86duzccj5).
 
 ## [10.15.0] - 2024-10-17
 

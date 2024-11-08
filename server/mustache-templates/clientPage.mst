@@ -34,6 +34,7 @@
                         <thead>
                             <tr class="table-header" scope="row">
                                 <th scope="col"><h5>Location</h5></th>
+                                <th scope="col"><h5>Device Type</h5></th>
                                 <th scope="col"><h5>Last Session Started</h5></th>
                                 <th scope="col">Sends Alerts?</th>
                                 <th scope="col">Sends Vitals?</th>
@@ -43,6 +44,7 @@
                         {{#locations}}
                             <tr class="table-data">
                                 <th scope="row"><a href="/locations/{{id}}">{{name}}</a></th>
+                                <td>{{deviceType}}</td>
                                 <td>{{sessionStart}}</td>
                                 <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
                                 <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
