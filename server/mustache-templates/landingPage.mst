@@ -52,7 +52,7 @@
 
             rows.forEach(row => {
                 let clientName = row.querySelector("th").innerText.toLowerCase();
-                if (clientName.startsWith(filter)) {
+                if (clientName.includes(filter)) {
                     row.style.display = ""
                 } else {
                     row.style.display = "none"
