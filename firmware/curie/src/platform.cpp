@@ -25,8 +25,8 @@
 #include <vl53l5cx_api.h>
 #include <braveDebug.h>
 
-i2cInterface * g_i2cVL;
-uint16_t g_sAddress;
+extern i2cInterface * g_i2cVL;
+extern uint16_t g_sAddress;
 
 #define VL53L5CX_ERROR_GPIO_SET_FAIL	-1
 #define VL53L5CX_COMMS_ERROR		-2
@@ -89,14 +89,15 @@ int32_t write_read_multi(
 #else
 
 	struct i2c_rdwr_ioctl_data packets;
-	struct i2c_msg messages[2];
+	//struct i2c_msg messages[2];
 
 	uint32_t data_size = 0;
 	uint32_t position = 0;
 
 	if (write_not_read) {
 		do {
-			data_size = (count - position) > (VL53L5CX_COMMS_CHUNK_SIZE-2) ? (VL53L5CX_COMMS_CHUNK_SIZE-2) : (count - position);
+			g_i2cVL->readBytes(i2c_address, reg_address, count, (uint16_t*)pdata);
+			/*data_size = (count - position) > (VL53L5CX_COMMS_CHUNK_SIZE-2) ? (VL53L5CX_COMMS_CHUNK_SIZE-2) : (count - position);
 
 			memcpy(&i2c_buffer[2], &pdata[position], data_size);
 
@@ -110,17 +111,19 @@ int32_t write_read_multi(
 
 			packets.msgs = messages;
 			packets.nmsgs = 1;
-
+			
 			if (ioctl(fd, I2C_RDWR, &packets) < 0)
 				//bDebug(TRACE, "I ran 1");
 				return VL53L5CX_COMMS_ERROR;
-			position +=  data_size;
+			// position +=  data_size;*/
 
 		} while (position < count);
 	}
 
 	else {
 		do {
+			g_i2cVL->writeBytes(i2c_address, reg_address, pdata[0]);
+			/*
 			data_size = (count - position) > VL53L5CX_COMMS_CHUNK_SIZE ? VL53L5CX_COMMS_CHUNK_SIZE : (count - position);
 
 			i2c_buffer[0] = (reg_address + position) >> 8;
@@ -138,12 +141,12 @@ int32_t write_read_multi(
 
 			packets.msgs = messages;
 			packets.nmsgs = 2;
-
+			
 			if (ioctl(fd, I2C_RDWR, &packets) < 0)
 				perror("Write Byte failure");
 				return VL53L5CX_COMMS_ERROR;
 
-			position += data_size;
+			//position += data_size;*/
 
 		} while (position < count);
 	}
@@ -194,7 +197,10 @@ uint8_t VL53L5CX_RdMulti(
 		uint8_t *p_values,
 		uint32_t size)
 {
-	return(read_multi(p_platform->fd, p_platform->address, reg_address, p_values, size));
+	return(
+		read_multi(p_platform->fd, p_platform->address, reg_address, p_values, size)
+		
+		);
 }
 
 uint8_t VL53L5CX_WrMulti(

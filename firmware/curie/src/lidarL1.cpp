@@ -44,6 +44,7 @@ int lidarL1::getData(string * sqlTable, std::vector<string> * vData){
     uint8_t dataReady = 0;
 	while (dataReady == 0) 
     {
+            bDebug(TRACE, "blah");
 			status = VL53L1X_CheckForDataReady(Dev, &dataReady);
 			usleep(1);
 	}
