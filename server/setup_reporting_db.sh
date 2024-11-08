@@ -128,5 +128,5 @@ SET locationid = (
     FROM sensors_vitals
     WHERE sensors_vitals.created_at = anchor_time.created_at
 )
-WHERE vitals_id IS NULL;
+WHERE locationid IS NULL;
 "
