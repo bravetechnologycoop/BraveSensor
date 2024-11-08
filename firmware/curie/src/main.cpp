@@ -21,6 +21,7 @@
 #include <multiMotionSensor.h>
 #include <postgresInterface.h>
 #include <lidarL1.h>
+#include <lidarL5.h>
 #include <usonicRange.h>
 
 using namespace std;
@@ -31,7 +32,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
-	int tmpcount = 7;
+	int tmpcount = 2;
     int err = OK;
     try{
         
@@ -41,9 +42,12 @@ int main()
 		fastI2C->setParams("/dev/i2c-1");
 		thermalCamera * sourceThermalCamera = NULL;
 		//lidarL1 *sourceLidarL1 = NULL;
+		lidarL5 * sourceLidarL5 = NULL;
         if (OK == fastI2C->openBus()){
 			sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
         	vSources.push_back(sourceThermalCamera);
+			sourceLidarL5 = new lidarL5(fastI2C, 0x29, 8); 
+			vSources.push_back(sourceLidarL5);
 			//sourceLidarL1 = new lidarL1(fastI2C, 0x29); 
 			//vSources.push_back(sourceLidarL1);
 		}
@@ -63,12 +67,12 @@ int main()
 		vSources.push_back(&sourcePIR);
 
 		serialib * usbSerial = new serialib();
-		multiMotionSensor * motionSensor = NULL;
+		/*multiMotionSensor * motionSensor = NULL;
 		if (1 == usbSerial->openDevice(DLP_SER, DLP_BAUD)) {
 			bDebug(TRACE, "Got the uart");
 			motionSensor = new multiMotionSensor(usbSerial);
 			vSources.push_back(motionSensor);
-		}
+		}*/
 
 
 		//open postgres interface

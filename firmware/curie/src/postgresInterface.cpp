@@ -86,7 +86,7 @@ int postgresInterface::openDB(){
 // Will probably end up being private, as a helper function, keeping public for development.
 int postgresInterface::writeSQL(string sql) {
     int err = OK;
-    bDebug(TRACE, "Start writesql query: \n" + sql);// + sql.substr(0, 100));
+    bDebug(TRACE, "Start writesql query: \n" + sql.substr(0, 100));
 	
     if (connStringHost.empty() || conn == NULL || !conn->is_open()){
         bDebug(TRACE, "Database connection is not open, check connection parameters");
