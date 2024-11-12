@@ -27,6 +27,16 @@ class multiGasSensor: public dataSource {
         int getTableParams(std::vector<std::pair<std::string, std::string>> * tableData);
     private:
         std::vector<std::pair<std::string, std::string>> dbParams;
+
+        float mass_concentration_pm1p0;
+        float mass_concentration_pm2p5;
+        float mass_concentration_pm4p0;
+        float mass_concentration_pm10p0;
+        float ambient_humidity;
+        float ambient_temperature;
+        float voc_index;
+        float nox_index;
+
 };
         
 

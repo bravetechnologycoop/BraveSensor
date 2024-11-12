@@ -32,7 +32,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
-	int tmpcount = 1;
+	int tmpcount = 10;
     int err = OK;
     try{
         
@@ -85,7 +85,7 @@ int main()
 		usleep(LOOP_TIMER);
 
 		while (loop){
-			bDebug(WARN, "Main Loop");
+			sleep(1);
 			err = pInterface->writeTables();
 			if (OK != err){
 				bDebug(ERROR, "Failed to writeTables Bailing");
@@ -96,7 +96,6 @@ int main()
 			if (!tmpcount){
 				loop = false;
 			}
-			sleep(1);
 		};
 
 		//cleanup
