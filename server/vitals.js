@@ -100,8 +100,8 @@ async function sendReconnectionMessage(locationid, deviceDisplayName, language, 
 
 // Heartbeat Helper Functions
 async function checkHeartbeat() {
-  const doorThresholdSeconds = helpers.getEnvVar('DOOR_THRESHOLD_SECONDS') 
-  const radarThresholdSeconds = helpers.getEnvVar('RADAR_THRESHOLD_SECONDS') 
+  const doorThresholdSeconds = helpers.getEnvVar('DOOR_THRESHOLD_SECONDS')
+  const radarThresholdSeconds = helpers.getEnvVar('RADAR_THRESHOLD_SECONDS')
   const subsequentVitalsAlertThresholdSeconds = helpers.getEnvVar('SUBSEQUENT_VITALS_ALERT_THRESHOLD')
 
   const currentDBTime = await db.getCurrentTime()
