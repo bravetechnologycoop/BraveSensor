@@ -1,25 +1,25 @@
-/* multiGas.h - Class the retrieves and process multigas sensor data
+/* multiGasSensor.h - Class the retrieves and process multigassensor sensor data
  *
  * Copyright (C) 2024 Brave Coop - All Rights Reserved
  *
  * File created by:  Denis Londry 2024
  */
-#ifndef _MULTIGAS__H_
-#define _MULTIGAS__H_
+#ifndef _MULTIGASSENSOR__H_
+#define _MULTIGASSENSOR__H_
 using namespace std;
 #include <vector>
 #include <dataSource.h>
 #include <serialib.h>
 #include <curie.h>
 
-#define T_MULTIGAS_NAME "MultiGas sensor"
-#define T_MULTIGAS_SQL_TABLE "multigas"
+#define T_MULTIGASSENSOR_NAME "MultiGas sensor"
+#define T_MULTIGAS_SQL_TABLE "multigassensor"
 
 
-class multiGas: public dataSource {
+class multiGasSensor: public dataSource {
     public:
-        multiGas();
-        ~multiGas();
+        multiGasSensor();
+        ~multiGasSensor();
 
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);
@@ -31,4 +31,4 @@ class multiGas: public dataSource {
         
 
 
-#endif //_MULTIGAS__H_
+#endif //_MULTIGASSENSOR__H_
