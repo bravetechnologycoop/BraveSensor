@@ -99,7 +99,8 @@ async function sendReconnectionMessage(locationid, deviceDisplayName, language, 
 }
 
 // Heartbeat Helper Functions
-async function checkHeartbeat() { // FIXME: undo the divide
+async function checkHeartbeat() {
+  // FIXME: undo the divide
   const doorThresholdSeconds = helpers.getEnvVar('DOOR_THRESHOLD_SECONDS') / 100
   const radarThresholdSeconds = helpers.getEnvVar('RADAR_THRESHOLD_SECONDS') / 100
   const subsequentVitalsAlertThresholdSeconds = helpers.getEnvVar('SUBSEQUENT_VITALS_ALERT_THRESHOLD')
