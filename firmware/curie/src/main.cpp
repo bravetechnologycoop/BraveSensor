@@ -22,6 +22,7 @@
 #include <postgresInterface.h>
 #include <lidarL1.h>
 #include <usonicRange.h>
+#include <multiGasSensor.h>
 
 using namespace std;
 
@@ -42,8 +43,8 @@ int main()
 		thermalCamera * sourceThermalCamera = NULL;
 		//lidarL1 *sourceLidarL1 = NULL;
         if (OK == fastI2C->openBus()){
-			sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
-        	vSources.push_back(sourceThermalCamera);
+			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
+        	//vSources.push_back(sourceThermalCamera);
 			//sourceLidarL1 = new lidarL1(fastI2C, 0x29); 
 			//vSources.push_back(sourceLidarL1);
 		}
@@ -51,10 +52,13 @@ int main()
 		i2cInterface * slowI2C = new i2cInterface();
 		slowI2C->setParams("/dev/i2c-22");
 		usonicRange * sourceUSonic = NULL;
+		multiGasSensor * sourceMGas = NULL;
 		if (OK == slowI2C->openBus()){
 			bDebug(TRACE, "Got the slow i2c");
 			//sourceUSonic = new usonicRange(slowI2C, 0x70);
 			//vSources.push_back(sourceUSonic);
+			sourceMGas = new multiGasSensor();
+			vSources.push_back(sourceMGas);
 		}
 		
 
@@ -92,7 +96,7 @@ int main()
 			if (!tmpcount){
 				loop = false;
 			}
-			usleep(100000);
+			sleep(1);
 		};
 
 		//cleanup

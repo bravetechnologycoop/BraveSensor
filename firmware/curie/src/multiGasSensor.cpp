@@ -33,17 +33,16 @@ multiGasSensor::multiGasSensor(){
     if (error) {
         bDebug(ERROR, "Error executing sen5x_get_serial_number(): " + to_string(error));
     } else {
-        string szTemp(serial_number);
-        bDebug(TRACE, "Serial number: " + string(serial_number));
+        bDebug(TRACE, "Serial number: " + string((char*)serial_number));
     }
 
     unsigned char product_name[32];
     uint8_t product_name_size = 32;
     error = sen5x_get_product_name(product_name, product_name_size);
     if (error) {
-        printf("Error executing sen5x_get_product_name(): %i\n", error);
+        bDebug(ERROR, "Error executing sen5x_get_product_name(): " + to_string(error));
     } else {
-        printf("Product name: %s\n", product_name);
+        bDebug(TRACE,"Product name: " + string((char*)product_name));
     }
 
 }
