@@ -9,16 +9,27 @@
 #include <curie.h>
 #include <usonicRange.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+extern "C"{
+    #include <linux/i2c-dev.h>
+    #include <i2c/smbus.h>
+}
 
-//usonicRange::usonicRange(i2cInterface *i2c, int i2cAddress){
-usonicRange::usonicRange(smbInterface *smb, uint8_t i2cAddress){
+usonicRange::usonicRange(char* i2cbus, uint8_t i2cAddress){
     bDebug(TRACE, "Creating usonicRange");
     setTableParams();
 
-    //!!! check and barf if this is bad
-    //this->i2c = i2c;
-    this->smb = smb;
     this->i2cAddress = i2cAddress;
+    this->fd = open(i2cbus, O_RDWR);
+    if (0 > this->fd){
+        bDebug(ERROR, "Failed to open bus");
+    } else {
+        if (0 > ioctl(this->fd, I2C_SLAVE, i2cAddress)){
+            bDebug(ERROR, "Failed to set the slave address");
+        }
+    }
+
 }
 
 usonicRange::~usonicRange(){
@@ -28,30 +39,27 @@ usonicRange::~usonicRange(){
 int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(INFO, "usonicRange getData");
     int err = OK;
-    uint16_t rangeCmd = 0x51;
-    //uint16_t range[2] = {0,0};
-    int32_t range = 200;
+    uint8_t setRangeCmd = 0x51;
+    uint8_t getRangeCmd = 0x81;
+    int16_t rawRange;
+    //int32_t range = 200;
 
     //check incoming pointers
     *sqlTable = T_USONIC_SQL_TABLE;
-    //err = this->i2c->writeBytes(this->i2cAddress, 224, 81);
-    err = this->smb->writeByte(this->i2cAddress, 81);
-    if (0 < err){
-        usleep(600000);
-        for (int i = 0; i < 2; i++){
-            usleep(100);  //micro sleep
-            if (0 > (this->smb->readByte(this->i2cAddress, &range))){
-                break;
-            }
-        }
-    }
-    
-    if (OK == err){
-        bDebug(INFO, ("range :" + to_string(range))); //+ " " + to_string(range[1])));
-        //vData->push_back(to_string((int)data));
-    }
-    
 
+    //send out the command to get a range
+    err = i2c_smbus_write_byte(this->fd, setRangeCmd);
+    if (0 > err){
+        bDebug(ERROR, "Failed to write SMB");
+    }
+    usleep(200000);
+    rawRange = i2c_smbus_read_word_data(this->fd, getRangeCmd);
+    if (0 < rawRange){
+        int8_t range = (rawRange >> 8) & 0xff | (rawRange & 0xff);
+        bDebug(TRACE, "usonic range: " + to_string(range) + "cm");
+        vData->push_back(to_string((int)range));
+    }
+    
     return err;
 }
 
