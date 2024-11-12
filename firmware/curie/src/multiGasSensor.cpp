@@ -8,10 +8,43 @@
 #include <dataSource.h>
 #include <multiGasSensor.h>
 #include <curie.h>
+#include <string.h>
+#include "SEN55/sen5x_i2c.h"
+#include "SEN55/sensirion_common.h"
+#include "SEN55/sensirion_i2c_hal.h"
+
+using namespace std;
 
 multiGasSensor::multiGasSensor(){
     bDebug(INFO, "multiGasSensor");
+    int error = OK;
     setTableParams();
+
+    sensirion_i2c_hal_init();
+
+    error = sen5x_device_reset();
+    if (error) {
+        bDebug(ERROR, "Error executing sen5x_device_reset(): " + to_string(error));
+    }
+
+    unsigned char serial_number[32];
+    uint8_t serial_number_size = 32;
+    error = sen5x_get_serial_number(serial_number, serial_number_size);
+    if (error) {
+        bDebug(ERROR, "Error executing sen5x_get_serial_number(): " + to_string(error));
+    } else {
+        string szTemp(serial_number);
+        bDebug(TRACE, "Serial number: " + string(serial_number));
+    }
+
+    unsigned char product_name[32];
+    uint8_t product_name_size = 32;
+    error = sen5x_get_product_name(product_name, product_name_size);
+    if (error) {
+        printf("Error executing sen5x_get_product_name(): %i\n", error);
+    } else {
+        printf("Product name: %s\n", product_name);
+    }
 
 }
 
@@ -23,8 +56,7 @@ int multiGasSensor::getData(string *sqlTable, std::vector<string> * vData){
     bDebug(INFO, "multiGasSensor GetData");
     *sqlTable = T_MULTIGAS_SQL_TABLE;
     int err = OK;
-    uint16_t xFreq, yFreq, zFreq, sFreq;
-    float pressure, xAmp, yAmp, zAmp, sAmp, soundBroadband, humidity, temp;
+    float temp = 0.0;
     
     vData->push_back(to_string(temp));
 
@@ -36,7 +68,7 @@ int multiGasSensor::getTableDef(string * sqlBuf){
     int err = OK;
     if (NULL != sqlBuf){
         *sqlBuf = T_MULTIGAS_SQL_TABLE;
-        bDebug(TRACE, "usonicRange Table: " + *sqlBuf);
+        bDebug(TRACE, "multigas Table: " + *sqlBuf);
         err = OK;
     }
 
