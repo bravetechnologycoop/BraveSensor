@@ -10,6 +10,7 @@ using namespace std;
 #include <vector>
 #include <dataSource.h>
 #include <i2cInterface.h>
+#include <smbInterface.h>
 
 #define T_USONIC_NAME "Ultrasonic Range Sensor"
 #define T_USONIC_SQL_TABLE "usonicrange"
@@ -17,7 +18,8 @@ using namespace std;
 
 class usonicRange: public dataSource {
     public:
-        usonicRange(i2cInterface *i2c, int i2cAddress);
+        //usonicRange(i2cInterface *i2c, int i2cAddress);
+        usonicRange(smbInterface *smb, uint8_t i2cAddress);
         ~usonicRange();
 
         int getData(string *sqlTable, std::vector<string> * vData);
@@ -25,9 +27,10 @@ class usonicRange: public dataSource {
         int setTableParams();
         int getTableParams(std::vector<std::pair<std::string, std::string>> * tableData);
     private:
-        i2cInterface * i2c;
+        //i2cInterface * i2c;
+        smbInterface * smb;
         std::vector<std::pair<std::string, std::string>> dbParams;
-        int i2cAddress;
+        uint8_t i2cAddress;
 
 };
 

@@ -45,11 +45,11 @@ int smbInterface::setParams(string busID){
 }
 int smbInterface::openBus(){
     bDebug(TRACE, "smbInterface openBus");
-    int err = -1;
+    int err = OK;
 
     this->fileSMB = open(this->busID.c_str(), O_RDWR);
     if (0 > this->fileSMB){
-        err = OK;
+        err = this->fileSMB;
         bDebug(ERROR, "failed to open i2c bus");
     }
 
@@ -81,6 +81,12 @@ int smbInterface::writeByte(uint8_t slaveAddr,  uint8_t data){
 
     if (0 < ioctl(this->fileSMB, I2C_SLAVE, slaveAddr)){
         err = i2c_smbus_write_byte(this->fileSMB, data);
+        if (0 > err){
+            bDebug(ERROR, "smbWrite failed to succesfully write a byte");
+        }
+    } else {
+        bDebug(ERROR, "smbWrite failed to set file ioctl");
+        perror("Write Byte failure");
     }
 
     return err;

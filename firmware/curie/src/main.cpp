@@ -31,7 +31,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
-	int tmpcount = 2;
+	int tmpcount = 1;
     int err = OK;
     try{
         
@@ -48,9 +48,9 @@ int main()
 			//vSources.push_back(sourceLidarL1);
 		}
 
-		smbInterface * slowI2C = new smbInterface();
+		i2cInterface * slowI2C = new i2cInterface();
 		slowI2C->setParams("/dev/i2c-22");
-		//usonicRange * sourceUSonic = NULL;
+		usonicRange * sourceUSonic = NULL;
 		if (OK == slowI2C->openBus()){
 			bDebug(TRACE, "Got the slow i2c");
 			//sourceUSonic = new usonicRange(slowI2C, 0x70);
@@ -63,11 +63,11 @@ int main()
 		vSources.push_back(&sourcePIR);
 
 		serialib * usbSerial = new serialib();
-		multiMotionSensor * motionSensor = NULL;
+		//multiMotionSensor * motionSensor = NULL;
 		if (1 == usbSerial->openDevice(DLP_SER, DLP_BAUD)) {
 			bDebug(TRACE, "Got the uart");
-			motionSensor = new multiMotionSensor(usbSerial);
-			vSources.push_back(motionSensor);
+			//motionSensor = new multiMotionSensor(usbSerial);
+			//vSources.push_back(motionSensor);
 		}
 
 
@@ -103,6 +103,7 @@ int main()
 		delete fastI2C;
 		slowI2C->closeBus();
 		delete slowI2C;
+		usbSerial->closeDevice();
 
 		bDebug(INFO, "Completed Data Gathering");
 	}

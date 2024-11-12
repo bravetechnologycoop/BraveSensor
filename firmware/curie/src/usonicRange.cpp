@@ -10,12 +10,14 @@
 #include <usonicRange.h>
 #include <unistd.h>
 
-usonicRange::usonicRange(i2cInterface *i2c, int i2cAddress){
+//usonicRange::usonicRange(i2cInterface *i2c, int i2cAddress){
+usonicRange::usonicRange(smbInterface *smb, uint8_t i2cAddress){
     bDebug(TRACE, "Creating usonicRange");
     setTableParams();
 
     //!!! check and barf if this is bad
-    this->i2c = i2c;
+    //this->i2c = i2c;
+    this->smb = smb;
     this->i2cAddress = i2cAddress;
 }
 
@@ -26,21 +28,29 @@ usonicRange::~usonicRange(){
 int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(INFO, "usonicRange getData");
     int err = OK;
-    uint8_t rangeCmd = 0x51;
-    uint8_t range = 20;
+    uint16_t rangeCmd = 0x51;
+    //uint16_t range[2] = {0,0};
+    int32_t range = 200;
 
     //check incoming pointers
     *sqlTable = T_USONIC_SQL_TABLE;
-    //err = this->i2c->writeByte(this->i2cAddress, &rangeCmd, 1);
-    usleep(100);  //let the range be read
-    //err = this->i2c->readByte(this->i2cAddress, &range, 1);
-
+    //err = this->i2c->writeBytes(this->i2cAddress, 224, 81);
+    err = this->smb->writeByte(this->i2cAddress, 81);
+    if (0 < err){
+        usleep(600000);
+        for (int i = 0; i < 2; i++){
+            usleep(100);  //micro sleep
+            if (0 > (this->smb->readByte(this->i2cAddress, &range))){
+                break;
+            }
+        }
+    }
+    
     if (OK == err){
-        bDebug(INFO, ("range :" + to_string((int)range)));
+        bDebug(INFO, ("range :" + to_string(range))); //+ " " + to_string(range[1])));
         //vData->push_back(to_string((int)data));
     }
     
-
 
     return err;
 }

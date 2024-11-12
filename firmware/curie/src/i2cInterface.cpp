@@ -135,6 +135,7 @@ int i2cInterface::writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t 
         if (ioctl(this->fileI2C, I2C_RDWR, &i2c_messageset) < 0) 
         {
             bDebug(ERROR, "I2C Write Error");
+            perror("i2c error");
             err = FILE_ERROR;
         }
     }
