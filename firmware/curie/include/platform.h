@@ -18,6 +18,9 @@
 #include <string.h>
 #include <i2cInterface.h>
 
+extern i2cInterface * g_i2cVL;
+extern uint16_t g_sAddress;
+
 /**
  * @brief Structure VL53L5CX_Platform needs to be filled by the customer,
  * depending on his platform. At least, it contains the VL53L5CX I2C address.

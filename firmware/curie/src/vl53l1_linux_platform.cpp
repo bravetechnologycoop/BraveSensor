@@ -20,22 +20,18 @@
 #include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <i2cInterface.h>
 
 #include "vl53l1_platform.h"
 
 /* Globals ------------------------------------------------------------------*/
 
-//#define VL53L1_MAX_I2C_XFER_SIZE 512
+#define VL53L1_MAX_I2C_XFER_SIZE 512
 
-//static uint8_t buffer[VL53L1_MAX_I2C_XFER_SIZE + 2];/* GLOBAL I2C comm buff */
+static uint8_t buffer[VL53L1_MAX_I2C_XFER_SIZE + 2];/* GLOBAL I2C comm buff */
 
-//static int i2c_hdl = -1;
+static int i2c_hdl = -1;
 static int st_tof_dev = -1;
-i2cInterface * g_i2cVL;
-uint16_t g_sAddress;
 
-/*
 static int8_t Linux_I2CRead(uint8_t *buff, uint8_t len)
 {
 	int ret;
@@ -59,61 +55,75 @@ static int8_t Linux_I2CWrite(uint8_t *buff, uint8_t len)
 	}
 	return 0;
 }
-*/
 
 int8_t VL53L1_WriteMulti(uint16_t dev, uint16_t RegisterAddress,
 		uint8_t *pdata, uint32_t count)
 {
-	int8_t Status = 1;
+	int8_t Status = 0;
 
-	//check that pdata is good
-	if(NULL != pdata && NULL != g_i2cVL)
-	{		
-			//generic write with leading address
-			if(g_i2cVL->writeBytes(dev, RegisterAddress, *((uint16_t *) pdata))) {
-				Status = 0;
-			}
-	}		
-		
+	if ((count + 1) > VL53L1_MAX_I2C_XFER_SIZE)
+		return -1;
+	buffer[0] = RegisterAddress >> 8;
+	buffer[1] = RegisterAddress & 0xFF;
+
+	memcpy(&buffer[2], pdata, count);
+	Status = Linux_I2CWrite(buffer, (count + 2));
 	return Status;
 }
 
 int8_t VL53L1_ReadMulti(uint16_t dev, uint16_t RegisterAddress,
 		uint8_t *pdata, uint32_t count)
 {
-	int8_t Status = 1;
+	int8_t Status = 0;
 
-	//check that pdata is good
-	if(NULL != pdata && NULL != g_i2cVL)
-	{
-		for(uint32_t i = 0; i <= count; i+=2){
+	if ((count + 1) > VL53L1_MAX_I2C_XFER_SIZE)
+		return -1;
 
-			if (g_i2cVL->readBytes(dev, RegisterAddress, count, (uint16_t*)pdata)){
-				Status = 0;
-			}
-		}
+	buffer[0] = RegisterAddress >> 8;
+	buffer[1] = RegisterAddress & 0xFF;
+
+	Status = Linux_I2CWrite((uint8_t *) buffer, (uint8_t) 2);
+	if (!Status) {
+		pdata[0] = RegisterAddress;
+		Status = Linux_I2CRead(pdata, count);
 	}
-
-
 	return Status;
 }
 
-int8_t VL53L1X_UltraLite_Linux_I2C_Init(i2cInterface * i2c, uint16_t i2caddress)
+int8_t VL53L1X_UltraLite_Linux_I2C_Init(uint16_t dev,
+		int i2c_adapter_nr, uint8_t i2c_Addr)
 {
-	//log some stuff
+	/* Open the I2C on Linux */
+	char i2c_hdlname[20];
+	(void)dev;
 
-	//test if inputs make sense
-	g_i2cVL = i2c;
-	g_sAddress = i2caddress;
+	printf("I2C Bus number is %d\n", i2c_adapter_nr);
+
+	snprintf(i2c_hdlname, 19, "/dev/i2c-%d", i2c_adapter_nr);
+	i2c_hdl = open(i2c_hdlname, O_RDWR);
+	if (i2c_hdl < 0) {
+		/* ERROR HANDLING; you can check errno to see what went wrong */
+		printf(" Open failed, returned value = %d, i2c_hdl_name = %s\n",
+				i2c_hdl, i2c_hdlname);
+		perror("Open bus ");
+		return -1;
+	}
+	if (ioctl(i2c_hdl, I2C_SLAVE, i2c_Addr) < 0) {
+		printf("Failed to acquire bus access and/or talk to slave.\n");
+		/* ERROR HANDLING; you can check errno to see what went wrong */
+		return -1;
+	}
 
 	return 0;
 }
 
 int8_t VL53L1X_UltraLite_Linux_Interrupt_Init(void)
 {
+	char *st_tof_dev_name = "st_tof_dev";
+
 	st_tof_dev = open("/dev/st_tof_dev", O_RDONLY);
 	if (st_tof_dev == -1) {
-		printf("Failed to open %s\n", "st_tof_dev");
+		printf("Failed to open %s\n", st_tof_dev_name);
 		return -1;
 	}
 

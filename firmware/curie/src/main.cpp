@@ -40,16 +40,16 @@ int main()
 		//set up the busses
         i2cInterface * fastI2C = new i2cInterface();
 		fastI2C->setParams("/dev/i2c-1");
-		thermalCamera * sourceThermalCamera = NULL;
-		//lidarL1 *sourceLidarL1 = NULL;
+		//thermalCamera * sourceThermalCamera = NULL;
+		lidarL1 *sourceLidarL1 = NULL;
 		//lidarL5 * sourceLidarL5 = NULL;
         if (OK == fastI2C->openBus()){
-			sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
-        	vSources.push_back(sourceThermalCamera);
+			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
+        	//vSources.push_back(sourceThermalCamera);
 			//sourceLidarL5 = new lidarL5(fastI2C, 0x29, 8); 
 			//vSources.push_back(sourceLidarL5);
-			//sourceLidarL1 = new lidarL1(fastI2C, 0x29); 
-			//vSources.push_back(sourceLidarL1);
+			sourceLidarL1 = new lidarL1(1, 0x29); 
+			vSources.push_back(sourceLidarL1);
 		}
 
 		smbInterface * slowI2C = new smbInterface();

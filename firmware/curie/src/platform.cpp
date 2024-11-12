@@ -24,9 +24,10 @@
 #include <types.h>
 #include <vl53l5cx_api.h>
 #include <braveDebug.h>
+i2cInterface * g_i2cVL;
+uint16_t g_sAddress;
 
-extern i2cInterface * g_i2cVL;
-extern uint16_t g_sAddress;
+
 
 #define VL53L5CX_ERROR_GPIO_SET_FAIL	-1
 #define VL53L5CX_COMMS_ERROR		-2

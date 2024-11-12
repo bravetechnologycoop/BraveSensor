@@ -113,10 +113,10 @@ int lidarL5::initDevice()
     uint8_t 		status, isAlive;
 	VL53L5CX_Configuration 	Dev;
 	this->pdev = &Dev;
-    int file = vl53l5cx_comms_init(i2cBus, i2cAddress);
-	if (file == -1){
+   // int file = vl53l5cx_comms_init(i2cBus, i2cAddress);
+	//if (file == -1){
 		err = BAD_SETTINGS;
-    }
+   // }
     /*
 	status = vl53l5cx_is_alive(pdev, &isAlive);
 	if(!isAlive || status)
