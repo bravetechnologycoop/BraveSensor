@@ -33,7 +33,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
-	int tmpcount = 10;
+	int tmpcount = 5;
     int err = OK;
     try{
         
@@ -59,16 +59,16 @@ int main()
 		//multiGasSensor * sourceMGas = NULL;
 		if (OK == slowI2C->openBus()){
 			bDebug(TRACE, "Got the slow i2c");
-			//sourceUSonic = new usonicRange(slowI2C, 0x70);
-			//vSources.push_back(sourceUSonic);
-			//sourceMGas = new multiGasSensor();
-			//vSources.push_back(sourceMGas);
+			sourceUSonic = new usonicRange(SLOW_I2C_SZ, 0x70);
+			vSources.push_back(sourceUSonic);
+			sourceMGas = new multiGasSensor();
+			vSources.push_back(sourceMGas);
 		}
 		
 
-		gpioInterface * gpioPIR = new gpioInterface(); 
-		passiveIR sourcePIR(gpioPIR);
-		vSources.push_back(&sourcePIR);
+		//gpioInterface * gpioPIR = new gpioInterface(); 
+		//passiveIR sourcePIR(gpioPIR);
+		//vSources.push_back(&sourcePIR);
 
 		serialib * usbSerial = new serialib();
 		multiMotionSensor * motionSensor = NULL;
