@@ -23,6 +23,7 @@
 #include <lidarL1.h>
 #include <lidarL5.h>
 #include <usonicRange.h>
+#include <multiGasSensor.h>
 
 using namespace std;
 
@@ -32,7 +33,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
-	int tmpcount = 2;
+	int tmpcount = 10;
     int err = OK;
     try{
         
@@ -52,13 +53,16 @@ int main()
 			vSources.push_back(sourceLidarL1);
 		}
 
-		smbInterface * slowI2C = new smbInterface();
+		i2cInterface * slowI2C = new i2cInterface();
 		slowI2C->setParams("/dev/i2c-22");
-		//usonicRange * sourceUSonic = NULL;
+		usonicRange * sourceUSonic = NULL;
+		multiGasSensor * sourceMGas = NULL;
 		if (OK == slowI2C->openBus()){
 			bDebug(TRACE, "Got the slow i2c");
 			//sourceUSonic = new usonicRange(slowI2C, 0x70);
 			//vSources.push_back(sourceUSonic);
+			sourceMGas = new multiGasSensor();
+			vSources.push_back(sourceMGas);
 		}
 		
 
@@ -67,11 +71,11 @@ int main()
 		vSources.push_back(&sourcePIR);
 
 		serialib * usbSerial = new serialib();
-		multiMotionSensor * motionSensor = NULL;
+		//multiMotionSensor * motionSensor = NULL;
 		if (1 == usbSerial->openDevice(DLP_SER, DLP_BAUD)) {
 			bDebug(TRACE, "Got the uart");
-			motionSensor = new multiMotionSensor(usbSerial);
-			vSources.push_back(motionSensor);
+			//motionSensor = new multiMotionSensor(usbSerial);
+			//vSources.push_back(motionSensor);
 		}
 
 
@@ -85,7 +89,7 @@ int main()
 		usleep(LOOP_TIMER);
 
 		while (loop){
-			bDebug(WARN, "Main Loop");
+			sleep(1);
 			err = pInterface->writeTables();
 			if (OK != err){
 				bDebug(ERROR, "Failed to writeTables Bailing");
@@ -96,7 +100,6 @@ int main()
 			if (!tmpcount){
 				loop = false;
 			}
-			usleep(100000);
 		};
 
 		//cleanup
@@ -107,6 +110,7 @@ int main()
 		delete fastI2C;
 		slowI2C->closeBus();
 		delete slowI2C;
+		usbSerial->closeDevice();
 
 		bDebug(INFO, "Completed Data Gathering");
 	}

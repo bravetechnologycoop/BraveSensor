@@ -8,12 +8,13 @@ BIN_DIR  := $(BUILD)/bin
 TARGET   := curie
 INCLUDE  := -Iinclude/
 SRC      :=						\
+	$(wildcard src/SEN55/*.cpp)	\
 	$(wildcard src/*.cpp)		\
 	$(wildcard src/vl53l5cx/*.cpp)		\
 	$(wildcard src/MLX90640/*.cpp)		\
 	$(wildcard src/vl53l1x/*.cpp)		\
 
-OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
+OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)#/$(SRC:%.c=$(OBJ_DIR)/%.o)
 DEPENDENCIES \
          := $(OBJECTS:.o=.d)
 
@@ -22,6 +23,10 @@ all: build $(BIN_DIR)/$(TARGET)
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -MMD -o $@
+
+#$(OBJ_DIR)/%.o: %.c
+#	@mkdir -p $(@D)
+#	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -MMD -o $@
 
 $(BIN_DIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(@D)
