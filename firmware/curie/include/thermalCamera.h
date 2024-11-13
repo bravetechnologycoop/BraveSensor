@@ -11,8 +11,7 @@ using namespace std;
 #include <dataSource.h>
 #include <dataSource.h>
 #include <i2cInterface.h>
-#include <MLX90640_API.h>
-#include <MLX90640_API.h>
+#include "../src/MLX90640/MLX90640_API.h"
 
 #define T_CAMERA_NAME "Thermal Camera"
 #define T_CAMERA_SQL_TABLE "thermalcamera"

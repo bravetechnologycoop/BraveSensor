@@ -8,9 +8,9 @@
 #include <dataSource.h>
 #include <lidarL1.h>
 #include <curie.h>
-#include <VL53L1X_api.h>
-#include <VL53L1X_calibration.h>
-#include <vl53l1_platform.h>
+#include "vl53l1x/VL53L1X_api.h"
+#include "vl53l1x/VL53L1X_calibration.h"
+#include "vl53l1x/vl53l1_platform.h"
 #include <unistd.h>
 
 lidarL1::lidarL1(int adapter_nr, int i2cAddress){

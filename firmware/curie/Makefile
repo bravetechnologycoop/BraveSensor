@@ -9,6 +9,9 @@ TARGET   := curie
 INCLUDE  := -Iinclude/
 SRC      :=						\
 	$(wildcard src/*.cpp)		\
+	$(wildcard src/vl53l5cx/*.cpp)		\
+	$(wildcard src/MLX90640/*.cpp)		\
+	$(wildcard src/vl53l1x/*.cpp)		\
 
 OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES \

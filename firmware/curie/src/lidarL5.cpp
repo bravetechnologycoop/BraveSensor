@@ -8,9 +8,9 @@
 #include <dataSource.h>
 #include <lidarL5.h>
 #include <curie.h>
-#include "vl53l5cx_api.h"
-#include "vl53l5cx_plugin_motion_indicator.h"
-#include "vl53l5cx_plugin_detection_thresholds.h"
+#include "vl53l5cx/vl53l5cx_api.h"
+#include "vl53l5cx/vl53l5cx_plugin_motion_indicator.h"
+#include "vl53l5cx/vl53l5cx_plugin_detection_thresholds.h"
 
 lidarL5::lidarL5(i2cInterface * i2cBus, int i2cAddress, int threshold){
     bDebug(TRACE, "Lidar created");

@@ -10,9 +10,9 @@ using namespace std;
 #include <vector>
 #include <dataSource.h>
 #include <i2cInterface.h>
-#include <vl53l5cx_api.h>
-#include <vl53l5cx_plugin_motion_indicator.h>
-#include <vl53l5cx_plugin_detection_thresholds.h>
+#include "../src/vl53l5cx/vl53l5cx_api.h"
+#include "../src/vl53l5cx/vl53l5cx_plugin_motion_indicator.h"
+#include "../src/vl53l5cx/vl53l5cx_plugin_detection_thresholds.h"
 
 #define T_LIDAR5_NAME "lidar5"
 #define T_LIDAR5_SQL_TABLE "lidar5"

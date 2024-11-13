@@ -5,7 +5,7 @@
  *
  * File created by:  Denis Londry 2024
  */
-#include <MLX90640_I2C_Driver.h>
+#include "MLX90640_I2C_Driver.h"
 #include <i2cInterface.h>
 #include <braveDebug.h>
 

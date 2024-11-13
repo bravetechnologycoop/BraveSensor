@@ -20,9 +20,9 @@
 
 #include <sys/ioctl.h>
 
-#include <platform.h>
+#include "platform.h"
 #include <types.h>
-#include <vl53l5cx_api.h>
+#include "vl53l5cx_api.h"
 #include <braveDebug.h>
 i2cInterface * g_i2cVL;
 uint16_t g_sAddress;
