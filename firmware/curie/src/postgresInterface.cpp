@@ -291,6 +291,7 @@ int postgresInterface::testTableIntegrity()
 
             std::vector<std::pair<std::string, std::string>> tableData;
             dS->getTableParams(&tableData);
+            tableData.emplace_back("epochtime", "timestamp");
 
             std::vector<std::string> tableColumns;
             for (const auto& p : tableData) {
