@@ -48,7 +48,7 @@ int co2Sensor::getData(string * sqlTable, std::vector<string> * vData){
     *sqlTable = T_CO2_SQL_TABLE;
 
     //send out the command to get a gas
-    err = i2c_smbus_write_byte(this->fd, setGasCmd);
+    err = i2c_smbus_write_byte(this->fd, 0x51);
     if (0 > err){
         bDebug(ERROR, "Failed to write SMB");
     }
