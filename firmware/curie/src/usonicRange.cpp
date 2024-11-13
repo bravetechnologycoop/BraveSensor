@@ -40,8 +40,8 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(INFO, "usonicRange getData");
     int err = OK;
     uint8_t setRangeCmd = 0x51;
-    uint8_t getRangeCmd = 0x81;
-    int16_t rawRange;
+    uint8_t getRangeCmd = 0x00;
+    int32_t rawRange;
     //int32_t range = 200;
 
     //check incoming pointers
@@ -52,12 +52,16 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     if (0 > err){
         bDebug(ERROR, "Failed to write SMB");
     }
-    usleep(200000);
+    //usleep(200000);
+    sleep(5); //crazy too long
     rawRange = i2c_smbus_read_word_data(this->fd, getRangeCmd);
     if (0 < rawRange){
-        int8_t range = (rawRange >> 8) & 0xff | (rawRange & 0xff);
+        int8_t range = ((rawRange >> 8) & 0xff) | (rawRange & 0xff);
         bDebug(TRACE, "usonic range: " + to_string(range) + "cm");
+        //!! -1 means nothing in range
         vData->push_back(to_string((int)range));
+    } else {
+        bDebug(ERROR, "SMB read failure: " + to_string(rawRange));
     }
     
     return err;

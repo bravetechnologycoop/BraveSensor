@@ -10,6 +10,7 @@
 #define FAST_I2C        1
 #define FAST_SPEED      400000
 #define SLOW_I2C        22
+#define SLOW_I2C_SZ     "/dev/i2c-22"
 #define SLOW_SPEED      100000
 #define DLP_SER         "/dev/ttyACM0"
 #define DLP_BAUD        57600
