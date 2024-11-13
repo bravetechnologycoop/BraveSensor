@@ -218,13 +218,14 @@ int postgresInterface::writeVectorSQL(string sqlTable, std::vector<string> vData
     return err;
 }
 
-int postgresInterface::createDefaultTable(){
+int postgresInterface::createDefaultTable(string table){
     int err = OK;
      if (!this->dataVector.empty()){
         bDebug(TRACE, "About to run through the data vector");
         for (dataSource * dS : this->dataVector){
             string tableName;
             dS->getTableDef(&tableName);
+            if(tableName == table){
             std::vector<std::pair<std::string, std::string>> tableData;
             dS->getTableParams(&tableData);
             bDebug(TRACE, "Creating default table for: " + tableName);
@@ -236,6 +237,7 @@ int postgresInterface::createDefaultTable(){
             query.pop_back();
             query += ");";
             err = writeSQL(query);
+            }
             
         }
     } else {
@@ -344,6 +346,6 @@ int postgresInterface::rename_table(string tableName) {
         err = BAD_SETTINGS;
     }
     //The table at this point will be either moved, or didn't exist, create defaults.
-    createDefaultTable();
+    createDefaultTable(tableName);
     return err;
 }

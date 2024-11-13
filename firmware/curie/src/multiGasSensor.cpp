@@ -123,7 +123,15 @@ int multiGasSensor::getData(string *sqlTable, std::vector<string> * vData){
                                     + " " + to_string(this->ambient_humidity) + " " + to_string(this->ambient_temperature) \
                                     + " " + to_string(this->voc_index) + " " + to_string(this->nox_index);
         bDebug(TRACE, szTemp);
+        vData->push_back(to_string(this->mass_concentration_pm1p0));
+        vData->push_back(to_string(this->mass_concentration_pm2p5));
+        vData->push_back(to_string(this->mass_concentration_pm4p0));
+        vData->push_back(to_string(this->mass_concentration_pm10p0));
+        vData->push_back(to_string(this->ambient_humidity));
         vData->push_back(to_string(this->ambient_temperature));
+        vData->push_back(to_string(this->voc_index));
+        vData->push_back(to_string(this->nox_index));
+        
     }
 
     return err;
@@ -146,7 +154,16 @@ int multiGasSensor::setTableParams(){
     int err = OK;
 
     try {
+        this->dbParams.emplace_back("mass_concentration_pm1p0", "float");
+        this->dbParams.emplace_back("mass_concentration_pm2p5", "float");
+        this->dbParams.emplace_back("mass_concentration_pm4p0", "float");
+        this->dbParams.emplace_back("mass_concentration_pm10p0", "float");
+        this->dbParams.emplace_back("ambient_humidity", "float");
         this->dbParams.emplace_back("temp", "float");
+        this->dbParams.emplace_back("voc_index", "float");
+        this->dbParams.emplace_back("nox_index", "float");
+        
+
 
     }
     catch(...) {
