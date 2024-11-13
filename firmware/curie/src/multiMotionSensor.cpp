@@ -92,10 +92,6 @@ int multiMotionSensor::getData(string *sqlTable, std::vector<string> * vData){
     szOut += to_string(humidity);
     bDebug(INFO, szOut);*/
 
-    cout << "" << endl;
-    cout << "" << endl;
-    cout << "" << endl;
-    cout << "" << endl;
     return err;
 }
 

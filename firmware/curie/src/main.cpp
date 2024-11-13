@@ -55,14 +55,14 @@ int main()
 
 		i2cInterface * slowI2C = new i2cInterface();
 		slowI2C->setParams("/dev/i2c-22");
-		usonicRange * sourceUSonic = NULL;
-		multiGasSensor * sourceMGas = NULL;
+		//usonicRange * sourceUSonic = NULL;
+		//multiGasSensor * sourceMGas = NULL;
 		if (OK == slowI2C->openBus()){
 			bDebug(TRACE, "Got the slow i2c");
 			//sourceUSonic = new usonicRange(slowI2C, 0x70);
 			//vSources.push_back(sourceUSonic);
-			sourceMGas = new multiGasSensor();
-			vSources.push_back(sourceMGas);
+			//sourceMGas = new multiGasSensor();
+			//vSources.push_back(sourceMGas);
 		}
 		
 
@@ -71,11 +71,11 @@ int main()
 		vSources.push_back(&sourcePIR);
 
 		serialib * usbSerial = new serialib();
-		//multiMotionSensor * motionSensor = NULL;
+		multiMotionSensor * motionSensor = NULL;
 		if (1 == usbSerial->openDevice(DLP_SER, DLP_BAUD)) {
 			bDebug(TRACE, "Got the uart");
-			//motionSensor = new multiMotionSensor(usbSerial);
-			//vSources.push_back(motionSensor);
+			motionSensor = new multiMotionSensor(usbSerial);
+			vSources.push_back(motionSensor);
 		}
 
 

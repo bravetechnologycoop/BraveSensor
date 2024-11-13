@@ -270,7 +270,7 @@ int postgresInterface::dbConnect(){
 int postgresInterface::testTableIntegrity()
 {
     int err = OK;
-    for (dataSource * dS : this->dataVector){
+    for (dataSource *dS : this->dataVector){
         pqxx::work txn(*conn);
         string tableName;
         pqxx::result result;
@@ -281,29 +281,35 @@ int postgresInterface::testTableIntegrity()
             result = txn.exec(sql);
             txn.commit();
             bDebug(TRACE, "SQL executed successfully, reading information_schema...");
+
             std::vector<std::string> schemaColumns;
             for (const pqxx::row& row : result){
-                int i = 0;
                 for (const auto& field : row) {
                     schemaColumns.push_back(field.c_str());
                 }
-                i++;
             }
-        
 
             std::vector<std::pair<std::string, std::string>> tableData;
             dS->getTableParams(&tableData);
-            for(const auto& p : tableData){
-                string s = std::string(p.first);
-                bool flag = false;
-                for (const auto& str : schemaColumns) {
-                    if(str == s){
-                        flag = true;
-                    }
-                }
-                if(flag == false) {
+
+            std::vector<std::string> tableColumns;
+            for (const auto& p : tableData) {
+                tableColumns.push_back(p.first);
+            }
+
+            for (const auto& col : tableColumns) {
+                if (std::find(schemaColumns.begin(), schemaColumns.end(), col) == schemaColumns.end()) {
                     integrityFailed = true;
                     break;
+                }
+            }
+
+            if (!integrityFailed) {
+                for (const auto& col : schemaColumns) {
+                    if (std::find(tableColumns.begin(), tableColumns.end(), col) == tableColumns.end()) {
+                        integrityFailed = true;
+                        break;
+                    }
                 }
             }
 
@@ -315,10 +321,10 @@ int postgresInterface::testTableIntegrity()
             bDebug(TRACE, "Table integrity failed, current table will be stored (if exists) and we will create a new one.");
             rename_table(tableName);
         }
-
     }
     return err;
 }
+
 
 int postgresInterface::rename_table(string tableName) {
     int err = OK;
