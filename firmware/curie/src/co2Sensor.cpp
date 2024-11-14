@@ -56,6 +56,7 @@ int co2Sensor::getData(string * sqlTable, std::vector<string> * vData){
     }
 
     bDebug(INFO, "co2Sensor getData wrote to bus");
+    sleep(2);
    
     if (0 <= err){
         for (int i = 0; i < 4; i ++){
