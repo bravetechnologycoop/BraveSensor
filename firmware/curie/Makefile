@@ -8,6 +8,7 @@ BIN_DIR  := $(BUILD)/bin
 TARGET   := curie
 INCLUDE  := -Iinclude/
 SRC      :=						\
+	$(wildcard src/VL53XL1/*.cpp) \
 	$(wildcard src/SEN55/*.cpp)	\
 	$(wildcard src/*.cpp)		\
 	$(wildcard src/vl53l5cx/*.cpp)		\

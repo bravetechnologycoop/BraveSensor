@@ -40,29 +40,35 @@ int co2Sensor::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(INFO, "co2Sensor getData");
     int err = OK;
     uint8_t setGasCmd[5] = {0x04, 0x13, 0x8b, 0x00, 0x01};
-    uint8_t getGasCmd = 0x00;
+    uint8_t getGasCmd[4];
     int32_t rawGas;
-    //int32_t gas = 200;
 
     //check incoming pointers
     *sqlTable = T_CO2_SQL_TABLE;
 
-    //send out the command to get a gas
-    err = i2c_smbus_write_byte(this->fd, 0x51);
-    if (0 > err){
-        bDebug(ERROR, "Failed to write SMB");
+    //send out the command to get a gas reading
+    for (int i = 0; i < 5; i++){
+        err = i2c_smbus_write_byte(this->fd, setGasCmd[i]);
+        if (0 > err){
+            bDebug(ERROR, "Failed to write SMB");
+            break;
+        }
     }
-    //usleep(200000);
-    sleep(5); //crazy too long
-    rawGas = i2c_smbus_read_word_data(this->fd, getGasCmd);
-    if (0 < rawGas){
-        int8_t gas = ((rawGas >> 8) & 0xff) | (rawGas & 0xff);
-        bDebug(TRACE, "co2 gas: " + to_string(gas) + "cm");
-        //!! -1 means nothing in gas
-        vData->push_back(to_string((int)gas));
+
+    bDebug(INFO, "co2Sensor getData wrote to bus");
+   
+    if (0 <= err){
+        for (int i = 0; i < 4; i ++){
+            getGasCmd[i] = i2c_smbus_read_byte(this->fd);
+        }
+
+        rawGas = (getGasCmd[0] & 0xff) | getGasCmd[1];
+        bDebug(TRACE, "CO2 raw read: " + to_string(getGasCmd[0]) + " " + to_string(getGasCmd[1]) + " " + to_string(getGasCmd[2]) + " " + to_string(getGasCmd[3]));
+        bDebug(TRACE, "CO2 PPM: " + to_string(rawGas));
     } else {
-        bDebug(ERROR, "SMB read failure: " + to_string(rawGas));
+        bDebug(ERROR, "Something went wrong");
     }
+   
     
     return err;
 }
