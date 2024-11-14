@@ -23,6 +23,7 @@
 #include <lidarL1.h>
 #include <usonicRange.h>
 #include <multiGasSensor.h>
+#include <co2Sensor.h>
 
 using namespace std;
 
@@ -40,7 +41,7 @@ int main()
 		//set up the busses
         i2cInterface * fastI2C = new i2cInterface();
 		fastI2C->setParams("/dev/i2c-1");
-		thermalCamera * sourceThermalCamera = NULL;
+		//thermalCamera * sourceThermalCamera = NULL;
 		//lidarL1 *sourceLidarL1 = NULL;
         if (OK == fastI2C->openBus()){
 			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
@@ -53,12 +54,15 @@ int main()
 		slowI2C->setParams("/dev/i2c-22");
 		usonicRange * sourceUSonic = NULL;
 		multiGasSensor * sourceMGas = NULL;
+		co2Sensor * sourceCO2 = NULL;
 		if (OK == slowI2C->openBus()){
 			bDebug(TRACE, "Got the slow i2c");
 			sourceUSonic = new usonicRange(SLOW_I2C_SZ, 0x70);
 			vSources.push_back(sourceUSonic);
 			sourceMGas = new multiGasSensor();
 			vSources.push_back(sourceMGas);
+			sourceCO2 = new co2Sensor(SLOW_I2C_SZ, 0x15);
+			vSources.push_back(sourceCO2);
 		}
 		
 
