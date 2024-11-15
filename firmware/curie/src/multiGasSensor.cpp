@@ -9,9 +9,9 @@
 #include <multiGasSensor.h>
 #include <curie.h>
 #include <string.h>
-#include "SEN55/sen5x_i2c.h"
-#include "SEN55/sensirion_common.h"
-#include "SEN55/sensirion_i2c_hal.h"
+#include "Sensirion/sen5x_i2c.h"
+#include "Sensirion/sensirion_common.h"
+#include "Sensirion/sensirion_i2c_hal.h"
 
 using namespace std;
 
