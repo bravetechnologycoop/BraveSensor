@@ -11,6 +11,9 @@ the code was deployed.
 
 ## [Unreleased]
 
+
+## [10.16.0] - 2024-11-14
+
 ### Added
 
 - Added migration script to update device_type_enum to handle multistall and singlestall sensors separately (CU-86duvwbq2).
@@ -23,6 +26,8 @@ the code was deployed.
 - Updated device_type_enum to have 'DEVICE_SENSOR_SINGLESTALL' and 'DEVICE_SENSOR_MULTISTALL' instead of 'DEVICE_SENSOR' (CU-86duvwbq2).
 - Updated test cases for newLocation and updateLocation to use new device types (CU-86duvwbq2).
 - Updated the /pa/create-sensor-location route due to createLocationFromBrowserForm() db function change (CU-86duvwbq2).
+- Changed english messages `alertAdditionalAlertAcceptResetRequest`, `alertStartAcceptResetRequest`, `resetNoticeToRequester`, `resetNoticeToOtherResponders`, `resetRequestRejected`, `sensorDisconnectionInitial`, `sensorDisconnectionReminder`, `sensorIsTampered`, `sensorInactivity` to reduce twilio message segments (CU-86duzccj5).
+- Changed messages in test cases to match the new ones (CU-86duzccj5).
 
 ## [10.15.0] - 2024-10-17
 
@@ -849,7 +854,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.16.0...HEAD
+[10.16.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...10.16.0
 [10.15.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...10.15.0
 [10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...10.14.0
 [10.13.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...v10.13.0

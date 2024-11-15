@@ -2,7 +2,7 @@
 # setup_reporting_db.sh
 #
 # Sets up the reporting database given a source and destination database.
-
+a
 # read arguments into variables
 src_user=$1
 src_host=$2
@@ -61,7 +61,8 @@ if [ "$use_existing" != "Y" ]; then
 
     # dump all tables except sensor_vitals (too large) into /tmp/sensor_reporting_db.sql
     # NOTE: the --clean option prepends the insert queries with drop queries to "clean" the necessary tables from the reporting db
-    pg_dump $src_db -U $src_user -h $src_host -p $src_port -f /tmp/sensor_reporting_db.sql --clean --if-exists -T public.sensors_vitals
+    #pg_dump $src_db -U $src_user -h $src_host -p $src_port -f /tmp/sensor_reporting_db.sql --clean --if-exists -T public.sensors_vitals
+    pg_dump $src_db -U $src_user -h $src_host -p $src_port -f /tmp/sensor_reporting_db.sql --clean --if-exists
 
     # Remove any lines related to pgcrypto extension
     sed -i '/DROP EXTENSION IF EXISTS pgcrypto;/d' /tmp/sensor_reporting_db.sql
@@ -87,3 +88,45 @@ if [ "$psql_return_val" != 0]; then
 else
     printf "The destination database has been populated - check for yourself!\n"
 fi
+
+# Get the most recent created_at from the source database's sensors_vitals table
+latest_created_at=$(psql -U $src_user -h $src_host -p $src_port -d $src_db -t -c "SELECT MAX(created_at) FROM public.sensors_vitals;")
+printf "Latest created_at from source database: $latest_created_at\n"
+
+# Create the anchor_time table in the destination database
+psql -U $dst_user -h $dst_host -p $dst_port -d $dst_db -v ON_ERROR_STOP=1 -c "
+CREATE TABLE IF NOT EXISTS anchor_time (
+    id serial PRIMARY KEY,
+    created_at timestamp NOT NULL,
+    vitals_id text,
+    locationid text
+);
+"
+
+# Insert the latest created_at value into the anchor_time table
+psql -U $dst_user -h $dst_host -p $dst_port -d $dst_db -v ON_ERROR_STOP=1 -c "
+INSERT INTO anchor_time (created_at)
+VALUES ('$latest_created_at');
+"
+
+printf "Anchor time inserted successfully.\n"
+
+psql -U $dst_user -h $dst_host -p $dst_port -d $dst_db -v ON_ERROR_STOP=1 -c "
+UPDATE anchor_time
+SET vitals_id = (
+    SELECT id 
+    FROM sensors_vitals
+    WHERE sensors_vitals.created_at = anchor_time.created_at
+)
+WHERE vitals_id IS NULL;
+"
+
+psql -U $dst_user -h $dst_host -p $dst_port -d $dst_db -v ON_ERROR_STOP=1 -c "
+UPDATE anchor_time
+SET locationid = (
+    SELECT locationid 
+    FROM sensors_vitals
+    WHERE sensors_vitals.created_at = anchor_time.created_at
+)
+WHERE locationid IS NULL;
+"
