@@ -11,6 +11,9 @@ the code was deployed.
 
 ## [Unreleased]
 
+
+## [10.16.0] - 2024-11-14
+
 ### Added
 
 - Added migration script to update device_type_enum to handle multistall and singlestall sensors separately (CU-86duvwbq2).
@@ -856,7 +859,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.16.0...HEAD
+[10.16.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...10.16.0
 [10.15.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...10.15.0
 [10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...10.14.0
 [10.13.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...v10.13.0
