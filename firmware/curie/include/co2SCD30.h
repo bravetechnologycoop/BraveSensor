@@ -16,7 +16,7 @@ using namespace std;
 
 class co2SCD30: public dataSource {
     public:
-        co2SCD30(char* i2cbus, uint8_t i2cAddress);
+        co2SCD30();
         ~co2SCD30();
 
         int getData(string *sqlTable, std::vector<string> * vData);
@@ -26,9 +26,6 @@ class co2SCD30: public dataSource {
     private:
         std::vector<std::pair<std::string, std::string>> dbParams;
         
-        uint8_t i2cAddress;
-        int fd;
-
 };
 
 

@@ -7,10 +7,10 @@ OBJ_DIR  := $(BUILD)/objects
 BIN_DIR  := $(BUILD)/bin
 TARGET   := curie
 INCLUDE  := -Iinclude/
-SRC      :=						\
-	$(wildcard src/VL53XL1/*.cpp) \
-	$(wildcard src/SEN55/*.cpp)	\
-	$(wildcard src/*.cpp)		\
+SRC      :=							\
+	$(wildcard src/VL53XL1/*.cpp)	\
+	$(wildcard src/Sensirion/*.cpp)		\
+	$(wildcard src/*.cpp)			\
 	$(wildcard src/vl53l5cx/*.cpp)		\
 	$(wildcard src/MLX90640/*.cpp)		\
 	$(wildcard src/vl53l1x/*.cpp)		\
@@ -25,9 +25,6 @@ $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -MMD -o $@
 
-#$(OBJ_DIR)/%.o: %.c
-#	@mkdir -p $(@D)
-#	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -MMD -o $@
 
 $(BIN_DIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(@D)
