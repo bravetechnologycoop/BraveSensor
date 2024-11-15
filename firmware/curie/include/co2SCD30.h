@@ -10,13 +10,15 @@ using namespace std;
 #include <vector>
 #include <dataSource.h>
 
+#ifndef T_CO2_NAME
 #define T_CO2_NAME "CO2 Gas Sensor"
-#define T_CO2_SQL_TABLE "co2scd30"
+#define T_CO2_SQL_TABLE "co2"
+#endif
 
 
 class co2SCD30: public dataSource {
     public:
-        co2SCD30();
+        co2SCD30(uint8_t i2cAddress);
         ~co2SCD30();
 
         int getData(string *sqlTable, std::vector<string> * vData);
@@ -26,6 +28,10 @@ class co2SCD30: public dataSource {
     private:
         std::vector<std::pair<std::string, std::string>> dbParams;
         
+        uint8_t i2cAddress;
+        float co2_concentration;
+        float temperature;
+        float humidity;
 };
 
 

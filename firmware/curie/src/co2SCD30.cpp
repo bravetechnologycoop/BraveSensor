@@ -11,16 +11,34 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-extern "C"{
-    #include <linux/i2c-dev.h>
-    #include <i2c/smbus.h>
-}
+#include "Sensirion/scd30_i2c.h"
+#include "Sensirion/sensirion_common.h"
+#include "Sensirion/sensirion_i2c_hal.h"
 
-co2SCD30::co2SCD30(){
+co2SCD30::co2SCD30(uint8_t i2cAddress){
     bDebug(TRACE, "Creating co2SCD30");
     setTableParams();
 
-    
+    this->i2cAddress = i2cAddress;
+    sensirion_i2c_hal_init();
+    init_driver(this->i2cAddress);
+
+    //just general set-up for the CO2 sensor
+    scd30_stop_periodic_measurement();
+    scd30_soft_reset();
+    usleep(2000000);
+    uint8_t major = 0;
+    uint8_t minor = 0;
+    int  error = scd30_read_firmware_version(&major, &minor);
+    if (error != NO_ERROR) {
+        bDebug(ERROR, "error executing read_firmware_version(): " + to_string(error));
+    } else {
+        bDebug(TRACE, "firmware version : " + to_string(major) + "." + to_string(minor));
+        error = scd30_start_periodic_measurement(0);
+        if (error != NO_ERROR) {
+            bDebug(ERROR, "error executing start_periodic_measurement(): " + to_string(error));
+        }
+    }
 
 }
 
@@ -45,6 +63,13 @@ int co2SCD30::getTableDef(string * sqlBuf){
         *sqlBuf = T_CO2_SQL_TABLE;
         bDebug(TRACE, "co2SCD30 Table: " + *sqlBuf);
         err = OK;
+    }
+
+    err = scd30_blocking_read_measurement_data(&(this->co2_concentration), &(this->temperature), &(this->humidity));
+    if (0 <= err) {
+        bDebug(TRACE, "SCD30 co2 t h: " + to_string(this->co2_concentration) + " " + to_string(this->temperature) + " " + to_string(this->humidity));
+    } else {
+        bDebug(ERROR, "Failed to read");
     }
 
     return err;
