@@ -23,7 +23,7 @@
 #include <lidarL1.h>
 #include <usonicRange.h>
 #include <multiGasSensor.h>
-#include <co2Sensor.h>
+#include <co2Telaire.h>
 
 using namespace std;
 
@@ -33,7 +33,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
-	int tmpcount = 5;
+	int tmpcount = 15;
     int err = OK;
     try{
         
@@ -54,14 +54,14 @@ int main()
 		slowI2C->setParams("/dev/i2c-22");
 		usonicRange * sourceUSonic = NULL;
 		multiGasSensor * sourceMGas = NULL;
-		co2Sensor * sourceCO2 = NULL;
+		co2Telaire * sourceCO2 = NULL;
 		if (OK == slowI2C->openBus()){
 			bDebug(TRACE, "Got the slow i2c");
 			sourceUSonic = new usonicRange(SLOW_I2C_SZ, 0x70);
 			vSources.push_back(sourceUSonic);
 			sourceMGas = new multiGasSensor();
 			vSources.push_back(sourceMGas);
-			sourceCO2 = new co2Sensor(SLOW_I2C_SZ, 0x15);
+			sourceCO2 = new co2Telaire(SLOW_I2C_SZ, 0x15);
 			vSources.push_back(sourceCO2);
 		}
 		
