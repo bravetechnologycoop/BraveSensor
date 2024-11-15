@@ -1,4 +1,4 @@
-/* co2Sensor.cpp - Class the retrieves and process passive IR gas device
+/* co2Telaire.cpp - Class the retrieves and process passive IR gas device
  *
  * Copyright (C) 2024 Brave Coop - All Rights Reserved
  *
@@ -7,7 +7,7 @@
 #include <braveDebug.h>
 #include <dataSource.h>
 #include <curie.h>
-#include <co2Sensor.h>
+#include <co2Telaire.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -16,8 +16,8 @@ extern "C"{
     #include <i2c/smbus.h>
 }
 
-co2Sensor::co2Sensor(char* i2cbus, uint8_t i2cAddress){
-    bDebug(TRACE, "Creating co2Sensor");
+co2Telaire::co2Telaire(char* i2cbus, uint8_t i2cAddress){
+    bDebug(TRACE, "Creating co2Telaire");
     setTableParams();
 
     this->i2cAddress = i2cAddress;
@@ -32,12 +32,12 @@ co2Sensor::co2Sensor(char* i2cbus, uint8_t i2cAddress){
 
 }
 
-co2Sensor::~co2Sensor(){
-    bDebug(TRACE, "Deleting co2Sensor");
+co2Telaire::~co2Telaire(){
+    bDebug(TRACE, "Deleting co2Telaire");
 }
 
-int co2Sensor::getData(string * sqlTable, std::vector<string> * vData){
-    bDebug(INFO, "co2Sensor getData");
+int co2Telaire::getData(string * sqlTable, std::vector<string> * vData){
+    bDebug(INFO, "co2Telaire getData");
     int err = OK;
     uint8_t setGasCmd[5] = {0x04, 0x13, 0x8b, 0x00, 0x01};
     uint8_t getGasCmd[4];
@@ -55,7 +55,7 @@ int co2Sensor::getData(string * sqlTable, std::vector<string> * vData){
         }
     }
 
-    bDebug(INFO, "co2Sensor getData wrote to bus");
+    bDebug(INFO, "co2Telaire getData wrote to bus");
     sleep(2);
    
     if (0 <= err){
@@ -74,21 +74,21 @@ int co2Sensor::getData(string * sqlTable, std::vector<string> * vData){
     return err;
 }
 
-int co2Sensor::getTableDef(string * sqlBuf){
-    bDebug(TRACE, "Get co2Sensor SQL table");
+int co2Telaire::getTableDef(string * sqlBuf){
+    bDebug(TRACE, "Get co2Telaire SQL table");
     int err = BAD_PARAMS;
 
     if (NULL != sqlBuf){
         *sqlBuf = T_CO2_SQL_TABLE;
-        bDebug(TRACE, "co2Sensor Table: " + *sqlBuf);
+        bDebug(TRACE, "co2Telaire Table: " + *sqlBuf);
         err = OK;
     }
 
     return err;
 }
 
-int co2Sensor::setTableParams(){
-    bDebug(TRACE, "co2Sensor Set table params");
+int co2Telaire::setTableParams(){
+    bDebug(TRACE, "co2Telaire Set table params");
 
     int err = OK;
 
@@ -102,8 +102,8 @@ int co2Sensor::setTableParams(){
     return err;
 }
 
-int co2Sensor::getTableParams(std::vector<std::pair<std::string, std::string>> * tableData){
-    bDebug(TRACE, "co2Sensor Get table params");
+int co2Telaire::getTableParams(std::vector<std::pair<std::string, std::string>> * tableData){
+    bDebug(TRACE, "co2Telaire Get table params");
     int err = BAD_SETTINGS;
     if(!dbParams.empty())
     {
