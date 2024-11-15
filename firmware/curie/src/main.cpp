@@ -25,6 +25,7 @@
 #include <usonicRange.h>
 #include <multiGasSensor.h>
 #include <co2Telaire.h>
+#include <co2SCD30.h>
 
 using namespace std;
 
@@ -59,15 +60,18 @@ int main()
 		slowI2C->setParams("/dev/i2c-22");
 		usonicRange * sourceUSonic = NULL;
 		multiGasSensor * sourceMGas = NULL;
-		co2Telaire * sourceCO2 = NULL;
+		co2Telaire * sourceCO2T = NULL;
+		co2SCD30 * sourceCO2S = NULL;
 		if (OK == slowI2C->openBus()){
 			bDebug(TRACE, "Got the slow i2c");
 			sourceUSonic = new usonicRange(SLOW_I2C_SZ, 0x70);
 			vSources.push_back(sourceUSonic);
 			sourceMGas = new multiGasSensor();
 			vSources.push_back(sourceMGas);
-			sourceCO2 = new co2Telaire(SLOW_I2C_SZ, 0x15);
-			vSources.push_back(sourceCO2);
+			sourceCO2T = new co2Telaire(SLOW_I2C_SZ, 0x15);
+			vSources.push_back(sourceCO2T);
+			sourceCO2S =  new co2SCD30(0x61);
+			vSources.push_back(sourceCO2S);
 		}
 		
 
@@ -94,7 +98,7 @@ int main()
 		usleep(LOOP_TIMER);
 
 		while (loop){
-			sleep(1);
+			sleep(10);
 			err = pInterface->writeTables();
 			if (OK != err){
 				bDebug(ERROR, "Failed to writeTables Bailing");

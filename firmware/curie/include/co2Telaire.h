@@ -10,8 +10,10 @@ using namespace std;
 #include <vector>
 #include <dataSource.h>
 
+#ifndef T_CO2_NAME
 #define T_CO2_NAME "CO2 Gas Sensor"
-#define T_CO2_SQL_TABLE "co2telaire"
+#define T_CO2_SQL_TABLE "co2"
+#endif
 
 
 class co2Telaire: public dataSource {
