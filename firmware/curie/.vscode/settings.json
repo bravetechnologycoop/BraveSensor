@@ -51,7 +51,10 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "lidarl0": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "ctime": "cpp",
+        "regex": "cpp",
+        "fstream": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

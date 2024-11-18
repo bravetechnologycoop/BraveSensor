@@ -4,15 +4,13 @@
  *
  * File created by:  Corey Cheng 2024
  */
-#ifndef _LIDARL0__H_
-#define _LIDARL0__H_
+#ifndef _LIDARL5__H_
+#define _LIDARL5__H_
 using namespace std;
 #include <vector>
 #include <dataSource.h>
-#include <i2cInterface.h>
+#include "../src/vl53l5cx/vl53l5_platform.h"
 #include "../src/vl53l5cx/vl53l5cx_api.h"
-#include "../src/vl53l5cx/vl53l5cx_plugin_motion_indicator.h"
-#include "../src/vl53l5cx/vl53l5cx_plugin_detection_thresholds.h"
 
 #define T_LIDAR5_NAME "lidar5"
 #define T_LIDAR5_SQL_TABLE "lidar5"
@@ -20,7 +18,7 @@ using namespace std;
 
 class lidarL5: public dataSource {
     public:
-        lidarL5(i2cInterface * i2cBus, int i2cAddress, int threshold);
+        lidarL5(int i2cBus, int i2cAddress);
         ~lidarL5();
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);
@@ -29,12 +27,10 @@ class lidarL5: public dataSource {
 
     private:
         int i2cAddress;
-        i2cInterface * i2cBus;
+        VL53L5CX_Configuration conf;
         std::vector<std::pair<std::string, std::string>> dbParams;
         int getTempData();
         int initDevice();
-        uint8_t nb_threshold;
-        VL53L5CX_Configuration * pdev;
 };
 
 

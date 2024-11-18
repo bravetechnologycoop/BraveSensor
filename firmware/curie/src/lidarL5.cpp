@@ -9,22 +9,22 @@
 #include <lidarL5.h>
 #include <curie.h>
 #include "vl53l5cx/vl53l5cx_api.h"
-#include "vl53l5cx/vl53l5cx_plugin_motion_indicator.h"
-#include "vl53l5cx/vl53l5cx_plugin_detection_thresholds.h"
 
-lidarL5::lidarL5(i2cInterface * i2cBus, int i2cAddress, int threshold){
+lidarL5::lidarL5(int i2cBus, int i2cAddress){
     bDebug(TRACE, "Lidar created");
-    this->nb_threshold = threshold * threshold;
+    int8_t err = OK;
 
-    this->sourceName = T_LIDAR5_NAME;
-    this->i2cBus = i2cBus;
-    if (NULL == i2cBus){
-        bDebug(ERROR, "No i2c Bus assigned");
-        throw(BAD_PORT);
-    }
-    setTableParams();
     this->i2cAddress = i2cAddress;
-    initDevice();
+    err =  VL53L5X_UltraLite_Linux_I2C_Init(&(this->conf.platform), i2cBus, i2cAddress);
+	if (0 > err){
+        bDebug(ERROR, "Failed to open device: " + to_string(err));
+    } else {
+        bDebug(TRACE, "Created the i2c bus");
+        if (OK != this->initDevice()){
+            bDebug(ERROR, "Failed to initialize the device");
+        }
+    }
+    
 }
 
 lidarL5::~lidarL5(){
@@ -34,28 +34,10 @@ lidarL5::~lidarL5(){
 int lidarL5::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "Lidar getData");
     int err = OK;
-    VL53L5CX_ResultsData 	Results;		/* Results data from VL53L5CX */
     //check incoming pointers
     *sqlTable = T_LIDAR5_SQL_TABLE;
-    vl53l5cx_start_ranging(pdev);
 
-    bool isReady = VL53L5CX_wait_for_dataready(&pdev->platform);
-	
-	if(isReady){
-
-	vl53l5cx_get_ranging_data(pdev, &Results);
-	printf("Print data no : %3u\n", pdev->streamcount);
-			for(int i = 0; i < 16; i++)
-			{
-				printf("Zone : %3d, Status : %3u, Distance : %4d mm\n",
-					i,
-					Results.target_status[VL53L5CX_NB_TARGET_PER_ZONE*i],
-					Results.distance_mm[VL53L5CX_NB_TARGET_PER_ZONE*i]);
-			}
-			printf("\n");
-
-	vl53l5cx_stop_ranging(pdev);
-    }
+   
 
 
     return err;
@@ -107,34 +89,30 @@ int lidarL5::getTableParams(std::vector<std::pair<std::string, std::string>> * t
     return err;
 }
 
-int lidarL5::initDevice()
-{
+int lidarL5::initDevice(){
+    bDebug(TRACE, "InitDevice");
 	int err = OK;
-    uint8_t 		status, isAlive;
-	VL53L5CX_Configuration 	Dev;
-	this->pdev = &Dev;
-   // int file = vl53l5cx_comms_init(i2cBus, i2cAddress);
-	//if (file == -1){
-		err = BAD_SETTINGS;
-   // }
-    /*
-	status = vl53l5cx_is_alive(pdev, &isAlive);
+    uint8_t status, isAlive;
+
+    status = vl53l5cx_is_alive(&(this->conf), &isAlive);
 	if(!isAlive || status)
 	{
-		bDebug(TRACE, "VL53L5CX not detected at requested address");
-        err = BAD_SETTINGS;
-		return err;
+		bDebug(ERROR, "VL53L5CX not detected at requested address");
+		return status;
 	}
+    bDebug(TRACE, "Device exists");
 
-	status = vl53l5cx_init(pdev);
+	/* (Mandatory) Init VL53L5CX sensor */
+	status = vl53l5cx_init(&(this->conf));
 	if(status)
 	{
-		bDebug(TRACE, "VL53L5CX ULD Loading failed");
-		err = BAD_SETTINGS;
-		return err;
-	}*/
+		bDebug(ERROR, "VL53L5CX ULD Loading failed: " + to_string(status));
+		return status;
+	}
 
-	bDebug(TRACE, "VL53L5CX ready!");
+	bDebug(TRACE, "VL53L5CX ULD ready ! (Version : " + string(VL53L5CX_API_REVISION) + ")");
+
+    status = vl53l5cx_start_ranging(&(this->conf));
 
     return err;
 }

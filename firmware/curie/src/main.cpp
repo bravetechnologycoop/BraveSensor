@@ -35,7 +35,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
-	int tmpcount = 15;
+	int tmpcount = 1;
     int err = OK;
     try{
         
@@ -45,12 +45,12 @@ int main()
 		fastI2C->setParams("/dev/i2c-1");
 		//thermalCamera * sourceThermalCamera = NULL;
 		//lidarL1 *sourceLidarL1 = NULL;
-		//lidarL5 * sourceLidarL5 = NULL;
+		lidarL5 * sourceLidarL5 = NULL;
         if (OK == fastI2C->openBus()){
 			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
         	//vSources.push_back(sourceThermalCamera);
-			//sourceLidarL5 = new lidarL5(fastI2C, 0x29, 8); 
-			//vSources.push_back(sourceLidarL5);
+			sourceLidarL5 = new lidarL5(FAST_I2C, 0x29); 
+			vSources.push_back(sourceLidarL5);
 			//sourceLidarL1 = new lidarL1(1, 0x29); 
 			//vSources.push_back(sourceLidarL1);
 		}
