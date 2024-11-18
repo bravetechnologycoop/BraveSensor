@@ -54,7 +54,7 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     }
     //usleep(200000);
     
-    for (int i = 0; i < 6; i++){
+    for (int i = 0; i < MAX_USONIC_READ_ATTEMPTS; i++){
         sleep(1);
         rawRange = i2c_smbus_read_word_data(this->fd, getRangeCmd);
         if (0 <= rawRange){
@@ -63,7 +63,10 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
             //!! -1 means nothing in range
             vData->push_back(to_string((int)range));
             break;
-        } 
+        } else if (i >= MAX_USONIC_READ_ATTEMPTS - 1){
+            bDebug(TRACE, "usonic read failed, sending -1...");
+            vData->push_back("-1");
+        }
     }
 
     if (0 > rawRange){
@@ -92,7 +95,7 @@ int usonicRange::setTableParams(){
     int err = OK;
 
     try {
-        this->dbParams.emplace_back("pIRbool", "boolean"); //!!!
+        this->dbParams.emplace_back("urangecm", "int"); //!!!
     }
     catch(...) {
         err = BAD_PARAMS;
