@@ -8,10 +8,10 @@ BIN_DIR  := $(BUILD)/bin
 TARGET   := curie
 INCLUDE  := -Iinclude/
 SRC      :=							\
-	$(wildcard src/VL53XL1/*.cpp)	\
-	$(wildcard src/Sensirion/*.cpp)		\
-	$(wildcard src/vl53l5cx/*.cpp)		\
-	$(wildcard src/MLX90640/*.cpp)		\
+	$(wildcard src/vl53l1x/*.cpp)	\
+	$(wildcard src/Sensirion/*.cpp)	\
+	$(wildcard src/vl53l5cx/*.cpp)	\
+	$(wildcard src/MLX90640/*.cpp)	\
 	$(wildcard src/*.cpp)			\
 
 OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)#/$(SRC:%.c=$(OBJ_DIR)/%.o)
