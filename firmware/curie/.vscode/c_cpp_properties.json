@@ -3,7 +3,10 @@
         {
             "name": "Linux",
             "includePath": [
-                "include"
+                "include",
+                "${workspaceFolder}/src/vl53l1x",
+                "${workspaceFolder}/src/vl53l5cx",
+                "${workspaceFolder}/src/MLX90640"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

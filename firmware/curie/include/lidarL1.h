@@ -17,7 +17,7 @@ using namespace std;
 
 class lidarL1: public dataSource {
     public:
-        lidarL1(i2cInterface * i2cBus, int i2cAddress);
+        lidarL1(int i2cAddress, int adapter_nr);
         ~lidarL1();
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);

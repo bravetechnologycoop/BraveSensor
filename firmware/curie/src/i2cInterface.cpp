@@ -100,6 +100,7 @@ int i2cInterface::readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t n
         if (ioctl(this->fileI2C, I2C_RDWR, &i2c_messageset) < 0) 
         {
             bDebug(ERROR, "i2c read error");
+            //perror("Write Byte failure");
             err = FILE_ERROR;
         } else {
             for (int count = 0; count < nMemAddressRead; count++) 
@@ -134,8 +135,8 @@ int i2cInterface::writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t 
 
         if (ioctl(this->fileI2C, I2C_RDWR, &i2c_messageset) < 0) 
         {
-            bDebug(ERROR, "I2C Write Error");
-            perror("i2c error");
+            perror("Write Byte failure");
+            //bDebug(ERROR, "I2C Write Error");
             err = FILE_ERROR;
         }
     }

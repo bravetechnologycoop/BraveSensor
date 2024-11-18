@@ -13,15 +13,21 @@
 #include <fcntl.h> // open()
 #include <unistd.h> // close()
 #include <time.h> // clock_gettime()
+#include <i2cInterface.h>
 
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 
 #include <sys/ioctl.h>
 
-#include <platform.h>
+#include "platform.h"
 #include <types.h>
-#include <vl53l5cx_api.h>
+#include "vl53l5cx_api.h"
+#include <braveDebug.h>
+i2cInterface * g_i2cVL;
+uint16_t g_sAddress;
+
+
 
 #define VL53L5CX_ERROR_GPIO_SET_FAIL	-1
 #define VL53L5CX_COMMS_ERROR		-2
@@ -49,31 +55,10 @@ struct comms_struct {
 #define ST_TOF_IOCTL_TRANSFER           _IOWR('a',0x1, struct comms_struct)
 #define ST_TOF_IOCTL_WAIT_FOR_INTERRUPT	_IO('a',0x2)
 
-int32_t vl53l5cx_comms_init(VL53L5CX_Platform * p_platform)
+int32_t vl53l5cx_comms_init(i2cInterface * i2c, uint16_t i2caddress)
 {
-
-#ifdef STMVL53L5CX_KERNEL
-	p_platform->fd = open("/dev/stmvl53l5cx", O_RDONLY);
-	if (p_platform->fd == -1) {
-		LOG("Failed to open /dev/stmvl53l5cx\n");
-		return VL53L5CX_COMMS_ERROR;
-	}
-#else
-	/* Create sensor at default i2c address */
-	p_platform->address = 0x52;
-	p_platform->fd = open("/dev/i2c-1", O_RDONLY);
-	if (p_platform->fd == -1) {
-		LOG("Failed to open /dev/i2c-1\n");
-		return VL53L5CX_COMMS_ERROR;
-	}
-
-	if (ioctl(p_platform->fd, I2C_SLAVE, p_platform->address) <0) {
-		LOG("Could not speak to the device on the i2c bus\n");
-		return VL53L5CX_COMMS_ERROR;
-	}
-#endif
-
-	LOG("Opened ST TOF Dev = %d\n", p_platform->fd);
+		g_i2cVL = i2c;
+		g_sAddress = i2caddress;
 
 	return 0;
 }
@@ -105,14 +90,15 @@ int32_t write_read_multi(
 #else
 
 	struct i2c_rdwr_ioctl_data packets;
-	struct i2c_msg messages[2];
+	//struct i2c_msg messages[2];
 
 	uint32_t data_size = 0;
 	uint32_t position = 0;
 
 	if (write_not_read) {
 		do {
-			data_size = (count - position) > (VL53L5CX_COMMS_CHUNK_SIZE-2) ? (VL53L5CX_COMMS_CHUNK_SIZE-2) : (count - position);
+			g_i2cVL->readBytes(i2c_address, reg_address, count, (uint16_t*)pdata);
+			/*data_size = (count - position) > (VL53L5CX_COMMS_CHUNK_SIZE-2) ? (VL53L5CX_COMMS_CHUNK_SIZE-2) : (count - position);
 
 			memcpy(&i2c_buffer[2], &pdata[position], data_size);
 
@@ -126,16 +112,19 @@ int32_t write_read_multi(
 
 			packets.msgs = messages;
 			packets.nmsgs = 1;
-
+			
 			if (ioctl(fd, I2C_RDWR, &packets) < 0)
+				//bDebug(TRACE, "I ran 1");
 				return VL53L5CX_COMMS_ERROR;
-			position +=  data_size;
+			// position +=  data_size;*/
 
 		} while (position < count);
 	}
 
 	else {
 		do {
+			g_i2cVL->writeBytes(i2c_address, reg_address, pdata[0]);
+			/*
 			data_size = (count - position) > VL53L5CX_COMMS_CHUNK_SIZE ? VL53L5CX_COMMS_CHUNK_SIZE : (count - position);
 
 			i2c_buffer[0] = (reg_address + position) >> 8;
@@ -153,11 +142,12 @@ int32_t write_read_multi(
 
 			packets.msgs = messages;
 			packets.nmsgs = 2;
-
+			
 			if (ioctl(fd, I2C_RDWR, &packets) < 0)
+				perror("Write Byte failure");
 				return VL53L5CX_COMMS_ERROR;
 
-			position += data_size;
+			//position += data_size;*/
 
 		} while (position < count);
 	}
@@ -208,7 +198,10 @@ uint8_t VL53L5CX_RdMulti(
 		uint8_t *p_values,
 		uint32_t size)
 {
-	return(read_multi(p_platform->fd, p_platform->address, reg_address, p_values, size));
+	return(
+		read_multi(p_platform->fd, p_platform->address, reg_address, p_values, size)
+		
+		);
 }
 
 uint8_t VL53L5CX_WrMulti(

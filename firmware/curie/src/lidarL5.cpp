@@ -8,9 +8,9 @@
 #include <dataSource.h>
 #include <lidarL5.h>
 #include <curie.h>
-#include "vl53l5cx_api.h"
-#include "vl53l5cx_plugin_motion_indicator.h"
-#include "vl53l5cx_plugin_detection_thresholds.h"
+#include "vl53l5cx/vl53l5cx_api.h"
+#include "vl53l5cx/vl53l5cx_plugin_motion_indicator.h"
+#include "vl53l5cx/vl53l5cx_plugin_detection_thresholds.h"
 
 lidarL5::lidarL5(i2cInterface * i2cBus, int i2cAddress, int threshold){
     bDebug(TRACE, "Lidar created");
@@ -39,34 +39,23 @@ int lidarL5::getData(string * sqlTable, std::vector<string> * vData){
     *sqlTable = T_LIDAR5_SQL_TABLE;
     vl53l5cx_start_ranging(pdev);
 
+    bool isReady = VL53L5CX_wait_for_dataready(&pdev->platform);
 	
-		
+	if(isReady){
+
 	vl53l5cx_get_ranging_data(pdev, &Results);
 	printf("Print data no : %3u\n", pdev->streamcount);
-			for(int i = 0; i < nb_threshold; i++)
+			for(int i = 0; i < 16; i++)
 			{
-				/* Print per zone results. These results are the same for all targets */
-				printf("Zone %3u : %2u, %6d, %6d, ",
+				printf("Zone : %3d, Status : %3u, Distance : %4d mm\n",
 					i,
-					Results.nb_target_detected[i],
-					(int)Results.ambient_per_spad[i],
-					(int)Results.nb_spads_enabled[i]);
-
-				for(int j = 0; j < VL53L5CX_NB_TARGET_PER_ZONE; j++)
-				{
-					/* Print per target results. These results depends of the target nb */
-					uint16_t idx = VL53L5CX_NB_TARGET_PER_ZONE * i + j;
-					printf("Target[%1u] : %2u, %4d, %6d, %3u, ",
-						j,
-						Results.target_status[idx],
-						Results.distance_mm[idx],
-						(int)Results.signal_per_spad[idx],
-						Results.range_sigma_mm[idx]);
-				}
-				printf("\n");
+					Results.target_status[VL53L5CX_NB_TARGET_PER_ZONE*i],
+					Results.distance_mm[VL53L5CX_NB_TARGET_PER_ZONE*i]);
 			}
+			printf("\n");
 
 	vl53l5cx_stop_ranging(pdev);
+    }
 
 
     return err;
@@ -86,7 +75,7 @@ int lidarL5::getTableDef(string * sqlBuf){
 }
 
 int lidarL5::setTableParams(){
-    bDebug(TRACE, "Set table params");
+    bDebug(TRACE, "Lidarl5 Set table params");
     int err = OK;
 
     try {
@@ -123,12 +112,16 @@ int lidarL5::initDevice()
 	int err = OK;
     uint8_t 		status, isAlive;
 	VL53L5CX_Configuration 	Dev;
-	vl53l5cx_comms_init(&Dev.platform);
 	this->pdev = &Dev;
+   // int file = vl53l5cx_comms_init(i2cBus, i2cAddress);
+	//if (file == -1){
+		err = BAD_SETTINGS;
+   // }
+    /*
 	status = vl53l5cx_is_alive(pdev, &isAlive);
 	if(!isAlive || status)
 	{
-		printf("VL53L5CX not detected at requested address\n");
+		bDebug(TRACE, "VL53L5CX not detected at requested address");
         err = BAD_SETTINGS;
 		return err;
 	}
@@ -136,13 +129,12 @@ int lidarL5::initDevice()
 	status = vl53l5cx_init(pdev);
 	if(status)
 	{
-		printf("VL53L5CX ULD Loading failed\n");
+		bDebug(TRACE, "VL53L5CX ULD Loading failed");
 		err = BAD_SETTINGS;
 		return err;
-	}
+	}*/
 
-	printf("VL53L5CX ULD ready ! (Version : %s)\n",
-			VL53L5CX_API_REVISION);
+	bDebug(TRACE, "VL53L5CX ready!");
 
     return err;
 }

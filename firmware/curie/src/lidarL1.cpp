@@ -8,23 +8,18 @@
 #include <dataSource.h>
 #include <lidarL1.h>
 #include <curie.h>
-#include <VL53L1X_api.h>
-#include <VL53L1X_calibration.h>
-#include <vl53l1_platform.h>
+#include "vl53l1x/VL53L1X_api.h"
+#include "vl53l1x/VL53L1X_calibration.h"
+#include "vl53l1x/vl53l1_platform.h"
 #include <unistd.h>
 
-lidarL1::lidarL1(i2cInterface * i2cBus, int i2cAddress){
+lidarL1::lidarL1(int adapter_nr, int i2cAddress){
     bDebug(TRACE, "LidarL1 created");
     
-    this->adapter_nr = 1;
+    this->adapter_nr = adapter_nr;
     
 
     this->sourceName = T_LIDAR1_NAME;
-    this->i2cBus = i2cBus;
-    if (NULL == i2cBus){
-        bDebug(ERROR, "No i2c Bus assigned");
-        throw(BAD_PORT);
-    }
     setTableParams();
     this->i2cAddress = i2cAddress;
     initDevice();
@@ -43,7 +38,7 @@ int lidarL1::getData(string * sqlTable, std::vector<string> * vData){
     int status;
     uint8_t dataReady = 0;
 	while (dataReady == 0) 
-    {
+    {;
 			status = VL53L1X_CheckForDataReady(Dev, &dataReady);
 			usleep(1);
 	}
@@ -118,12 +113,12 @@ int lidarL1::initDevice()
 {
     int err = OK;
     bDebug(TRACE, "init");
-
-    int file = VL53L1X_UltraLite_Linux_I2C_Init(i2cBus, i2cAddress);
+    uint16_t Dev = (uint16_t)i2cAddress;
+    int file = VL53L1X_UltraLite_Linux_I2C_Init(Dev, adapter_nr, i2cAddress);
 	if (file == -1){
 		err = BAD_SETTINGS;
     }
-    uint16_t Dev = (uint16_t)i2cAddress;
+    
     int status;
     uint8_t byteData, sensorState = 0;
 	uint16_t wordData;

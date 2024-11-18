@@ -16,6 +16,10 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <i2cInterface.h>
+
+extern i2cInterface * g_i2cVL;
+extern uint16_t g_sAddress;
 
 /**
  * @brief Structure VL53L5CX_Platform needs to be filled by the customer,
@@ -181,7 +185,7 @@ uint8_t VL53L5CX_WaitMs(
  * @param (int) *fd : pointer on a I2C channel descriptor.
  * @return (uint8_t) status : 0 if OK
  */
-int32_t vl53l5cx_comms_init(VL53L5CX_Platform * p_platform);
+int32_t vl53l5cx_comms_init(i2cInterface * i2c, uint16_t i2caddress);
 
 
 /**

@@ -7,8 +7,8 @@
 #include <braveDebug.h>
 #include <dataSource.h>
 #include <thermalCamera.h>
-#include <MLX90640_API.h>
-#include <MLX90640_I2C_Driver.h>
+#include "MLX90640/MLX90640_API.h"
+#include "MLX90640/MLX90640_I2C_Driver.h"
 #include <curie.h>
 
 thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
