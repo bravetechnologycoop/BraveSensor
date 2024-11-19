@@ -37,6 +37,11 @@ int multiMotionSensor::getData(string *sqlTable, std::vector<string> * vData){
     int8_t tilt[3]= {};
 
     string xFreq, yFreq, zFreq, sFreq, xAmp, yAmp, zAmp, sAmp = "";
+
+    float xData[6][2] = {0};
+    float yData[6][2] = {0};
+    float zData[6][2] = {0};
+    float sData[6][2] = {0};
     
     sleep(2);
     this->serialPort->flushReceiver();
@@ -44,11 +49,11 @@ int multiMotionSensor::getData(string *sqlTable, std::vector<string> * vData){
     humidity = this->getHumidity();
     pressure = this->getPressure();
     if(this->getTilt(tilt) == -200) {err = BAD_SETTINGS;}
-    if(this->getVibrationX(&xFreq, &xAmp) == -200) {err = BAD_SETTINGS;}
-    if(this->getVibrationY(&yFreq, &yAmp) == -200){err = BAD_SETTINGS;}
-    if(this->getVibrationZ(&zFreq, &zAmp) == -200){err = BAD_SETTINGS;}
+    if(this->getVibrationX(&xData) == -200) {err = BAD_SETTINGS;}
+    if(this->getVibrationY(&yData) == -200){err = BAD_SETTINGS;}
+    if(this->getVibrationZ(&zData) == -200){err = BAD_SETTINGS;}
     light = this->getLight();
-    if(this->getSoundwave(&sFreq, &sAmp) == -200){err = BAD_SETTINGS;}
+    if(this->getSoundwave(&sData) == -200){err = BAD_SETTINGS;}
     soundBroadband = this->getSoundBroadband();
 
     vData->push_back(to_string(temp));
@@ -57,15 +62,11 @@ int multiMotionSensor::getData(string *sqlTable, std::vector<string> * vData){
     vData->push_back(to_string(tilt[0])); //x
     vData->push_back(to_string(tilt[1])); //y
     vData->push_back(to_string(tilt[2])); //z
-    vData->push_back("'"+xFreq+"'");
-    vData->push_back("'"+xAmp+"'");
-    vData->push_back("'"+yFreq+"'");
-    vData->push_back("'"+yAmp+"'");
-    vData->push_back("'"+zFreq+"'");
-    vData->push_back("'"+zAmp+"'");
+    vData->push_back(parseWaveToString(xData));
+    vData->push_back(parseWaveToString(yData));
+    vData->push_back(parseWaveToString(zData));
     vData->push_back(to_string(light));
-    vData->push_back("'"+sFreq+"'");
-    vData->push_back("'"+sAmp+"'");
+    vData->push_back(parseWaveToString(sData));
     vData->push_back(to_string(soundBroadband));
 
     return err;
@@ -94,15 +95,11 @@ int multiMotionSensor::setTableParams(){
         this->dbParams.emplace_back("xtilt", "int");
         this->dbParams.emplace_back("ytilt", "int");
         this->dbParams.emplace_back("ztilt", "int");
-        this->dbParams.emplace_back("xfreq", "text");
-        this->dbParams.emplace_back("xamp", "text");
-        this->dbParams.emplace_back("yfreq", "text");
-        this->dbParams.emplace_back("yamp", "text");
-        this->dbParams.emplace_back("zfreq", "text");
-        this->dbParams.emplace_back("zamp", "text");
+        this->dbParams.emplace_back("xvibration", "float[][]");
+        this->dbParams.emplace_back("yvibration", "float[][]");
+        this->dbParams.emplace_back("zvibration", "float[][]");
         this->dbParams.emplace_back("light", "int");
-        this->dbParams.emplace_back("sfreq", "text");
-        this->dbParams.emplace_back("samp", "text");
+        this->dbParams.emplace_back("svibration", "float[][]");
         this->dbParams.emplace_back("soundbroadband", "float");
     }
     catch(...) {
@@ -187,96 +184,105 @@ int multiMotionSensor::getTilt(int8_t xyz[]){
     return err;
 }
 
-int multiMotionSensor::getVibrationX(string* xFreq, string* xAmp) {
-    bDebug(TRACE, "multiMotionSensor getting xvibration");
+int multiMotionSensor::getVibrationX(float(*xData)[6][2]) {
+    bDebug(TRACE, "multiMotionSensor getting vibration X");
+
+    uint16_t freq[6] = {};
+    uint16_t ampTemp[6] = {};
     int status = SENSOR_FAULT;
-    uint16_t freq[6] = {}; 
-    float amp[6] = {};
+
     if (this->serialPort->isDeviceOpen()) {
         uint8_t buffer[64];
-        uint16_t ampTemp = 0;
         this->serialPort->writeChar('X');
-        
-        for(int i = 0; i <= 5; i++){
-        this->serialPort->readBytes(buffer, 4);
-        freq[i] = (buffer[0] << 8) | buffer[1];
-        *xFreq += to_string(freq[i]) + " ";
-        ampTemp = (buffer[2] << 8) | buffer[3];
-        amp[i] = ((float)(ampTemp)) / 100.0f;
-        *xAmp += to_string(freq[i]) + " ";
-        status = buffer[0];
-            if(i == 0){
-                bDebug(TRACE, "Fundamental Frequency: " + to_string(freq[i]) + ", Fundamental Amplitude: " + to_string(amp[i]));
+        for (int i = 0; i < 6; i++) {
+            this->serialPort->readBytes(buffer, 4);
+            freq[i] = (buffer[0] << 8) | buffer[1];
+            (*xData)[i][0] = (float)(freq[i]);
+
+            ampTemp[i] = (buffer[2] << 8) | buffer[3];
+            (*xData)[i][1] = (float)(ampTemp[i]) / 100.0f;
+
+            status = buffer[0];
+            if (i == 0) {
+                bDebug(TRACE, "Fundamental Frequency: " + std::to_string((*xData)[i][0]) +
+                    ", Fundamental Amplitude: " + std::to_string((*xData)[i][1]));
+            } else {
+                 bDebug(TRACE, "X Peak " + std::to_string(i) + " Frequency: " +
+                    std::to_string((*xData)[i][0]) + ", Amplitude: " +
+                    std::to_string((*xData)[i][1]));
+                }
             }
-            else {
-                bDebug(TRACE, "X Peak " + to_string(i) + " Frequency: " + to_string(freq[i]) + ", Amplitude: " + to_string(amp[i]));
-            }
+        } else {
+            status = BAD_SETTINGS;
         }
-    }
-    xFreq->pop_back();
-    xAmp->pop_back();
     return status;
 }
 
-int multiMotionSensor::getVibrationY(string* yFreq, string* yAmp) {
-    bDebug(TRACE, "multiMotionSensor getting yvibration");
+int multiMotionSensor::getVibrationX(float(*yData)[6][2]) {
+    bDebug(TRACE, "multiMotionSensor getting vibration Y");
+
+    uint16_t freq[6] = {};
+    uint16_t ampTemp[6] = {};
     int status = SENSOR_FAULT;
-    uint16_t freq[6] = {}; 
-    float amp[6] = {};
+
     if (this->serialPort->isDeviceOpen()) {
         uint8_t buffer[64];
-        uint16_t ampTemp = 0;
         this->serialPort->writeChar('V');
-        
-        for(int i = 0; i <= 5; i++){
-        this->serialPort->readBytes(buffer, 4);
-        freq[i] = (buffer[0] << 8) | buffer[1];
-        *yFreq += to_string(freq[i]) + " ";
-        ampTemp = (buffer[2] << 8) | buffer[3];
-        amp[i] = ((float)(ampTemp)) / 100.0f;
-        *yAmp += to_string(freq[i]) + " ";
-        status = buffer[0];
-            if(i == 0){
-                bDebug(TRACE, "Fundamental Frequency: " + to_string(freq[i]) + ", Fundamental Amplitude: " + to_string(amp[i]));
+        for (int i = 0; i < 6; i++) {
+            this->serialPort->readBytes(buffer, 4);
+            freq[i] = (buffer[0] << 8) | buffer[1];
+            (*yData)[i][0] = (float)(freq[i]);
+
+            ampTemp[i] = (buffer[2] << 8) | buffer[3];
+            (*yData)[i][1] = (float)(ampTemp[i]) / 100.0f;
+
+            status = buffer[0];
+            if (i == 0) {
+                bDebug(TRACE, "Fundamental Frequency: " + std::to_string((*yData)[i][0]) +
+                    ", Fundamental Amplitude: " + std::to_string((*yData)[i][1]));
+            } else {
+                 bDebug(TRACE, "Y Peak " + std::to_string(i) + " Frequency: " +
+                    std::to_string((*yData)[i][0]) + ", Amplitude: " +
+                    std::to_string((*yData)[i][1]));
+                }
             }
-            else {
-                bDebug(TRACE, "Y Peak " + to_string(i) + " Frequency: " + to_string(freq[i]) + ", Amplitude: " + to_string(amp[i]));
-            }
+        } else {
+            status = BAD_SETTINGS;
         }
-        yFreq->pop_back();
-        yAmp->pop_back();
-    }
     return status;
 }
 
-int multiMotionSensor::getVibrationZ(string* zFreq, string* zAmp) {
-    bDebug(TRACE, "multiMotionSensor getting zvibration");
+int multiMotionSensor::getVibrationZ(float(*zData)[6][2]) {
+    bDebug(TRACE, "multiMotionSensor getting vibration Z");
+
+    uint16_t freq[6] = {};
+    uint16_t ampTemp[6] = {};
     int status = SENSOR_FAULT;
-    uint16_t freq[6] = {}; 
-    float amp[6] = {};
+
     if (this->serialPort->isDeviceOpen()) {
         uint8_t buffer[64];
-        uint16_t ampTemp = 0;
         this->serialPort->writeChar('W');
-        
-        for(int i = 0; i <= 5; i++){
-        this->serialPort->readBytes(buffer, 4);
-        freq[i] = (buffer[0] << 8) | buffer[1];
-        *zFreq += to_string(freq[i]) + " ";
-        ampTemp = (buffer[2] << 8) | buffer[3];
-        amp[i] = ((float)(ampTemp)) / 100.0f;
-        *zAmp += to_string(freq[i]) + " ";
-        status = buffer[0];
-            if(i == 0){
-                bDebug(TRACE, "Fundamental Frequency: " + to_string(freq[i]) + ", Fundamental Amplitude: " + to_string(amp[i]));
+        for (int i = 0; i < 6; i++) {
+            this->serialPort->readBytes(buffer, 4);
+            freq[i] = (buffer[0] << 8) | buffer[1];
+            (*zData)[i][0] = (float)(freq[i]);
+
+            ampTemp[i] = (buffer[2] << 8) | buffer[3];
+            (*zData)[i][1] = (float)(ampTemp[i]) / 100.0f;
+
+            status = buffer[0];
+            if (i == 0) {
+                bDebug(TRACE, "Fundamental Frequency: " + std::to_string((*zData)[i][0]) +
+                    ", Fundamental Amplitude: " + std::to_string((*zData)[i][1]));
+            } else {
+                 bDebug(TRACE, "Z Peak " + std::to_string(i) + " Frequency: " +
+                    std::to_string((*zData)[i][0]) + ", Amplitude: " +
+                    std::to_string((*zData)[i][1]));
+                }
             }
-            else {
-                bDebug(TRACE, "Y Peak " + to_string(i) + " Frequency: " + to_string(freq[i]) + ", Amplitude: " + to_string(amp[i]));
-            }
+        } else {
+            status = BAD_SETTINGS;
         }
-        zFreq->pop_back();
-        zAmp->pop_back();
-    }
     return status;
 }
 
@@ -296,34 +302,37 @@ int8_t multiMotionSensor::getLight(){
     return light;
 }
 
-int multiMotionSensor::getSoundwave(string* sFreq, string* sAmp) {
+int multiMotionSensor::getSoundwave(float(*sData)[6][2]) {
     bDebug(TRACE, "multiMotionSensor getting soundwave");
+
+    uint16_t freq[6] = {};
+    uint16_t ampTemp[6] = {};
     int status = SENSOR_FAULT;
-    uint16_t freq[6] = {}; 
-    float amp[6] = {};
+
     if (this->serialPort->isDeviceOpen()) {
         uint8_t buffer[64];
-        uint16_t ampTemp = 0;
-        this->serialPort->writeChar('F');
-        
-        for(int i = 0; i <= 5; i++){
-        this->serialPort->readBytes(buffer, 4);
-        freq[i] = (buffer[0] << 8) | buffer[1];
-        *sFreq += to_string(freq[i]) + " ";
-        ampTemp = (buffer[2] << 8) | buffer[3];
-        amp[i] = ((float)(ampTemp)) / 100.0f;
-        *sAmp += to_string(freq[i]) + " ";
-        status = buffer[0];
-            if(i == 0){
-                bDebug(TRACE, "Fundamental Frequency: " + to_string(freq[i]) + ", Fundamental Amplitude: " + to_string(amp[i]));
+        this->serialPort->writeChar('W');
+        for (int i = 0; i < 6; i++) {
+            this->serialPort->readBytes(buffer, 4);
+            freq[i] = (buffer[0] << 8) | buffer[1];
+            (*sData)[i][0] = (float)(freq[i]);
+
+            ampTemp[i] = (buffer[2] << 8) | buffer[3];
+            (*sData)[i][1] = (float)(ampTemp[i]) / 100.0f;
+
+            status = buffer[0];
+            if (i == 0) {
+                bDebug(TRACE, "Fundamental Frequency: " + std::to_string((*sData)[i][0]) +
+                    ", Fundamental Amplitude: " + std::to_string((*sData)[i][1]));
+            } else {
+                 bDebug(TRACE, "Y Peak " + std::to_string(i) + " Frequency: " +
+                    std::to_string((*sData)[i][0]) + ", Amplitude: " +
+                    std::to_string((*sData)[i][1]));
+                }
             }
-            else {
-                bDebug(TRACE, "Soundwave Peak " + to_string(i) + " Frequency: " + to_string(freq[i]) + ", Amplitude: " + to_string(amp[i]));
-            }
+        } else {
+            status = BAD_SETTINGS;
         }
-        sFreq->pop_back();
-        sAmp->pop_back();
-    }
     return status;
 }
 
@@ -341,4 +350,23 @@ float multiMotionSensor::getSoundBroadband() {
         bDebug(TRACE, "Sound Broadband Level: " + to_string(soundLevel));
     }
     return soundLevel;
+}
+
+string multiMotionSensor::parseWaveToString(float arr[6][2]) {
+    string result = "{";
+    for (int i = 0; i < 6; ++i) {
+        result += "{";
+        for (int j = 0; j < 2; ++j) {
+            result += std::to_string(arr[i][j]);
+            if (j == 0) {
+                result += ",";
+            }
+        }
+        result += "}";
+        if (i != 5) {
+            result += ",";
+        }
+    }
+    result += "}";
+    return result;
 }
