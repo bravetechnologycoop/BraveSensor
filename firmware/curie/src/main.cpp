@@ -42,7 +42,7 @@ int main()
         
 		//set up the busses
         i2cInterface * fastI2C = new i2cInterface();
-		fastI2C->setParams("/dev/i2c-1");
+		fastI2C->setParams(FAST_I2C_SZ);
 		//thermalCamera * sourceThermalCamera = NULL;
 		//lidarL1 *sourceLidarL1 = NULL;
 		lidarL5 * sourceLidarL5 = NULL;
@@ -56,7 +56,7 @@ int main()
 		}
 
 		i2cInterface * slowI2C = new i2cInterface();
-		slowI2C->setParams("/dev/i2c-22");
+		slowI2C->setParams(SLOW_I2C_SZ);
 		usonicRange * sourceUSonic = NULL;
 		multiGasSensor * sourceMGas = NULL;
 		co2Telaire * sourceCO2T = NULL;

@@ -25,7 +25,7 @@
 
 #include "vl53l5_platform.h"
 
-#define VL53L5_MAX_I2C_XFER_SIZE 512
+#define VL53L5_MAX_I2C_XFER_SIZE 1024
 static uint8_t buffer[VL53L5_MAX_I2C_XFER_SIZE + 2];/* GLOBAL I2C comm buff */
 
 static int8_t Linux_I2CRead(int64_t dev, uint8_t *buff, uint8_t len)
@@ -34,7 +34,7 @@ static int8_t Linux_I2CRead(int64_t dev, uint8_t *buff, uint8_t len)
 
 	ret = read(dev, buff, len);
 	if (ret != len) {
-		printf("Read failed with %d\n", ret);
+		bDebug(ERROR, "Read failed with " + to_string(ret));
 		return -1;
 	}
 	return 0;
@@ -46,7 +46,7 @@ static int8_t Linux_I2CWrite(int dev, uint8_t *buff, uint8_t len)
 
 	ret = write(dev, buff, len);
 	if (ret != len) {
-		printf("Write failed with %d\n", ret);
+		bDebug(ERROR, "Write failed with " + to_string(ret));
 		return -1;
 	}
 	return 0;
@@ -107,8 +107,13 @@ uint8_t VL53L5CX_WrByte(
 
 	sprintf(tempstr, "i2cWrite %04x %02x", RegisterAdress, value);
 	bDebug(TRACE, tempstr);
+	uint8_t err = VL53L5CX_WrMulti(p_platform, RegisterAdress, (uint8_t *) &value, 1);
 
-	return VL53L5CX_WrMulti(p_platform, RegisterAdress, (uint8_t *) &value, 1);
+	if (0 != err){
+		bDebug(ERROR, "VL53L5CX_WrByte Failed to Write");
+	}
+
+	return err;
 }
 
 uint8_t VL53L5CX_WrMulti(
@@ -119,8 +124,10 @@ uint8_t VL53L5CX_WrMulti(
 {	
 	uint8_t Status = 0;
 
-	if ((size + 1) > VL53L5_MAX_I2C_XFER_SIZE)
+	if ((size + 1) > VL53L5_MAX_I2C_XFER_SIZE){
+		bDebug(ERROR, "Write exceeded maximum size at: " + to_string(size));
 		return -1;
+	}
 	buffer[0] = RegisterAdress >> 8;
 	buffer[1] = RegisterAdress & 0xFF;
 
@@ -142,14 +149,16 @@ uint8_t VL53L5CX_RdMulti(
 {
 	uint8_t Status = 0;
 	
-	if ((size + 1) > VL53L5_MAX_I2C_XFER_SIZE)
+	if ((size + 1) > VL53L5_MAX_I2C_XFER_SIZE){
+		bDebug(ERROR, "Read Bounds exceeded");
 		return -1;
+	}
 
 	buffer[0] = RegisterAdress >> 8;
 	buffer[1] = RegisterAdress & 0xFF;
 
 	Status = Linux_I2CWrite(p_platform->i2c_hdl, (uint8_t *) buffer, (uint8_t) 2);
-	if (!Status) {
+	if (0 == Status) {
 		p_values[0] = RegisterAdress;
 		Status = Linux_I2CRead(p_platform->i2c_hdl, p_values, size);
 		if (0 == Status){
@@ -161,6 +170,8 @@ uint8_t VL53L5CX_RdMulti(
 		} else {
 			bDebug(ERROR, "Failed to Read");
 		}
+	} else {
+		bDebug(ERROR, "Failed to setup the write");
 	}
 	return Status;
 }

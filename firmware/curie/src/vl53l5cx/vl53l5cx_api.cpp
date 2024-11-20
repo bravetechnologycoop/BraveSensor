@@ -294,6 +294,10 @@ uint8_t vl53l5cx_init(
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x01);
 	status |= _vl53l5cx_poll_for_answer(p_dev, 1, 0, 0x21, 0x10, 0x10);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x00);
+	if(status != (uint8_t)0){
+		bDebug(ERROR, "Failed to access FW");
+		goto exit;
+	}
 
 	/* Enable host access to GO1 */
 	status |= VL53L5CX_RdByte(&(p_dev->platform), 0x7fff, &tmp);
@@ -323,6 +327,10 @@ uint8_t vl53l5cx_init(
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x01);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x20, 0x07);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x20, 0x06);
+	if(status != (uint8_t)0){
+		bDebug(ERROR, "Failed to wake MCU");
+		goto exit;
+	}
 
 	/* Download FW into VL53L5 */
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x09);
@@ -335,6 +343,10 @@ uint8_t vl53l5cx_init(
 	status |= VL53L5CX_WrMulti(&(p_dev->platform),0,
 		(uint8_t*)&VL53L5CX_FIRMWARE[0x10000],0x5000);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x01);
+	if(status != (uint8_t)0){
+		bDebug(ERROR, "Failed to download FW");
+		goto exit;
+	}
 
 	/* Check if FW correctly downloaded */
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x02);
@@ -342,7 +354,7 @@ uint8_t vl53l5cx_init(
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x01);
 	status |= _vl53l5cx_poll_for_answer(p_dev, 1, 0, 0x21, 0x10, 0x10);
 	if(status != (uint8_t)0){
-		bDebug(ERROR, "Failed to download FW");
+		bDebug(ERROR, "Failed to check FW");
 		goto exit;
 	}
 

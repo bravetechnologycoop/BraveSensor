@@ -8,6 +8,7 @@
 #define _CURIE__H_
 
 #define FAST_I2C        1
+#define FAST_I2C_SZ     "/dev/i2c-1"
 #define FAST_SPEED      400000
 #define SLOW_I2C        22
 #define SLOW_I2C_SZ     "/dev/i2c-22"
