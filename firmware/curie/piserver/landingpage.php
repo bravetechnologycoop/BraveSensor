@@ -1,13 +1,17 @@
 <?php
-$db_name = 'webinterface';
-$db_user = 'bravetest';
-$db_password = 'bravetest';
+$db_name = 'testdb';
+$db_user = 'brave';
+$db_password = 'brave';
 $db_host = 'localhost';
 
 try {
-    $pdo = new PDO("pgsql:host=$db_host;dbname=$db_name", $db_user, $db_password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+    try {
+        $pdo = new PDO("pgsql:host=$db_host;dbname=$db_name", $db_user, $db_password);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        //echo "Connected successfully!";
+    } catch (PDOException $e) {
+        echo "Database connection failed: " . $e->getMessage();
+    }
     if (isset($_POST['in'])) {
         $stmt = $pdo->prepare("SELECT count FROM counter ORDER BY epochtime DESC LIMIT 1");
         $stmt->execute();
