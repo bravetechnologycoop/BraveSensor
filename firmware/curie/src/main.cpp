@@ -46,12 +46,12 @@ int main()
 		//thermalCamera * sourceThermalCamera = NULL;
 		//thermalCamera * sourceThermalCamera = NULL;
 		//lidarL1 *sourceLidarL1 = NULL;
-		//lidarL5 * sourceLidarL5 = NULL;
+		lidarL5 * sourceLidarL5 = NULL;
         if (OK == fastI2C->openBus()){
 			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
         	//vSources.push_back(sourceThermalCamera);
-			//sourceLidarL5 = new lidarL5(fastI2C, 0x29, 8); 
-			//vSources.push_back(sourceLidarL5);
+			sourceLidarL5 = new lidarL5(fastI2C, 0x29, 8); 
+			vSources.push_back(sourceLidarL5);
 			//sourceLidarL1 = new lidarL1(1, 0x29); 
 			//vSources.push_back(sourceLidarL1);
 		}
@@ -61,7 +61,7 @@ int main()
 		usonicRange * sourceUSonic = NULL;
 		multiGasSensor * sourceMGas = NULL;
 		co2Telaire * sourceCO2T = NULL;
-		co2SCD30 * sourceCO2S = NULL;
+		//co2SCD30 * sourceCO2S = NULL;
 		if (OK == slowI2C->openBus()){
 			bDebug(TRACE, "Got the slow i2c");
 			sourceUSonic = new usonicRange(SLOW_I2C_SZ, 0x70);
@@ -70,8 +70,8 @@ int main()
 			vSources.push_back(sourceMGas);
 			sourceCO2T = new co2Telaire(SLOW_I2C_SZ, 0x15);
 			vSources.push_back(sourceCO2T);
-			sourceCO2S =  new co2SCD30(0x61);
-			vSources.push_back(sourceCO2S);
+			//sourceCO2S =  new co2SCD30(0x61);
+			//vSources.push_back(sourceCO2S);
 		}
 		
 
@@ -80,11 +80,11 @@ int main()
 		//vSources.push_back(&sourcePIR);
 
 		serialib * usbSerial = new serialib();
-		multiMotionSensor * motionSensor = NULL;
+		//multiMotionSensor * motionSensor = NULL;
 		if (1 == usbSerial->openDevice(DLP_SER, DLP_BAUD)) {
 			bDebug(TRACE, "Got the uart");
-			motionSensor = new multiMotionSensor(usbSerial);
-			vSources.push_back(motionSensor);
+			//motionSensor = new multiMotionSensor(usbSerial);
+			//vSources.push_back(motionSensor);
 		}
 
 

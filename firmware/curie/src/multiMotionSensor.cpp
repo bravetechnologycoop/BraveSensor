@@ -218,7 +218,7 @@ int multiMotionSensor::getVibrationX(float(*xData)[6][2]) {
     return status;
 }
 
-int multiMotionSensor::getVibrationX(float(*yData)[6][2]) {
+int multiMotionSensor::getVibrationY(float(*yData)[6][2]) {
     bDebug(TRACE, "multiMotionSensor getting vibration Y");
 
     uint16_t freq[6] = {};
@@ -352,21 +352,22 @@ float multiMotionSensor::getSoundBroadband() {
     return soundLevel;
 }
 
-string multiMotionSensor::parseWaveToString(float arr[6][2]) {
-    string result = "{";
+std::string multiMotionSensor::parseWaveToString(float arr[6][2]) {
+    std::string result = "ARRAY[";
     for (int i = 0; i < 6; ++i) {
-        result += "{";
+        result += "[";
         for (int j = 0; j < 2; ++j) {
             result += std::to_string(arr[i][j]);
+
             if (j == 0) {
                 result += ",";
             }
         }
-        result += "}";
+        result += "]";
         if (i != 5) {
             result += ",";
         }
     }
-    result += "}";
+    result += "]";
     return result;
 }
