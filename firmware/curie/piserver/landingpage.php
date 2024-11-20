@@ -35,7 +35,7 @@ try {
         $stmt->bindParam(':new_count', $new_count);
         $stmt->execute();
     }
-    $stmt = $pdo->prepare("SELECT count, epochtime FROM counter ORDER BY epochtime DESC LIMIT 1");
+    $stmt = $pdo->prepare("SELECT count, epochtime FROM counter ORDER BY epochtime DESC LIMIT 5");
     $stmt->execute();
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $current_count = $row['count'];
