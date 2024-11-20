@@ -81,17 +81,17 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
 		#ifdef THERMAL_CAMERA
-		g_sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
-		vSources.push_back(g_sourceThermalCamera);
+		g_sourceThermalCamera = new thermalCamera(g_fastI2C);
+		dataVector->push_back(g_sourceThermalCamera);
 		#endif
 		#ifdef LIDAR
 		#ifdef LIDAR_L5
-		g_sourceLidarL5 = new lidarL5(FAST_I2C, 0x29); 
-		vSources.push_back(g_sourceLidarL5);
+		g_sourceLidarL5 = new lidarL5(FAST_I2C); 
+		dataVector->push_back(g_sourceLidarL5);
 		#endif
 		#ifdef LIDAR_L1
-		g_sourceLidarL1 = new lidarL1(1, 0x29); 
-		vSources.push_back(g_sourceLidarL1);
+		g_sourceLidarL1 = new lidarL1(FAST_I2C); 
+		dataVector->push_back(g_sourceLidarL1);
 		#endif
 		#endif
 	}
@@ -99,7 +99,7 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	if (g_slowI2C->isReady()){
 		//slow i2c is ready to go
 		#ifdef USONIC_RANGE
-		g_sourceUSonic = new usonicRange(SLOW_I2C_SZ, 0x70);
+		g_sourceUSonic = new usonicRange(SLOW_I2C_SZ);
 		dataVector->push_back(g_sourceUSonic);
 		#endif
 		#ifdef MULTI_GAS
@@ -108,26 +108,26 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 		#endif
 		#ifdef CO2
 		#ifdef CO2TELAIRE
-		g_sourceCO2T = new co2Telaire(SLOW_I2C_SZ, 0x15);
+		g_sourceCO2T = new co2Telaire(SLOW_I2C_SZ);
 		dataVector->push_back(g_sourceCO2T);
 		#endif
 		#ifdef CO2SCD
-		g_sourceCO2S =  new co2SCD30(0x61);
+		g_sourceCO2S =  new co2SCD30();
 		dataVector->push_back(g_sourceCO2S);
 		#endif
 		#endif 
 	}
 
 	#ifdef PIR
-	g_passiveIR = new sourcePIR(gpioPIR);
-	dataSource->push_back(g_sourcePIR);
+	g_sourcePIR = new passiveIR(g_gpioPIR);
+	dataVector->push_back(g_sourcePIR);
 	#endif
 
 	if (g_usbSerial->isDeviceOpen()){
 		//usb serial port is ready to go
 		#ifdef MULTI_MOTION
 		g_motionSensor = new multiMotionSensor(g_usbSerial);
-		dataSource->push_back(g_motionSensor);
+		dataVector->push_back(g_motionSensor);
 		#endif
 	}
 
@@ -140,7 +140,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
-	int tmpcount = 1;
+	int tmpcount = 2;
     int err = OK;
     try{
         
@@ -173,7 +173,8 @@ int main()
 			} 
 
 			if (loop){
-				usleep(LOOP_TIMER);
+				bDebug(TRACE, "Loop Sleep");
+				sleep(LOOP_TIMER);
 			}
 		};
 

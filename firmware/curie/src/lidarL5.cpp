@@ -35,7 +35,7 @@ int lidarL5::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "Lidar getData");
     int err = OK;
     //check incoming pointers
-    *sqlTable = T_LIDAR5_SQL_TABLE;
+    *sqlTable = LIDAR5_SQL_TABLE;
 
    
 
@@ -48,7 +48,7 @@ int lidarL5::getTableDef(string * sqlBuf){
     int err = BAD_PARAMS;
 
     if (NULL != sqlBuf){
-        *sqlBuf = T_LIDAR5_SQL_TABLE;
+        *sqlBuf = LIDAR5_SQL_TABLE;
         bDebug(TRACE, "lidar Table: " + *sqlBuf);
         err = OK;
     }

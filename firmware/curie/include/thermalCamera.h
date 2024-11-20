@@ -16,10 +16,11 @@ using namespace std;
 #define T_CAMERA_NAME "Thermal Camera"
 #define T_CAMERA_SQL_TABLE "thermalcamera"
 
+#define T_CAMERA_DEFAULT_I2C_ADDRESS 0x33
 
 class thermalCamera final: virtual public dataSource {
     public:
-        thermalCamera(i2cInterface * i2cBus, int i2cAddress);
+        thermalCamera(i2cInterface * i2cBus, int i2cAddress = T_CAMERA_DEFAULT_I2C_ADDRESS);
         ~thermalCamera();
 
         int getData(string *sqlTable, std::vector<string> * vData);

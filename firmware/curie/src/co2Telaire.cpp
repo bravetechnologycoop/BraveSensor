@@ -44,7 +44,7 @@ int co2Telaire::getData(string * sqlTable, std::vector<string> * vData){
     int32_t rawGas;
 
     //check incoming pointers
-    *sqlTable = T_CO2_SQL_TABLE;
+    *sqlTable = CO2_SQL_TABLE;
 
     //send out the command to get a gas reading
     for (int i = 0; i < 5; i++){
@@ -81,7 +81,7 @@ int co2Telaire::getTableDef(string * sqlBuf){
     int err = BAD_PARAMS;
 
     if (NULL != sqlBuf){
-        *sqlBuf = T_CO2_SQL_TABLE;
+        *sqlBuf = CO2_SQL_TABLE;
         bDebug(TRACE, "co2Telaire Table: " + *sqlBuf);
         err = OK;
     }

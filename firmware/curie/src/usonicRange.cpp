@@ -54,7 +54,7 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     //int32_t range = 200;
 
     //check incoming pointers
-    *sqlTable = T_USONIC_SQL_TABLE;
+    *sqlTable = USONIC_SQL_TABLE;
 
     //send out the command to get a range
     err = i2c_smbus_write_byte(this->fd, setRangeCmd);
@@ -90,7 +90,7 @@ int usonicRange::getTableDef(string * sqlBuf){
     int err = BAD_PARAMS;
 
     if (NULL != sqlBuf){
-        *sqlBuf = T_USONIC_SQL_TABLE;
+        *sqlBuf = USONIC_SQL_TABLE;
         bDebug(TRACE, "usonicRange Table: " + *sqlBuf);
         err = OK;
     }

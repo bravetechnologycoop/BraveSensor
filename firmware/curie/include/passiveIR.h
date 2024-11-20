@@ -12,8 +12,8 @@ using namespace std;
 #include <dataSource.h>
 #include <gpioInterface.h>
 
-#define T_PIR_NAME "Passive IR detector"
-#define T_PIR_SQL_TABLE "passiveir"
+#define PIR_NAME "Passive IR detector"
+#define PIR_SQL_TABLE "passiveir"
 
 
 class passiveIR final: public dataSource {

@@ -12,13 +12,14 @@ using namespace std;
 #include "../src/vl53l5cx/vl53l5_platform.h"
 #include "../src/vl53l5cx/vl53l5cx_api.h"
 
-#define T_LIDAR5_NAME "lidar5"
-#define T_LIDAR5_SQL_TABLE "lidar5"
+#define LIDAR5_NAME "lidar5"
+#define LIDAR5_SQL_TABLE "lidar5"
 
+#define LIDAR5_DEFAULT_I2C_ADDRESS 0x29
 
 class lidarL5 final: public dataSource {
     public:
-        lidarL5(int i2cBus, int i2cAddress);
+        lidarL5(int i2cBus, int i2cAddress = LIDAR5_DEFAULT_I2C_ADDRESS);
         ~lidarL5();
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);

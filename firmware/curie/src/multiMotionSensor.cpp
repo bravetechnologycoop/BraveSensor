@@ -30,7 +30,7 @@ int multiMotionSensor::getData(string *sqlTable, std::vector<string> * vData){
 
     bDebug(INFO, "multiMotionSensor GetData");
     
-    *sqlTable = T_MULTIMOTION_SQL_TABLE;
+    *sqlTable = MULTIMOTION_SQL_TABLE;
     int err = OK;
     float pressure, soundBroadband, humidity, temp = 0.0;
     uint8_t light;
@@ -76,7 +76,7 @@ int multiMotionSensor::getTableDef(string * sqlBuf){
     bDebug(INFO, "multiMotionSensor getTableDef");
     int err = OK;
     if (NULL != sqlBuf){
-        *sqlBuf = T_MULTIMOTION_SQL_TABLE;
+        *sqlBuf = MULTIMOTION_SQL_TABLE;
         bDebug(TRACE, "multiMotionSensor Table: " + *sqlBuf);
         err = OK;
     }

@@ -29,7 +29,7 @@ int passiveIR::getData(string * sqlTable, std::vector<string> * vData){
     bool data = false;
 
     //check incoming pointers
-    *sqlTable = T_PIR_SQL_TABLE;
+    *sqlTable = PIR_SQL_TABLE;
 
     err = this->gpio->readPin(&data);
     if (OK == err){
@@ -47,7 +47,7 @@ int passiveIR::getTableDef(string * sqlBuf){
     int err = BAD_PARAMS;
 
     if (NULL != sqlBuf){
-        *sqlBuf = T_PIR_SQL_TABLE;
+        *sqlBuf = PIR_SQL_TABLE;
         bDebug(TRACE, "passiveIR Table: " + *sqlBuf);
         err = OK;
     }
