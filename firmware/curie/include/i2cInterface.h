@@ -11,12 +11,12 @@ using namespace std;
 
 class i2cInterface{
     public:
-        i2cInterface();
+        i2cInterface(string busID);
         ~i2cInterface();
 
-        int setParams(string busID);
         int openBus();
         int closeBus();
+        bool isReady();
 
         int readBytes(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data);
         int writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data);

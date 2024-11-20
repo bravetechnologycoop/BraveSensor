@@ -16,12 +16,12 @@ extern "C"{
     #include <i2c/smbus.h>
 }
 
-co2Telaire::co2Telaire(char* i2cbus, uint8_t i2cAddress){
+co2Telaire::co2Telaire(string i2cbus, uint8_t i2cAddress){
     bDebug(TRACE, "Creating co2Telaire");
     setTableParams();
 
     this->i2cAddress = i2cAddress;
-    this->fd = open(i2cbus, O_RDWR);
+    this->fd = open(i2cbus.c_str(), O_RDWR);
     if (0 > this->fd){
         bDebug(ERROR, "Failed to open bus");
     } else {

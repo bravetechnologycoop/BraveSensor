@@ -16,7 +16,7 @@ using namespace std;
 #define T_MULTIGAS_SQL_TABLE "multigassensor"
 
 
-class multiGasSensor: public dataSource {
+class multiGasSensor final: public dataSource {
     public:
         multiGasSensor();
         ~multiGasSensor();

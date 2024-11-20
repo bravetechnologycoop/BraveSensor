@@ -10,16 +10,13 @@
   ******************************************************************************
   */
 
-#ifndef PLATFORM_H_
-#define PLATFORM_H_
+
+#ifndef _PLATFORM_H_
+#define _PLATFORM_H_
 #pragma once
 
 #include <stdint.h>
 #include <string.h>
-#include <i2cInterface.h>
-
-extern i2cInterface * g_i2cVL;
-extern uint16_t g_sAddress;
 
 /**
  * @brief Structure VL53L5CX_Platform needs to be filled by the customer,
@@ -34,10 +31,8 @@ typedef struct
 	/* To be filled with customer's platform. At least an I2C address/descriptor
 	 * needs to be added */
 	/* Example for most standard platform : I2C address of sensor */
-	uint16_t  			address;
-
-	/* For Linux implementation, file descriptor */
-	int fd;
+    uint16_t  			address;
+	int 				i2c_hdl;
 
 } VL53L5CX_Platform;
 
@@ -75,9 +70,7 @@ typedef struct
 // #define VL53L5CX_DISABLE_TARGET_STATUS
 // #define VL53L5CX_DISABLE_MOTION_INDICATOR
 
-
- /**
- * @brief Mandatory function used to read one single byte.
+/**
  * @param (VL53L5CX_Platform*) p_platform : Pointer of VL53L5CX platform
  * structure.
  * @param (uint16_t) Address : I2C location of value to read.
@@ -86,36 +79,37 @@ typedef struct
  */
 
 uint8_t VL53L5CX_RdByte(
-		VL53L5CX_Platform * p_platform,
-		uint16_t reg_address,
+		VL53L5CX_Platform *p_platform,
+		uint16_t RegisterAdress,
 		uint8_t *p_value);
 
 /**
  * @brief Mandatory function used to write one single byte.
  * @param (VL53L5CX_Platform*) p_platform : Pointer of VL53L5CX platform
  * structure.
- * @param (uint16_t) reg_address : I2C location of value to read.
+ * @param (uint16_t) Address : I2C location of value to read.
  * @param (uint8_t) value : Pointer of value to write.
  * @return (uint8_t) status : 0 if OK
  */
 
 uint8_t VL53L5CX_WrByte(
-		VL53L5CX_Platform * p_platform,
-		uint16_t reg_address,
+		VL53L5CX_Platform *p_platform,
+		uint16_t RegisterAdress,
 		uint8_t value);
 
 /**
+ * @brief Mandatory function used to read multiples bytes.
  * @param (VL53L5CX_Platform*) p_platform : Pointer of VL53L5CX platform
  * structure.
- * @param (uint16_t) reg_address : I2C location of values to read.
+ * @param (uint16_t) Address : I2C location of values to read.
  * @param (uint8_t) *p_values : Buffer of bytes to read.
  * @param (uint32_t) size : Size of *p_values buffer.
  * @return (uint8_t) status : 0 if OK
  */
 
 uint8_t VL53L5CX_RdMulti(
-		VL53L5CX_Platform * p_platform,
-		uint16_t reg_address,
+		VL53L5CX_Platform *p_platform,
+		uint16_t RegisterAdress,
 		uint8_t *p_values,
 		uint32_t size);
 
@@ -123,15 +117,15 @@ uint8_t VL53L5CX_RdMulti(
  * @brief Mandatory function used to write multiples bytes.
  * @param (VL53L5CX_Platform*) p_platform : Pointer of VL53L5CX platform
  * structure.
- * @param (uint16_t) reg_address : I2C location of values to write.
+ * @param (uint16_t) Address : I2C location of values to write.
  * @param (uint8_t) *p_values : Buffer of bytes to write.
  * @param (uint32_t) size : Size of *p_values buffer.
  * @return (uint8_t) status : 0 if OK
  */
 
 uint8_t VL53L5CX_WrMulti(
-		VL53L5CX_Platform * p_platform,
-		uint16_t reg_address,
+		VL53L5CX_Platform *p_platform,
+		uint16_t RegisterAdress,
 		uint8_t *p_values,
 		uint32_t size);
 
@@ -146,16 +140,7 @@ uint8_t VL53L5CX_WrMulti(
  */
 
 uint8_t VL53L5CX_Reset_Sensor(
-		VL53L5CX_Platform * p_platform);
-
-/**
- * @brief This function is used to wait for a new measurement. It can 
- * support both interrupt mode with kernel module and polling mode
- * @param (VL53L5CX_Platform*) p_platform : Pointer of VL53L5CX platform
- * structure.
- * @return (uint8_t) status : 1 if data is ready
- */
-uint8_t VL53L5CX_wait_for_dataready(VL53L5CX_Platform * p_platform);
+		VL53L5CX_Platform *p_platform);
 
 /**
  * @brief Mandatory function, used to swap a buffer. The buffer size is always a
@@ -177,22 +162,20 @@ void VL53L5CX_SwapBuffer(
  */
 
 uint8_t VL53L5CX_WaitMs(
-		VL53L5CX_Platform * p_platform,
+		VL53L5CX_Platform *p_platform,
 		uint32_t TimeMs);
 
 /**
- * @brief I2C communication channel initialization
- * @param (int) *fd : pointer on a I2C channel descriptor.
- * @return (uint8_t) status : 0 if OK
+ * @brief user function used to setup the basic interfaces.
+ * @param (VL53L5CX_Platform*) p_platform : Pointer of VL53L5CX platform
+ * structure.
+ * @param (int) i2c_adapter_nr : linux adapter address.
+ * @param (uint8_t) i2c_Addr : i2c  address.
+ * @return (int8_t) status : 0 if successful
  */
-int32_t vl53l5cx_comms_init(i2cInterface * i2c, uint16_t i2caddress);
-
-
-/**
- * @brief I2C communication channel deletion
- * @param (int) fd : I2C channel descriptor.
- * @return (uint8_t) status : 0 if OK
- */
-int32_t vl53l5cx_comms_close(VL53L5CX_Platform * p_platform);
+int8_t VL53L5X_UltraLite_Linux_I2C_Init(
+		VL53L5CX_Platform *p_platform,
+		int i2c_adapter_nr, 
+		uint8_t i2c_Addr);
 
 #endif	// _PLATFORM_H_

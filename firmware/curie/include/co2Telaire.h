@@ -16,9 +16,9 @@ using namespace std;
 #endif
 
 
-class co2Telaire: public dataSource {
+class co2Telaire final: public dataSource {
     public:
-        co2Telaire(char* i2cbus, uint8_t i2cAddress);
+        co2Telaire(string i2cbus, uint8_t i2cAddress);
         ~co2Telaire();
 
         int getData(string *sqlTable, std::vector<string> * vData);

@@ -12,10 +12,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <braveDebug.h>
 #include "vl53l5cx_api.h"
 #include "vl53l5cx_buffers.h"
-#include <braveDebug.h>
-#include <unistd.h>
 
 /**
  * @brief Inner function, not available outside this file. This function is used
@@ -34,24 +33,20 @@ static uint8_t _vl53l5cx_poll_for_answer(
 	uint8_t timeout = 0;
 
 	do {
-		
-		//bDebug(TRACE, "poll1 " + to_string(status));
 		status |= VL53L5CX_RdMulti(&(p_dev->platform), address,
 				p_dev->temp_buffer, size);
-		usleep(2000);
-		//bDebug(TRACE, "poll2 " + to_string(status));
 		status |= VL53L5CX_WaitMs(&(p_dev->platform), 10);
-//bDebug(TRACE, "poll3" + to_string(status));
+
 		if(timeout >= (uint8_t)200)	/* 2s timeout */
 		{
 			status |= (uint8_t)VL53L5CX_STATUS_TIMEOUT_ERROR;
-		//	bDebug(TRACE, "poll4" + to_string(status));
+			bDebug(ERROR, "Failed on poll for answer: TIMEOUT");
 			break;
 		}else if((size >= (uint8_t)4) 
                          && (p_dev->temp_buffer[2] >= (uint8_t)0x7f))
 		{
 			status |= VL53L5CX_MCU_ERROR;
-		//	bDebug(TRACE, "poll5" + to_string(status));
+			bDebug(ERROR, "Failed on poll for answer: MCU ERROR");
 			break;
 		}
 		else
@@ -59,6 +54,10 @@ static uint8_t _vl53l5cx_poll_for_answer(
 			timeout++;
 		}
 	}while ((p_dev->temp_buffer[pos] & mask) != expected_value);
+
+	if (0 != status){
+		bDebug(ERROR, "Failed on poll for answer");
+	}
 
 	return status;
 }
@@ -256,9 +255,7 @@ uint8_t vl53l5cx_init(
 	p_dev->default_xtalk = (uint8_t*)VL53L5CX_DEFAULT_XTALK;
 	p_dev->default_configuration = (uint8_t*)VL53L5CX_DEFAULT_CONFIGURATION;
 	p_dev->is_auto_stop_enabled = (uint8_t)0x0;
-	int i = 0;
-	bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	/* SW reboot sequence */
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x00);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x0009, 0x04);
@@ -266,8 +263,7 @@ uint8_t vl53l5cx_init(
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x000A, 0x03);
 	status |= VL53L5CX_RdByte(&(p_dev->platform), 0x7FFF, &tmp);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x000C, 0x01);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x0101, 0x00);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x0102, 0x00);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x010A, 0x01);
@@ -278,41 +274,35 @@ bDebug(TRACE, to_string(i) + to_string(status));
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x000C, 0x00);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x000F, 0x43);
 	status |= VL53L5CX_WaitMs(&(p_dev->platform), 1);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x000F, 0x40);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x000A, 0x01);
 	status |= VL53L5CX_WaitMs(&(p_dev->platform), 100);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	/* Wait for sensor booted (several ms required to get sensor ready ) */
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x00);
-	bDebug(TRACE, to_string(i) + to_string(status) + "blah");
-	i++;
 	status |= _vl53l5cx_poll_for_answer(p_dev, 1, 0, 0x06, 0xff, 1);
-	bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
 	if(status != (uint8_t)0){
 		goto exit;
 	}
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x000E, 0x01);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x02);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	/* Enable FW access */
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x03, 0x0D);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x01);
 	status |= _vl53l5cx_poll_for_answer(p_dev, 1, 0, 0x21, 0x10, 0x10);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x00);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+	if(status != (uint8_t)0){
+		bDebug(ERROR, "Failed to access FW");
+		goto exit;
+	}
+
 	/* Enable host access to GO1 */
 	status |= VL53L5CX_RdByte(&(p_dev->platform), 0x7fff, &tmp);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x0C, 0x01);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	/* Power ON status */
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x00);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x101, 0x00);
@@ -329,8 +319,7 @@ bDebug(TRACE, to_string(i) + to_string(status));
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x21A, 0x00);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x219, 0x00);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x21B, 0x00);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	/* Wake up MCU */
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x00);
 	status |= VL53L5CX_RdByte(&(p_dev->platform), 0x7fff, &tmp);
@@ -338,8 +327,11 @@ bDebug(TRACE, to_string(i) + to_string(status));
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x01);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x20, 0x07);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x20, 0x06);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+	if(status != (uint8_t)0){
+		bDebug(ERROR, "Failed to wake MCU");
+		goto exit;
+	}
+
 	/* Download FW into VL53L5 */
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x09);
 	status |= VL53L5CX_WrMulti(&(p_dev->platform),0,
@@ -351,23 +343,25 @@ bDebug(TRACE, to_string(i) + to_string(status));
 	status |= VL53L5CX_WrMulti(&(p_dev->platform),0,
 		(uint8_t*)&VL53L5CX_FIRMWARE[0x10000],0x5000);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x01);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+	if(status != (uint8_t)0){
+		bDebug(ERROR, "Failed to download FW");
+		goto exit;
+	}
+
 	/* Check if FW correctly downloaded */
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x02);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x03, 0x0D);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x01);
 	status |= _vl53l5cx_poll_for_answer(p_dev, 1, 0, 0x21, 0x10, 0x10);
 	if(status != (uint8_t)0){
+		bDebug(ERROR, "Failed to check FW");
 		goto exit;
 	}
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x00);
 	status |= VL53L5CX_RdByte(&(p_dev->platform), 0x7fff, &tmp);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x0C, 0x01);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	/* Reset MCU and wait boot */
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7FFF, 0x00);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x114, 0x00);
@@ -380,10 +374,10 @@ bDebug(TRACE, to_string(i) + to_string(status));
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x0B, 0x01);
 	status |= _vl53l5cx_poll_for_mcu_boot(p_dev);
 	if(status != (uint8_t)0){
+		bDebug(ERROR, "Failed to reset MCU");
 		goto exit;
 	}
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x02);
 
 	/* Get offset NVM data and store them into the offset buffer */
@@ -396,22 +390,19 @@ bDebug(TRACE, to_string(i) + to_string(status));
 	(void)memcpy(p_dev->offset_data, p_dev->temp_buffer,
 		VL53L5CX_OFFSET_BUFFER_SIZE);
 	status |= _vl53l5cx_send_offset_data(p_dev, VL53L5CX_RESOLUTION_4X4);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	/* Set default Xtalk shape. Send Xtalk to sensor */
 	(void)memcpy(p_dev->xtalk_data, (uint8_t*)VL53L5CX_DEFAULT_XTALK,
 		VL53L5CX_XTALK_BUFFER_SIZE);
 	status |= _vl53l5cx_send_xtalk_data(p_dev, VL53L5CX_RESOLUTION_4X4);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	/* Send default configuration to VL53L5CX firmware */
 	status |= VL53L5CX_WrMulti(&(p_dev->platform), 0x2c34,
 		p_dev->default_configuration,
 		sizeof(VL53L5CX_DEFAULT_CONFIGURATION));
 	status |= _vl53l5cx_poll_for_answer(p_dev, 4, 1,
 		VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
-bDebug(TRACE, to_string(i) + to_string(status));
-	i++;
+
 	status |= vl53l5cx_dci_write_data(p_dev, (uint8_t*)&pipe_ctrl,
 		VL53L5CX_DCI_PIPE_CONTROL, (uint16_t)sizeof(pipe_ctrl));
 #if VL53L5CX_NB_TARGET_PER_ZONE != 1

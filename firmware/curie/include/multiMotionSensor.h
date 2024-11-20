@@ -16,7 +16,7 @@ using namespace std;
 #define T_MULTIMOTION_SQL_TABLE "multimotionsensor"
 
 
-class multiMotionSensor: public dataSource {
+class multiMotionSensor final: public dataSource {
     public:
         multiMotionSensor(serialib * serialPort);
         ~multiMotionSensor();

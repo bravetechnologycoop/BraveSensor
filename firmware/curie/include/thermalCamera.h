@@ -17,7 +17,7 @@ using namespace std;
 #define T_CAMERA_SQL_TABLE "thermalcamera"
 
 
-class thermalCamera: public dataSource {
+class thermalCamera final: virtual public dataSource {
     public:
         thermalCamera(i2cInterface * i2cBus, int i2cAddress);
         ~thermalCamera();

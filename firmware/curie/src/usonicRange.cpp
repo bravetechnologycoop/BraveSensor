@@ -16,12 +16,21 @@ extern "C"{
     #include <i2c/smbus.h>
 }
 
-usonicRange::usonicRange(char* i2cbus, uint8_t i2cAddress){
+usonicRange::usonicRange(string i2cbus, uint8_t i2cAddress){
     bDebug(TRACE, "Creating usonicRange");
     setTableParams();
 
     this->i2cAddress = i2cAddress;
-    this->fd = open(i2cbus, O_RDWR);
+    this->fd = open(i2cbus.c_str(), O_RDWR);
+    if (0 > this->fd){
+        bDebug(ERROR, "Failed to open bus");
+    } else {
+        if (0 > ioctl(this->fd, I2C_SLAVE, i2cAddress)){
+            bDebug(ERROR, "Failed to set the slave address");
+        }
+    }
+
+    this->fd = open(i2cbus.c_str(), O_RDWR);
     if (0 > this->fd){
         bDebug(ERROR, "Failed to open bus");
     } else {
@@ -52,7 +61,6 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     if (0 > err){
         bDebug(ERROR, "Failed to write SMB");
     }
-    //usleep(200000);
     
     for (int i = 0; i < MAX_USONIC_READ_ATTEMPTS; i++){
         sleep(1);
@@ -72,6 +80,7 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     if (0 > rawRange){
         bDebug(ERROR, "Failed to read range");
     }
+    
     
     return err;
 }

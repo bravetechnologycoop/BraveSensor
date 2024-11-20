@@ -17,7 +17,3 @@ dataSource::dataSource(){
 dataSource::~dataSource(){
     bDebug(TRACE, "dataSource destroyed");
 }
-
-string dataSource::getName(){
-    return this->sourceName;
-}

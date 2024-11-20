@@ -13,10 +13,12 @@ using namespace std;
 #define T_USONIC_NAME "Ultrasonic Range Sensor"
 #define T_USONIC_SQL_TABLE "usonicrange"
 
+//uSonicRange loop constant
+#define MAX_USONIC_READ_ATTEMPTS   6
 
-class usonicRange: public dataSource {
+class usonicRange final: public dataSource {
     public:
-        usonicRange(char* i2cbus, uint8_t i2cAddress);
+        usonicRange(string i2cbus, uint8_t i2cAddress);
         ~usonicRange();
 
         int getData(string *sqlTable, std::vector<string> * vData);

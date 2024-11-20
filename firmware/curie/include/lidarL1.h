@@ -15,7 +15,7 @@ using namespace std;
 #define T_LIDAR1_SQL_TABLE "lidar1"
 
 
-class lidarL1: public dataSource {
+class lidarL1 final: public dataSource {
     public:
         lidarL1(int i2cAddress, int adapter_nr);
         ~lidarL1();
