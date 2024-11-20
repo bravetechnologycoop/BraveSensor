@@ -24,6 +24,13 @@
 
 #define LOOP_TIMER      1000
 
+//uSonicRange loop constant
+#define MAX_USONIC_READ_ATTEMPTS   6
+
+//co2Telaire loop constant
+#define MAX_CO2_READ_ATTEMPTS_READ   5
+#define MAX_CO2_WRITE_ATTEMPTS   4
+
 //error types
 #define OK              0x00
 #define BAD_PORT        0x20

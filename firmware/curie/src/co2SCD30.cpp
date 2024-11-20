@@ -49,7 +49,21 @@ co2SCD30::~co2SCD30(){
 int co2SCD30::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(INFO, "co2SCD30 getData");
     int err = OK;
-    
+
+    *sqlTable = T_CO2_SQL_TABLE;
+
+    err = scd30_blocking_read_measurement_data(&(this->co2_concentration), &(this->temperature), &(this->humidity));
+    if (0 <= err) {
+        bDebug(TRACE, "SCD30 co2 t h: " + to_string(this->co2_concentration) + " " + to_string(this->temperature) + " " + to_string(this->humidity));
+        vData->push_back(to_string(this->co2_concentration));
+        vData->push_back(to_string(this->temperature));
+        vData->push_back(to_string(this->humidity));
+    } else {
+        bDebug(ERROR, "Failed to read");
+        vData->push_back("-1");
+        vData->push_back("-1");
+        vData->push_back("-1");
+    }
    
     
     return err;
@@ -65,12 +79,7 @@ int co2SCD30::getTableDef(string * sqlBuf){
         err = OK;
     }
 
-    err = scd30_blocking_read_measurement_data(&(this->co2_concentration), &(this->temperature), &(this->humidity));
-    if (0 <= err) {
-        bDebug(TRACE, "SCD30 co2 t h: " + to_string(this->co2_concentration) + " " + to_string(this->temperature) + " " + to_string(this->humidity));
-    } else {
-        bDebug(ERROR, "Failed to read");
-    }
+    
 
     return err;
 }
@@ -81,7 +90,9 @@ int co2SCD30::setTableParams(){
     int err = OK;
 
     try {
-        this->dbParams.emplace_back("pIRbool", "boolean"); //!!!
+        this->dbParams.emplace_back("co2read", "float"); //!!!
+        this->dbParams.emplace_back("temp", "float");
+        this->dbParams.emplace_back("humidity", "float");
     }
     catch(...) {
         err = BAD_PARAMS;

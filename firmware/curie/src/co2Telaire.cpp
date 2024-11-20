@@ -66,7 +66,9 @@ int co2Telaire::getData(string * sqlTable, std::vector<string> * vData){
         rawGas = (getGasCmd[0] & 0xff) | getGasCmd[1];
         bDebug(TRACE, "CO2 raw read: " + to_string(getGasCmd[0]) + " " + to_string(getGasCmd[1]) + " " + to_string(getGasCmd[2]) + " " + to_string(getGasCmd[3]));
         bDebug(TRACE, "CO2 PPM: " + to_string(rawGas));
+        vData->push_back(to_string(rawGas));
     } else {
+        vData->push_back("-1");
         bDebug(ERROR, "Something went wrong");
     }
    
@@ -93,7 +95,7 @@ int co2Telaire::setTableParams(){
     int err = OK;
 
     try {
-        this->dbParams.emplace_back("pIRbool", "boolean"); //!!!
+        this->dbParams.emplace_back("co2read", "int"); //!!!
     }
     catch(...) {
         err = BAD_PARAMS;

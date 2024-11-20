@@ -9,7 +9,7 @@
                 "${workspaceFolder}/src/MLX90640"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/gcc",
+            "compilerPath": null,
             "cStandard": "c17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-arm64"

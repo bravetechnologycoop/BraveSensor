@@ -26,6 +26,8 @@
 #include <multiGasSensor.h>
 #include <co2Telaire.h>
 #include <co2SCD30.h>
+#include <co2Telaire.h>
+#include <co2SCD30.h>
 
 using namespace std;
 
@@ -45,6 +47,7 @@ int main()
 		fastI2C->setParams(FAST_I2C_SZ);
 		//thermalCamera * sourceThermalCamera = NULL;
 		//lidarL1 *sourceLidarL1 = NULL;
+		lidarL5 * sourceLidarL5 = NULL;
 		lidarL5 * sourceLidarL5 = NULL;
         if (OK == fastI2C->openBus()){
 			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
@@ -77,13 +80,16 @@ int main()
 		//gpioInterface * gpioPIR = new gpioInterface(); 
 		//passiveIR sourcePIR(gpioPIR);
 		//vSources.push_back(&sourcePIR);
+		//gpioInterface * gpioPIR = new gpioInterface(); 
+		//passiveIR sourcePIR(gpioPIR);
+		//vSources.push_back(&sourcePIR);
 
 		serialib * usbSerial = new serialib();
-		multiMotionSensor * motionSensor = NULL;
+		//multiMotionSensor * motionSensor = NULL;
 		if (1 == usbSerial->openDevice(DLP_SER, DLP_BAUD)) {
 			bDebug(TRACE, "Got the uart");
-			motionSensor = new multiMotionSensor(usbSerial);
-			vSources.push_back(motionSensor);
+			//motionSensor = new multiMotionSensor(usbSerial);
+			//vSources.push_back(motionSensor);
 		}
 
 
@@ -97,6 +103,7 @@ int main()
 		usleep(LOOP_TIMER);
 
 		while (loop){
+			sleep(10);
 			sleep(10);
 			err = pInterface->writeTables();
 			if (OK != err){
