@@ -16,7 +16,7 @@ using namespace std;
 
 class usonicRange: public dataSource {
     public:
-        usonicRange(char* i2cbus, uint8_t i2cAddress);
+        usonicRange(string i2cbus, uint8_t i2cAddress);
         ~usonicRange();
 
         int getData(string *sqlTable, std::vector<string> * vData);

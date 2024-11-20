@@ -119,11 +119,10 @@ int8_t VL53L1X_UltraLite_Linux_I2C_Init(uint16_t dev,
 
 int8_t VL53L1X_UltraLite_Linux_Interrupt_Init(void)
 {
-	char *st_tof_dev_name = "st_tof_dev";
 
 	st_tof_dev = open("/dev/st_tof_dev", O_RDONLY);
 	if (st_tof_dev == -1) {
-		printf("Failed to open %s\n", st_tof_dev_name);
+		printf("Failed to open /dev/st_tof_dev\n");
 		return -1;
 	}
 

@@ -16,20 +16,12 @@ extern "C"{
     #include <i2c/smbus.h>
 }
 
-usonicRange::usonicRange(char* i2cbus, uint8_t i2cAddress){
-#include <sys/ioctl.h>
-#include <fcntl.h>
-extern "C"{
-    #include <linux/i2c-dev.h>
-    #include <i2c/smbus.h>
-}
-
-usonicRange::usonicRange(char* i2cbus, uint8_t i2cAddress){
+usonicRange::usonicRange(string i2cbus, uint8_t i2cAddress){
     bDebug(TRACE, "Creating usonicRange");
     setTableParams();
 
     this->i2cAddress = i2cAddress;
-    this->fd = open(i2cbus, O_RDWR);
+    this->fd = open(i2cbus.c_str(), O_RDWR);
     if (0 > this->fd){
         bDebug(ERROR, "Failed to open bus");
     } else {
@@ -38,7 +30,7 @@ usonicRange::usonicRange(char* i2cbus, uint8_t i2cAddress){
         }
     }
 
-    this->fd = open(i2cbus, O_RDWR);
+    this->fd = open(i2cbus.c_str(), O_RDWR);
     if (0 > this->fd){
         bDebug(ERROR, "Failed to open bus");
     } else {
@@ -60,10 +52,6 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     uint8_t getRangeCmd = 0x00;
     int32_t rawRange;
     //int32_t range = 200;
-    uint8_t setRangeCmd = 0x51;
-    uint8_t getRangeCmd = 0x00;
-    int32_t rawRange;
-    //int32_t range = 200;
 
     //check incoming pointers
     *sqlTable = T_USONIC_SQL_TABLE;
@@ -73,7 +61,6 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     if (0 > err){
         bDebug(ERROR, "Failed to write SMB");
     }
-    //usleep(200000);
     
     for (int i = 0; i < MAX_USONIC_READ_ATTEMPTS; i++){
         sleep(1);
@@ -89,9 +76,6 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
             vData->push_back("-1");
         }
     }
-
-    if (0 > rawRange){
-        bDebug(ERROR, "Failed to read range");
 
     if (0 > rawRange){
         bDebug(ERROR, "Failed to read range");
