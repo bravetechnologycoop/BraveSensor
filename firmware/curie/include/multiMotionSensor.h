@@ -12,8 +12,8 @@ using namespace std;
 #include <serialib.h>
 #include <curie.h>
 
-#define T_MULTIMOTION_NAME "Multimotion sensor"
-#define T_MULTIMOTION_SQL_TABLE "multimotionsensor"
+#define MULTIMOTION_NAME "Multimotion sensor"
+#define MULTIMOTION_SQL_TABLE "multimotionsensor"
 
 
 class multiMotionSensor final: public dataSource {

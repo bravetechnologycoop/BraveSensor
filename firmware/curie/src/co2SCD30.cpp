@@ -50,7 +50,7 @@ int co2SCD30::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(INFO, "co2SCD30 getData");
     int err = OK;
 
-    *sqlTable = T_CO2_SQL_TABLE;
+    *sqlTable = CO2_SQL_TABLE;
 
     err = scd30_blocking_read_measurement_data(&(this->co2_concentration), &(this->temperature), &(this->humidity));
     if (0 <= err) {
@@ -74,7 +74,7 @@ int co2SCD30::getTableDef(string * sqlBuf){
     int err = BAD_PARAMS;
 
     if (NULL != sqlBuf){
-        *sqlBuf = T_CO2_SQL_TABLE;
+        *sqlBuf = CO2_SQL_TABLE;
         bDebug(TRACE, "co2SCD30 Table: " + *sqlBuf);
         err = OK;
     }

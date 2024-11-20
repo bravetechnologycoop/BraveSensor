@@ -77,7 +77,7 @@ multiGasSensor::~multiGasSensor(){
 
 int multiGasSensor::getData(string *sqlTable, std::vector<string> * vData){
     bDebug(INFO, "multiGasSensor GetData");
-    *sqlTable = T_MULTIGAS_SQL_TABLE;
+    *sqlTable = MULTIGAS_SQL_TABLE;
     int err = OK;
     uint16_t mass_concentration_pm1p0;
     uint16_t mass_concentration_pm2p5;
@@ -141,7 +141,7 @@ int multiGasSensor::getTableDef(string * sqlBuf){
     bDebug(INFO, "multiGasSensor getTableDef");
     int err = OK;
     if (NULL != sqlBuf){
-        *sqlBuf = T_MULTIGAS_SQL_TABLE;
+        *sqlBuf = MULTIGAS_SQL_TABLE;
         bDebug(TRACE, "multigas Table: " + *sqlBuf);
         err = OK;
     }

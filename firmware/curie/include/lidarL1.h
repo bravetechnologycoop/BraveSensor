@@ -11,13 +11,15 @@ using namespace std;
 #include <dataSource.h>
 #include <i2cInterface.h>
 
-#define T_LIDAR1_NAME "lidar1"
-#define T_LIDAR1_SQL_TABLE "lidar1"
+#define LIDAR1_NAME "lidar1"
+#define LIDAR1_SQL_TABLE "lidar1"
+
+#define LIDAR1_DEFAULT_I2C_ADDRESS 0x29
 
 
 class lidarL1 final: public dataSource {
     public:
-        lidarL1(int i2cAddress, int adapter_nr);
+        lidarL1(int adapter_nr, int i2cAddress = LIDAR1_DEFAULT_I2C_ADDRESS);
         ~lidarL1();
         int getData(string *sqlTable, std::vector<string> * vData);
         int getTableDef(string * sqlBuf);

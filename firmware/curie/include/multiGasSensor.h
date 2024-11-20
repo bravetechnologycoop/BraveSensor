@@ -12,8 +12,8 @@ using namespace std;
 #include <serialib.h>
 #include <curie.h>
 
-#define T_MULTIGASSENSOR_NAME "MultiGas sensor"
-#define T_MULTIGAS_SQL_TABLE "multigassensor"
+#define MULTIGASSENSOR_NAME "MultiGas sensor"
+#define MULTIGAS_SQL_TABLE "multigassensor"
 
 
 class multiGasSensor final: public dataSource {
