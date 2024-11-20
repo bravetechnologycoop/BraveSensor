@@ -18,8 +18,6 @@ lidarL1::lidarL1(int adapter_nr, int i2cAddress){
     
     this->adapter_nr = adapter_nr;
     
-
-    this->sourceName = T_LIDAR1_NAME;
     setTableParams();
     this->i2cAddress = i2cAddress;
     initDevice();

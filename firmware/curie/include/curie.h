@@ -6,6 +6,18 @@
  */
 #ifndef _CURIE__H_
 #define _CURIE__H_
+#include <thermalCamera.h>
+#include <passiveIR.h>
+#include <usonicRange.h>
+#include <multiMotionSensor.h>
+#include <postgresInterface.h>
+#include <lidarL1.h>
+#include <lidarL5.h>
+#include <usonicRange.h>
+#include <multiGasSensor.h>
+#include <co2Telaire.h>
+#include <co2SCD30.h>
+
 
 #define FAST_I2C        1
 #define FAST_I2C_SZ     "/dev/i2c-1"
@@ -16,20 +28,8 @@
 #define DLP_SER         "/dev/ttyACM0"
 #define DLP_BAUD        57600
 
-//device classes
-#define USB_SER
-//#define NATIVE_I2C
-#define BB_I2C
-//#define GPIO_DEV
+#define LOOP_TIMER      5 * 60
 
-#define LOOP_TIMER      1000
-
-//uSonicRange loop constant
-#define MAX_USONIC_READ_ATTEMPTS   6
-
-//co2Telaire loop constant
-#define MAX_CO2_READ_ATTEMPTS_READ   5
-#define MAX_CO2_WRITE_ATTEMPTS   4
 
 //error types
 #define OK              0x00

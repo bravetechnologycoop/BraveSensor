@@ -15,19 +15,124 @@
 #include <smbInterface.h>
 #include <gpioInterface.h>
 #include <serialib.h>
-#include <thermalCamera.h>
-#include <passiveIR.h>
-#include <usonicRange.h>
-#include <multiMotionSensor.h>
-#include <postgresInterface.h>
-#include <lidarL1.h>
-#include <lidarL5.h>
-#include <usonicRange.h>
-#include <multiGasSensor.h>
-#include <co2Telaire.h>
-#include <co2SCD30.h>
+
 
 using namespace std;
+
+thermalCamera * g_sourceThermalCamera = NULL;
+lidarL1 * g_sourceLidarL1 = NULL;
+lidarL5 * g_sourceLidarL5 = NULL;
+usonicRange * g_sourceUSonic = NULL;
+multiGasSensor * g_sourceMGas = NULL;
+co2Telaire * g_sourceCO2T = NULL;
+co2SCD30 * g_sourceCO2S = NULL;
+passiveIR * g_sourcePIR = NULL;
+multiMotionSensor * g_motionSensor = NULL;
+i2cInterface * g_fastI2C = NULL;
+i2cInterface * g_slowI2C = NULL;
+gpioInterface * g_gpioPIR = NULL;
+serialib * g_usbSerial = NULL;
+
+int initiateBusses(){
+	int err = OK;
+	bDebug(TRACE, "Initializing the Busses");
+
+	g_fastI2C = new i2cInterface(FAST_I2C_SZ);
+	g_fastI2C->openBus();
+
+	g_slowI2C = new i2cInterface(SLOW_I2C_SZ);
+	g_slowI2C->openBus();
+
+	g_gpioPIR = new gpioInterface();
+
+	g_usbSerial = new serialib();
+	g_usbSerial->openDevice(DLP_SER, DLP_BAUD);
+
+	return err;
+}
+
+void cleanUp(){
+	bDebug(TRACE, "Cleaning up busses and device assignments");
+
+	delete g_sourceThermalCamera;
+	delete g_sourceLidarL1;
+	delete g_sourceLidarL5;
+	delete g_sourceUSonic;
+	delete g_sourceMGas;
+	delete g_sourceCO2T;
+	delete g_sourceCO2S;
+	delete  g_sourcePIR;
+	delete  g_motionSensor;
+	
+	g_fastI2C->closeBus();
+	delete g_fastI2C;
+	g_slowI2C->closeBus();
+	delete g_slowI2C;
+	g_gpioPIR->close();
+	delete g_gpioPIR;
+	g_usbSerial->closeDevice();
+	delete g_usbSerial;
+}
+
+int initiateDataSources(vector<dataSource*> * dataVector){
+	int err = OK;
+	bDebug(TRACE, "Initializing the DataSources");
+
+	if (g_fastI2C->isReady()){
+		//fast i2c is ready to go
+		#ifdef THERMAL_CAMERA
+		g_sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
+		vSources.push_back(g_sourceThermalCamera);
+		#endif
+		#ifdef LIDAR
+		#ifdef LIDAR_L5
+		g_sourceLidarL5 = new lidarL5(FAST_I2C, 0x29); 
+		vSources.push_back(g_sourceLidarL5);
+		#endif
+		#ifdef LIDAR_L1
+		g_sourceLidarL1 = new lidarL1(1, 0x29); 
+		vSources.push_back(g_sourceLidarL1);
+		#endif
+		#endif
+	}
+
+	if (g_slowI2C->isReady()){
+		//slow i2c is ready to go
+		#ifdef USONIC_RANGE
+		g_sourceUSonic = new usonicRange(SLOW_I2C_SZ, 0x70);
+		dataVector->push_back(g_sourceUSonic);
+		#endif
+		#ifdef MULTI_GAS
+		g_sourceMGas = new multiGasSensor();
+		dataVector->push_back(g_sourceMGas);
+		#endif
+		#ifdef CO2
+		#ifdef CO2TELAIRE
+		g_sourceCO2T = new co2Telaire(SLOW_I2C_SZ, 0x15);
+		dataVector->push_back(g_sourceCO2T);
+		#endif
+		#ifdef CO2SCD
+		g_sourceCO2S =  new co2SCD30(0x61);
+		dataVector->push_back(g_sourceCO2S);
+		#endif
+		#endif 
+	}
+
+	#ifdef PIR
+	g_passiveIR = new sourcePIR(gpioPIR);
+	dataSource->push_back(g_sourcePIR);
+	#endif
+
+	if (g_usbSerial->isDeviceOpen()){
+		//usb serial port is ready to go
+		#ifdef MULTI_MOTION
+		g_motionSensor = new multiMotionSensor(g_usbSerial);
+		dataSource->push_back(g_motionSensor);
+		#endif
+	}
+
+	return err;
+}
 
 int main()
 {
@@ -39,53 +144,13 @@ int main()
     int err = OK;
     try{
         
-        
-		//set up the busses
-        i2cInterface * fastI2C = new i2cInterface();
-		fastI2C->setParams(FAST_I2C_SZ);
-		//thermalCamera * sourceThermalCamera = NULL;
-		//lidarL1 *sourceLidarL1 = NULL;
-		lidarL5 * sourceLidarL5 = NULL;
-        if (OK == fastI2C->openBus()){
-			//sourceThermalCamera = new thermalCamera(fastI2C, 0x33);
-        	//vSources.push_back(sourceThermalCamera);
-			sourceLidarL5 = new lidarL5(FAST_I2C, 0x29); 
-			vSources.push_back(sourceLidarL5);
-			//sourceLidarL1 = new lidarL1(1, 0x29); 
-			//vSources.push_back(sourceLidarL1);
+        if (OK != initiateBusses()){
+			throw(BAD_SETTINGS);
 		}
 
-		i2cInterface * slowI2C = new i2cInterface();
-		slowI2C->setParams(SLOW_I2C_SZ);
-		usonicRange * sourceUSonic = NULL;
-		multiGasSensor * sourceMGas = NULL;
-		co2Telaire * sourceCO2T = NULL;
-		co2SCD30 * sourceCO2S = NULL;
-		if (OK == slowI2C->openBus()){
-			bDebug(TRACE, "Got the slow i2c");
-			sourceUSonic = new usonicRange(SLOW_I2C_SZ, 0x70);
-			vSources.push_back(sourceUSonic);
-			sourceMGas = new multiGasSensor();
-			vSources.push_back(sourceMGas);
-			sourceCO2T = new co2Telaire(SLOW_I2C_SZ, 0x15);
-			vSources.push_back(sourceCO2T);
-			sourceCO2S =  new co2SCD30(0x61);
-			vSources.push_back(sourceCO2S);
+		if (OK != initiateDataSources(&vSources)){
+			throw(BAD_SETTINGS);
 		}
-		
-
-		//gpioInterface * gpioPIR = new gpioInterface(); 
-		//passiveIR sourcePIR(gpioPIR);
-		//vSources.push_back(&sourcePIR);
-
-		serialib * usbSerial = new serialib();
-		//multiMotionSensor * motionSensor = NULL;
-		if (1 == usbSerial->openDevice(DLP_SER, DLP_BAUD)) {
-			bDebug(TRACE, "Got the uart");
-			//motionSensor = new multiMotionSensor(usbSerial);
-			//vSources.push_back(motionSensor);
-		}
-
 
 		//open postgres interface
 		pInterface = new postgresInterface(BRAVEUSER, BRAVEPASSWORD, BRAVEHOST, BRAVEPORT, BRAVEDBNAME);
@@ -94,10 +159,8 @@ int main()
 		pInterface->openDB();
 
 		//main execution loop
-		usleep(LOOP_TIMER);
-
+		
 		while (loop){
-			sleep(10);
 			err = pInterface->writeTables();
 			if (OK != err){
 				bDebug(ERROR, "Failed to writeTables Bailing");
@@ -107,6 +170,10 @@ int main()
 			tmpcount--;
 			if (!tmpcount){
 				loop = false;
+			} 
+
+			if (loop){
+				usleep(LOOP_TIMER);
 			}
 		};
 
@@ -114,11 +181,7 @@ int main()
 		delete pInterface;
 		vSources.clear();
 
-		fastI2C->closeBus();
-		delete fastI2C;
-		slowI2C->closeBus();
-		delete slowI2C;
-		usbSerial->closeDevice();
+		cleanUp();
 
 		bDebug(INFO, "Completed Data Gathering");
 	}

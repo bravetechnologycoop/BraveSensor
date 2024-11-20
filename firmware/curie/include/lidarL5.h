@@ -16,7 +16,7 @@ using namespace std;
 #define T_LIDAR5_SQL_TABLE "lidar5"
 
 
-class lidarL5: public dataSource {
+class lidarL5 final: public dataSource {
     public:
         lidarL5(int i2cBus, int i2cAddress);
         ~lidarL5();

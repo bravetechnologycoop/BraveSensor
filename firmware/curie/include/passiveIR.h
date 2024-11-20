@@ -16,7 +16,7 @@ using namespace std;
 #define T_PIR_SQL_TABLE "passiveir"
 
 
-class passiveIR: public dataSource {
+class passiveIR final: public dataSource {
     public:
         passiveIR(gpioInterface *gpio);
         ~passiveIR();

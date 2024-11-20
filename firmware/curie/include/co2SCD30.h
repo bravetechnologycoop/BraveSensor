@@ -16,7 +16,7 @@ using namespace std;
 #endif
 
 
-class co2SCD30: public dataSource {
+class co2SCD30 final: public dataSource {
     public:
         co2SCD30(uint8_t i2cAddress);
         ~co2SCD30();

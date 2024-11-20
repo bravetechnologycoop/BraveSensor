@@ -21,23 +21,18 @@
 #define I2C_MSG_FMT __u8
 #endif
 
-i2cInterface::i2cInterface(){
+i2cInterface::i2cInterface(string busID){
     bDebug(TRACE, "i2cInterface Created");
     this->fileI2C = 0;
-    this->busID = "";
+    this->busID = busID;
 }
 
 i2cInterface::~i2cInterface(){
     bDebug(TRACE, "i2cInterface destroyed");
 }
 
-int i2cInterface::setParams(string busID){
-    bDebug(TRACE, "i2c params: " + busID);
-    int err = OK;
-    
-    this->busID = busID;
-
-    return err;
+bool i2cInterface::isReady(){
+    return !!this->fileI2C;
 }
 
 int i2cInterface::openBus(){
