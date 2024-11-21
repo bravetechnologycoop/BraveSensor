@@ -10,6 +10,74 @@ unsigned long state3_stillness_timer;
 bool hasDurationAlertBeenSent;
 bool hasStillnessAlertBeenSent;
 
+SCENARIO("Force_Reset", "[force reset]") {
+    GIVEN("Any possible scenario") {
+        resetWasCalled = false;
+        fullPublishString = "";
+        WHEN("the function is called with 1") {
+            int returnVal = force_reset("1");
+
+            THEN("returnValue should be 1 and resetWasCalled should be true") {
+                REQUIRE(returnVal == 1);
+                REQUIRE(resetWasCalled == true);
+                REQUIRE(fullPublishString ==
+                        "YOU SHALL NOT PANIC!!Reset has begun so ignore the future particle message about failure to call force_reset()");
+            }
+        }
+
+        WHEN("the function is not called with 1") {
+            int returnVal = force_reset("invalid Value");
+
+            THEN("the return value should be -1 and resetWasCalled should be false") {
+                REQUIRE(returnVal == -1);
+                REQUIRE(resetWasCalled == false);
+            }
+        }
+    }
+}
+
+SCENARIO("Reset State to Zero", "[reset state to zero]") {
+    GIVEN("The state handler is set to a non-zero state") {
+        stateHandler = state1_countdown;
+
+        WHEN("the function is called with '1'") {
+            int returnFlag = reset_state_to_zero("1");
+
+            THEN("the state handler should be reset to state0_idle") {
+                REQUIRE(stateHandler == state0_idle);
+            }
+
+            THEN("the function should return 1 to indicate success") {
+                REQUIRE(returnFlag == 1);
+            }
+        }
+
+        WHEN("the function is called with something other than '1'") {
+            int returnFlag = reset_state_to_zero("0");
+
+            THEN("the state handler should not be changed") {
+                REQUIRE(stateHandler == state1_countdown);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+
+        WHEN("the function is called with a string longer than 1 character") {
+            int returnFlag = reset_state_to_zero("invalid");
+
+            THEN("the state handler should not be changed") {
+                REQUIRE(stateHandler == state1_countdown);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+    }
+}
+
 SCENARIO("Turn_Debugging_Publishes_On_Off", "[toggle debug flag]") {
     GIVEN("A false debug flag") {
         stateMachineDebugFlag = false;
@@ -103,45 +171,6 @@ SCENARIO("Turn_Debugging_Publishes_On_Off", "[toggle debug flag]") {
 
             THEN("The function should return whether debugging publishes are turned on, in this case, true") {
                 REQUIRE(returnVal == 1);
-            }
-        }
-    }
-}
-
-SCENARIO("Change_IM21_Door_ID", "[change door id]") {
-    GIVEN("A valid global door ID") {
-        String doorID = "AB,CD,EF";
-
-        WHEN("the function is called with a valid door ID") {
-            int returnVal = im21_door_id_set(doorID);
-
-            THEN("The function should return the door ID converted to a decimal number") {
-                REQUIRE(returnVal == 11259375);
-            }
-        }
-
-        WHEN("The function is called with e and a valid door ID was previously set") {
-            im21_door_id_set("12,34,56");
-            int returnVal = im21_door_id_set("e");  // Note: The mock EEPROM is coded to always return 0x123456 as the door ID
-
-            THEN("The function should return the current value of the door ID, converted to a decimal number") {
-                REQUIRE(returnVal == 1193046);
-            }
-        }
-
-        WHEN("the function is called with an empty string") {
-            int returnVal = im21_door_id_set("");
-
-            THEN("the function should return -1 for the invalid input") {
-                REQUIRE(returnVal == -1);
-            }
-        }
-
-        WHEN("the function is called with a missing byte") {
-            int returnVal = im21_door_id_set("GH,IJ");
-
-            THEN("the function should return -1 for the invalid input") {
-                REQUIRE(returnVal == -1);
             }
         }
     }
@@ -255,39 +284,39 @@ SCENARIO("Set Initial Timer", "[initial timer]") {
     }
 }
 
-SCENARIO("Set Duration Timer", "[duration timer]") {
-    GIVEN("A starting initial timer of 10 milliseconds") {
-        state2_max_duration = 10000;
+SCENARIO("Set Duration Alert Threshold", "[duration alert threshold]") {
+    GIVEN("A starting duration alert threshold of 20 minutes") {
+        duration_alert_threshold = 1200000;
 
         WHEN("the function is called with 'e'") {
-            int returnFlag = duration_timer_set("e");
+            int returnFlag = duration_alert_threshold_set("e");
 
-            THEN("the initial timer value should remain the same") {
-                REQUIRE(state2_max_duration == 10000);
+            THEN("the duration alert threshold value should remain the same") {
+                REQUIRE(duration_alert_threshold == 1200000);
             }
 
-            THEN("the function should return the stored value") {
-                REQUIRE(returnFlag == 10);
+            THEN("the function should return the stored value in seconds") {
+                REQUIRE(returnFlag == 1200);
             }
         }
 
         WHEN("the function is called with a positive integer") {
-            int returnFlag = duration_timer_set("15");
+            int returnFlag = duration_alert_threshold_set("15");
 
-            THEN("the initial timer value should be updated to the input * 1000") {
-                REQUIRE(state2_max_duration == 15000);
+            THEN("the duration alert threshold value should be updated to the input * 1000") {
+                REQUIRE(duration_alert_threshold == 15000);
             }
 
-            THEN("the function should return the input") {
+            THEN("the function should return the input in seconds") {
                 REQUIRE(returnFlag == 15);
             }
         }
 
         WHEN("the function is called with a negative integer") {
-            int returnFlag = duration_timer_set("-15");
+            int returnFlag = duration_alert_threshold_set("-15");
 
-            THEN("the initial timer value should not be updated") {
-                REQUIRE(state2_max_duration == 10000);
+            THEN("the duration alert threshold value should not be updated") {
+                REQUIRE(duration_alert_threshold == 1200000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -296,10 +325,10 @@ SCENARIO("Set Duration Timer", "[duration timer]") {
         }
 
         WHEN("the function is called with something other than 'e' or a positive integer") {
-            int returnFlag = duration_timer_set("nonint");
+            int returnFlag = duration_alert_threshold_set("nonInt");
 
-            THEN("the initial timer value should not be updated") {
-                REQUIRE(state2_max_duration == 10000);
+            THEN("the duration alert threshold value should not be updated") {
+                REQUIRE(duration_alert_threshold == 1200000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -309,39 +338,39 @@ SCENARIO("Set Duration Timer", "[duration timer]") {
     }
 }
 
-SCENARIO("Set Stillness Timer", "[stillness timer]") {
-    GIVEN("A starting stillness timer of 10 milliseconds") {
-        state3_max_stillness_time = 10000;
+SCENARIO("Set Initial Stillness Alert Threshold", "[initial stillness alert threshold]") {
+    GIVEN("A starting initial stillness alert threshold of 5 minutes") {
+        initial_stillness_alert_threshold = 300000;
 
         WHEN("the function is called with 'e'") {
-            int returnFlag = stillness_timer_set("e");
+            int returnFlag = initial_stillness_alert_threshold_set("e");
 
-            THEN("the initial timer value should remain the same") {
-                REQUIRE(state3_max_stillness_time == 10000);
+            THEN("the initial stillness alert threshold value should remain the same") {
+                REQUIRE(initial_stillness_alert_threshold == 300000);
             }
 
-            THEN("the function should return the stored value") {
-                REQUIRE(returnFlag == 10);
+            THEN("the function should return the stored value in seconds") {
+                REQUIRE(returnFlag == 300);
             }
         }
 
         WHEN("the function is called with a positive integer") {
-            int returnFlag = stillness_timer_set("15");
+            int returnFlag = initial_stillness_alert_threshold_set("10");
 
-            THEN("the initial timer value should be updated to the input * 1000") {
-                REQUIRE(state3_max_stillness_time == 15000);
+            THEN("the initial stillness alert threshold value should be updated to the input * 1000") {
+                REQUIRE(initial_stillness_alert_threshold == 10000);
             }
 
-            THEN("the function should return the input") {
-                REQUIRE(returnFlag == 15);
+            THEN("the function should return the input in seconds") {
+                REQUIRE(returnFlag == 10);
             }
         }
 
         WHEN("the function is called with a negative integer") {
-            int returnFlag = stillness_timer_set("-15");
+            int returnFlag = initial_stillness_alert_threshold_set("-10");
 
-            THEN("the initial timer value should not be updated") {
-                REQUIRE(state3_max_stillness_time == 10000);
+            THEN("the initial stillness alert threshold value should not be updated") {
+                REQUIRE(initial_stillness_alert_threshold == 300000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -350,10 +379,10 @@ SCENARIO("Set Stillness Timer", "[stillness timer]") {
         }
 
         WHEN("the function is called with something other than 'e' or a positive integer") {
-            int returnFlag = stillness_timer_set("nonint");
+            int returnFlag = initial_stillness_alert_threshold_set("nonInt");
 
-            THEN("the initial timer value should not be updated") {
-                REQUIRE(state3_max_stillness_time == 10000);
+            THEN("the initial stillness alert threshold value should not be updated") {
+                REQUIRE(initial_stillness_alert_threshold == 300000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -363,39 +392,39 @@ SCENARIO("Set Stillness Timer", "[stillness timer]") {
     }
 }
 
-SCENARIO("Set Long Stillness Timer", "[long stillness timer]") {
-    GIVEN("A starting long stillness timer of 10 milliseconds") {
-        state3_max_long_stillness_time = 10000;
+SCENARIO("Set Followup Stillness Alert Threshold", "[followup stillness alert threshold]") {
+    GIVEN("A starting followup stillness alert threshold of 3 minutes") {
+        followup_stillness_alert_threshold = 180000;
 
         WHEN("the function is called with 'e'") {
-            int returnFlag = long_stillness_timer_set("e");
+            int returnFlag = followup_stillness_alert_threshold_set("e");
 
-            THEN("the initial timer value should remain the same") {
-                REQUIRE(state3_max_long_stillness_time == 10000);
+            THEN("the followup stillness alert threshold value should remain the same") {
+                REQUIRE(followup_stillness_alert_threshold == 180000);
             }
 
-            THEN("the function should return the stored value") {
-                REQUIRE(returnFlag == 10);
+            THEN("the function should return the stored value in seconds") {
+                REQUIRE(returnFlag == 180);
             }
         }
 
         WHEN("the function is called with a positive integer") {
-            int returnFlag = long_stillness_timer_set("15");
+            int returnFlag = followup_stillness_alert_threshold_set("20");
 
-            THEN("the initial timer value should be updated to the input * 1000") {
-                REQUIRE(state3_max_long_stillness_time == 15000);
+            THEN("the followup stillness alert threshold value should be updated to the input * 1000") {
+                REQUIRE(followup_stillness_alert_threshold == 20000);
             }
 
-            THEN("the function should return the input") {
-                REQUIRE(returnFlag == 15);
+            THEN("the function should return the input in seconds") {
+                REQUIRE(returnFlag == 20);
             }
         }
 
         WHEN("the function is called with a negative integer") {
-            int returnFlag = long_stillness_timer_set("-15");
+            int returnFlag = followup_stillness_alert_threshold_set("-20");
 
-            THEN("the initial timer value should not be updated") {
-                REQUIRE(state3_max_long_stillness_time == 10000);
+            THEN("the followup stillness alert threshold value should not be updated") {
+                REQUIRE(followup_stillness_alert_threshold == 180000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -404,10 +433,10 @@ SCENARIO("Set Long Stillness Timer", "[long stillness timer]") {
         }
 
         WHEN("the function is called with something other than 'e' or a positive integer") {
-            int returnFlag = long_stillness_timer_set("nonint");
+            int returnFlag = followup_stillness_alert_threshold_set("nonInt");
 
-            THEN("the initial timer value should not be updated") {
-                REQUIRE(state3_max_long_stillness_time == 10000);
+            THEN("the followup stillness alert threshold value should not be updated") {
+                REQUIRE(followup_stillness_alert_threshold == 180000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -471,95 +500,44 @@ SCENARIO("Set INS Threshold", "[ins threshold]") {
     }
 }
 
-SCENARIO("Force_Reset", "[force reset]") {
-    GIVEN("Any possible scenario") {
-        resetWasCalled = false;
-        fullPublishString = "";
-        WHEN("the function is called with 1") {
-            int returnVal = force_reset("1");
+SCENARIO("Change_IM21_Door_ID", "[change door id]") {
+    GIVEN("A valid global door ID") {
+        String doorID = "AB,CD,EF";
 
-            THEN("returnValue should be 1 and resetWasCalled should be true") {
-                REQUIRE(returnVal == 1);
-                REQUIRE(resetWasCalled == true);
-                REQUIRE(fullPublishString ==
-                        "YOU SHALL NOT PANIC!!Reset has begun so ignore the future particle message about failure to call force_reset()");
+        WHEN("the function is called with a valid door ID") {
+            int returnVal = im21_door_id_set(doorID);
+
+            THEN("The function should return the door ID converted to a decimal number") {
+                REQUIRE(returnVal == 11259375);
             }
         }
 
-        WHEN("the function is not called with 1") {
-            int returnVal = force_reset("invalid Value");
+        WHEN("The function is called with e and a valid door ID was previously set") {
+            im21_door_id_set("12,34,56");
+            int returnVal = im21_door_id_set("e");  // Note: The mock EEPROM is coded to always return 0x123456 as the door ID
 
-            THEN("the return value should be -1 and resetWasCalled should be false") {
+            THEN("The function should return the current value of the door ID, converted to a decimal number") {
+                REQUIRE(returnVal == 1193046);
+            }
+        }
+
+        WHEN("the function is called with an empty string") {
+            int returnVal = im21_door_id_set("");
+
+            THEN("the function should return -1 for the invalid input") {
                 REQUIRE(returnVal == -1);
-                REQUIRE(resetWasCalled == false);
+            }
+        }
+
+        WHEN("the function is called with a missing byte") {
+            int returnVal = im21_door_id_set("GH,IJ");
+
+            THEN("the function should return -1 for the invalid input") {
+                REQUIRE(returnVal == -1);
             }
         }
     }
 }
 
-SCENARIO("Reset_Stillness_Timer_For_Alerting_Session", "[reset stillness timer for alerting session]") {
-    GIVEN("A session that has already had a Duration Alert") {
-        unsigned long initial_state3_stillness_timer_value = 30005;
-        state3_stillness_timer = initial_state3_stillness_timer_value;
-        hasDurationAlertBeenSent = true;
-        hasStillnessAlertBeenSent = false;
 
-        WHEN("the function is called with any string") {
-            int returnVal = reset_stillness_timer_for_alerting_session("any string");
 
-            THEN("The function should return the difference between old stillness timer value and now") {
-                // Testing a one-second range to prevent test flakiness
-                unsigned long expectedValue = millis() - initial_state3_stillness_timer_value;
-                REQUIRE((returnVal >= expectedValue - 1000 && returnVal <= expectedValue));
-            }
-
-            THEN("The new stillness timer value is the current value of millis()") {
-                // Testing a one-second range to prevent test flakiness
-                int currentTimeInMillis = (int)millis();
-                REQUIRE((state3_stillness_timer >= currentTimeInMillis - 1000 && state3_stillness_timer <= currentTimeInMillis));
-            }
-        }
-    }
-
-    GIVEN("A session that has already had a Stillness Alert") {
-        unsigned long initial_state3_stillness_timer_value = 30005;
-        state3_stillness_timer = initial_state3_stillness_timer_value;
-        hasDurationAlertBeenSent = false;
-        hasStillnessAlertBeenSent = true;
-
-        WHEN("the function is called with any string") {
-            int returnVal = reset_stillness_timer_for_alerting_session("any string");
-
-            THEN("The function should return the difference between old stillness timer value and now") {
-                // Testing a one-second range to prevent test flakiness
-                unsigned long expectedValue = millis() - initial_state3_stillness_timer_value;
-                REQUIRE((returnVal >= expectedValue - 1000 && returnVal <= expectedValue));
-            }
-
-            THEN("The new stillness timer value is the current value of millis()") {
-                // Testing a one-second range to prevent test flakiness
-                int currentTimeInMillis = (int)millis();
-                REQUIRE((state3_stillness_timer >= currentTimeInMillis - 1000 && state3_stillness_timer <= currentTimeInMillis));
-            }
-        }
-    }
-
-    GIVEN("A session that has not yet sent any alerts") {
-        unsigned long initial_state3_stillness_timer_value = 30005;
-        state3_stillness_timer = initial_state3_stillness_timer_value;
-        hasDurationAlertBeenSent = false;
-        hasStillnessAlertBeenSent = false;
-
-        WHEN("the function is called with any string") {
-            int returnVal = reset_stillness_timer_for_alerting_session("any string");
-
-            THEN("The function should return -1") {
-                REQUIRE(returnVal == -1);
-            }
-
-            THEN("The stillness timer value did not change") {
-                REQUIRE(state3_stillness_timer == initial_state3_stillness_timer_value);
-            }
-        }
-    }
-}
