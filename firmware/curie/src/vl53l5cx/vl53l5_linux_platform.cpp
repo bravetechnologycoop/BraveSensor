@@ -186,7 +186,7 @@ uint8_t VL53L5CX_RdMulti(
 		buffer[0] = (RegisterAdress + position) >> 8;
 		buffer[1] = (RegisterAdress + position) & 0xFF;
 		sprintf(tmpstr, "Setting read from %02X%02X", buffer[0], buffer[1]);
-		bDebug(TRACE, tmpstr);
+		//bDebug(TRACE, tmpstr);
 		Status = Linux_I2CWrite(p_platform->i2c_hdl, (uint8_t *)buffer, (uint8_t)2);
 		if (0 != Status){
 			bDebug(ERROR, "Failed to set the read");
@@ -200,35 +200,6 @@ uint8_t VL53L5CX_RdMulti(
 	}
 
 	return Status;
-
-	/*to_read = size & 0xFF;
-
-	buffer[0] = RegisterAdress >> 8;
-	buffer[1] = RegisterAdress & 0xFF;
-	sprintf(tmpstr, "Setting read from %02X%02X", buffer[0], buffer[1]);
-	bDebug(TRACE, tmpstr);
-
-	Status = Linux_I2CWrite(p_platform->i2c_hdl, (uint8_t *) buffer, (uint8_t) 2);
-	if (0 == Status) {
-		p_values[0] = RegisterAdress;
-		Status = Linux_I2CRead(p_platform->i2c_hdl, p_values, to_read);
-		if ((0 == Status)){
-			if (0 == p_values[0]){
-				return Status;
-			}
-			cout << "Reading i2c ";
-			for (uint32_t i = 0; (i < to_read); i++){
-				sprintf(tmpstr, "%02X", p_values[i]);
-				cout <<  tmpstr << " ";
-			}
-			cout << "\n";
-		} else {
-			bDebug(ERROR, "Failed to Read");
-		}
-	} else {
-		bDebug(ERROR, "Failed to setup the write");
-	}
-	return Status;*/
 }
 
 uint8_t VL53L5CX_Reset_Sensor(

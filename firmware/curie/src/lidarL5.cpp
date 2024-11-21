@@ -29,14 +29,37 @@ lidarL5::lidarL5(int i2cBus, int i2cAddress){
 
 lidarL5::~lidarL5(){
     bDebug(TRACE, "Lidar destroyed");
+
+    vl53l5cx_stop_ranging(&(this->conf));
 }
 
 int lidarL5::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "Lidar getData");
     int err = OK;
+    uint8_t isReady;
+    VL53L5CX_ResultsData Results;
+
     //check incoming pointers
     *sqlTable = LIDAR5_SQL_TABLE;
 
+   err = vl53l5cx_check_data_ready(&(this->conf), &isReady);
+
+   if (!err && !!isReady){
+        err = vl53l5cx_get_ranging_data(&(this->conf), &Results);
+        if (!err) {
+            char tmpstr[128];
+            for (int i = 0; i < 16; i++){
+
+                //status of 5 and 9 are good, others are not great.
+                sprintf(tmpstr, "Zone :  %3d, Status: %3u, Targets: %2u, Distance : %4d mm", 
+                    i, 
+                    Results.target_status[VL53L5CX_NB_TARGET_PER_ZONE*i], 
+                    Results.nb_target_detected[i],
+                    Results.distance_mm[VL53L5CX_NB_TARGET_PER_ZONE*i]);
+                bDebug(TRACE, tmpstr);
+            }
+        }
+   }
    
 
 
@@ -114,7 +137,7 @@ int lidarL5::initDevice(){
 
 	bDebug(TRACE, "VL53L5CX ULD ready ! (Version : " + string(VL53L5CX_API_REVISION) + ")");
 
-    //status = vl53l5cx_start_ranging(&(this->conf));
+    status = vl53l5cx_start_ranging(&(this->conf));
 
     return err;
 }
