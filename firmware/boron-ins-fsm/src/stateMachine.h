@@ -13,23 +13,22 @@
 // ascii table goes up to 7F, so pick something greater than that
 // which is also unlikely to be part of a door ID or a threshold/timer const
 #define INITIALIZE_STATE_MACHINE_CONSTS_FLAG           0x8888
-#define INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG 0x8888
 #define INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG      0x8888
 
 // initial (default) values for state machine, can be changed via console function
-// or by writing something other than 0x8888 to the above flag in flash
+// or by writing something other than 0x8888 to the above flag in flash 
 #define INS_THRESHOLD                   60
 #define STATE0_OCCUPANT_DETECTION_TIMER 172800000  // 2 days
 #define STATE1_MAX_TIME                 15000      // ms = 15s
-#define STATE2_MAX_DURATION             1200000    // ms = 20 min
-#define STATE3_MAX_STILLNESS_TIME       120000     // ms = 2 minutes
 
-// Duration alert threshold
+// Duration alert threshold (used in state 2)
 #define DURATION_ALERT_THRESHOLD        1800000    // ms = 30 minutes          
 
-// Stillness alert thresholds
+// Stillness alert thresholds (used in state 3)
 #define INITIAL_STILLNESS_ALERT_THRESHOLD 300000   // ms = 5 minutes
 #define FOLLOWUP_STILLNESS_ALERT_THRESHOLD 180000  // ms = 3 minutes
+
+// ----------------------------------------------------------------------------
 
 // How often to publish Heartbeat messages
 #define SM_HEARTBEAT_INTERVAL 660000  // ms = 11 min

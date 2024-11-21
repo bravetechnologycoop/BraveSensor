@@ -24,12 +24,6 @@ unsigned long state3_stillness_timer;
 unsigned long ins_threshold = INS_THRESHOLD;
 unsigned long state0_occupant_detection_timer = STATE0_OCCUPANT_DETECTION_TIMER;
 unsigned long state1_max_time = STATE1_MAX_TIME;
-unsigned long state2_max_duration = STATE2_MAX_DURATION;
-unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
-unsigned long state3_max_long_stillness_time = STATE3_MAX_STILLNESS_TIME;
-
-// Pointer to the current max stillness time
-unsigned long *max_stillness_time = &state3_max_stillness_time;
 
 // Flags to track if alerts have been sent
 bool hasDurationAlertBeenSent;
@@ -73,7 +67,6 @@ void initializeStateMachineConsts() {
     if (initializeConstsFlag != INITIALIZE_STATE_MACHINE_CONSTS_FLAG) {
         EEPROM.put(ADDR_INS_THRESHOLD, ins_threshold);
         EEPROM.put(ADDR_STATE1_MAX_TIME, state1_max_time);
-        EEPROM.put(ADDR_STATE2_MAX_DURATION, state2_max_duration);
         initializeConstsFlag = INITIALIZE_STATE_MACHINE_CONSTS_FLAG;
         EEPROM.put(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
         Log.info("State machine constants were written to flash on bootup.");
@@ -81,7 +74,6 @@ void initializeStateMachineConsts() {
     else {
         EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
         EEPROM.get(ADDR_STATE1_MAX_TIME, state1_max_time);
-        EEPROM.get(ADDR_STATE2_MAX_DURATION, state2_max_duration);
         Log.info("State machine constants were read from flash on bootup.");
     }
 
@@ -123,7 +115,6 @@ void state0_idle() {
     // Reset alert flags and initialize variables
     hasDurationAlertBeenSent = false;
     hasStillnessAlertBeenSent = false;
-    max_stillness_time = &state3_max_stillness_time;
     number_of_alerts_published = 0;
 
     // Set debug pins to LOW
