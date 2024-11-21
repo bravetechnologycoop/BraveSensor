@@ -46,7 +46,7 @@ static uint8_t _vl53l5cx_poll_for_answer(
                          && (p_dev->temp_buffer[2] >= (uint8_t)0x7f))
 		{
 			status |= VL53L5CX_MCU_ERROR;
-			bDebug(ERROR, "Failed on poll for answer: MCU ERROR");
+			bDebug(ERROR, "Failed on poll for answer: MCU ERROR " + to_string(p_dev->temp_buffer[2]));
 			break;
 		}
 		else
@@ -344,7 +344,6 @@ uint8_t vl53l5cx_init(
 		(uint8_t*)&VL53L5CX_FIRMWARE[0x10000],0x5000);
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x01);
 	if(status != (uint8_t)0){
-		bDebug(ERROR, "Failed to download FW");
 		goto exit;
 	}
 
@@ -354,9 +353,9 @@ uint8_t vl53l5cx_init(
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x01);
 	status |= _vl53l5cx_poll_for_answer(p_dev, 1, 0, 0x21, 0x10, 0x10);
 	if(status != (uint8_t)0){
-		bDebug(ERROR, "Failed to check FW");
 		goto exit;
 	}
+
 
 	status |= VL53L5CX_WrByte(&(p_dev->platform), 0x7fff, 0x00);
 	status |= VL53L5CX_RdByte(&(p_dev->platform), 0x7fff, &tmp);
@@ -385,6 +384,10 @@ uint8_t vl53l5cx_init(
 		(uint8_t*)VL53L5CX_GET_NVM_CMD, sizeof(VL53L5CX_GET_NVM_CMD));
 	status |= _vl53l5cx_poll_for_answer(p_dev, 4, 0,
 		VL53L5CX_UI_CMD_STATUS, 0xff, 2);
+	if(status != (uint8_t)0){
+		bDebug(ERROR, "Failed  VL53L5CX_GET_NVM_CMD");
+		goto exit;
+	}
 	status |= VL53L5CX_RdMulti(&(p_dev->platform), VL53L5CX_UI_CMD_START,
 		p_dev->temp_buffer, VL53L5CX_NVM_DATA_SIZE);
 	(void)memcpy(p_dev->offset_data, p_dev->temp_buffer,
@@ -402,6 +405,10 @@ uint8_t vl53l5cx_init(
 		sizeof(VL53L5CX_DEFAULT_CONFIGURATION));
 	status |= _vl53l5cx_poll_for_answer(p_dev, 4, 1,
 		VL53L5CX_UI_CMD_STATUS, 0xff, 0x03);
+	if(status != (uint8_t)0){
+		bDebug(ERROR, "Failed to reset VL53L5CX_UI_CMD_STATUS");
+		goto exit;
+	}
 
 	status |= vl53l5cx_dci_write_data(p_dev, (uint8_t*)&pipe_ctrl,
 		VL53L5CX_DCI_PIPE_CONTROL, (uint16_t)sizeof(pipe_ctrl));

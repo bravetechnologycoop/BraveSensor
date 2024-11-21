@@ -102,6 +102,8 @@ int lidarL5::initDevice(){
 	}
     bDebug(TRACE, "Device exists");
 
+    status = VL53L5CX_Reset_Sensor(&(this->conf.platform));
+
 	/* (Mandatory) Init VL53L5CX sensor */
 	status = vl53l5cx_init(&(this->conf));
 	if(status)
@@ -112,7 +114,7 @@ int lidarL5::initDevice(){
 
 	bDebug(TRACE, "VL53L5CX ULD ready ! (Version : " + string(VL53L5CX_API_REVISION) + ")");
 
-    status = vl53l5cx_start_ranging(&(this->conf));
+    //status = vl53l5cx_start_ranging(&(this->conf));
 
     return err;
 }

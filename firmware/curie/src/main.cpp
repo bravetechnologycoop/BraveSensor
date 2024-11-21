@@ -140,7 +140,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
-	int tmpcount = 2;
+	int tmpcount = 1;
     int err = OK;
     try{
         
