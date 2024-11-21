@@ -79,9 +79,9 @@ extern unsigned long state3_stillness_timer;
 extern unsigned long ins_threshold;
 extern unsigned long state0_occupant_detection_timer;
 extern unsigned long state1_max_time;
-unsigned long duration_alert_threshold;
-unsigned long initial_stillness_alert_threshold;
-unsigned long followup_stillness_alert_threshold; 
+extern unsigned long duration_alert_threshold;
+extern unsigned long initial_stillness_alert_threshold;
+extern unsigned long followup_stillness_alert_threshold; 
 
 // whether or not the current session has sent alerts
 extern bool hasDurationAlertBeenSent;

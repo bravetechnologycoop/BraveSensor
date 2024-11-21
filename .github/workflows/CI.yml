@@ -105,13 +105,13 @@ jobs:
   firmware_tests:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Build and test firmware
-      run: |
-        cd firmware/boron-ins-fsm/test
-        g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
-        g++ -std=c++11 -I../inc -I./ -I./mocks -I../lib/CircularBuffer/src -o ins3331Tests ins3331Tests.cpp -lstdc++ -lm && ./ins3331Tests -s
-        g++ -std=c++11 -I../inc -I./ -I./mocks -o DoorSensorTests imDoorSensorTests.cpp -lstdc++ -lm && ./DoorSensorTests -s
-
+      - name: Build and test firmware
+        run: |
+          set -e
+          cd firmware/boron-ins-fsm/test
+          g++ -std=c++11 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
+          g++ -std=c++11 -I../inc -I./ -I./mocks -I../lib/CircularBuffer/src -o ins3331Tests ins3331Tests.cpp -lstdc++ -lm && ./ins3331Tests -s
+          g++ -std=c++11 -I../inc -I./ -I./mocks -o DoorSensorTests imDoorSensorTests.cpp -lstdc++ -lm && ./DoorSensorTests -s
