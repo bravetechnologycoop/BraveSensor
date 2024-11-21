@@ -16,10 +16,12 @@
 #include <gpioInterface.h>
 #include <serialib.h>
 #include <thread>
+#include <mutex>
 
 
 using namespace std;
 bool g_loop;
+timed_mutex g_interthreadMutex;
 
 thermalCamera * g_sourceThermalCamera = NULL;
 lidarL1 * g_sourceLidarL1 = NULL;
@@ -136,15 +138,27 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	return err;
 }
 
-void spiThread()
+void spiRxThread()
 {
 	while (g_loop){
-		if (g_loop){
-			bDebug(TRACE, "spiThread Sleep");
-			sleep(10);
-		}
+		g_interthreadMutex.lock();
+		this_thread::sleep_for(10s);
+		bDebug(TRACE, "Spi is doing stuff");
+		//busy wait reading from SPI until you get data
+		//read blob from SPI
+		//push blob into boronSensor->parseData(uint8_t* data)
+		g_interthreadMutex.unlock();
+		this_thread::sleep_for(20s);
 	}
 
+}
+
+void spiTxThread(){
+	while (g_loop){
+		this_thread::sleep_for(120s);
+		//send your data over the SPI TX line
+		// 0x0d 0x00 [uint8_t]^n 0x0d 0x00
+	}
 }
 
 int main()
@@ -152,7 +166,7 @@ int main()
 	bDebug(INFO, "Starting Data Gathering");
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
-	int count = 2;
+	int count = 10;
     int err = OK;
 	thread * boronListener;
 	g_loop = true;
@@ -173,7 +187,7 @@ int main()
 		pInterface->openDB();
 
 		//start child thread
-		boronListener = new thread(spiThread);
+		boronListener = new thread(spiRxThread);
 
 		//main execution loop
 		while (g_loop){
@@ -192,7 +206,12 @@ int main()
 
 			if (g_loop){
 				bDebug(TRACE, "Loop Sleep");
-				sleep(LOOP_TIMER);
+				if (g_interthreadMutex.try_lock_for(LOOP_TIMER)){
+					bDebug(TRACE, "Spi Thread Sent us Something");
+					g_interthreadMutex.unlock();
+				} else {
+					bDebug(TRACE, "Mutex wait expired read anyways");
+				}
 			}
 		};
 
