@@ -517,7 +517,7 @@ describe('vitals.js integration tests: handleHeartbeat', () => {
       expect(braveAlerter.sendSingleAlert).to.be.calledWith(
         this.client.responderPhoneNumbers[0],
         this.client.fromPhoneNumber,
-        'The door sensor at fakeLocationName is not fully attached to the door. If you require a replacement door sensor or have any questions about this, contact us by emailing clientsupport@brave.coop.',
+        'The door contact at fakeLocationName is not fully attached to the door. For a replacement or any questions, email clientsupport@brave.coop.',
       )
     })
 

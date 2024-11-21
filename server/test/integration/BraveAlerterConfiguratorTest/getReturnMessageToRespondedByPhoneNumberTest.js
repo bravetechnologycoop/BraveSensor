@@ -42,7 +42,7 @@ describe('BraveAlerterConfigurator.js integration tests: getReturnMessageToRespo
     ])
 
     expect(returnMessage).to.equal(
-      "This Brave Sensor will be reset, and you will no longer receive alerts for this session.\n\nThe sensor will return to normal operation after about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
+      'The Brave Sensor has been reset. No further alerts will be generated until another occupant is detected. Please check the location if needed. Session complete (no reply needed).',
     )
   })
 
@@ -66,7 +66,7 @@ describe('BraveAlerterConfigurator.js integration tests: getReturnMessageToRespo
     )
 
     expect(returnMessage).to.equal(
-      "This Brave Sensor will be reset, and you will no longer receive alerts for this session.\n\nThe sensor will return to normal operation after about ten minutes have passed. If you have not checked on this location yet, please do so.\n\nThis session is now complete. (You don't need to respond to this message.)",
+      'The Brave Sensor has been reset. No further alerts will be generated until another occupant is detected. Please check the location if needed. Session complete (no reply needed).',
     )
   })
 

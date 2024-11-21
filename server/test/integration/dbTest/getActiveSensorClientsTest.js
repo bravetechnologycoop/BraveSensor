@@ -3,7 +3,7 @@ const { expect } = require('chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
-const { factories } = require('brave-alert-lib')
+const { factories, DEVICE_TYPE } = require('brave-alert-lib')
 const db = require('../../../db/db')
 
 // arbitrary number of active clients to generate
@@ -20,10 +20,21 @@ async function dbInsertActiveClients() {
       isSendingVitals: true,
     })
 
-    // create a location for this client that is sending alerts and vitals
+    // create a singlestall location for this client that is sending alerts and vitals
     await factories.locationDBFactory(db, {
-      locationid: `active-client-location-${index}`,
-      displayName: `Active Client Location ${index}`,
+      deviceType: DEVICE_TYPE.SENSOR_SINGLESTALL,
+      locationid: `active-client-singlestall-location-${index}`,
+      displayName: `Active Client Singlestall Location ${index}`,
+      clientId: client.id,
+      isSendingAlerts: true,
+      isSendingVitals: true,
+    })
+
+    // create a multistall location for this client that is sending alerts and vitals
+    await factories.locationDBFactory(db, {
+      deviceType: DEVICE_TYPE.SENSOR_MULTISTALL,
+      locationid: `active-client-multistall-location-${index}`,
+      displayName: `Active Client Multistall Location ${index}`,
       clientId: client.id,
       isSendingAlerts: true,
       isSendingVitals: true,
@@ -174,10 +185,21 @@ async function dbInsertInactiveClients() {
     })
 
     if (options.clientHasLocation) {
-      // create a location for this client that is sending alerts and vitals
+      // create a singlestall location for this client that is sending alerts and vitals
       await factories.locationDBFactory(db, {
-        locationid: `inactive-client-location-${index}`,
-        displayName: `Inactive Client Location ${index}`,
+        deviceType: DEVICE_TYPE.SENSOR_SINGLESTALL,
+        locationid: `inactive-client-singlestall-location-${index}`,
+        displayName: `Inactive Client Singlestall Location ${index}`,
+        clientId: client.id,
+        isSendingAlerts: options.locationIsSendingAlerts,
+        isSendingVitals: options.locationIsSendingVitals,
+      })
+
+      // create a multistall location for this client that is sending alerts and vitals
+      await factories.locationDBFactory(db, {
+        deviceType: DEVICE_TYPE.SENSOR_MULTISTALL,
+        locationid: `inactive-client-mutlistall-location-${index}`,
+        displayName: `Inactive Client Multistall Location ${index}`,
         clientId: client.id,
         isSendingAlerts: options.locationIsSendingAlerts,
         isSendingVitals: options.locationIsSendingVitals,

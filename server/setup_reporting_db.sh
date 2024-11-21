@@ -2,7 +2,7 @@
 # setup_reporting_db.sh
 #
 # Sets up the reporting database given a source and destination database.
-
+a
 # read arguments into variables
 src_user=$1
 src_host=$2
@@ -97,7 +97,9 @@ printf "Latest created_at from source database: $latest_created_at\n"
 psql -U $dst_user -h $dst_host -p $dst_port -d $dst_db -v ON_ERROR_STOP=1 -c "
 CREATE TABLE IF NOT EXISTS anchor_time (
     id serial PRIMARY KEY,
-    created_at timestamp NOT NULL
+    created_at timestamp NOT NULL,
+    vitals_id text,
+    locationid text
 );
 "
 
@@ -108,3 +110,23 @@ VALUES ('$latest_created_at');
 "
 
 printf "Anchor time inserted successfully.\n"
+
+psql -U $dst_user -h $dst_host -p $dst_port -d $dst_db -v ON_ERROR_STOP=1 -c "
+UPDATE anchor_time
+SET vitals_id = (
+    SELECT id 
+    FROM sensors_vitals
+    WHERE sensors_vitals.created_at = anchor_time.created_at
+)
+WHERE vitals_id IS NULL;
+"
+
+psql -U $dst_user -h $dst_host -p $dst_port -d $dst_db -v ON_ERROR_STOP=1 -c "
+UPDATE anchor_time
+SET locationid = (
+    SELECT locationid 
+    FROM sensors_vitals
+    WHERE sensors_vitals.created_at = anchor_time.created_at
+)
+WHERE locationid IS NULL;
+"
