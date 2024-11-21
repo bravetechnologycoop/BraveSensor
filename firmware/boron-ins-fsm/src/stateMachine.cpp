@@ -17,6 +17,7 @@ StateHandler stateHandler = state0_idle;
 
 // Timers for different states
 unsigned long state1_timer;
+unsigned long state2_monitoring_timer;
 unsigned long state3_stillness_timer;
 
 // State machine constants with default values
@@ -104,11 +105,11 @@ void initializeStateMachineConsts() {
  * State 0 - Idle State
  * This is the normal state of the sensor where:
  * Door is open/closed and we don't see any movement inside the washroom stall.
- * Can transition to state 1 if the door is closed and we see movement.
  */
 void state0_idle() {
     // Check if device needs to be reset
-    if (millis() - doorHeartbeatReceived > DEVICE_RESET_THRESHOLD) {
+    unsigned long timeSinceDoorHeartbeat = millis() - doorHeartbeatReceived;
+    if (timeSinceDoorHeartbeat > DEVICE_RESET_THRESHOLD) {
         System.enableReset();
     } 
     else {
@@ -131,9 +132,12 @@ void state0_idle() {
     digitalWrite(D4, LOW);
     digitalWrite(D5, LOW);
 
+    // Calculate the time since the door was closed
+    unsigned long timeInState0 = millis() - timeWhenDoorClosed;
+
     // Log current state
     Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f", checkDoor.doorStatus, checkINS.iAverage);
-    publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, (millis() - timeWhenDoorClosed));
+    publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, timeInState0);
 
     // Check state transition conditions
     // Transition to state 1 if:
@@ -141,7 +145,7 @@ void state0_idle() {
     // 2. The INS data indicates movement (iAverage > ins_threshold).
     // 3. The door is closed.
     // 4. The door status is known.
-    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && 
+    if (timeInState0 < state0_occupant_detection_timer && 
         ((unsigned long)checkINS.iAverage > ins_threshold) &&
         !isDoorOpen(checkDoor.doorStatus) && 
         !isDoorStatusUnknown(checkDoor.doorStatus)) {
@@ -150,7 +154,7 @@ void state0_idle() {
         publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(0, 0);
 
-        // Initialize timers and transition to state 1
+        // Update state 1 timer and transition to state 1
         state1_timer = millis();
         stateHandler = state1_countdown;
     }
@@ -172,10 +176,13 @@ void state1_countdown() {
     // Set debug pin D2 to HIGH
     digitalWrite(D2, HIGH);
 
+    // Calculate the time spent in state 1
+    unsigned long timeInState1 = millis() - state1_timer;
+
     // Log current state
     Log.info("You are in state 1, initial countdown: Door status = 0x%02X, iAverage = %f, timer = %ld ms", 
-            checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
-    publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
+            checkDoor.doorStatus, checkINS.iAverage, timeInState1);
+    publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, timeInState1);
 
     // Check state transition conditions
     // Transition to state 0 if no movement is detected OR the door is opened.
@@ -192,13 +199,13 @@ void state1_countdown() {
         stateHandler = state0_idle;
     }
     // Transition to state 2 if the door remains closed and movement is detected for the maximum allowed time.
-    else if (millis() - state1_timer >= state1_max_time) {
+    else if (timeInState1 >= state1_max_time) {
         Log.warn("Door closed and motion detected for > max time, going to state 2 from state 1");
         publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 3);
 
-        // Initialize duration timer and transition to state 2
-        state2_duration_timer = millis();
+        // Update state 2 timer and transition to state 2
+        state2_monitoring_timer = millis();
         stateHandler = state2_monitoring;
     }
 }
@@ -220,10 +227,13 @@ void state2_monitoring() {
     // Set debug pin D3 to HIGH
     digitalWrite(D3, HIGH);
 
+    // Calculate the time spent in state 2
+    unsigned long timeInState2 = millis() - state2_monitoring_timer;
+
     // Log current state
     Log.info("You are in state 2, duration: Door status = 0x%02X, iAverage = %f, timer = %ld ms", 
-             checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
-    publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
+             checkDoor.doorStatus, checkINS.iAverage, timeInState2);
+    publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, timeInState2);
 
     // Check state transition conditions
     // Transition to state 3 if stillness is detected
@@ -232,7 +242,7 @@ void state2_monitoring() {
         publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 1);
 
-        // Initialize stillness timer and transition to state 3
+        // Update state 3 timer and transition to state 3
         state3_stillness_timer = millis();
         stateHandler = state3_stillness;
     }
@@ -251,23 +261,17 @@ void state2_monitoring() {
 
         // publish duration alert to particle
         Log.error("Duration Alert!!");
+        number_of_alerts_published += 1; 
         unsigned long occupancy_duration = (millis() - timeWhenDoorClosed) / 60000;  // Convert to minutes
-        snprintf(alertMessage, sizeof(alertMessage), "{\"occupancyDuration\": %lu}", occupancy_duration);
+        snprintf(alertMessage, sizeof(alertMessage), "{\"occupancyDuration\": %lu, \"numberOfAlertsPublished\": %lu}", occupancy_duration, number_of_alerts_published);
         Particle.publish("Duration Alert", alertMessage, PRIVATE); 
         hasDurationAlertBeenSent = true;
-        number_of_alerts_published += 1; 
 
         // Stay in state 2 to continue monitoring
         stateHandler = state2_monitoring;
     }
 }
 
-/*
- * State 3 - Stillness 
- * This state is entered when the door is closed and stillness is detected.
- * The system monitors the stillness duration.
- * Sends a stillness alert if the stillness duration exceeds a threshold.
- */
 void state3_stillness() {
     // Scan inputs
     doorData checkDoor = checkIM();
@@ -279,18 +283,24 @@ void state3_stillness() {
     // Set debug pin D4 to HIGH
     digitalWrite(D4, HIGH);
 
+    // Calculate the time spent in state 3
+    unsigned long timeInState3 = millis() - state3_stillness_timer;
+
     // Log current state
     Log.info("You are in state 3, stillness: Door status = 0x%02X, iAverage = %f, timer = %ld ms", 
-             checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
-    publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
+             checkDoor.doorStatus, checkINS.iAverage, timeInState3);
+    publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, timeInState3);
 
     // Check state transition conditions
     // Transition to state 2 if movement is detected again
     if ((unsigned long)checkINS.iAverage > ins_threshold) {
-        Log.warn("Motion spotted again, going from state3_stillness to state2_duration");
+        Log.warn("Motion spotted again, going from state3_stillness to state2_monitoring");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 0);
-        stateHandler = state2_duration;
+
+        // Update state 2 timer and transition to state 2
+        state2_monitoring_timer = millis();
+        stateHandler = state2_monitoring;
     }
     // Transition to state 0 if the door is opened
     else if (isDoorOpen(checkDoor.doorStatus)) {
@@ -300,54 +310,57 @@ void state3_stillness() {
         stateHandler = state0_idle;
     }
     // Send a stillness alert if the stillness duration exceeds the initial threshold
-    else if (!hasStillnessAlertBeenSent && (millis() - state3_stillness_timer >= INITIAL_STILLNESS_ALERT_THRESHOLD)) {
+    else if (!hasStillnessAlertBeenSent && timeInState3 >= INITIAL_STILLNESS_ALERT_THRESHOLD) {
         Log.warn("Initial stillness alert, remaining in state3 after publish");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
 
         // publish stillness alert to particle
         Log.error("Stillness Alert!!");
+        number_of_alerts_published += 1;  
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
         hasStillnessAlertBeenSent = true;
-        number_of_alerts_published += 1;  
 
-        // Reset stillness state timers and stay in state 3
+        // Reset state 3 timer and stay in state 3
         state3_stillness_timer = millis();
         stateHandler = state3_stillness;
     }
     // Send a follow-up stillness alert if the stillness duration exceeds the follow-up threshold
-    else if (hasStillnessAlertBeenSent && (millis() - state3_stillness_timer >= FOLLOWUP_STILLNESS_ALERT_THRESHOLD)) {
+    else if (hasStillnessAlertBeenSent && timeInState3 >= FOLLOWUP_STILLNESS_ALERT_THRESHOLD) {
         Log.warn("Follow-up stillness alert, remaining in state3 after publish");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
 
         // publish stillness alert to particle
         Log.error("Stillness Alert!!");
+        number_of_alerts_published += 1;  
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
-        number_of_alerts_published += 1;  
 
-        // Reset stillness state timers and stay in state 3
+        // Reset state 3 timer and stay in state 3
         state3_stillness_timer = millis(); 
         stateHandler = state3_stillness;
     }
 }
-
-// --------------- TODO FROM HERE ------------------
 
 void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue) {
     if (stateMachineDebugFlag) {
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char stateTransition[622];
         snprintf(stateTransition, sizeof(stateTransition),
-                 "{\"prev_state\":\"%d\", \"next_state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\"}", prevState, nextState, doorStatus,
-                 INSValue);
+                 "{"
+                    "\"prev_state\":\"%d\", "
+                    "\"next_state\":\"%d\", "
+                    "\"door_status\":\"0x%02X\", "
+                    "\"INS_val\":\"%f\" "
+                 "}",
+                prevState, nextState, doorStatus, INSValue);
         Particle.publish("State Transition", stateTransition, PRIVATE);
     }
 }
 
-void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, unsigned long timer) {
+void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, unsigned long state_timer) {
     if (stateMachineDebugFlag) {
         if ((millis() - debugFlagTurnedOnAt) > DEBUG_AUTO_OFF_THRESHOLD) {
             stateMachineDebugFlag = false;
@@ -356,10 +369,23 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
             // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
             char debugMessage[622];
             snprintf(debugMessage, sizeof(debugMessage),
-                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
-                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
-                     state, doorStatus, INSValue, ins_threshold, timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
-                     *max_stillness_time);
+                     "{"
+                        "\"state\":\"%d\", "
+                        "\"door_status\":\"0x%02X\", "
+                        "\"INS_val\":\"%f\", "
+                        "\"INS_threshold\":\"%lu\", "
+                        "\"time_in_curr_state\":\"%lu\", "
+
+                        "\"occupant_detection_timer\":\"%lu\", "
+                        "\"initial_countdown_timer\":\"%lu\", "
+
+                        "\"duration_alert_threshold\":\"%lu\", "
+                        "\"initial_stillness_threshold\":\"%lu\", "
+                        "\"followup_stillness_threshold\":\"%lu\""
+                     "}",
+                     state, doorStatus, INSValue, ins_threshold, state_timer, 
+                     state0_occupant_detection_timer, state1_max_time, 
+                     DURATION_ALERT_THRESHOLD, INITIAL_STILLNESS_ALERT_THRESHOLD, FOLLOWUP_STILLNESS_ALERT_THRESHOLD);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
         }
@@ -367,7 +393,8 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
 }
 
 /**
- * Saves the state transition data onto queues, including the last state, reason of transition and time spent in state.
+ * Maintains state transition history onto queues:
+ * Includes the last state, reason of transition and time spent in state.
  *
  * Reason Code | Meaning
  * -------------------------------
@@ -384,6 +411,8 @@ void saveStateChangeOrAlert(int state, int reason) {
     timeQueue.push(millis() - lastStateChangeOrAlert);
     lastStateChangeOrAlert = millis();
 }
+
+// ------------------------------------------------------------------------------------------------
 
 const char *resetReasonString(int resetReason) {
     switch (resetReason) {

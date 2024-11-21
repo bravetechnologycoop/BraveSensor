@@ -77,6 +77,7 @@ extern StateHandler stateHandler;
 
 // these are the timers that are zero'ed by millis()
 extern unsigned long state1_timer;
+extern unsigned long state2_monitoring_timer;
 extern unsigned long state3_stillness_timer;
 
 // state machine constants stored in flash
