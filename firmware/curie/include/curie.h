@@ -18,17 +18,17 @@
 #include <co2Telaire.h>
 #include <co2SCD30.h>
 
-//#define THERMAL_CAMERA
+#define THERMAL_CAMERA
 #define LIDAR
 #define LIDAR_L5
 //#define LIDAR_L1
-//#define USONIC_RANGE
-//#define MULTI_GAS
-//#define CO2
+#define USONIC_RANGE
+#define MULTI_GAS
+#define CO2
 //#define CO2TELAIRE
 #define CO2SCD
-//#define PIR
-//#define MULTI_MOTION
+#define PIR
+#define MULTI_MOTION
 
 
 #define FAST_I2C        1
