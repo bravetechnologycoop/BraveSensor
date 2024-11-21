@@ -3,66 +3,66 @@
  * written by Heidi Fedorak, Apr 2021
  */
 
-#include "Particle.h"
-#include "stateMachine.h"
 #include <queue>
+
 #include "debugFlags.h"
 #include "flashAddresses.h"
 #include "imDoorSensor.h"
 #include "ins3331.h"
+#include "stateMachine.h"
+#include "Particle.h"
 
-// define and initialize state machine pointer
+// State machine pointer
 StateHandler stateHandler = state0_idle;
 
-// define global variables so they are allocated in memory
+// Timers for different states
 unsigned long state1_timer;
-unsigned long state2_duration_timer;
 unsigned long state3_stillness_timer;
-// initialize constants to sensible default values
+
+// State machine constants with default values
 unsigned long ins_threshold = INS_THRESHOLD;
 unsigned long state0_occupant_detection_timer = STATE0_OCCUPANT_DETECTION_TIMER;
 unsigned long state1_max_time = STATE1_MAX_TIME;
 unsigned long state2_max_duration = STATE2_MAX_DURATION;
 unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
-// By default, we use the same value for max_stillness_time and max_long_stillness_time
 unsigned long state3_max_long_stillness_time = STATE3_MAX_STILLNESS_TIME;
-int resetReason = System.resetReason();
-// record whether an alert has been sent within the same session
+
+// Pointer to the current max stillness time
+unsigned long *max_stillness_time = &state3_max_stillness_time;
+
+// Flags to track if alerts have been sent
 bool hasDurationAlertBeenSent;
 bool hasStillnessAlertBeenSent;
-// which max stillness time are we currently comparing against
-// using pointers so that the value pointed to be max_stillness_time will be the correct values of state3_max_stillness_time or
-// state3_max_long_stillness_time even if they change due to a console function call during the session
-unsigned long *max_stillness_time = &state3_max_stillness_time;
-// the total number of alerts published while in state 2 or state 3
-// the number of alerts generated in a session should start at 0, resetting to 0 when in state 0
+
+// Counter for the number of alerts published in state 2 and 3
 unsigned long number_of_alerts_published = 0;
 
+// Reset reason
+int resetReason = System.resetReason();
+
+// Queues to store state transition data
 std::queue<int> stateQueue;
 std::queue<int> reasonQueue;
 std::queue<unsigned long> timeQueue;
 unsigned long lastStateChangeOrAlert = millis();
 
 void setupStateMachine() {
-    // set up debug pins
+    // Set up debug pins
     pinMode(D2, OUTPUT);
     pinMode(D3, OUTPUT);
     pinMode(D4, OUTPUT);
     pinMode(D5, OUTPUT);
 
-    // default to not publishing debug logs
+    // Default to not publishing debug logs (from debugFlags.h)
     stateMachineDebugFlag = 0;
 
-    // default to no duration alert sent
+    // Default alerts sent to false
     hasDurationAlertBeenSent = false;
-
-    // default to no stillness alert sent
     hasStillnessAlertBeenSent = false;
 }
 
 void initializeStateMachineConsts() {
     uint16_t initializeConstsFlag;
-    uint16_t initializeState3MaxLongStillenssTimeFlag;
     uint16_t initializeState0OccupationDetectionFlag;
 
     // Boron flash memory is initialized to all F's (1's)
@@ -73,7 +73,6 @@ void initializeStateMachineConsts() {
         EEPROM.put(ADDR_INS_THRESHOLD, ins_threshold);
         EEPROM.put(ADDR_STATE1_MAX_TIME, state1_max_time);
         EEPROM.put(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
         initializeConstsFlag = INITIALIZE_STATE_MACHINE_CONSTS_FLAG;
         EEPROM.put(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
         Log.info("State machine constants were written to flash on bootup.");
@@ -82,27 +81,7 @@ void initializeStateMachineConsts() {
         EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
         EEPROM.get(ADDR_STATE1_MAX_TIME, state1_max_time);
         EEPROM.get(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        EEPROM.get(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
         Log.info("State machine constants were read from flash on bootup.");
-    }
-
-    // Boron flash memory is initialized to all F's (1's)
-    // Needs separate intialization for Borons that had versions of the firmware <= 9.3.0
-    EEPROM.get(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
-    Log.info("state machine constant State3MaxLongStillnessTime flag is 0x%04X", initializeState3MaxLongStillenssTimeFlag);
-
-    if (initializeState3MaxLongStillenssTimeFlag != INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG) {
-        // By default, we use the same value for max_stillness_time and max_long_stillness_time
-        EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_stillness_time);
-        state3_max_long_stillness_time = state3_max_stillness_time;
-
-        initializeState3MaxLongStillenssTimeFlag = INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG;
-        EEPROM.put(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
-        Log.info("State machine constant State3MaxLongStillnessTime was written to flash on bootup.");
-    }
-    else {
-        EEPROM.get(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
-        Log.info("State machine constant State3MaxLongStillnessTime was read from flash on bootup.");
     }
 
     // Seperate initialization for State 0 Window
@@ -121,218 +100,241 @@ void initializeStateMachineConsts() {
     }
 }
 
+/*
+ * State 0 - Idle State
+ * This is the normal state of the sensor where:
+ * Door is open/closed and we don't see any movement inside the washroom stall.
+ * Can transition to state 1 if the door is closed and we see movement.
+ */
 void state0_idle() {
+    // Check if device needs to be reset
     if (millis() - doorHeartbeatReceived > DEVICE_RESET_THRESHOLD) {
         System.enableReset();
-    }
+    } 
     else {
         System.disableReset();
     }
 
-    // scan inputs
-    doorData checkDoor;
-    filteredINSData checkINS;
-    // this returns the previous door event value until a new door event is received
-    // on code boot up it initializes to returning INITIAL_DOOR_STATUS
-    checkDoor = checkIM();
-    // this returns 0.0 if the INS has no new data to transmit
-    checkINS = checkINS3331();
-    // session is over in idle state, so reset the whether alert has been sent flags
+    // Scan inputs
+    doorData checkDoor = checkIM();
+    filteredINSData checkINS = checkINS3331();
+
+    // Reset alert flags and initialize variables
     hasDurationAlertBeenSent = false;
     hasStillnessAlertBeenSent = false;
-    // set to compare against the shorter stillness threshold
     max_stillness_time = &state3_max_stillness_time;
-    // set the total number of alerts generated to 0
     number_of_alerts_published = 0;
 
-    // do stuff in the state
+    // Set debug pins to LOW
     digitalWrite(D2, LOW);
     digitalWrite(D3, LOW);
     digitalWrite(D4, LOW);
     digitalWrite(D5, LOW);
 
+    // Log current state
     Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f", checkDoor.doorStatus, checkINS.iAverage);
-    // default timer to 0 when state doesn't have a timer
     publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, (millis() - timeWhenDoorClosed));
 
-    // fix outputs and state exit conditions accordingly
-    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && ((unsigned long)checkINS.iAverage > ins_threshold) &&
-        !isDoorOpen(checkDoor.doorStatus) && !isDoorStatusUnknown(checkDoor.doorStatus)) {
+    // Check state transition conditions
+    // Transition to state 1 if:
+    // 1. The door has been closed for less than the occupant detection timer (person has entered and washroom is now occupied).
+    // 2. The INS data indicates movement (iAverage > ins_threshold).
+    // 3. The door is closed.
+    // 4. The door status is known.
+    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && 
+        ((unsigned long)checkINS.iAverage > ins_threshold) &&
+        !isDoorOpen(checkDoor.doorStatus) && 
+        !isDoorStatusUnknown(checkDoor.doorStatus)) {
+        
         Log.warn("In state 0, door closed and seeing movement, heading to state 1");
         publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(0, 0);
-        // zero the state 1 timer
+
+        // Initialize timers and transition to state 1
         state1_timer = millis();
-        // head to state 1
-        stateHandler = state1_15sCountdown;
-    }
-    else {
-        // if we don't meet the exit conditions above, we remain here
-        // stateHandler = state0_idle;
+        stateHandler = state1_countdown;
     }
 }
 
-void state1_15sCountdown() {
+/*
+ * State 1 - Initial Countdown State
+ * This state is entered when the door is closed and movement is detected.
+ * The system countdowns for a short period to confirm occupancy.
+ */
+void state1_countdown() {
+    // Disable system reset
     System.disableReset();
-    // scan inputs
-    doorData checkDoor;
-    filteredINSData checkINS;
-    // this returns the previous door event value until a new door event is received
-    // on code boot up it initializes to returning INITIAL_DOOR_STATUS
-    checkDoor = checkIM();
-    // this returns 0.0 if the INS has no new data to transmit
-    checkINS = checkINS3331();
 
-    // do stuff in the state
+    // Scan inputs
+    doorData checkDoor = checkIM();
+    filteredINSData checkINS = checkINS3331();
+
+    // Set debug pin D2 to HIGH
     digitalWrite(D2, HIGH);
-    Log.info("You are in state 1, initial countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
-             (millis() - state1_timer));
+
+    // Log current state
+    Log.info("You are in state 1, initial countdown: Door status = 0x%02X, iAverage = %f, timer = %ld ms", 
+            checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
     publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
 
-    // fix outputs and state exit conditions accordingly
+    // Check state transition conditions
+    // Transition to state 0 if no movement is detected OR the door is opened.
     if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
-        Log.warn("no movement, you're going back to state 0 from state 1");
+        Log.warn("No movement, going back to state 0 from state 1");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 1);
         stateHandler = state0_idle;
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
-        Log.warn("door was opened, you're going back to state 0 from state 1");
+        Log.warn("Door was opened, going back to state 0 from state 1");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 2);
         stateHandler = state0_idle;
     }
+    // Transition to state 2 if the door remains closed and movement is detected for the maximum allowed time.
     else if (millis() - state1_timer >= state1_max_time) {
-        Log.warn("door closed && motion for > Xs, going to state 2 from state1");
+        Log.warn("Door closed and motion detected for > max time, going to state 2 from state 1");
         publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 3);
-        // zero the duration timer
+
+        // Initialize duration timer and transition to state 2
         state2_duration_timer = millis();
-        // head to duration state
-        stateHandler = state2_duration;
-    }
-    else {
-        // if we don't meet the exit conditions above, we remain here
-        // stateHandler = state1_15sCountdown;
+        stateHandler = state2_monitoring;
     }
 }
 
-void state2_duration() {
-    // scan inputs
-    doorData checkDoor;
-    filteredINSData checkINS;
-    // this returns the previous door event value until a new door event is received
-    // on code boot up it initializes to returning INITIAL_DOOR_STATUS
-    checkDoor = checkIM();
-    // this returns 0.0 if the INS has no new data to transmit
-    checkINS = checkINS3331();
-    // will contain the data for a Stillness Alert; max 622 chars as per Particle docs
+/*
+ * State 2 - Monitoring State
+ * This state is entered when the door is closed and movement is detected for a confirmed period.
+ * The system monitors the duration of occupancy and stilness.
+ * Sends a single duration alert if the not sent before and duration exceeds a threshold.
+ */
+void state2_monitoring() {
+    // Scan inputs
+    doorData checkDoor = checkIM();
+    filteredINSData checkINS = checkINS3331();
+
+    // Will contain the data for a Duration Alert; max 622 chars as per Particle docs
     char alertMessage[622];
 
-    // do stuff in the state
+    // Set debug pin D3 to HIGH
     digitalWrite(D3, HIGH);
-    Log.info("You are in state 2, duration: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
-             (millis() - state2_duration_timer));
+
+    // Log current state
+    Log.info("You are in state 2, duration: Door status = 0x%02X, iAverage = %f, timer = %ld ms", 
+             checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
     publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
 
-    // fix outputs and state exit conditions accordingly
+    // Check state transition conditions
+    // Transition to state 3 if stillness is detected
     if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
         Log.warn("Seeing stillness, going to state3_stillness from state2_duration");
         publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 1);
-        // zero the stillness timer
+
+        // Initialize stillness timer and transition to state 3
         state3_stillness_timer = millis();
-        // go to stillness state
         stateHandler = state3_stillness;
     }
+    // Transition to state 0 if the door is opened
     else if (isDoorOpen(checkDoor.doorStatus)) {
-        Log.warn("Door opened, session over, going to idle from state2_duration");
+        Log.warn("Door opened, session over, going to idle from state2_monitoring");
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 2);
         stateHandler = state0_idle;
     }
-    else if (millis() - state2_duration_timer >= state2_max_duration) {
-        Log.warn("See duration alert, remaining in state2_duration after alert publish");
+    // Send a duration alert if it hasn't been sent yet and the duration exceeds the threshold
+    else if (!hasDurationAlertBeenSent && (millis() - timeWhenDoorClosed >= DURATION_ALERT_THRESHOLD)) {
+        Log.warn("Sending duration alert and continuing to monitor for stillness in state2_monitoring");
+        publishStateTransition(2, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 4);
+
+        // publish duration alert to particle
         Log.error("Duration Alert!!");
-        number_of_alerts_published += 1;  // increment the number of alerts published
-        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
-        Particle.publish("Duration Alert", alertMessage, PRIVATE);
+        unsigned long occupancy_duration = (millis() - timeWhenDoorClosed) / 60000;  // Convert to minutes
+        snprintf(alertMessage, sizeof(alertMessage), "{\"occupancyDuration\": %lu}", occupancy_duration);
+        Particle.publish("Duration Alert", alertMessage, PRIVATE); 
         hasDurationAlertBeenSent = true;
-        state2_duration_timer = millis();
-        stateHandler = state2_duration;
-    }
-    else {
-        // if we don't meet the exit conditions above hang out here
-        // stateHandler = state2_duration;
-    }
+        number_of_alerts_published += 1; 
 
-}  // end state2_duration
+        // Stay in state 2 to continue monitoring
+        stateHandler = state2_monitoring;
+    }
+}
 
+/*
+ * State 3 - Stillness 
+ * This state is entered when the door is closed and stillness is detected.
+ * The system monitors the stillness duration.
+ * Sends a stillness alert if the stillness duration exceeds a threshold.
+ */
 void state3_stillness() {
-    // scan inputs
-    doorData checkDoor;
-    filteredINSData checkINS;
-    // will contain the data for a Stillness Alert; max 622 chars as per Particle docs
+    // Scan inputs
+    doorData checkDoor = checkIM();
+    filteredINSData checkINS = checkINS3331();
+  
+    // Will contain the data for a Stillness Alert; max 622 chars as per Particle docs
     char alertMessage[622];
 
-    // this returns the previous door event value until a new door event is received
-    // on code boot up it initializes to returning INITIAL_DOOR_STATUS
-    checkDoor = checkIM();
-    // this returns 0.0 if the INS has no new data to transmit
-    checkINS = checkINS3331();
-
-    // do stuff in the state
+    // Set debug pin D4 to HIGH
     digitalWrite(D4, HIGH);
-    Log.info("You are in state 3, stillness: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
-             (millis() - state3_stillness_timer));
+
+    // Log current state
+    Log.info("You are in state 3, stillness: Door status = 0x%02X, iAverage = %f, timer = %ld ms", 
+             checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
     publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
 
-    // fix outputs and state exit conditions accordingly
+    // Check state transition conditions
+    // Transition to state 2 if movement is detected again
     if ((unsigned long)checkINS.iAverage > ins_threshold) {
-        Log.warn("motion spotted again, going from state3_stillness to state2_duration");
+        Log.warn("Motion spotted again, going from state3_stillness to state2_duration");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 0);
-        // go back to state 2, duration
         stateHandler = state2_duration;
     }
+    // Transition to state 0 if the door is opened
     else if (isDoorOpen(checkDoor.doorStatus)) {
-        Log.warn("door opened, session over, going from state3_stillness to idle");
+        Log.warn("Door opened, session over, going from state3_stillness to idle");
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 2);
         stateHandler = state0_idle;
     }
-    else if (millis() - state3_stillness_timer >= *max_stillness_time) {
-        Log.warn("stillness alert, remaining in state3 after publish");
+    // Send a stillness alert if the stillness duration exceeds the initial threshold
+    else if (!hasStillnessAlertBeenSent && (millis() - state3_stillness_timer >= INITIAL_STILLNESS_ALERT_THRESHOLD)) {
+        Log.warn("Initial stillness alert, remaining in state3 after publish");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
+
+        // publish stillness alert to particle
         Log.error("Stillness Alert!!");
-        number_of_alerts_published += 1;  // increment the number of alerts published
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
         hasStillnessAlertBeenSent = true;
-        state3_stillness_timer = millis();                     // reset the stillness timer
-        max_stillness_time = &state3_max_long_stillness_time;  // set to compare against the longer stillness threshold for the rest of this session
-        stateHandler = state3_stillness;
-    }
-    else if (millis() - state2_duration_timer >= state2_max_duration) {
-        Log.warn("duration alert, remaining in state3 after publish");
-        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(3, 4);
-        Log.error("Duration Alert!!");
-        number_of_alerts_published += 1;  // increment the number of alerts published
-        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
-        Particle.publish("Duration Alert", alertMessage, PRIVATE);
-        hasDurationAlertBeenSent = true;
-        state2_duration_timer = millis();
-        stateHandler = state3_stillness;
-    }
-    else {
-        // if we don't meet the exit conditions above, we remain here
-        // stateHandler = state3_stillness;
-    }
+        number_of_alerts_published += 1;  
 
-}  // end state3_stillness
+        // Reset stillness state timers and stay in state 3
+        state3_stillness_timer = millis();
+        stateHandler = state3_stillness;
+    }
+    // Send a follow-up stillness alert if the stillness duration exceeds the follow-up threshold
+    else if (hasStillnessAlertBeenSent && (millis() - state3_stillness_timer >= FOLLOWUP_STILLNESS_ALERT_THRESHOLD)) {
+        Log.warn("Follow-up stillness alert, remaining in state3 after publish");
+        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(3, 5);
+
+        // publish stillness alert to particle
+        Log.error("Stillness Alert!!");
+        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
+        Particle.publish("Stillness Alert", alertMessage, PRIVATE);
+        number_of_alerts_published += 1;  
+
+        // Reset stillness state timers and stay in state 3
+        state3_stillness_timer = millis(); 
+        stateHandler = state3_stillness;
+    }
+}
+
+// --------------- TODO FROM HERE ------------------
 
 void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue) {
     if (stateMachineDebugFlag) {
