@@ -22,32 +22,69 @@
 void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
     Particle.function("Force_Reset", force_reset);
+    Particle.function("Reset_State_To_Zero", reset_state_to_zero);
     Particle.function("Turn_Debugging_Publishes_On_Off", toggle_debugging_publishes);
     Particle.function("Change_Occupant_Detection_Timer", occupant_detection_timer_set);
     Particle.function("Change_Initial_Timer", initial_timer_set);
-    Particle.function("Change_Duration_Timer", duration_timer_set);
-    Particle.function("Change_Stillness_Timer", stillness_timer_set);
-    Particle.function("Change_Long_Stillness_Timer", long_stillness_timer_set);
+    Particle.function("Change_Duration_Threshold", duration_alert_threshold_set);
+    Particle.function("Change_Initial_Stillness_Threshold", initial_stillness_alert_threshold_set);
+    Particle.function("Change_Followup_Stillness_Threshold", followup_stillness_alert_threshold_set);
     Particle.function("Change_INS_Threshold", ins_threshold_set);
     Particle.function("Change_IM21_Door_ID", im21_door_id_set);
-    Particle.function("Reset_Stillness_Timer_For_Alerting_Session", reset_stillness_timer_for_alerting_session);
 }
 
-bool isValidIM21Id(String input) {
-    if (input.equals("")) {
-        return false;
-    }
+int force_reset(String command) {
+    // default to invalid input
+    int returnFlag = -1;
 
-    if (input.equals("e")) {
-        return true;
+    // string.toInt() returns 0 if it fails, so can't distinguish between user
+    // entering 0 vs entering bad input. So convert to char and use ascii table
+    const char* holder = command.c_str();
+
+    if (*(holder + 1) != 0) {
+        // any string longer than 1 char is invalid input, so
+        returnFlag = -1;
     }
-    else {
-        if (!(input.length() == 8)) {
-            return false;
+    else if (*holder == '1') {
+        returnFlag = 1;
+        bool msg_sent = Particle.publish("YOU SHALL NOT PANIC!!",
+                                         "Reset has begun so ignore the future particle "
+                                         "message about failure to call force_reset()",
+                                         PRIVATE | WITH_ACK);
+        if (msg_sent) {
+            System.reset();
         }
     }
+    else {
+        // anything else is bad input so
+        returnFlag = -1;
+    }
 
-    return true;
+    return returnFlag;
+}
+
+int reset_state_to_zero(String command) {
+    // default to invalid input
+    int returnFlag = -1;
+
+    const char* holder = command.c_str();
+
+    if (*(holder + 1) != 0) {
+        // any string longer than 1 char is invalid input
+        returnFlag = -1;
+    } else if (*holder == '1') {
+        returnFlag = 1;
+
+        // reset the state handler to point to state 0
+        stateHandler = state0_idle;
+
+        Particle.publish("State Reset", "State has been reset to 0.", PRIVATE | WITH_ACK);
+    } else {
+        // anything else is bad input
+        returnFlag = -1;
+    }
+
+    return returnFlag;
 }
 
 int toggle_debugging_publishes(String command) {
@@ -151,121 +188,121 @@ int initial_timer_set(String input) {
     return returnFlag;
 }
 
-// returns duration if valid input is given, otherwise returns -1
-int duration_timer_set(String input) {
+int duration_alert_threshold_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        returnFlag = state2_max_duration / 1000;
+        EEPROM.get(ADDR_DURATION_ALERT_THRESHOLD, duration_alert_threshold);
+        returnFlag = duration_alert_threshold / 1000;
     }
     // else parse new threshold
     else {
-        int timeout = input.toInt();
-        // increase timeout value to from seconds to ms
-        timeout = timeout * 1000;
+        int threshold = input.toInt();
+        // increase threshold value from seconds to ms
+        threshold = threshold * 1000;
 
-        if (timeout == 0) {
+        if (threshold == 0) {
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
         }
-        else if (timeout < 0) {
+        else if (threshold < 0) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_STATE2_MAX_DURATION, timeout);
-            state2_max_duration = timeout;
-            returnFlag = state2_max_duration / 1000;
+            EEPROM.put(ADDR_DURATION_ALERT_THRESHOLD, threshold);
+            duration_alert_threshold = threshold;
+            returnFlag = duration_alert_threshold / 1000;
         }
     }
-
     return returnFlag;
 }
 
-// returns stillness timer length if valid input is given, otherwise returns -1
-int stillness_timer_set(String input) {
+int initial_stillness_alert_threshold_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
-        returnFlag = state3_max_stillness_time / 1000;
+        EEPROM.get(ADDR_INITIAL_STILLNESS_ALERT_THRESHOLD, initial_stillness_alert_threshold);
+        returnFlag = initial_stillness_alert_threshold / 1000;
     }
     // else parse new threshold
     else {
-        int timeout = input.toInt();
-        // increase timeout value to from seconds to ms
-        timeout = timeout * 1000;
+        int threshold = input.toInt();
+        // increase threshold value from seconds to ms
+        threshold = threshold * 1000;
 
-        if (timeout == 0) {
+        if (threshold == 0) {
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
         }
-        else if (timeout < 0) {
+        else if (threshold < 0) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, timeout);
-            state3_max_stillness_time = timeout;
-            returnFlag = state3_max_stillness_time / 1000;
+            EEPROM.put(ADDR_INITIAL_STILLNESS_ALERT_THRESHOLD, threshold);
+            initial_stillness_alert_threshold = threshold;
+            returnFlag = initial_stillness_alert_threshold / 1000;
         }
     }
-
     return returnFlag;
 }
 
-// returns the previous length of the stillness timer
-int reset_stillness_timer_for_alerting_session(String input) {
-    int returnValue = -1;
-
-    if (hasDurationAlertBeenSent || hasStillnessAlertBeenSent) {
-        returnValue = (int)(millis() - state3_stillness_timer);
-        state3_stillness_timer = millis();
-    }
-
-    return returnValue;
-}
-
-// returns long stillness timer length if valid input is given, otherwise returns -1
-int long_stillness_timer_set(String input) {
+int followup_stillness_alert_threshold_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
-        returnFlag = state3_max_long_stillness_time / 1000;
+        EEPROM.get(ADDR_FOLLOWUP_STILLNESS_ALERT_THRESHOLD, followup_stillness_alert_threshold);
+        returnFlag = followup_stillness_alert_threshold / 1000;
     }
     // else parse new threshold
     else {
-        int timeout = input.toInt();
-        // increase timeout value to from seconds to ms
-        timeout = timeout * 1000;
+        int threshold = input.toInt();
+        // increase threshold value from seconds to ms
+        threshold = threshold * 1000;
 
-        if (timeout == 0) {
+        if (threshold == 0) {
             // string.toInt() returns 0 if input not an int
             // and a threshold value of 0 makes no sense, so return -1
             returnFlag = -1;
         }
-        else if (timeout < 0) {
+        else if (threshold < 0) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, timeout);
-            state3_max_long_stillness_time = timeout;
-            returnFlag = state3_max_long_stillness_time / 1000;
+            EEPROM.put(ADDR_FOLLOWUP_STILLNESS_ALERT_THRESHOLD, threshold);
+            followup_stillness_alert_threshold = threshold;
+            returnFlag = followup_stillness_alert_threshold / 1000;
+        }
+    }
+    return returnFlag;
+}
+
+// helper function
+bool isValidIM21Id(String input) {
+    if (input.equals("")) {
+        return false;
+    }
+
+    if (input.equals("e")) {
+        return true;
+    }
+    else {
+        if (!(input.length() == 8)) {
+            return false;
         }
     }
 
-    return returnFlag;
+    return true;
 }
 
 // returns threshold if valid input is given, otherwise returns -1
@@ -357,34 +394,4 @@ int im21_door_id_set(String command) {
 
     // return door ID as int
     return (int)strtol(buffer, NULL, 16);
-}
-
-int force_reset(String command) {
-    // default to invalid input
-    int returnFlag = -1;
-
-    // string.toInt() returns 0 if it fails, so can't distinguish between user
-    // entering 0 vs entering bad input. So convert to char and use ascii table
-    const char* holder = command.c_str();
-
-    if (*(holder + 1) != 0) {
-        // any string longer than 1 char is invalid input, so
-        returnFlag = -1;
-    }
-    else if (*holder == '1') {
-        returnFlag = 1;
-        bool msg_sent = Particle.publish("YOU SHALL NOT PANIC!!",
-                                         "Reset has begun so ignore the future particle "
-                                         "message about failure to call force_reset()",
-                                         PRIVATE | WITH_ACK);
-        if (msg_sent) {
-            System.reset();
-        }
-    }
-    else {
-        // anything else is bad input so
-        returnFlag = -1;
-    }
-
-    return returnFlag;
 }
