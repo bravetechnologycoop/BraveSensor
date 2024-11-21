@@ -25,7 +25,7 @@
 
 #include "vl53l5_platform.h"
 
-#define VL53L5_MAX_I2C_XFER_SIZE 1024
+#define VL53L5_MAX_I2C_XFER_SIZE 128
 static uint8_t buffer[VL53L5_MAX_I2C_XFER_SIZE + 2];/* GLOBAL I2C comm buff */
 
 static int8_t Linux_I2CRead(int64_t dev, uint8_t *buff, uint8_t len)
@@ -87,13 +87,13 @@ uint8_t VL53L5CX_RdByte(
 		uint8_t *p_value)
 {
 	uint8_t err = VL53L5CX_RdMulti(p_platform, RegisterAdress, p_value, 1);
-	char tempstr[32] = "Failed to Read";
+	/*char tempstr[32] = "Failed to Read";
 
 	if (0 == err){
-		sprintf(tempstr, "i2cRead  %04x %02x", RegisterAdress, *p_value);
+		//sprintf(tempstr, "i2cRead  %04x %02x", RegisterAdress, *p_value);
 	} 
 
-	bDebug(TRACE, tempstr);
+	bDebug(TRACE, tempstr);*/
 
 	return err;
 }
@@ -103,10 +103,10 @@ uint8_t VL53L5CX_WrByte(
 		uint16_t RegisterAdress,
 		uint8_t value)
 {
-	char  tempstr[32];
+	//char  tempstr[32];
 
-	sprintf(tempstr, "i2cWrite %04x %02x", RegisterAdress, value);
-	bDebug(TRACE, tempstr);
+	//sprintf(tempstr, "i2cWrite %04x %02x", RegisterAdress, value);
+	//bDebug(TRACE, tempstr);
 	uint8_t err = VL53L5CX_WrMulti(p_platform, RegisterAdress, (uint8_t *) &value, 1);
 
 	if (0 != err){
@@ -123,21 +123,42 @@ uint8_t VL53L5CX_WrMulti(
 		uint32_t size)
 {	
 	uint8_t Status = 0;
+	uint8_t * ptr = p_values;
+	uint32_t buff_left = size;
+	uint8_t to_send = VL53L5_MAX_I2C_XFER_SIZE;
+	uint16_t block_address = RegisterAdress;
+	char tmpStr[64];
+	uint32_t block = 0;
 
-	if ((size + 1) > VL53L5_MAX_I2C_XFER_SIZE){
-		bDebug(ERROR, "Write exceeded maximum size at: " + to_string(size));
-		return -1;
+	block = size/VL53L5_MAX_I2C_XFER_SIZE;
+	if (size%VL53L5_MAX_I2C_XFER_SIZE) block++;
+	sprintf(tmpStr, "Expected Blocks %X from buf size of %X", block, size);
+	//bDebug(TRACE, tmpStr);
+	block = 0;
+
+	while (0 < buff_left){
+		buffer[0] = block_address >> 8;
+		buffer[1] = block_address & 0xFF;
+
+		if (VL53L5_MAX_I2C_XFER_SIZE > buff_left){
+			to_send = buff_left;
+		}
+
+		memcpy(&buffer[2], ptr, to_send);
+		ptr += to_send;
+		buff_left -= to_send;
+		sprintf(tmpStr, "Writing block: %X %02X bytes to %02X%02X", block, to_send, buffer[0], buffer[1]);
+		//bDebug(TRACE, tmpStr);
+		block++;
+		block_address += to_send;
+		
+		Status = Linux_I2CWrite(p_platform->i2c_hdl, buffer, (to_send + 2));
+
+		if (0 != Status){
+			bDebug(ERROR, "Failed to Write");
+			break;
+		}
 	}
-	buffer[0] = RegisterAdress >> 8;
-	buffer[1] = RegisterAdress & 0xFF;
-
-	memcpy(&buffer[2], p_values, size);
-	Status = Linux_I2CWrite(p_platform->i2c_hdl, buffer, (size + 2));
-
-	if (0 != Status){
-		bDebug(ERROR, "Failed to Write");
-	}
-
 	return Status;
 }
 
@@ -148,31 +169,36 @@ uint8_t VL53L5CX_RdMulti(
 		uint32_t size)
 {
 	uint8_t Status = 0;
+	uint32_t position = 0;
+	uint32_t to_read = 0;
+	char tmpstr[64];
 	
-	if ((size + 1) > VL53L5_MAX_I2C_XFER_SIZE){
-		bDebug(ERROR, "Read Bounds exceeded");
-		return -1;
-	}
-
-	buffer[0] = RegisterAdress >> 8;
-	buffer[1] = RegisterAdress & 0xFF;
-
-	Status = Linux_I2CWrite(p_platform->i2c_hdl, (uint8_t *) buffer, (uint8_t) 2);
-	if (0 == Status) {
-		p_values[0] = RegisterAdress;
-		Status = Linux_I2CRead(p_platform->i2c_hdl, p_values, size);
-		if (0 == Status){
-			cout << "Reading i2c ";
-			for (uint32_t i = 0; (i < size); i++){
-				cout <<  to_string(p_values[i]) << " ";
+	for (position = 0; position < size; position += VL53L5_MAX_I2C_XFER_SIZE){
+		to_read = size;
+		if (size > VL53L5_MAX_I2C_XFER_SIZE){
+			to_read = VL53L5_MAX_I2C_XFER_SIZE;
+			if ((position + VL53L5_MAX_I2C_XFER_SIZE) > size){
+				to_read = size - position;
 			}
-			cout << "\n";
-		} else {
-			bDebug(ERROR, "Failed to Read");
 		}
-	} else {
-		bDebug(ERROR, "Failed to setup the write");
+
+		//set-up the read
+		buffer[0] = (RegisterAdress + position) >> 8;
+		buffer[1] = (RegisterAdress + position) & 0xFF;
+		sprintf(tmpstr, "Setting read from %02X%02X", buffer[0], buffer[1]);
+		//bDebug(TRACE, tmpstr);
+		Status = Linux_I2CWrite(p_platform->i2c_hdl, (uint8_t *)buffer, (uint8_t)2);
+		if (0 != Status){
+			bDebug(ERROR, "Failed to set the read");
+			break;
+		}
+		Status = Linux_I2CRead(p_platform->i2c_hdl, p_values + position, to_read);
+		if (0 != Status){
+			bDebug(ERROR, "Failed to read block");
+			break;
+		}
 	}
+
 	return Status;
 }
 
@@ -182,7 +208,6 @@ uint8_t VL53L5CX_Reset_Sensor(
 	uint8_t status = 0;
 	
 	/* (Optional) Need to be implemented by customer. This function returns 0 if OK */
-	
 	/* Set pin LPN to LOW */
 	/* Set pin AVDD to LOW */
 	/* Set pin VDDIO  to LOW */

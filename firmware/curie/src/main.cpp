@@ -15,9 +15,11 @@
 #include <smbInterface.h>
 #include <gpioInterface.h>
 #include <serialib.h>
+#include <thread>
 
 
 using namespace std;
+bool g_loop;
 
 thermalCamera * g_sourceThermalCamera = NULL;
 lidarL1 * g_sourceLidarL1 = NULL;
@@ -134,14 +136,26 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	return err;
 }
 
+void spiThread()
+{
+	while (g_loop){
+		if (g_loop){
+			bDebug(TRACE, "spiThread Sleep");
+			sleep(10);
+		}
+	}
+
+}
+
 int main()
 {
 	bDebug(INFO, "Starting Data Gathering");
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
-    bool loop = true;
-	int tmpcount = 99;
+	int count = 2;
     int err = OK;
+	thread * boronListener;
+	g_loop = true;
     try{
         
         if (OK != initiateBusses()){
@@ -158,25 +172,32 @@ int main()
 
 		pInterface->openDB();
 
+		//start child thread
+		boronListener = new thread(spiThread);
+
 		//main execution loop
-		usleep(SLEEP_TIMER_MS);
-		while (loop){
+		while (g_loop){
 			err = pInterface->writeTables();
 			if (OK != err){
 				bDebug(ERROR, "Failed to writeTables Bailing");
-				loop = false;
+				g_loop = false;
 			}
 
-			tmpcount--;
-			if (!tmpcount){
-				loop = false;
-			} 
+			if (0 < count){  //set count to -1 to loop forever
+				count--;
+				if (!count){
+					g_loop = false;
+				} 
+			}
 
-			if (loop){
+			if (g_loop){
 				bDebug(TRACE, "Loop Sleep");
 				sleep(LOOP_TIMER);
 			}
 		};
+
+		//wait for the thread to complete
+		boronListener->join();
 
 		//cleanup
 		delete pInterface;
