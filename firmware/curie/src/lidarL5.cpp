@@ -24,7 +24,7 @@ lidarL5::lidarL5(int i2cBus, int i2cAddress){
             bDebug(ERROR, "Failed to initialize the device");
         }
     }
-    
+    setTableParams();
 }
 
 lidarL5::~lidarL5(){
@@ -49,13 +49,17 @@ int lidarL5::getData(string * sqlTable, std::vector<string> * vData){
         if (!err) {
             char tmpstr[128];
             for (int i = 0; i < 16; i++){
-
+                string s = "";
                 //status of 5 and 9 are good, others are not great.
                 sprintf(tmpstr, "Zone :  %3d, Status: %3u, Targets: %2u, Distance : %4d mm", 
                     i, 
                     Results.target_status[VL53L5CX_NB_TARGET_PER_ZONE*i], 
                     Results.nb_target_detected[i],
                     Results.distance_mm[VL53L5CX_NB_TARGET_PER_ZONE*i]);
+                
+                s += "ARRAY[" + to_string(Results.target_status[VL53L5CX_NB_TARGET_PER_ZONE*i]) + "," + to_string(Results.nb_target_detected[i]) + "," + to_string(Results.distance_mm[VL53L5CX_NB_TARGET_PER_ZONE*i]) + "]";
+                vData->push_back(s);
+
                 bDebug(TRACE, tmpstr);
             }
         }
@@ -85,12 +89,9 @@ int lidarL5::setTableParams(){
 
     try {
 
-        for (int i = 0; i < 64; ++i) 
+        for (int i = 0; i < 16; ++i) 
         {
-           // char[32] 
-             string szType = "col" + to_string(i);
-           // bDebug(TRACE, szType);
-            this->dbParams.emplace_back(szType, "float8");
+            this->dbParams.emplace_back("zone" + to_string(i), "int[]");
         }
         
     }
