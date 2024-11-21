@@ -140,7 +140,7 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
     bool loop = true;
-	int tmpcount = 2;
+	int tmpcount = 99;
     int err = OK;
     try{
         
@@ -159,7 +159,7 @@ int main()
 		pInterface->openDB();
 
 		//main execution loop
-		
+		usleep(SLEEP_TIMER_MS);
 		while (loop){
 			err = pInterface->writeTables();
 			if (OK != err){

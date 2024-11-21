@@ -187,9 +187,13 @@ int postgresInterface::writeTables(){
         for (dataSource * dS : this->dataVector){
             string sqlTable = "";
             std::vector<string>  vData;
-            dS->getData(&sqlTable, &vData);
-            bDebug(TRACE, "Data found for table: " + sqlTable + " about to write..");
-            writeVectorSQL(sqlTable, vData);
+            
+            if(dS->getData(&sqlTable, &vData) != SENSOR_FAULT){
+                bDebug(TRACE, "Data found for table: " + sqlTable + " about to write..");
+                writeVectorSQL(sqlTable, vData);
+            } else {
+                bDebug(TRACE, "Bad data for table: " + sqlTable + " will not write to database.");
+            }
         }
     } else {
         bDebug(ERROR, "dataVector is empty");

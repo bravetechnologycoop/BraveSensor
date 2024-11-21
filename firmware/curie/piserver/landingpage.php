@@ -35,7 +35,7 @@ try {
         $stmt->bindParam(':new_count', $new_count);
         $stmt->execute();
     }
-    $stmt = $pdo->prepare("SELECT count, epochtime FROM counter ORDER BY epochtime DESC LIMIT 5");
+    $stmt = $pdo->prepare("SELECT count, epochtime FROM counter ORDER BY epochtime DESC LIMIT 1");
     $stmt->execute();
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $current_count = $row['count'];
@@ -48,7 +48,7 @@ try {
     $table_data = null;
     if (isset($_POST['table'])) {
         $selected_table = $_POST['table'];
-        $stmt = $pdo->prepare("SELECT * FROM $selected_table LIMIT 10");
+        $stmt = $pdo->prepare("SELECT * FROM $selected_table ORDER BY epochtime DESC LIMIT 10");
         $stmt->execute();
         $table_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
