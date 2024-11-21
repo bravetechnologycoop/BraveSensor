@@ -272,6 +272,12 @@ void state2_monitoring() {
     }
 }
 
+/*
+ * State 3 - Stillness 
+ * This state is entered when the door is closed and stillness is detected.
+ * The system monitors the stillness duration.
+ * Sends a stillness alert if the stillness duration exceeds a threshold.
+ */
 void state3_stillness() {
     // Scan inputs
     doorData checkDoor = checkIM();
@@ -346,7 +352,7 @@ void state3_stillness() {
 
 void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue) {
     if (stateMachineDebugFlag) {
-        // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
+        // From particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char stateTransition[622];
         snprintf(stateTransition, sizeof(stateTransition),
                  "{"
@@ -366,7 +372,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
             stateMachineDebugFlag = false;
         }
         else if ((millis() - lastDebugPublish) > DEBUG_PUBLISH_INTERVAL) {
-            // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
+            // From particle docs, max length of publish is 622 chars, I am assuming this includes null char
             char debugMessage[622];
             snprintf(debugMessage, sizeof(debugMessage),
                      "{"
@@ -375,10 +381,8 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
                         "\"INS_val\":\"%f\", "
                         "\"INS_threshold\":\"%lu\", "
                         "\"time_in_curr_state\":\"%lu\", "
-
                         "\"occupant_detection_timer\":\"%lu\", "
                         "\"initial_countdown_timer\":\"%lu\", "
-
                         "\"duration_alert_threshold\":\"%lu\", "
                         "\"initial_stillness_threshold\":\"%lu\", "
                         "\"followup_stillness_threshold\":\"%lu\""
@@ -411,8 +415,6 @@ void saveStateChangeOrAlert(int state, int reason) {
     timeQueue.push(millis() - lastStateChangeOrAlert);
     lastStateChangeOrAlert = millis();
 }
-
-// ------------------------------------------------------------------------------------------------
 
 const char *resetReasonString(int resetReason) {
     switch (resetReason) {
@@ -448,19 +450,24 @@ const char *resetReasonString(int resetReason) {
 void getHeartbeat() {
     static unsigned long lastHeartbeatPublish = 0;
 
-    // 1st "if condition" is so that the boron publishes a heartbeat on startup
-    // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true.
-    //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 because the IM Door Sensor broadcasts 3
-    //     messages The doorMessageReceivedFlag is set to true when any IM Door Sensor message is received, but only after a certain threshold
-    // 3rd "if condition" is true only if a heartbeat hasnt been published in the last SM_HEARTBEAT_INTERVAL
-    if (lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && ((millis() - doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY)) ||
+    // Publish a heartbeat message if:
+    // 1. This is the first heartbeat since startup.
+    // 2. A door message was received and enough time has passed since the last door heartbeat.
+    // 3. The heartbeat hasn't been published in the last SM_HEARTBEAT_INTERVAL.
+    if (lastHeartbeatPublish == 0 || 
+        (doorMessageReceivedFlag && ((millis() - doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY)) ||
         (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) {
+        
         // Check INS value
         filteredINSData checkINS = checkINS3331();
         bool isINSZero = (checkINS.iAverage < 0.0001);
+
+        // Queue to track missed door events
         static unsigned int didMissQueueSum = 0;
         static std::queue<bool> didMissQueue;
-        // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
+
+        // Prepare the heartbeat message
+        // From particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char heartbeatMessage[622] = {0};
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
         writer.beginObject();
@@ -468,56 +475,56 @@ void getHeartbeat() {
         // Add "isINSZero" field to the JSON message
         writer.name("isINSZero").value(isINSZero && lastHeartbeatPublish > 0);
 
-        // sends consecutive heartbeat count to server side to be handled
+        // Add consecutive open door heartbeat count
         writer.name("consecutiveOpenDoorHeartbeatCount").value(consecutiveOpenDoorHeartbeatCount);
 
+        // Manage the queue of missed door events
         if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
-            // if oldest value did miss; subtract from the current amount
+            // If oldest value did miss; subtract from the current amount
             if (didMissQueue.front()) {
                 didMissQueueSum--;
             }
             didMissQueue.pop();
         }
-        // store the value of missedDoorEventCount at this instant then reset it;
-        // it is possible for the value to change during the execution of this function
+
+        // Store the current missed door event count and reset it
+        // It is possible for the value to change during the execution of this function
         int instantMissedDoorEventCount = missedDoorEventCount;
         missedDoorEventCount = 0;
 
-        // logs number of instances of missed door events since last heartbeat
+        // Log the number of missed door events since the last heartbeat
         writer.name("doorMissedMsg").value(instantMissedDoorEventCount);
 
+        // Update the missed door events queue
         bool didMiss = instantMissedDoorEventCount > 0;
-        didMissQueueSum += (int)didMiss;  // if did miss; add 1 to the current amount
-        didMissQueue.push(didMiss);       // enqueue whether this heartbeat did miss
-        // logs whether or not sensor is frequently missing door events
+        didMissQueueSum += (int)didMiss;
+        didMissQueue.push(didMiss);
+
+        // Logs whether or not sensor is frequently missing door events
         writer.name("doorMissedFrequently").value(didMissQueueSum > SM_HEARTBEAT_DID_MISS_THRESHOLD);
 
+        // Log the time since the last door message, battery status, and tamper status
         if (doorLastMessage == 0) {
-            // Haven't seen any door messages since the device last restarted so all of these are unknown at this point
             writer.name("doorLastMessage").value(-1);
             writer.name("doorLowBatt").value(-1);
             writer.name("doorTampered").value(-1);
-        }
-        else {
-            // logs time in milliseconds since last IM Door Sensor message was received
+        } else {
             writer.name("doorLastMessage").value((unsigned int)(millis() - doorLastMessage));
-
             writer.name("doorLowBatt").value(doorLowBatteryFlag);
-
             writer.name("doorTampered").value(doorTamperedFlag);
         }
 
-        // logs the reason of the last reset
+        // Log the reason for the last reset
         writer.name("resetReason").value(resetReasonString(resetReason));
 
-        // subsequent heartbeats will not display reset reason
+        // Subsequent heartbeats will not display the reset reason
         resetReason = RESET_REASON_NONE;
 
-        // logs each state, reason of transitioning away, and time spent in state (ms)
+        // Log the state transition history
         writer.name("states").beginArray();
         int numStates = stateQueue.size();
         for (int i = 0; i < numStates; i++) {
-            // If heartbeat message is near full, break, report rest of states in next heartbeat
+            // If the heartbeat message is near full, break and report the rest of the states in the next heartbeat
             if (writer.dataSize() >= HEARTBEAT_STATES_CUTOFF) {
                 Log.warn("Heartbeat message full, remaining states will be reported next heartbeat");
                 break;
@@ -526,11 +533,15 @@ void getHeartbeat() {
             stateQueue.pop();
             reasonQueue.pop();
             timeQueue.pop();
-        }                    // end states queue for
-        writer.endArray();   // end states array
-        writer.endObject();  // end heartbeat message
+        }
+        writer.endArray();   // End states array
+        writer.endObject();  // End heartbeat message
+
+        // Publish the heartbeat message to particle
         Particle.publish("Heartbeat", heartbeatMessage, PRIVATE);
         Log.warn(heartbeatMessage);
+
+        // Update the last heartbeat publish time
         lastHeartbeatPublish = millis();
         doorMessageReceivedFlag = false;
     }
