@@ -17,16 +17,12 @@
 
 // initial (default) values for state machine, can be changed via console function
 // or by writing something other than 0x8888 to the above flag in flash 
-#define INS_THRESHOLD                   60
-#define STATE0_OCCUPANT_DETECTION_TIMER 172800000  // 2 days
-#define STATE1_MAX_TIME                 15000      // ms = 15s
-
-// Duration alert threshold (used in state 2)
-#define DURATION_ALERT_THRESHOLD        1800000    // ms = 30 minutes          
-
-// Stillness alert thresholds (used in state 3)
-#define INITIAL_STILLNESS_ALERT_THRESHOLD 300000   // ms = 5 minutes
-#define FOLLOWUP_STILLNESS_ALERT_THRESHOLD 180000  // ms = 3 minutes
+#define INS_THRESHOLD                       60         
+#define STATE0_OCCUPANT_DETECTION_TIMER     172800000   // ms = 2 days
+#define STATE1_MAX_TIME                     15000       // ms = 15 secs
+#define DURATION_ALERT_THRESHOLD            1800000     // ms = 30 mins          
+#define INITIAL_STILLNESS_ALERT_THRESHOLD   300000      // ms = 5 mins
+#define FOLLOWUP_STILLNESS_ALERT_THRESHOLD  180000      // ms = 3 mins
 
 // ----------------------------------------------------------------------------
 
@@ -83,7 +79,9 @@ extern unsigned long state3_stillness_timer;
 extern unsigned long ins_threshold;
 extern unsigned long state0_occupant_detection_timer;
 extern unsigned long state1_max_time;
-extern unsigned long state2_max_duration;
+unsigned long duration_alert_threshold;
+unsigned long initial_stillness_alert_threshold;
+unsigned long followup_stillness_alert_threshold; 
 
 // whether or not the current session has sent alerts
 extern bool hasDurationAlertBeenSent;

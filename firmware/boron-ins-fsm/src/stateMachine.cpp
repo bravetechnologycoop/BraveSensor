@@ -24,6 +24,9 @@ unsigned long state3_stillness_timer;
 unsigned long ins_threshold = INS_THRESHOLD;
 unsigned long state0_occupant_detection_timer = STATE0_OCCUPANT_DETECTION_TIMER;
 unsigned long state1_max_time = STATE1_MAX_TIME;
+unsigned long duration_alert_threshold = DURATION_ALERT_THRESHOLD;
+unsigned long initial_stillness_alert_threshold = INITIAL_STILLNESS_ALERT_THRESHOLD;
+unsigned long followup_stillness_alert_threshold = FOLLOWUP_STILLNESS_ALERT_THRESHOLD;
 
 // Flags to track if alerts have been sent
 bool hasDurationAlertBeenSent;
@@ -67,6 +70,9 @@ void initializeStateMachineConsts() {
     if (initializeConstsFlag != INITIALIZE_STATE_MACHINE_CONSTS_FLAG) {
         EEPROM.put(ADDR_INS_THRESHOLD, ins_threshold);
         EEPROM.put(ADDR_STATE1_MAX_TIME, state1_max_time);
+        EEPROM.put(ADDR_DURATION_ALERT_THRESHOLD, duration_alert_threshold);
+        EEPROM.put(ADDR_INITIAL_STILLNESS_ALERT_THRESHOLD, initial_stillness_alert_threshold);
+        EEPROM.put(ADDR_FOLLOWUP_STILLNESS_ALERT_THRESHOLD, followup_stillness_alert_threshold);
         initializeConstsFlag = INITIALIZE_STATE_MACHINE_CONSTS_FLAG;
         EEPROM.put(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
         Log.info("State machine constants were written to flash on bootup.");
@@ -74,10 +80,13 @@ void initializeStateMachineConsts() {
     else {
         EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
         EEPROM.get(ADDR_STATE1_MAX_TIME, state1_max_time);
+        EEPROM.get(ADDR_DURATION_ALERT_THRESHOLD, duration_alert_threshold);
+        EEPROM.get(ADDR_INITIAL_STILLNESS_ALERT_THRESHOLD, initial_stillness_alert_threshold);
+        EEPROM.get(ADDR_FOLLOWUP_STILLNESS_ALERT_THRESHOLD, followup_stillness_alert_threshold);
         Log.info("State machine constants were read from flash on bootup.");
     }
 
-    // Seperate initialization for State 0 Window
+    // Separate initialization for State 0 Window
     EEPROM.get(ADDR_INITIALIZE_STATE0_OCCUPANT_DETECTION_TIMER_FLAG, initializeState0OccupationDetectionFlag);
     Log.info("state machine constant State0OccupationDetectionFlag is 0x%04X", initializeState0OccupationDetectionFlag);
 
@@ -245,7 +254,7 @@ void state2_monitoring() {
         stateHandler = state0_idle;
     }
     // Send a duration alert if it hasn't been sent yet and the duration exceeds the threshold
-    else if (!hasDurationAlertBeenSent && (millis() - timeWhenDoorClosed >= DURATION_ALERT_THRESHOLD)) {
+    else if (!hasDurationAlertBeenSent && (millis() - timeWhenDoorClosed >= duration_alert_threshold)) {
         Log.warn("Sending duration alert and continuing to monitor for stillness in state2_monitoring");
         publishStateTransition(2, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 4);
@@ -307,7 +316,7 @@ void state3_stillness() {
         stateHandler = state0_idle;
     }
     // Send a stillness alert if the stillness duration exceeds the initial threshold
-    else if (!hasStillnessAlertBeenSent && timeInState3 >= INITIAL_STILLNESS_ALERT_THRESHOLD) {
+    else if (!hasStillnessAlertBeenSent && timeInState3 >= initial_stillness_alert_threshold) {
         Log.warn("Initial stillness alert, remaining in state3 after publish");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
@@ -324,7 +333,7 @@ void state3_stillness() {
         stateHandler = state3_stillness;
     }
     // Send a follow-up stillness alert if the stillness duration exceeds the follow-up threshold
-    else if (hasStillnessAlertBeenSent && timeInState3 >= FOLLOWUP_STILLNESS_ALERT_THRESHOLD) {
+    else if (hasStillnessAlertBeenSent && timeInState3 >= followup_stillness_alert_threshold) {
         Log.warn("Follow-up stillness alert, remaining in state3 after publish");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
