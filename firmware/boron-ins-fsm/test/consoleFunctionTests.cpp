@@ -6,9 +6,6 @@
 #include "../src/stateMachine.h"
 
 IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
-unsigned long state3_stillness_timer;
-bool hasDurationAlertBeenSent;
-bool hasStillnessAlertBeenSent;
 
 SCENARIO("Force_Reset", "[force reset]") {
     GIVEN("Any possible scenario") {

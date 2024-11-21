@@ -12,6 +12,7 @@
 #include "mocks/mock_ble.h"
 #include "mocks/mock_logging.h"
 #include "mocks/mock_ticks.h"
+#include "mocks/mock_stateMachine.h" 
 
 // Particle.h library include files
 // Copied from local Particle toolchain files
@@ -28,11 +29,3 @@ MockSystem System;
 MockLogger Log;
 MockBLE BLE;
 
-bool stateMachineDebugFlag;
-unsigned long debugFlagTurnedOnAt;
-long unsigned state0_occupant_detection_timer;
-long unsigned state1_max_time;
-long unsigned state2_max_duration;
-long unsigned state3_max_stillness_time;
-long unsigned state3_max_long_stillness_time;
-long unsigned ins_threshold;
