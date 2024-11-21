@@ -138,16 +138,27 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	return err;
 }
 
-void spiThread()
+void spiRxThread()
 {
 	while (g_loop){
 		g_interthreadMutex.lock();
 		this_thread::sleep_for(10s);
 		bDebug(TRACE, "Spi is doing stuff");
+		//busy wait reading from SPI until you get data
+		//read blob from SPI
+		//push blob into boronSensor->parseData(uint8_t* data)
 		g_interthreadMutex.unlock();
 		this_thread::sleep_for(20s);
 	}
 
+}
+
+void spiTxThread(){
+	while (g_loop){
+		this_thread::sleep_for(120s);
+		//send your data over the SPI TX line
+		// 0x0d 0x00 [uint8_t]^n 0x0d 0x00
+	}
 }
 
 int main()
@@ -176,7 +187,7 @@ int main()
 		pInterface->openDB();
 
 		//start child thread
-		boronListener = new thread(spiThread);
+		boronListener = new thread(spiRxThread);
 
 		//main execution loop
 		while (g_loop){
