@@ -20,7 +20,7 @@ unsigned long state1_timer;
 unsigned long state2_monitoring_timer;
 unsigned long state3_stillness_timer;
 
-// State machine constants with default values
+// State machine constants
 unsigned long ins_threshold = INS_THRESHOLD;
 unsigned long state0_occupant_detection_timer = STATE0_OCCUPANT_DETECTION_TIMER;
 unsigned long state1_max_time = STATE1_MAX_TIME;
@@ -118,8 +118,10 @@ void state0_idle() {
     }
 
     // Scan inputs
-    doorData checkDoor = checkIM();
-    filteredINSData checkINS = checkINS3331();
+    doorData checkDoor;
+    filteredINSData checkINS;
+    checkDoor = checkIM();
+    checkINS = checkINS3331();
 
     // Reset alert flags and initialize variables
     hasDurationAlertBeenSent = false;
@@ -136,7 +138,7 @@ void state0_idle() {
     unsigned long timeInState0 = millis() - timeWhenDoorClosed;
 
     // Log current state
-    Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f", checkDoor.doorStatus, checkINS.iAverage);
+    Log.info("State 0 (Idle): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
     publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, timeInState0);
 
     // Check state transition conditions

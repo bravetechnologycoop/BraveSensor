@@ -287,24 +287,6 @@ int followup_stillness_alert_threshold_set(String input) {
     return returnFlag;
 }
 
-// helper function
-bool isValidIM21Id(String input) {
-    if (input.equals("")) {
-        return false;
-    }
-
-    if (input.equals("e")) {
-        return true;
-    }
-    else {
-        if (!(input.length() == 8)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 // returns threshold if valid input is given, otherwise returns -1
 int ins_threshold_set(String input) {
     int returnFlag = -1;
@@ -336,6 +318,24 @@ int ins_threshold_set(String input) {
     }
 
     return returnFlag;
+}
+
+// helper function
+bool isValidIM21Id(String input) {
+    if (input.equals("")) {
+        return false;
+    }
+
+    if (input.equals("e")) {
+        return true;
+    }
+    else {
+        if (!(input.length() == 8)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 // particle console function to get/set door sensor ID
