@@ -166,7 +166,7 @@ int main()
 	bDebug(INFO, "Starting Data Gathering");
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
-	int count = 10;
+	int count = -1;
     int err = OK;
 	thread * boronListener;
 	g_loop = true;
