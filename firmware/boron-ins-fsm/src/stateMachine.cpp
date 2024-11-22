@@ -389,7 +389,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
                      "}",
                      state, doorStatus, INSValue, ins_threshold, state_timer, 
                      state0_occupant_detection_timer, state1_max_time, 
-                     DURATION_ALERT_THRESHOLD, INITIAL_STILLNESS_ALERT_THRESHOLD, FOLLOWUP_STILLNESS_ALERT_THRESHOLD);
+                     duration_alert_threshold, initial_stillness_alert_threshold, followup_stillness_alert_threshold);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
         }

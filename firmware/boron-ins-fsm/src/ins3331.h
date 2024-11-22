@@ -6,6 +6,8 @@
 #ifndef INS3331_H
 #define INS3331_H
 
+#include "Particle.h" 
+
 //***************************macro defines******************************
 
 #define SerialRadar Serial1  // Used for communication with the radar, Serial connection using TX,RX pins

@@ -53,7 +53,7 @@ void getHeartbeat();
 // state functions, called by stateHandler
 void state0_idle();
 void state1_countdown();
-void state2_montioring();
+void state2_monitoring();
 void state3_stillness();
 
 void publishDebugMessage(int, unsigned char, float, unsigned long);

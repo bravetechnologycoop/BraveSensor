@@ -6,6 +6,8 @@
 #ifndef IM_DOOR_H
 #define IM_DOOR_H
 
+#include "Particle.h" 
+
 //*************************global macro defines**********************************
 // ascii table goes up to 7F, so pick something greater than that
 // which is also unlikely to be part of a door ID or a threshold/timer const
