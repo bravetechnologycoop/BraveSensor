@@ -16,6 +16,7 @@ the code was deployed.
 
 ### Added
 
+- Added search bar for clients and locations in the dashboard (CU-86dup4jg7).
 - Added migration script to update device_type_enum to handle multistall and singlestall sensors separately (CU-86duvwbq2).
 - Added dashboard functionality for submit new location and edit location to handle different device_types using dropdown (CU-86duvwbq2).
 - Added new integration tests for inserting a multi-stall sensor and editing single-stall to multi-stall (CU-86duvwbq2).
