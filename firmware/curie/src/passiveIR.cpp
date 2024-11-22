@@ -36,6 +36,9 @@ int passiveIR::getData(string * sqlTable, std::vector<string> * vData){
         bDebug(TRACE, ("Pin Value :" + to_string((int)data)));
         vData->push_back("'" + to_string((int)data) + "'");
     }
+    else {
+        err = SENSOR_FAULT;
+    }
     
 
 

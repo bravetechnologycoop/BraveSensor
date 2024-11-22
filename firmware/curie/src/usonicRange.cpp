@@ -72,7 +72,7 @@ int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
             vData->push_back(to_string((int)range));
             break;
         } else if (i >= MAX_USONIC_READ_ATTEMPTS - 1){
-            bDebug(TRACE, "usonic read failed, sending -1...");
+            bDebug(TRACE, "usonic read failed");
             vData->push_back("-1");
         }
     }

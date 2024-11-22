@@ -68,8 +68,8 @@ int co2Telaire::getData(string * sqlTable, std::vector<string> * vData){
         bDebug(TRACE, "CO2 PPM: " + to_string(rawGas));
         vData->push_back(to_string(rawGas));
     } else {
-        vData->push_back("-1");
-        bDebug(ERROR, "Something went wrong");
+        err = SENSOR_FAULT;
+        bDebug(ERROR, "Something went wrong, sending SENSOR_FAULT");
     }
    
     

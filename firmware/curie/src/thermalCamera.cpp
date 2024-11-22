@@ -43,18 +43,30 @@ int thermalCamera::getData(string * sqlTable, std::vector<string> * vData){
 
     this->getTempData();
     int cell = 0;
+    int flag = 0;
+    bool exitLoops = false;
     for (int i = 0; i < 24; i++){
         string szTempOutput = "Line " + to_string(i);
         for (int j = 0; j < 32; j++){
             szTempOutput += " " + to_string(this->mlx90640To[cell]);
             vData->push_back(to_string(this->mlx90640To[cell]));
             cell++;
+            if(this->mlx90640To[cell] == 0.0f){
+                flag++;
+                if(flag > (j/2) && j >= 20)
+                {
+                    bDebug(TRACE, "Thermal Camera bad data, sending SENSOR_FAULT");
+                    vData->clear();
+                    err = SENSOR_FAULT;
+                    exitLoops = true;
+                    break;
+                }
+            }
         }
-    //    bDebug(TRACE, szTempOutput);
+        if(exitLoops){
+            break;
+        }
     }
-
-    //in some sort of loop or process
-    //vData->push_back("Moooooo");
 
 
     return err;

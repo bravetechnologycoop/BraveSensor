@@ -53,16 +53,14 @@ int co2SCD30::getData(string * sqlTable, std::vector<string> * vData){
     *sqlTable = CO2_SQL_TABLE;
 
     err = scd30_blocking_read_measurement_data(&(this->co2_concentration), &(this->temperature), &(this->humidity));
-    if (0 <= err) {
-        bDebug(TRACE, "SCD30 co2 t h: " + to_string(this->co2_concentration) + " " + to_string(this->temperature) + " " + to_string(this->humidity));
+    bDebug(TRACE, "SCD30 co2 t h: " + to_string(this->co2_concentration) + " " + to_string(this->temperature) + " " + to_string(this->humidity));
+    if (0 <= err && this->co2_concentration != 0.0f) {
         vData->push_back(to_string(this->co2_concentration));
         vData->push_back(to_string(this->temperature));
         vData->push_back(to_string(this->humidity));
     } else {
         bDebug(ERROR, "Failed to read");
-        vData->push_back("-1");
-        vData->push_back("-1");
-        vData->push_back("-1");
+        err = SENSOR_FAULT;
     }
    
     

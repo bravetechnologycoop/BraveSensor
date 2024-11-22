@@ -285,6 +285,8 @@ async function renderLocationEditPage(req, res) {
             selected: client.id === location.client.id,
           }
         }),
+      isSingleStallSelected: location.deviceType === 'SENSOR_SINGLESTALL',
+      isMultiStallSelected: location.deviceType === 'SENSOR_MULTISTALL',
     }
 
     res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
@@ -360,6 +362,7 @@ async function renderClientDetailsPage(req, res) {
           return {
             name: location.displayName,
             id: location.id,
+            deviceType: location.deviceType,
             sessionStart: location.sessionStart,
             isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
             isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
@@ -548,7 +551,7 @@ async function submitEditClient(req, res) {
   }
 }
 
-const validateNewLocation = Validator.body(['locationid', 'displayName', 'serialNumber', 'phoneNumber', 'clientId']).trim().notEmpty()
+const validateNewLocation = Validator.body(['locationid', 'displayName', 'serialNumber', 'phoneNumber', 'clientId', 'deviceType']).trim().notEmpty()
 
 async function submitNewLocation(req, res) {
   try {
@@ -584,6 +587,7 @@ async function submitNewLocation(req, res) {
         data.serialNumber,
         data.phoneNumber,
         data.clientId,
+        data.deviceType,
       )
 
       res.redirect(`/locations/${newLocation.id}`)
@@ -606,6 +610,7 @@ const validateEditLocation = Validator.body([
   'isSendingAlerts',
   'isSendingVitals',
   'clientId',
+  'deviceType',
 ])
   .trim()
   .notEmpty()
@@ -639,6 +644,7 @@ async function submitEditLocation(req, res) {
         data.isSendingAlerts === 'true',
         data.isSendingVitals === 'true',
         data.clientId,
+        data.deviceType,
         data.deviceId,
       )
 
