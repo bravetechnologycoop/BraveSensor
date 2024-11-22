@@ -191,7 +191,7 @@ int main()
 	int count = -1;
     int err = OK;
 	thread * boronListener;
-	thread * boronWriter;
+	//thread * boronWriter;
 	g_loop = true;
     try{
         
@@ -242,7 +242,7 @@ int main()
 
 		//wait for the thread to complete
 		boronListener->join();
-		boronWriter->join();
+		//boronWriter->join();
 
 		//cleanup
 		delete pInterface;
