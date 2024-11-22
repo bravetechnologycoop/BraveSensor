@@ -23,6 +23,7 @@
 using namespace std;
 bool g_loop;
 timed_mutex g_interthreadMutex;
+mutex g_spiMutex;
 
 thermalCamera * g_sourceThermalCamera = NULL;
 lidarL1 * g_sourceLidarL1 = NULL;
@@ -148,14 +149,16 @@ void spiRxThread()
 {
 	while (g_loop){
 		g_interthreadMutex.lock();
-		this_thread::sleep_for(20s);
+		g_spiMutex.lock();
 		bDebug(TRACE, "Spi is doing stuff");
 		//busy wait reading from SPI until you get data
 		//read blob from SPI
 		//push blob into boronSensor->parseData(uint8_t* data)
 		g_boronSensor->parseData(g_buffer);
-		g_interthreadMutex.unlock();
 		this_thread::sleep_for(10s);
+
+		g_spiMutex.unlock();
+		g_interthreadMutex.unlock();
 	}
 
 }
@@ -163,8 +166,9 @@ void spiRxThread()
 void spiTxThread()
 {
     while (g_loop) {
-        std::this_thread::sleep_for(10s); 
-        g_interthreadMutex.lock();
+		g_spiMutex.lock();
+        std::this_thread::sleep_for(270s); 
+        
 
         bDebug(TRACE, "Write thread ran, populating....");
         g_buffer[0] = 0x0d;
@@ -174,8 +178,7 @@ void spiTxThread()
         }
         g_buffer[30] = 0x0d;
         g_buffer[31] = 0x00;
-        g_interthreadMutex.unlock();
-        std::this_thread::sleep_for(30s);
+        g_spiMutex.unlock();
     }
 }
 
@@ -209,7 +212,7 @@ int main()
 
 		//start child thread
 		boronListener = new thread(spiRxThread);
-		boronWriter = new thread(spiTxThread);
+		//boronWriter = new thread(spiTxThread);
 
 		//main execution loop
 		while (g_loop){
