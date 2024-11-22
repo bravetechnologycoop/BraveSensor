@@ -14,6 +14,7 @@
 #include <i2cInterface.h>
 #include <smbInterface.h>
 #include <gpioInterface.h>
+#include <boronSensor.h>
 #include <serialib.h>
 #include <thread>
 #include <mutex>
@@ -36,6 +37,9 @@ i2cInterface * g_fastI2C = NULL;
 i2cInterface * g_slowI2C = NULL;
 gpioInterface * g_gpioPIR = NULL;
 serialib * g_usbSerial = NULL;
+boronSensor * g_boronSensor = new boronSensor;
+
+uint8_t g_buffer[32] = {0};
 
 int initiateBusses(){
 	int err = OK;
@@ -81,6 +85,8 @@ void cleanUp(){
 int initiateDataSources(vector<dataSource*> * dataVector){
 	int err = OK;
 	bDebug(TRACE, "Initializing the DataSources");
+
+	dataVector->push_back(g_boronSensor);
 
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
@@ -142,24 +148,37 @@ void spiRxThread()
 {
 	while (g_loop){
 		g_interthreadMutex.lock();
-		this_thread::sleep_for(10s);
+		this_thread::sleep_for(20s);
 		bDebug(TRACE, "Spi is doing stuff");
 		//busy wait reading from SPI until you get data
 		//read blob from SPI
 		//push blob into boronSensor->parseData(uint8_t* data)
+		g_boronSensor->parseData(g_buffer);
 		g_interthreadMutex.unlock();
-		this_thread::sleep_for(20s);
+		this_thread::sleep_for(10s);
 	}
 
 }
 
-void spiTxThread(){
-	while (g_loop){
-		this_thread::sleep_for(120s);
-		//send your data over the SPI TX line
-		// 0x0d 0x00 [uint8_t]^n 0x0d 0x00
-	}
+void spiTxThread()
+{
+    while (g_loop) {
+        std::this_thread::sleep_for(10s); 
+        g_interthreadMutex.lock();
+
+        bDebug(TRACE, "Write thread ran, populating....");
+        g_buffer[0] = 0x0d;
+        g_buffer[1] = 0x00;
+        for (int i = 2; i <= 29; ++i) {
+            g_buffer[i] = g_buffer[i] + 1;
+        }
+        g_buffer[30] = 0x0d;
+        g_buffer[31] = 0x00;
+        g_interthreadMutex.unlock();
+        std::this_thread::sleep_for(30s);
+    }
 }
+
 
 int main()
 {
@@ -169,6 +188,7 @@ int main()
 	int count = 10;
     int err = OK;
 	thread * boronListener;
+	thread * boronWriter;
 	g_loop = true;
     try{
         
@@ -186,8 +206,10 @@ int main()
 
 		pInterface->openDB();
 
+
 		//start child thread
 		boronListener = new thread(spiRxThread);
+		boronWriter = new thread(spiTxThread);
 
 		//main execution loop
 		while (g_loop){
@@ -217,6 +239,7 @@ int main()
 
 		//wait for the thread to complete
 		boronListener->join();
+		boronWriter->join();
 
 		//cleanup
 		delete pInterface;

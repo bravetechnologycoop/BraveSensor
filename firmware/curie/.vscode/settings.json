@@ -55,7 +55,13 @@
         "*.php": "php",
         "ctime": "cpp",
         "regex": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "condition_variable": "cpp",
+        "ratio": "cpp",
+        "mutex": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.default.compilerPath": "/usr/bin/gcc",
