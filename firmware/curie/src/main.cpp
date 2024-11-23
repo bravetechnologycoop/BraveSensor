@@ -19,7 +19,6 @@
 #include <thread>
 #include <mutex>
 
-
 using namespace std;
 bool g_loop;
 timed_mutex g_interthreadMutex;
@@ -37,7 +36,7 @@ i2cInterface * g_fastI2C = NULL;
 i2cInterface * g_slowI2C = NULL;
 gpioInterface * g_gpioPIR = NULL;
 serialib * g_usbSerial = NULL;
-boronSensor * g_boronSensor = new boronSensor;
+boronSensor * g_boronSensor = NULL;
 
 uint8_t g_buffer[32] = {0};
 
@@ -86,6 +85,7 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	int err = OK;
 	bDebug(TRACE, "Initializing the DataSources");
 
+	g_boronSensor = new boronSensor();
 	dataVector->push_back(g_boronSensor);
 
 	if (g_fastI2C->isReady()){
@@ -148,14 +148,13 @@ void spiRxThread()
 {
 	while (g_loop){
 		g_interthreadMutex.lock();
-		this_thread::sleep_for(20s);
-		bDebug(TRACE, "Spi is doing stuff");
+		//bDebug(TRACE, "Spi is doing stuff");
+		this_thread::sleep_for(500s);
 		//busy wait reading from SPI until you get data
 		//read blob from SPI
 		//push blob into boronSensor->parseData(uint8_t* data)
 		g_boronSensor->parseData(g_buffer);
 		g_interthreadMutex.unlock();
-		this_thread::sleep_for(10s);
 	}
 
 }
@@ -163,7 +162,7 @@ void spiRxThread()
 void spiTxThread()
 {
     while (g_loop) {
-        std::this_thread::sleep_for(10s); 
+        std::this_thread::sleep_for(150s); 
         g_interthreadMutex.lock();
 
         bDebug(TRACE, "Write thread ran, populating....");
@@ -175,7 +174,7 @@ void spiTxThread()
         g_buffer[30] = 0x0d;
         g_buffer[31] = 0x00;
         g_interthreadMutex.unlock();
-        std::this_thread::sleep_for(30s);
+        std::this_thread::sleep_for(150s);
     }
 }
 
@@ -185,10 +184,10 @@ int main()
 	bDebug(INFO, "Starting Data Gathering");
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
-	int count = 10;
+	int count = -1;
     int err = OK;
 	thread * boronListener;
-	thread * boronWriter;
+	//thread * boronWriter;
 	g_loop = true;
     try{
         
@@ -209,7 +208,7 @@ int main()
 
 		//start child thread
 		boronListener = new thread(spiRxThread);
-		boronWriter = new thread(spiTxThread);
+		//boronWriter = new thread(spiTxThread);
 
 		//main execution loop
 		while (g_loop){
@@ -239,8 +238,8 @@ int main()
 
 		//wait for the thread to complete
 		boronListener->join();
-		boronWriter->join();
-
+		//boronWriter->join();
+		sleep(300);
 		//cleanup
 		delete pInterface;
 		vSources.clear();
