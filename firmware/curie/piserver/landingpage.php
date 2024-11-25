@@ -66,6 +66,7 @@ try {
     <h1 align="center">Bathroom Counter</h1>
     <h2 align="center">Current Count: <?php echo $current_count; ?></h2>
     <h3 align="center">Last Updated: <?php echo $epochtime; ?></h3>
+    <h4 align="center"><a href="thermalCamera.php">Go to Thermal Camera</a></h4>
 
     <div style="text-align: center;">
         <form method="POST">
