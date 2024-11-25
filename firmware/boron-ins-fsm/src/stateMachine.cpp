@@ -151,15 +151,15 @@ void state0_idle() {
     digitalWrite(D4, LOW);
     digitalWrite(D5, LOW);
 
-    Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f", checkDoor.doorStatus, checkINS.iAverage);
+    Log.info("You are in state 0, idle: Door status, iMedian = 0x%02X, %d", checkDoor.doorStatus, checkINS.iMedian);
     // default timer to 0 when state doesn't have a timer
-    publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, (millis() - timeWhenDoorClosed));
+    publishDebugMessage(0, checkDoor.doorStatus, checkINS.iMedian, (millis() - timeWhenDoorClosed));
 
     // fix outputs and state exit conditions accordingly
-    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && ((unsigned long)checkINS.iAverage > ins_threshold) &&
+    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && ((unsigned long)checkINS.iMedian > ins_threshold) &&
         !isDoorOpen(checkDoor.doorStatus) && !isDoorStatusUnknown(checkDoor.doorStatus)) {
         Log.warn("In state 0, door closed and seeing movement, heading to state 1");
-        publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iMedian);
         saveStateChangeOrAlert(0, 0);
         // zero the state 1 timer
         state1_timer = millis();
@@ -185,26 +185,26 @@ void state1_15sCountdown() {
 
     // do stuff in the state
     digitalWrite(D2, HIGH);
-    Log.info("You are in state 1, initial countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
+    Log.info("You are in state 1, initial countdown: Door status, iMedian, timer = 0x%02X, %d, %ld", checkDoor.doorStatus, checkINS.iMedian,
              (millis() - state1_timer));
-    publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
+    publishDebugMessage(1, checkDoor.doorStatus, checkINS.iMedian, (millis() - state1_timer));
 
     // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
+    if ((unsigned long)checkINS.iMedian > 0 && (unsigned long)checkINS.iMedian < ins_threshold) {
         Log.warn("no movement, you're going back to state 0 from state 1");
-        publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iMedian);
         saveStateChangeOrAlert(1, 1);
         stateHandler = state0_idle;
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("door was opened, you're going back to state 0 from state 1");
-        publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iMedian);
         saveStateChangeOrAlert(1, 2);
         stateHandler = state0_idle;
     }
     else if (millis() - state1_timer >= state1_max_time) {
         Log.warn("door closed && motion for > Xs, going to state 2 from state1");
-        publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.iMedian);
         saveStateChangeOrAlert(1, 3);
         // zero the duration timer
         state2_duration_timer = millis();
@@ -231,14 +231,14 @@ void state2_duration() {
 
     // do stuff in the state
     digitalWrite(D3, HIGH);
-    Log.info("You are in state 2, duration: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
+    Log.info("You are in state 2, duration: Door status, iMedian, timer = 0x%02X, %d, %ld", checkDoor.doorStatus, checkINS.iMedian,
              (millis() - state2_duration_timer));
-    publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
+    publishDebugMessage(2, checkDoor.doorStatus, checkINS.iMedian, (millis() - state2_duration_timer));
 
     // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
+    if ((unsigned long)checkINS.iMedian > 0 && (unsigned long)checkINS.iMedian < ins_threshold) {
         Log.warn("Seeing stillness, going to state3_stillness from state2_duration");
-        publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iMedian);
         saveStateChangeOrAlert(2, 1);
         // zero the stillness timer
         state3_stillness_timer = millis();
@@ -247,7 +247,7 @@ void state2_duration() {
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("Door opened, session over, going to idle from state2_duration");
-        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iMedian);
         saveStateChangeOrAlert(2, 2);
         stateHandler = state0_idle;
     }
@@ -284,27 +284,27 @@ void state3_stillness() {
 
     // do stuff in the state
     digitalWrite(D4, HIGH);
-    Log.info("You are in state 3, stillness: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
+    Log.info("You are in state 3, stillness: Door status, iMedian, timer = 0x%02X, %d, %ld", checkDoor.doorStatus, checkINS.iMedian,
              (millis() - state3_stillness_timer));
-    publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
+    publishDebugMessage(3, checkDoor.doorStatus, checkINS.iMedian, (millis() - state3_stillness_timer));
 
     // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > ins_threshold) {
+    if ((unsigned long)checkINS.iMedian > ins_threshold) {
         Log.warn("motion spotted again, going from state3_stillness to state2_duration");
-        publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iMedian);
         saveStateChangeOrAlert(3, 0);
         // go back to state 2, duration
         stateHandler = state2_duration;
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("door opened, session over, going from state3_stillness to idle");
-        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iMedian);
         saveStateChangeOrAlert(3, 2);
         stateHandler = state0_idle;
     }
     else if (millis() - state3_stillness_timer >= *max_stillness_time) {
         Log.warn("stillness alert, remaining in state3 after publish");
-        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iMedian);
         saveStateChangeOrAlert(3, 5);
         Log.error("Stillness Alert!!");
         number_of_alerts_published += 1;  // increment the number of alerts published
@@ -317,7 +317,7 @@ void state3_stillness() {
     }
     else if (millis() - state2_duration_timer >= state2_max_duration) {
         Log.warn("duration alert, remaining in state3 after publish");
-        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iMedian);
         saveStateChangeOrAlert(3, 4);
         Log.error("Duration Alert!!");
         number_of_alerts_published += 1;  // increment the number of alerts published
@@ -334,18 +334,18 @@ void state3_stillness() {
 
 }  // end state3_stillness
 
-void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue) {
+void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, int INSValue) {
     if (stateMachineDebugFlag) {
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
         char stateTransition[622];
         snprintf(stateTransition, sizeof(stateTransition),
-                 "{\"prev_state\":\"%d\", \"next_state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\"}", prevState, nextState, doorStatus,
+                 "{\"prev_state\":\"%d\", \"next_state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%d\"}", prevState, nextState, doorStatus,
                  INSValue);
         Particle.publish("State Transition", stateTransition, PRIVATE);
     }
 }
 
-void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, unsigned long timer) {
+void publishDebugMessage(int state, unsigned char doorStatus, int INSval, unsigned long timer) {
     if (stateMachineDebugFlag) {
         if ((millis() - debugFlagTurnedOnAt) > DEBUG_AUTO_OFF_THRESHOLD) {
             stateMachineDebugFlag = false;
@@ -354,9 +354,9 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
             // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
             char debugMessage[622];
             snprintf(debugMessage, sizeof(debugMessage),
-                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
+                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%d\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
                      "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
-                     state, doorStatus, INSValue, ins_threshold, timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
+                     state, doorStatus, INSval, ins_threshold, timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
                      *max_stillness_time);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
@@ -426,7 +426,7 @@ void getHeartbeat() {
         (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) {
         // Check INS value
         filteredINSData checkINS = checkINS3331();
-        bool isINSZero = (checkINS.iAverage < 0.0001);
+        bool isINSZero = (checkINS.iMedian <= 0);
         static unsigned int didMissQueueSum = 0;
         static std::queue<bool> didMissQueue;
         // from particle docs, max length of publish is 622 chars, I am assuming this includes null char

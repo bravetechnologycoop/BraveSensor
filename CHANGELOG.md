@@ -11,6 +11,9 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Changed
+- Filtering for streaming INS data changed from moving mean of size 25 to a moving median of size 19
+
 
 ## [10.16.0] - 2024-11-14
 

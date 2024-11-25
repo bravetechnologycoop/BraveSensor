@@ -50,8 +50,8 @@ void state1_15sCountdown();
 void state2_duration();
 void state3_stillness();
 
-void publishDebugMessage(int, unsigned char, float, unsigned long);
-void publishStateTransition(int, int, unsigned char, float);
+void publishDebugMessage(int, unsigned char, int, unsigned long);
+void publishStateTransition(int, int, unsigned char, int);
 void saveStateChangeOrAlert(int, int);
 
 // threads

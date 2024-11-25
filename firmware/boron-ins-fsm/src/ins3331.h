@@ -23,6 +23,7 @@
 // buffer size must always be at least one larger than sample size
 #define MOVING_AVERAGE_SAMPLE_SIZE 25
 #define MOVING_AVERAGE_BUFFER_SIZE 26
+#define RUNNING_MEDIAN_SAMPLE_SIZE 19
 
 //***************************global typedefs ******************************
 typedef struct rawINSData {
@@ -35,8 +36,8 @@ typedef struct rawINSData {
 } rawINSData;
 
 typedef struct filteredINSData {
-    float iAverage;
-    float qAverage;
+    int iMedian;
+    int qMedian;
     unsigned long timestamp;
 
 } filteredINSData;

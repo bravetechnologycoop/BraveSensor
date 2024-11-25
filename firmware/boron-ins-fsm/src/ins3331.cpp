@@ -6,6 +6,7 @@
 #include "Particle.h"
 #include "ins3331.h"
 #include <CircularBuffer.h>
+#include <RunningMedianST.h>
 
 os_queue_t insQueue;
 
@@ -20,44 +21,20 @@ void setupINS3331() {
 // in the future, checkINS3331() will become a thread
 filteredINSData checkINS3331() {
     rawINSData dataToParse;
-    static CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> iBuffer, qBuffer;
+    RunningMedianInt32 iBuffer = RunningMedianInt32(RUNNING_MEDIAN_SAMPLE_SIZE);
+    RunningMedianInt32 qBuffer = RunningMedianInt32(RUNNING_MEDIAN_SAMPLE_SIZE);
     static filteredINSData returnINSData = {0, 0, 0};
 
     // os_queue_take returns 0 on success, so if we get a value, dump it to circular buffer
     if (os_queue_take(insQueue, &dataToParse, 0, 0) == 0) {
-        static float iSum = 0;
-        static float qSum = 0;
 
-        // add absolute values to circular buffer for the rolling average
-        // since push() adds to the tail, adding beyond capacity causes the element at head to be overwritten and lost
-        iBuffer.push(abs(dataToParse.inPhase));
-        qBuffer.push(abs(dataToParse.quadrature));
+        // add absolute values to circular buffer for the running median
+        iBuffer.add(abs(dataToParse.inPhase));
+        qBuffer.add(abs(dataToParse.quadrature));
 
-        // compute average of the first n data points by computing the full sum
-        if (iBuffer.size() == MOVING_AVERAGE_SAMPLE_SIZE) {
-            for (int i = 0; i < MOVING_AVERAGE_SAMPLE_SIZE; i++) {
-                iSum += iBuffer[i];
-                qSum += qBuffer[i];
-            }
-            returnINSData.iAverage = iSum / MOVING_AVERAGE_SAMPLE_SIZE;
-            returnINSData.qAverage = qSum / MOVING_AVERAGE_SAMPLE_SIZE;
-        }
-
-        // compute subsequent averages by using sum = sum - oldVal + newVal
-        // note buffer size must be at least one greater than sample size to retain oldVal
-        if (iBuffer.size() == MOVING_AVERAGE_BUFFER_SIZE) {
-            /*for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
-              Log.info("iBuf[%d], qBuf[%d]: %d,   %d", i,i,iBuffer[i],qBuffer[i]);
-            }
-            */
-            iSum = iSum - iBuffer[0] + iBuffer[MOVING_AVERAGE_BUFFER_SIZE - 1];
-            qSum = qSum - qBuffer[0] + qBuffer[MOVING_AVERAGE_BUFFER_SIZE - 1];
-            returnINSData.iAverage = iSum / MOVING_AVERAGE_SAMPLE_SIZE;
-            returnINSData.qAverage = qSum / MOVING_AVERAGE_SAMPLE_SIZE;
-            // record the time this value was removed from the queue and calculated
-            returnINSData.timestamp = millis();
-            // Log.info("iAverage = %f, qAverage = %f", returnINSData.iAverage, returnINSData.qAverage);
-        }
+        returnINSData.iMedian = iBuffer.getMedian();
+        returnINSData.qMedian = qBuffer.getMedian();
+        returnINSData.timestamp = millis();
 
     }  // end queue if
 
