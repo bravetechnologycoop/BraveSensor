@@ -43,6 +43,9 @@ typedef struct filteredINSData {
 
 extern os_queue_t insHeartbeatQueue;
 
+extern int  g_iValues[MOVING_AVERAGE_BUFFER_SIZE];
+extern int  g_qValues[MOVING_AVERAGE_BUFFER_SIZE];
+
 //***************************function declarations***************
 
 // console functions
