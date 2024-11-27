@@ -1,7 +1,7 @@
 <?php
-$db_name = 'webinterface';
-$db_user = 'bravetest';
-$db_password = 'bravetest';
+$db_name = 'testdb';
+$db_user = 'brave';
+$db_password = 'brave';
 $db_host = 'localhost';
 
 $epochtimes = [];
@@ -12,8 +12,8 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $stmt = $pdo->query("SELECT epochtime FROM thermalcamera ORDER BY epochtime DESC");
     $epochtimes = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    $selectedEpochtime = isset($_GET['epochtime']) ? (int)$_GET['epochtime'] : $epochtimes[0];
-
+    $selectedEpochtime = isset($_GET['epochtime']) ? $_GET['epochtime'] : $epochtimes[0];
+    
     $stmt = $pdo->prepare("SELECT * FROM thermalcamera WHERE epochtime = :epochtime LIMIT 1");
     $stmt->bindParam(':epochtime', $selectedEpochtime, PDO::PARAM_INT);
     $stmt->execute();
