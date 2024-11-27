@@ -165,8 +165,8 @@ void threadBLEScanner(void *param) {
     doorData scanThreadDoorData;
     unsigned char doorAdvertisingData[BLE_MAX_ADV_DATA_LEN];
 
-    // setting scan timeout (how long scan runs for) to 100ms = 10 centiseconds
-    BLE.setScanTimeout(10);
+    // setting scan timeout (how long scan runs for) to 50ms= 5 centiseconds
+    BLE.setScanTimeout(5);
 
     while (true) {
         // Perform an initial BLE scan without any filters to log all found devices
@@ -176,9 +176,6 @@ void threadBLEScanner(void *param) {
         for (BleScanResult scanResult : allScanResults) {
             Log.info("Device found: Address: %s, RSSI: %d", scanResult.address().toString().c_str(), scanResult.rssi());
         }
-
-        // Add a delay before the next scan
-        delay(1000);  // Delay for 1 second
 
         // Perform a filtered BLE scan for specific devices
         BleScanFilter filter;
@@ -208,7 +205,7 @@ void threadBLEScanner(void *param) {
 
         // Process the scan results
         for (BleScanResult scanResult : scanResults) {
-            Log.info("Device found: Address: %s, RSSI: %d", scanResult.address().toString().c_str(), scanResult.rssi());
+            Log.warn("Device found: Address: %s, RSSI: %d", scanResult.address().toString().c_str(), scanResult.rssi());
 
             // place advertising data in doorAdvertisingData buffer array
             if (!scanResult.advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN)) {

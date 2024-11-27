@@ -240,7 +240,7 @@ void state2_monitoring() {
     // Check state transition conditions
     // Transition to state 3 if stillness is detected
     if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
-        Log.warn("Seeing stillness, going to state3_stillness from state2_duration");
+        Log.warn("Seeing stillness, going to state3_stillness from state2_monitoring");
         publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 1);
 
