@@ -10,12 +10,6 @@
 #include <vector>
 #include <curie.h>
 #include <unistd.h>
-#include <braveDebug.h>
-#include <i2cInterface.h>
-#include <smbInterface.h>
-#include <gpioInterface.h>
-#include <boronSensor.h>
-#include <serialib.h>
 #include <thread>
 #include <mutex>
 
@@ -34,11 +28,13 @@ co2Telaire * g_sourceCO2T = NULL;
 co2SCD30 * g_sourceCO2S = NULL;
 passiveIR * g_sourcePIR = NULL;
 multiMotionSensor * g_motionSensor = NULL;
+boronSensor * g_boronSensor = NULL;
+
 i2cInterface * g_fastI2C = NULL;
 i2cInterface * g_slowI2C = NULL;
 gpioInterface * g_gpioPIR = NULL;
 serialib * g_usbSerial = NULL;
-boronSensor * g_boronSensor = new boronSensor;
+spiInterface * g_spi0 = NULL;
 
 uint8_t g_buffer[32] = {0};
 
@@ -56,6 +52,9 @@ int initiateBusses(){
 
 	g_usbSerial = new serialib();
 	g_usbSerial->openDevice(DLP_SER, DLP_BAUD);
+
+	g_spi0 = new spiInterface("/dev/spi0.0", 500000, 0);
+	g_spi0->openBus();
 
 	return err;
 }
@@ -149,7 +148,6 @@ void spiRxThread()
 {
 	while (g_loop){
 		g_interthreadMutex.lock();
-		g_spiMutex.lock();
 		bDebug(TRACE, "Spi is doing stuff");
 		//busy wait reading from SPI until you get data
 		//read blob from SPI
@@ -157,7 +155,6 @@ void spiRxThread()
 		g_boronSensor->parseData(g_buffer);
 		this_thread::sleep_for(10s);
 
-		g_spiMutex.unlock();
 		g_interthreadMutex.unlock();
 	}
 
@@ -166,7 +163,6 @@ void spiRxThread()
 void spiTxThread()
 {
     while (g_loop) {
-		g_spiMutex.lock();
         std::this_thread::sleep_for(270s); 
         
 
@@ -178,7 +174,6 @@ void spiTxThread()
         }
         g_buffer[30] = 0x0d;
         g_buffer[31] = 0x00;
-        g_spiMutex.unlock();
     }
 }
 
