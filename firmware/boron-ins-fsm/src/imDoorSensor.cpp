@@ -21,7 +21,7 @@ unsigned long doorLastMessage = 0;
 unsigned long timeWhenDoorClosed = 0;
 unsigned long consecutiveOpenDoorHeartbeatCount = 0;
 
-//**********setup()******************
+//********** setup() ******************
 
 void setupIM() {
     // Create a queue. Each element is an unsigned char, there are 25 elements. Last parameter is always 0.
@@ -30,7 +30,7 @@ void setupIM() {
     new Thread("scanBLEThread", threadBLEScanner);
 }
 
-//**********loop()*******************
+//********** loop() *******************
 
 void initializeDoorID() {
     uint16_t initializeDoorIDFlag;
@@ -160,23 +160,17 @@ void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorDat
              currentDoorData.controlByte);
 }
 
-//**********threads*****************
+//********** threads *****************
+
 void threadBLEScanner(void *param) {
     doorData scanThreadDoorData;
     unsigned char doorAdvertisingData[BLE_MAX_ADV_DATA_LEN];
 
-    // setting scan timeout (how long scan runs for) to 50ms= 5 centiseconds
+    // setting scan timeout (how long scan runs for) to 50ms = 5 centiseconds
+    // using millis() to measure, timeout(1) = 13-14 ms. timout(5) = 53-54ms
     BLE.setScanTimeout(5);
 
     while (true) {
-        // Perform an initial BLE scan without any filters to log all found devices
-        Log.info("Starting initial BLE scan without filters...");
-        spark::Vector<BleScanResult> allScanResults = BLE.scan();
-        Log.info("Initial BLE scan completed. Number of devices found: %d", allScanResults.size());
-        for (BleScanResult scanResult : allScanResults) {
-            Log.info("Device found: Address: %s, RSSI: %d", scanResult.address().toString().c_str(), scanResult.rssi());
-        }
-
         // Perform a filtered BLE scan for specific devices
         BleScanFilter filter;
         char address[18];
@@ -191,37 +185,25 @@ void threadBLEScanner(void *param) {
         sprintf(address, "80:FB:F1:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
         filter.address(address);
 
-        // Log the filter addresses
-        Log.info("Filter addresses: B8:7C:6F:%02X:%02X:%02X, 8C:9A:22:%02X:%02X:%02X, AC:9A:22:%02X:%02X:%02X, 80:FB:F1:%02X:%02X:%02X",
-                 globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1,
-                 globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1,
-                 globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1,
-                 globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
-
-        // Start filtered BLE scan
-        Log.info("Starting filtered BLE scan...");
+        // Filtered BLE scan
         spark::Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter);
-        Log.info("Filtered BLE scan completed. Number of devices found: %d", scanResults.size());
 
         // Process the scan results
         for (BleScanResult scanResult : scanResults) {
-            Log.info("Device found: Address: %s, RSSI: %d", scanResult.address().toString().c_str(), scanResult.rssi());
+            // Extract advertising data
+            scanResult.advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN);
 
-            // place advertising data in doorAdvertisingData buffer array
-            if (!scanResult.advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN)) {
-                Log.error("Failed to get advertising data from scan result.");
-                continue;
-            }
-
-            // extract door status and dump it in the queue
+            // Advertising data format:
+            // [0]: Firmware Version
+            // [1-3]: Last 3 bytes of door sensor address
+            // [4]: Type ID (sensor type)
+            // [5]: Event Data (bit 3: heartbeat, bit 2: low battery, bit 1: door open, bit 0: tamper alarm)
+            // [6]: Control Data
             scanThreadDoorData.doorStatus = doorAdvertisingData[5];
             scanThreadDoorData.controlByte = doorAdvertisingData[6];
 
-            // Log the read values
-            Log.info("Read door status: 0x%02X, control byte: 0x%02X", scanThreadDoorData.doorStatus, scanThreadDoorData.controlByte);
-
-            if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0 && stateMachineDebugFlag) {  //
-                // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
+            if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0 && stateMachineDebugFlag) {
+                // Publish debug message if heartbeat is detected
                 char debugMessage[622] = "";
                 for (int i = 0; i < BLE_MAX_ADV_DATA_LEN; i++) {
                     snprintf(debugMessage + strlen(debugMessage), sizeof(debugMessage), "%02X ", doorAdvertisingData[i]);
@@ -240,7 +222,7 @@ void threadBLEScanner(void *param) {
 
 }  // end threadBLEScanner
 
-/*    Door Sensor Utility Functions    */
+//********** utility functions *****************
 
 /* Return whether the door is open or closed, according to the IM door sensor.
  *
