@@ -152,7 +152,7 @@ void state0_idle() {
         !isDoorOpen(checkDoor.doorStatus) && 
         !isDoorStatusUnknown(checkDoor.doorStatus)) {
         
-        Log.warn("In state 0, door closed and seeing movement, heading to state 1");
+        Log.warn("State 0 --> State 1: Door closed and seeing movement");
         publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(0, 0);
 
@@ -182,27 +182,26 @@ void state1_countdown() {
     unsigned long timeInState1 = millis() - state1_timer;
 
     // Log current state
-    Log.info("You are in state 1, initial countdown: Door status = 0x%02X, iAverage = %f, timer = %ld ms", 
-            checkDoor.doorStatus, checkINS.iAverage, timeInState1);
+    Log.info("State 1 (Countdown): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
     publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, timeInState1);
 
     // Check state transition conditions
     // Transition to state 0 if no movement is detected OR the door is opened.
     if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
-        Log.warn("No movement, going back to state 0 from state 1");
+        Log.warn("State 1 --> State 0: No movement detected");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 1);
         stateHandler = state0_idle;
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
-        Log.warn("Door was opened, going back to state 0 from state 1");
+        Log.warn("State 1 --> State 0: Door opened, session over");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 2);
         stateHandler = state0_idle;
     }
     // Transition to state 2 if the door remains closed and movement is detected for the maximum allowed time.
     else if (timeInState1 >= state1_max_time) {
-        Log.warn("Door closed and motion detected for > max time, going to state 2 from state 1");
+        Log.warn("State 1 --> State 2: Movemented detected for max detection time");
         publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 3);
 
@@ -233,14 +232,20 @@ void state2_monitoring() {
     unsigned long timeInState2 = millis() - state2_monitoring_timer;
 
     // Log current state
-    Log.info("You are in state 2, duration: Door status = 0x%02X, iAverage = %f, timer = %ld ms", 
-             checkDoor.doorStatus, checkINS.iAverage, timeInState2);
+    Log.info("State 2 (Monitoring): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
     publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, timeInState2);
 
     // Check state transition conditions
+    // Transition to state 0 if the door is opened
+    if (isDoorOpen(checkDoor.doorStatus)) {
+        Log.warn("State 2 --> State 0: Door opened, session over");
+        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(2, 2);
+        stateHandler = state0_idle;
+    }
     // Transition to state 3 if stillness is detected
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
-        Log.warn("Seeing stillness, going to state3_stillness from state2_monitoring");
+    else if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
+        Log.warn("State 2 --> State 3: Stillness detected");
         publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 1);
 
@@ -248,21 +253,13 @@ void state2_monitoring() {
         state3_stillness_timer = millis();
         stateHandler = state3_stillness;
     }
-    // Transition to state 0 if the door is opened
-    else if (isDoorOpen(checkDoor.doorStatus)) {
-        Log.warn("Door opened, session over, going to idle from state2_monitoring");
-        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(2, 2);
-        stateHandler = state0_idle;
-    }
     // Send a duration alert if it hasn't been sent yet and the duration exceeds the threshold
     else if (!hasDurationAlertBeenSent && (millis() - timeWhenDoorClosed >= duration_alert_threshold)) {
-        Log.warn("Sending duration alert and continuing to monitor for stillness in state2_monitoring");
+        Log.warn("--Duration Alert--");
         publishStateTransition(2, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 4);
 
         // publish duration alert to particle
-        Log.error("Duration Alert!!");
         number_of_alerts_published += 1; 
         unsigned long occupancy_duration = (millis() - timeWhenDoorClosed) / 60000;  // Convert to minutes
         snprintf(alertMessage, sizeof(alertMessage), "{\"occupancyDuration\": %lu, \"numberOfAlertsPublished\": %lu}", occupancy_duration, number_of_alerts_published);
@@ -295,14 +292,20 @@ void state3_stillness() {
     unsigned long timeInState3 = millis() - state3_stillness_timer;
 
     // Log current state
-    Log.info("You are in state 3, stillness: Door status = 0x%02X, iAverage = %f, timer = %ld ms", 
-             checkDoor.doorStatus, checkINS.iAverage, timeInState3);
+    Log.info("State 3 (Stillness): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
     publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, timeInState3);
 
-    // Check state transition conditions
+    // Check state transition conditions  
+    // Transition to state 0 if the door is opened
+    if (isDoorOpen(checkDoor.doorStatus)) {
+        Log.warn("State 3 --> State 0: Door opened, session over");
+        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(3, 2);
+        stateHandler = state0_idle;
+    }
     // Transition to state 2 if movement is detected again
-    if ((unsigned long)checkINS.iAverage > ins_threshold) {
-        Log.warn("Motion spotted again, going from state3_stillness to state2_monitoring");
+    else if ((unsigned long)checkINS.iAverage > ins_threshold) {
+        Log.warn("State 3 --> State 2: Motion detected again");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 0);
 
@@ -310,21 +313,13 @@ void state3_stillness() {
         state2_monitoring_timer = millis();
         stateHandler = state2_monitoring;
     }
-    // Transition to state 0 if the door is opened
-    else if (isDoorOpen(checkDoor.doorStatus)) {
-        Log.warn("Door opened, session over, going from state3_stillness to idle");
-        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(3, 2);
-        stateHandler = state0_idle;
-    }
     // Send a stillness alert if the stillness duration exceeds the initial threshold
     else if (!hasStillnessAlertBeenSent && timeInState3 >= initial_stillness_alert_threshold) {
-        Log.warn("Initial stillness alert, remaining in state3 after publish");
+        Log.warn("--Stillness Alert--");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
 
         // publish stillness alert to particle
-        Log.error("Stillness Alert!!");
         number_of_alerts_published += 1;  
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
@@ -336,12 +331,11 @@ void state3_stillness() {
     }
     // Send a follow-up stillness alert if the stillness duration exceeds the follow-up threshold
     else if (hasStillnessAlertBeenSent && timeInState3 >= followup_stillness_alert_threshold) {
-        Log.warn("Follow-up stillness alert, remaining in state3 after publish");
+        Log.warn("--Followup Stillness Alert--");
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
 
         // publish stillness alert to particle
-        Log.error("Stillness Alert!!");
         number_of_alerts_published += 1;  
         snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);

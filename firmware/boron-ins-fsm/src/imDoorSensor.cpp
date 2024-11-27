@@ -205,7 +205,7 @@ void threadBLEScanner(void *param) {
 
         // Process the scan results
         for (BleScanResult scanResult : scanResults) {
-            Log.warn("Device found: Address: %s, RSSI: %d", scanResult.address().toString().c_str(), scanResult.rssi());
+            Log.info("Device found: Address: %s, RSSI: %d", scanResult.address().toString().c_str(), scanResult.rssi());
 
             // place advertising data in doorAdvertisingData buffer array
             if (!scanResult.advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN)) {
@@ -236,8 +236,6 @@ void threadBLEScanner(void *param) {
 
         os_thread_yield();
 
-        // Add a delay to slow down the scanning
-        delay(1000);  // Delay for 1 second
     }  // endwhile
 
 }  // end threadBLEScanner

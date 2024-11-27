@@ -10,12 +10,12 @@
 #include "consoleFunctions.h"
 #include "tpl5010watchdog.h"
 
-#define DEBUG_LEVEL            LOG_LEVEL_INFO
-#define BRAVE_FIRMWARE_VERSION 6999 // see versioning notes in the readme
+#define DEBUG_LEVEL             LOG_LEVEL_WARN  // set to different log level for debugging
+#define BRAVE_FIRMWARE_VERSION  6999            // must be int, see versioning in README.md
 
-PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);  // must be an int, see versioning notes above
+PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);
 SYSTEM_THREAD(ENABLED);
-SerialLogHandler logHandler(LOG_LEVEL_WARN);
+SerialLogHandler logHandler(DEBUG_LEVEL);
 
 void setup() {
     // enable reset reason
