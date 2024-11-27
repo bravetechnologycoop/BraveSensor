@@ -7,8 +7,11 @@
 #include "ins3331.h"
 #include <CircularBuffer.h>
 #include <RunningMedianST.h>
+#include <math.h>
 
 os_queue_t insQueue;
+float signalWhileMoving = 0;
+int speed_limit = 3;
 
 // setup function & subfunctions
 void setupINS3331() {
@@ -23,17 +26,29 @@ filteredINSData checkINS3331() {
     rawINSData dataToParse;
     RunningMedianInt32 iBuffer = RunningMedianInt32(RUNNING_MEDIAN_SAMPLE_SIZE);
     RunningMedianInt32 qBuffer = RunningMedianInt32(RUNNING_MEDIAN_SAMPLE_SIZE);
-    static filteredINSData returnINSData = {0, 0, 0};
+    RunningMedianFloat signalBuffer = RunningMedianFloat(RUNNING_MEDIAN_SAMPLE_SIZE);
+    static filteredINSData returnINSData = {0, 0, 0, 0, 0.0, 0.0, 0};
 
     // os_queue_take returns 0 on success, so if we get a value, dump it to circular buffer
     if (os_queue_take(insQueue, &dataToParse, 0, 0) == 0) {
+        float signal = sqrt((double)(pow(dataToParse.inPhase, 2) + pow(dataToParse.quadrature, 2)));
 
         // add absolute values to circular buffer for the running median
         iBuffer.add(abs(dataToParse.inPhase));
-        qBuffer.add(abs(dataToParse.quadrature));
+        //qBuffer.add(abs(dataToParse.quadrature));
+        signalBuffer.add(signal);
 
+        returnINSData.direction = dataToParse.direction;
+        returnINSData.speed_kph = dataToParse.speed_kph;
         returnINSData.iMedian = iBuffer.getMedian();
-        returnINSData.qMedian = qBuffer.getMedian();
+        //returnINSData.qMedian = qBuffer.getMedian();
+        returnINSData.signalMedian = signalBuffer.getMedian();
+
+        if (dataToParse.speed_kph > speed_limit) {
+            signalWhileMoving = returnINSData.signalMedian;
+        }
+
+        returnINSData.distance = signalWhileMoving;
         returnINSData.timestamp = millis();
 
     }  // end queue if
@@ -82,6 +97,8 @@ void threadINSReader(void *param) {
                 // convert bytes to signed integer
                 rawData.inPhase = (int)(iHighByte << 8 | iLowByte);
                 rawData.quadrature = (int)(qHighByte << 8 | qLowByte);
+                rawData.direction = receiveBuffer[5];
+                rawData.speed_kph = receiveBuffer[6];
 
                 os_queue_put(insQueue, (void *)&rawData, 0, 0);
 

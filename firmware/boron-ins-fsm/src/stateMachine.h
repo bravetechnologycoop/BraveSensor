@@ -37,6 +37,16 @@
 // Restricts heartbeat to being published once instead of 3 times from the 3 IM Door Sensor broadcasts
 #define HEARTBEAT_PUBLISH_DELAY 1000  // ms = 1 sec
 
+typedef struct {
+    int state;
+    unsigned char door_status;
+    unsigned char direction;
+    unsigned char speed_kph;
+    int INSval;
+    float signal;
+    unsigned long timer;
+} debugData;
+
 // setup() functions
 void setupStateMachine();
 
@@ -50,8 +60,8 @@ void state1_15sCountdown();
 void state2_duration();
 void state3_stillness();
 
-void publishDebugMessage(int, unsigned char, int, unsigned long);
-void publishStateTransition(int, int, unsigned char, int);
+void publishDebugMessage(int, unsigned char, unsigned char, unsigned char, int, float, float, unsigned long);
+void publishStateTransition(int, int, unsigned char, float);
 void saveStateChangeOrAlert(int, int);
 
 // threads
