@@ -134,12 +134,12 @@ void sendAlphaUpdate() {
     uint8_t rx_buffer[sizeof(tx_buffer)];
     int index = 0;
 
-    // Add the g_iValues buffer (MOVING_AVERAGE_BUFFER_SIZE * 2 bytes)
+    // Add the g_iValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
     for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
         tx_buffer[index++] = g_iValues[i] & 0xFF;
     }
 
-    // Then, add the g_qValues buffer (MOVING_AVERAGE_BUFFER_SIZE * 2 bytes)
+    // Then, add the g_qValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
     for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
         tx_buffer[index++] = g_qValues[i] & 0xFF; 
     }
