@@ -7,7 +7,9 @@
 #include "ins3331.h"
 #include <CircularBuffer.h>
 
-os_queue_t insQueue;
+os_queue_t insQueue; 
+int  g_iValues[MOVING_AVERAGE_BUFFER_SIZE];
+int  g_qValues[MOVING_AVERAGE_BUFFER_SIZE];
 
 // setup function & subfunctions
 void setupINS3331() {
@@ -18,7 +20,7 @@ void setupINS3331() {
 }
 
 // in the future, checkINS3331() will become a thread
-filteredINSData checkINS3331() {
+filteredINSData checkINS3331( ) {
     rawINSData dataToParse;
     static CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> iBuffer, qBuffer;
     static filteredINSData returnINSData = {0, 0, 0};
@@ -32,6 +34,10 @@ filteredINSData checkINS3331() {
         // since push() adds to the tail, adding beyond capacity causes the element at head to be overwritten and lost
         iBuffer.push(abs(dataToParse.inPhase));
         qBuffer.push(abs(dataToParse.quadrature));
+
+        //send to the global as well
+        g_iValues.push(dataToParse.inPhase);
+        g_iValues.push(dataToParse.quadrature);
 
         // compute average of the first n data points by computing the full sum
         if (iBuffer.size() == MOVING_AVERAGE_SAMPLE_SIZE) {
@@ -58,7 +64,7 @@ filteredINSData checkINS3331() {
             returnINSData.timestamp = millis();
             // Log.info("iAverage = %f, qAverage = %f", returnINSData.iAverage, returnINSData.qAverage);
         }
-
+        
     }  // end queue if
 
     return returnINSData;
@@ -157,3 +163,4 @@ unsigned char calculateChecksum(unsigned char myArray[], int arrayLength) {
 
     return checksum;
 }
+

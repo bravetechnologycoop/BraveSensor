@@ -6,6 +6,16 @@
  */
 #ifndef _CURIE__H_
 #define _CURIE__H_
+
+#include <braveDebug.h>
+
+//interfaces
+#include <i2cInterface.h>
+#include <gpioInterface.h>
+#include <spiInterface.h>
+#include <boronSensor.h>
+#include <serialib.h>
+//sensors
 #include <thermalCamera.h>
 #include <passiveIR.h>
 #include <usonicRange.h>

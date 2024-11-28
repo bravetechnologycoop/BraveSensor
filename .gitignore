@@ -39,3 +39,4 @@ Thumbs.db
 firmware/curie/build/bin/*
 firmware/curie/build/bin/curie
 firmware/curie/src/i2cInterface_old
+firmware/curie/output.txt

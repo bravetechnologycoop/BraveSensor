@@ -10,18 +10,13 @@
 #include <vector>
 #include <curie.h>
 #include <unistd.h>
-#include <braveDebug.h>
-#include <i2cInterface.h>
-#include <smbInterface.h>
-#include <gpioInterface.h>
-//#include <boronSensor.h>
-#include <serialib.h>
 #include <thread>
 #include <mutex>
 
 using namespace std;
 bool g_loop;
 timed_mutex g_interthreadMutex;
+mutex g_spiMutex;
 
 thermalCamera * g_sourceThermalCamera = NULL;
 lidarL1 * g_sourceLidarL1 = NULL;
@@ -32,11 +27,13 @@ co2Telaire * g_sourceCO2T = NULL;
 co2SCD30 * g_sourceCO2S = NULL;
 passiveIR * g_sourcePIR = NULL;
 multiMotionSensor * g_motionSensor = NULL;
+boronSensor * g_boronSensor = NULL;
+
 i2cInterface * g_fastI2C = NULL;
 i2cInterface * g_slowI2C = NULL;
 gpioInterface * g_gpioPIR = NULL;
 serialib * g_usbSerial = NULL;
-//boronSensor * g_boronSensor = NULL;
+spiInterface * g_spi0 = NULL;
 
 uint8_t g_buffer[32] = {0};
 
@@ -55,6 +52,9 @@ int initiateBusses(){
 	g_usbSerial = new serialib();
 	g_usbSerial->openDevice(DLP_SER, DLP_BAUD);
 
+	g_spi0 = new spiInterface("/dev/spidev0.0", 500000, 0);
+	g_spi0->openBus();
+
 	return err;
 }
 
@@ -68,8 +68,9 @@ void cleanUp(){
 	delete g_sourceMGas;
 	delete g_sourceCO2T;
 	delete g_sourceCO2S;
-	delete  g_sourcePIR;
-	delete  g_motionSensor;
+	delete g_sourcePIR;
+	delete g_motionSensor;
+	delete g_boronSensor;
 	
 	g_fastI2C->closeBus();
 	delete g_fastI2C;
@@ -79,6 +80,8 @@ void cleanUp(){
 	delete g_gpioPIR;
 	g_usbSerial->closeDevice();
 	delete g_usbSerial;
+	g_spi0->closeBus();
+	delete g_spi0;
 }
 
 int initiateDataSources(vector<dataSource*> * dataVector){
@@ -146,15 +149,23 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 
 void spiRxThread()
 {
+	uint8_t txBuff[128], rxBuff[128] = {0};
+
+	for (int i = 0; i < 128; i++){
+		txBuff[i] = i;
+	}
+
 	while (g_loop){
 		g_interthreadMutex.lock();
-		//bDebug(TRACE, "Spi is doing stuff");
-		this_thread::sleep_for(500s);
+		bDebug(TRACE, "Spi is doing stuff");
 		//busy wait reading from SPI until you get data
 		//read blob from SPI
 		//push blob into boronSensor->parseData(uint8_t* data)
-		//g_boronSensor->parseData(g_buffer);
-		//g_interthreadMutex.unlock();
+		//g_spi0->readwriteBytes(txBuff, rxBuff, 128);
+		g_boronSensor->parseData(g_buffer);
+		this_thread::sleep_for(10s);
+
+		g_interthreadMutex.unlock();
 	}
 
 }
@@ -162,8 +173,8 @@ void spiRxThread()
 void spiTxThread()
 {
     while (g_loop) {
-        std::this_thread::sleep_for(150s); 
-        g_interthreadMutex.lock();
+        std::this_thread::sleep_for(270s); 
+        
 
         bDebug(TRACE, "Write thread ran, populating....");
         g_buffer[0] = 0x0d;
@@ -173,8 +184,6 @@ void spiTxThread()
         }
         g_buffer[30] = 0x0d;
         g_buffer[31] = 0x00;
-        g_interthreadMutex.unlock();
-        std::this_thread::sleep_for(150s);
     }
 }
 
@@ -185,8 +194,9 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
 	int count = -1;
+	int count = -1;
     int err = OK;
-	//thread * boronListener;
+	thread * boronListener;
 	//thread * boronWriter;
 	g_loop = true;
     try{
@@ -207,7 +217,7 @@ int main()
 
 
 		//start child thread
-		//boronListener = new thread(spiRxThread);
+		boronListener = new thread(spiRxThread);
 		//boronWriter = new thread(spiTxThread);
 
 		//main execution loop
@@ -237,9 +247,9 @@ int main()
 		};
 
 		//wait for the thread to complete
-		//boronListener->join();
+		boronListener->join();
 		//boronWriter->join();
-		sleep(300);
+
 		//cleanup
 		delete pInterface;
 		vSources.clear();

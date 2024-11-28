@@ -37,6 +37,8 @@
 // Restricts heartbeat to being published once instead of 3 times from the 3 IM Door Sensor broadcasts
 #define HEARTBEAT_PUBLISH_DELAY 1000  // ms = 1 sec
 
+#define ALPHA_UPDATE_TIMER              300000  // ms = 5 minutes
+
 // setup() functions
 void setupStateMachine();
 
