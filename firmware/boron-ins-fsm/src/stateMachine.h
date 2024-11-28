@@ -70,12 +70,20 @@ typedef void (*StateHandler)();
 // declaring the state handler pointer as extern so .ino file can use it
 extern StateHandler stateHandler;
 
-// these are the timers that are zero'ed by millis()
-extern unsigned long state1_timer;
-extern unsigned long state2_monitoring_timer;
-extern unsigned long state3_stillness_timer;
+// Start timers for different states
+// Whenever there is a state transition, these are updated to millis()
+extern unsigned long state0_start_time;
+extern unsigned long state1_start_time;
+extern unsigned long state2_start_time;
+extern unsigned long state3_start_time;
 
-// state machine constants stored in flash
+// Time spent in different states
+extern unsigned long timeInState0;
+extern unsigned long timeInState1;
+extern unsigned long timeInState2;
+extern unsigned long timeInState3;
+
+// State machine constants stored in flash
 extern unsigned long ins_threshold;
 extern unsigned long state0_occupant_detection_timer;
 extern unsigned long state1_max_time;
@@ -83,9 +91,12 @@ extern unsigned long duration_alert_threshold;
 extern unsigned long initial_stillness_alert_threshold;
 extern unsigned long followup_stillness_alert_threshold; 
 
-// whether or not the current session has sent alerts
-extern bool hasDurationAlertBeenSent;
-extern bool hasStillnessAlertBeenSent;
+// Flag to pause duration alerts
+extern bool hasDurationAlertBeenPaused;
+
+// Counter for the number of alerts sent 
+extern unsigned long numDurationAlertSent;
+extern unsigned long numStillnessAlertSent;
 
 // ----------------------------------------------------------------------------
 
