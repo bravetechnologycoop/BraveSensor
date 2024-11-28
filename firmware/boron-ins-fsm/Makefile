@@ -32,18 +32,23 @@ all: build
 build: check-cpp 
 	@echo "------ Creating build directory... ------"
 	mkdir -p $(BUILD_DIR)
+	@echo "\n"
+
 	@echo "------ Compiling firmware... ------"
 	$(PARTICLE_CLI_PATH) compile $(PLATFORM) --target $(DEVICE_OS_VERSION) \
 	$(SRC_DIR)/* $(LIB_DIR)/CircularBuffer/src/* \
 	--saveTo $(BUILD_DIR)/$(BINARY_NAME).bin
+	@echo "\n"
 
 check-cpp:
 	@command -v cppcheck >/dev/null 2>&1 || { echo >&2 "cppcheck is not installed. Please install it and try again."; exit 1; }
 	@echo "------ Checking cpp code... ------"
-	cppcheck --std=c++11 $(SRC_DIR)
+	cppcheck --std=c++11 --check-level=exhaustive $(SRC_DIR)
+	@echo "\n"
 
 clean:
 	@echo "------ Cleaning build directory... ------"
 	rm -rf $(BUILD_DIR)
+	@echo "\n"
 
 .PHONY: all build check-cpp clean
