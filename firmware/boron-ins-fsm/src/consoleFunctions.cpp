@@ -366,21 +366,17 @@ int im21_door_id_set(String command) {
     // else not echo, so we have a new door ID to parse
     else {
         // parse input string and update global door ID
-        char* byteholder1;
-        char* byteholder2;
-        char* byteholder3;
-
         int split1 = command.indexOf(',');                            // get index of first comma to delimit input
-        byteholder1 = strdup(command.substring(0, split1).c_str());   // get first byte of input and copy to holder variable
-        globalDoorID.byte3 = (uint8_t)strtol(byteholder1, NULL, 16);  // convert it to hex and set the third byte of the door ID
+        String byteholder1 = command.substring(0, split1);            // get first byte of input and copy to holder variable
+        globalDoorID.byte3 = (uint8_t)strtol(byteholder1.c_str(), NULL, 16);  // convert it to hex and set the third byte of the door ID
 
         int split2 = command.indexOf(',', split1 + 1);
-        byteholder2 = strdup(command.substring(split1 + 1, split2).c_str());
-        globalDoorID.byte2 = (uint8_t)strtol(byteholder2, NULL, 16);
+        String byteholder2 = command.substring(split1 + 1, split2);
+        globalDoorID.byte2 = (uint8_t)strtol(byteholder2.c_str(), NULL, 16);
 
         int split3 = command.indexOf(',', split2 + 1);
-        byteholder3 = strdup(command.substring(split2 + 1, split3).c_str());
-        globalDoorID.byte1 = (uint8_t)strtol(byteholder3, NULL, 16);
+        String byteholder3 = command.substring(split2 + 1, split3);
+        globalDoorID.byte1 = (uint8_t)strtol(byteholder3.c_str(), NULL, 16);
 
         // write new global door ID to flash
         EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);
