@@ -31,3 +31,6 @@ compile_commands.json
 
 # build
 build
+
+# ignore notes
+notes.md
