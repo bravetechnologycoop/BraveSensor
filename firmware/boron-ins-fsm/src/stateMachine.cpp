@@ -368,6 +368,9 @@ void state3_stillness() {
         Particle.publish("Duration Alert", alertMessage, PRIVATE);
 
         // Stay in state 3
+        // !!!!!!!!!---TODO---!!!!!!!!!
+        // Add reset state3 timer here if sending alert 5 mins after duration in state 3
+        // Otherwise stillness will be sent 5 mins after it entered state 3, regardless of this duration
         stateHandler = state3_stillness;
     }
     // Send a initial stillness alert if the stillness duration exceeds the initial threshold
@@ -386,7 +389,8 @@ void state3_stillness() {
         // pause the duration alerts
         hasDurationAlertBeenPaused = true;
 
-        // Stay in state 3
+        // Reset the state 3 timer for next alert and stay in state 3
+        state3_start_time = millis();
         stateHandler = state3_stillness;
     }
     // Send a follow-up stillness alert if initial stillness alert is sent and the stillness duration exceeds the follow-up threshold
@@ -404,7 +408,8 @@ void state3_stillness() {
         // make sure duration alers are paused
         hasDurationAlertBeenPaused = true;
 
-        // Stay in state 3
+        // Reset the state 3 timer for next alert and stay in state 3
+        state3_start_time = millis();
         stateHandler = state3_stillness;
     }
 }
