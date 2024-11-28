@@ -53,7 +53,7 @@ int initiateBusses(){
 	g_usbSerial = new serialib();
 	g_usbSerial->openDevice(DLP_SER, DLP_BAUD);
 
-	g_spi0 = new spiInterface("/dev/spi0.0", 500000, 0);
+	g_spi0 = new spiInterface("/dev/spidev0.0", 500000, 0);
 	g_spi0->openBus();
 
 	return err;
@@ -69,8 +69,9 @@ void cleanUp(){
 	delete g_sourceMGas;
 	delete g_sourceCO2T;
 	delete g_sourceCO2S;
-	delete  g_sourcePIR;
-	delete  g_motionSensor;
+	delete g_sourcePIR;
+	delete g_motionSensor;
+	delete g_boronSensor;
 	
 	g_fastI2C->closeBus();
 	delete g_fastI2C;
@@ -80,6 +81,8 @@ void cleanUp(){
 	delete g_gpioPIR;
 	g_usbSerial->closeDevice();
 	delete g_usbSerial;
+	g_spi0->closeBus();
+	delete g_spi0;
 }
 
 int initiateDataSources(vector<dataSource*> * dataVector){
