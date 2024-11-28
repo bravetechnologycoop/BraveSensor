@@ -13,7 +13,6 @@
 #include <thread>
 #include <mutex>
 
-
 using namespace std;
 bool g_loop;
 timed_mutex g_interthreadMutex;
@@ -89,7 +88,8 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	int err = OK;
 	bDebug(TRACE, "Initializing the DataSources");
 
-	dataVector->push_back(g_boronSensor);
+	//g_boronSensor = new boronSensor();
+	//dataVector->push_back(g_boronSensor);
 
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
@@ -193,6 +193,7 @@ int main()
 	bDebug(INFO, "Starting Data Gathering");
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
+	int count = -1;
 	int count = -1;
     int err = OK;
 	thread * boronListener;
