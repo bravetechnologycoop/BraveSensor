@@ -14,7 +14,7 @@
 #include <i2cInterface.h>
 #include <smbInterface.h>
 #include <gpioInterface.h>
-#include <boronSensor.h>
+//#include <boronSensor.h>
 #include <serialib.h>
 #include <thread>
 #include <mutex>
@@ -36,7 +36,7 @@ i2cInterface * g_fastI2C = NULL;
 i2cInterface * g_slowI2C = NULL;
 gpioInterface * g_gpioPIR = NULL;
 serialib * g_usbSerial = NULL;
-boronSensor * g_boronSensor = NULL;
+//boronSensor * g_boronSensor = NULL;
 
 uint8_t g_buffer[32] = {0};
 
@@ -85,8 +85,8 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	int err = OK;
 	bDebug(TRACE, "Initializing the DataSources");
 
-	g_boronSensor = new boronSensor();
-	dataVector->push_back(g_boronSensor);
+	//g_boronSensor = new boronSensor();
+	//dataVector->push_back(g_boronSensor);
 
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
@@ -153,8 +153,8 @@ void spiRxThread()
 		//busy wait reading from SPI until you get data
 		//read blob from SPI
 		//push blob into boronSensor->parseData(uint8_t* data)
-		g_boronSensor->parseData(g_buffer);
-		g_interthreadMutex.unlock();
+		//g_boronSensor->parseData(g_buffer);
+		//g_interthreadMutex.unlock();
 	}
 
 }
@@ -186,7 +186,7 @@ int main()
 	std::vector<dataSource*> vSources;
 	int count = -1;
     int err = OK;
-	thread * boronListener;
+	//thread * boronListener;
 	//thread * boronWriter;
 	g_loop = true;
     try{
@@ -207,7 +207,7 @@ int main()
 
 
 		//start child thread
-		boronListener = new thread(spiRxThread);
+		//boronListener = new thread(spiRxThread);
 		//boronWriter = new thread(spiTxThread);
 
 		//main execution loop
@@ -237,7 +237,7 @@ int main()
 		};
 
 		//wait for the thread to complete
-		boronListener->join();
+		//boronListener->join();
 		//boronWriter->join();
 		sleep(300);
 		//cleanup

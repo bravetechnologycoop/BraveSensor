@@ -27,7 +27,7 @@ try {
             
             $pixels[$i] = array_map('intval', $array);
 
-           // echo "pixels is " . " " . (string)$pixels[$i][0] . " " .(string)$pixels[$i][1] ." " . (string)$pixels[$i][2];
+            //echo "pixels is " . " " . (string)$pixels[$i][0] . " " .(string)$pixels[$i][1] ." " . (string)$pixels[$i][2];
         }
         
 
@@ -35,10 +35,10 @@ try {
         if (count($pixels) < 16) {
             for ($i = 0; $i < count($pixels); $i++) {
                 $pixels[$i] = array_pad($pixels, 16, 0);
+    
             }
         }
     } else {
-        // Show blank if thermalcamera not populated
         $pixels = array_fill(0, 16, 0);
     }
     
@@ -47,31 +47,30 @@ try {
     exit;
 }
 
-$minDistance = 1500;
-$maxDistance = 2500;
-//$minDistance = min($pixels);
-//$maxDistance = max($pixels);
+//$minDistance = 0;
+//$maxDistance = 65;
+
+$minDistance = min($pixels[2]);
+$maxDistance = max($pixels[2]);
 function colorGradiant($value, $minDistance, $maxDistance, $status) {
-    //set the value to a normalized value between 0 and 1 (for the ironPallate mapping)
     $normalized = 0;
     if($maxDistance - $minDistance != 0){
         $normalized = ($value - $minDistance) / ($maxDistance - $minDistance);
     }
     $color = "";
     if($status == 5 || $status == 9){
-        //WIP gradient, could be improved
-        $r = (int)(255 * $normalized);  // Red increases as normalized goes from 0 to 1
-        $g = 0;  // Green stays 0
-        $b = 0;  // Blue stays 0
+        $r = 0;
+        $g = (int)(255 * $normalized);
+        $b = 0;
         $color = "rgb($r, $g, $b)";
     }
     
     if($status == 255){
-        $color = "rgb(0, 255, 0)";
+        $color = "rgb(250, 64, 255)";
     }
 
     if($color == ""){
-        $color = "rgb(255, 0, 255)";
+        $color = "rgb(207, 20, 43)";
     }
 
     return $color;

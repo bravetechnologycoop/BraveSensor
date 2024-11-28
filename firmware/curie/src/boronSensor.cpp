@@ -8,16 +8,16 @@
 #include <dataSource.h>
 #include <curie.h>
 #include <boronSensor.h>
-#include "spidevpp/spi.h"
+//#include "spidevpp/spi.h"
 #include <linux/types.h>
 
 boronSensor::boronSensor(){
-    spi = new SPI(0,32000,0);
+    //spi = new SPI(0,32000,0);
     
     bDebug(TRACE, "Creating boronSensor");
-    //init();
+    init();
     setTableParams();
-    smokeTest();
+    //smokeTest();
 }
 
 boronSensor::~boronSensor(){
@@ -85,7 +85,7 @@ int boronSensor::parseData(uint8_t buffer[32]){
     return err;
 }
 
-int boronSensor::smokeTest(){
+/*int boronSensor::smokeTest(){
     int speed = 32000;
     int fd = this->spi->spiOpen(0, speed, 0);
     bDebug(TRACE, "fd: " + to_string(fd));
@@ -96,7 +96,7 @@ int boronSensor::smokeTest(){
     bDebug(TRACE, "Write: " + to_string(write));
 
     int read = this->spi->spiRead(fd, speed, RXBuf, 3);
-    bDebug(TRACE, "Read: " +  to_string(read));*/
+    bDebug(TRACE, "Read: " +  to_string(read));*/ /*
     int count = 3;
     int transfer = this->spi->spiXfer(fd, speed, TXBuf, RXBuf, count);
     bDebug(TRACE, "TRANSFER:" + to_string(transfer));
@@ -116,13 +116,13 @@ int boronSensor::smokeTest(){
     }
     sleep(20);
     return 0;
-}
+}*/
 
 int boronSensor::init(){
     int err = OK;
-    if(this->spi->spiOpen(0, 32000, 0) < 0) {
+    //if(this->spi->spiOpen(0, 32000, 0) < 0) {
         err = BAD_SETTINGS;
-    }
+    //}
     if(err == OK){
         bDebug(TRACE, "init successful");
     }
