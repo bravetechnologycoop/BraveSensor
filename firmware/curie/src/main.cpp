@@ -149,12 +149,19 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 
 void spiRxThread()
 {
+	uint8_t txBuff[128], rxBuff[128] = {0};
+
+	for (int i = 0; i < 128; i++){
+		txBuff[i] = i;
+	}
+
 	while (g_loop){
 		g_interthreadMutex.lock();
 		bDebug(TRACE, "Spi is doing stuff");
 		//busy wait reading from SPI until you get data
 		//read blob from SPI
 		//push blob into boronSensor->parseData(uint8_t* data)
+		//g_spi0->readwriteBytes(txBuff, rxBuff, 128);
 		g_boronSensor->parseData(g_buffer);
 		this_thread::sleep_for(10s);
 

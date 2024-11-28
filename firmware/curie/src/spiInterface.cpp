@@ -99,8 +99,8 @@ int spiInterface::readBytes( uint8_t *in_data, size_t len){
 
     memset(&spi, 0, sizeof(spi));
 
-    spi.tx_buf        = (unsigned) NULL;
-    spi.rx_buf        = (unsigned) in_data;
+    spi.tx_buf        = (uint64_t) NULL;
+    spi.rx_buf        = (uint64_t) in_data;
     spi.len           = len;
     spi.speed_hz      = this->baud;
     spi.delay_usecs   = 0;
@@ -119,8 +119,8 @@ int spiInterface::writeBytes(uint8_t *out_data, size_t len){
 
     memset(&spi, 0, sizeof(spi));
 
-    spi.tx_buf        = (unsigned) out_data;
-    spi.rx_buf        = (unsigned) NULL;
+    spi.tx_buf        = (uint64_t) out_data;
+    spi.rx_buf        = (uint64_t) NULL;
     spi.len           = len;
     spi.speed_hz      = this->baud;
     spi.delay_usecs   = 0;
@@ -139,8 +139,8 @@ int spiInterface::readwriteBytes(uint8_t *in_data, uint8_t *out_data,size_t len 
 
     memset(&spi, 0, sizeof(spi));
 
-    spi.tx_buf        = (unsigned) out_data;
-    spi.rx_buf        = (unsigned) in_data;
+    spi.tx_buf        = (uint64_t) out_data;
+    spi.rx_buf        = (uint64_t) in_data;
     spi.len           = len;
     spi.speed_hz      = this->baud;
     spi.delay_usecs   = 0;
