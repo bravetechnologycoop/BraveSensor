@@ -19,8 +19,9 @@
 #define APPLICATION_STOP  0xE4
 #define APPLICATION_START 0xEB
 
-// this is the number of samples that the average is taken on
-// buffer size must always be at least one larger than sample size
+#define MOVING_AVERAGE_SAMPLE_SIZE 25
+#define MOVING_AVERAGE_BUFFER_SIZE 26
+
 #define RUNNING_MEDIAN_SAMPLE_SIZE 19
 
 //***************************global typedefs ******************************
@@ -36,16 +37,14 @@ typedef struct rawINSData {
 typedef struct filteredINSData {
     unsigned char direction;
     unsigned char speed_kph;
+    float iAverage;
     int iMedian;
-    int qMedian;
     float signalMedian;
-    float distance;
     unsigned long timestamp;
 
 } filteredINSData;
 
 extern os_queue_t insHeartbeatQueue;
-extern int speed_limit;
 
 //***************************function declarations***************
 

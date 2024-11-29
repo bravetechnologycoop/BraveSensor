@@ -153,7 +153,7 @@ void state0_idle() {
 
     Log.info("You are in state 0, idle: Door status, signalMedian = 0x%02X, %f", checkDoor.doorStatus, checkINS.signalMedian);
     // default timer to 0 when state doesn't have a timer
-    publishDebugMessage(0, checkDoor.doorStatus, checkINS.direction, checkINS.speed_kph, checkINS.iMedian, checkINS.signalMedian, checkINS.distance, (millis() - timeWhenDoorClosed));
+    publishDebugMessage(0, checkDoor.doorStatus, checkINS.iMedian, checkINS.iAverage, checkINS.signalMedian, (millis() - timeWhenDoorClosed));
 
     // fix outputs and state exit conditions accordingly
     if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && ((unsigned long)checkINS.signalMedian > ins_threshold) &&
@@ -187,7 +187,7 @@ void state1_15sCountdown() {
     digitalWrite(D2, HIGH);
     Log.info("You are in state 1, initial countdown: Door status, signalMedian, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.signalMedian,
              (millis() - state1_timer));
-    publishDebugMessage(1, checkDoor.doorStatus, checkINS.direction, checkINS.speed_kph, checkINS.iMedian, checkINS.signalMedian, checkINS.distance, (millis() - state1_timer));
+    publishDebugMessage(1, checkDoor.doorStatus, checkINS.iMedian, checkINS.iAverage, checkINS.signalMedian, (millis() - state1_timer));
 
     // fix outputs and state exit conditions accordingly
     if ((unsigned long)checkINS.signalMedian > 0 && (unsigned long)checkINS.signalMedian < ins_threshold) {
@@ -233,7 +233,7 @@ void state2_duration() {
     digitalWrite(D3, HIGH);
     Log.info("You are in state 2, duration: Door status, signalMedian, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.signalMedian,
              (millis() - state2_duration_timer));
-    publishDebugMessage(2, checkDoor.doorStatus, checkINS.direction, checkINS.speed_kph, checkINS.iMedian, checkINS.signalMedian, checkINS.distance, (millis() - state2_duration_timer));
+    publishDebugMessage(2, checkDoor.doorStatus, checkINS.iMedian, checkINS.iAverage, checkINS.signalMedian, (millis() - state2_duration_timer));
 
     // fix outputs and state exit conditions accordingly
     if ((unsigned long)checkINS.signalMedian > 0 && (unsigned long)checkINS.signalMedian < ins_threshold) {
@@ -286,7 +286,7 @@ void state3_stillness() {
     digitalWrite(D4, HIGH);
     Log.info("You are in state 3, stillness: Door status, signalMedian, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.signalMedian,
              (millis() - state3_stillness_timer));
-    publishDebugMessage(3, checkDoor.doorStatus, checkINS.direction, checkINS.speed_kph, checkINS.iMedian, checkINS.signalMedian, checkINS.distance, (millis() - state3_stillness_timer));
+    publishDebugMessage(3, checkDoor.doorStatus, checkINS.iMedian, checkINS.iAverage, checkINS.signalMedian, (millis() - state3_stillness_timer));
 
     // fix outputs and state exit conditions accordingly
     if ((unsigned long)checkINS.signalMedian > ins_threshold) {
@@ -345,7 +345,7 @@ void publishStateTransition(int prevState, int nextState, unsigned char doorStat
     }
 }
 
-void publishDebugMessage(int state, unsigned char doorStatus, unsigned char direction, unsigned char speed, int iMedian, float signal, float distance, unsigned long timer) {
+void publishDebugMessage(int state, unsigned char doorStatus, int iMedian, float iAverage, float signal, unsigned long timer) {
     if (stateMachineDebugFlag) {
         if ((millis() - debugFlagTurnedOnAt) > DEBUG_AUTO_OFF_THRESHOLD) {
             stateMachineDebugFlag = false;
@@ -354,9 +354,9 @@ void publishDebugMessage(int state, unsigned char doorStatus, unsigned char dire
             // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
             char debugMessage[622];
             snprintf(debugMessage, sizeof(debugMessage),
-                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"direction\":\"%d\", \"speed\":\"%d\", \"iMedian\":\"%d\", \"distance\":\"%f\", \"INS_val\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
+                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"iMedian\":\"%d\", \"iAverage\":\"%f\", \"signal\":\"%f\", \"INS_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
                      "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
-                     state, doorStatus, direction, speed, iMedian, distance, signal, ins_threshold, timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
+                     state, doorStatus, iMedian, iAverage, signal, ins_threshold, timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
                      *max_stillness_time);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();

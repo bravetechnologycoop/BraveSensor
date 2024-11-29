@@ -60,7 +60,7 @@ void state1_15sCountdown();
 void state2_duration();
 void state3_stillness();
 
-void publishDebugMessage(int, unsigned char, unsigned char, unsigned char, int, float, float, unsigned long);
+void publishDebugMessage(int, unsigned char, int, float, float, unsigned long);
 void publishStateTransition(int, int, unsigned char, float);
 void saveStateChangeOrAlert(int, int);
 

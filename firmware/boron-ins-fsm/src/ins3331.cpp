@@ -10,8 +10,6 @@
 #include <math.h>
 
 os_queue_t insQueue;
-float signalWhileMoving = 0;
-int speed_limit = 3;
 
 // setup function & subfunctions
 void setupINS3331() {
@@ -24,31 +22,40 @@ void setupINS3331() {
 // in the future, checkINS3331() will become a thread
 filteredINSData checkINS3331() {
     rawINSData dataToParse;
-    RunningMedianInt32 iBuffer = RunningMedianInt32(RUNNING_MEDIAN_SAMPLE_SIZE);
-    RunningMedianInt32 qBuffer = RunningMedianInt32(RUNNING_MEDIAN_SAMPLE_SIZE);
-    RunningMedianFloat signalBuffer = RunningMedianFloat(RUNNING_MEDIAN_SAMPLE_SIZE);
-    static filteredINSData returnINSData = {0, 0, 0, 0, 0.0, 0.0, 0};
+    static CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> iAvgBuffer;
+    RunningMedianInt32 iMedBuffer = RunningMedianInt32(RUNNING_MEDIAN_SAMPLE_SIZE);
+    RunningMedianFloat signalMedBuffer = RunningMedianFloat(RUNNING_MEDIAN_SAMPLE_SIZE);
+    static filteredINSData returnINSData = {0, 0, 0.0, 0, 0.0, 0};
 
     // os_queue_take returns 0 on success, so if we get a value, dump it to circular buffer
     if (os_queue_take(insQueue, &dataToParse, 0, 0) == 0) {
+        static float iSum = 0;
         float signal = sqrt((double)(pow(dataToParse.inPhase, 2) + pow(dataToParse.quadrature, 2)));
+        /*
+        float QbyI = ((float)dataToParse.quadrature) / ((float)dataToParse.inPhase);
+        float phase = atan(QbyI) * 180/M_PI;
+        */
 
-        // add absolute values to circular buffer for the running median
-        iBuffer.add(abs(dataToParse.inPhase));
-        //qBuffer.add(abs(dataToParse.quadrature));
-        signalBuffer.add(signal);
+        iAvgBuffer.push(abs(dataToParse.inPhase));
+        iMedBuffer.add(abs(dataToParse.inPhase));
+        signalMedBuffer.add(signal);
 
-        returnINSData.direction = dataToParse.direction;
-        returnINSData.speed_kph = dataToParse.speed_kph;
-        returnINSData.iMedian = iBuffer.getMedian();
-        //returnINSData.qMedian = qBuffer.getMedian();
-        returnINSData.signalMedian = signalBuffer.getMedian();
-
-        if (dataToParse.speed_kph > speed_limit) {
-            signalWhileMoving = returnINSData.signalMedian;
+        if (iAvgBuffer.size() == MOVING_AVERAGE_SAMPLE_SIZE) {
+            for (int i = 0; i < MOVING_AVERAGE_SAMPLE_SIZE; i++) {
+                iSum += iAvgBuffer[i];
+            }
+            returnINSData.iAverage = iSum / MOVING_AVERAGE_SAMPLE_SIZE;
         }
 
-        returnINSData.distance = signalWhileMoving;
+        if (iAvgBuffer.size() == MOVING_AVERAGE_BUFFER_SIZE) {
+            iSum = iSum - iAvgBuffer[0] + iAvgBuffer[MOVING_AVERAGE_BUFFER_SIZE - 1];
+            returnINSData.iAverage = iSum / MOVING_AVERAGE_SAMPLE_SIZE;
+            // Log.info("iAverage = %f, qAverage = %f", returnINSData.iAverage, returnINSData.qAverage);
+        }
+
+        returnINSData.iMedian = iMedBuffer.getMedian();
+        returnINSData.signalMedian = signalMedBuffer.getMedian();
+
         returnINSData.timestamp = millis();
 
     }  // end queue if
