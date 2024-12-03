@@ -5,9 +5,9 @@
 # Produces .bin file in ./build/ folder
 #
 # Example Usage:
-# 	make							// build/firmware.bin
+# 	make					// build/firmware.bin
 # 	make BINARY_NAME=v1000			// build/v1000.bin
-# 	make clean						// removes build folder
+# 	make clean				// removes build folder
 # 
 # You can find other methods of building firmware here:
 # https://docs.particle.io/firmware/best-practices/firmware-build-options/
