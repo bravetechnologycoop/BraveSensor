@@ -8,8 +8,10 @@
 #include <CircularBuffer.h>
 
 os_queue_t insQueue; 
-int  g_iValues[MOVING_AVERAGE_BUFFER_SIZE];
-int  g_qValues[MOVING_AVERAGE_BUFFER_SIZE];
+CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> g_iValues;
+CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> g_qValues;
+//int  g_iValues[MOVING_AVERAGE_BUFFER_SIZE];
+//int  g_qValues[MOVING_AVERAGE_BUFFER_SIZE];
 
 // setup function & subfunctions
 void setupINS3331() {
