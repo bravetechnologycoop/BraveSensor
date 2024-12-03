@@ -16,7 +16,6 @@
 StateHandler stateHandler = state0_idle;
 
 // Start timers for different states
-// Whenever there is a state transition, these are updated to millis()
 unsigned long state0_start_time;
 unsigned long state1_start_time;
 unsigned long state2_start_time;
@@ -62,7 +61,7 @@ void setupStateMachine() {
     // Default to not publishing debug logs (from debugFlags.h)
     stateMachineDebugFlag = 0;
 
-    // Reset the state start timers
+    // Initialize the state start timers
     state0_start_time = 0;
     state1_start_time = 0;
     state2_start_time = 0;
@@ -154,18 +153,24 @@ void state0_idle() {
     doorData checkDoor = checkIM();
     filteredINSData checkINS = checkINS3331();
 
-    // Reset alert flags and initialize variables
-    hasDurationAlertBeenPaused = false;
-    numDurationAlertSent = 0;
-    numStillnessAlertSent = 0;
-
     // Set debug pins to LOW
     digitalWrite(D2, LOW);
     digitalWrite(D3, LOW);
     digitalWrite(D4, LOW);
     digitalWrite(D5, LOW);
 
+    // Reset alert flags and initialize variables
+    hasDurationAlertBeenPaused = false;
+    numDurationAlertSent = 0;
+    numStillnessAlertSent = 0;
+
+    // Reset the other state start timers 
+    state1_start_time = 0;
+    state2_start_time = 0;
+    state3_start_time = 0;
+
     // If the door is closed, calculate the time spent in state 0
+    // State 0 only requires timeWhenDoorClosed
     if (!isDoorOpen(checkDoor.doorStatus)) {
         state0_start_time = timeWhenDoorClosed;
         timeInState0 = calculateTimeInState(state0_start_time);
@@ -263,6 +268,7 @@ void state2_monitoring() {
 
     // Will contain the data for a Duration Alert; max 622 chars as per Particle docs
     char alertMessage[622];
+    char sessionEndMessage[622];
 
     // Set debug pin D3 to HIGH
     digitalWrite(D3, HIGH);
@@ -280,6 +286,13 @@ void state2_monitoring() {
         Log.warn("State 2 --> State 0: Door opened, session over");
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 2);
+
+        // publish session end message to particle 
+        // !!!!!!!!!---TODO---!!!!!!!!! 
+        sprintf(sessionEndMessage, ""); 
+        Particle.publish("Session End", sessionEndMessage, PRIVATE);
+
+        // Transition to state 0
         stateHandler = state0_idle;
     }
     // Transition to state 3 if stillness is detected
@@ -310,7 +323,6 @@ void state2_monitoring() {
     }
 }
 
-
 /*
  * State 3 - Stillness 
  * This state is entered when the door is closed and stillness is detected.
@@ -324,6 +336,7 @@ void state3_stillness() {
   
     // Will contain the data for a Stillness Alert; max 622 chars as per Particle docs
     char alertMessage[622];
+    char sessionEndMessage[622];
 
     // Set debug pin D4 to HIGH
     digitalWrite(D4, HIGH);
@@ -341,6 +354,13 @@ void state3_stillness() {
         Log.warn("State 3 --> State 0: Door opened, session over");
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 2);
+
+        // publish session end message to particle 
+        // !!!!!!!!!---TODO---!!!!!!!!! 
+        sprintf(sessionEndMessage, ""); 
+        Particle.publish("Session End", sessionEndMessage, PRIVATE);
+
+        // Transition to state 0
         stateHandler = state0_idle;
     }
     // Transition to state 2 if movement is detected again
@@ -460,7 +480,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
     }
 }
 
-/**
+/*
  * Maintains state transition history onto queues:
  * Includes the last state, reason of transition and time spent in state.
  *
@@ -472,7 +492,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
  * 3           | Initial timer surpassed
  * 4           | Duration alert
  * 5           | Stillness alert
- **/
+ */
 void saveStateChangeOrAlert(int state, int reason) {
     stateQueue.push(state);
     reasonQueue.push(reason);
