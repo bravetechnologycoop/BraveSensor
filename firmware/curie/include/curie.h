@@ -28,8 +28,8 @@
 #include <co2Telaire.h>
 #include <co2SCD30.h>
 
-#define THERMAL_CAMERA
-#define LIDAR
+//#define THERMAL_CAMERA
+//#define LIDAR
 #define LIDAR_L5
 //#define LIDAR_L1
 #define USONIC_RANGE
@@ -38,7 +38,7 @@
 //#define CO2TELAIRE
 #define CO2SCD
 #define PIR
-#define MULTI_MOTION
+//#define MULTI_MOTION
 
 
 #define FAST_I2C        1
