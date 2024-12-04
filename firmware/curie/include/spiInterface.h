@@ -18,8 +18,6 @@ class spiInterface{
         int closeBus();
         bool isReady();
 
-        int readBytes( uint8_t *in_data, size_t len);
-        int writeBytes(uint8_t *out_data, size_t len);
         int readwriteBytes(uint8_t *in_data, uint8_t *out_data,size_t len );
 
     private:

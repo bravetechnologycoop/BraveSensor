@@ -114,59 +114,13 @@ bool spiInterface::isReady(){
     return ret;
 }
 
-int spiInterface::readBytes( uint8_t *in_data, size_t len){
-    bDebug(TRACE, "spiInterface readBytes");
-    int err;
-    /*struct spi_ioc_transfer spi;
-
-    memset(&spi, 0, sizeof(spi));
-
-    spi.tx_buf        = (uint64_t) NULL;
-    spi.rx_buf        = (uint64_t) in_data;
-    spi.len           = len;
-    spi.speed_hz      = this->baud;
-    spi.delay_usecs   = 0;
-    spi.bits_per_word = 8;
-    spi.cs_change     = 0;
-
-    err = ioctl(this->fileSPI, SPI_IOC_MESSAGE(1), &spi);*/
-    err = read(this->fileSPI, in_data, len);
-
-    return err;
-}
-
-int spiInterface::writeBytes(uint8_t *out_data, size_t len){
-    bDebug(TRACE, "spiInterface writeBytes");
-    int err;
-    /*struct spi_ioc_transfer spi;
-
-    memset(&spi, 0, sizeof(spi));
-
-    spi.tx_buf        = (uint64_t) out_data;
-    spi.rx_buf        = (uint64_t) NULL;
-    spi.len           = len;
-    spi.speed_hz      = this->baud;
-    spi.delay_usecs   = 0;
-    spi.bits_per_word = 8;
-    spi.cs_change     = 0;
-
-    err = ioctl(this->fileSPI, SPI_IOC_MESSAGE(1), &spi);*/
-
-    err = write(this->fileSPI, out_data, len);
-
-    return err;
-}
-
 int spiInterface::readwriteBytes(uint8_t *in_data, uint8_t *out_data,size_t len ){
     bDebug(TRACE, "spiInterface readwriteBytes");
     int err;
     struct spi_ioc_transfer tr;
-    uint64_t  tx_buf = 2056;
-    uint64_t  rx_buf = 0;
-    size_t bufLen = len / 4;  //lets make sure we do this on 64 bit buffer areas;
-
-    tr.tx_buf = (unsigned long)in_data;
-    tr.rx_buf = (unsigned long)out_data;
+    
+    tr.rx_buf = (unsigned long)in_data;
+    tr.tx_buf = (unsigned long)out_data;
     tr.len = len;
     tr.delay_usecs = 0;
     tr.speed_hz = this->baud;
