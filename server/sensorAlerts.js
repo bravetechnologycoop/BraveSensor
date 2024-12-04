@@ -3,7 +3,7 @@ const { t } = require('i18next')
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { ALERT_TYPE, CHATBOT_STATE, helpers } = require('brave-alert-lib')
+const { helpers, twilioHelpers } = require('brave-alert-lib')
 const SENSOR_EVENT = require('./SensorEventEnum')
 const db = require('./db/db')
 
@@ -16,48 +16,135 @@ function setup(braveAlerterObj) {
 }
 
 async function handleAlert(location, alertType, alertData) {
-  const alertTypeDisplayName = helpers.getAlertTypeDisplayName(alertType, location.client.language, t)
-  helpers.log(
-    `${alertTypeDisplayName} Alert for: ${location.locationid} Display Name: ${location.displayName} CoreID: ${location.serialNumber} Data: ${alertData}`,
-  )
-
   let pgClient
 
   try {
     pgClient = await db.beginTransaction()
-
     if (pgClient === null) {
       helpers.logError(`handleAlert: Error starting transaction`)
       return
     }
 
-    const currentSession = await db.getUnrespondedSessionWithDeviceId(location.id, pgClient)
+    /*
+      CREATE TABLE Sessions (
+          id              UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+          device_id       UUID        NOT NULL REFERENCES Devices(id),
+          updated_at      TIMESTAMP   NOT NULL,
+          door_closed_at  TIMESTAMP   NOT NULL,
+          door_opened_at  TIMESTAMP,
+      );
+      CREATE TABLE Alerts (
+          id              UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+          session_id      UUID        NOT NULL REFERENCES Sessions(id),
+          alert_type      ENUM        NOT NULL,
+          recieved_at     TIMESTAMP   NOT NULL,
+      );
+    */
+    
+    // time when this current alert was recieved
     const currentTime = await db.getCurrentTime(pgClient)
+
+    // check if a session already exists for the device
+    const currentSession = await db.getSessionWithDeviceId(location.id, pgClient)
+
+    // client
     const client = location.client
 
-    // default to this sensor not being resettable
-    let isResettable = false
+    // if there is no session, then this is the first alert
+    if (currentSession === null) {
 
-    // Sensors with version <= 10.7.0 will send alert data that is a string with no particularly useful information.
-    // JSON.parse(alertData) should throw in this case, where isResettable should default to false.
-    try {
-      const parsedAlertData = JSON.parse(alertData)
+      // create new session
+      const newSession = await db.createSession (
+        location.id,                        // device_id foriegn key
+        currentTime,                        // updated_at
+        alertData.timeWhenDoorClosed,       // door_closed_at
+        pgClient,                           // pg database instance
+      )
 
-      if (parsedAlertData.numberOfAlertsPublished) {
-        // boolean value of whether the sensor is resettable (number of alerts exceeds threshold)
-        // NOTE: parsedAlertData.numberOfAlertsPublished is different to the session column number_of_alerts. It represents the number of alerts
-        //   published while the sensor is in state 2 or state 3 (the bathroom is occupied and the door is closed, which is terminated only by
-        //   the door opening), not the number of alerts in a server-side session (number of alerts received since the session began).
-        isResettable = parsedAlertData.numberOfAlertsPublished >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
+      // push the alert to the alerts table
+      await db.createAlert (
+        newSession.id,                      // foriegn key session id
+        alertType,                          // alert type
+        currentTime,                        // recieved_at
+        pgClient,                           // pg database instance
+      )
+
+      // based on the type of alert, identify the initial message to sent
+      // make sure to translate the alert message here as well
+      // if a duration alert recieved, send the duration alert message: {location} has been occupied for {alertData.occupancyTime} minutes
+      // if a initial stillness alert is recieved, send the message: {location} needs a SAFETY CHECK. On your way? Reply with anything
+      // the door opened type alert cannot be recieved as the first alert so error
+
+      // send message to all responder phone numbers
+      let response
+      try {
+        const fromPhoneNumber = location.fromPhoneNumber
+        const responderPhoneNumbers = client.responderPhoneNumbers
+        const hasValidPhoneNumbers = fromPhoneNumber && responderPhoneNumbers && responderPhoneNumbers.length > 0
+
+        if (hasValidPhoneNumbers) {
+          const messagePromises = responderPhoneNumbers.map(toPhoneNumber => 
+            twilioHelpers.sendTwilioMessage(toPhoneNumber, fromPhoneNumber, textMessage)
+          )
+          response = await Promise.all(messagePromises)
+        }
+      } catch (error) {
+        helpers.logError(error)
       }
 
-      if (parsedAlertData.isTrueStillnessAlert) {
-        helpers.logSentry(`True Stillness alert at ${location.displayName}`)
+      // handle invalid response (all promises are resolved)
+      const isResponseInvalid = response === undefined || 
+        (Array.isArray(response) && response.every(result => result === undefined))
+      if (isResponseInvalid) {
+        helpers.logError(`Failed to send alert update for session ${sessionId}: ${textMessage}`)
       }
-    } catch (error) {
-      // default to isResettable false
-      isResettable = false
+
     }
+    // otherwise, the session already exist
+    else {
+      // if the alert recived was a door opened alert, 
+      // then update the session door_opened_at to current time
+
+      if (alertType === SENSOR_EVENT.DOOR_OPENED) {
+        // update the existing session
+        await db.updateSession (
+          currentSession.id,        // session will be identified by this
+          currentTime,              // updated_at
+          currentTime,              // door_opened_at
+          pgClient,                 // pg database instance
+        )
+
+        // push the alert to the alerts table
+        await db.createAlert (
+          currentSession.id,        // foriegn key session id
+          alertType,                // alert type
+          currentTime,              // recieved_at
+          pgClient,                 // pg database instance
+        )
+      }
+      // otherwise if it was another duration or stillness alert
+      else {
+        // update the existing session
+        await db.updateSession (
+          currentSession.id,        // session will be identified by this
+          currentTime,              // updated_at
+          pgClient,                 // pg database instance
+        )
+
+        // push the alert to the alerts table
+        await db.createAlert (
+          currentSession.id,        // foriegn key session id
+          alertType,                // alert type
+          currentTime,              // recieved_at
+          pgClient,                 // pg database instance
+        )
+      }
+    }
+
+    // OLD STUFF
+    // -    -
+    //  .  . 
+    //   ^^
 
     if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
       // this session doesn't exist; create new session
@@ -123,7 +210,7 @@ async function handleAlert(location, alertType, alertData) {
   }
 }
 
-const validateSensorEvent = Validator.body(['coreid', 'event', 'api_key', 'data']).exists()
+const validateSensorEvent = Validator.body(['event', 'data', 'coreid', 'api_key']).exists()
 
 async function handleSensorEvent(request, response) {
   try {
@@ -133,9 +220,11 @@ async function handleSensorEvent(request, response) {
       const apiKey = request.body.api_key
 
       if (particleWebhookAPIKey === apiKey) {
-        let alertType
-        const coreId = request.body.coreid
         const sensorEvent = request.body.event
+        const alertData = request.body.data
+        const coreId = request.body.coreid
+        
+        let alertType
         if (sensorEvent === SENSOR_EVENT.DURATION) {
           alertType = ALERT_TYPE.SENSOR_DURATION
         } else if (sensorEvent === SENSOR_EVENT.STILLNESS) {
@@ -144,7 +233,6 @@ async function handleSensorEvent(request, response) {
           const errorMessage = `Bad request to ${request.path}: Invalid event type`
           helpers.logError(errorMessage)
         }
-        const alertData = request.body.data
 
         const location = await db.getDeviceWithSerialNumber(coreId)
         if (!location) {
