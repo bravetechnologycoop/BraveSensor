@@ -10,7 +10,6 @@ using namespace std;
 #include <vector>
 #include <gpiod.h>
 #include <dataSource.h>
-#include <gpioInterface.h>
 
 #define BORON_NAME "Boron Sensor"
 #define BORON_SQL_TABLE "boron"
@@ -25,12 +24,11 @@ class boronSensor final: public dataSource {
         int getTableDef(string * sqlBuf);
         int setTableParams();
         int getTableParams(std::vector<std::pair<std::string, std::string>> * tableData);
-        int parseData(uint8_t buffer[32]);
-        uint8_t buffer[32];
+        int parseData(uint8_t *buffer, uint8_t len);
 
     private:
-        init();
-        std::vector<std::pair<std::string, std::string>> dbParams;
+        std::vector<std::pair<std::string, std::string>> dbParams;        
+        uint8_t buffer[32];
 
 };
 
