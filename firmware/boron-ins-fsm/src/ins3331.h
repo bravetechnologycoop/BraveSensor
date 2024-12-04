@@ -2,6 +2,7 @@
  * Brave firmware state machine for single Boron
  * written by Heidi Fedorak, Apr 2021
  */
+#include "CircularBuffer.h" 
 
 #ifndef INS3331_H
 #define INS3331_H
@@ -43,9 +44,8 @@ typedef struct filteredINSData {
 
 extern os_queue_t insHeartbeatQueue;
 
-extern int  g_iValues[MOVING_AVERAGE_BUFFER_SIZE];
-extern int  g_qValues[MOVING_AVERAGE_BUFFER_SIZE];
-
+extern CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> g_iValues;
+extern CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> g_qValues;
 //***************************function declarations***************
 
 // console functions
