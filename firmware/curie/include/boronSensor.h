@@ -29,7 +29,7 @@ class boronSensor final: public dataSource {
         uint8_t buffer[32];
 
     private:
-        init();
+        int init();
         std::vector<std::pair<std::string, std::string>> dbParams;
 
 };

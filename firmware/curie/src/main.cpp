@@ -88,8 +88,8 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	int err = OK;
 	bDebug(TRACE, "Initializing the DataSources");
 
-	//g_boronSensor = new boronSensor();
-	//dataVector->push_back(g_boronSensor);
+	g_boronSensor = new boronSensor();
+	dataVector->push_back(g_boronSensor);
 
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
@@ -194,10 +194,9 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
 	int count = -1;
-	int count = -1;
     int err = OK;
 	thread * boronListener;
-	//thread * boronWriter;
+	thread * boronWriter;
 	g_loop = true;
     try{
         
@@ -218,7 +217,7 @@ int main()
 
 		//start child thread
 		boronListener = new thread(spiRxThread);
-		//boronWriter = new thread(spiTxThread);
+		boronWriter = new thread(spiTxThread);
 
 		//main execution loop
 		while (g_loop){
@@ -248,7 +247,7 @@ int main()
 
 		//wait for the thread to complete
 		boronListener->join();
-		//boronWriter->join();
+		boronWriter->join();
 
 		//cleanup
 		delete pInterface;

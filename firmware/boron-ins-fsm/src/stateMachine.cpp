@@ -180,6 +180,7 @@ void sendAlphaUpdate() {
     // Now send the data over SPI
     SPI.begin(SPI_MODE_MASTER);
     SPI.transfer(tx_buffer, rx_buffer, sizeof(tx_buffer), NULL);  // Send the data
+    //!!during dev we can tie the lines together and check that tx == rx
     SPI.end();
 }
 

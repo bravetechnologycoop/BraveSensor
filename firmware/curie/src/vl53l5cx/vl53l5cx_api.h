@@ -740,4 +740,6 @@ uint8_t vl53l5cx_dci_replace_data(
 		uint16_t			new_data_size,
 		uint16_t			new_data_pos);
 
+uint8_t VL53L5CX_wait_for_dataready(VL53L5CX_Platform *p_platform);
+
 #endif //VL53L5CX_API_H_

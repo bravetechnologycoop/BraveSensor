@@ -9,6 +9,7 @@
 #include <lidarL5.h>
 #include <curie.h>
 #include "vl53l5cx/vl53l5cx_api.h"
+#include "vl53l5cx/vl53l5cx_api.h"
 
 lidarL5::lidarL5(int i2cBus, int i2cAddress){
     bDebug(TRACE, "Lidar created");
@@ -41,8 +42,11 @@ int lidarL5::getData(string * sqlTable, std::vector<string> * vData){
 
     //check incoming pointers
     *sqlTable = LIDAR5_SQL_TABLE;
-
+   vl53l5cx_start_ranging(&(this->conf));
+   sleep(2);
+   //VL53L5CX_wait_for_dataready(&(this->conf.platform));
    err = vl53l5cx_check_data_ready(&(this->conf), &isReady);
+   bDebug(TRACE, "err: " + to_string(err) + " isReady: " + to_string(isReady));
 
    if (!err && !!isReady){
         err = vl53l5cx_get_ranging_data(&(this->conf), &Results);
@@ -63,7 +67,8 @@ int lidarL5::getData(string * sqlTable, std::vector<string> * vData){
                 bDebug(TRACE, tmpstr);
             }
         }
-   }
+        err = vl53l5cx_stop_ranging(&(this->conf));
+    }
    
 
 
@@ -137,8 +142,6 @@ int lidarL5::initDevice(){
 	}
 
 	bDebug(TRACE, "VL53L5CX ULD ready ! (Version : " + string(VL53L5CX_API_REVISION) + ")");
-
-    status = vl53l5cx_start_ranging(&(this->conf));
 
     return err;
 }

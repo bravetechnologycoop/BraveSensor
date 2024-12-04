@@ -15,7 +15,7 @@ boronSensor::boronSensor(){
     //spi = new SPI(0,32000,0);
     
     bDebug(TRACE, "Creating boronSensor");
-    init();
+    //init();
     setTableParams();
     //smokeTest();
 }
