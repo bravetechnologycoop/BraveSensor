@@ -15,6 +15,8 @@
 #include <braveDebug.h>
 #include "vl53l5cx_api.h"
 #include "vl53l5cx_buffers.h"
+#include <cstddef>
+
 
 /**
  * @brief Inner function, not available outside this file. This function is used
@@ -709,7 +711,15 @@ uint8_t vl53l5cx_check_data_ready(
 	uint8_t status = VL53L5CX_STATUS_OK;
 
 	status |= VL53L5CX_RdMulti(&(p_dev->platform), 0x0, p_dev->temp_buffer, 4);
+	bDebug(TRACE, "status 1 " + to_string(status));
 
+	bool check1 = p_dev->temp_buffer[0] != p_dev->streamcount;
+	bool check2 = p_dev->temp_buffer[0] != (uint8_t)255;
+	bool check3 = p_dev->temp_buffer[1] == (uint8_t)0x5;
+	bool check4 = (p_dev->temp_buffer[2] & (uint8_t)0x5) == (uint8_t)0x5;
+	bool check5 = ((p_dev->temp_buffer[3] & (uint8_t)0x10) ==(uint8_t)0x10);
+	bDebug(TRACE, "check1: " + to_string(check1) + " check2: " + to_string(check2) + " check3: " + to_string(check3) + " check4: " + to_string(check4) + " check5: " + to_string(check5));
+	bDebug(TRACE, "temp buffer " + to_string(p_dev->temp_buffer[0]) + " stream count " + to_string(p_dev->streamcount));
 	if((p_dev->temp_buffer[0] != p_dev->streamcount)
 			&& (p_dev->temp_buffer[0] != (uint8_t)255)
 			&& (p_dev->temp_buffer[1] == (uint8_t)0x5)
@@ -725,6 +735,7 @@ uint8_t vl53l5cx_check_data_ready(
         if ((p_dev->temp_buffer[3] & (uint8_t)0x80) != (uint8_t)0)
         {
         	status |= p_dev->temp_buffer[2];	/* Return GO2 error status */
+			bDebug(TRACE, "status 2 " + to_string(status));
         }
 
 		*p_isReady = 0;
@@ -1358,4 +1369,21 @@ uint8_t vl53l5cx_dci_replace_data(
 	status |= vl53l5cx_dci_write_data(p_dev, data, index, data_size);
 
 	return status;
+}
+
+
+uint8_t VL53L5CX_wait_for_dataready(VL53L5CX_Platform *p_platform)
+{
+#ifdef STMVL53L5CX_KERNEL
+	if (ioctl(p_platform->fd, ST_TOF_IOCTL_WAIT_FOR_INTERRUPT) < 0)
+		return 0;
+#else
+	VL53L5CX_Configuration * p_dev = (VL53L5CX_Configuration *)(p_platform - offsetof(VL53L5CX_Configuration, platform));
+	uint8_t isReady = 0;
+	do {
+		VL53L5CX_WaitMs(p_platform, 5);
+		vl53l5cx_check_data_ready(p_dev, &isReady);		
+	} while (isReady == 0);
+#endif
+	return 1;
 }

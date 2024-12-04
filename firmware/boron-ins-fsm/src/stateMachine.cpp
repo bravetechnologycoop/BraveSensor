@@ -125,18 +125,62 @@ void initializeStateMachineConsts() {
     }
 }
 
-void sendAlphaUpdate(){
-    alpha_update_time = millis() + ALPHA_UPDATE_TIMER; 
+void sendAlphaUpdate() {
+    alpha_update_time = millis() + ALPHA_UPDATE_TIMER;
 
-    //package up the 2 i and q buffers
-    //the buffer size constant
-    //rssi
-    //statemachine value
-    //door sensor
+    //MOVING_AVERAGE_BUFFER_SIZE * 2 bytes for g_iValues and g_qValues,
+    // 10 bytes for RSSI, 1 byte for state machine, 1 byte for door sensor status
+    uint8_t tx_buffer[MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1];
+    uint8_t rx_buffer[sizeof(tx_buffer)];
+    int index = 0;
 
+    // Add the g_iValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
+    for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
+        tx_buffer[index++] = g_iValues[i] & 0xFF;
+    }
+
+    // Then, add the g_qValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
+    for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
+        tx_buffer[index++] = g_qValues[i] & 0xFF; 
+    }
+
+    // Add the RSSI value (2 bytes)
+    CellularSignal sig = Cellular.RSSI();
+    int signalStr = (int) sig.getStrength() * 100; // Signal strength % as an int
+    int signalQual = (int) sig.getQuality() * 100; // Quality % as an int
+    int signalStrAbs = (int) sig.getStrengthValue() * 10; // Strength * 10 as an int
+    int signalQualAbs = (int) sig.getQualityValue() * 10; // Quality * 10 as an int
+    int ratAsInteger = (int) sig.getAccessTechnology(); // Will return one of 5 RAT constants, see below.
+
+    // NET_ACCESS_TECHNOLOGY_GSM: 2G RAT
+    // NET_ACCESS_TECHNOLOGY_EDGE: 2G RAT with EDGE
+    // NET_ACCESS_TECHNOLOGY_UMTS/NET_ACCESS_TECHNOLOGY_UTRAN/NET_ACCESS_TECHNOLOGY_WCDMA: UMTS RAT
+    // NET_ACCESS_TECHNOLOGY_LTE: LTE RAT
+    // NET_ACCESS_TECHNOLOGY_LTE_CAT_M1: LTE Cat M1 RAT
+    int signalData[5] = { signalStr, signalQual, signalStrAbs, signalQualAbs, ratAsInteger };
+    for (int i = 0; i < 5; i++) {
+        tx_buffer[index++] = (signalData[i] >> 8) & 0xFF;
+        tx_buffer[index++] = signalData[i] & 0xFF;
+    }
+
+    // Add the state machine value (1 byte)
+    if (!stateQueue.empty()) {
+        tx_buffer[index++] = stateQueue.back() & 0xFF; //We need to ensure one byte, although will probably never be 2 bytes
+    }
+    else {
+        tx_buffer[index++] = 0x00; //if stateQueue is empty for whatever reason, send 0;
+    }
     
+    doorData checkDoor;
+    checkDoor = checkIM();
+
+    // Add the door sensor status (1 byte)
+    tx_buffer[index++] = isDoorOpen(checkDoor.doorStatus);  // 1 for open, 0 for closed, no byte mask needed
+
+    // Now send the data over SPI
     SPI.begin(SPI_MODE_MASTER);
-    SPI.transfer(tx_buffer, rx_buffer, length, NULL);
+    SPI.transfer(tx_buffer, rx_buffer, sizeof(tx_buffer), NULL);  // Send the data
+    //!!during dev we can tie the lines together and check that tx == rx
     SPI.end();
 }
 

@@ -88,8 +88,8 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	int err = OK;
 	bDebug(TRACE, "Initializing the DataSources");
 
-	//g_boronSensor = new boronSensor();
-	//dataVector->push_back(g_boronSensor);
+	g_boronSensor = new boronSensor();
+	dataVector->push_back(g_boronSensor);
 
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
