@@ -27,7 +27,7 @@ int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
     int tmp;
     validateBuffer();
     //Check that rxBuffer != {0}
-    int zeros[sizeof(rxBuffer)];
+    int zeros[sizeof(rxBuffer)] = {0};
     if(!(memcmp(rxBuffer,zeros,sizeof(rxBuffer))==0) && validateBuffer() == OK )
     {
         int index = 0;
@@ -130,11 +130,26 @@ int boronSensor::getTableParams(std::vector<std::pair<std::string, std::string>>
 }
 
 int boronSensor::storeData(uint8_t * buffer, uint8_t len){
-    int err = OK; 
+    bDebug(TRACE, "Boron store data");
+    int err = -1; 
+
+    for (int i = 0; i < len; i++){
+        //all 0 is BAD
+        if (buffer[i] != 0){
+            err = OK;
+            continue;
+        }
+    }
+
+    if (OK != err) return err;
+    
     if(buffer != NULL && len != 0){
-        for(int i = 0; i <= len; i++){
+        for(int i = 0; i < len; i++){
             if(this->rxBufferIndex < FULL_BUFFER_SIZE){
                 this->rxBuffer[this->rxBufferIndex++] = buffer[i];
+                if(this->rxBufferIndex == FULL_BUFFER_SIZE){
+                    this->rxBufferIndex = 0;
+                }
             }
             else{
                 bDebug(TRACE, "index out of bounds, resetting index to 0 and buffer");
@@ -145,12 +160,26 @@ int boronSensor::storeData(uint8_t * buffer, uint8_t len){
         }
         if(this->rxBufferIndex >= 2){
             if(rxBuffer[0] != DELIMITER_A || rxBuffer[1] != DELIMITER_B){
+                bDebug(TRACE, "rxbuffer0 " + to_string(rxBuffer[0]));
+                bDebug(TRACE, "rxbuffer1 " + to_string(rxBuffer[1]));
                 bDebug(TRACE, "starting delimiter invalid, flushing buffer");
                 flushBuffer();
                 err = BAD_SETTINGS;
             }
         }
     }
+    if(err == OK){
+        string txBufContents = "boron: ";
+	    for (int i = 0; i < 68; i++) {
+    	stringstream ss;
+    	ss << hex << this->rxBuffer[i];
+    	string hexString = ss.str();
+        txBufContents += to_string(this->rxBuffer[i]) + " ";
+	    }
+	    bDebug(TRACE, txBufContents.c_str());
+    }
+
+
     return err;
 }
 
