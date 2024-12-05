@@ -149,29 +149,36 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 
 void spiRxThread()
 {
-	uint8_t rxBuf[32] = {0};
+	int buflen = 68;
+	uint8_t rxBuf[buflen] = {0};
+	uint8_t txBuf[buflen] = {0};
 	bool read_bytes = false;
-	uint8_t txBuf[32];
-	for (int i = 0; i < 32; i++){
-		txBuf[i] = i+1;
+
+	for (int i = 0; i < buflen; i++){
+		txBuf[i] = i + 1;
 	}
+	txBuf[0] = 0xDE;
+	txBuf[1] = 0xAD;
+	txBuf[buflen - 2] = 0xDE;
+	txBuf[buflen - 1] = 0xAD;
 
 	while (g_loop){
 		g_interthreadMutex.lock();
 		bDebug(TRACE, "Spi RX is doing stuff");
+		read_bytes = false;
 		//busy wait reading from SPI until you get data
 		//read blob from SPI
 		while (!read_bytes){
-			if (0 > g_spi0->readwriteBytes(rxBuf, txBuf, 32)){
+			if (0 > g_spi0->readwriteBytes(rxBuf, txBuf, buflen)){
 				bDebug(WARN, "Failed RW");
 			}
-			if (0 == g_boronSensor->parseData(rxBuf, 4)){
+			if (0 == g_boronSensor->parseData(rxBuf, buflen)){
 				read_bytes = true;
 			}
 			this_thread::sleep_for(30s);
 		}
 		g_interthreadMutex.unlock();
-		this_thread::sleep_for(240s);
+		this_thread::sleep_for(5s);
 	}
 
 }

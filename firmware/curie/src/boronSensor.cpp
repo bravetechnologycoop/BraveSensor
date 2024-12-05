@@ -73,17 +73,17 @@ int boronSensor::getTableParams(std::vector<std::pair<std::string, std::string>>
 }
 
 int boronSensor::parseData(uint8_t * buffer, uint8_t len){
-    int err = 32;
+    int err = len;
     char outbuf[128];
     sprintf(outbuf, "parseData %02X %02X %02X %02X ...", *(buffer), *(buffer + 1), *(buffer + 2), *(buffer + 3));
     bDebug(TRACE, outbuf);
     
     for (int i = 0; i < len; ++i) {
-        //this->buffer[i] = buffer[i];
+        this->buffer[i] = buffer[i];
         if (0 != buffer[i]){
             err -= 1;
         }
     }
-    return 0;
+    return err;
 }
 
