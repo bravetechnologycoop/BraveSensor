@@ -162,7 +162,7 @@ void spiRxThread()
 		//busy wait reading from SPI until you get data
 		//read blob from SPI
 		while (!read_bytes){
-			if (0 > g_spi0->readwriteBytes(txBuf, rxBuf, 32)){
+			if (0 > g_spi0->readwriteBytes(rxBuf, txBuf, 32)){
 				bDebug(WARN, "Failed RW");
 			}
 			if (0 == g_boronSensor->storeData(rxBuf, 4)){
@@ -175,25 +175,6 @@ void spiRxThread()
 
 }
 
-void spiTxThread()
-{
-	uint8_t txBuf[32];
-	int ret = 0;
-	for (int i = 0; i < 32; i++){
-		txBuf[i] = i+1;
-	}
-
-	bDebug(TRACE, "Spi TX is doing stuff");
-    while (g_loop) {
-        std::this_thread::sleep_for(10s); 
-        
-		ret = g_spi0->writeBytes(txBuf, 32);
-		if (0 >= ret){
-			bDebug(TRACE, "SPI didn't write well");
-		}
-
-    }
-}
 
 
 int main()
@@ -204,7 +185,6 @@ int main()
 	int count = -1;
     int err = OK;
 	thread * boronListener;
-	thread * boronWriter;
 	g_loop = true;
     try{
         
@@ -225,7 +205,6 @@ int main()
 
 		//start child thread
 		boronListener = new thread(spiRxThread);
-		boronWriter = new thread(spiTxThread);
 
 		//main execution loop
 		while (g_loop){
@@ -255,7 +234,6 @@ int main()
 
 		//wait for the thread to complete
 		boronListener->join();
-		boronWriter->join();
 
 		//cleanup
 		delete pInterface;
