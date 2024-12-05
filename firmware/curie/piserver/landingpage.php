@@ -8,6 +8,20 @@ try {
     try {
         $pdo = new PDO("pgsql:host=$db_host;dbname=$db_name", $db_user, $db_password);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // Check if the 'counter' table exists, if not, create it
+        $stmt = $pdo->prepare("SELECT to_regclass('public.counter')");
+        $stmt->execute();
+        $table_exists = $stmt->fetchColumn();
+
+        if (!$table_exists) {
+            $create_table_sql = "
+                CREATE TABLE counter (
+                    count INT,
+                    epochtime TIMESTAMP DEFAULT NOW()
+                    );";
+            $pdo->exec($create_table_sql);
+        }
         //echo "Connected successfully!";
     } catch (PDOException $e) {
         echo "Database connection failed: " . $e->getMessage();

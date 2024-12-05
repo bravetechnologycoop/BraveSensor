@@ -25,7 +25,6 @@ int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
     int err = OK;
     *sqlTable = BORON_SQL_TABLE;
     int tmp;
-    validateBuffer();
     //Check that rxBuffer != {0}
     int zeros[sizeof(rxBuffer)] = {0};
     if(!(memcmp(rxBuffer,zeros,sizeof(rxBuffer))==0) && validateBuffer() == OK )
@@ -64,8 +63,10 @@ int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
             bDebug(TRACE, "Delimiter not found, exiting..");
             return SENSOR_FAULT;
         }
+        
+        flushBuffer();
 
-        if(index != FULL_BUFFER_SIZE - 1){
+        if(index != FULL_BUFFER_SIZE){
             bDebug(TRACE, "bad math has happened");
         }
     }
@@ -147,9 +148,6 @@ int boronSensor::storeData(uint8_t * buffer, uint8_t len){
         for(int i = 0; i < len; i++){
             if(this->rxBufferIndex < FULL_BUFFER_SIZE){
                 this->rxBuffer[this->rxBufferIndex++] = buffer[i];
-                if(this->rxBufferIndex == FULL_BUFFER_SIZE){
-                    this->rxBufferIndex = 0;
-                }
             }
             else{
                 bDebug(TRACE, "index out of bounds, resetting index to 0 and buffer");
@@ -186,9 +184,9 @@ int boronSensor::storeData(uint8_t * buffer, uint8_t len){
 int boronSensor::validateBuffer(){
     int err = OK;
     int length = sizeof(rxBuffer) / sizeof(rxBuffer[0]);
-    if(this->rxBufferIndex != FULL_BUFFER_SIZE - 1){
+    if(this->rxBufferIndex != FULL_BUFFER_SIZE){
         err = BAD_SETTINGS;
-        bDebug(TRACE, "Buffer not filled, invalid");
+        bDebug(TRACE, "Buffer not filled, invalid: " + to_string(this->rxBufferIndex));
     } else if(rxBuffer[0] != DELIMITER_A || rxBuffer[1] != DELIMITER_B){
         err = BAD_SETTINGS;
         bDebug(TRACE, "Beginning delimiter invalid");
