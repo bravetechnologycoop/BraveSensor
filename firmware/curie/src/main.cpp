@@ -171,6 +171,7 @@ void spiRxThread()
 			this_thread::sleep_for(30s);
 		}
 		g_interthreadMutex.unlock();
+		this_thread::sleep_for(240s);
 	}
 
 }

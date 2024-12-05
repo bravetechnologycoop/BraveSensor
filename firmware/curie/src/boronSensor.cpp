@@ -84,6 +84,6 @@ int boronSensor::parseData(uint8_t * buffer, uint8_t len){
             err -= 1;
         }
     }
-    return err;
+    return 0;
 }
 

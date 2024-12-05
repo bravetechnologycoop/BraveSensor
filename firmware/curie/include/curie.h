@@ -29,7 +29,7 @@
 #include <co2SCD30.h>
 
 //#define THERMAL_CAMERA
-//#define LIDAR
+#define LIDAR
 #define LIDAR_L5
 //#define LIDAR_L1
 #define USONIC_RANGE
