@@ -1,4 +1,4 @@
-/* usonicRange.h - Class the retrieves and process passive IR range device data
+/* usonicRange.h - Class the retrieves and process ultrasonic device data
  *
  * Copyright (C) 2024 Brave Coop - All Rights Reserved
  *

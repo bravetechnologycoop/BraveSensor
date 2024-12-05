@@ -1,4 +1,4 @@
-/* lidar.h - Class the retrieves and process thermal camera data
+/* lidar.h - Class the retrieves and process lidar data
  *
  * Copyright (C) 2024 Brave Coop - All Rights Reserved
  *

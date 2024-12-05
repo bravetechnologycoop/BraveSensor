@@ -130,17 +130,22 @@ void sendAlphaUpdate() {
 
     //MOVING_AVERAGE_BUFFER_SIZE * 2 bytes for g_iValues and g_qValues,
     // 10 bytes for RSSI, 1 byte for state machine, 1 byte for door sensor status
-    uint8_t tx_buffer[MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1];
+    uint8_t tx_buffer[2 + MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1 + 2];
     uint8_t rx_buffer[sizeof(tx_buffer)];
     int index = 0;
+    //set delimiter
+    tx_buffer[index++] = 0xDE;
+    tx_buffer[index++] = 0xAD;
 
-    // Add the g_iValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
-    for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
+   // Add the g_iValues buffer
+    for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i+=2) {
+        tx_buffer[index++] = (g_iValues[i] >> 8) & 0xFF;
         tx_buffer[index++] = g_iValues[i] & 0xFF;
     }
 
-    // Then, add the g_qValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
-    for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
+    // Then, add the g_qValues buffer
+    for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i+=2) {
+        tx_buffer[index++] = (g_qValues[i] >> 8) & 0xFF; 
         tx_buffer[index++] = g_qValues[i] & 0xFF; 
     }
 
@@ -176,6 +181,9 @@ void sendAlphaUpdate() {
 
     // Add the door sensor status (1 byte)
     tx_buffer[index++] = isDoorOpen(checkDoor.doorStatus);  // 1 for open, 0 for closed, no byte mask needed
+
+    tx_buffer[index++] = 0xDE;
+    tx_buffer[index++] = 0xAD;
 
     // Now send the data over SPI
     SPI.begin(SPI_MODE_MASTER);
