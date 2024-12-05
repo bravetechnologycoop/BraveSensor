@@ -172,7 +172,7 @@ void spiRxThread()
 			if (0 > g_spi0->readwriteBytes(rxBuf, txBuf, buflen)){
 				bDebug(WARN, "Failed RW");
 			}
-			if (0 == g_boronSensor->parseData(rxBuf, buflen)){
+			if (0 == g_boronSensor->storeData(rxBuf, buflen)){
 				read_bytes = true;
 			}
 			this_thread::sleep_for(30s);
