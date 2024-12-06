@@ -38,6 +38,7 @@ class boronSensor final: public dataSource {
         int validateBuffer();
         int flushBuffer();
         int rxBufferIndex;
+        int signalParse(uint8_t rat, string type, float * signal);
 };
 
 

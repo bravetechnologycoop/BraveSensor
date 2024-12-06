@@ -223,3 +223,56 @@ int boronSensor::flushBuffer(){
     return err;
 }
 
+int boronSensor::signalParse(uint8_t rat, string type, float * signal){
+    int err = OK;
+    //signal !!!change this based on RAT logic:
+        // getStrengthValue() bits 5+6
+        //2G RAT / 2G RAT with EDGE: RSSI in dBm. Range: [-111, -48] as specified in 3GPP TS 45.008 8.1.4.
+        // UMTS RAT: RSCP in dBm. Range: [-121, -25] as specified in 3GPP TS 25.133 9.1.1.3.
+        // LTE Cat M1 RAT: Range: [-141, -44] (dBm)
+        // LTE Cat 1 RAT: Range: [-141, -44] (dBm)
+        // getSignalQuality() bits 7+8
+        // 2G RAT: Bit Error Rate (BER) in % as specified in 3GPP TS 45.008 8.2.4. Range: [0.14%, 18.10%]
+        // 2G RAT with EDGE: log10 of Mean Bit Error Probability (BEP) as defined in 3GPP TS 45.008. Range: [-0.60, -3.60] as specified in 3GPP TS 45.008 10.2.3.3.
+        // UMTS RAT: Ec/Io (dB) [-24.5, 0], as specified in 3GPP TS 25.133 9.1.2.3.
+        // LTE Cat M1 RAT: Range: [-20, -3] (dB)
+        // LTE Cat 1 RAT: Range: [-20, -3] (dB)
+    switch(rat){ //!!!!! VALUES NOT RIGHT FIX LATER
+        case 1: //2G RAT:
+            if(type == "strength"){
+                *signal *= -1; 
+            }
+            if(type == "quality"){
+                *signal /= 100;
+            }
+        case 2: //2G RAT with EDGE:
+            if(type == "strength"){
+                *signal *= -1; 
+            }
+            if(type == "quality"){
+                *signal *= -1;
+            }
+        case 3: //UMTS RAT:
+            if(type == "strength"){
+                *signal *= -1; 
+            }
+            if(type == "quality"){
+                *signal *= -1;
+            }
+        case 4: //LTE Cat M1:
+            if(type == "strength"){
+                *signal *= -1; 
+            }
+            if(type == "quality"){
+                *signal *= -1;
+            }
+        case 5: //LTE Cat 1 CAT:
+            if(type == "strength"){
+                *signal *= -1; 
+            }
+            if(type == "quality"){
+                *signal *= -1;
+            }              
+    }
+
+}
