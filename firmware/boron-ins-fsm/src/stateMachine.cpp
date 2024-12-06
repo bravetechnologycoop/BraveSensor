@@ -10,6 +10,7 @@
 #include "flashAddresses.h"
 #include "imDoorSensor.h"
 #include "ins3331.h"
+#include <stdlib.h> 
 
 // define and initialize state machine pointer
 StateHandler stateHandler = state0_idle;
@@ -149,7 +150,7 @@ void sendAlphaUpdate() {
         tx_buffer[index++] = g_qValues[i] & 0xFF; 
     }
 
-    // Add the RSSI value (2 bytes)
+    // Add the RSSI value (2 bytes) //offset?
     CellularSignal sig = Cellular.RSSI();
     int signalStr = (int) sig.getStrength() * 100; // Signal strength % as an int
     int signalQual = (int) sig.getQuality() * 100; // Quality % as an int

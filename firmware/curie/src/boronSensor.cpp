@@ -26,8 +26,8 @@ int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
     *sqlTable = BORON_SQL_TABLE;
     int tmp;
     //Check that rxBuffer != {0}
-    int zeros[sizeof(rxBuffer)] = {0};
-    if(!(memcmp(rxBuffer,zeros,sizeof(rxBuffer))==0) && validateBuffer() == OK )
+    uint8_t zeros[sizeof(rxBuffer)] = {0};
+    if(!(memcmp(rxBuffer, zeros, sizeof(rxBuffer))) == 0 && validateBuffer() == OK )
     {
         int index = 0;
         if(rxBuffer[index++] != DELIMITER_A || rxBuffer[index++] != DELIMITER_B){
@@ -48,7 +48,18 @@ int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
             tmp += (rxBuffer[index++]) & 0xFF;
             vData->push_back(to_string(tmp));
         }
-        //signal
+        //signal !!!change this based on RAT logic:
+        // getStrengthValue() bits 5+6
+        //2G RAT / 2G RAT with EDGE: RSSI in dBm. Range: [-111, -48] as specified in 3GPP TS 45.008 8.1.4.
+        // UMTS RAT: RSCP in dBm. Range: [-121, -25] as specified in 3GPP TS 25.133 9.1.1.3.
+        // LTE Cat M1 RAT: Range: [-141, -44] (dBm)
+        // LTE Cat 1 RAT: Range: [-141, -44] (dBm)
+        // getSignalQuality() bits 7+8
+        // 2G RAT: Bit Error Rate (BER) in % as specified in 3GPP TS 45.008 8.2.4. Range: [0.14%, 18.10%]
+        // 2G RAT with EDGE: log10 of Mean Bit Error Probability (BEP) as defined in 3GPP TS 45.008. Range: [-0.60, -3.60] as specified in 3GPP TS 45.008 10.2.3.3.
+        // UMTS RAT: Ec/Io (dB) [-24.5, 0], as specified in 3GPP TS 25.133 9.1.2.3.
+        // LTE Cat M1 RAT: Range: [-20, -3] (dB)
+        // LTE Cat 1 RAT: Range: [-20, -3] (dB)
         for (int i = 0; i < 10; i+=2) {
             tmp = 0;
             tmp += (rxBuffer[index++] >> 8) & 0xFF;
@@ -73,6 +84,7 @@ int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
     else {
         bDebug(TRACE, "Buffer invalid, clearing");
         flushBuffer();
+        return SENSOR_FAULT;
     }
     return err;
 }
@@ -149,8 +161,8 @@ int boronSensor::storeData(uint8_t * buffer, uint8_t len){
             if(this->rxBufferIndex < FULL_BUFFER_SIZE){
                 this->rxBuffer[this->rxBufferIndex++] = buffer[i];
             }
-            else{
-                bDebug(TRACE, "index out of bounds, resetting index to 0 and buffer");
+            else {
+                bDebug(TRACE, "index out of bounds, resetting index to 0 and flushing buffer");
                 flushBuffer();
                 err = BAD_SETTINGS;
                 break;
@@ -160,22 +172,13 @@ int boronSensor::storeData(uint8_t * buffer, uint8_t len){
             if(rxBuffer[0] != DELIMITER_A || rxBuffer[1] != DELIMITER_B){
                 bDebug(TRACE, "rxbuffer0 " + to_string(rxBuffer[0]));
                 bDebug(TRACE, "rxbuffer1 " + to_string(rxBuffer[1]));
-                bDebug(TRACE, "starting delimiter invalid, flushing buffer");
+                bDebug(TRACE, "starting delimiter invalid, resetting index to 0 and flushing buffer");
                 flushBuffer();
                 err = BAD_SETTINGS;
             }
         }
     }
-    if(err == OK){
-        string txBufContents = "boron: ";
-	    for (int i = 0; i < 68; i++) {
-    	stringstream ss;
-    	ss << hex << this->rxBuffer[i];
-    	string hexString = ss.str();
-        txBufContents += to_string(this->rxBuffer[i]) + " ";
-	    }
-	    bDebug(TRACE, txBufContents.c_str());
-    }
+    
 
 
     return err;
@@ -184,6 +187,18 @@ int boronSensor::storeData(uint8_t * buffer, uint8_t len){
 int boronSensor::validateBuffer(){
     int err = OK;
     int length = sizeof(rxBuffer) / sizeof(rxBuffer[0]);
+
+    if(err == OK){
+        string rxBufContents = "boron: ";
+	    for (int i = 0; i < 68; i++) {
+    	stringstream ss;
+    	ss << hex << this->rxBuffer[i];
+    	string hexString = ss.str();
+        rxBufContents += to_string(this->rxBuffer[i]) + " ";
+	    }
+	    bDebug(TRACE, rxBufContents.c_str());
+    }
+
     if(this->rxBufferIndex != FULL_BUFFER_SIZE){
         err = BAD_SETTINGS;
         bDebug(TRACE, "Buffer not filled, invalid: " + to_string(this->rxBufferIndex));

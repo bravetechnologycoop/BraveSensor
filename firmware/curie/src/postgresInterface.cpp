@@ -218,7 +218,7 @@ int postgresInterface::writeVectorSQL(string sqlTable, std::vector<string> vData
     }
     query.pop_back();
     query += ");";
-    writeSQL(query);
+    err = writeSQL(query);
     return err;
 }
 
@@ -324,7 +324,7 @@ int postgresInterface::testTableIntegrity()
         }
         if(integrityFailed){
             bDebug(TRACE, "Table integrity failed, current table will be stored (if exists) and we will create a new one.");
-            rename_table(tableName);
+            err = rename_table(tableName);
         }
     }
     return err;
@@ -357,6 +357,6 @@ int postgresInterface::rename_table(string tableName) {
         err = BAD_SETTINGS;
     }
     //The table at this point will be either moved, or didn't exist, create defaults.
-    createDefaultTable(tableName);
+    err = createDefaultTable(tableName);
     return err;
 }
