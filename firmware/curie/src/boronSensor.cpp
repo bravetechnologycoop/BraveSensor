@@ -60,12 +60,22 @@ int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
         // UMTS RAT: Ec/Io (dB) [-24.5, 0], as specified in 3GPP TS 25.133 9.1.2.3.
         // LTE Cat M1 RAT: Range: [-20, -3] (dB)
         // LTE Cat 1 RAT: Range: [-20, -3] (dB)
+        float signal[5] = {0};
+
         for (int i = 0; i < 10; i+=2) {
             tmp = 0;
             tmp += (rxBuffer[index++] >> 8) & 0xFF;
             tmp += (rxBuffer[index++]) & 0xFF;
-            vData->push_back(to_string(tmp));
+            signal[i] = tmp;
         }
+        float strengthAbs = float(signal[2]);
+        signalParse(signal[4], "strength", &strengthAbs);
+        vData->push_back(to_string(strengthAbs));
+
+        float qualityAbs = float(signal[3]);
+        signalParse(signal[4], "quality", &qualityAbs);
+        vData->push_back(to_string(qualityAbs));
+
         //door sensor
         vData->push_back(to_string(rxBuffer[index++]));
         //sensor state
@@ -114,11 +124,11 @@ int boronSensor::setTableParams(){
         for (int i = 0; i <= IQ_BUFFER_SIZE; i+=2) {
             this->dbParams.emplace_back("qvalue" + to_string(i/2), "int");
         }
-        this->dbParams.emplace_back("sigstr", "int");
-        this->dbParams.emplace_back("sigqual", "int");
-        this->dbParams.emplace_back("sigstrabs", "int");
-        this->dbParams.emplace_back("sigqualabs", "int");
-        this->dbParams.emplace_back("rat", "int");
+        this->dbParams.emplace_back("sigstr", "float");
+        this->dbParams.emplace_back("sigqual", "float");
+        this->dbParams.emplace_back("sigstrabs", "float");
+        this->dbParams.emplace_back("sigqualabs", "float");
+        this->dbParams.emplace_back("rat", "float");
         this->dbParams.emplace_back("doorsensor", "int");
         this->dbParams.emplace_back("state", "int");
 
