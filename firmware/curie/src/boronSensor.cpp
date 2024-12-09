@@ -201,10 +201,9 @@ int boronSensor::validateBuffer(){
     if(err == OK){
         string rxBufContents = "boron: ";
 	    for (int i = 0; i < 68; i++) {
-    	stringstream ss;
-    	ss << hex << this->rxBuffer[i];
-    	string hexString = ss.str();
-        rxBufContents += to_string(this->rxBuffer[i]) + " ";
+            char tmp[5];
+            sprintf(tmp, "%02X", this->rxBuffer[i]);
+            rxBufContents += tmp;
 	    }
 	    bDebug(TRACE, rxBufContents.c_str());
     }

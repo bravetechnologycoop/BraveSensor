@@ -68,7 +68,8 @@
 #define BRAVEPASSWORD    "brave"
 #define BRAVEHOST        "localhost"
 #define BRAVEPORT        "5432"
+#ifndef BRAVEDBNAME
 #define BRAVEDBNAME      "testdb"
-#define BRAVESQL         "SELECT * FROM testtable"
+#endif
 
 #endif //_CURIE__H_
