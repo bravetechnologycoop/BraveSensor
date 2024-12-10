@@ -1,0 +1,8 @@
+[Unit]
+Description=Curie services that keeps polling
+
+[Service]
+ExecStart=/home/brave/projects/denis-wip/BraveSensor/firmware/curie/build/bin/curie
+
+[Install]
+WantedBy=multi-user.target
