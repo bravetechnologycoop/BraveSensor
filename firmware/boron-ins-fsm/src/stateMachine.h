@@ -84,4 +84,8 @@ extern unsigned long state3_max_long_stillness_time;
 extern bool hasDurationAlertBeenSent;
 extern bool hasStillnessAlertBeenSent;
 
+//set this so the .ino file can use it
+extern HAL_I2C_Config acquireWireBuffer();
+extern void sendAlphaUpdate();
+
 #endif
