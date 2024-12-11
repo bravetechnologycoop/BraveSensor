@@ -468,6 +468,7 @@ const validateEditClient = [
     'isSendingAlerts',
     'isSendingVitals',
     'language',
+    'status',
   ])
     .trim()
     .notEmpty(),
@@ -524,6 +525,7 @@ async function submitEditClient(req, res) {
         data.isSendingAlerts,
         data.isSendingVitals,
         data.language,
+        data.status,
         req.params.id,
       )
 

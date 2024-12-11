@@ -110,21 +110,18 @@
                         <input type="text" class="form-control" name="organization" placeholder="Organization">
                     </div>
                 </div>   
-
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="funder" class="col-sm-3 col-form-label">Funder</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="funder" placeholder="Funder">
                     </div>
                 </div>   
-
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="postalCode" class="col-sm-3 col-form-label">Postal Code</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="postalCode" placeholder="Postal Code">
                     </div>
                 </div>   
-
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="city" class="col-sm-3 col-form-label">City</label>
                     <div class="col-sm-5">
