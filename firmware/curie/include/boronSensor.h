@@ -22,7 +22,7 @@ using namespace std;
 
 class boronSensor final: public dataSource {
     public:
-        boronSensor();
+        boronSensor(uint8_t adapter, uint8_t i2cAddress);
         ~boronSensor();
 
         int getData(string *sqlTable, std::vector<string> * vData);
@@ -33,12 +33,13 @@ class boronSensor final: public dataSource {
         
 
     private:
-        std::vector<std::pair<std::string, std::string>> dbParams;        
-        uint8_t rxBuffer[FULL_BUFFER_SIZE];
-        int validateBuffer();
-        int flushBuffer();
-        int rxBufferIndex;
-        int signalParse(uint8_t rat, string type, float * signal);
+        std::vector<std::pair<std::string, std::string>> dbParams;
+        int8_t readi2c(uint8_t *buff, uint8_t len);
+        int8_t writei2c(uint8_t *buff, uint8_t len); 
+        uint8_t buffer[32];
+        int fd;
+        uint8_t i2cAddress;
+
 };
 
 

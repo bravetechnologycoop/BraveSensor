@@ -32,13 +32,13 @@
 //#define LIDAR
 #define LIDAR_L5
 //#define LIDAR_L1
-#define USONIC_RANGE
-#define MULTI_GAS
-#define CO2
-//#define CO2TELAIRE
+//#define USONIC_RANGE
+//#define MULTI_GAS
+//#define CO2
 #define CO2SCD
-#define PIR
+//#define PIR
 //#define MULTI_MOTION
+#define BORON
 
 
 #define FAST_I2C        1

@@ -8,6 +8,8 @@
 #define _GPIOINTERFACE__H_
 #include <string>
 #include <gpiod.h>
+#include <unistd.h>
+
 using namespace std;
 
 class gpioInterface{
@@ -22,6 +24,7 @@ class gpioInterface{
 
         int readPin(bool *bData);
         int writePin(bool bData);
+        int waitForPin(timespec ts);
 
     private:
         string busID;

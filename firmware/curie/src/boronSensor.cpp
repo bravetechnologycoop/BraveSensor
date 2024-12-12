@@ -9,93 +9,62 @@
 #include <curie.h>
 #include <boronSensor.h>
 #include <linux/types.h>
+#include <linux/i2c-dev.h>
+#include <sys/ioctl.h>
 
-boronSensor::boronSensor(){    
+#define BORON_BUFFER 68
+
+boronSensor::boronSensor(uint8_t adapter,  uint8_t i2cAddress){    
     bDebug(TRACE, "Creating boronSensor");
-    
+    char fname[64];
+
+    this->fd = -1;
+    this->i2cAddress = i2cAddress;
+    sprintf(fname, "/dev/i2c-%d", adapter);
+    this->fd = open(fname, O_RDWR);
+	if (this->fd < 0) {
+		/* ERROR HANDLING; you can check errno to see what went wrong */
+		printf(" Open failed, returned value = %d, i2c_hdl_name = %s\n",
+				this->fd, fname);
+		perror("Open bus ");
+		return;
+	}
+	if (ioctl(this->fd, I2C_SLAVE, this->i2cAddress) < 0) {
+		printf("Failed to acquire bus access and/or talk to slave.\n");
+		/* ERROR HANDLING; you can check errno to see what went wrong */
+		return;
+	}
+
     setTableParams();
+    bDebug(TRACE, "Created boronSensor");
 }
 
 boronSensor::~boronSensor(){
     bDebug(TRACE, "Deleting boronSensor");
+
+     if (this->fd >= 0){
+        close(this->fd);
+        this->fd = -1;
+     }
 }
 
 int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "boronSensor getData");
     int err = OK;
-    *sqlTable = BORON_SQL_TABLE;
-    int tmp;
-    //Check that rxBuffer != {0}
-    uint8_t zeros[sizeof(rxBuffer)] = {0};
-    if(!(memcmp(rxBuffer, zeros, sizeof(rxBuffer))) == 0 && validateBuffer() == OK )
-    {
-        int index = 0;
-        if(rxBuffer[index++] != DELIMITER_A || rxBuffer[index++] != DELIMITER_B){
-            bDebug(TRACE, "Delimiter not found, exiting..");
-            return SENSOR_FAULT;
-        }
-        //i Values
-        for (int i = 0; i < IQ_BUFFER_SIZE; i+=2) { 
-            tmp = 0;
-            tmp += (rxBuffer[index++] >> 8) & 0xFF;
-            tmp += (rxBuffer[index++]) & 0xFF;
-            vData->push_back(to_string(tmp));
-        }
-        //q Values
-        for (int i = 0; i < IQ_BUFFER_SIZE; i+=2) { 
-            tmp = 0;
-            tmp += (rxBuffer[index++] >> 8) & 0xFF;
-            tmp += (rxBuffer[index++]) & 0xFF;
-            vData->push_back(to_string(tmp));
-        }
-        //signal !!!change this based on RAT logic:
-        // getStrengthValue() bits 5+6
-        //2G RAT / 2G RAT with EDGE: RSSI in dBm. Range: [-111, -48] as specified in 3GPP TS 45.008 8.1.4.
-        // UMTS RAT: RSCP in dBm. Range: [-121, -25] as specified in 3GPP TS 25.133 9.1.1.3.
-        // LTE Cat M1 RAT: Range: [-141, -44] (dBm)
-        // LTE Cat 1 RAT: Range: [-141, -44] (dBm)
-        // getSignalQuality() bits 7+8
-        // 2G RAT: Bit Error Rate (BER) in % as specified in 3GPP TS 45.008 8.2.4. Range: [0.14%, 18.10%]
-        // 2G RAT with EDGE: log10 of Mean Bit Error Probability (BEP) as defined in 3GPP TS 45.008. Range: [-0.60, -3.60] as specified in 3GPP TS 45.008 10.2.3.3.
-        // UMTS RAT: Ec/Io (dB) [-24.5, 0], as specified in 3GPP TS 25.133 9.1.2.3.
-        // LTE Cat M1 RAT: Range: [-20, -3] (dB)
-        // LTE Cat 1 RAT: Range: [-20, -3] (dB)
-        float signal[5] = {0};
+    uint8_t buf[BORON_BUFFER];
 
-        for (int i = 0; i < 10; i+=2) {
-            tmp = 0;
-            tmp += (rxBuffer[index++] >> 8) & 0xFF;
-            tmp += (rxBuffer[index++]) & 0xFF;
-            signal[i] = tmp;
-        }
-        float strengthAbs = float(signal[2]);
-        signalParse(signal[4], "strength", &strengthAbs);
-        vData->push_back(to_string(strengthAbs));
-
-        float qualityAbs = float(signal[3]);
-        signalParse(signal[4], "quality", &qualityAbs);
-        vData->push_back(to_string(qualityAbs));
-
-        //door sensor
-        vData->push_back(to_string(rxBuffer[index++]));
-        //sensor state
-        vData->push_back(to_string(rxBuffer[index++]));
-        if(rxBuffer[index++] != DELIMITER_A || rxBuffer[index++] != DELIMITER_B){
-            bDebug(TRACE, "Delimiter not found, exiting..");
-            return SENSOR_FAULT;
-        }
-        
-        flushBuffer();
-
-        if(index != FULL_BUFFER_SIZE){
-            bDebug(TRACE, "bad math has happened");
+    err = this->readi2c(buf, BORON_BUFFER);
+    if ( 0 > err){
+        bDebug(ERROR, "BoronSensor failed to read i2c");
+    
+    } else {
+        this->parseData(buf, BORON_BUFFER);
+        *sqlTable = BORON_SQL_TABLE;
+        for (int i = 0; i < 32; ++i) {
+            vData->push_back(to_string(buffer[i]));
         }
     }
-    else {
-        bDebug(TRACE, "Buffer invalid, clearing");
-        flushBuffer();
-        return SENSOR_FAULT;
-    }
+
     return err;
 }
 
@@ -232,56 +201,26 @@ int boronSensor::flushBuffer(){
     return err;
 }
 
-int boronSensor::signalParse(uint8_t rat, string type, float * signal){
-    int err = OK;
-    //signal !!!change this based on RAT logic:
-        // getStrengthValue() bits 5+6
-        //2G RAT / 2G RAT with EDGE: RSSI in dBm. Range: [-111, -48] as specified in 3GPP TS 45.008 8.1.4.
-        // UMTS RAT: RSCP in dBm. Range: [-121, -25] as specified in 3GPP TS 25.133 9.1.1.3.
-        // LTE Cat M1 RAT: Range: [-141, -44] (dBm)
-        // LTE Cat 1 RAT: Range: [-141, -44] (dBm)
-        // getSignalQuality() bits 7+8
-        // 2G RAT: Bit Error Rate (BER) in % as specified in 3GPP TS 45.008 8.2.4. Range: [0.14%, 18.10%]
-        // 2G RAT with EDGE: log10 of Mean Bit Error Probability (BEP) as defined in 3GPP TS 45.008. Range: [-0.60, -3.60] as specified in 3GPP TS 45.008 10.2.3.3.
-        // UMTS RAT: Ec/Io (dB) [-24.5, 0], as specified in 3GPP TS 25.133 9.1.2.3.
-        // LTE Cat M1 RAT: Range: [-20, -3] (dB)
-        // LTE Cat 1 RAT: Range: [-20, -3] (dB)
-    switch(rat){ //!!!!! VALUES NOT RIGHT FIX LATER
-        case 1: //2G RAT:
-            if(type == "strength"){
-                *signal *= -1; 
-            }
-            if(type == "quality"){
-                *signal /= 100;
-            }
-        case 2: //2G RAT with EDGE:
-            if(type == "strength"){
-                *signal *= -1; 
-            }
-            if(type == "quality"){
-                *signal *= -1;
-            }
-        case 3: //UMTS RAT:
-            if(type == "strength"){
-                *signal *= -1; 
-            }
-            if(type == "quality"){
-                *signal *= -1;
-            }
-        case 4: //LTE Cat M1:
-            if(type == "strength"){
-                *signal *= -1; 
-            }
-            if(type == "quality"){
-                *signal *= -1;
-            }
-        case 5: //LTE Cat 1 CAT:
-            if(type == "strength"){
-                *signal *= -1; 
-            }
-            if(type == "quality"){
-                *signal *= -1;
-            }              
-    }
+int8_t boronSensor::readi2c(uint8_t *buff, uint8_t len)
+{
+	int ret;
 
+	ret = read(this->fd, buff, len);
+	if (ret != len) {
+		printf("Read failed with %d\n", ret);
+		return -1;
+	}
+	return 0;
+}
+
+ int8_t boronSensor::writei2c(uint8_t *buff, uint8_t len)
+{
+	int ret;
+
+	ret = write(this->fd, buff, len);
+	if (ret != len) {
+		printf("Write failed with %d\n", ret);
+		return -1;
+	}
+	return 0;
 }
