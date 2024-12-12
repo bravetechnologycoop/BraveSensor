@@ -5,6 +5,7 @@ const dashboard = require('./dashboard')
 const pa = require('./pa')
 const vitals = require('./vitals')
 const sensorAlerts = require('./sensorAlerts')
+const smokeTest = require('./smokeTest')
 
 function configureRoutes(app) {
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)
@@ -26,6 +27,9 @@ function configureRoutes(app) {
   app.post('/locations', dashboard.validateNewLocation, dashboard.submitNewLocation)
   app.post('/locations/:id', dashboard.validateEditLocation, dashboard.submitEditLocation)
   app.post('/login', dashboard.submitLogin)
+
+  app.post('/smokeTest/setup', smokeTest.setupSmokeTest)
+  app.post('/smokeTest/teardown', smokeTest.teardownSmokeTest)
 
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
   app.post('/api/sensorEvent', sensorAlerts.validateSensorEvent, sensorAlerts.handleSensorEvent)

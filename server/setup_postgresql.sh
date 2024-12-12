@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 if [[ -z "${PG_PASSWORD}" ]]; then
   pg_password=$1
 else

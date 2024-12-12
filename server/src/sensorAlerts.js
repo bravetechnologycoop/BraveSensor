@@ -3,17 +3,10 @@ const { t } = require('i18next')
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { helpers, twilioHelpers } = require('brave-alert-lib')
-const SENSOR_EVENT = require('./SensorEventEnum')
+const { helpers, twilioHelpers, SENSOR_EVENT, ALERT_TYPE } = require('brave-alert-lib')
 const db = require('./db/db')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
-
-let braveAlerter
-
-function setup(braveAlerterObj) {
-  braveAlerter = braveAlerterObj
-}
 
 async function handleAlert(location, alertType, alertData) {
   let pgClient
@@ -40,7 +33,7 @@ async function handleAlert(location, alertType, alertData) {
           recieved_at     TIMESTAMP   NOT NULL,
       );
     */
-    
+
     // time when this current alert was recieved
     const currentTime = await db.getCurrentTime(pgClient)
 
@@ -52,21 +45,20 @@ async function handleAlert(location, alertType, alertData) {
 
     // if there is no session, then this is the first alert
     if (currentSession === null) {
-
       // create new session
-      const newSession = await db.createSession (
-        location.id,                        // device_id foriegn key
-        currentTime,                        // updated_at
-        alertData.timeWhenDoorClosed,       // door_closed_at
-        pgClient,                           // pg database instance
+      const newSession = await db.createSession(
+        location.id, // device_id foriegn key
+        currentTime, // updated_at
+        alertData.timeWhenDoorClosed, // door_closed_at
+        pgClient, // pg database instance
       )
 
       // push the alert to the alerts table
-      await db.createAlert (
-        newSession.id,                      // foriegn key session id
-        alertType,                          // alert type
-        currentTime,                        // recieved_at
-        pgClient,                           // pg database instance
+      await db.createAlert(
+        newSession.id, // foriegn key session id
+        alertType, // alert type
+        currentTime, // recieved_at
+        pgClient, // pg database instance
       )
 
       // based on the type of alert, identify the initial message to sent
@@ -83,8 +75,8 @@ async function handleAlert(location, alertType, alertData) {
         const hasValidPhoneNumbers = fromPhoneNumber && responderPhoneNumbers && responderPhoneNumbers.length > 0
 
         if (hasValidPhoneNumbers) {
-          const messagePromises = responderPhoneNumbers.map(toPhoneNumber => 
-            twilioHelpers.sendTwilioMessage(toPhoneNumber, fromPhoneNumber, textMessage)
+          const messagePromises = responderPhoneNumbers.map(toPhoneNumber =>
+            twilioHelpers.sendTwilioMessage(toPhoneNumber, fromPhoneNumber, textMessage),
           )
           response = await Promise.all(messagePromises)
         }
@@ -93,110 +85,108 @@ async function handleAlert(location, alertType, alertData) {
       }
 
       // handle invalid response (all promises are resolved)
-      const isResponseInvalid = response === undefined || 
-        (Array.isArray(response) && response.every(result => result === undefined))
+      const isResponseInvalid = response === undefined || (Array.isArray(response) && response.every(result => result === undefined))
       if (isResponseInvalid) {
         helpers.logError(`Failed to send alert update for session ${sessionId}: ${textMessage}`)
       }
-
     }
     // otherwise, the session already exist
     else {
-      // if the alert recived was a door opened alert, 
+      // if the alert recived was a door opened alert,
       // then update the session door_opened_at to current time
 
       if (alertType === SENSOR_EVENT.DOOR_OPENED) {
         // update the existing session
-        await db.updateSession (
-          currentSession.id,        // session will be identified by this
-          currentTime,              // updated_at
-          currentTime,              // door_opened_at
-          pgClient,                 // pg database instance
+        await db.updateSession(
+          currentSession.id, // session will be identified by this
+          currentTime, // updated_at
+          currentTime, // door_opened_at
+          pgClient, // pg database instance
         )
 
         // push the alert to the alerts table
-        await db.createAlert (
-          currentSession.id,        // foriegn key session id
-          alertType,                // alert type
-          currentTime,              // recieved_at
-          pgClient,                 // pg database instance
+        await db.createAlert(
+          currentSession.id, // foriegn key session id
+          alertType, // alert type
+          currentTime, // recieved_at
+          pgClient, // pg database instance
         )
       }
       // otherwise if it was another duration or stillness alert
       else {
         // update the existing session
-        await db.updateSession (
-          currentSession.id,        // session will be identified by this
-          currentTime,              // updated_at
-          pgClient,                 // pg database instance
+        await db.updateSession(
+          currentSession.id, // session will be identified by this
+          currentTime, // updated_at
+          pgClient, // pg database instance
         )
 
         // push the alert to the alerts table
-        await db.createAlert (
-          currentSession.id,        // foriegn key session id
-          alertType,                // alert type
-          currentTime,              // recieved_at
-          pgClient,                 // pg database instance
+        await db.createAlert(
+          currentSession.id, // foriegn key session id
+          alertType, // alert type
+          currentTime, // recieved_at
+          pgClient, // pg database instance
         )
       }
     }
 
-    // OLD STUFF
-    // -    -
-    //  .  . 
-    //   ^^
+    // // OLD STUFF
+    // // -    -
+    // //  .  .
+    // //   ^^
 
-    if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
-      // this session doesn't exist; create new session
-      const newSession = await db.createSession(
-        location.id,
-        undefined,
-        CHATBOT_STATE.STARTED,
-        alertType,
-        undefined,
-        undefined,
-        undefined,
-        isResettable,
-        pgClient,
-      )
+    // if (currentSession === null || currentTime - currentSession.updatedAt >= helpers.getEnvVar('SESSION_RESET_THRESHOLD')) {
+    //   // this session doesn't exist; create new session
+    //   const newSession = await db.createSession(
+    //     location.id,
+    //     undefined,
+    //     CHATBOT_STATE.STARTED,
+    //     alertType,
+    //     undefined,
+    //     undefined,
+    //     undefined,
+    //     isResettable,
+    //     pgClient,
+    //   )
 
-      braveAlerter.startAlertSession({
-        sessionId: newSession.id,
-        toPhoneNumbers: client.responderPhoneNumbers,
-        fromPhoneNumber: location.phoneNumber,
-        deviceName: location.displayName,
-        alertType: newSession.alertType,
-        language: client.language,
-        t,
-        message: t(isResettable ? 'alertStartAcceptResetRequest' : 'alertStart', {
-          lng: client.language,
-          alertTypeDisplayName,
-          deviceDisplayName: location.displayName,
-        }),
-        reminderTimeoutMillis: client.reminderTimeout * 1000,
-        fallbackTimeoutMillis: client.fallbackTimeout * 1000,
-        reminderMessage: t('alertReminder', { lng: client.language, deviceDisplayName: location.displayName }),
-        fallbackMessage: t('alertFallback', { lng: client.language, deviceDisplayName: location.displayName }),
-        fallbackToPhoneNumbers: client.fallbackPhoneNumbers,
-        fallbackFromPhoneNumber: client.fromPhoneNumber,
-      })
-    } else {
-      // this session already exists; this is an additional alert
+    //   braveAlerter.startAlertSession({
+    //     sessionId: newSession.id,
+    //     toPhoneNumbers: client.responderPhoneNumbers,
+    //     fromPhoneNumber: location.phoneNumber,
+    //     deviceName: location.displayName,
+    //     alertType: newSession.alertType,
+    //     language: client.language,
+    //     t,
+    //     message: t(isResettable ? 'alertStartAcceptResetRequest' : 'alertStart', {
+    //       lng: client.language,
+    //       alertTypeDisplayName,
+    //       deviceDisplayName: location.displayName,
+    //     }),
+    //     reminderTimeoutMillis: client.reminderTimeout * 1000,
+    //     fallbackTimeoutMillis: client.fallbackTimeout * 1000,
+    //     reminderMessage: t('alertReminder', { lng: client.language, deviceDisplayName: location.displayName }),
+    //     fallbackMessage: t('alertFallback', { lng: client.language, deviceDisplayName: location.displayName }),
+    //     fallbackToPhoneNumbers: client.fallbackPhoneNumbers,
+    //     fallbackFromPhoneNumber: client.fromPhoneNumber,
+    //   })
+    // } else {
+    //   // this session already exists; this is an additional alert
 
-      currentSession.numberOfAlerts += 1 // increase the number of alerts for this session
-      currentSession.isResettable = isResettable
+    //   currentSession.numberOfAlerts += 1 // increase the number of alerts for this session
+    //   currentSession.isResettable = isResettable
 
-      db.saveSession(currentSession, pgClient)
+    //   db.saveSession(currentSession, pgClient)
 
-      const alertMessage = t(isResettable ? 'alertAdditionalAlertAcceptResetRequest' : 'alertAdditionalAlert', {
-        lng: client.language,
-        alertTypeDisplayName,
-        deviceDisplayName: location.displayName,
-      })
+    //   const alertMessage = t(isResettable ? 'alertAdditionalAlertAcceptResetRequest' : 'alertAdditionalAlert', {
+    //     lng: client.language,
+    //     alertTypeDisplayName,
+    //     deviceDisplayName: location.displayName,
+    //   })
 
-      // send session update to responder phone numbers
-      braveAlerter.sendAlertSessionUpdate(currentSession.id, client.responderPhoneNumbers, location.phoneNumber, alertMessage)
-    }
+    //   // send session update to responder phone numbers
+    //   braveAlerter.sendAlertSessionUpdate(currentSession.id, client.responderPhoneNumbers, location.phoneNumber, alertMessage)
+    // }
 
     await db.commitTransaction(pgClient)
   } catch (e) {
@@ -223,7 +213,7 @@ async function handleSensorEvent(request, response) {
         const sensorEvent = request.body.event
         const alertData = request.body.data
         const coreId = request.body.coreid
-        
+
         let alertType
         if (sensorEvent === SENSOR_EVENT.DURATION) {
           alertType = ALERT_TYPE.SENSOR_DURATION
@@ -266,7 +256,6 @@ async function handleSensorEvent(request, response) {
 }
 
 module.exports = {
-  setup,
   validateSensorEvent,
   handleSensorEvent,
 }

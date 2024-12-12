@@ -6,15 +6,14 @@ const chaiDateTime = require('chai-datetime')
 const expect = chai.expect
 const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
-const { ALERT_TYPE, factories, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, factories, helpers, SENSOR_EVENT } = require('brave-alert-lib')
 const imports = require('../../index')
 
 const db = imports.db
 const server = imports.server
 const braveAlerter = imports.braveAlerter
-const SENSOR_EVENT = require('../../SensorEventEnum')
 
-const { firmwareAlert } = require('../../testingHelpers')
+const { firmwareAlert } = require('../testingHelpers')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)

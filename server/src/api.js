@@ -1,4 +1,6 @@
-/* Conventions for this API:
+/* api.js - Brave Sensor API
+ *
+ * Conventions for this API:
  *  - GET method for read actions
  *  - POST method for update actions
  *  - PUT method for create actions

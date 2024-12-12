@@ -2,9 +2,7 @@
 const pg = require('pg')
 
 // In-house dependencies
-const { ALERT_TYPE, CHATBOT_STATE, Client, DEVICE_TYPE, Device, Session, helpers } = require('brave-alert-lib')
-const ClientExtension = require('../ClientExtension')
-const SensorsVital = require('../SensorsVital')
+const { ALERT_TYPE, CHATBOT_STATE, Client, DEVICE_TYPE, Device, Session, helpers, ClientExtension, SensorsVital } = require('brave-alert-lib')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),

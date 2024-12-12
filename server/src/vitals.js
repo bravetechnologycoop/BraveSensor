@@ -6,12 +6,10 @@ const { DateTime } = require('luxon')
 const { t } = require('i18next')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const { helpers, twilioHelpers } = require('brave-alert-lib')
 const db = require('./db/db')
 
 const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
-
-let braveAlerter
 
 // Expects JS Date objects and returns an int
 function differenceInSeconds(date1, date2) {
@@ -20,19 +18,15 @@ function differenceInSeconds(date1, date2) {
   return dateTime1.diff(dateTime2, 'seconds').seconds
 }
 
-function setupVitals(braveAlerterObj) {
-  braveAlerter = braveAlerterObj
-}
-
 async function sendSingleAlert(locationid, message, pgClient) {
   const location = await db.getLocationWithLocationid(locationid, pgClient)
 
   location.client.responderPhoneNumbers.forEach(async responderPhoneNumber => {
-    await braveAlerter.sendSingleAlert(responderPhoneNumber, location.client.fromPhoneNumber, message)
+    await twilioHelpers.sendSingleAlert(responderPhoneNumber, location.client.fromPhoneNumber, message)
   })
 
   location.client.heartbeatPhoneNumbers.forEach(async heartbeatAlertRecipient => {
-    await braveAlerter.sendSingleAlert(heartbeatAlertRecipient, location.client.fromPhoneNumber, message)
+    await twilioHelpers.sendSingleAlert(heartbeatAlertRecipient, location.client.fromPhoneNumber, message)
   })
 }
 
@@ -359,7 +353,6 @@ module.exports = {
   checkHeartbeat,
   handleHeartbeat,
   sendLowBatteryAlert,
-  setupVitals,
   validateHeartbeat,
   checkForInternalProblems,
   sendInactivityAlert,

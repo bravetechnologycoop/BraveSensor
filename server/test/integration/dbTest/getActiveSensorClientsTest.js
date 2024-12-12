@@ -4,7 +4,7 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
 const { factories, DEVICE_TYPE } = require('brave-alert-lib')
-const db = require('../../../db/db')
+const db = require('../../../src/db/db')
 
 // arbitrary number of active clients to generate
 const nActiveClients = 10

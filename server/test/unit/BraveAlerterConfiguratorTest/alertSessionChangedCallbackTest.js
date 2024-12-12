@@ -7,7 +7,7 @@ const sinonChai = require('sinon-chai')
 // In-house dependencies
 const { AlertSession, CHATBOT_STATE, factories, helpers } = require('brave-alert-lib')
 const BraveAlerterConfigurator = require('../../../BraveAlerterConfigurator')
-const db = require('../../../db/db')
+const db = require('../../../src/db/db')
 const particle = require('../../../particle')
 
 // Configure Chai

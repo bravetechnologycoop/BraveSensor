@@ -6,9 +6,8 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const sinon = require('sinon')
 
 // In-house dependencies
-const { factories, helpers } = require('brave-alert-lib')
+const { factories, helpers, sensorsVitalDBFactory } = require('brave-alert-lib')
 const { braveAlerter, db, server } = require('../../../index')
-const { sensorsVitalDBFactory } = require('../../../testingHelpers')
 
 chai.use(chaiHttp)
 chai.use(sinonChai)

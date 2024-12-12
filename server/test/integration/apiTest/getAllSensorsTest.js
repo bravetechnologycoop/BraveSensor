@@ -7,8 +7,8 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
-const db = require('../../../db/db')
 const { server } = require('../../../index')
+const db = require('../../../src/db/db')
 
 // Setup chai
 chai.use(chaiHttp)
