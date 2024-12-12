@@ -20,7 +20,7 @@
     "@sentry/node": "^6.2.5",
     "@sentry/tracing": "^6.2.5",
     "axios": "^1.7.4",
-    "brave-alert-lib": "https://github.com/bravetechnologycoop/brave-alert-lib#v15.0.4",
+    "brave-alert-lib": "https://github.com/bravetechnologycoop/brave-alert-lib/tree/nb-alert-lib-redesign",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "execution-time": "^1.4.1",
