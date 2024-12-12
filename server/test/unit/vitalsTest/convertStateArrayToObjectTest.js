@@ -5,7 +5,7 @@ const sinonChai = require('sinon-chai')
 const rewire = require('rewire')
 
 // In-house dependencies
-const vitals = rewire('../../../vitals')
+const vitals = rewire('../../../src/vitals')
 
 // Configure Chai
 use(sinonChai)

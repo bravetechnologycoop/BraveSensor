@@ -9,7 +9,7 @@ const ParticleApi = require('particle-api-js')
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
 
-const particle = rewire('../../../particle')
+const particle = rewire('../../../src/particle')
 
 // Configure Chai
 use(sinonChai)
