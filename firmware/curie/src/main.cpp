@@ -32,8 +32,8 @@ boronSensor * g_boronSensor = NULL;
 i2cInterface * g_fastI2C = NULL;
 i2cInterface * g_slowI2C = NULL;
 gpioInterface * g_gpioPIR = NULL;
+gpioInterface * g_gpioBoron = NULL;
 serialib * g_usbSerial = NULL;
-spiInterface * g_spi0 = NULL;
 
 uint8_t g_buffer[32] = {0};
 
@@ -48,12 +48,10 @@ int initiateBusses(){
 	g_slowI2C->openBus();
 
 	g_gpioPIR = new gpioInterface();
+	g_gpioBoron = new gpioInterface("gpiochip0", 12);
 
 	g_usbSerial = new serialib();
 	g_usbSerial->openDevice(DLP_SER, DLP_BAUD);
-
-	g_spi0 = new spiInterface("/dev/spidev0.0", 500000, 0);
-	g_spi0->openBus();
 
 	return err;
 }
@@ -78,18 +76,15 @@ void cleanUp(){
 	delete g_slowI2C;
 	g_gpioPIR->close();
 	delete g_gpioPIR;
+	g_gpioBoron->close();
+	delete g_gpioBoron;
 	g_usbSerial->closeDevice();
 	delete g_usbSerial;
-	g_spi0->closeBus();
-	delete g_spi0;
 }
 
 int initiateDataSources(vector<dataSource*> * dataVector){
 	int err = OK;
 	bDebug(TRACE, "Initializing the DataSources");
-
-	g_boronSensor = new boronSensor();
-	dataVector->push_back(g_boronSensor);
 
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
@@ -129,6 +124,10 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 		dataVector->push_back(g_sourceCO2S);
 		#endif
 		#endif 
+		#ifdef BORON
+		g_boronSensor = new boronSensor(22, 0x09);
+		dataVector->push_back(g_boronSensor);
+		#endif
 	}
 
 	#ifdef PIR
@@ -147,35 +146,27 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	return err;
 }
 
-void spiRxThread()
+void RxThread()
 {
-	int buflen = 68;
-	uint8_t rxBuf[buflen] = {0};
-	uint8_t txBuf[buflen] = {0};
-	bool read_bytes = false;
+	int  signal = 0;
+	timespec ts = {30,0};
+	g_gpioBoron->open(false);
 
-	for (int i = 0; i < buflen; i++){
-		txBuf[i] = i + 1;
-	}
-	txBuf[0] = 0xDE;
-	txBuf[1] = 0xAD;
-	txBuf[buflen - 2] = 0xDE;
-	txBuf[buflen - 1] = 0xAD;
 
 	while (g_loop){
 		g_interthreadMutex.lock();
-		bDebug(TRACE, "Spi RX is doing stuff");
-		read_bytes = false;
-		//busy wait reading from SPI until you get data
-		//read blob from SPI
-		while (!read_bytes){
-			if (0 > g_spi0->readwriteBytes(rxBuf, txBuf, buflen)){
-				bDebug(WARN, "Failed RW");
-			}
-			if (0 == g_boronSensor->parseData(rxBuf, buflen)){
-				read_bytes = true;
-			}
-			this_thread::sleep_for(30s);
+		bDebug(TRACE, "RX is doing stuff");
+		signal = 0;
+		while (!signal){
+			signal = g_gpioBoron->waitForPin(ts);
+			if (0 == signal){
+				bDebug(TRACE, "time cycle");
+				this_thread::sleep_for(30s);
+			}			
+		}
+		if (-1 == signal){
+			bDebug(ERROR, "rx fault");
+			break;
 		}
 		g_interthreadMutex.unlock();
 		this_thread::sleep_for(5s);
@@ -212,7 +203,7 @@ int main()
 
 
 		//start child thread
-		boronListener = new thread(spiRxThread);
+		boronListener = new thread(RxThread);
 
 		//main execution loop
 		while (g_loop){

@@ -17,7 +17,7 @@ using namespace std;
 
 class boronSensor final: public dataSource {
     public:
-        boronSensor();
+        boronSensor(uint8_t adapter, uint8_t i2cAddress);
         ~boronSensor();
 
         int getData(string *sqlTable, std::vector<string> * vData);
@@ -27,8 +27,12 @@ class boronSensor final: public dataSource {
         int parseData(uint8_t *buffer, uint8_t len);
 
     private:
-        std::vector<std::pair<std::string, std::string>> dbParams;        
+        std::vector<std::pair<std::string, std::string>> dbParams;
+        int8_t readi2c(uint8_t *buff, uint8_t len);
+        int8_t writei2c(uint8_t *buff, uint8_t len); 
         uint8_t buffer[32];
+        int fd;
+        uint8_t i2cAddress;
 
 };
 

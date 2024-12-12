@@ -96,3 +96,17 @@ int gpioInterface::writePin(bool bData){
 
     return err;
 }
+
+int gpioInterface::waitForPin(timespec ts){
+    bDebug(TRACE, "wait GPIO");
+    int err = -1;
+
+    if (!this->output){
+        err = gpiod_line_request_both_edges_events(this->line, "boron");
+        if (0 > err){
+            gpiod_line_event_wait(this->line, &ts);
+        }
+    }
+
+    return err;
+}
