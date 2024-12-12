@@ -1,3 +1,9 @@
+/* 
+ * particle.js
+ * 
+ * Manages Particle device API requests and firmware updates
+ */
+
 // Third-party dependencies
 const ParticleApi = require('particle-api-js')
 

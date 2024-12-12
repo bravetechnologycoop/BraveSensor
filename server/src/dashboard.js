@@ -1,3 +1,10 @@
+/* 
+ * dashboard.js - Brave Sensor Dashboard
+ *
+ * Handles rendering and managing dashboard pages and sessions
+ * Also contains various dashboard functions configured in routes
+ */
+
 // Third-party dependencies
 const fs = require('fs')
 const Mustache = require('mustache')

@@ -1,3 +1,9 @@
+/* 
+ * pa.js 
+ *
+ * Handles various PA-related API requests and validations
+ */
+
 // Third-party dependencies
 const Validator = require('express-validator')
 

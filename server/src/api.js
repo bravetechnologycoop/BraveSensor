@@ -1,18 +1,11 @@
-/* api.js - Brave Sensor API
+/* 
+ * api.js - Brave Sensor API
  *
- * Conventions for this API:
- *  - GET method for read actions
- *  - POST method for update actions
- *  - PUT method for create actions
- *  - DELETE method for delete actions
- *
- *  - Must contain the `braveKey` API key in the query string (for GET only) or the body (for all other methods)
- *
- *  - Must return a JSON object containing the following keys:
- *    - status:   which will be either "success" or "error"
- *    - data:     the desired JSON object, if there is one
- *    - message:  a human-readable explanation of the error, if there was one and this is appropriate. Be careful
- *                to not include anything that will give an attacker extra information
+ * Include `braveKey` API key in query string (GET) or body (others)
+ * Return JSON with:
+ *  - status: "success" or "error"
+ *  - data: JSON object (if any)
+ *  - message: error explanation (if appropriate, avoid sensitive info)
  */
 
 // Third-party dependencies

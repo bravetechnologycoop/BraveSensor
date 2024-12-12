@@ -44,10 +44,9 @@ function configureRoutes(app) {
   app.post('/pa/message-clients', pa.validateMessageClients, googleHelpers.paAuthorize, pa.handleMessageClients)
   app.post('/pa/health', pa.validateCheckDatabaseConnection, googleHelpers.paAuthorize, pa.handleCheckDatabaseConnection)
 
+  // API routes - TODO
   app.get('/api/sensors', api.validateGetAllSensors, api.authorize, api.getAllSensors)
   app.get('/api/sensors/:sensorId', api.validateGetSensor, api.authorize, api.getSensor)
-
-  // TODO add the other routes
 }
 
 module.exports = {

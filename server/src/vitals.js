@@ -1,3 +1,10 @@
+/* 
+ * vitals.js 
+ *
+ * Manages sensor vitals and heartbeat checks for the devices
+ * Heatbeat events are recieved via particle webhook on /api/heartbeat
+ */
+
 /* eslint-disable no-continue */
 
 // Third-party dependencies

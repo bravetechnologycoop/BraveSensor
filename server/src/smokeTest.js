@@ -1,3 +1,9 @@
+/* 
+ * smokeTest.js 
+ * 
+ * Sets up and tears down smoke tests for the Brave Sensor
+ */
+
 // Third-party dependencies
 const axios = require('axios').default
 
