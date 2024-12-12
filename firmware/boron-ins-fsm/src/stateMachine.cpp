@@ -69,7 +69,6 @@ void setupStateMachine() {
     // default to no stillness alert sent
     hasStillnessAlertBeenSent = false;
 
-    alpha_update_time = millis();
 }
 
 void initializeStateMachineConsts() {
@@ -528,9 +527,9 @@ void getHeartbeat() {
 
 constexpr size_t I2C_BUFFER_SIZE = 512;
 
-HAL_I2C_Config acquireWireBuffer() {
-    HAL_I2C_Config config = {
-        .size = sizeof(HAL_I2C_Config),
+hal_i2c_config_t acquireWireBuffer() {
+    hal_i2c_config_t config = {
+        .size = sizeof(hal_i2c_config_t),
         .version = HAL_I2C_CONFIG_VERSION_1,
         .rx_buffer = new (std::nothrow) uint8_t[I2C_BUFFER_SIZE],
         .rx_buffer_size = I2C_BUFFER_SIZE,
@@ -540,12 +539,11 @@ HAL_I2C_Config acquireWireBuffer() {
     return config;
 }
 
-void sendAlphaUpdate() {
+void sendAlphaUpdate(int howMany) {
 
     //MOVING_AVERAGE_BUFFER_SIZE * 2 bytes for g_iValues and g_qValues,
     // 10 bytes for RSSI, 1 byte for state machine, 1 byte for door sensor status
-    uint8_t tx_buffer[MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1];
-    uint8_t rx_buffer[sizeof(tx_buffer)];
+    char tx_buffer[MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1];
     int index = 0;
 
     // Add the g_iValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
@@ -594,4 +592,5 @@ void sendAlphaUpdate() {
     Wire.write(tx_buffer);
     
     digitalWrite(D2, LOW); //ready for next state
+
 }

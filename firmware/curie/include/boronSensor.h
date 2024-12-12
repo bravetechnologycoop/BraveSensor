@@ -1,8 +1,8 @@
-/* boronSensor.h - Class that receives data from the Boron Sensor via SPI
+/* passiveIR.h - Class the retrieves and process passive IR range device data
  *
  * Copyright (C) 2024 Brave Coop - All Rights Reserved
  *
- * File created by:  Corey Cheng 2024
+ * File created by:  Denis Londry 2024
  */
 #ifndef _BORONSENSOR__H_
 #define _BORONSENSOR__H_
@@ -20,6 +20,7 @@ using namespace std;
 #define DELIMITER_A 0xDE
 #define DELIMITER_B 0xAD
 
+
 class boronSensor final: public dataSource {
     public:
         boronSensor(uint8_t adapter, uint8_t i2cAddress);
@@ -29,15 +30,19 @@ class boronSensor final: public dataSource {
         int getTableDef(string * sqlBuf);
         int setTableParams();
         int getTableParams(std::vector<std::pair<std::string, std::string>> * tableData);
-        int storeData(uint8_t *buffer, uint8_t len);
-        
+        int parseData(uint8_t *buffer, uint8_t len);
 
     private:
         std::vector<std::pair<std::string, std::string>> dbParams;
         int8_t readi2c(uint8_t *buff, uint8_t len);
         int8_t writei2c(uint8_t *buff, uint8_t len); 
-        uint8_t buffer[32];
+        uint8_t rxBuffer[FULL_BUFFER_SIZE];
+        int rxBufferIndex = 0;
         int fd;
+        int validateBuffer();
+        int storeData(uint8_t * buffer, uint8_t len);
+        int flushBuffer();
+        int signalParse(uint8_t rat, string type, float * signal);
         uint8_t i2cAddress;
 
 };

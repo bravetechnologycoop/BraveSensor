@@ -85,7 +85,7 @@ extern bool hasDurationAlertBeenSent;
 extern bool hasStillnessAlertBeenSent;
 
 //set this so the .ino file can use it
-extern HAL_I2C_Config acquireWireBuffer();
-extern void sendAlphaUpdate();
+extern hal_i2c_config_t acquireWireBuffer();
+extern void sendAlphaUpdate(int howMany);
 
 #endif

@@ -48,7 +48,7 @@ int initiateBusses(){
 	g_slowI2C->openBus();
 
 	g_gpioPIR = new gpioInterface();
-	g_gpioBoron = new gpioInterface("gpiochip0", 12);
+	g_gpioBoron = new gpioInterface("gpiochip0", 16);
 
 	g_usbSerial = new serialib();
 	g_usbSerial->openDevice(DLP_SER, DLP_BAUD);
@@ -148,33 +148,34 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 
 void RxThread()
 {
-	int  signal = 0;
-	timespec ts = {30,0};
-	g_gpioBoron->open(false);
+    int signal = 0;
+    timespec ts = {30, 0};
+    g_gpioBoron->open(false);
 
+    while (g_loop) {
+        // Lock the mutex for thread synchronization
+        g_interthreadMutex.lock();
+        bDebug(TRACE, "RX is doing stuff");
 
-	while (g_loop){
-		g_interthreadMutex.lock();
-		bDebug(TRACE, "RX is doing stuff");
-		signal = 0;
-		while (!signal){
-			signal = g_gpioBoron->waitForPin(ts);
-			if (0 == signal){
-				bDebug(TRACE, "time cycle");
-				this_thread::sleep_for(30s);
-			}			
-		}
-		if (-1 == signal){
-			bDebug(ERROR, "rx fault");
-			break;
-		}
-		g_interthreadMutex.unlock();
-		this_thread::sleep_for(5s);
-	}
+        signal = 0;
+        while (!signal) {
+            signal = g_gpioBoron->waitForPin(ts);
+            if (0 == signal) {
+                bDebug(TRACE, "time cycle");
+                this_thread::sleep_for(30s);
+            }
+        }
 
+        if (-1 == signal) {
+            bDebug(ERROR, "rx fault");
+            break;
+        }
+
+        // Unlock the mutex after processing
+        g_interthreadMutex.unlock();
+        this_thread::sleep_for(5s);
+    }
 }
-
-
 
 int main()
 {

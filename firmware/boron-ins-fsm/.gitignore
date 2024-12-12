@@ -1,6 +1,7 @@
 #ignore files that may contain sensitive client information
 SetupFiles/
 setupFirmware.h
+build
 
 #ignore vscode and visual studio settings
 .vscode/

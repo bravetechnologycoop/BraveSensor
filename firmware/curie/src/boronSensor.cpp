@@ -1,8 +1,8 @@
-/* boronSensor.cpp - Class that receives data from the Boron Sensor via SPI
+/* passiveIR.cpp - Class the retrieves and process passive IR range device
  *
  * Copyright (C) 2024 Brave Coop - All Rights Reserved
  *
- * File created by:  Corey Cheng 2024
+ * File created by:  Denis Londry 2024
  */
 #include <braveDebug.h>
 #include <dataSource.h>
@@ -51,20 +51,67 @@ boronSensor::~boronSensor(){
 int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "boronSensor getData");
     int err = OK;
-    uint8_t buf[BORON_BUFFER];
+    *sqlTable = BORON_SQL_TABLE;
+    int tmp;
+    readi2c(rxBuffer, FULL_BUFFER_SIZE);
+    if(validateBuffer() == OK )
+    {   
+        int index = 0;
+        if(rxBuffer[index++] != DELIMITER_A || rxBuffer[index++] != DELIMITER_B){
+            bDebug(TRACE, "Delimiter not found, exiting..");
+            return SENSOR_FAULT;
+        }
+        //i Values
+        for (int i = 0; i < IQ_BUFFER_SIZE; i+=2) { 
+            tmp = 0;
+            tmp += (rxBuffer[index++] >> 8) & 0xFF;
+            tmp += (rxBuffer[index++]) & 0xFF;
+            vData->push_back(to_string(tmp));
+        }
+        //q Values
+        for (int i = 0; i < IQ_BUFFER_SIZE; i+=2) { 
+            tmp = 0;
+            tmp += (rxBuffer[index++] >> 8) & 0xFF;
+            tmp += (rxBuffer[index++]) & 0xFF;
+            vData->push_back(to_string(tmp));
+        }
+        //signal
+        float signal[5] = {0};
 
-    err = this->readi2c(buf, BORON_BUFFER);
-    if ( 0 > err){
-        bDebug(ERROR, "BoronSensor failed to read i2c");
-    
-    } else {
-        this->parseData(buf, BORON_BUFFER);
-        *sqlTable = BORON_SQL_TABLE;
-        for (int i = 0; i < 32; ++i) {
-            vData->push_back(to_string(buffer[i]));
+        for (int i = 0; i < 10; i+=2) {
+            tmp = 0;
+            tmp += (rxBuffer[index++] >> 8) & 0xFF;
+            tmp += (rxBuffer[index++]) & 0xFF;
+            signal[i/2] = tmp;
+        }
+        float strengthAbs = float(signal[2]);
+        signalParse(signal[4], "strength", &strengthAbs);
+        vData->push_back(to_string(strengthAbs));
+
+        float qualityAbs = float(signal[3]);
+        signalParse(signal[4], "quality", &qualityAbs);
+        vData->push_back(to_string(qualityAbs));
+
+        //door sensor
+        vData->push_back(to_string(rxBuffer[index++]));
+        //sensor state
+        vData->push_back(to_string(rxBuffer[index++]));
+        if(rxBuffer[index++] != DELIMITER_A || rxBuffer[index++] != DELIMITER_B){
+            bDebug(TRACE, "Delimiter not found, exiting..");
+            return SENSOR_FAULT;
+        }
+        
+        flushBuffer();
+
+        if(index != FULL_BUFFER_SIZE){
+            bDebug(TRACE, "bad math has happened");
         }
     }
-
+    else {
+        bDebug(TRACE, "Buffer invalid, clearing");
+        flushBuffer();
+        return SENSOR_FAULT;
+    }
     return err;
 }
 
@@ -87,21 +134,9 @@ int boronSensor::setTableParams(){
     int err = OK;
 
     try {
-        for (int i = 0; i <= IQ_BUFFER_SIZE; i+=2) {
-            this->dbParams.emplace_back("ivalue" + to_string(i/2), "int");
+        for (int i = 0; i <= 31; ++i) {
+            this->dbParams.emplace_back("buffer" + to_string(i), "int");
         }
-        for (int i = 0; i <= IQ_BUFFER_SIZE; i+=2) {
-            this->dbParams.emplace_back("qvalue" + to_string(i/2), "int");
-        }
-        this->dbParams.emplace_back("sigstr", "float");
-        this->dbParams.emplace_back("sigqual", "float");
-        this->dbParams.emplace_back("sigstrabs", "float");
-        this->dbParams.emplace_back("sigqualabs", "float");
-        this->dbParams.emplace_back("rat", "float");
-        this->dbParams.emplace_back("doorsensor", "int");
-        this->dbParams.emplace_back("state", "int");
-
-
     }
     catch(...) {
         err = BAD_PARAMS;
@@ -121,46 +156,28 @@ int boronSensor::getTableParams(std::vector<std::pair<std::string, std::string>>
     return err;
 }
 
-int boronSensor::storeData(uint8_t * buffer, uint8_t len){
-    bDebug(TRACE, "Boron store data");
-    int err = -1; 
+int8_t boronSensor::readi2c(uint8_t *buff, uint8_t len)
+{
+	int ret;
+    bDebug(TRACE, "boron readi2c");
+	ret = read(this->fd, buff, len);
+	if (ret != len) {
+		printf("Read failed with %d\n", ret);
+		return -1;
+	}
+	return 0;
+}
 
-    for (int i = 0; i < len; i++){
-        //all 0 is BAD
-        if (buffer[i] != 0){
-            err = OK;
-            continue;
-        }
-    }
+ int8_t boronSensor::writei2c(uint8_t *buff, uint8_t len)
+{
+	int ret;
 
-    if (OK != err) return err;
-    
-    if(buffer != NULL && len != 0){
-        for(int i = 0; i < len; i++){
-            if(this->rxBufferIndex < FULL_BUFFER_SIZE){
-                this->rxBuffer[this->rxBufferIndex++] = buffer[i];
-            }
-            else {
-                bDebug(TRACE, "index out of bounds, resetting index to 0 and flushing buffer");
-                flushBuffer();
-                err = BAD_SETTINGS;
-                break;
-            }
-        }
-        if(this->rxBufferIndex >= 2){
-            if(rxBuffer[0] != DELIMITER_A || rxBuffer[1] != DELIMITER_B){
-                bDebug(TRACE, "rxbuffer0 " + to_string(rxBuffer[0]));
-                bDebug(TRACE, "rxbuffer1 " + to_string(rxBuffer[1]));
-                bDebug(TRACE, "starting delimiter invalid, resetting index to 0 and flushing buffer");
-                flushBuffer();
-                err = BAD_SETTINGS;
-            }
-        }
-    }
-    
-
-
-    return err;
+	ret = write(this->fd, buff, len);
+	if (ret != len) {
+		printf("Write failed with %d\n", ret);
+		return -1;
+	}
+	return 0;
 }
 
 int boronSensor::validateBuffer(){
@@ -170,9 +187,10 @@ int boronSensor::validateBuffer(){
     if(err == OK){
         string rxBufContents = "boron: ";
 	    for (int i = 0; i < 68; i++) {
-            char tmp[5];
-            sprintf(tmp, "%02X", this->rxBuffer[i]);
-            rxBufContents += tmp;
+    	stringstream ss;
+    	ss << hex << this->rxBuffer[i];
+    	string hexString = ss.str();
+        rxBufContents += to_string(this->rxBuffer[i]) + " ";
 	    }
 	    bDebug(TRACE, rxBufContents.c_str());
     }
@@ -194,33 +212,53 @@ int boronSensor::validateBuffer(){
 
 }
 
+int boronSensor::signalParse(uint8_t rat, string type, float * signal){
+    int err = OK;
+    switch(rat){
+        case 1: //2G RAT:
+            if(type == "strength"){
+                *signal *= -1; 
+            }
+            if(type == "quality"){
+                *signal /= 100;
+            }
+        case 2: //2G RAT with EDGE:
+            if(type == "strength"){
+                *signal *= -1; 
+            }
+            if(type == "quality"){
+                *signal *= -1;
+            }
+        case 3: //UMTS RAT:
+            if(type == "strength"){
+                *signal *= -1; 
+            }
+            if(type == "quality"){
+                *signal *= -1;
+            }
+        case 4: //LTE Cat M1:
+            if(type == "strength"){
+                *signal *= -1; 
+            }
+            if(type == "quality"){
+                *signal *= -1;
+            }
+        case 5: //LTE Cat 1 CAT:
+            if(type == "strength"){
+                *signal *= -1; 
+            }
+            if(type == "quality"){
+                *signal *= -1;
+            }    
+        default:
+            bDebug(TRACE, "Invalid RAT value: " + to_string(rat));          
+    }
+    return err;
+}
+
 int boronSensor::flushBuffer(){
     int err = OK;
     this->rxBufferIndex = 0;
     std::memset(this->rxBuffer, 0, sizeof(this->rxBuffer));
     return err;
-}
-
-int8_t boronSensor::readi2c(uint8_t *buff, uint8_t len)
-{
-	int ret;
-
-	ret = read(this->fd, buff, len);
-	if (ret != len) {
-		printf("Read failed with %d\n", ret);
-		return -1;
-	}
-	return 0;
-}
-
- int8_t boronSensor::writei2c(uint8_t *buff, uint8_t len)
-{
-	int ret;
-
-	ret = write(this->fd, buff, len);
-	if (ret != len) {
-		printf("Write failed with %d\n", ret);
-		return -1;
-	}
-	return 0;
 }
