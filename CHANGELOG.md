@@ -20,6 +20,7 @@ the code was deployed.
 
 - Updated `checkHeartbeat` function in `vitals.js` to send the 2 different messages (CU-86duu0vdu).
 - Removed `sendDisconnectionMessage` and `sendDisconnectionReminder`function in `vitals.js` (CU-86duu0vdu).
+- Updated dashboard homepage to include and sort by Organization (CU-86dva4dxd)
 
 ## [10.16.0] - 2024-11-14
 
