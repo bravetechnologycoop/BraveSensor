@@ -48,7 +48,7 @@ int initiateBusses(){
 	g_slowI2C->openBus();
 
 	g_gpioPIR = new gpioInterface();
-	g_gpioBoron = new gpioInterface("gpiochip0", 12);
+	g_gpioBoron = new gpioInterface("gpiochip0", 16);
 
 	g_usbSerial = new serialib();
 	g_usbSerial->openDevice(DLP_SER, DLP_BAUD);
@@ -150,7 +150,7 @@ void RxThread()
 {
 	int  signal = 0;
 	timespec ts = {30,0};
-	g_gpioBoron->open(false);
+	g_gpioBoron->openForEvent();
 
 
 	while (g_loop){

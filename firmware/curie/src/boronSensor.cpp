@@ -130,7 +130,7 @@ int8_t boronSensor::readi2c(uint8_t *buff, uint8_t len)
 
 	ret = read(this->fd, buff, len);
 	if (ret != len) {
-		printf("Read failed with %d\n", ret);
+        perror("read");
 		return -1;
 	}
 	return 0;

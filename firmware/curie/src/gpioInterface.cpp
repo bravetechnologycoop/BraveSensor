@@ -59,9 +59,28 @@ int gpioInterface::open(bool output){
     this->chip = gpiod_chip_open_by_name((this->busID).c_str());
     this->line = gpiod_chip_get_line(this->chip, this->pinID);
     if (output) {
-        gpiod_line_request_output(this->line, "CURIE", 0); 
+        err = gpiod_line_request_output(this->line, "CURIE", 0); 
     } else {
-        gpiod_line_request_input(this->line, "CURIE");
+        err = gpiod_line_request_input(this->line, "CURIE");
+    }
+
+    if (-1 == err){
+        bDebug(ERROR, "Could not open line");
+    }
+
+    return err;
+}
+
+int gpioInterface::openForEvent(){
+    bDebug(TRACE, "gpioInterface setting up the event tools");
+    int err = OK;
+
+    this->chip = gpiod_chip_open_by_name((this->busID).c_str());
+    this->line = gpiod_chip_get_line(this->chip, this->pinID);
+
+    err = gpiod_line_request_both_edges_events(this->line, "boron");
+    if (-1 == err){
+        perror("gpiod_line_request_both_edges_events");
     }
 
     return err;
@@ -100,12 +119,11 @@ int gpioInterface::writePin(bool bData){
 int gpioInterface::waitForPin(timespec ts){
     bDebug(TRACE, "wait GPIO");
     int err = -1;
-
-    if (!this->output){
-        err = gpiod_line_request_both_edges_events(this->line, "boron");
-        if (0 > err){
-            gpiod_line_event_wait(this->line, &ts);
-        }
+    
+    err = gpiod_line_event_wait(this->line, &ts);
+    if (0 > err){
+         perror("gpiod_line_event_wait");
+        bDebug(ERROR, "Failing to Wait");
     }
 
     return err;

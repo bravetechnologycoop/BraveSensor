@@ -20,6 +20,7 @@ class gpioInterface{
 
         int setParams(string busID, int pinID);
         int open(bool output);
+        int openForEvent();
         int close();
 
         int readPin(bool *bData);
