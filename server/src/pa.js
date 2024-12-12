@@ -1,5 +1,5 @@
-/* 
- * pa.js 
+/*
+ * pa.js
  *
  * Handles various PA-related API requests and validations
  */

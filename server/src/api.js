@@ -1,4 +1,4 @@
-/* 
+/*
  * api.js - Brave Sensor API
  *
  * Include `braveKey` API key in query string (GET) or body (others)

@@ -1,6 +1,6 @@
-/* 
- * smokeTest.js 
- * 
+/*
+ * smokeTest.js
+ *
  * Sets up and tears down smoke tests for the Brave Sensor
  */
 

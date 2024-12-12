@@ -1,4 +1,4 @@
-/* 
+/*
  * dashboard.js - Brave Sensor Dashboard
  *
  * Handles rendering and managing dashboard pages and sessions

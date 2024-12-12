@@ -1,6 +1,6 @@
-/* 
+/*
  * particle.js
- * 
+ *
  * Manages Particle device API requests and firmware updates
  */
 
