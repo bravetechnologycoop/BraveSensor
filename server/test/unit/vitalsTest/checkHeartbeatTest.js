@@ -7,10 +7,10 @@ const rewire = require('rewire')
 
 // In-house dependencies
 const { factories, helpers } = require('brave-alert-lib')
-const db = require('../../../db/db')
-const { sensorsVitalFactory } = require('../../../testingHelpers')
+const db = require('../../../src/db/db')
+const { sensorsVitalFactory } = require('../../testingHelpers')
 
-const vitals = rewire('../../../vitals')
+const vitals = rewire('../../../src/vitals')
 
 // Configure Chai
 use(sinonChai)

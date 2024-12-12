@@ -6,8 +6,8 @@ const sinonChai = require('sinon-chai')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
-const { mockResponse } = require('../../../testingHelpers')
-const api = require('../../../api')
+const { mockResponse } = require('../../testingHelpers')
+const api = require('../../../src/api')
 
 // Configure Chai
 use(sinonChai)

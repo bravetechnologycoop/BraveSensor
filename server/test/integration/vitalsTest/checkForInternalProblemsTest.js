@@ -6,9 +6,9 @@ const sinonChai = require('sinon-chai')
 
 // In-house dependencies
 const { ALERT_TYPE, factories, helpers } = require('brave-alert-lib')
-const db = require('../../../db/db')
+const db = require('../../../src/db/db')
 
-const vitals = require('../../../vitals')
+const vitals = require('../../../src/vitals')
 
 // Configure Chai
 use(sinonChai)

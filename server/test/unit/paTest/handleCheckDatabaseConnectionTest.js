@@ -6,9 +6,9 @@ const sinonChai = require('sinon-chai')
 
 // In-house dependencies
 const { helpers } = require('brave-alert-lib')
-const { mockResponse } = require('../../../testingHelpers')
-const pa = require('../../../pa')
-const db = require('../../../db/db')
+const { mockResponse } = require('../../testingHelpers')
+const pa = require('../../../src/pa')
+const db = require('../../../src/db/db')
 
 const testGoogleIdToken = 'google-id-token'
 const braveKey = helpers.getEnvVar('PA_API_KEY_PRIMARY')
