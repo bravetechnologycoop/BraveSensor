@@ -23,7 +23,7 @@
                 <input type="text" id="searchBar" class="form-control" placeholder="Search...">
                 <div class="input-group-append">
                     <select id="viewSelect" class="form-control" value="organization">
-                        <option value="" selected>Organization</option>
+                        <option value="funder" selected>Funder</option>
                         <option value="organization" selected>Organization</option>
                         <option value="client">Client</option>
                         <option value="devices">Devices</option>
@@ -49,6 +49,7 @@
                     {{#clients}}
                         <tr class="table-data client-row">
                             <th scope="row"><a href="/clients/{{id}}">{{displayName}}</a></th>
+                            <td>{{organization}}</td>
                             <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
                             <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
                         </tr>

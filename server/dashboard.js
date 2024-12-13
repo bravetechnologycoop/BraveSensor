@@ -107,14 +107,28 @@ async function redirectToHomePage(req, res) {
 
 async function renderDashboardPage(req, res) {
   try {
-    const displayedClients = (await db.getClients()).filter(client => client.isDisplayed)
+    const clients = (await db.getClients()).filter(client => client.isDisplayed)
+
+    const displayedClients = await Promise.all(
+      clients.map(async client => {
+        const clientExtension = await db.getClientExtensionWithClientId(client.id)
+        return {
+          ...client,
+          organization: clientExtension.organization || 'Unknown',
+        }
+      }),
+    )
+
+    displayedClients.sort((a, b) => {
+      const orgA = a.organization.toLowerCase()
+      const orgB = b.organization.toLowerCase()
+      return orgA.localeCompare(orgB)
+    })
+
     const displayedDevices = await db.getLocations()
 
     const viewParams = {
-      clients: displayedClients.map(client => ({
-        ...client,
-        organization: client.organization || 'N/A',
-      })),
+      clients: displayedClients,
       devices: displayedDevices.map(device => ({
         ...device,
         clientName: device.client.displayName,
