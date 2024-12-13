@@ -108,9 +108,17 @@ async function redirectToHomePage(req, res) {
 async function renderDashboardPage(req, res) {
   try {
     const displayedClients = (await db.getClients()).filter(client => client.isDisplayed)
+    const displayedDevices = await db.getLocations()
 
     const viewParams = {
-      clients: displayedClients,
+      clients: displayedClients.map(client => ({
+        ...client,
+        organization: client.organization || 'N/A',
+      })),
+      devices: displayedDevices.map(device => ({
+        ...device,
+        clientName: device.client.displayName,
+      })),
     }
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
