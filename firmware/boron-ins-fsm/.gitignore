@@ -1,7 +1,6 @@
 #ignore files that may contain sensitive client information
 SetupFiles/
 setupFirmware.h
-build
 
 #ignore vscode and visual studio settings
 .vscode/
@@ -26,3 +25,5 @@ src/BraveSensorProductionFirmware.cpp
 
 # ignore unused generated compile_commands.json file
 compile_commands.json
+
+build/

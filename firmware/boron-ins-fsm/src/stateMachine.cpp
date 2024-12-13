@@ -58,7 +58,8 @@ void setupStateMachine() {
     System.setPowerConfiguration(conf);
 
     Wire.begin(9);  //join i2c as slave address 9
-    Wire.onReceive(sendAlphaUpdate);
+
+    Wire.onRequest(sendAlphaUpdate);
 
     // default to not publishing debug logs
     stateMachineDebugFlag = 0;
@@ -539,8 +540,9 @@ hal_i2c_config_t acquireWireBuffer() {
     return config;
 }
 
-void sendAlphaUpdate(int howMany) {
-
+void sendAlphaUpdate() {
+    Log.warn("sending alpha update");
+    /*
     //MOVING_AVERAGE_BUFFER_SIZE * 2 bytes for g_iValues and g_qValues,
     // 10 bytes for RSSI, 1 byte for state machine, 1 byte for door sensor status
     char tx_buffer[MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1];
@@ -588,9 +590,13 @@ void sendAlphaUpdate(int howMany) {
 
     // Add the door sensor status (1 byte)
     tx_buffer[index++] = isDoorOpen(checkDoor.doorStatus);  // 1 for open, 0 for closed, no byte mask needed
-
+    */
+    char tx_buffer[10];
+    for(int i = 0; i <= 10; i++){
+        tx_buffer[i] = i + 1;
+    }
     Wire.write(tx_buffer);
     
     digitalWrite(D2, LOW); //ready for next state
-
+    
 }
