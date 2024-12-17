@@ -20,10 +20,10 @@
             <h4 class="no-locations">Sensors Search</h4>
             <br>
             <div class="input-group mb-3">
-                <input type="text" id="searchBar" class="form-control" placeholder="Search...">
+                <input id="searchBar" type="text" class="form-control" placeholder="Search...">
                 <div class="input-group-append">
                     <select id="viewSelect" class="form-control" value="organization">
-                        <option value="funder" selected>Funder</option>
+                        <option value="funder">Funder</option>
                         <option value="organization" selected>Organization</option>
                         <option value="client">Client</option>
                         <option value="devices">Devices</option>
@@ -40,29 +40,35 @@
                             <th scope="col">Organization</th>
                         </tr>
                     </thead>
+
                     <tbody id="tableBody">
                     {{#clients}}
                         <tr class="table-data organization-row">
-                            <th scope="row">{{organization}}</th>
+                            <th scope="row"><a href="/clients?organization={{organization}}">{{organization}}</a></th>
+                        </tr>
+                    {{/clients}}
+                    {{#clients}}
+                        <tr class="table-data funder-row">
+                            <th scope="row"><a href="/organizations?funder={{funder}}">{{funder}}</a></th>
                         </tr>
                     {{/clients}}
                     {{#clients}}
                         <tr class="table-data client-row">
                             <th scope="row"><a href="/clients/{{id}}">{{displayName}}</a></th>
-                            <td>{{organization}}</td>
                             <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
                             <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
                         </tr>
                     {{/clients}}
-                    {{#devices}}
+                    {{#locations}}
                         <tr class="table-data device-row">
-                            <th scope="row">{{locationid}}</th>
+                            <th scope="row"><a href="/locations/{{id}}">{{locationid}}</a></th>
                             <td>{{deviceType}}</td>
                             <td>{{lastSessionStartedAt}}</td>
                             <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
                             <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
                         </tr>
-                    {{/devices}}
+                    {{/locations}}
+
                     </tbody>
                 </table>
             </div>
@@ -72,6 +78,7 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
     <script>
         document.getElementById('searchBar').addEventListener('input', filterTable);
         document.getElementById('viewSelect').addEventListener('change', updateTableHeader);
@@ -83,7 +90,14 @@
             let headerHtml = '';
             let viewTitle = '';
 
-            if (view === 'organization') {
+            if (view === 'funder') {
+                headerHtml = `
+                    <tr class="table-header" scope="row">
+                        <th scope="col">Funder</th>
+                    </tr>
+                `;
+                viewTitle = 'Funder View';
+            } else if (view === 'organization') {
                 headerHtml = `
                     <tr class="table-header" scope="row">
                         <th scope="col">Organization</th>
@@ -112,8 +126,8 @@
                 viewTitle = 'Devices View';
             }
 
-            tableHeader.innerHTML = headerHtml;
             viewHeader.innerText = viewTitle;
+            tableHeader.innerHTML = headerHtml;
             filterTable();
         }
 
@@ -123,7 +137,10 @@
             const rows = document.querySelectorAll('#tableBody .table-data');
             rows.forEach(row => {
                 let textToSearch = '';
-                if (view === 'organization') {
+                if (view === 'funder') {
+                    textToSearch = row.querySelector('th').innerText.toLowerCase();
+                    row.style.display = row.classList.contains('funder-row') && textToSearch.includes(searchTerm) ? '' : 'none';
+                } else if (view === 'organization') {
                     textToSearch = row.querySelector('th').innerText.toLowerCase();
                     row.style.display = row.classList.contains('organization-row') && textToSearch.includes(searchTerm) ? '' : 'none';
                 } else if (view === 'client') {
@@ -139,5 +156,6 @@
         // Initialize the table header based on the default view
         updateTableHeader();
     </script>
+
 </body>
 </html>

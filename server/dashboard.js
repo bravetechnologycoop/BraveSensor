@@ -11,19 +11,22 @@ const { helpers } = require('brave-alert-lib')
 const { ALERT_TYPE } = require('brave-alert-lib')
 const db = require('./db/db')
 
-const clientPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientPage.mst`, 'utf-8')
-const clientVitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientVitals.mst`, 'utf-8')
-const landingCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/landingCSSPartial.mst`, 'utf-8')
-const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/landingPage.mst`, 'utf-8')
-const locationsCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationsCSSPartial.mst`, 'utf-8')
-const locationsDashboardTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationsDashboard.mst`, 'utf-8')
-const locationFormCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationFormCSSPartial.mst`, 'utf-8')
 const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')
+const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/landingPage.mst`, 'utf-8')
+const organizationPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/organizationPage.mst`, 'utf-8')
+const clientPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientPage.mst`, 'utf-8')
+const clientDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientDetailsPage.mst`, 'utf-8')
+const clientVitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientVitals.mst`, 'utf-8')
 const newClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newClient.mst`, 'utf-8')
-const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newLocation.mst`, 'utf-8')
 const updateClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateClient.mst`, 'utf-8')
+const locationDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationDetailsPage.mst`, 'utf-8')
+const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newLocation.mst`, 'utf-8')
 const updateLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateLocation.mst`, 'utf-8')
 const vitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/vitals.mst`, 'utf-8')
+
+const landingCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/landingCSSPartial.mst`, 'utf-8')
+const locationsCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationsCSSPartial.mst`, 'utf-8')
+const locationFormCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationFormCSSPartial.mst`, 'utf-8')
 
 function setupDashboardSessions(app) {
   app.use(cookieParser())
@@ -105,37 +108,100 @@ async function redirectToHomePage(req, res) {
   res.redirect('/dashboard')
 }
 
-async function renderDashboardPage(req, res) {
+async function renderLandingPage(req, res) {
   try {
-    const clients = (await db.getClients()).filter(client => client.isDisplayed)
+    const clients = await db.getClients()
+    const locations = await db.getLocations()
 
+    // Fetch and merge client extensions
     const displayedClients = await Promise.all(
       clients.map(async client => {
         const clientExtension = await db.getClientExtensionWithClientId(client.id)
         return {
           ...client,
-          organization: clientExtension.organization || 'Unknown',
+          country: clientExtension.country || '',
+          countrySubdivision: clientExtension.countrySubdivision || '',
+          buildingType: clientExtension.buildingType || '',
+          organization: clientExtension.organization || '',
+          funder: clientExtension.funder || '',
+          postalCode: clientExtension.postalCode || '',
+          city: clientExtension.city || '',
+          project: clientExtension.project || '',
         }
       }),
     )
 
-    displayedClients.sort((a, b) => {
-      const orgA = a.organization.toLowerCase()
-      const orgB = b.organization.toLowerCase()
-      return orgA.localeCompare(orgB)
-    })
-
-    const displayedDevices = await db.getLocations()
-
-    const viewParams = {
-      clients: displayedClients,
-      devices: displayedDevices.map(device => ({
-        ...device,
-        clientName: device.client.displayName,
-      })),
-    }
+    const viewParams = { locations, clients: displayedClients }
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
+async function renderOrganizationPage(req, res) {
+  try {
+    const funder = req.query.funder
+    const clients = await db.getClients()
+
+    // Fetch and merge client extensions
+    const displayedClients = await Promise.all(
+      clients.map(async client => {
+        const clientExtension = await db.getClientExtensionWithClientId(client.id)
+        return {
+          ...client,
+          country: clientExtension.country || '',
+          countrySubdivision: clientExtension.countrySubdivision || '',
+          buildingType: clientExtension.buildingType || '',
+          organization: clientExtension.organization || '',
+          funder: clientExtension.funder || '',
+          postalCode: clientExtension.postalCode || '',
+          city: clientExtension.city || '',
+          project: clientExtension.project || '',
+        }
+      }),
+    )
+
+    // Filter clients by funder
+    const filteredClients = displayedClients.filter(client => client.funder === funder)
+
+    const viewParams = { funder, clients: filteredClients }
+    res.send(Mustache.render(organizationPageTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
+async function renderClientPage(req, res) {
+  try {
+    const organization = req.query.organization
+    const clients = await db.getClients()
+
+    // Fetch and merge client extensions
+    const displayedClients = await Promise.all(
+      clients.map(async client => {
+        const clientExtension = await db.getClientExtensionWithClientId(client.id)
+        return {
+          ...client,
+          country: clientExtension.country || '',
+          countrySubdivision: clientExtension.countrySubdivision || '',
+          buildingType: clientExtension.buildingType || '',
+          organization: clientExtension.organization || '',
+          funder: clientExtension.funder || '',
+          postalCode: clientExtension.postalCode || '',
+          city: clientExtension.city || '',
+          project: clientExtension.project || '',
+        }
+      }),
+    )
+
+    // Filter clients by organization
+    const filteredClients = displayedClients.filter(client => client.organization === organization)
+
+    const viewParams = { organization, clients: filteredClients }
+    res.send(Mustache.render(clientPageTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -216,7 +282,7 @@ async function renderClientDetailsPage(req, res) {
         }),
     }
 
-    res.send(Mustache.render(clientPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
+    res.send(Mustache.render(clientDetailsPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -265,7 +331,7 @@ async function renderLocationDetailsPage(req, res) {
       })
     }
 
-    res.send(Mustache.render(locationsDashboardTemplate, viewParams, { nav: navPartial, css: locationsCSSPartial }))
+    res.send(Mustache.render(locationDetailsPageTemplate, viewParams, { nav: navPartial, css: locationsCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -700,13 +766,17 @@ module.exports = {
   renderClientDetailsPage,
   renderClientEditPage,
   renderClientVitalsPage,
-  renderDashboardPage,
+  renderLandingPage,
   renderLocationDetailsPage,
   renderLocationEditPage,
   renderLoginPage,
   renderNewClientPage,
   renderNewLocationPage,
   renderVitalsPage,
+
+  renderOrganizationPage,
+  renderClientPage,
+
   sessionChecker,
   setupDashboardSessions,
   submitEditClient,
