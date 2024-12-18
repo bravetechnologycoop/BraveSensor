@@ -15,15 +15,16 @@ the code was deployed.
 
 - Added `sensorDoorDisconnectionInitial`, `sensorRadarDisconnectionInitial`, `sensorDoorDisconnectionReminder` and `sensorRadarDisconnectionReminder` to english and spanish messages (CU-86duu0vdu).
 - Added functions for the above messages in `vitals.js` (CU-86duu0vdu).
-- Added migration script 54 which adds the `status` and `commissioned_at` column to clients (CU-86dv9uxta).
-- Added new status field in the edit client dashboard page (CU-86dv9uxta).
+- Added migration script 54 which adds the `status` and `first_device_live_at` column to clients (CU-86dv9uxta).
+- Added new status and first_device_live_at fields to edit client dashboard page (CU-86dv9uxta).
 
 ### Changed
 
 - Updated `checkHeartbeat` function in `vitals.js` to send the 2 different messages (CU-86duu0vdu).
 - Removed `sendDisconnectionMessage` and `sendDisconnectionReminder`function in `vitals.js` (CU-86duu0vdu).
-- Updated edit client test cases with new status column (CU-86dv9uxta).
-- Updated dashboard homepage to include and sort by Organization (CU-86dva4dxd)
+- Updated dashboard homepage to include and sort by Organization (CU-86dva4dxd).
+- Updated brave-alert-lib to v15.0.6 due to client model change (CU-86dv9uxta).
+- Updated submitEditClientTest.js test cases with new client fields (CU-86dv9uxta).
 
 ## [10.16.0] - 2024-11-14
 
