@@ -179,6 +179,12 @@
                         </select>
                     </div>
                 </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="firstDeviceLiveAt" class="col-sm-3 col-form-label">First Device Live At:</label>
+                    <div class="col-sm-5">
+                        <input type="date" class="form-control" name="firstDeviceLiveAt" value="{{firstDeviceLiveAt}}">
+                    </div>
+                </div>
                 <br>
                 <button type="submit" class="btn btn-primary btn-large">Submit</button>
               </form>

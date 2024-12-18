@@ -474,7 +474,7 @@ const validateEditClient = [
     .notEmpty(),
   Validator.body(['fallbackPhoneNumbers']).trim(),
   Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
-  Validator.body(['country', 'countrySubdivision', 'buildingType', 'organization', 'funder', 'postalCode', 'city', 'project'])
+  Validator.body(['firstDeviceLiveAt', 'country', 'countrySubdivision', 'buildingType', 'organization', 'funder', 'postalCode', 'city', 'project'])
     .trim()
     .optional({ nullable: true }),
 ]
@@ -526,6 +526,7 @@ async function submitEditClient(req, res) {
         data.isSendingVitals,
         data.language,
         data.status,
+        data.firstDeviceLiveAt,
         req.params.id,
       )
 

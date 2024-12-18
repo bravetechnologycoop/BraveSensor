@@ -59,7 +59,7 @@ function createClientFromRow(r) {
     r.created_at,
     r.updated_at,
     r.status,
-    r.commissioned_at,
+    r.first_device_live_at,
   )
 }
 
@@ -1024,6 +1024,7 @@ async function updateClient(
   isSendingVitals,
   language,
   status,
+  firstDeviceLiveAt,
   clientId,
   pgClient,
 ) {
@@ -1032,8 +1033,8 @@ async function updateClient(
       'updateClient',
       `
       UPDATE clients
-      SET display_name = $1, from_phone_number = $2, responder_phone_numbers = $3, reminder_timeout = $4, fallback_phone_numbers = $5, fallback_timeout = $6, heartbeat_phone_numbers = $7, incident_categories = $8, is_displayed = $9, is_sending_alerts = $10, is_sending_vitals = $11, language = $12, status = $13
-      WHERE id = $14
+      SET display_name = $1, from_phone_number = $2, responder_phone_numbers = $3, reminder_timeout = $4, fallback_phone_numbers = $5, fallback_timeout = $6, heartbeat_phone_numbers = $7, incident_categories = $8, is_displayed = $9, is_sending_alerts = $10, is_sending_vitals = $11, language = $12, status = $13, first_device_live_at = $14
+      WHERE id = $15
       RETURNING *
       `,
       [
@@ -1050,6 +1051,7 @@ async function updateClient(
         isSendingVitals,
         language,
         status,
+        firstDeviceLiveAt,
         clientId,
       ],
       pool,
@@ -1228,8 +1230,8 @@ async function createClient(
     const results = await helpers.runQuery(
       'createClient',
       `
-      INSERT INTO clients (display_name, responder_phone_numbers, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_displayed, is_sending_alerts, is_sending_vitals, language, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      INSERT INTO clients (display_name, responder_phone_numbers, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_displayed, is_sending_alerts, is_sending_vitals, language, status, first_device_live_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
       `,
       [
@@ -1246,6 +1248,7 @@ async function createClient(
         isSendingVitals,
         language,
         STATUS.TESTING,
+        null,
       ],
       pool,
       pgClient,
