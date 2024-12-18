@@ -9,7 +9,6 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const { factories, helpers } = require('brave-alert-lib')
 const db = require('../../../db/db')
 const { server } = require('../../../index')
-const { first } = require('lodash')
 
 // Setup chai
 chai.use(chaiHttp)
@@ -196,7 +195,7 @@ describe('dashboard.js integration tests: submitEditClient', () => {
         isSendingVitals: this.isSendingVitals.trim() === 'true',
         language: this.language.trim(),
         status: this.status.trim(),
-        firstDeviceLiveAt: this.firstDeviceLiveAt.trim()
+        firstDeviceLiveAt: this.firstDeviceLiveAt.trim(),
       })
     })
   })
