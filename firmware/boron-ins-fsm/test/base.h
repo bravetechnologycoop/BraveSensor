@@ -1,7 +1,11 @@
+/* base.h - Base header file for unit tests
+ *
+ * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ */
+
 #include "catch.hpp"
 #include <cstdarg>
 #include <cstring>
-
 #include <iostream>
 
 // Mocks
@@ -28,4 +32,3 @@ MockParticle Particle;
 MockSystem System;
 MockLogger Log;
 MockBLE BLE;
-

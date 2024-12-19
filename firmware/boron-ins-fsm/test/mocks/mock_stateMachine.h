@@ -1,5 +1,6 @@
-/*
- * Mock implementation for Boron State Machine
+/* mock_stateMachine.h - Mock implementation for Boron State Machine
+ *
+ * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
  */
 
 #pragma once

@@ -1,3 +1,8 @@
+/* ins3331Tests.cpp - Unit tests for INS3331 sensor interface
+ *
+ * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ */
+
 #define CATCH_CONFIG_MAIN
 #include "base.h"
 #include "../src/ins3331.cpp"

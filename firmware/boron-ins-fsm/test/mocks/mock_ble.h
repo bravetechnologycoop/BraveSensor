@@ -1,5 +1,6 @@
-/*
- * Mock implementation for BLE functions and classes
+/* mock_ble.h - Mock implementation for BLE functions and classes
+ *
+ * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
  */
 
 #pragma once

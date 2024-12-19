@@ -1,3 +1,10 @@
+/* debugFlags.h - Debug flags for state machine
+ * 
+ * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ * 
+ * File created by: Heidi Fedorak, Apr 2021
+ */
+
 #ifndef DEBUG_FLAGS_H
 #define DEBUG_FLAGS_H
 

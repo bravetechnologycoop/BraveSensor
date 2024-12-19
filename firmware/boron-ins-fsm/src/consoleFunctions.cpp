@@ -1,17 +1,10 @@
-/*
- * Brave firmware state machine for single Boron
- * written by Heidi Fedorak, Apr 2021
+/* consoleFunctions.cpp - Implementation of console functions for state machine
  *
- *  Yes, I straight up copied and pasted a function four times :-P
- *  Reason 1: it makes the console functions easier to use, user just has to
- *             input an int to the correct function, and doesn't have to
- *             remember/type correctly a string command.
- *  Reason 2: I don't have to spend time programming a command parser for
- *              things like 60 -threshold vs 100 -stillnessTime
- *
- *
- *
+ * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ * 
+ * File created by: Heidi Fedorak, Apr 2021
  */
+
 #include "Particle.h"
 #include "consoleFunctions.h"
 #include "debugFlags.h"

@@ -1,5 +1,6 @@
-/*
- * Mock implementation for logging functions and classes
+/* mock_logging.h - Mock implementation for logging functions and classes
+ *
+ * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
  */
 
 #pragma once
@@ -34,4 +35,5 @@ public:
         printf("LOG.INFO\n");
     }
 };
+
 extern MockLogger Log;
