@@ -50,7 +50,7 @@
 #define DLP_SER         "/dev/ttyACM0"
 #define DLP_BAUD        57600
 
-#define LOOP_TIMER      300s
+#define LOOP_TIMER      30s
 
 
 //error types

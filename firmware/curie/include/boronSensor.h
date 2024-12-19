@@ -15,7 +15,7 @@ using namespace std;
 #define BORON_SQL_TABLE "boron"
 
 #define IQ_BUFFER_SIZE 26 //(2 bytes per 13 iValues/qValues)
-#define FULL_BUFFER_SIZE 68 
+#define FULL_BUFFER_SIZE 68
 //(2 byte delimiter) + (2 bytes per 13 iValues) + (2 bytes per 13 qValues) + (2 bytes per 5 signal values) + (1 bytes for sensor state) + (1 bytes for door state) + (2 byte delimiter)
 #define DELIMITER_A 0xDE
 #define DELIMITER_B 0xAD

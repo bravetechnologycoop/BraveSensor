@@ -12,8 +12,6 @@
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
 
-#define BORON_BUFFER 68
-
 boronSensor::boronSensor(uint8_t adapter,  uint8_t i2cAddress){    
     bDebug(TRACE, "Creating boronSensor");
     char fname[64];
@@ -53,8 +51,12 @@ int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
     int err = OK;
     *sqlTable = BORON_SQL_TABLE;
     int tmp;
-    readi2c(rxBuffer, FULL_BUFFER_SIZE);
-    if(validateBuffer() == OK )
+    uint8_t command = 0x01;
+    err = writei2c(&command, 1);
+    usleep(50000);
+
+    err = readi2c(rxBuffer, FULL_BUFFER_SIZE);
+    if(validateBuffer() == OK && err != -1)
     {   
         int index = 0;
         if(rxBuffer[index++] != DELIMITER_A || rxBuffer[index++] != DELIMITER_B){
@@ -106,6 +108,9 @@ int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
         if(index != FULL_BUFFER_SIZE){
             bDebug(TRACE, "bad math has happened");
         }
+    }
+    else if(err == -1){
+        bDebug(TRACE, "readi2c err -1");
     }
     else {
         bDebug(TRACE, "Buffer invalid, clearing");
@@ -186,7 +191,7 @@ int boronSensor::validateBuffer(){
 
     if(err == OK){
         string rxBufContents = "boron: ";
-	    for (int i = 0; i < 68; i++) {
+	    for (int i = 0; i < FULL_BUFFER_SIZE; i++) {
     	stringstream ss;
     	ss << hex << this->rxBuffer[i];
     	string hexString = ss.str();
