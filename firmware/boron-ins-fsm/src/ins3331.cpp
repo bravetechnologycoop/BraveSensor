@@ -39,7 +39,7 @@ filteredINSData checkINS3331( ) {
 
         //send to the global as well
         g_iValues.push(dataToParse.inPhase);
-        g_iValues.push(dataToParse.quadrature);
+        g_qValues.push(dataToParse.quadrature);
 
         // compute average of the first n data points by computing the full sum
         if (iBuffer.size() == MOVING_AVERAGE_SAMPLE_SIZE) {
