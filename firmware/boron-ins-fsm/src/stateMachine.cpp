@@ -54,12 +54,6 @@ std::queue<unsigned long> timeQueue;
 unsigned long lastStateChangeOrAlert = millis();
 
 void setupStateMachine() {
-    // Set up debug pins
-    pinMode(D2, OUTPUT);
-    pinMode(D3, OUTPUT);
-    pinMode(D4, OUTPUT);
-    pinMode(D5, OUTPUT);
-
     // Default to not publishing debug logs (from debugFlags.h)
     stateMachineDebugFlag = 0;
 
@@ -155,12 +149,6 @@ void state0_idle() {
     doorData checkDoor = checkIM();
     filteredINSData checkINS = checkINS3331();
 
-    // Set debug pins to LOW
-    digitalWrite(D2, LOW);
-    digitalWrite(D3, LOW);
-    digitalWrite(D4, LOW);
-    digitalWrite(D5, LOW);
-
     // Reset alert flags and initialize variables
     hasDurationAlertBeenPaused = false;
     numDurationAlertSent = 0;
@@ -221,9 +209,6 @@ void state1_countdown() {
     doorData checkDoor = checkIM();
     filteredINSData checkINS = checkINS3331();
 
-    // Set debug pin D2 to HIGH
-    digitalWrite(D2, HIGH);
-
     // Calculate the time spent in state 1
     timeInState1 = calculateTimeInState(state1_start_time);
 
@@ -271,9 +256,6 @@ void state2_monitoring() {
     // Will contain the data for a Duration Alert; max 622 chars as per Particle docs
     char alertMessage[622];
     char sessionEndMessage[622];
-
-    // Set debug pin D3 to HIGH
-    digitalWrite(D3, HIGH);
 
     // Calculate the time spent in state 2
     timeInState2 = calculateTimeInState(state2_start_time);
@@ -339,9 +321,6 @@ void state3_stillness() {
     // Will contain the data for a Stillness Alert; max 622 chars as per Particle docs
     char alertMessage[622];
     char sessionEndMessage[622];
-
-    // Set debug pin D4 to HIGH
-    digitalWrite(D4, HIGH);
 
     // Calculate the time spent in state 3
     timeInState3 = calculateTimeInState(state3_start_time);
