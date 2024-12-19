@@ -23,7 +23,7 @@
                 <table class="table table-striped table-sm table-fixed">
                     <thead>
                         <tr class="table-header" scope="row">
-                            <th scope="col">Organization</th>
+                            <th scope="col">Projects</th>
                         </tr>
                     </thead>
                     <tbody>

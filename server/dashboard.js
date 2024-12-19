@@ -27,7 +27,6 @@ const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/new
 const updateLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateLocation.mst`, 'utf-8')
 const vitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/vitals.mst`, 'utf-8')
 
-
 function setupDashboardSessions(app) {
   app.use(cookieParser())
 
@@ -347,7 +346,7 @@ async function renderNewLocationPage(req, res) {
     const clients = await db.getClients()
     const viewParams = { clients: clients.filter(client => client.isDisplayed) }
 
-    res.send(Mustache.render(newLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+    res.send(Mustache.render(newLocationTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -383,7 +382,7 @@ async function renderLocationDetailsPage(req, res) {
       })
     }
 
-    res.send(Mustache.render(locationDetailsPageTemplate, viewParams, { nav: navPartial, css: locationsCSSPartial }))
+    res.send(Mustache.render(locationDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
