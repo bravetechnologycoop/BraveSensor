@@ -15,7 +15,7 @@
 
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);  // must be an int, see versioning notes above
 SYSTEM_THREAD(ENABLED);
-SerialLogHandler logHandler(WARN_LEVEL);
+SerialLogHandler logHandler(LOG_LEVEL_WARN);
 
 void setup() {
     // enable reset reason

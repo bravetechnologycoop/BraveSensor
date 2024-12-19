@@ -15,6 +15,10 @@
 // define and initialize state machine pointer
 StateHandler stateHandler = state0_idle;
 
+CellularSignal g_Signal;
+
+char tx_buffer[68] = {0};
+
 // define global variables so they are allocated in memory
 unsigned long state1_timer;
 unsigned long state2_duration_timer;
@@ -58,6 +62,8 @@ void setupStateMachine() {
     System.setPowerConfiguration(conf);
 
     Wire.begin(9);  //join i2c as slave address 9
+
+    Wire.onReceive(populateAlphaUpdate);
 
     Wire.onRequest(sendAlphaUpdate);
 
@@ -158,6 +164,7 @@ void state0_idle() {
     number_of_alerts_published = 0;
 
     // do stuff in the state
+    populateAlphaUpdate(1);
     digitalWrite(D2, LOW);
     digitalWrite(D3, LOW);
     digitalWrite(D4, LOW);
@@ -182,6 +189,7 @@ void state0_idle() {
         // if we don't meet the exit conditions above, we remain here
         // stateHandler = state0_idle;
     }
+    g_Signal = Cellular.RSSI();
 
 }
 
@@ -197,6 +205,7 @@ void state1_15sCountdown() {
     checkINS = checkINS3331();
 
     // do stuff in the state
+    populateAlphaUpdate(1);
     digitalWrite(D2, HIGH);
     Log.info("You are in state 1, initial countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
              (millis() - state1_timer));
@@ -208,6 +217,7 @@ void state1_15sCountdown() {
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 1);
         stateHandler = state0_idle;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
@@ -215,6 +225,7 @@ void state1_15sCountdown() {
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 2);
         stateHandler = state0_idle;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else if (millis() - state1_timer >= state1_max_time) {
@@ -225,6 +236,7 @@ void state1_15sCountdown() {
         state2_duration_timer = millis();
         // head to duration state
         stateHandler = state2_duration;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else {
@@ -260,6 +272,7 @@ void state2_duration() {
         state3_stillness_timer = millis();
         // go to stillness state
         stateHandler = state3_stillness;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
@@ -267,7 +280,9 @@ void state2_duration() {
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 2);
         stateHandler = state0_idle;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
+        
     }
     else if (millis() - state2_duration_timer >= state2_max_duration) {
         Log.warn("See duration alert, remaining in state2_duration after alert publish");
@@ -279,6 +294,7 @@ void state2_duration() {
         hasDurationAlertBeenSent = true;
         state2_duration_timer = millis();
         stateHandler = state2_duration;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else {
@@ -314,6 +330,7 @@ void state3_stillness() {
         saveStateChangeOrAlert(3, 0);
         // go back to state 2, duration
         stateHandler = state2_duration;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
@@ -321,6 +338,7 @@ void state3_stillness() {
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 2);
         stateHandler = state0_idle;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else if (millis() - state3_stillness_timer >= *max_stillness_time) {
@@ -542,30 +560,51 @@ hal_i2c_config_t acquireWireBuffer() {
 
 void sendAlphaUpdate() {
     Log.warn("sending alpha update");
-    /*
-    //MOVING_AVERAGE_BUFFER_SIZE * 2 bytes for g_iValues and g_qValues,
-    // 10 bytes for RSSI, 1 byte for state machine, 1 byte for door sensor status
-    char tx_buffer[MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1];
+
+    Wire.write(tx_buffer);
+    
+    digitalWrite(D2, LOW); //ready for next state
+    
+}
+
+void populateAlphaUpdate(int a){
+    //MOVING_AVERAGE_BUFFER_SIZE * 2 bytes for g_iValues and g_qValues
+    const unsigned int buffSize = MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1 + 4;
+    //int buffSize = MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1;
+    // 10 bytes for RSSI, 1 byte for state machine, 1 byte for door sensor status + 4 bytes for delimiters
+    //char tx_buffer[buffSize] = {0};
+    
     int index = 0;
+
+    tx_buffer[0] = 0xDE;
+    tx_buffer[1] = 0xAD;
+    index = 2;
 
     // Add the g_iValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
     for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
-        tx_buffer[index++] = g_iValues[i] & 0xFF;
+        tx_buffer[index++] = g_iValues[i];// & 0xFF;
     }
 
     // Then, add the g_qValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
     for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
-        tx_buffer[index++] = g_qValues[i] & 0xFF; 
+        tx_buffer[index++] = g_qValues[i];// & 0xFF; 
     }
 
     // Add the RSSI value (2 bytes)
-    CellularSignal sig = Cellular.RSSI();
-    int signalStr = (int) sig.getStrength() * 100; // Signal strength % as an int
-    int signalQual = (int) sig.getQuality() * 100; // Quality % as an int
-    int signalStrAbs = (int) sig.getStrengthValue() * 10; // Strength * 10 as an int
-    int signalQualAbs = (int) sig.getQualityValue() * 10; // Quality * 10 as an int
-    int ratAsInteger = (int) sig.getAccessTechnology(); // Will return one of 5 RAT constants, see below.
+    //CellularSignal sig = Cellular.RSSI(); <- crash?
+    
+    int signalStr = (int) g_Signal.getStrength(); // Signal strength % as an int
+    int signalQual = (int) g_Signal.getQuality(); // Quality % as an int
+    int signalStrAbs = (int) g_Signal.getStrengthValue(); // Strength as an int
+    int signalQualAbs = (int) g_Signal.getQualityValue(); // Quality as an int
+    int ratAsInteger = (int) g_Signal.getAccessTechnology(); // Will return one of 5 RAT constants, see below.*/
 
+   /* int signalStr = 1; // Signal strength % as an int
+    int signalQual = 2; // Quality % as an int
+    int signalStrAbs = 3; // Strength as an int
+    int signalQualAbs = 4; // Quality as an int
+    int ratAsInteger = 5; // Will return one of 5 RAT constants, see below.*/
+    
     // NET_ACCESS_TECHNOLOGY_GSM: 2G RAT
     // NET_ACCESS_TECHNOLOGY_EDGE: 2G RAT with EDGE
     // NET_ACCESS_TECHNOLOGY_UMTS/NET_ACCESS_TECHNOLOGY_UTRAN/NET_ACCESS_TECHNOLOGY_WCDMA: UMTS RAT
@@ -573,10 +612,15 @@ void sendAlphaUpdate() {
     // NET_ACCESS_TECHNOLOGY_LTE_CAT_M1: LTE Cat M1 RAT
     int signalData[5] = { signalStr, signalQual, signalStrAbs, signalQualAbs, ratAsInteger };
     for (int i = 0; i < 5; i++) {
-        tx_buffer[index++] = (signalData[i] >> 8) & 0xFF;
-        tx_buffer[index++] = signalData[i] & 0xFF;
+        // tx_buffer[index++] = (signalData[i] >> 8) & 0xFF;
+        // tx_buffer[index++] = signalData[i] & 0xFF;
+        tx_buffer[index++] = signalData[i];
+        tx_buffer[index++] = signalData[i];
     }
 
+    tx_buffer[index++] = 0xAB;
+    tx_buffer[index++] = 0xCD;
+/*
     // Add the state machine value (1 byte)
     if (!stateQueue.empty()) {
         tx_buffer[index++] = stateQueue.back() & 0xFF; //We need to ensure one byte, although will probably never be 2 bytes
@@ -590,13 +634,12 @@ void sendAlphaUpdate() {
 
     // Add the door sensor status (1 byte)
     tx_buffer[index++] = isDoorOpen(checkDoor.doorStatus);  // 1 for open, 0 for closed, no byte mask needed
-    */
-    char tx_buffer[10];
-    for(int i = 0; i <= 10; i++){
+    
+    /*for(int i = index; i <= buffSize - index; i++){
         tx_buffer[i] = i + 1;
-    }
-    Wire.write(tx_buffer);
-    
-    digitalWrite(D2, LOW); //ready for next state
-    
+    }*/
+
+    tx_buffer[index++] = 0xDE;
+    tx_buffer[index++] = 0xAD;
+
 }
