@@ -10,6 +10,7 @@ function configureRoutes(app) {
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)
   app.get('/dashboard', dashboard.sessionChecker, dashboard.renderLandingPage)
 
+  app.get('/projects', dashboard.sessionChecker, dashboard.renderProjectPage)
   app.get('/organizations', dashboard.sessionChecker, dashboard.renderOrganizationPage)
   app.get('/clients', dashboard.sessionChecker, dashboard.renderClientPage)
 

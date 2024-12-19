@@ -13,6 +13,7 @@ const db = require('./db/db')
 
 const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')
 const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/landingPage.mst`, 'utf-8')
+const projectPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/projectPage.mst`, 'utf-8')
 const organizationPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/organizationPage.mst`, 'utf-8')
 const clientPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientPage.mst`, 'utf-8')
 const clientDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientDetailsPage.mst`, 'utf-8')
@@ -131,7 +132,20 @@ async function renderLandingPage(req, res) {
       }),
     )
 
-    const viewParams = { locations, clients: displayedClients }
+    const displayedLocations = locations
+      .filter(location => location.isDisplayed)
+      .map(location => {
+        return {
+          name: location.displayName,
+          id: location.id,
+          deviceType: location.deviceType,
+          sessionStart: location.sessionStart,
+          isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
+          isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
+        }
+      })
+
+    const viewParams = { locations: displayedLocations, clients: displayedClients }
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
   } catch (err) {
@@ -140,7 +154,7 @@ async function renderLandingPage(req, res) {
   }
 }
 
-async function renderOrganizationPage(req, res) {
+async function renderProjectPage(req, res) {
   try {
     const funder = req.query.funder
     const clients = await db.getClients()
@@ -167,6 +181,40 @@ async function renderOrganizationPage(req, res) {
     const filteredClients = displayedClients.filter(client => client.funder === funder)
 
     const viewParams = { funder, clients: filteredClients }
+    res.send(Mustache.render(projectPageTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
+async function renderOrganizationPage(req, res) {
+  try {
+    const project = req.query.project
+    const clients = await db.getClients()
+
+    // Fetch and merge client extensions
+    const displayedClients = await Promise.all(
+      clients.map(async client => {
+        const clientExtension = await db.getClientExtensionWithClientId(client.id)
+        return {
+          ...client,
+          country: clientExtension.country || '',
+          countrySubdivision: clientExtension.countrySubdivision || '',
+          buildingType: clientExtension.buildingType || '',
+          organization: clientExtension.organization || '',
+          funder: clientExtension.funder || '',
+          postalCode: clientExtension.postalCode || '',
+          city: clientExtension.city || '',
+          project: clientExtension.project || '',
+        }
+      }),
+    )
+
+    // Filter clients by project
+    const filteredClients = displayedClients.filter(client => client.project === project)
+
+    const viewParams = { project, clients: filteredClients }
     res.send(Mustache.render(organizationPageTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
@@ -208,6 +256,61 @@ async function renderClientPage(req, res) {
   }
 }
 
+async function renderClientDetailsPage(req, res) {
+  try {
+    const clients = await db.getClients()
+    const currentClient = clients.find(client => client.id === req.params.id)
+    const locations = await db.getLocationsFromClientId(currentClient.id)
+
+    for (const location of locations) {
+      const recentSession = await db.getMostRecentSessionWithDevice(location)
+      if (recentSession !== null) {
+        const sessionCreatedAt = Date.parse(recentSession.createdAt)
+        const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
+        location.sessionStart = timeSinceLastSession
+      }
+    }
+
+    // Fetch and merge client extension for the current client only
+    const clientExtension = await db.getClientExtensionWithClientId(currentClient.id)
+    const displayedClient = {
+      ...currentClient,
+      country: clientExtension.country || '',
+      countrySubdivision: clientExtension.countrySubdivision || '',
+      buildingType: clientExtension.buildingType || '',
+      organization: clientExtension.organization || '',
+      funder: clientExtension.funder || '',
+      postalCode: clientExtension.postalCode || '',
+      city: clientExtension.city || '',
+      project: clientExtension.project || '',
+    }
+
+    const displayedLocations = locations
+      .filter(location => location.isDisplayed)
+      .map(location => {
+        return {
+          name: location.displayName,
+          id: location.id,
+          deviceType: location.deviceType,
+          sessionStart: location.sessionStart,
+          isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
+          isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
+        }
+      })
+
+    const viewParams = {
+      clients: clients.filter(client => client.isDisplayed),
+      currentClient: displayedClient,
+      locations: displayedLocations,
+    }
+
+    res.send(Mustache.render(clientDetailsPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
 async function renderNewClientPage(req, res) {
   try {
     // Needed for the navigation bar
@@ -243,46 +346,6 @@ async function renderClientEditPage(req, res) {
     }
 
     res.send(Mustache.render(updateClientTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
-  } catch (err) {
-    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
-    res.status(500).send()
-  }
-}
-
-async function renderClientDetailsPage(req, res) {
-  try {
-    const clients = await db.getClients()
-    const currentClient = clients.find(client => client.id === req.params.id)
-
-    const locations = await db.getLocationsFromClientId(currentClient.id)
-
-    for (const location of locations) {
-      const recentSession = await db.getMostRecentSessionWithDevice(location)
-      if (recentSession !== null) {
-        const sessionCreatedAt = Date.parse(recentSession.createdAt)
-        const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
-        location.sessionStart = timeSinceLastSession
-      }
-    }
-
-    const viewParams = {
-      clients: clients.filter(client => client.isDisplayed),
-      currentClient,
-      locations: locations
-        .filter(location => location.isDisplayed)
-        .map(location => {
-          return {
-            name: location.displayName,
-            id: location.id,
-            deviceType: location.deviceType,
-            sessionStart: location.sessionStart,
-            isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
-            isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
-          }
-        }),
-    }
-
-    res.send(Mustache.render(clientDetailsPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -761,32 +824,31 @@ async function submitEditLocation(req, res) {
 }
 
 module.exports = {
-  downloadCsv,
-  redirectToHomePage,
-  renderClientDetailsPage,
-  renderClientEditPage,
-  renderClientVitalsPage,
-  renderLandingPage,
-  renderLocationDetailsPage,
-  renderLocationEditPage,
-  renderLoginPage,
-  renderNewClientPage,
-  renderNewLocationPage,
-  renderVitalsPage,
-
-  renderOrganizationPage,
-  renderClientPage,
-
-  sessionChecker,
   setupDashboardSessions,
-  submitEditClient,
-  submitEditLocation,
+  sessionChecker,
+  renderLoginPage,
   submitLogin,
   submitLogout,
-  submitNewClient,
-  submitNewLocation,
-  validateEditClient,
+  redirectToHomePage,
+  renderLandingPage,
+  renderProjectPage,
+  renderOrganizationPage,
+  renderClientPage,
+  renderNewClientPage,
+  renderClientDetailsPage,
+  renderClientEditPage,
+  renderNewLocationPage,
+  renderLocationDetailsPage,
+  renderLocationEditPage,
+  renderVitalsPage,
+  renderClientVitalsPage,
+  downloadCsv,
   validateNewClient,
-  validateEditLocation,
+  validateEditClient,
   validateNewLocation,
+  validateEditLocation,
+  submitNewClient,
+  submitEditClient,
+  submitNewLocation,
+  submitEditLocation,
 }

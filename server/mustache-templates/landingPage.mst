@@ -24,14 +24,15 @@
                 <div class="input-group-append">
                     <select id="viewSelect" class="form-control" value="organization">
                         <option value="funder">Funder</option>
+                        <option value="project">Projects</option>
                         <option value="organization" selected>Organization</option>
                         <option value="client">Client</option>
-                        <option value="devices">Devices</option>
+                        <option value="device">Devices</option>
                     </select>
                 </div>
             </div>
             <br>
-            <h4 id="viewHeader">Organization View</h4> {{! default view }}
+            <h4 id="viewHeader">Organization View</h4> {{! Default view }}
             <br>
             <div class="table-responsive">
                 <table class="table table-striped table-sm table-fixed">
@@ -42,33 +43,6 @@
                     </thead>
 
                     <tbody id="tableBody">
-                    {{#clients}}
-                        <tr class="table-data organization-row">
-                            <th scope="row"><a href="/clients?organization={{organization}}">{{organization}}</a></th>
-                        </tr>
-                    {{/clients}}
-                    {{#clients}}
-                        <tr class="table-data funder-row">
-                            <th scope="row"><a href="/organizations?funder={{funder}}">{{funder}}</a></th>
-                        </tr>
-                    {{/clients}}
-                    {{#clients}}
-                        <tr class="table-data client-row">
-                            <th scope="row"><a href="/clients/{{id}}">{{displayName}}</a></th>
-                            <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
-                            <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
-                        </tr>
-                    {{/clients}}
-                    {{#locations}}
-                        <tr class="table-data device-row">
-                            <th scope="row"><a href="/locations/{{id}}">{{locationid}}</a></th>
-                            <td>{{deviceType}}</td>
-                            <td>{{lastSessionStartedAt}}</td>
-                            <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
-                            <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
-                        </tr>
-                    {{/locations}}
-
                     </tbody>
                 </table>
             </div>
@@ -80,7 +54,10 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 
     <script>
+        // Call filter table if searchbar is updated
         document.getElementById('searchBar').addEventListener('input', filterTable);
+
+        // Call updateTableHeader if view is changed
         document.getElementById('viewSelect').addEventListener('change', updateTableHeader);
 
         function updateTableHeader() {
@@ -97,6 +74,13 @@
                     </tr>
                 `;
                 viewTitle = 'Funder View';
+            } else if (view === 'project') {
+                headerHtml = `
+                    <tr class="table-header" scope="row">
+                        <th scope="col">Project</th>
+                    </tr>
+                `;
+                viewTitle = 'Project View';
             } else if (view === 'organization') {
                 headerHtml = `
                     <tr class="table-header" scope="row">
@@ -113,7 +97,7 @@
                     </tr>
                 `;
                 viewTitle = 'Client View';
-            } else if (view === 'devices') {
+            } else if (view === 'device') {
                 headerHtml = `
                     <tr class="table-header" scope="row">
                         <th scope="col">Location ID</th>
@@ -123,11 +107,73 @@
                         <th scope="col">Sends Vitals?</th>
                     </tr>
                 `;
-                viewTitle = 'Devices View';
-            }
+                viewTitle = 'Device View';
+            } 
 
             viewHeader.innerText = viewTitle;
             tableHeader.innerHTML = headerHtml;
+            populateTableBody();
+        }
+
+        function populateTableBody() {
+            const view = document.getElementById('viewSelect').value;
+            const tableBody = document.getElementById('tableBody');
+            let bodyHtml = '';
+
+            if (view === 'funder') {
+                bodyHtml = `
+                    {{#clients}}
+                        <tr class="table-data funder-row">
+                            {{! Clicking item renders the projects filtered by the selected funder }}
+                            <th scope="row"><a href="/projects?funder={{funder}}">{{funder}}</a></th>
+                        </tr>
+                    {{/clients}}
+                `;
+            } else if (view === 'project') {
+                bodyHtml = `
+                    {{#clients}}
+                        <tr class="table-data project-row">
+                            {{! Clicking item renders the organizations filtered by the selected project }}
+                            <th scope="row"><a href="/organizations?project={{project}}">{{project}}</a></th>
+                        </tr>
+                    {{/clients}}
+                `;
+            } else if (view === 'organization') {
+                bodyHtml = `
+                    {{#clients}}
+                        <tr class="table-data organization-row">
+                            {{! Clicking item renders the clients filtered by the selected organization }}
+                            <th scope="row"><a href="/clients?organization={{organization}}">{{organization}}</a></th>
+                        </tr>
+                    {{/clients}}
+                `;
+            } else if (view === 'client') {
+                bodyHtml = `
+                    {{#clients}}
+                        <tr class="table-data client-row">
+                            {{! Clicking item renders client details and the devices for that client }}
+                            <th scope="row"><a href="/clients/{{id}}">{{displayName}}</a></th>
+                            <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
+                            <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
+                        </tr>
+                    {{/clients}}
+                `;
+            } else if (view === 'device') {
+                bodyHtml = `
+                    {{#locations}}
+                        <tr class="table-data device-row">
+                            {{! Clicking item renders location/device details }}
+                            <th scope="row"><a href="/locations/{{id}}">{{locationid}}</a></th>
+                            <td>{{deviceType}}</td>
+                            <td>{{lastSessionStartedAt}}</td>
+                            <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
+                            <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
+                        </tr>
+                    {{/locations}}
+                `;
+            } 
+
+            tableBody.innerHTML = bodyHtml;
             filterTable();
         }
 
@@ -140,20 +186,23 @@
                 if (view === 'funder') {
                     textToSearch = row.querySelector('th').innerText.toLowerCase();
                     row.style.display = row.classList.contains('funder-row') && textToSearch.includes(searchTerm) ? '' : 'none';
+                } else if (view === 'project') {
+                    textToSearch = row.querySelector('th').innerText.toLowerCase();
+                    row.style.display = row.classList.contains('project-row') && textToSearch.includes(searchTerm) ? '' : 'none';
                 } else if (view === 'organization') {
                     textToSearch = row.querySelector('th').innerText.toLowerCase();
                     row.style.display = row.classList.contains('organization-row') && textToSearch.includes(searchTerm) ? '' : 'none';
                 } else if (view === 'client') {
                     textToSearch = row.querySelector('th').innerText.toLowerCase();
                     row.style.display = row.classList.contains('client-row') && textToSearch.includes(searchTerm) ? '' : 'none';
-                } else if (view === 'devices') {
+                } else if (view === 'device') {
                     textToSearch = row.querySelector('th').innerText.toLowerCase();
                     row.style.display = row.classList.contains('device-row') && textToSearch.includes(searchTerm) ? '' : 'none';
-                }
+                } 
             });
         }
 
-        // Initialize the table header based on the default view
+        // Initialize the table header and body based on the default view
         updateTableHeader();
     </script>
 
