@@ -17,10 +17,10 @@
     {{> nav}}
     <div class="content-area">
         <div class="content-wrapper">
-            <h4 class="no-locations">Sensors Search</h4>
+            <h4>Sensors Search</h4>
             <br>
             <div class="input-group mb-3">
-                <input id="searchBar" type="text" class="form-control" placeholder="Search...">
+                <input class="searchBar" id="searchBar" type="text" class="form-control" placeholder="Search...">
                 <div class="input-group-append">
                     <select id="viewSelect" class="form-control" value="organization">
                         <option value="funder">Funder</option>
@@ -32,7 +32,7 @@
                 </div>
             </div>
             <br>
-            <h4 id="viewHeader">Organization View</h4> {{! Default view }}
+            <h4 class='faded-heading' id="viewHeader">Organization View</h4> {{! Default view }}
             <br>
             <div class="table-responsive">
                 <table class="table table-striped table-sm table-fixed">
@@ -100,7 +100,7 @@
             } else if (view === 'device') {
                 headerHtml = `
                     <tr class="table-header" scope="row">
-                        <th scope="col">Location ID</th>
+                        <th scope="col">Location Name</th>
                         <th scope="col">Device Type</th>
                         <th scope="col">Last Session Started At</th>
                         <th scope="col">Sends Alerts?</th>
@@ -163,7 +163,7 @@
                     {{#locations}}
                         <tr class="table-data device-row">
                             {{! Clicking item renders location/device details }}
-                            <th scope="row"><a href="/locations/{{id}}">{{locationid}}</a></th>
+                            <th scope="row"><a href="/locations/{{id}}">{{name}}</a></th>
                             <td>{{deviceType}}</td>
                             <td>{{lastSessionStartedAt}}</td>
                             <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>

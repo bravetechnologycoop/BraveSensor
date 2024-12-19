@@ -12,6 +12,8 @@ const { ALERT_TYPE } = require('brave-alert-lib')
 const db = require('./db/db')
 
 const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')
+const pageCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/pageCSSPartial.mst`, 'utf-8')
+
 const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/landingPage.mst`, 'utf-8')
 const projectPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/projectPage.mst`, 'utf-8')
 const organizationPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/organizationPage.mst`, 'utf-8')
@@ -25,9 +27,6 @@ const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/new
 const updateLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateLocation.mst`, 'utf-8')
 const vitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/vitals.mst`, 'utf-8')
 
-const landingCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/landingCSSPartial.mst`, 'utf-8')
-const locationsCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationsCSSPartial.mst`, 'utf-8')
-const locationFormCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/locationFormCSSPartial.mst`, 'utf-8')
 
 function setupDashboardSessions(app) {
   app.use(cookieParser())
@@ -147,7 +146,7 @@ async function renderLandingPage(req, res) {
 
     const viewParams = { locations: displayedLocations, clients: displayedClients }
 
-    res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
+    res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -181,7 +180,7 @@ async function renderProjectPage(req, res) {
     const filteredClients = displayedClients.filter(client => client.funder === funder)
 
     const viewParams = { funder, clients: filteredClients }
-    res.send(Mustache.render(projectPageTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+    res.send(Mustache.render(projectPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -215,7 +214,7 @@ async function renderOrganizationPage(req, res) {
     const filteredClients = displayedClients.filter(client => client.project === project)
 
     const viewParams = { project, clients: filteredClients }
-    res.send(Mustache.render(organizationPageTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+    res.send(Mustache.render(organizationPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -249,7 +248,7 @@ async function renderClientPage(req, res) {
     const filteredClients = displayedClients.filter(client => client.organization === organization)
 
     const viewParams = { organization, clients: filteredClients }
-    res.send(Mustache.render(clientPageTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+    res.send(Mustache.render(clientPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -298,13 +297,9 @@ async function renderClientDetailsPage(req, res) {
         }
       })
 
-    const viewParams = {
-      clients: clients.filter(client => client.isDisplayed),
-      currentClient: displayedClient,
-      locations: displayedLocations,
-    }
+    const viewParams = { currentClient: displayedClient, locations: displayedLocations }
 
-    res.send(Mustache.render(clientDetailsPageTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
+    res.send(Mustache.render(clientDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -313,11 +308,7 @@ async function renderClientDetailsPage(req, res) {
 
 async function renderNewClientPage(req, res) {
   try {
-    // Needed for the navigation bar
-    const clients = await db.getClients()
-    const viewParams = { clients: clients.filter(client => client.isDisplayed) }
-
-    res.send(Mustache.render(newClientTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+    res.send(Mustache.render(newClientTemplate, {}, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -331,7 +322,6 @@ async function renderClientEditPage(req, res) {
     const clientExtension = await db.getClientExtensionWithClientId(req.params.id)
 
     const viewParams = {
-      clients: clients.filter(client => client.isDisplayed),
       currentClient: {
         ...currentClient,
         country: clientExtension.country || '',
@@ -345,7 +335,7 @@ async function renderClientEditPage(req, res) {
       },
     }
 
-    res.send(Mustache.render(updateClientTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+    res.send(Mustache.render(updateClientTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -366,7 +356,6 @@ async function renderNewLocationPage(req, res) {
 
 async function renderLocationDetailsPage(req, res) {
   try {
-    // Needed for the navigation bar
     const clients = await db.getClients()
     const location = await db.getLocationWithDeviceId(req.params.id)
     const recentSessions = await db.getHistoryOfSessions(req.params.id)
@@ -420,7 +409,7 @@ async function renderLocationEditPage(req, res) {
       isMultiStallSelected: location.deviceType === 'SENSOR_MULTISTALL',
     }
 
-    res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: locationFormCSSPartial }))
+    res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -458,7 +447,7 @@ async function renderVitalsPage(req, res) {
       }
     }
 
-    res.send(Mustache.render(vitalsTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
+    res.send(Mustache.render(vitalsTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(err)
     res.status(500).send()
@@ -502,7 +491,7 @@ async function renderClientVitalsPage(req, res) {
       viewParams.viewMessage = 'No client to display'
     }
 
-    res.send(Mustache.render(clientVitalsTemplate, viewParams, { nav: navPartial, css: landingCSSPartial }))
+    res.send(Mustache.render(clientVitalsTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(err)
     res.status(500).send()

@@ -9,11 +9,9 @@ const sensorAlerts = require('./sensorAlerts')
 function configureRoutes(app) {
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)
   app.get('/dashboard', dashboard.sessionChecker, dashboard.renderLandingPage)
-
   app.get('/projects', dashboard.sessionChecker, dashboard.renderProjectPage)
   app.get('/organizations', dashboard.sessionChecker, dashboard.renderOrganizationPage)
   app.get('/clients', dashboard.sessionChecker, dashboard.renderClientPage)
-
   app.get('/clients/new', dashboard.sessionChecker, dashboard.renderNewClientPage) // Must be configured before /clients/:id
   app.get('/clients/:id', dashboard.sessionChecker, dashboard.renderClientDetailsPage)
   app.get('/clients/:id/edit', dashboard.sessionChecker, dashboard.renderClientEditPage)
