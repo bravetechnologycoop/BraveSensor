@@ -156,12 +156,12 @@ async function renderLandingPage(req, res) {
         }
       })
 
-    const viewParams = { 
-      locations: displayedLocations, 
-      clients: displayedClients, 
-      uniqueFunders: uniqueFunders, 
-      uniqueProjects: uniqueProjects,
-      uniqueOrganizations: uniqueOrganizations, 
+    const viewParams = {
+      locations: displayedLocations,
+      clients: displayedClients,
+      uniqueFunders,
+      uniqueProjects,
+      uniqueOrganizations,
     }
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
@@ -201,11 +201,12 @@ async function renderFunderProjectsPage(req, res) {
         : displayedClients.filter(client => client.funder === funder)
 
     // Filter out duplicate projects
-    const uniqueProjects = Array.from(new Set(filteredClients.map(client => client.project)))
-      .map(project => filteredClients.find(client => client.project === project))
+    const uniqueProjects = Array.from(new Set(filteredClients.map(client => client.project))).map(project =>
+      filteredClients.find(client => client.project === project),
+    )
 
-    const viewParams = { 
-      funder: funder, 
+    const viewParams = {
+      funder,
       clients: uniqueProjects,
     }
 
@@ -246,8 +247,9 @@ async function renderProjectOrganizationsPage(req, res) {
         : displayedClients.filter(client => client.project === project)
 
     // Filter out duplicate organizations
-    const uniqueOrganizations = Array.from(new Set(filteredClients.map(client => client.organization)))
-      .map(organization => filteredClients.find(client => client.organization === organization))
+    const uniqueOrganizations = Array.from(new Set(filteredClients.map(client => client.organization))).map(organization =>
+      filteredClients.find(client => client.organization === organization),
+    )
 
     const viewParams = { project, clients: uniqueOrganizations }
     res.send(Mustache.render(projectOrganizationsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
@@ -287,8 +289,7 @@ async function renderOrganizationClientsPage(req, res) {
         : displayedClients.filter(client => client.organization === organization)
 
     // Filter out duplicate clients
-    const uniqueClients = Array.from(new Set(filteredClients.map(client => client.id)))
-      .map(id => filteredClients.find(client => client.id === id))
+    const uniqueClients = Array.from(new Set(filteredClients.map(client => client.id))).map(id => filteredClients.find(client => client.id === id))
 
     const viewParams = { organization, clients: uniqueClients }
     res.send(Mustache.render(organizationClientsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))

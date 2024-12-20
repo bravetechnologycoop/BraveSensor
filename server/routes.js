@@ -9,14 +9,14 @@ const sensorAlerts = require('./sensorAlerts')
 function configureRoutes(app) {
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)
   app.get('/dashboard', dashboard.sessionChecker, dashboard.renderLandingPage)
-  app.get('/projects', dashboard.sessionChecker, dashboard.renderFunderProjectsPage)              // projects?funder=
-  app.get('/organizations', dashboard.sessionChecker, dashboard.renderProjectOrganizationsPage)   // organizations?project=
-  app.get('/clients', dashboard.sessionChecker, dashboard.renderOrganizationClientsPage)          // clients?organization=
-  app.get('/clients/new', dashboard.sessionChecker, dashboard.renderNewClientPage)                // Must be configured before /clients/:id
+  app.get('/projects', dashboard.sessionChecker, dashboard.renderFunderProjectsPage) // projects?funder=
+  app.get('/organizations', dashboard.sessionChecker, dashboard.renderProjectOrganizationsPage) // organizations?project=
+  app.get('/clients', dashboard.sessionChecker, dashboard.renderOrganizationClientsPage) // clients?organization=
+  app.get('/clients/new', dashboard.sessionChecker, dashboard.renderNewClientPage) // Must be configured before /clients/:id
   app.get('/clients/:id', dashboard.sessionChecker, dashboard.renderClientDetailsPage)
   app.get('/clients/:id/edit', dashboard.sessionChecker, dashboard.renderClientEditPage)
   app.get('/clients/:id/vitals', dashboard.sessionChecker, dashboard.renderClientVitalsPage)
-  app.get('/locations/new', dashboard.sessionChecker, dashboard.renderNewLocationPage)            // Must be configured before /location/:id
+  app.get('/locations/new', dashboard.sessionChecker, dashboard.renderNewLocationPage) // Must be configured before /location/:id
   app.get('/locations/:id', dashboard.sessionChecker, dashboard.renderLocationDetailsPage)
   app.get('/locations/:id/edit', dashboard.sessionChecker, dashboard.renderLocationEditPage)
   app.get('/vitals', dashboard.sessionChecker, dashboard.renderVitalsPage)
