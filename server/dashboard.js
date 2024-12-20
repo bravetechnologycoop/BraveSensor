@@ -107,35 +107,40 @@ async function redirectToHomePage(req, res) {
   res.redirect('/dashboard')
 }
 
-// Helper function
 async function fetchAndMergeClientExtensions(clients) {
-  return Promise.all(
-    clients.map(async client => {
-      const clientExtension = await db.getClientExtensionWithClientId(client.id)
-      return {
-        ...client,
-        country: clientExtension.country || 'N/A',
-        countrySubdivision: clientExtension.countrySubdivision || 'N/A',
-        buildingType: clientExtension.buildingType || 'N/A',
-        organization: clientExtension.organization || 'N/A',
-        funder: clientExtension.funder || 'N/A',
-        postalCode: clientExtension.postalCode || 'N/A',
-        city: clientExtension.city || 'N/A',
-        project: clientExtension.project || 'N/A',
-      }
-    }),
-  )
+  const clientExtensions = await Promise.all(clients.map(client => db.getClientExtensionWithClientId(client.id)))
+
+  return clients.map((client, index) => {
+    const clientExtension = clientExtensions[index]
+    return {
+      ...client,
+      country: clientExtension.country || 'N/A',
+      countrySubdivision: clientExtension.countrySubdivision || 'N/A',
+      buildingType: clientExtension.buildingType || 'N/A',
+      organization: clientExtension.organization || 'N/A',
+      funder: clientExtension.funder || 'N/A',
+      postalCode: clientExtension.postalCode || 'N/A',
+      city: clientExtension.city || 'N/A',
+      project: clientExtension.project || 'N/A',
+    }
+  })
 }
 
-// Helper function
 function filterUniqueItems(items, key) {
-  return Array.from(new Set(items.map(item => item[key]))).map(uniqueKey => items.find(item => item[key] === uniqueKey))
+  const seen = new Set()
+  return items.filter(item => {
+    const value = item[key]
+    if (seen.has(value)) {
+      return false
+    }
+    seen.add(value)
+    return true
+  })
 }
 
 async function renderLandingPage(req, res) {
   try {
-    const clients = await db.getClients()
-    const locations = await db.getLocations()
+    const [clients, locations] = await Promise.all([db.getClients(), db.getLocations()])
     const displayedClients = await fetchAndMergeClientExtensions(clients)
 
     const uniqueFunders = filterUniqueItems(displayedClients, 'funder')
@@ -234,7 +239,8 @@ async function renderOrganizationClientsPage(req, res) {
 async function renderClientDetailsPage(req, res) {
   try {
     const clients = await db.getClients()
-    const currentClient = clients.find(client => client.id === req.params.id)
+    const displayedClients = await fetchAndMergeClientExtensions(clients)
+    const currentClient = displayedClients.find(client => client.id === req.params.id)
     const locations = await db.getLocationsFromClientId(currentClient.id)
 
     for (const location of locations) {
@@ -246,34 +252,18 @@ async function renderClientDetailsPage(req, res) {
       }
     }
 
-    // Fetch and merge client extension for the current client only
-    const clientExtension = await db.getClientExtensionWithClientId(currentClient.id)
-    const displayedClient = {
-      ...currentClient,
-      country: clientExtension.country || '',
-      countrySubdivision: clientExtension.countrySubdivision || '',
-      buildingType: clientExtension.buildingType || '',
-      organization: clientExtension.organization || '',
-      funder: clientExtension.funder || '',
-      postalCode: clientExtension.postalCode || '',
-      city: clientExtension.city || '',
-      project: clientExtension.project || '',
-    }
-
     const displayedLocations = locations
       .filter(location => location.isDisplayed)
-      .map(location => {
-        return {
-          name: location.displayName,
-          id: location.id,
-          deviceType: location.deviceType,
-          sessionStart: location.sessionStart,
-          isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
-          isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
-        }
-      })
+      .map(location => ({
+        name: location.displayName,
+        id: location.id,
+        deviceType: location.deviceType,
+        sessionStart: location.sessionStart,
+        isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
+        isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
+      }))
 
-    const viewParams = { currentClient: displayedClient, locations: displayedLocations }
+    const viewParams = { currentClient, locations: displayedLocations }
 
     res.send(Mustache.render(clientDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
@@ -294,22 +284,10 @@ async function renderNewClientPage(req, res) {
 async function renderClientEditPage(req, res) {
   try {
     const clients = await db.getClients()
-    const currentClient = clients.find(client => client.id === req.params.id)
-    const clientExtension = await db.getClientExtensionWithClientId(req.params.id)
+    const displayedClients = await fetchAndMergeClientExtensions(clients)
+    const currentClient = displayedClients.find(client => client.id === req.params.id)
 
-    const viewParams = {
-      currentClient: {
-        ...currentClient,
-        country: clientExtension.country || '',
-        countrySubdivision: clientExtension.countrySubdivision || '',
-        buildingType: clientExtension.buildingType || '',
-        organization: clientExtension.organization || '',
-        funder: clientExtension.funder || '',
-        postalCode: clientExtension.postalCode || '',
-        city: clientExtension.city || '',
-        project: clientExtension.project || '',
-      },
-    }
+    const viewParams = { currentClient }
 
     res.send(Mustache.render(updateClientTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
