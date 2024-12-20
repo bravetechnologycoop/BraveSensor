@@ -25,7 +25,21 @@
                 <br>
                 <br>
                 <br>
-                
+
+                <h5>Client Information</h5>
+                <div class="client-info">
+                    <p><strong>Responder Phone Numbers:</strong> {{#responderPhoneNumbers}}{{.}}, {{/responderPhoneNumbers}}</p>
+                    <p><strong>Fallback Phone Numbers:</strong> {{#fallbackPhoneNumbers}}{{.}}, {{/fallbackPhoneNumbers}}</p>
+                    <p><strong>Funder:</strong> <span>{{funder}}</span></p>
+                    <p><strong>Organization:</strong> <span>{{organization}}</span></p>
+                    <p><strong>Project:</strong> <span>{{project}}</span></p>
+                    <p><strong>Country:</strong> <span>{{country}}</span></p>
+                    <p><strong>Country Subdivision:</strong> <span>{{countrySubdivision}}</span></p>
+                    <p><strong>Building Type:</strong> <span>{{buildingType}}</span></p>
+                    <p><strong>Postal Code:</strong> <span>{{postalCode}}</span></p>
+                    <p><strong>City:</strong> <span>{{city}}</span></p>
+                </div>
+
                 <h5>Locations</h5>
                 <div class="table-responsive">
                     <table class="table table-striped table-sm table-fixed">
