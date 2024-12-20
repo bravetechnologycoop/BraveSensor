@@ -17,7 +17,10 @@ StateHandler stateHandler = state0_idle;
 
 CellularSignal g_Signal;
 
+int g_doorStatus;
+
 char tx_buffer[68] = {0};
+
 
 // define global variables so they are allocated in memory
 unsigned long state1_timer;
@@ -153,6 +156,7 @@ void state0_idle() {
     // this returns the previous door event value until a new door event is received
     // on code boot up it initializes to returning INITIAL_DOOR_STATUS
     checkDoor = checkIM();
+    g_doorStatus = isDoorOpen(checkDoor.doorStatus);
     // this returns 0.0 if the INS has no new data to transmit
     checkINS = checkINS3331();
     // session is over in idle state, so reset the whether alert has been sent flags
@@ -191,6 +195,7 @@ void state0_idle() {
     }
     g_Signal = Cellular.RSSI();
 
+
 }
 
 void state1_15sCountdown() {
@@ -201,6 +206,7 @@ void state1_15sCountdown() {
     // this returns the previous door event value until a new door event is received
     // on code boot up it initializes to returning INITIAL_DOOR_STATUS
     checkDoor = checkIM();
+    g_doorStatus = isDoorOpen(checkDoor.doorStatus);
     // this returns 0.0 if the INS has no new data to transmit
     checkINS = checkINS3331();
 
@@ -252,6 +258,7 @@ void state2_duration() {
     // this returns the previous door event value until a new door event is received
     // on code boot up it initializes to returning INITIAL_DOOR_STATUS
     checkDoor = checkIM();
+    g_doorStatus = isDoorOpen(checkDoor.doorStatus);
     // this returns 0.0 if the INS has no new data to transmit
     checkINS = checkINS3331();
     // will contain the data for a Stillness Alert; max 622 chars as per Particle docs
@@ -314,6 +321,7 @@ void state3_stillness() {
     // this returns the previous door event value until a new door event is received
     // on code boot up it initializes to returning INITIAL_DOOR_STATUS
     checkDoor = checkIM();
+    g_doorStatus = isDoorOpen(checkDoor.doorStatus);
     // this returns 0.0 if the INS has no new data to transmit
     checkINS = checkINS3331();
 
@@ -568,42 +576,37 @@ void sendAlphaUpdate() {
 }
 
 void populateAlphaUpdate(int a){
-    //MOVING_AVERAGE_BUFFER_SIZE * 2 bytes for g_iValues and g_qValues
-    const unsigned int buffSize = MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1 + 4;
-    //int buffSize = MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1;
-    // 10 bytes for RSSI, 1 byte for state machine, 1 byte for door sensor status + 4 bytes for delimiters
-    //char tx_buffer[buffSize] = {0};
-    
+
     int index = 0;
 
-    tx_buffer[0] = 0xDE;
-    tx_buffer[1] = 0xAD;
-    index = 2;
+    tx_buffer[index++] = 0xDE;
+    tx_buffer[index++] = 0xAD;
 
     // Add the g_iValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
     for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
-        tx_buffer[index++] = g_iValues[i];// & 0xFF;
+        if(g_iValues[i] != NULL){
+            tx_buffer[index++] = g_iValues[i] & 0xFF;
+        }
+        else{
+            tx_buffer[index++] = 0xFF;
+        }
     }
 
     // Then, add the g_qValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
     for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
-        tx_buffer[index++] = g_qValues[i];// & 0xFF; 
+        if(g_qValues[i] != NULL){
+            tx_buffer[index++] = g_qValues[i] & 0xFF;
+        }
+        else{
+            tx_buffer[index++] = 0xFF;
+        }
     }
-
-    // Add the RSSI value (2 bytes)
-    //CellularSignal sig = Cellular.RSSI(); <- crash?
     
     int signalStr = (int) g_Signal.getStrength(); // Signal strength % as an int
     int signalQual = (int) g_Signal.getQuality(); // Quality % as an int
     int signalStrAbs = (int) g_Signal.getStrengthValue(); // Strength as an int
     int signalQualAbs = (int) g_Signal.getQualityValue(); // Quality as an int
     int ratAsInteger = (int) g_Signal.getAccessTechnology(); // Will return one of 5 RAT constants, see below.*/
-
-   /* int signalStr = 1; // Signal strength % as an int
-    int signalQual = 2; // Quality % as an int
-    int signalStrAbs = 3; // Strength as an int
-    int signalQualAbs = 4; // Quality as an int
-    int ratAsInteger = 5; // Will return one of 5 RAT constants, see below.*/
     
     // NET_ACCESS_TECHNOLOGY_GSM: 2G RAT
     // NET_ACCESS_TECHNOLOGY_EDGE: 2G RAT with EDGE
@@ -612,32 +615,36 @@ void populateAlphaUpdate(int a){
     // NET_ACCESS_TECHNOLOGY_LTE_CAT_M1: LTE Cat M1 RAT
     int signalData[5] = { signalStr, signalQual, signalStrAbs, signalQualAbs, ratAsInteger };
     for (int i = 0; i < 5; i++) {
-        // tx_buffer[index++] = (signalData[i] >> 8) & 0xFF;
-        // tx_buffer[index++] = signalData[i] & 0xFF;
-        tx_buffer[index++] = signalData[i];
-        tx_buffer[index++] = signalData[i];
+       if(tx_buffer[index] != NULL && tx_buffer[index] != 0){
+            tx_buffer[index] = signalData[i] & 0xFF;
+       }
+       else {
+            tx_buffer[index] = 0xFF; //Invalid
+       }
+       index++;
     }
 
-    tx_buffer[index++] = 0xAB;
-    tx_buffer[index++] = 0xCD;
-/*
     // Add the state machine value (1 byte)
-    if (!stateQueue.empty()) {
+    if (!stateQueue.empty() && stateQueue.back() != 0) {
         tx_buffer[index++] = stateQueue.back() & 0xFF; //We need to ensure one byte, although will probably never be 2 bytes
     }
+    else if(!stateQueue.empty() && stateQueue.back() == 0){
+        tx_buffer[index++] = 0xFE; //There's some weird 0 handling so if we send 0xFE, this will mean state 0
+    } 
     else {
-        tx_buffer[index++] = 0x00; //if stateQueue is empty for whatever reason, send 0;
+        tx_buffer[index++] = 0xFF; //if stateQueue is empty for whatever reason, send 0xFF;
     }
-    
-    doorData checkDoor;
-    checkDoor = checkIM();
 
     // Add the door sensor status (1 byte)
-    tx_buffer[index++] = isDoorOpen(checkDoor.doorStatus);  // 1 for open, 0 for closed, no byte mask needed
-    
-    /*for(int i = index; i <= buffSize - index; i++){
-        tx_buffer[i] = i + 1;
-    }*/
+    if(g_doorStatus == 1){
+        tx_buffer[index++] = g_doorStatus;  // 1 for open, 0 for closed, no byte mask needed
+    }
+    else if(g_doorStatus == 0){
+        tx_buffer[index++] = 0xFE; //There's some weird 0 handling so if we send 0xFE, this will mean door sensor 0
+    }
+    else {
+        tx_buffer[index++] = 0xFF; //unknown
+    }
 
     tx_buffer[index++] = 0xDE;
     tx_buffer[index++] = 0xAD;
