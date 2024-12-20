@@ -107,54 +107,51 @@ async function redirectToHomePage(req, res) {
   res.redirect('/dashboard')
 }
 
+// Helper function
+async function fetchAndMergeClientExtensions(clients) {
+  return Promise.all(
+    clients.map(async client => {
+      const clientExtension = await db.getClientExtensionWithClientId(client.id)
+      return {
+        ...client,
+        country: clientExtension.country || 'N/A',
+        countrySubdivision: clientExtension.countrySubdivision || 'N/A',
+        buildingType: clientExtension.buildingType || 'N/A',
+        organization: clientExtension.organization || 'N/A',
+        funder: clientExtension.funder || 'N/A',
+        postalCode: clientExtension.postalCode || 'N/A',
+        city: clientExtension.city || 'N/A',
+        project: clientExtension.project || 'N/A',
+      }
+    }),
+  )
+}
+
+// Helper function
+function filterUniqueItems(items, key) {
+  return Array.from(new Set(items.map(item => item[key]))).map(uniqueKey => items.find(item => item[key] === uniqueKey))
+}
+
 async function renderLandingPage(req, res) {
   try {
     const clients = await db.getClients()
     const locations = await db.getLocations()
+    const displayedClients = await fetchAndMergeClientExtensions(clients)
 
-    // Fetch and merge client extensions
-    const displayedClients = await Promise.all(
-      clients.map(async client => {
-        const clientExtension = await db.getClientExtensionWithClientId(client.id)
-        return {
-          ...client,
-          country: clientExtension.country || 'N/A',
-          countrySubdivision: clientExtension.countrySubdivision || 'N/A',
-          buildingType: clientExtension.buildingType || 'N/A',
-          organization: clientExtension.organization || 'N/A',
-          funder: clientExtension.funder || 'N/A',
-          postalCode: clientExtension.postalCode || 'N/A',
-          city: clientExtension.city || 'N/A',
-          project: clientExtension.project || 'N/A',
-        }
-      }),
-    )
-
-    // Filter out duplicate organizations, funders, and projects
-    const uniqueFunders = Array.from(new Set(displayedClients.map(client => client.funder))).map(funder =>
-      displayedClients.find(client => client.funder === funder),
-    )
-
-    const uniqueProjects = Array.from(new Set(displayedClients.map(client => client.project))).map(project =>
-      displayedClients.find(client => client.project === project),
-    )
-
-    const uniqueOrganizations = Array.from(new Set(displayedClients.map(client => client.organization))).map(organization =>
-      displayedClients.find(client => client.organization === organization),
-    )
+    const uniqueFunders = filterUniqueItems(displayedClients, 'funder')
+    const uniqueProjects = filterUniqueItems(displayedClients, 'project')
+    const uniqueOrganizations = filterUniqueItems(displayedClients, 'organization')
 
     const displayedLocations = locations
       .filter(location => location.isDisplayed)
-      .map(location => {
-        return {
-          name: location.displayName,
-          id: location.id,
-          deviceType: location.deviceType,
-          sessionStart: location.sessionStart,
-          isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
-          isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
-        }
-      })
+      .map(location => ({
+        name: location.displayName,
+        id: location.id,
+        deviceType: location.deviceType,
+        sessionStart: location.sessionStart,
+        isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
+        isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
+      }))
 
     const viewParams = {
       locations: displayedLocations,
@@ -175,41 +172,16 @@ async function renderFunderProjectsPage(req, res) {
   try {
     const funder = req.query.funder
     const clients = await db.getClients()
+    const displayedClients = await fetchAndMergeClientExtensions(clients)
 
-    // Fetch and merge client extensions
-    const displayedClients = await Promise.all(
-      clients.map(async client => {
-        const clientExtension = await db.getClientExtensionWithClientId(client.id)
-        return {
-          ...client,
-          country: clientExtension.country || 'N/A',
-          countrySubdivision: clientExtension.countrySubdivision || 'N/A',
-          buildingType: clientExtension.buildingType || 'N/A',
-          organization: clientExtension.organization || 'N/A',
-          funder: clientExtension.funder || 'N/A',
-          postalCode: clientExtension.postalCode || 'N/A',
-          city: clientExtension.city || 'N/A',
-          project: clientExtension.project || 'N/A',
-        }
-      }),
-    )
-
-    // Filter clients by funder
     const filteredClients =
       funder === 'N/A'
         ? displayedClients.filter(client => client.funder === 'N/A' || client.funder === null)
         : displayedClients.filter(client => client.funder === funder)
 
-    // Filter out duplicate projects
-    const uniqueProjects = Array.from(new Set(filteredClients.map(client => client.project))).map(project =>
-      filteredClients.find(client => client.project === project),
-    )
+    const uniqueProjects = filterUniqueItems(filteredClients, 'project')
 
-    const viewParams = {
-      funder,
-      clients: uniqueProjects,
-    }
-
+    const viewParams = { funder, clients: uniqueProjects }
     res.send(Mustache.render(funderProjectsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
@@ -221,35 +193,14 @@ async function renderProjectOrganizationsPage(req, res) {
   try {
     const project = req.query.project
     const clients = await db.getClients()
+    const displayedClients = await fetchAndMergeClientExtensions(clients)
 
-    // Fetch and merge client extensions
-    const displayedClients = await Promise.all(
-      clients.map(async client => {
-        const clientExtension = await db.getClientExtensionWithClientId(client.id)
-        return {
-          ...client,
-          country: clientExtension.country || 'N/A',
-          countrySubdivision: clientExtension.countrySubdivision || 'N/A',
-          buildingType: clientExtension.buildingType || 'N/A',
-          organization: clientExtension.organization || 'N/A',
-          funder: clientExtension.funder || 'N/A',
-          postalCode: clientExtension.postalCode || 'N/A',
-          city: clientExtension.city || 'N/A',
-          project: clientExtension.project || 'N/A',
-        }
-      }),
-    )
-
-    // Filter clients by project
     const filteredClients =
       project === 'N/A'
         ? displayedClients.filter(client => client.project === 'N/A' || client.project === null)
         : displayedClients.filter(client => client.project === project)
 
-    // Filter out duplicate organizations
-    const uniqueOrganizations = Array.from(new Set(filteredClients.map(client => client.organization))).map(organization =>
-      filteredClients.find(client => client.organization === organization),
-    )
+    const uniqueOrganizations = filterUniqueItems(filteredClients, 'organization')
 
     const viewParams = { project, clients: uniqueOrganizations }
     res.send(Mustache.render(projectOrganizationsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
@@ -263,33 +214,14 @@ async function renderOrganizationClientsPage(req, res) {
   try {
     const organization = req.query.organization
     const clients = await db.getClients()
+    const displayedClients = await fetchAndMergeClientExtensions(clients)
 
-    // Fetch and merge client extensions
-    const displayedClients = await Promise.all(
-      clients.map(async client => {
-        const clientExtension = await db.getClientExtensionWithClientId(client.id)
-        return {
-          ...client,
-          country: clientExtension.country || 'N/A',
-          countrySubdivision: clientExtension.countrySubdivision || 'N/A',
-          buildingType: clientExtension.buildingType || 'N/A',
-          organization: clientExtension.organization || 'N/A',
-          funder: clientExtension.funder || 'N/A',
-          postalCode: clientExtension.postalCode || 'N/A',
-          city: clientExtension.city || 'N/A',
-          project: clientExtension.project || 'N/A',
-        }
-      }),
-    )
-
-    // Filter clients by organization
     const filteredClients =
       organization === 'N/A'
         ? displayedClients.filter(client => client.organization === 'N/A' || client.organization === null)
         : displayedClients.filter(client => client.organization === organization)
 
-    // Filter out duplicate clients
-    const uniqueClients = Array.from(new Set(filteredClients.map(client => client.id))).map(id => filteredClients.find(client => client.id === id))
+    const uniqueClients = filterUniqueItems(filteredClients, 'id')
 
     const viewParams = { organization, clients: uniqueClients }
     res.send(Mustache.render(organizationClientsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
