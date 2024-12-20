@@ -17,13 +17,13 @@
     {{> nav}}
     <div class="content-area">
         <div class="content-wrapper">
-            <h3>{{project}}</h3>
+            <h3>Project:  {{project}}</h3>
             <br>
             <div class="table-responsive">
                 <table class="table table-striped table-sm table-fixed">
                     <thead>
                         <tr class="table-header" scope="row">
-                            <th scope="col">Organization</th>
+                            <th scope="col">Organizations</th>
                         </tr>
                     </thead>
                     <tbody>

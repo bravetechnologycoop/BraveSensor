@@ -15,9 +15,9 @@ const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.m
 const pageCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/pageCSSPartial.mst`, 'utf-8')
 
 const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/landingPage.mst`, 'utf-8')
-const projectPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/projectPage.mst`, 'utf-8')
-const organizationPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/organizationPage.mst`, 'utf-8')
-const clientPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientPage.mst`, 'utf-8')
+const funderProjectsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/funderProjectsPage.mst`, 'utf-8')
+const projectOrganizationsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/projectOrganizationsPage.mst`, 'utf-8')
+const organizationClientsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/organizationClientsPage.mst`, 'utf-8')
 const clientDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientDetailsPage.mst`, 'utf-8')
 const clientVitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientVitals.mst`, 'utf-8')
 const newClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newClient.mst`, 'utf-8')
@@ -118,16 +118,29 @@ async function renderLandingPage(req, res) {
         const clientExtension = await db.getClientExtensionWithClientId(client.id)
         return {
           ...client,
-          country: clientExtension.country || '',
-          countrySubdivision: clientExtension.countrySubdivision || '',
-          buildingType: clientExtension.buildingType || '',
-          organization: clientExtension.organization || '',
-          funder: clientExtension.funder || '',
-          postalCode: clientExtension.postalCode || '',
-          city: clientExtension.city || '',
-          project: clientExtension.project || '',
+          country: clientExtension.country || 'N/A',
+          countrySubdivision: clientExtension.countrySubdivision || 'N/A',
+          buildingType: clientExtension.buildingType || 'N/A',
+          organization: clientExtension.organization || 'N/A',
+          funder: clientExtension.funder || 'N/A',
+          postalCode: clientExtension.postalCode || 'N/A',
+          city: clientExtension.city || 'N/A',
+          project: clientExtension.project || 'N/A',
         }
       }),
+    )
+
+    // Filter out duplicate organizations, funders, and projects
+    const uniqueFunders = Array.from(new Set(displayedClients.map(client => client.funder))).map(funder =>
+      displayedClients.find(client => client.funder === funder),
+    )
+
+    const uniqueProjects = Array.from(new Set(displayedClients.map(client => client.project))).map(project =>
+      displayedClients.find(client => client.project === project),
+    )
+
+    const uniqueOrganizations = Array.from(new Set(displayedClients.map(client => client.organization))).map(organization =>
+      displayedClients.find(client => client.organization === organization),
     )
 
     const displayedLocations = locations
@@ -143,7 +156,13 @@ async function renderLandingPage(req, res) {
         }
       })
 
-    const viewParams = { locations: displayedLocations, clients: displayedClients }
+    const viewParams = { 
+      locations: displayedLocations, 
+      clients: displayedClients, 
+      uniqueFunders: uniqueFunders, 
+      uniqueProjects: uniqueProjects,
+      uniqueOrganizations: uniqueOrganizations, 
+    }
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
@@ -152,7 +171,7 @@ async function renderLandingPage(req, res) {
   }
 }
 
-async function renderProjectPage(req, res) {
+async function renderFunderProjectsPage(req, res) {
   try {
     const funder = req.query.funder
     const clients = await db.getClients()
@@ -163,30 +182,41 @@ async function renderProjectPage(req, res) {
         const clientExtension = await db.getClientExtensionWithClientId(client.id)
         return {
           ...client,
-          country: clientExtension.country || '',
-          countrySubdivision: clientExtension.countrySubdivision || '',
-          buildingType: clientExtension.buildingType || '',
-          organization: clientExtension.organization || '',
-          funder: clientExtension.funder || '',
-          postalCode: clientExtension.postalCode || '',
-          city: clientExtension.city || '',
-          project: clientExtension.project || '',
+          country: clientExtension.country || 'N/A',
+          countrySubdivision: clientExtension.countrySubdivision || 'N/A',
+          buildingType: clientExtension.buildingType || 'N/A',
+          organization: clientExtension.organization || 'N/A',
+          funder: clientExtension.funder || 'N/A',
+          postalCode: clientExtension.postalCode || 'N/A',
+          city: clientExtension.city || 'N/A',
+          project: clientExtension.project || 'N/A',
         }
       }),
     )
 
     // Filter clients by funder
-    const filteredClients = displayedClients.filter(client => client.funder === funder)
+    const filteredClients =
+      funder === 'N/A'
+        ? displayedClients.filter(client => client.funder === 'N/A' || client.funder === null)
+        : displayedClients.filter(client => client.funder === funder)
 
-    const viewParams = { funder, clients: filteredClients }
-    res.send(Mustache.render(projectPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+    // Filter out duplicate projects
+    const uniqueProjects = Array.from(new Set(filteredClients.map(client => client.project)))
+      .map(project => filteredClients.find(client => client.project === project))
+
+    const viewParams = { 
+      funder: funder, 
+      clients: uniqueProjects,
+    }
+
+    res.send(Mustache.render(funderProjectsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
 }
 
-async function renderOrganizationPage(req, res) {
+async function renderProjectOrganizationsPage(req, res) {
   try {
     const project = req.query.project
     const clients = await db.getClients()
@@ -197,30 +227,37 @@ async function renderOrganizationPage(req, res) {
         const clientExtension = await db.getClientExtensionWithClientId(client.id)
         return {
           ...client,
-          country: clientExtension.country || '',
-          countrySubdivision: clientExtension.countrySubdivision || '',
-          buildingType: clientExtension.buildingType || '',
-          organization: clientExtension.organization || '',
-          funder: clientExtension.funder || '',
-          postalCode: clientExtension.postalCode || '',
-          city: clientExtension.city || '',
-          project: clientExtension.project || '',
+          country: clientExtension.country || 'N/A',
+          countrySubdivision: clientExtension.countrySubdivision || 'N/A',
+          buildingType: clientExtension.buildingType || 'N/A',
+          organization: clientExtension.organization || 'N/A',
+          funder: clientExtension.funder || 'N/A',
+          postalCode: clientExtension.postalCode || 'N/A',
+          city: clientExtension.city || 'N/A',
+          project: clientExtension.project || 'N/A',
         }
       }),
     )
 
     // Filter clients by project
-    const filteredClients = displayedClients.filter(client => client.project === project)
+    const filteredClients =
+      project === 'N/A'
+        ? displayedClients.filter(client => client.project === 'N/A' || client.project === null)
+        : displayedClients.filter(client => client.project === project)
 
-    const viewParams = { project, clients: filteredClients }
-    res.send(Mustache.render(organizationPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+    // Filter out duplicate organizations
+    const uniqueOrganizations = Array.from(new Set(filteredClients.map(client => client.organization)))
+      .map(organization => filteredClients.find(client => client.organization === organization))
+
+    const viewParams = { project, clients: uniqueOrganizations }
+    res.send(Mustache.render(projectOrganizationsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
 }
 
-async function renderClientPage(req, res) {
+async function renderOrganizationClientsPage(req, res) {
   try {
     const organization = req.query.organization
     const clients = await db.getClients()
@@ -231,23 +268,30 @@ async function renderClientPage(req, res) {
         const clientExtension = await db.getClientExtensionWithClientId(client.id)
         return {
           ...client,
-          country: clientExtension.country || '',
-          countrySubdivision: clientExtension.countrySubdivision || '',
-          buildingType: clientExtension.buildingType || '',
-          organization: clientExtension.organization || '',
-          funder: clientExtension.funder || '',
-          postalCode: clientExtension.postalCode || '',
-          city: clientExtension.city || '',
-          project: clientExtension.project || '',
+          country: clientExtension.country || 'N/A',
+          countrySubdivision: clientExtension.countrySubdivision || 'N/A',
+          buildingType: clientExtension.buildingType || 'N/A',
+          organization: clientExtension.organization || 'N/A',
+          funder: clientExtension.funder || 'N/A',
+          postalCode: clientExtension.postalCode || 'N/A',
+          city: clientExtension.city || 'N/A',
+          project: clientExtension.project || 'N/A',
         }
       }),
     )
 
     // Filter clients by organization
-    const filteredClients = displayedClients.filter(client => client.organization === organization)
+    const filteredClients =
+      organization === 'N/A'
+        ? displayedClients.filter(client => client.organization === 'N/A' || client.organization === null)
+        : displayedClients.filter(client => client.organization === organization)
 
-    const viewParams = { organization, clients: filteredClients }
-    res.send(Mustache.render(clientPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+    // Filter out duplicate clients
+    const uniqueClients = Array.from(new Set(filteredClients.map(client => client.id)))
+      .map(id => filteredClients.find(client => client.id === id))
+
+    const viewParams = { organization, clients: uniqueClients }
+    res.send(Mustache.render(organizationClientsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -819,9 +863,9 @@ module.exports = {
   submitLogout,
   redirectToHomePage,
   renderLandingPage,
-  renderProjectPage,
-  renderOrganizationPage,
-  renderClientPage,
+  renderFunderProjectsPage,
+  renderProjectOrganizationsPage,
+  renderOrganizationClientsPage,
   renderNewClientPage,
   renderClientDetailsPage,
   renderClientEditPage,

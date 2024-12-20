@@ -122,30 +122,30 @@
 
             if (view === 'funder') {
                 bodyHtml = `
-                    {{#clients}}
+                    {{#uniqueFunders}}
                         <tr class="table-data funder-row">
                             {{! Clicking item renders the projects filtered by the selected funder }}
                             <th scope="row"><a href="/projects?funder={{funder}}">{{funder}}</a></th>
                         </tr>
-                    {{/clients}}
+                    {{/uniqueFunders}}
                 `;
             } else if (view === 'project') {
                 bodyHtml = `
-                    {{#clients}}
+                    {{#uniqueProjects}}
                         <tr class="table-data project-row">
                             {{! Clicking item renders the organizations filtered by the selected project }}
                             <th scope="row"><a href="/organizations?project={{project}}">{{project}}</a></th>
                         </tr>
-                    {{/clients}}
+                    {{/uniqueProjects}}
                 `;
             } else if (view === 'organization') {
                 bodyHtml = `
-                    {{#clients}}
+                    {{#uniqueOrganizations}}
                         <tr class="table-data organization-row">
                             {{! Clicking item renders the clients filtered by the selected organization }}
                             <th scope="row"><a href="/clients?organization={{organization}}">{{organization}}</a></th>
                         </tr>
-                    {{/clients}}
+                    {{/uniqueOrganizations}}
                 `;
             } else if (view === 'client') {
                 bodyHtml = `

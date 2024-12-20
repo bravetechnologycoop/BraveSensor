@@ -18,7 +18,7 @@
     <div class="content-area">
         <div class="content-wrapper">
             {{#currentClient}}
-                <h3>{{displayName}}</h3>
+                <h3>Client:  {{displayName}}</h3>
 
                 <a href="/clients/{{id}}/vitals" class="btn btn-secondary btn-sm" role="button">View Vitals</a>
                 <a href="/clients/{{id}}/edit" class="btn btn-secondary btn-sm ml-1" role="button">Edit Client</a>
