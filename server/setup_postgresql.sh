@@ -30,7 +30,7 @@ else
   pg_port="${PG_PORT}"
 fi
 
-for file in $(ls -v db/*.sql); do
+for file in $(ls -v src/db/*.sql); do
   echo "Running script $file"
   PGPASSWORD=$pg_password psql -U $pg_user -h $pg_host -d $pg_dbname -p $pg_port -v "ON_ERROR_STOP=1" --set=sslmode=require -f ./$file
 done
