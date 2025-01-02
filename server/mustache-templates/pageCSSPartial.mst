@@ -32,10 +32,6 @@
         text-overflow: ellipsis;
     }
 
-    .no-locations {
-        opacity: .75;
-    }
-
     .btn-logout, .btn-logout > a {
         width: auto;
         text-decoration: none;
@@ -56,6 +52,95 @@
         margin-right: 7%;
         margin-top: 5%;
         margin-bottom: 5%;
+    }
+    
+    .faded-heading {
+        opacity: .75;
+    }
+
+    .input-group {
+        margin: 0 auto;
+        display: flex;
+    }
+    
+    .input-group .searchBar {
+        flex: 1;
+        border: 1px solid #00b8b8;
+        border-radius: 5px;
+        padding-left: 10px; 
+        outline: none;
+    }
+    
+    .input-group .searchBar::placeholder {
+        margin-left: 5px; 
+    }
+    
+    .input-group .input-group-append .form-control {
+        border: 1px solid #00b8b8;
+        border-radius: 5px;
+        margin-left: 5px;
+        outline: none; 
+    }
+
+    .client-info {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        background-color: #f9f9f9;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+
+    .client-info p {
+        margin-bottom: 5px;
+    }
+
+    .client-info span {
+        display: inline-block;
+        margin-left: 5px;
+    }
+
+    .table-header {
+        background-color: rgb(135, 200, 200);
+        color:rgb(255, 255, 255);
+        font-weight: bolder;
+    }
+
+    .table-data {
+        font-weight: normal; 
+    }
+
+    div.content-wrapper>table {
+        table-layout: fixed;
+        max-width: 300px;
+        border-collapse: collapse;
+        border-spacing: 5px 5px;
+        margin-right: auto;
+    }
+
+    th, td {
+        text-align: left;
+        height: auto;
+        width: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    th a{
+        text-decoration: none;
+        color: rgb(88, 88, 91);
+    }
+
+    th a:hover {
+        text-decoration: none;
+    }
+
+    .table>thead>tr>th,
+    .table>tbody>tr>th,
+    .table>tbody>tr>td {
+        border: none;
+        width: auto;
     }
 
     @media screen and (max-width: 770px) {

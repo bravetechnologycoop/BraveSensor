@@ -15,12 +15,21 @@ the code was deployed.
 
 - Added `sensorDoorDisconnectionInitial`, `sensorRadarDisconnectionInitial`, `sensorDoorDisconnectionReminder` and `sensorRadarDisconnectionReminder` to english and spanish messages (CU-86duu0vdu).
 - Added functions for the above messages in `vitals.js` (CU-86duu0vdu).
+- Created dashboard hierarchy: "Funder" -> "Projects" -> "Organization" -> "Clients" -> "Devices" using URL parameters (CU-86dup4jg7).
+- Added new routes and dashboard functions for rendering project and organization pages (CU-86dup4jg7).
 
 ### Changed
 
 - Updated `checkHeartbeat` function in `vitals.js` to send the 2 different messages (CU-86duu0vdu).
 - Removed `sendDisconnectionMessage` and `sendDisconnectionReminder`function in `vitals.js` (CU-86duu0vdu).
 - Updated dashboard homepage to include and sort by Organization (CU-86dva4dxd)
+- Updated the client details dashboard page to provide an overview of client information (CU-86dup4jg7).
+- Enhanced the landing page with a new search feature and toggle options for various views based on new pages (CU-86dup4jg7).
+- Updated the CSS for dashboard pages -- `pageCSSPartial.mst` -- including new table headers and a search bar (CU-86dup4jg7).
+
+### Removed
+
+- Deleted old CSS code `locationCSSPartial.mst` and `locationFormCSSPartial.mst` (CU-86dup4jg7).
 
 ## [10.16.0] - 2024-11-14
 
