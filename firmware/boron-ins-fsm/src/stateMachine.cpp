@@ -44,12 +44,6 @@ std::queue<unsigned long> timeQueue;
 unsigned long lastStateChangeOrAlert = millis();
 
 void setupStateMachine() {
-    // set up debug pins
-    pinMode(D2, OUTPUT);
-    pinMode(D3, OUTPUT);
-    pinMode(D4, OUTPUT);
-    pinMode(D5, OUTPUT);
-
     // default to not publishing debug logs
     stateMachineDebugFlag = 0;
 
@@ -146,11 +140,6 @@ void state0_idle() {
     number_of_alerts_published = 0;
 
     // do stuff in the state
-    digitalWrite(D2, LOW);
-    digitalWrite(D3, LOW);
-    digitalWrite(D4, LOW);
-    digitalWrite(D5, LOW);
-
     Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f", checkDoor.doorStatus, checkINS.iAverage);
     // default timer to 0 when state doesn't have a timer
     publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, (millis() - timeWhenDoorClosed));
@@ -184,7 +173,6 @@ void state1_15sCountdown() {
     checkINS = checkINS3331();
 
     // do stuff in the state
-    digitalWrite(D2, HIGH);
     Log.info("You are in state 1, initial countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
              (millis() - state1_timer));
     publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
@@ -230,7 +218,6 @@ void state2_duration() {
     char alertMessage[622];
 
     // do stuff in the state
-    digitalWrite(D3, HIGH);
     Log.info("You are in state 2, duration: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
              (millis() - state2_duration_timer));
     publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
@@ -283,7 +270,6 @@ void state3_stillness() {
     checkINS = checkINS3331();
 
     // do stuff in the state
-    digitalWrite(D4, HIGH);
     Log.info("You are in state 3, stillness: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
              (millis() - state3_stillness_timer));
     publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
