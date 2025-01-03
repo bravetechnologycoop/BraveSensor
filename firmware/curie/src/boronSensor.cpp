@@ -165,10 +165,10 @@ int boronSensor::setTableParams(){
 
     int err = OK;
     try {
-        for (int i = 0; i <= 13; i++) {
+        for (int i = 0; i < 13; i++) {
             this->dbParams.emplace_back("ivalue" + to_string(i), "int");
         }
-        for (int i = 0; i <= 13; i++){
+        for (int i = 0; i < 13; i++){
             this->dbParams.emplace_back("qvalue" + to_string(i), "int");
         }
         this->dbParams.emplace_back("strength", "int");
