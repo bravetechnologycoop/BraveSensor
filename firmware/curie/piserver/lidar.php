@@ -26,8 +26,6 @@ try {
             $array = explode(",", trim($pixels[$i], "{}"));
             
             $pixels[$i] = array_map('intval', $array);
-
-            //echo "pixels is " . " " . (string)$pixels[$i][0] . " " .(string)$pixels[$i][1] ." " . (string)$pixels[$i][2];
         }
         
 
