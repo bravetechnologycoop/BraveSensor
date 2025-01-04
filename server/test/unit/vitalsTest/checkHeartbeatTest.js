@@ -41,10 +41,14 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     sandbox.spy(helpers, 'logError')
     sandbox.spy(helpers, 'log')
 
-    this.sendDisconnectionMessageStub = sandbox.stub()
-    vitals.__set__('sendDisconnectionMessage', this.sendDisconnectionMessageStub)
-    this.sendDisconnectionReminderStub = sandbox.stub()
-    vitals.__set__('sendDisconnectionReminder', this.sendDisconnectionReminderStub)
+    this.sendRadarDisconnectionMessageStub = sandbox.stub()
+    vitals.__set__('sendRadarDisconnectionMessage', this.sendRadarDisconnectionMessageStub)
+    this.sendRadarDisconnectionReminderStub = sandbox.stub()
+    vitals.__set__('sendRadarDisconnectionReminder', this.sendRadarDisconnectionReminderStub)
+    this.sendDoorDisconnectionMessageStub = sandbox.stub()
+    vitals.__set__('sendDoorDisconnectionMessage', this.sendDoorDisconnectionMessageStub)
+    this.sendDoorDisconnectionReminderStub = sandbox.stub()
+    vitals.__set__('sendDoorDisconnectionReminder', this.sendDoorDisconnectionReminderStub)
     this.sendReconnectionMessageStub = sandbox.stub()
     vitals.__set__('sendReconnectionMessage', this.sendReconnectionMessageStub)
   })
@@ -74,8 +78,8 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       expect(helpers.logSentry).to.have.been.calledOnceWithExactly(`Radar sensor down at ${this.testLocation.locationid}`)
     })
 
-    it('should send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(
+    it('should send an initial radar disconnection messages to the client', () => {
+      expect(this.sendRadarDisconnectionMessageStub).to.be.calledOnceWithExactly(
         this.testLocation.locationid,
         this.testLocation.displayName,
         this.testLocation.client.language,
@@ -83,8 +87,16 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       )
     })
 
-    it('should not send any disconnection reminder messages to the client', () => {
-      expect(this.sendDisconnectionReminderStub).to.not.be.called
+    it('should not send an initial door disconnection messages to the client', () => {
+      expect(this.sendDoorDisconnectionMessageStub).to.not.be.called
+    })
+
+    it('should not send any radar disconnection reminder messages to the client', () => {
+      expect(this.sendRadarDisconnectionReminderStub).to.not.be.called
+    })
+
+    it('should not send any door disconnection reminder messages to the client', () => {
+      expect(this.sendDoorDisconnectionReminderStub).to.not.be.called
     })
 
     it('should not send any reconnection messages to the client', () => {
@@ -116,12 +128,20 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       expect(helpers.logSentry).to.not.have.been.called
     })
 
-    it('should not send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.not.be.called
+    it('should not send an initial radar disconnection message to the client', () => {
+      expect(this.sendRadarDisconnectionMessageStub).to.not.be.called
     })
 
-    it('should not send any disconnection reminder messages to the client', () => {
-      expect(this.sendDisconnectionReminderStub).to.not.be.called
+    it('should not send an initial door disconnection message to the client', () => {
+      expect(this.sendDoorDisconnectionMessageStub).to.not.be.called
+    })
+
+    it('should not send any radar disconnection reminder messages to the client', () => {
+      expect(this.sendRadarDisconnectionReminderStub).to.not.be.called
+    })
+
+    it('should not send any door disconnection reminder messages to the client', () => {
+      expect(this.sendDoorDisconnectionReminderStub).to.not.be.called
     })
 
     it('should not send any reconnection messages to the client', () => {
@@ -154,12 +174,20 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       expect(helpers.logSentry).to.not.have.been.called
     })
 
-    it('should not send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.not.be.called
+    it('should not send an initial radar disconnection message to the client', () => {
+      expect(this.sendRadarDisconnectionMessageStub).to.not.be.called
+    })
+
+    it('should not send an initial door disconnection message to the client', () => {
+      expect(this.sendDoorDisconnectionMessageStub).to.not.be.called
     })
 
     it('should not send any disconnection reminder messages to the client', () => {
-      expect(this.sendDisconnectionReminderStub).to.not.be.called
+      expect(this.sendRadarDisconnectionReminderStub).to.not.be.called
+    })
+
+    it('should not send any door disconnection reminder message to the client', () => {
+      expect(this.sendDoorDisconnectionReminderStub).to.not.be.called
     })
 
     it('should not send any reconnection messages to the client', () => {
@@ -196,7 +224,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
 
     it('should send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.be.calledOnceWithExactly(
+      expect(this.sendDoorDisconnectionMessageStub).to.be.calledOnceWithExactly(
         this.testLocation.locationid,
         this.testLocation.displayName,
         this.testLocation.client.language,
@@ -205,7 +233,7 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
     })
 
     it('should not send any disconnection reminder messages to the client', () => {
-      expect(this.sendDisconnectionReminderStub).to.not.be.called
+      expect(this.sendDoorDisconnectionReminderStub).to.not.be.called
     })
 
     it('should not send any reconnection messages to the client', () => {
@@ -241,12 +269,20 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       expect(helpers.logSentry).to.be.calledWithExactly(`${this.testLocation.locationid} reconnected after reason: ${resetReason}`)
     })
 
-    it('should not send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.not.be.called
+    it('should not send an initial radar disconnection messages to the client', () => {
+      expect(this.sendRadarDisconnectionMessageStub).to.not.be.called
     })
 
-    it('should not send any disconnection reminder messages to the client', () => {
-      expect(this.sendDisconnectionReminderStub).to.not.be.called
+    it('should not send an initial door disconnection messages to the client', () => {
+      expect(this.sendDoorDisconnectionMessageStub).to.not.be.called
+    })
+
+    it('should not send any radar disconnection reminder messages to the client', () => {
+      expect(this.sendRadarDisconnectionReminderStub).to.not.be.called
+    })
+
+    it('should not send any door disconnection reminder messages to the client', () => {
+      expect(this.sendDoorDisconnectionReminderStub).to.not.be.called
     })
 
     it('should send a reconnection messages to the client', () => {
@@ -287,12 +323,20 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       expect(helpers.logSentry).to.not.be.called
     })
 
-    it('should not send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.not.be.called
+    it('should not send an initial radar disconnection message to the client', () => {
+      expect(this.sendRadarDisconnectionMessageStub).to.not.be.called
     })
 
-    it('should not send any disconnection reminder messages to the client', () => {
-      expect(this.sendDisconnectionReminderStub).to.not.be.called
+    it('should not send an initial door disconnection message to the client', () => {
+      expect(this.sendDoorDisconnectionMessageStub).to.not.be.called
+    })
+
+    it('should not send any radar disconnection reminder messages to the client', () => {
+      expect(this.sendRadarDisconnectionReminderStub).to.not.be.called
+    })
+
+    it('should not send any door disconnection reminder messages to the client', () => {
+      expect(this.sendDoorDisconnectionReminderStub).to.not.be.called
     })
 
     it('should not send any reconnection messages to the client', () => {
@@ -326,12 +370,66 @@ describe('vitals.js unit tests: checkHeartbeat', () => {
       expect(helpers.logSentry).to.not.be.called
     })
 
-    it('should not send an initial disconnection messages to the client', () => {
-      expect(this.sendDisconnectionMessageStub).to.not.be.called
+    it('should not send an initial radar disconnection message to the client', () => {
+      expect(this.sendRadarDisconnectionMessageStub).to.not.be.called
     })
 
-    it('should send a disconnection reminder message to the client', () => {
-      expect(this.sendDisconnectionReminderStub).to.be.calledOnceWithExactly(
+    it('should not send an initial door disconnection message to the client', () => {
+      expect(this.sendDoorDisconnectionMessageStub).to.not.be.called
+    })
+
+    it('should send a radar disconnection reminder message to the client', () => {
+      expect(this.sendRadarDisconnectionReminderStub).to.be.calledOnceWithExactly(
+        this.testLocation.locationid,
+        this.testLocation.displayName,
+        this.testLocation.client.language,
+        this.testLocation.client.displayName,
+      )
+    })
+
+    it('should not send any door disconnection reminder message to the client', () => {
+      expect(this.sendDoorDisconnectionReminderStub).to.not.be.called
+    })
+
+    it('should not send any reconnection messages to the client', () => {
+      expect(this.sendReconnectionMessageStub).to.not.be.called
+    })
+
+    it('should update the sentVitalsAlertAt to the current time', () => {
+      expect(db.updateSentAlerts).to.be.calledOnceWithExactly(this.testLocation.locationid, true)
+    })
+
+    it('should not log any errors', () => {
+      expect(helpers.logError).to.not.be.called
+    })
+  })
+
+  describe('when a device with a firmware state machine and an existing alert still notice that the latest door message was longer than the threshold', () => {
+    beforeEach(async () => {
+      this.testLocation = factories.locationFactory({
+        isSendingVitals: true,
+        sentVitalsAlertAt: new Date('2019-10-10'),
+        client: factories.clientFactory({ isSendingVitals: true }),
+      })
+      sandbox.stub(db, 'getLocations').returns([this.testLocation])
+
+      sandbox
+        .stub(db, 'getMostRecentSensorsVitalWithLocation')
+        .returns(factories.sensorsVitalFactory({ createdAt: notExcessiveRadarDate, doorLastSeenAt: excessiveDoorDate, resetReason }))
+
+      await vitals.checkHeartbeat()
+    })
+
+    it('should send a system disconnection message to Sentry', () => {
+      expect(helpers.logSentry).to.not.be.called
+    })
+
+    it('should send an initial door disconnection messages to the client', () => {
+      expect(this.sendDoorDisconnectionMessageStub).to.not.be.called
+    })
+
+    it('should send a door disconnection reminder messages to the client', () => {
+      expect(this.sendDoorDisconnectionReminderStub).to.be.calledOnceWithExactly(
         this.testLocation.locationid,
         this.testLocation.displayName,
         this.testLocation.client.language,

@@ -11,6 +11,29 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Added `sensorDoorDisconnectionInitial`, `sensorRadarDisconnectionInitial`, `sensorDoorDisconnectionReminder` and `sensorRadarDisconnectionReminder` to english and spanish messages (CU-86duu0vdu).
+- Added functions for the above messages in `vitals.js` (CU-86duu0vdu).
+- Added migration script 54 which adds the `status` and `first_device_live_at` column to clients (CU-86dv9uxta).
+- Added new status and first_device_live_at fields to edit client dashboard page (CU-86dv9uxta).
+- Created dashboard hierarchy: "Funder" -> "Projects" -> "Organization" -> "Clients" -> "Devices" using URL parameters (CU-86dup4jg7).
+- Added new routes and dashboard functions for rendering project and organization pages (CU-86dup4jg7).
+
+### Changed
+
+- Updated `checkHeartbeat` function in `vitals.js` to send the 2 different messages (CU-86duu0vdu).
+- Removed `sendDisconnectionMessage` and `sendDisconnectionReminder`function in `vitals.js` (CU-86duu0vdu).
+- Updated dashboard homepage to include and sort by Organization (CU-86dva4dxd).
+- Updated brave-alert-lib to v15.0.6 due to client model change (CU-86dv9uxta).
+- Updated submitEditClientTest.js test cases with new client fields (CU-86dv9uxta).
+- Updated the client details dashboard page to provide an overview of client information (CU-86dup4jg7).
+- Enhanced the landing page with a new search feature and toggle options for various views based on new pages (CU-86dup4jg7).
+- Updated the CSS for dashboard pages -- `pageCSSPartial.mst` -- including new table headers and a search bar (CU-86dup4jg7).
+
+### Removed
+
+- Deleted old CSS code `locationCSSPartial.mst` and `locationFormCSSPartial.mst` (CU-86dup4jg7).
 
 ## [10.16.0] - 2024-11-14
 
@@ -28,6 +51,7 @@ the code was deployed.
 - Updated the /pa/create-sensor-location route due to createLocationFromBrowserForm() db function change (CU-86duvwbq2).
 - Changed english messages `alertAdditionalAlertAcceptResetRequest`, `alertStartAcceptResetRequest`, `resetNoticeToRequester`, `resetNoticeToOtherResponders`, `resetRequestRejected`, `sensorDisconnectionInitial`, `sensorDisconnectionReminder`, `sensorIsTampered`, `sensorInactivity` to reduce twilio message segments (CU-86duzccj5).
 - Changed messages in test cases to match the new ones (CU-86duzccj5).
+- Updated integration tests that uses the disconnection messages to reflect the new outcomes (CU-86duu0vdu).
 
 ## [10.15.0] - 2024-10-17
 
