@@ -44,6 +44,9 @@ bool hasDurationAlertBeenPaused = false;
 unsigned long numDurationAlertSent = 0;
 unsigned long numStillnessAlertSent = 0;
 
+// Tracks the time last duration alert was sent
+unsigned long lastDurationAlertTime = 0;
+
 // Reset reason
 int resetReason = System.resetReason();
 
@@ -253,12 +256,12 @@ void state2_monitoring() {
     doorData checkDoor = checkIM();
     filteredINSData checkINS = checkINS3331();
 
-    // Will contain the data for a Duration Alert; max 622 chars as per Particle docs
-    char alertMessage[622];
-    char sessionEndMessage[622];
-
-    // Calculate the time spent in state 2
+    // Calculate timing data
     timeInState2 = calculateTimeInState(state2_start_time);
+    unsigned long timeSinceDoorClosed = calculateTimeInState(timeWhenDoorClosed);
+    unsigned long timeSinceLastDurationAlert = (numDurationAlertSent > 0) ? millis() - lastDurationAlertTime : 0;
+    bool isAlertThresholdExceeded = (numDurationAlertSent == 0 && timeSinceDoorClosed >= duration_alert_threshold) ||
+                                    (numDurationAlertSent > 0 && timeSinceLastDurationAlert >= duration_alert_threshold);
 
     // Log current state
     Log.info("State 2 (Monitoring): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
@@ -271,13 +274,16 @@ void state2_monitoring() {
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 2);
 
-        // publish session end message to particle 
-        // !!!!!!!!!---TODO---!!!!!!!!! 
-        sprintf(sessionEndMessage, ""); 
-        Particle.publish("Session End", sessionEndMessage, PRIVATE);
+        // Publish door opened message to particle 
+        char doorOpenedMessage[622];
+        snprintf(doorOpenedMessage, sizeof(doorOpenedMessage),
+                 "{\"alertSentFromState\": %lu, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu}",
+                 2, numDurationAlertSent, numStillnessAlertSent);
+        Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
 
         // Transition to state 0
         stateHandler = state0_idle;
+        return;
     }
     // Transition to state 3 if stillness is detected
     else if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < ins_threshold) {
@@ -288,27 +294,28 @@ void state2_monitoring() {
         // Update state 3 timer and transition to state 3
         state3_start_time = millis();
         stateHandler = state3_stillness;
+        return;
     }
-    // Send a duration alert if it hasn't been sent yet and the duration exceeds the threshold
-    else if ((numDurationAlertSent == 0) && (millis() - timeWhenDoorClosed >= duration_alert_threshold) && !hasDurationAlertBeenPaused) {
-        Log.warn("--Duration Alert--");
+    // Send duration alerts if threshold is exceeded
+    else if (!hasDurationAlertBeenPaused && isAlertThresholdExceeded) {
+        Log.warn("--Duration Alert-- TimeSinceDoorClosed: %lu, TimeSinceLastAlert: %lu, TimeInState: %lu", timeSinceDoorClosed, timeSinceLastDurationAlert, timeInState2);
         publishStateTransition(2, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 4);
 
-        // publish duration alert to particle
-        // !!!!!!!!!---TODO---!!!!!!!!!
-        numDurationAlertSent += 1; 
-        unsigned long occupancy_duration = (millis() - timeWhenDoorClosed) / 60000;  // Convert to minutes
-        sprintf(alertMessage, ""); 
+        // Publish duration alert to particle
+        numDurationAlertSent += 1;
+        lastDurationAlertTime = millis();
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char alertMessage[622];
+        snprintf(alertMessage, sizeof(alertMessage),
+                 "{\"alertSentFromState\": %d, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
+                 2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Duration Alert", alertMessage, PRIVATE);
-
-        // Stay in state 2 to continue monitoring
-        stateHandler = state2_monitoring;
     }
 }
 
 /*
- * State 3 - Stillness 
+ * State 3 - Stillness State
  * This state is entered when the door is closed and stillness is detected.
  * The system monitors the stillness duration.
  * Sends a stillness alert if the stillness duration exceeds a threshold.
@@ -318,12 +325,12 @@ void state3_stillness() {
     doorData checkDoor = checkIM();
     filteredINSData checkINS = checkINS3331();
   
-    // Will contain the data for a Stillness Alert; max 622 chars as per Particle docs
-    char alertMessage[622];
-    char sessionEndMessage[622];
-
-    // Calculate the time spent in state 3
+    // Calculate timing data
     timeInState3 = calculateTimeInState(state3_start_time);
+    unsigned long timeSinceDoorClosed = calculateTimeInState(timeWhenDoorClosed);
+    unsigned long timeSinceLastDurationAlert = (numDurationAlertSent > 0) ? millis() - lastDurationAlertTime : 0;
+    bool isAlertThresholdExceeded = (numDurationAlertSent == 0 && timeSinceDoorClosed >= duration_alert_threshold) ||
+                                    (numDurationAlertSent > 0 && timeSinceLastDurationAlert >= duration_alert_threshold);
 
     // Log current state
     Log.info("State 3 (Stillness): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
@@ -336,80 +343,88 @@ void state3_stillness() {
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 2);
 
-        // publish session end message to particle 
-        // !!!!!!!!!---TODO---!!!!!!!!! 
-        sprintf(sessionEndMessage, ""); 
-        Particle.publish("Session End", sessionEndMessage, PRIVATE);
+        // Publish door opened message to particle
+        char doorOpenedMessage[622];
+        snprintf(doorOpenedMessage, sizeof(doorOpenedMessage), 
+                 "{\"alertSentFromState\": %d, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu}", 
+                 3, numDurationAlertSent, numStillnessAlertSent);
+        Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
 
         // Transition to state 0
         stateHandler = state0_idle;
-    }
-    // Transition to state 2 if movement is detected again
-    else if ((unsigned long)checkINS.iAverage > ins_threshold) {
-        Log.warn("State 3 --> State 2: Motion detected again");
+    } 
+    else if ((unsigned long)checkINS.iAverage > ins_threshold) {  // Movement detected again
+        Log.warn("State 3 --> State 2: Motion detected again.");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 0);
 
-        // Update state 2 timer and transition to state 2
+        // Pause the duration alerts and transition to state 2
+        hasDurationAlertBeenPaused = false;
         state2_start_time = millis();
         stateHandler = state2_monitoring;
     }
-    // If duration alert has not been sent, not paused and timer exceeds duration alert threshold 
-    // while waiting for initial stillness alert, then send the duration alert
-    else if ((numDurationAlertSent == 0) && (millis() - timeWhenDoorClosed >= duration_alert_threshold) && !hasDurationAlertBeenPaused) {
-        Log.warn("--Duration Alert--");
-        publishStateTransition(2, 2, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(2, 4);
+    // Duration alert condition based on time elapsed since door closed or last alert
+    else if (!hasDurationAlertBeenPaused && isAlertThresholdExceeded) { 
+        Log.warn("--Duration Alert-- TimeSinceDoorClosed: %lu, TimeSinceLastAlert: %lu, TimeInState: %lu", timeSinceDoorClosed, timeSinceLastDurationAlert, timeInState3);
+        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(3, 4);
 
-        // publish duration alert to particle
-        // !!!!!!!!!---TODO---!!!!!!!!!
-        numDurationAlertSent += 1; 
+        // Publish duration alert to particle
+        numDurationAlertSent += 1;
         unsigned long occupancy_duration = (millis() - timeWhenDoorClosed) / 60000;  // Convert to minutes
-        sprintf(alertMessage, ""); 
+        char alertMessage[622];
+        snprintf(alertMessage, sizeof(alertMessage), 
+                 "{\"alertSentFromState\": %d, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
+                 3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Duration Alert", alertMessage, PRIVATE);
 
+        // Update the last duration alert time
+        lastDurationAlertTime = millis();
+
         // Stay in state 3
-        // !!!!!!!!!---TODO---!!!!!!!!!
-        // Add reset state3 timer here if sending alert 5 mins after duration in state 3
-        // Otherwise stillness will be sent 5 mins after it entered state 3, regardless of this duration
         stateHandler = state3_stillness;
-    }
+    } 
     // Send a initial stillness alert if the stillness duration exceeds the initial threshold
-    else if ((numStillnessAlertSent == 0) && timeInState3 >= initial_stillness_alert_threshold) {
-        Log.warn("--Stillness Alert--");
+    else if ((numStillnessAlertSent == 0) && (timeInState3 >= initial_stillness_alert_threshold)) {
+        Log.warn("--Initial Stillness Alert-- TimeSinceDoorClosed: %lu, TimeInState: %lu", timeSinceDoorClosed, timeInState3);
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
 
-        // publish stillness alert to particle
-        // !!!!!!!!!---TODO---!!!!!!!!!
-        numStillnessAlertSent += 1;  
-        sprintf(alertMessage, ""); 
+        // Publish stillness alert to particle
+        numStillnessAlertSent += 1;
+        unsigned long occupancy_duration = (millis() - timeWhenDoorClosed) / 60000;  // Convert to minutes
+        char alertMessage[622];
+        snprintf(alertMessage, sizeof(alertMessage), 
+                 "{\"alertSentFromState\": %d, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
+                 3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
 
-        // once the first duration alert has been sent
-        // pause the duration alerts
+        // Pause the duration alerts
         hasDurationAlertBeenPaused = true;
 
-        // Reset the state 3 timer for next alert and stay in state 3
+        // Reset state 3 timer for next alert
         state3_start_time = millis();
         stateHandler = state3_stillness;
-    }
+    } 
     // Send a follow-up stillness alert if initial stillness alert is sent and the stillness duration exceeds the follow-up threshold
-    else if ((numStillnessAlertSent > 0) && timeInState3 >= followup_stillness_alert_threshold) {
-        Log.warn("--Followup Stillness Alert--");
+    else if ((numStillnessAlertSent > 0) && (timeInState3 >= followup_stillness_alert_threshold)) {
+        Log.warn("--Followup Stillness Alert-- TimeSinceDoorClosed: %lu, TimeInState: %lu", timeSinceDoorClosed, timeInState3);
         publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 5);
 
-        // publish stillness alert to particle
-        // !!!!!!!!!---TODO---!!!!!!!!!
+        // Publish follow-up stillness alert to particle
         numStillnessAlertSent += 1;
-        sprintf(alertMessage, ""); 
+        unsigned long occupancy_duration = (millis() - timeWhenDoorClosed) / 60000;  // Convert to minutes
+        char alertMessage[622];
+        snprintf(alertMessage, sizeof(alertMessage), 
+                 "{\"alertSentFromState\": %d, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
+                 3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
 
-        // make sure duration alers are paused
+        // Pause the duration alerts
         hasDurationAlertBeenPaused = true;
 
-        // Reset the state 3 timer for next alert and stay in state 3
+        // Reset state 3 timer for the next follow-up alert
         state3_start_time = millis();
         stateHandler = state3_stillness;
     }
@@ -515,7 +530,7 @@ const char *resetReasonString(int resetReason) {
 void getHeartbeat() {
     static unsigned long lastHeartbeatPublish = 0;
 
-    // Publish a heartbeat message if:
+    // Publish a heartbeat message if at least one of these condition meet:
     // 1. This is the first heartbeat since startup.
     // 2. A door message was received and enough time has passed since the last door heartbeat.
     // 3. The heartbeat hasn't been published in the last SM_HEARTBEAT_INTERVAL.

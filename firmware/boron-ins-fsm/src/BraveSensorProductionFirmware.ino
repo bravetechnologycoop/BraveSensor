@@ -12,26 +12,30 @@
 #include "consoleFunctions.h"
 #include "tpl5010watchdog.h"
 
-#define DEBUG_LEVEL             LOG_LEVEL_WARN  // Set log level for debugging
-#define BRAVE_FIRMWARE_VERSION  6999            // Firmware version, see versioning in README.md
+// See versioning in README.md
+#define BRAVE_FIRMWARE_VERSION  6999
+
+// Note: setting debug level to LOG_LEVEL_INFO and printing a lot of output
+// may cause timing issue causing code to break, like door sensor not being 
+// found by the BLE thread. Only log required info with warn.
+#define DEBUG_LEVEL             LOG_LEVEL_WARN
 
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);
 SYSTEM_THREAD(ENABLED);
 SerialLogHandler logHandler(DEBUG_LEVEL);
 
 void setup() {
-    // Enable reset reason
     System.enableFeature(FEATURE_RESET_INFO);
 
-    // Use internal antenna on Boron for BLE
     BLE.selectAntenna(BleAntennaType::INTERNAL);
+
     setupIM();
     setupINS3331();
     setupConsoleFunctions();
     setupStateMachine();
     setupWatchdog();
 
-    Particle.publishVitals(900);  // Publish vitals every 15 minutes
+    Particle.publishVitals(900);  // every 15 minutes
 }
 
 void loop() {
