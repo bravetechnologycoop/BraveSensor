@@ -4,7 +4,7 @@ const api = require('./api')
 const dashboard = require('./dashboard')
 const pa = require('./pa')
 const vitals = require('./vitals')
-const sensorAlerts = require('./sensorAlerts')
+const events = require('./events')
 const smokeTest = require('./smokeTest')
 
 function configureRoutes(app) {
@@ -35,7 +35,7 @@ function configureRoutes(app) {
   app.post('/smokeTest/teardown', smokeTest.teardownSmokeTest)
 
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
-  app.post('/api/sensorEvent', sensorAlerts.validateSensorEvent, sensorAlerts.handleSensorEvent)
+  app.post('/api/sensorEvent', events.validateEvent, events.handleEvent)
 
   app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
   app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)
