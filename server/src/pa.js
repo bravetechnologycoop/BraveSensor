@@ -8,9 +8,7 @@
 const Validator = require('express-validator')
 
 // In-house dependencies
-const helpers = require('./utils/helpers')
-const twilioHelpers = require('./utils/twilioHelpers')
-const googleHelpers = require('./utils/googleHelpers')
+const { helpers, twilioHelpers, googleHelpers } = require('./utils/index')
 const db = require('./db/db')
 
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]

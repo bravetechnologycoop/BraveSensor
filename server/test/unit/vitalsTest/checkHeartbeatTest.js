@@ -6,7 +6,7 @@ const sinonChai = require('sinon-chai')
 const rewire = require('rewire')
 
 // In-house dependencies
-const helpers = require('../../../src/utils/helpers')
+const { helpers } = require('../../../src/utils/index')
 const factories = require('../../factories')
 const db = require('../../../src/db/db')
 

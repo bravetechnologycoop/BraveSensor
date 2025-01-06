@@ -14,7 +14,7 @@ const cookieParser = require('cookie-parser')
 const { Parser } = require('json2csv')
 
 // In-house dependencies
-const helpers = require('./utils/helpers')
+const { helpers } = require('./utils/index')
 const { ALERT_TYPE } = require('./enums/index')
 const db = require('./db/db')
 

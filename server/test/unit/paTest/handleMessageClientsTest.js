@@ -5,8 +5,7 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 
 // In-house dependencies
-const helpers = require('../../../src/utils/helpers')
-const twilioHelpers = require('../../../src/utils/twilioHelpers')
+const { helpers, twilioHelpers } = require('../../../src/utils/index')
 const { mockResponse } = require('../../testingHelpers')
 const pa = require('../../../src/pa')
 const db = require('../../../src/db/db')

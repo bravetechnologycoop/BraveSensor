@@ -1,5 +1,5 @@
 // In-house dependencies
-const googleHelpers = require('./utils/googleHelpers')
+const { googleHelpers }= require('./utils/index')
 const api = require('./api')
 const dashboard = require('./dashboard')
 const pa = require('./pa')

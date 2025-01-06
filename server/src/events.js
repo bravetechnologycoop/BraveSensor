@@ -8,8 +8,7 @@
 const Validator = require('express-validator')
 
 // In-house dependencies
-const helpers = require('./utils/helpers')
-const twilioHelpers = require('./utils/twilioHelpers')
+const { helpers, twilioHelpers } = require('./utils/index')
 const { SENSOR_EVENT, ALERT_TYPE } = require('./enums/index')
 const db = require('./db/db')
 

@@ -5,7 +5,7 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 
 // In-house dependencies
-const helpers = require('../../../src/utils/helpers')
+const { helpers } = require('../../../src/utils/index')
 const factories = require('../../factories')
 const { ALERT_TYPE } = require('../../../src/enums/index')
 const db = require('../../../src/db/db')

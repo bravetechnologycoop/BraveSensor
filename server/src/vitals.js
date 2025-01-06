@@ -13,8 +13,7 @@ const { DateTime } = require('luxon')
 const { t } = require('i18next')
 
 // In-house dependencies
-const helpers = require('./utils/helpers')
-const twilioHelpers = require('./utils/twilioHelpers')
+const { helpers, twilioHelpers }= require('./utils/index')
 const db = require('./db/db')
 
 const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')

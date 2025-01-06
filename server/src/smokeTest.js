@@ -8,7 +8,7 @@
 const axios = require('axios').default
 
 // In-house dependencies
-const helpers = require('./utils/helpers')
+const { helpers } = require('./utils/index')
 const { SENSOR_EVENT } = require('./enums/index')
 const { factories } = require('../test/factories')
 const db = require('./db/db')

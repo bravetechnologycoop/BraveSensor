@@ -2,7 +2,7 @@
 const pg = require('pg')
 
 // In-house dependencies
-const helpers = require('../utils/helpers')
+const { helpers } = require('../utils/index')
 const { ALERT_TYPE, CHATBOT_STATE, DEVICE_TYPE, STATUS } = require('../enums/index')
 const { Client, ClientExtension, Device, SensorsVital, Session } = require('../models/index')
 

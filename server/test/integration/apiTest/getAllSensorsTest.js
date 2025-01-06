@@ -6,7 +6,7 @@ const sinonChai = require('sinon-chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
-const helpers = require('../../../src/utils/helpers')
+const { helpers } = require('../../../src/utils/index')
 const factories = require('../../factories')
 const { server } = require('../../../index')
 const db = require('../../../src/db/db')
