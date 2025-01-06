@@ -2,7 +2,7 @@
 const i18next = require('i18next')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const helpers = require('./helpers')
 const CommonEn = require('../resources/translations/common.en.json')
 const CommonEsUs = require('../resources/translations/common.es_us.json')
 

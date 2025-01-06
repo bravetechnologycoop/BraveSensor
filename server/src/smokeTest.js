@@ -8,7 +8,9 @@
 const axios = require('axios').default
 
 // In-house dependencies
-const { factories, helpers, SENSOR_EVENT } = require('brave-alert-lib')
+const helpers = require('./utils/helpers')
+const { SENSOR_EVENT } = require('./enums/index')
+const { factories } = require('../test/factories')
 const db = require('./db/db')
 
 const radar_coreID = 'radar_coreID'

@@ -1,10 +1,10 @@
-// factories.js
+// factories.js - OLD
 //
 // Factory functions to create database and JavaScript instances for various models.
 // These are primarily used for unit and integration testing.
 
-const { Client, Session, Device, Gateway, SensorsVital } = require('./models/index')
-const { ALERT_TYPE, CHATBOT_STATE, DEVICE_TYPE, STATUS } = require('./enums/index')
+const { Client, Session, Device, SensorsVital } = require('../src/models/index')
+const { ALERT_TYPE, CHATBOT_STATE, DEVICE_TYPE, STATUS } = require('../src/enums/index')
 
 async function clientDBFactory(db, overrides = {}) {
   const client = await db.createClient(
@@ -44,69 +44,6 @@ function clientFactory(overrides = {}) {
     overrides.updatedAt !== undefined ? overrides.updatedAt : '2024-03-29T19:23:48.154Z',
     overrides.status !== undefined ? overrides.status : STATUS.LIVE,
     overrides.firstDeviceLiveAt !== undefined ? overrides.firstDeviceLiveAt : '2024-03-29',
-  )
-}
-
-async function buttonDBFactory(db, overrides = {}) {
-  const device = await db.createDevice(
-    DEVICE_TYPE.BUTTON,
-    overrides.clientId !== undefined ? overrides.clientId : 'fakeClientId',
-    null,
-    overrides.phoneNumber !== undefined ? overrides.phoneNumber : '+12223334444',
-    overrides.displayName !== undefined ? overrides.displayName : 'Unit 305',
-    overrides.serialNumber !== undefined ? overrides.serialNumber : 'AB12-12345',
-    overrides.sentLowBatteryAlertAt !== undefined ? overrides.sentLowBatteryAlertAt : null,
-    overrides.sentVitalsAlertAt !== undefined ? overrides.sentVitalsAlertAt : null,
-    overrides.isDisplayed !== undefined ? overrides.isDisplayed : true,
-    overrides.isSendingAlerts !== undefined ? overrides.isSendingAlerts : true,
-    overrides.isSendingVitals !== undefined ? overrides.isSendingVitals : true,
-  )
-
-  return device
-}
-
-function buttonFactory(overrides = {}) {
-  return new Device(
-    overrides.id !== undefined ? overrides.id : 'fakeId',
-    DEVICE_TYPE.BUTTON,
-    null,
-    overrides.phoneNumber !== undefined ? overrides.phoneNumber : '+12223334444',
-    overrides.displayName !== undefined ? overrides.displayName : 'Unit 305',
-    overrides.serialNumber !== undefined ? overrides.serialNumber : 'AB12-12345',
-    overrides.sentLowBatteryAlertAt !== undefined ? overrides.sentLowBatteryAlertAt : null,
-    overrides.sentVitalsAlertAt !== undefined ? overrides.sentVitalsAlertAt : null,
-    overrides.createdAt !== undefined ? overrides.createdAt : '2024-03-29T19:23:48.154Z',
-    overrides.updatedAt !== undefined ? overrides.updatedAt : '2024-03-29T19:23:48.154Z',
-    overrides.isDisplayed !== undefined ? overrides.isDisplayed : true,
-    overrides.isSendingAlerts !== undefined ? overrides.isSendingAlerts : true,
-    overrides.isSendingVitals !== undefined ? overrides.isSendingVitals : true,
-    overrides.client !== undefined ? overrides.client : clientFactory(),
-  )
-}
-
-async function gatewayDBFactory(db, overrides = {}) {
-  const device = await db.createGateway(
-    overrides.id !== undefined ? overrides.id : 'fakeGatewayId',
-    overrides.clientId !== undefined ? overrides.clientId : 'fakeClientId',
-    overrides.displayName !== undefined ? overrides.displayName : 'Gateway 3',
-    overrides.sentVitalsAlertAt !== undefined ? overrides.sentVitalsAlertAt : null,
-    overrides.isDisplayed !== undefined ? overrides.isDisplayed : true,
-    overrides.isSendingVitals !== undefined ? overrides.isSendingVitals : true,
-  )
-
-  return device
-}
-
-function gatewayFactory(overrides = {}) {
-  return new Gateway(
-    overrides.id !== undefined ? overrides.id : 'fakeId',
-    overrides.displayName !== undefined ? overrides.displayName : 'Gateway 3',
-    overrides.createdAt !== undefined ? overrides.createdAt : '2024-03-29T19:23:48.154Z',
-    overrides.updatedAt !== undefined ? overrides.updatedAt : '2024-03-29T19:23:48.154Z',
-    overrides.sentVitalsAlertAt !== undefined ? overrides.sentVitalsAlertAt : null,
-    overrides.isDisplayed !== undefined ? overrides.isDisplayed : true,
-    overrides.isSendingVitals !== undefined ? overrides.isSendingVitals : true,
-    overrides.client !== undefined ? overrides.client : clientFactory(),
   )
 }
 
@@ -250,10 +187,6 @@ function sensorsVitalFactory(overrides = {}) {
 module.exports = {
   clientDBFactory,
   clientFactory,
-  buttonDBFactory,
-  buttonFactory,
-  gatewayDBFactory,
-  gatewayFactory,
   deviceDBFactory,
   deviceFactory,
   locationDBFactory,

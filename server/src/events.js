@@ -8,7 +8,9 @@
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { helpers, twilioHelpers, SENSOR_EVENT, ALERT_TYPE } = require('brave-alert-lib')
+const helpers = require('./utils/helpers')
+const twilioHelpers = require('./utils/twilioHelpers')
+const { SENSOR_EVENT, ALERT_TYPE } = require('./enums/index')
 const db = require('./db/db')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
@@ -22,7 +24,7 @@ async function handleAlert(location, alertType, alertData) {
       helpers.logError(`handleAlert: Error starting transaction`)
       return
     }
-    
+
     // time when this current alert was recieved
     const currentTime = await db.getCurrentTime(pgClient)
 
@@ -186,13 +188,6 @@ async function handleEvent(request, response) {
     response.status(200).json(errorMessage)
   }
 }
-
-
-
-
-
-
-
 
 module.exports = {
   validateEvent,

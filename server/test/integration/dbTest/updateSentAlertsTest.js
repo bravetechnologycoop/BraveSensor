@@ -5,7 +5,7 @@ const chai = require('chai')
 const chaiDateTime = require('chai-datetime')
 
 // In-house dependencies
-const { factories } = require('brave-alert-lib')
+const factories = require('../../factories')
 const db = require('../../../src/db/db')
 
 chai.use(chaiDateTime)

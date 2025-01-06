@@ -7,7 +7,7 @@ const rewire = require('rewire')
 const ParticleApi = require('particle-api-js')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const helpers = require('../../../src/utils/helpers')
 
 const particle = rewire('../../../src/particle')
 

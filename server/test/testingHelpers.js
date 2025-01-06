@@ -1,5 +1,5 @@
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const helpers = require('../src/utils/helpers')
 
 // Sends chai as a parameter so I don't need to include it as a regular dependency in package.json
 async function firmwareAlert(chai, server, coreID, sensorEvent, apiKey, data) {

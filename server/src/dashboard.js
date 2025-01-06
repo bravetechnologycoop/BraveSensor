@@ -14,8 +14,8 @@ const cookieParser = require('cookie-parser')
 const { Parser } = require('json2csv')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
-const { ALERT_TYPE } = require('brave-alert-lib')
+const helpers = require('./utils/helpers')
+const { ALERT_TYPE } = require('./enums/index')
 const db = require('./db/db')
 
 const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')

@@ -6,7 +6,8 @@ const sinonChai = require('sinon-chai')
 const rewire = require('rewire')
 
 // In-house dependencies
-const { factories, helpers } = require('brave-alert-lib')
+const helpers = require('../../../src/utils/helpers')
+const factories = require('../../factories')
 const db = require('../../../src/db/db')
 
 const vitals = rewire('../../../src/vitals')

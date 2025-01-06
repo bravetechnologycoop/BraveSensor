@@ -12,7 +12,7 @@
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { helpers } = require('brave-alert-lib')
+const helpers = require('./utils/helpers')
 const db = require('./db/db')
 
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]

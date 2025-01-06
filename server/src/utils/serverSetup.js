@@ -1,6 +1,6 @@
 const fs = require('fs')
 const https = require('https')
-const { helpers } = require('brave-alert-lib')
+const helpers = require('./helpers')
 const vitals = require('../vitals')
 
 module.exports = app => {

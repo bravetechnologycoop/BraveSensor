@@ -3,7 +3,8 @@ const { expect } = require('chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
-const { factories, DEVICE_TYPE } = require('brave-alert-lib')
+const factories = require('../../factories')
+const { DEVICE_TYPE } = require('../../../src/enums/index')
 const db = require('../../../src/db/db')
 
 // arbitrary number of active clients to generate

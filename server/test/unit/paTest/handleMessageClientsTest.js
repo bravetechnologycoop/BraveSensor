@@ -5,7 +5,8 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 
 // In-house dependencies
-const { helpers, twilioHelpers } = require('brave-alert-lib')
+const helpers = require('../../../src/utils/helpers')
+const twilioHelpers = require('../../../src/utils/twilioHelpers')
 const { mockResponse } = require('../../testingHelpers')
 const pa = require('../../../src/pa')
 const db = require('../../../src/db/db')
