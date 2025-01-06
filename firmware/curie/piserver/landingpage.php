@@ -17,7 +17,7 @@ try {
         if (!$table_exists) {
             $create_table_sql = "
                 CREATE TABLE occupancy (
-                    occupied boolean,
+                    occupied INT,
                     stillness boolean,
                     epochtime TIMESTAMP DEFAULT NOW()
                     );";
@@ -32,12 +32,10 @@ try {
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $occupied = $row['occupied'];
-        if(!$occupied){
-            $new_occupied = 1;
-            $stmt = $pdo->prepare("INSERT INTO occupancy (occupied) VALUES (:new_occupied)");
-            $stmt->bindParam(':new_occupied', $new_occupied, PDO::PARAM_INT);
-            $stmt->execute();
-        }
+        $new_occupied = $occupied + 1;
+        $stmt = $pdo->prepare("INSERT INTO occupancy (occupied) VALUES (:new_occupied)");
+        $stmt->bindParam(':new_occupied', $new_occupied, PDO::PARAM_INT);
+        $stmt->execute();
     }
 
     if (isset($_POST['out'])) {
@@ -46,7 +44,7 @@ try {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $occupied = $row['occupied'];
         if($occupied){
-            $new_occupied = 0;
+            $new_occupied = $occupied - 1;
             $stmt = $pdo->prepare("INSERT INTO occupancy (occupied) VALUES (:new_occupied)");
             $stmt->bindParam(':new_occupied', $new_occupied, PDO::PARAM_INT);
             $stmt->execute();
@@ -59,20 +57,20 @@ try {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $stillness = $row['stillness'];
         $occupied = $row['occupied'];
-        if(!$stillness && $occupied){
+        if(!$stillness && $occupied >= 1){
             $new_stillness = 1;
             $stmt = $pdo->prepare("UPDATE occupancy SET stillness = :new_stillness WHERE epochtime = (SELECT MAX(epochtime) FROM occupancy)");
             $stmt->bindParam(':new_stillness', $new_stillness, PDO::PARAM_INT);
             $stmt->execute();
         } else {
-            echo "We need occupied to be true to have stillness";
+            echo "We need occupied to be at least 1 to have stillness";
         }
     }
 
     $stmt = $pdo->prepare("SELECT occupied, stillness, epochtime FROM occupancy ORDER BY epochtime DESC LIMIT 1");
     $stmt->execute();
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    $current_occupied = $row['occupied'] ? 'true' : 'false';
+    $current_occupied = $row['occupied'];
     $current_stillness = $row['stillness'] ? 'true' : 'false';    
     $epochtime = $row['epochtime'];
 
