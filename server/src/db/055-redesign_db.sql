@@ -77,16 +77,16 @@ BEGIN
         event_id                    UUID                NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
         session_id                  UUID                NOT NULL REFERENCES Sessions_new(session_id) ON DELETE CASCADE,
         event_type                  event_type_enum     NOT NULL,
-        event_type_details          TEXT
-        event_sent_at               TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
+        event_type_details          TEXT,
+        event_sent_at               TIMESTAMPTZ         NOT NULL DEFAULT NOW()
     );
 
     -- Create the Vitals_new table
     CREATE TABLE Vitals_new (
         vital_id                    UUID                NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
         device_id                   UUID                NOT NULL REFERENCES Devices_new(device_id) ON DELETE CASCADE,
-        vital_type                  vital_type_enum     NOT NULL
-        vital_sent_at               TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
+        vital_type                  vital_type_enum     NOT NULL,
+        vital_sent_at               TIMESTAMPTZ         NOT NULL DEFAULT NOW()
     );
 
     -- Trigger functions
