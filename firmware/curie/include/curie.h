@@ -30,12 +30,12 @@
 
 //#define THERMAL_CAMERA
 //#define LIDAR
-#define LIDAR_L5
+//#define LIDAR_L5
 //#define LIDAR_L1
 //#define USONIC_RANGE
 //#define MULTI_GAS
 //#define CO2
-#define CO2SCD
+//#define CO2SCD
 //#define PIR
 //#define MULTI_MOTION
 #define BORON
