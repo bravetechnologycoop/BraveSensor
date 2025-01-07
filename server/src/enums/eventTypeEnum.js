@@ -1,0 +1,7 @@
+const EVENT_TYPE = {
+  DURATION_ALERT: 'DURATION_ALERT',
+  STILLNESS_ALERT: 'DURATION_ALERT',
+  DOOR_OPENED: 'DOOR_OPENED',
+}
+
+module.exports = Object.freeze(EVENT_TYPE)

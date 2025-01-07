@@ -66,7 +66,7 @@ BEGIN
         updated_at                  TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
         ended_at                    TIMESTAMPTZ,
         session_status              session_status_enum NOT NULL,
-        survey_sent                 BOOLEAN,
+        survey_sent                 BOOLEAN             NOT NULL DEFAULT false,
         selected_survey_category    INT,
         attending_responder_number  TEXT,
         response_time               INTERVAL 

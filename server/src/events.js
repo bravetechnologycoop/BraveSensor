@@ -8,125 +8,110 @@
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { helpers, twilioHelpers } = require('./utils/index')
-const { SENSOR_EVENT, ALERT_TYPE } = require('./enums/index')
-const db = require('./db/db')
+const { helpers } = require('./utils/index')
+const { EVENT_TYPE } = require('./enums/index')
+const db_new = require('./db/db_new')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
-async function handleAlert(location, alertType, alertData) {
+async function handleAlert(device, eventType, eventData) {
   let pgClient
 
   try {
-    pgClient = await db.beginTransaction()
+    pgClient = await db_new.beginTransaction()
     if (pgClient === null) {
       helpers.logError(`handleAlert: Error starting transaction`)
       return
     }
 
-    // time when this current alert was recieved
-    const currentTime = await db.getCurrentTime(pgClient)
+    helpers.log(device)
+    helpers.log(eventType)
+    helpers.log(eventData)
 
-    // check if a session already exists for the device
-    const currentSession = await db.getSessionWithDeviceId(location.id, pgClient)
+    // const currentTime = await db_new.getCurrentTime(pgClient)
+    // const currentSession = await db_new.getSessionWithDeviceId(device.deviceId, pgClient)
 
-    // client
-    const client = location.client
+    // if there is no session, then this is the first event
+    // if (currentSession === null) {
+    // double check to make sure the message is either a duration or a stillness
+    // those are the only two option to create a new session
 
-    // if there is no session, then this is the first alert
-    if (currentSession === null) {
-      // create new session
-      const newSession = await db.createSession(
-        location.id, // device_id foriegn key
-        currentTime, // updated_at
-        alertData.timeWhenDoorClosed, // door_closed_at
-        pgClient, // pg database instance
-      )
+    // create an active session and log the event
+    // const newSession = await db_new.createSession(device.device_id, pgClient)
+    // await db_new.createEvent(newSession.sessionId, eventType, pgClient)
 
-      // push the alert to the alerts table
-      await db.createAlert(
-        newSession.id, // foriegn key session id
-        alertType, // alert type
-        currentTime, // recieved_at
-        pgClient, // pg database instance
-      )
+    // send the message to the client
+    // 1. construct the message
+    // 2. translate the message (use clientId to figure out the client and language)
+    // 3. send the message to all the responder clients using device_twilio_phone_number
 
-      // based on the type of alert, identify the initial message to sent
-      // make sure to translate the alert message here as well
-      // if a duration alert recieved, send the duration alert message: {location} has been occupied for {alertData.occupancyTime} minutes
-      // if a initial stillness alert is recieved, send the message: {location} needs a SAFETY CHECK. On your way? Reply with anything
-      // the door opened type alert cannot be recieved as the first alert so error
-      let textMessage = ''
-      if (alertType === ALERT_TYPE.SENSOR_DURATION) {
-        textMessage = `${location.displayName} has been occupied for ${alertData.occupancyTime} minutes`
-      } else if (alertType === ALERT_TYPE.SENSOR_STILLNESS) {
-        textMessage = `${location.displayName} needs a SAFETY CHECK. On your way? Reply with anything`
-      } else {
-        helpers.logError('Invalid alert type received as the first alert')
-      }
+    // let textMessage = ''
+    // if (alertType === ALERT_TYPE.SENSOR_DURATION) {
+    //   textMessage = `${location.displayName} has been occupied for ${alertData.occupancyTime} minutes`
+    // } else if (alertType === ALERT_TYPE.SENSOR_STILLNESS) {
+    //   textMessage = `${location.displayName} needs a SAFETY CHECK. On your way? Reply with anything`
+    // } else {
+    //   helpers.logError('Invalid alert type received as the first alert')
+    // }
 
-      // send message to all responder phone numbers
-      let response
-      try {
-        const fromPhoneNumber = location.fromPhoneNumber
-        const responderPhoneNumbers = client.responderPhoneNumbers
-        const hasValidPhoneNumbers = fromPhoneNumber && responderPhoneNumbers && responderPhoneNumbers.length > 0
+    // let response
+    // try {
+    //   const fromPhoneNumber = location.fromPhoneNumber
+    //   const responderPhoneNumbers = client.responderPhoneNumbers
+    //   const hasValidPhoneNumbers = fromPhoneNumber && responderPhoneNumbers && responderPhoneNumbers.length > 0
 
-        if (hasValidPhoneNumbers) {
-          const messagePromises = responderPhoneNumbers.map(toPhoneNumber =>
-            twilioHelpers.sendTwilioMessage(toPhoneNumber, fromPhoneNumber, textMessage),
-          )
-          response = await Promise.all(messagePromises)
-        }
-      } catch (error) {
-        helpers.logError(error)
-      }
+    //   if (hasValidPhoneNumbers) {
+    //     const messagePromises = responderPhoneNumbers.map(toPhoneNumber =>
+    //       twilioHelpers.sendTwilioMessage(toPhoneNumber, fromPhoneNumber, textMessage),
+    //     )
+    //     response = await Promise.all(messagePromises)
+    //   }
+    // } catch (error) {
+    //   helpers.logError(error)
+    // }
 
-      // handle invalid response (all promises are resolved)
-      const isResponseInvalid = response === undefined || (Array.isArray(response) && response.every(result => result === undefined))
-      if (isResponseInvalid) {
-        helpers.logError(`Failed to send alert update for session ${newSession.id}: ${textMessage}`)
-      }
-    }
-    // otherwise, the session already exist
-    else {
-      // if the alert recived was a door opened alert,
-      // then update the session door_opened_at to current time
+    // // handle invalid response (all promises are resolved)
+    // const isResponseInvalid = response === undefined || (Array.isArray(response) && response.every(result => result === undefined))
+    // if (isResponseInvalid) {
+    //   helpers.logError(`Failed to send alert update for session ${newSession.id}: ${textMessage}`)
+    // }
+    // }
+    // // otherwise, the session already exist
+    // else {
+    //   // if the alert recived was a door opened alert,
+    //   // then update the session door_opened_at to current time
+    //   // if (alertType === SENSOR_EVENT.DOOR_OPENED) {
+    //   //   // update the existing session
+    //   //   await db.updateSession(
+    //   //     currentSession.id, // session will be identified by this
+    //   //     currentTime, // updated_at
+    //   //     currentTime, // door_opened_at
+    //   //     pgClient, // pg database instance
+    //   //   )
+    //   // } else {
+    //   //   // otherwise if it was another duration or stillness alert
+    //   //   // update the existing session
+    //   //   await db.updateSession(
+    //   //     currentSession.id, // session will be identified by this
+    //   //     currentTime, // updated_at
+    //   //     pgClient, // pg database instance
+    //   //   )
+    //   // }
+    //   // // push the alert to the alerts table
+    //   // await db.createAlert(
+    //   //   currentSession.id, // foriegn key session id
+    //   //   alertType, // alert type
+    //   //   currentTime, // recieved_at
+    //   //   pgClient, // pg database instance
+    //   // )
+    // }
 
-      if (alertType === SENSOR_EVENT.DOOR_OPENED) {
-        // update the existing session
-        await db.updateSession(
-          currentSession.id, // session will be identified by this
-          currentTime, // updated_at
-          currentTime, // door_opened_at
-          pgClient, // pg database instance
-        )
-      } else {
-        // otherwise if it was another duration or stillness alert
-        // update the existing session
-        await db.updateSession(
-          currentSession.id, // session will be identified by this
-          currentTime, // updated_at
-          pgClient, // pg database instance
-        )
-      }
-
-      // push the alert to the alerts table
-      await db.createAlert(
-        currentSession.id, // foriegn key session id
-        alertType, // alert type
-        currentTime, // recieved_at
-        pgClient, // pg database instance
-      )
-    }
-
-    await db.commitTransaction(pgClient)
+    await db_new.commitTransaction(pgClient)
   } catch (e) {
     try {
-      await db.rollbackTransaction(pgClient)
+      await db_new.rollbackTransaction(pgClient)
       helpers.logError(`handleAlert: Rolled back transaction because of error: ${e}`)
     } catch (error) {
-      // Do nothing
       helpers.logError(`handleAlert: Error rolling back transaction: ${error} Rollback attempted because of error: ${e}`)
     }
   }
@@ -142,29 +127,42 @@ async function handleEvent(request, response) {
       const apiKey = request.body.api_key
 
       if (particleWebhookAPIKey === apiKey) {
-        const sensorEvent = request.body.event
-        const alertData = request.body.data
-        const coreId = request.body.coreid
+        const receivedEventType = request.body.event
+        const eventData = request.body.data
+        const particleDeviceID = request.body.coreid
 
-        let alertType
-        if (sensorEvent === SENSOR_EVENT.DURATION) {
-          alertType = ALERT_TYPE.SENSOR_DURATION
-        } else if (sensorEvent === SENSOR_EVENT.STILLNESS) {
-          alertType = ALERT_TYPE.SENSOR_STILLNESS
-        } else {
-          const errorMessage = `Bad request to ${request.path}: Invalid event type`
-          helpers.logError(errorMessage)
+        let eventType
+        switch (receivedEventType) {
+          case 'Duration Alert': {
+            eventType = EVENT_TYPE.DURATION_ALERT
+            break
+          }
+          case 'Stillness Alert': {
+            eventType = EVENT_TYPE.STILLNESS_ALERT
+            break
+          }
+          case 'Door Opened': {
+            eventType = EVENT_TYPE.DOOR_OPENED
+            break
+          }
+          default: {
+            const errorMessage = `Bad request to ${request.path}: unknown event type ${receivedEventType}`
+            helpers.logError(errorMessage)
+            response.status(200).json(errorMessage)
+            return
+          }
         }
 
-        const location = await db.getDeviceWithSerialNumber(coreId)
-        if (!location) {
-          const errorMessage = `Bad request to ${request.path}: no location matches the coreID ${coreId}`
+        const device = await db_new.getDeviceWithParticleDeviceId(particleDeviceID)
+        if (!device) {
+          const errorMessage = `Bad request to ${request.path}: no device matches the coreID ${particleDeviceID}`
           helpers.logError(errorMessage)
           // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
           response.status(200).json(errorMessage)
         } else {
-          if (location.client.isSendingAlerts && location.isSendingAlerts) {
-            await handleAlert(location, alertType, alertData)
+          const client = await db_new.getClientWithClientId(device.clientId)
+          if (client.devicesSendingAlerts && device.isSendingAlerts) {
+            await handleAlert(device, eventType, eventData)
           }
           response.status(200).json('OK')
         }

@@ -1,0 +1,7 @@
+const SESSION_STATUS = {
+  ACTIVE: 'ACTIVE',
+  COMPLETED: 'COMPLETED',
+  SUSPENDED: 'SUSPENDED',
+}
+
+module.exports = Object.freeze(SESSION_STATUS)
