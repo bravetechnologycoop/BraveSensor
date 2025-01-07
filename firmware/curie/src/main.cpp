@@ -86,6 +86,13 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	int err = OK;
 	bDebug(TRACE, "Initializing the DataSources");
 
+	int fd = open(SLOW_I2C_SZ, O_WRONLY);
+	
+	
+	//g_slowI2C->writeBytes(0x1A, 0x01, /*byte command*/)
+	//g_slowI2C->writeBytes(0x1A, 0x03, /*byte command*/)
+
+
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
 		#ifdef THERMAL_CAMERA
@@ -246,4 +253,39 @@ int main()
 	catch (...){
 		bDebug(ERROR, "Caught at last possible place");
 	}
+}
+
+u_int16_t commandByteCreate(){
+
+	int command[8] = {0};
+
+	#ifdef MULTI_GAS
+	command[0] = 1;
+	#endif
+	#ifdef CO2SCD
+	command[1] = 1;
+	#endif
+	#ifdef CO2
+	command[2] = 1;
+	#endif
+	#ifdef PIR
+	command[3] = 1;
+	#endif
+	#ifdef LIDAR_L5
+	command[4] = 1;
+	#endif
+	#ifdef LIDAR_L1
+	command[5] = 1;
+	#endif
+	#ifdef THERMAL_CAMERA
+	command[6] = 1;
+	#endif
+	u_int16_t commandByte = 0;
+	string output = 0;
+	for (int i = 0; i < 8; ++i) {
+        commandByte |= (command[i] << (7 - i));  // Shift and OR the bits
+    }
+	std::cout << "Command byte: " << std::hex << commandByte << std::endl;
+
+	return commandByte;
 }
