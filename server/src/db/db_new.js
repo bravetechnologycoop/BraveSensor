@@ -277,7 +277,6 @@ async function getDeviceWithParticleDeviceId(particleDeviceId, pgClient) {
     )
 
     if (results === undefined || results.rows.length === 0) {
-      helpers.logError(`No device found with Particle Device ID: ${particleDeviceId}`)
       return null
     }
 
@@ -318,16 +317,16 @@ async function createSession(deviceId, pgClient) {
   return null
 }
 
-async function getSessionWithDeviceId(deviceId, pgClient) {
+async function getCurrentSessionWithDeviceId(deviceId, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getSessionWithDeviceId',
+      'getCurrentSessionWithDeviceId',
       `
       SELECT *
       FROM sessions_new
-      WHERE device_id = $1
+      WHERE device_id = $1 AND session_status = $2
       `,
-      [deviceId],
+      [deviceId, SESSION_STATUS.ACTIVE],
       pool,
       pgClient,
     )
@@ -339,13 +338,13 @@ async function getSessionWithDeviceId(deviceId, pgClient) {
     // returns a session object
     return createSessionFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getDeviceWithSerialNumber query: ${err.toString()}`)
+    helpers.logError(`Error running the getCurrentSessionWithDeviceId query: ${err.toString()}`)
   }
 
   return null
 }
 
-async function createEvent(sessionId, eventType, pgClient) {
+async function createEvent(sessionId, eventType, eventTypeDetails, pgClient) {
   try {
     const results = await helpers.runQuery(
       'createEvent',
@@ -353,10 +352,11 @@ async function createEvent(sessionId, eventType, pgClient) {
       INSERT INTO events_new(
         session_id, 
         event_type,
-      ) VALUES ($1, $2)
+        event_type_details
+      ) VALUES ($1, $2, $3)
       RETURNING *
       `,
-      [sessionId, eventType],
+      [sessionId, eventType, eventTypeDetails],
       pool,
       pgClient,
     )
@@ -384,6 +384,6 @@ module.exports = {
   getClientWithClientId,
   getDeviceWithParticleDeviceId,
   createSession,
-  getSessionWithDeviceId,
+  getCurrentSessionWithDeviceId,
   createEvent,
 }

@@ -35,7 +35,7 @@ function configureRoutes(app) {
   app.post('/smokeTest/teardown', smokeTest.teardownSmokeTest)
 
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
-  app.post('/api/sensorEvent', events.validateEvent, events.handleEvent)
+  app.post('/api/sensorEvent', events.validateSensorEvent, events.handleSensorEvent)
 
   app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
   app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)
