@@ -18,6 +18,7 @@ const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 // ------------------------------------------------------------------------------------------------
 
 function getEventTypeDetails(eventType) {
+  helpers.log(`getEventTypeDetails: eventType = ${eventType}`)
   switch (eventType) {
     case EVENT_TYPE.DURATION_ALERT:
       return 'DurationAlert'
@@ -29,6 +30,7 @@ function getEventTypeDetails(eventType) {
 }
 
 async function sendMessageToAllResponders(device, textMessage, sessionId) {
+  helpers.log(`sendMessageToAllResponders: device = ${device.deviceId}, textMessage = ${textMessage}, sessionId = ${sessionId}`)
   try {
     const client = await db_new.getClientWithClientId(device.clientId)
     const responderPhoneNumbers = client.responderPhoneNumbers
@@ -57,6 +59,7 @@ async function sendMessageToAllResponders(device, textMessage, sessionId) {
 }
 
 async function handleNewSession(device, eventType, eventData, pgClient) {
+  helpers.log(`handleNewSession: device = ${device.deviceId}, eventType = ${eventType}`)
   try {
     // create a new active session
     const newSession = await db_new.createSession(device.deviceId, pgClient)
@@ -88,7 +91,7 @@ async function handleNewSession(device, eventType, eventData, pgClient) {
 }
 
 async function handleExistingSession(currentSession, eventType, pgClient) {
-  helpers.log(currentSession.sessionId)
+  helpers.log(`handleExistingSession: sessionId = ${currentSession.sessionId}, eventType = ${eventType}`)
   try {
     if (eventType === EVENT_TYPE.DURATION_ALERT) {
       helpers.log('Received duration alert for already existing active session')
@@ -104,6 +107,7 @@ async function handleExistingSession(currentSession, eventType, pgClient) {
 }
 
 async function processSensorEvent(device, eventType, eventData) {
+  helpers.log(`processSensorEvent: device = ${device.deviceId}, eventType = ${eventType}`)
   let pgClient
 
   try {
@@ -143,6 +147,7 @@ function respondWithError(response, errorMessage, path) {
 }
 
 function getEventType(receivedEventType, response, path) {
+  helpers.log(`getEventType: receivedEventType = ${receivedEventType}`)
   // Map event type from string to enum
   const eventTypeMapping = {
     'Duration Alert': EVENT_TYPE.DURATION_ALERT,
@@ -159,6 +164,7 @@ function getEventType(receivedEventType, response, path) {
 }
 
 function parseEventData(receivedEventData, response, path) {
+  helpers.log(`parseEventData: receivedEventData = ${receivedEventData}`)
   if (typeof receivedEventData !== 'string') return receivedEventData
   try {
     // Parse event data from string to JSON
@@ -172,6 +178,7 @@ function parseEventData(receivedEventData, response, path) {
 const validateSensorEvent = Validator.body(['event', 'data', 'coreid', 'api_key']).exists()
 
 async function handleSensorEvent(request, response) {
+  helpers.log(`handleSensorEvent: request.body = ${JSON.stringify(request.body)}`)
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
     if (!validationErrors.isEmpty()) {
