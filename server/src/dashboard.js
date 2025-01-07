@@ -625,6 +625,19 @@ async function submitEditClient(req, res) {
       const fallbackPhoneNumbers =
         data.fallbackPhoneNumbers && data.fallbackPhoneNumbers.trim() !== '' ? data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()) : []
 
+      let firstDeviceLiveAt = data.firstDeviceLiveAt
+      if (!firstDeviceLiveAt || firstDeviceLiveAt.trim() === '') {
+        try {
+          firstDeviceLiveAt = await db.getCurrentFirstDeviceLiveAt(req.params.id)
+          if (!firstDeviceLiveAt) {
+            helpers.logError(`No current firstDeviceLiveAt found for client ID: ${req.params.id}`)
+          }
+        } catch (error) {
+          helpers.logError(`Error retrieving current firstDeviceLiveAt for client ID: ${req.params.id} - ${error.toString()}`)
+          return res.status(500).send('Internal Server Error')
+        }
+      }
+
       await db.updateClient(
         data.displayName,
         data.fromPhoneNumber,
@@ -639,7 +652,7 @@ async function submitEditClient(req, res) {
         data.isSendingVitals,
         data.language,
         data.status,
-        data.firstDeviceLiveAt,
+        firstDeviceLiveAt,
         req.params.id,
       )
 

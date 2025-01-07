@@ -29,11 +29,11 @@ async function sendSingleAlert(locationid, message, pgClient) {
   const location = await db.getLocationWithLocationid(locationid, pgClient)
 
   location.client.responderPhoneNumbers.forEach(async responderPhoneNumber => {
-    await twilioHelpers.sendSingleAlert(responderPhoneNumber, location.client.fromPhoneNumber, message)
+    await twilioHelpers.sendTwilioMessage(responderPhoneNumber, location.client.fromPhoneNumber, message)
   })
 
   location.client.heartbeatPhoneNumbers.forEach(async heartbeatAlertRecipient => {
-    await twilioHelpers.sendSingleAlert(heartbeatAlertRecipient, location.client.fromPhoneNumber, message)
+    await twilioHelpers.sendTwilioMessage(heartbeatAlertRecipient, location.client.fromPhoneNumber, message)
   })
 }
 

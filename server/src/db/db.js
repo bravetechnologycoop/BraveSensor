@@ -1632,6 +1632,31 @@ async function createDevice(
   return null
 }
 
+async function getCurrentFirstDeviceLiveAt(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getCurrentFirstDeviceLiveAt',
+      `
+      SELECT first_device_live_at
+      FROM clients
+      WHERE id = $1
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return results.rows[0].first_device_live_at
+  } catch (err) {
+    helpers.logError(`Error running the getCurrentFirstDeviceLiveAt query: ${err.toString()}`)
+    return null
+  }
+}
+
 module.exports = {
   beginTransaction,
   clearClientWithDisplayName,
@@ -1674,6 +1699,7 @@ module.exports = {
   getRecentSensorsVitalsWithClientId,
   getSessionWithSessionId,
   getUnrespondedSessionWithDeviceId,
+  getCurrentFirstDeviceLiveAt,
   logSensorsVital,
   numberOfStillnessAlertsInIntervalOfTime,
   rollbackTransaction,
