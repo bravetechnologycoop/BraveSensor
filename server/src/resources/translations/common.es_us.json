@@ -30,5 +30,11 @@
   "No One Inside": "Nadie adentro",
   "Person responded": "La persona respondió",
   "Overdose": "Sobredosis",
-  "None of the above": "Ninguna de las anteriores"
+  "None of the above": "Ninguna de las anteriores",
+
+  "durationAlert": "{{deviceName}} ha estado ocupado durante {{occupancyDuration}} minutos",
+  "stillnessAlert": "{{deviceName}} necesita una REVISIÓN DE SEGURIDAD. ¿Vas en camino? Responde con 5 o k",
+  "call": "Marcador de posición para la funcionalidad de llamada",
+  "durationAlertDoorOpened": "Vemos que la puerta se ha abierto en {{deviceName}}. Presiona 0 para contarnos más.",
+  "stillnessAlertSurveyDoorOpened": "Vemos que la puerta se ha abierto.\n¿Podrías informarnos el resultado?\n{{surveyCategories}}"
 }

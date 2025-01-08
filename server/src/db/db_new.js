@@ -21,6 +21,62 @@ pool.on('error', err => {
   helpers.logError(`unexpected database error: ${err.toString()}`)
 })
 
+function createClientFromRow(r) {
+  return new ClientNew(
+    r.client_id,
+    r.display_name,
+    r.language,
+    r.created_at,
+    r.updated_at,
+    r.responder_phone_numbers,
+    r.fallback_phone_numbers,
+    r.vitals_twilio_number,
+    r.vitals_phone_numbers,
+    r.survey_categories,
+    r.is_displayed,
+    r.devices_sending_alerts,
+    r.devices_sending_vitals,
+    r.devices_status,
+    r.first_device_live_at,
+  )
+}
+
+function createDeviceFromRow(r) {
+  return new DeviceNew(
+    r.device_id,
+    r.location_id,
+    r.display_name,
+    r.client_id,
+    r.created_at,
+    r.updated_at,
+    r.particle_device_id,
+    r.device_type,
+    r.device_twilio_number,
+    r.is_displayed,
+    r.is_sending_alerts,
+    r.is_sending_vitals,
+  )
+}
+
+function createSessionFromRow(r) {
+  return new SessionNew(
+    r.session_id,
+    r.device_id,
+    r.created_at,
+    r.updated_at,
+    r.ended_at,
+    r.session_status,
+    r.survey_sent,
+    r.selected_survey_category,
+    r.attending_responder_number,
+    r.response_time,
+  )
+}
+
+function createEventFromRow(r) {
+  return new EventNew(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at)
+}
+
 async function commitTransaction(pgClient) {
   if (helpers.isDbLogging()) {
     helpers.log('STARTED: commitTransaction')
@@ -115,103 +171,6 @@ async function beginTransaction() {
   }
 }
 
-async function getCurrentTime(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getCurrentTime',
-      `
-      SELECT NOW()
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-
-    return results.rows[0].now
-  } catch (err) {
-    helpers.logError(`Error running the getCurrentTime query: ${err.toString()}`)
-  }
-}
-function createClientFromRow(r) {
-  return new ClientNew(
-    r.client_id,
-    r.display_name,
-    r.language,
-    r.created_at,
-    r.updated_at,
-    r.responder_phone_numbers,
-    r.fallback_phone_numbers,
-    r.vitals_twilio_number,
-    r.vitals_phone_numbers,
-    r.survey_categories,
-    r.is_displayed,
-    r.devices_sending_alerts,
-    r.devices_sending_vitals,
-    r.devices_status,
-    r.first_device_live_at,
-  )
-}
-
-function createDeviceFromRow(r) {
-  return new DeviceNew(
-    r.device_id,
-    r.location_id,
-    r.display_name,
-    r.client_id,
-    r.created_at,
-    r.updated_at,
-    r.particle_device_id,
-    r.device_type,
-    r.device_twilio_number,
-    r.is_displayed,
-    r.is_sending_alerts,
-    r.is_sending_vitals,
-  )
-}
-
-function createSessionFromRow(r) {
-  return new SessionNew(
-    r.session_id,
-    r.device_id,
-    r.created_at,
-    r.updated_at,
-    r.ended_at,
-    r.session_status,
-    r.survey_sent,
-    r.selected_survey_category,
-    r.attending_responder_number,
-    r.response_time,
-  )
-}
-
-function createEventFromRow(r) {
-  return new EventNew(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at)
-}
-
-// async function getClients(pgClient) {
-//   try {
-//     const results = await helpers.runQuery(
-//       'getClients',
-//       `
-//       SELECT *
-//       FROM clients_new
-//       ORDER BY display_name
-//       `,
-//       [],
-//       pool,
-//       pgClient,
-//     )
-
-//     if (results === undefined) {
-//       return null
-//     }
-
-//     return await Promise.all(results.rows.map(r => createClientFromRow(r)))
-//   } catch (err) {
-//     helpers.logError(`Error running the getClients query: ${err.toString()}`)
-//   }
-// }
-
 async function getClientWithClientId(clientId, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -235,32 +194,6 @@ async function getClientWithClientId(clientId, pgClient) {
     helpers.logError(`Error running the getClientWithClientId query: ${err.toString()}`)
   }
 }
-
-// async function getDevices(pgClient) {
-//   try {
-//     const results = await helpers.runQuery(
-//       'getDevices',
-//       `
-//       SELECT d.*
-//       FROM devices_new AS d
-//       LEFT JOIN clients_new AS c
-//       ON d.client_id = c.client_id
-//       ORDER BY c.display_name, d.display_name
-//       `,
-//       [],
-//       pool,
-//       pgClient,
-//     )
-
-//     if (results === undefined) {
-//       return null
-//     }
-
-//     return await Promise.all(results.rows.map(r => createDeviceFromRow(r)))
-//   } catch (err) {
-//     helpers.logError(`Error running the getDevices query: ${err.toString()}`)
-//   }
-// }
 
 async function getDeviceWithParticleDeviceId(particleDeviceId, pgClient) {
   try {
@@ -289,6 +222,7 @@ async function getDeviceWithParticleDeviceId(particleDeviceId, pgClient) {
 }
 
 async function createSession(deviceId, pgClient) {
+  helpers.log('Creating new session')
   try {
     const results = await helpers.runQuery(
       'createSession',
@@ -344,12 +278,44 @@ async function getCurrentSessionWithDeviceId(deviceId, pgClient) {
   return null
 }
 
+async function updateSession(sessionId, sessionStatus, surveySent, pgClient) {
+  helpers.log('Updating existing session')
+  try {
+    const results = await helpers.runQuery(
+      'updateSession',
+      `
+      UPDATE sessions_new
+      SET session_status = $2::session_status_enum,
+          survey_sent = $3::BOOLEAN,
+          updated_at = NOW(),
+          ended_at = CASE WHEN $2 = $4 THEN NOW() ELSE ended_at END
+      WHERE session_id = $1
+      RETURNING *;
+      `,
+      [sessionId, sessionStatus, surveySent, SESSION_STATUS.COMPLETED],
+      pool,
+      pgClient,
+    )
+
+    if (!results || results.rows.length === 0) {
+      return null
+    }
+
+    // returns a session object
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSession query: ${err.toString()}`)
+    return null
+  }
+}
+
 async function createEvent(sessionId, eventType, eventTypeDetails, pgClient) {
+  helpers.log('Creating an event')
   try {
     const results = await helpers.runQuery(
       'createEvent',
       `
-      INSERT INTO events_new(
+      INSERT INTO events_new (
         session_id, 
         event_type,
         event_type_details
@@ -368,10 +334,39 @@ async function createEvent(sessionId, eventType, eventTypeDetails, pgClient) {
     // returns an event object
     return createEventFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getDeviceWithSerialNumber query: ${err.toString()}`)
+    helpers.logError(`Error running the createEvent query: ${err.toString()}`)
   }
 
   return null
+}
+
+async function getLatestAlertEvent(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestAlertEvent',
+      `
+      SELECT *
+      FROM events_new
+      WHERE session_id = $1
+      AND event_type IN ('DURATION_ALERT', 'STILLNESS_ALERT')
+      ORDER BY event_sent_at DESC
+      LIMIT 1
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    // returns an event object
+    return createEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getLatestAlertEvent query: ${err.toString()}`)
+    return null
+  }
 }
 
 module.exports = {
@@ -379,11 +374,14 @@ module.exports = {
   rollbackTransaction,
   beginTransaction,
 
-  getCurrentTime,
-
   getClientWithClientId,
+
   getDeviceWithParticleDeviceId,
+
   createSession,
   getCurrentSessionWithDeviceId,
+  updateSession,
+
   createEvent,
+  getLatestAlertEvent,
 }

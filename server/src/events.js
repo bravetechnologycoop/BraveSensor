@@ -10,104 +10,166 @@ const i18next = require('i18next')
 
 // In-house dependencies
 const { helpers, twilioHelpers } = require('./utils/index')
-const { EVENT_TYPE } = require('./enums/index')
+const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
 const db_new = require('./db/db_new')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
 // ------------------------------------------------------------------------------------------------
 
-function getEventTypeDetails(eventType) {
-  helpers.log(`getEventTypeDetails: eventType = ${eventType}`)
-  switch (eventType) {
-    case EVENT_TYPE.DURATION_ALERT:
-      return 'DurationAlert'
-    case EVENT_TYPE.STILLNESS_ALERT:
-      return 'StillnessAlert'
-    default:
-      return null
+async function sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumbers, textMessage) {
+  if (!deviceTwilioNumber || !Array.isArray(responderPhoneNumbers) || responderPhoneNumbers.length === 0) {
+    const errorMessage = 'sendMessageToAllResponders: Missing device twilio number or responder phone numbers'
+    helpers.logError(errorMessage)
+    throw new Error(errorMessage)
+  }
+
+  try {
+    const sendPromises = responderPhoneNumbers.map(toPhoneNumber => twilioHelpers.sendTwilioMessage(toPhoneNumber, deviceTwilioNumber, textMessage))
+
+    const responses = await Promise.all(sendPromises)
+
+    const failedResponses = responses.filter(response => !response)
+    if (failedResponses.length > 0) {
+      const errorMessage = `sendMessageToAllResponders: Failed to send ${failedResponses.length} messages out of ${responderPhoneNumbers.length}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    return responses
+  } catch (error) {
+    helpers.logError(`sendMessageToAllResponders: Error sending message: ${error}`)
+    throw error
   }
 }
 
-async function sendMessageToAllResponders(device, textMessage, sessionId) {
-  helpers.log(`sendMessageToAllResponders: device = ${device.deviceId}, textMessage = ${textMessage}, sessionId = ${sessionId}`)
+async function updateSessionBasedOnEventType(eventType, messageKey, sessionId) {
+  if (eventType === EVENT_TYPE.DURATION_ALERT || eventType === EVENT_TYPE.STILLNESS_ALERT) {
+    await db_new.updateSession(sessionId, SESSION_STATUS.ACTIVE, false)
+  } else if (eventType === EVENT_TYPE.DOOR_OPENED) {
+    const surveySent = !!(messageKey === 'stillnessAlertSurveyDoorOpened' || messageKey === 'durationAlertDoorOpened')
+    await db_new.updateSession(sessionId, SESSION_STATUS.COMPLETED, surveySent)
+  }
+}
+
+async function selectMessageKeyForExistingSession(eventType, eventData, currentSession, pgClient) {
+  switch (eventType) {
+    case EVENT_TYPE.DURATION_ALERT:
+      return 'durationAlert'
+    case EVENT_TYPE.STILLNESS_ALERT:
+      if (eventData.numStillnessAlertsSent >= 1 && eventData.numStillnessAlertsSent <= 3) {
+        return 'stillnessAlert'
+      }
+      if (eventData.numStillnessAlertsSent === 4) {
+        return 'call'
+      }
+      helpers.log(`Too many stillness alerts sent: ${eventData.numStillnessAlertsSent}`)
+      throw new Error('Too many stillness alerts')
+
+    case EVENT_TYPE.DOOR_OPENED: {
+      const latestAlertEvent = await db_new.getLatestAlertEvent(currentSession.sessionId, pgClient)
+      if (!latestAlertEvent) {
+        helpers.log(`No latest event found for session ID: ${currentSession.sessionId}`)
+        throw new Error('No latest event found')
+      }
+
+      switch (latestAlertEvent.eventType) {
+        case EVENT_TYPE.DURATION_ALERT:
+          return 'durationAlertDoorOpened'
+        case EVENT_TYPE.STILLNESS_ALERT:
+          return 'stillnessAlertSurveyDoorOpened'
+        default:
+          helpers.log(`Invalid latest event type for session ID: ${currentSession.sessionId}`)
+          throw new Error('Invalid latest event type')
+      }
+    }
+    default:
+      helpers.logError('Invalid event type')
+      throw new Error('Invalid event type')
+  }
+}
+
+async function handleExistingSession(device, eventType, eventData, currentSession, pgClient) {
   try {
+    // find messageKey based on eventType
+    const messageKey = await selectMessageKeyForExistingSession(eventType, eventData, currentSession, pgClient)
+
+    // construct translated textMessage
     const client = await db_new.getClientWithClientId(device.clientId)
+    const clientLanguage = client.language || 'en'
+    const surveyCategories = client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n')
+    const textMessage = i18next.t(messageKey, {
+      lng: clientLanguage,
+      deviceName: device.displayName,
+      occupancyDuration: eventData.occupancyDuration,
+      surveyCategories,
+    })
+
+    helpers.log(textMessage)
+
+    // send message to all responders
     const responderPhoneNumbers = client.responderPhoneNumbers
     const deviceTwilioNumber = device.deviceTwilioNumber
+    await sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumbers, textMessage)
 
-    // translate the message to client's language (default to 'en')
-    const clientLanguage = client.language || 'en'
-    const translatedMessage = i18next.t(textMessage, { lng: clientLanguage })
+    await updateSessionBasedOnEventType(eventType, messageKey, currentSession.sessionId)
 
-    if (deviceTwilioNumber && responderPhoneNumbers.length > 0) {
-      const sendPromises = responderPhoneNumbers.map(toPhoneNumber =>
-        twilioHelpers.sendTwilioMessage(toPhoneNumber, deviceTwilioNumber, translatedMessage),
-      )
-
-      const responses = await Promise.all(sendPromises)
-
-      if (!responses || responses.every(response => !response)) {
-        helpers.logError(`sendMessageToAllResponders: Failed to send message for session ${sessionId}: ${translatedMessage}`)
-      }
-    } else {
-      helpers.logError('sendMessageToAllResponders: Missing Twilio number or responder phone numbers')
-    }
+    // log the event
+    await db_new.createEvent(currentSession.sessionId, eventType, messageKey, pgClient)
   } catch (error) {
-    helpers.logError(`sendMessageToAllResponders: Error sending message: ${error}`)
+    helpers.logError(`handleExistingSession: Error handling existing session: ${error}`)
+    throw error
+  }
+}
+
+async function selectMessageKeyForNewSession(eventType) {
+  switch (eventType) {
+    case EVENT_TYPE.DURATION_ALERT:
+      return 'durationAlert'
+    case EVENT_TYPE.STILLNESS_ALERT:
+      return 'stillnessAlert'
+    default:
+      helpers.logError('Invalid event type received as the first alert')
+      throw new Error('Invalid event type')
   }
 }
 
 async function handleNewSession(device, eventType, eventData, pgClient) {
-  helpers.log(`handleNewSession: device = ${device.deviceId}, eventType = ${eventType}`)
   try {
     // create a new active session
     const newSession = await db_new.createSession(device.deviceId, pgClient)
-
-    const eventTypeDetails = getEventTypeDetails(eventType)
-    if (!eventTypeDetails) {
-      throw new Error(`Invalid event type received: ${eventType}`)
+    if (!newSession || !newSession.sessionId) {
+      throw new Error('Failed to create a new session')
     }
 
-    // log the event
-    await db_new.createEvent(newSession.sessionId, eventType, eventTypeDetails, pgClient)
+    // find messageKey based on eventType
+    const messageKey = await selectMessageKeyForNewSession(eventType)
 
-    // construct the initial text message
-    let textMessage
-    if (eventType === EVENT_TYPE.DURATION_ALERT) {
-      textMessage = `${device.displayName} has been occupied for ${eventData.occupancyDuration} minutes`
-    } else if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
-      textMessage = `${device.displayName} needs a SAFETY CHECK. On your way? Reply with anything`
-    } else {
-      helpers.logError('Invalid event type received as the first alert')
-    }
+    // construct translated textMessage
+    const client = await db_new.getClientWithClientId(device.clientId)
+    const clientLanguage = client.language || 'en'
+    const textMessage = i18next.t(messageKey, {
+      lng: clientLanguage,
+      deviceName: device.displayName,
+      occupancyDuration: eventData.occupancyDuration,
+    })
+
+    helpers.log(textMessage)
 
     // send message to all responders
-    await sendMessageToAllResponders(device, textMessage, newSession.sessionId)
-  } catch (error) {
-    helpers.logError(`handleNewSession: Error creating new session or event: ${error}`)
-    await db_new.rollbackTransaction(pgClient)
-  }
-}
+    const responderPhoneNumbers = client.responderPhoneNumbers
+    const deviceTwilioNumber = device.deviceTwilioNumber
+    await sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumbers, textMessage)
 
-async function handleExistingSession(currentSession, eventType, pgClient) {
-  helpers.log(`handleExistingSession: sessionId = ${currentSession.sessionId}, eventType = ${eventType}`)
-  try {
-    if (eventType === EVENT_TYPE.DURATION_ALERT) {
-      helpers.log('Received duration alert for already existing active session')
-    } else if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
-      helpers.log('Received stillness alert for already existing active session')
-    } else if (eventType === EVENT_TYPE.DOOR_OPENED) {
-      helpers.log('Received door opened for already existing active session')
-    }
+    // log the event
+    await db_new.createEvent(newSession.sessionId, eventType, messageKey, pgClient)
   } catch (error) {
-    helpers.logError(`handleExistingSession: Error updating session or logging event: ${error}`)
-    await db_new.rollbackTransaction(pgClient)
+    helpers.logError(`handleNewSession: Error handling new session: ${error}`)
+    throw error
   }
 }
 
 async function processSensorEvent(device, eventType, eventData) {
-  helpers.log(`processSensorEvent: device = ${device.deviceId}, eventType = ${eventType}`)
   let pgClient
 
   try {
@@ -118,11 +180,10 @@ async function processSensorEvent(device, eventType, eventData) {
     }
 
     const currentSession = await db_new.getCurrentSessionWithDeviceId(device.deviceId, pgClient)
-
     if (!currentSession) {
       await handleNewSession(device, eventType, eventData, pgClient)
     } else {
-      await handleExistingSession(currentSession, eventType, pgClient)
+      await handleExistingSession(device, eventType, eventData, currentSession, pgClient)
     }
 
     await db_new.commitTransaction(pgClient)
@@ -147,7 +208,6 @@ function respondWithError(response, errorMessage, path) {
 }
 
 function getEventType(receivedEventType, response, path) {
-  helpers.log(`getEventType: receivedEventType = ${receivedEventType}`)
   // Map event type from string to enum
   const eventTypeMapping = {
     'Duration Alert': EVENT_TYPE.DURATION_ALERT,
@@ -164,7 +224,6 @@ function getEventType(receivedEventType, response, path) {
 }
 
 function parseEventData(receivedEventData, response, path) {
-  helpers.log(`parseEventData: receivedEventData = ${receivedEventData}`)
   if (typeof receivedEventData !== 'string') return receivedEventData
   try {
     // Parse event data from string to JSON
@@ -178,7 +237,6 @@ function parseEventData(receivedEventData, response, path) {
 const validateSensorEvent = Validator.body(['event', 'data', 'coreid', 'api_key']).exists()
 
 async function handleSensorEvent(request, response) {
-  helpers.log(`handleSensorEvent: request.body = ${JSON.stringify(request.body)}`)
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
     if (!validationErrors.isEmpty()) {

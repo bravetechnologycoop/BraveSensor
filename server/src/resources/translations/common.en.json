@@ -26,5 +26,11 @@
   "thankYou": "Thank you",
   "SENSOR_DURATION": "Duration",
   "SENSOR_STILLNESS": "Stillness",
-  "SENSOR_UNKNOWN": "Unknown"
+  "SENSOR_UNKNOWN": "Unknown",
+
+  "durationAlert": "{{deviceName}} has been occupied for {{occupancyDuration}} minutes",
+  "stillnessAlert": "{{deviceName}} needs a SAFETY CHECK. On your way? Reply with 5 or k",
+  "call": "Placeholder for call functionality",
+  "durationAlertDoorOpened": "We see the door has opened at {{deviceName}}. Press 0 to tell us more.",
+  "stillnessAlertSurveyDoorOpened": "We see the door has been opened.\nCould you please let us know the outcome?\n{{surveyCategories}}"
 }
