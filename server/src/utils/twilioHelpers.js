@@ -16,10 +16,6 @@ function getTwilioClient() {
   return twilio(TWILIO_SID, TWILIO_TOKEN)
 }
 
-function isValidTwilioRequest(request) {
-  return twilio.validateExpressRequest(request, TWILIO_TOKEN)
-}
-
 async function sendTwilioMessage(toPhoneNumber, fromPhoneNumber, message) {
   const twilioClient = getTwilioClient()
 
@@ -77,7 +73,6 @@ async function buyAndConfigureTwilioPhoneNumber(areaCode, friendlyName) {
 
 module.exports = {
   buyAndConfigureTwilioPhoneNumber,
-  isValidTwilioRequest,
   sendTwilioMessage,
   sendTwilioResponse,
 }

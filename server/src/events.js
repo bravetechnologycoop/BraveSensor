@@ -7,6 +7,7 @@
 // Third-party dependencies
 const Validator = require('express-validator')
 const i18next = require('i18next')
+const twilio = require('twilio')
 
 // In-house dependencies
 const { helpers, twilioHelpers } = require('./utils/index')
@@ -14,6 +15,51 @@ const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
 const db_new = require('./db/db_new')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
+const TWILIO_TOKEN = helpers.getEnvVar('TWILIO_TOKEN')
+
+function validateTwilioRequest(request, response, next) {
+  if (twilio.validateExpressRequest(request, TWILIO_TOKEN)) {
+    next()
+  } else {
+    const errorMessage = `Bad request to ${request.path}: Sender ${request.body.From} is not Twilio`
+    helpers.logError(errorMessage)
+    response.status(401).send(errorMessage)
+  }
+}
+
+async function handleTwilioRequest(request, response) {
+  try {
+    const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
+    if (!validationErrors.isEmpty()) {
+      const errorMessage = `Bad request: ${validationErrors.array()}`
+      helpers.logError(errorMessage)
+      response.status(400).send(errorMessage)
+      return
+    }
+
+    const requiredBodyParams = ['Body', 'From', 'To']
+    if (!helpers.isValidRequest(request, requiredBodyParams)) {
+      const errorMessage = `Bad request to ${request.path}: Body, From, or To fields are missing`
+      helpers.logError(errorMessage)
+      response.status(400).send(errorMessage)
+      return
+    }
+
+    const responderPhoneNumber = request.body.From
+    const deviceTwilioNumber = request.body.To
+    const message = request.body.Body
+
+    helpers.log('Request Details:', JSON.stringify(request, null, 2))
+    helpers.log(responderPhoneNumber)
+    helpers.log(deviceTwilioNumber)
+    helpers.log(message)
+
+    response.status(200).send()
+  } catch (err) {
+    helpers.logError(err)
+    response.status(500).send(err.toString())
+  }
+}
 
 // ------------------------------------------------------------------------------------------------
 
@@ -275,5 +321,7 @@ async function handleSensorEvent(request, response) {
 
 module.exports = {
   validateSensorEvent,
+  validateTwilioRequest,
   handleSensorEvent,
+  handleTwilioRequest,
 }
