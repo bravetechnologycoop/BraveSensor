@@ -265,7 +265,6 @@ void state2_duration() {
     char alertMessage[622];
 
     // do stuff in the state
-    digitalWrite(D3, HIGH);
     Log.info("You are in state 2, duration: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
              (millis() - state2_duration_timer));
     publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
@@ -326,7 +325,6 @@ void state3_stillness() {
     checkINS = checkINS3331();
 
     // do stuff in the state
-    digitalWrite(D4, HIGH);
     Log.info("You are in state 3, stillness: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
              (millis() - state3_stillness_timer));
     publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
