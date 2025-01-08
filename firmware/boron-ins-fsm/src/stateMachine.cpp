@@ -277,7 +277,7 @@ void state2_monitoring() {
         // Publish door opened message to particle 
         char doorOpenedMessage[622];
         snprintf(doorOpenedMessage, sizeof(doorOpenedMessage),
-                 "{\"alertSentFromState\": %lu, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu}",
+                 "{\"alertSentFromState\": %lu, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu}",
                  2, numDurationAlertSent, numStillnessAlertSent);
         Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
 
@@ -308,7 +308,7 @@ void state2_monitoring() {
         unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
         char alertMessage[622];
         snprintf(alertMessage, sizeof(alertMessage),
-                 "{\"alertSentFromState\": %d, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
+                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
                  2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Duration Alert", alertMessage, PRIVATE);
     }
@@ -346,7 +346,7 @@ void state3_stillness() {
         // Publish door opened message to particle
         char doorOpenedMessage[622];
         snprintf(doorOpenedMessage, sizeof(doorOpenedMessage), 
-                 "{\"alertSentFromState\": %d, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu}", 
+                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu}", 
                  3, numDurationAlertSent, numStillnessAlertSent);
         Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
 
@@ -374,7 +374,7 @@ void state3_stillness() {
         unsigned long occupancy_duration = (millis() - timeWhenDoorClosed) / 60000;  // Convert to minutes
         char alertMessage[622];
         snprintf(alertMessage, sizeof(alertMessage), 
-                 "{\"alertSentFromState\": %d, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
+                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
                  3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Duration Alert", alertMessage, PRIVATE);
 
@@ -395,7 +395,7 @@ void state3_stillness() {
         unsigned long occupancy_duration = (millis() - timeWhenDoorClosed) / 60000;  // Convert to minutes
         char alertMessage[622];
         snprintf(alertMessage, sizeof(alertMessage), 
-                 "{\"alertSentFromState\": %d, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
+                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
                  3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
 
@@ -417,7 +417,7 @@ void state3_stillness() {
         unsigned long occupancy_duration = (millis() - timeWhenDoorClosed) / 60000;  // Convert to minutes
         char alertMessage[622];
         snprintf(alertMessage, sizeof(alertMessage), 
-                 "{\"alertSentFromState\": %d, \"durationAlertsSent\": %lu, \"stillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
+                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
                  3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
 
