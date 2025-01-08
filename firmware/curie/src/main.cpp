@@ -60,31 +60,31 @@ u_int16_t commandByteCreate(){
 
 	int command[8] = {1,1,1,1,1,1,1,1};
 
-	#ifdef MULTI_GAS
-	command[7] = 1;
+	#ifndef MULTI_GAS
+	command[7] = 0;
 	#endif
-	#ifdef CO2SCD
-	command[6] = 1;
+	#ifndef CO2SCD
+	command[6] = 0;
 	#endif
-	#ifdef PIR
-	command[5] = 1;
+	#ifndef PIR
+	command[5] = 0;
 	#endif
-	#ifdef USONIC_RANGE
-	command[4] = 1;
+	#ifndef USONIC_RANGE
+	command[4] = 0;
 	#endif
-	#ifdef LIDAR_L5
-	command[3] = 1;
+	#ifndef LIDAR_L5
+	command[3] = 0;
 	#endif
-	#ifdef LIDAR_L1
-	command[2] = 1;
+	#ifndef LIDAR_L1
+	command[2] = 0;
 	#endif
-	#ifdef THERMAL_CAMERA
-	command[1] = 1;
+	#ifndef THERMAL_CAMERA
+	command[1] = 0;
 	#endif
 	command[0] = 1;
 	u_int16_t commandByte = 0;
 	for (int i = 0; i <= 8; ++i) {
-        commandByte |= (command[i] << (7 - i));  // Shift and OR the bits
+        commandByte |= (command[i] << (7 - i));
     }
 	std::cout << "Command byte: " << std::hex << commandByte << std::endl;
 
@@ -122,13 +122,17 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	bDebug(TRACE, "Initializing the DataSources");
 
 	uint16_t commandByte = commandByteCreate();
-	
-	if(g_slowI2C->isReady()){
-		g_slowI2C->writeBytes(0x1A, 0x01, commandByte);
-		g_slowI2C->writeBytes(0x1A, 0x03, commandByte);
-	}
-	
 
+	std::stringstream ss;
+    ss << "0x" << std::hex << std::uppercase << commandByte;
+    
+    std::string hexCommandByte = ss.str();
+	string shellCommand = "./src/sensorControl.sh " + hexCommandByte;
+
+	bDebug(TRACE, shellCommand);
+
+	std::system(shellCommand.c_str());
+	
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
 		#ifdef THERMAL_CAMERA
