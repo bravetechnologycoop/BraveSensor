@@ -58,28 +58,28 @@ int initiateBusses(){
 
 u_int16_t commandByteCreate(){
 
-	int command[8] = {1,1,1,1,1,1,1,1};
+	int command[8] = {0};
 
 	#ifndef MULTI_GAS
-	command[7] = 0;
+	command[7] = 1;
 	#endif
 	#ifndef CO2SCD
-	command[6] = 0;
+	command[6] = 1;
 	#endif
 	#ifndef PIR
-	command[5] = 0;
+	command[5] = 1;
 	#endif
 	#ifndef USONIC_RANGE
-	command[4] = 0;
+	command[4] = 1;
 	#endif
 	#ifndef LIDAR_L5
 	command[3] = 0;
 	#endif
 	#ifndef LIDAR_L1
-	command[2] = 0;
+	command[2] = 1;
 	#endif
 	#ifndef THERMAL_CAMERA
-	command[1] = 0;
+	command[1] = 1;
 	#endif
 	command[0] = 1;
 	u_int16_t commandByte = 0;
