@@ -130,7 +130,7 @@ void initializeStateMachineConsts() {
 
     if (initializeOccupationDetectionINSThresholdFlag != INITIALIZATION_FLAG_SET) {
         // firmware was never v1924
-        if (initializeHighConfINSThresholdFlag != INITIALIZATION_FLAG_SET) {
+        if (initializeHighConfINSThresholdFlag != INITIALIZATION_FLAG_HIGH_CONF) {
             EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, occupation_detection_ins_threshold);
             EEPROM.put(ADDR_OCCUPATION_INS_THRESHOLD, occupation_detection_ins_threshold);
             Log.info("State machine constant OccupantDetectionINSThreshold was written to flash on bootup.");
@@ -145,10 +145,9 @@ void initializeStateMachineConsts() {
             EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
             EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
             EEPROM.put(ADDR_OCCUPATION_INS_THRESHOLD, occupation_detection_ins_threshold);
-            Log.info("State machine constant State0OccupationDetectionTimer was written to flash on bootup.");
         }
-        initializeState0OccupationDetectionFlag = INITIALIZATION_FLAG_SET;
-        EEPROM.put(ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG, initializeState0OccupationDetectionFlag);
+        initializeOccupationDetectionINSThresholdFlag = INITIALIZATION_FLAG_SET;
+        EEPROM.put(ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG, initializeOccupationDetectionINSThresholdFlag);
     }
     // firmware is v11000+
     else {

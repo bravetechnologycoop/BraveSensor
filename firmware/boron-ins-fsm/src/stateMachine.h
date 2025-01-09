@@ -10,7 +10,8 @@
 
 // ascii table goes up to 7F, so pick something greater than that
 // which is also unlikely to be part of a door ID or a threshold/timer const
-#define INITIALIZATION_FLAG_SET 0x8888
+#define INITIALIZATION_FLAG_SET       0x8888
+#define INITIALIZATION_FLAG_HIGH_CONF 0x9999
 
 // initial (default) values for state machine, can be changed via console function
 // or by writing something other than 0x8888 to the above flag in flash
