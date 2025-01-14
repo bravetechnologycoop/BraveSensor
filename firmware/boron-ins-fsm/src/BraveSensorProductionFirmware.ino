@@ -9,13 +9,14 @@
 #include "stateMachine.h"
 #include "consoleFunctions.h"
 #include "tpl5010watchdog.h"
+#include "statusRGB.h"
 
 #define DEBUG_LEVEL            LOG_LEVEL_INFO
-#define BRAVE_FIRMWARE_VERSION 10160  // see versioning notes in the readme
+#define BRAVE_FIRMWARE_VERSION 10060  // see versioning notes in the readme
 
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);  // must be an int, see versioning notes above
 SYSTEM_THREAD(ENABLED);
-SerialLogHandler logHandler(WARN_LEVEL);
+SerialLogHandler logHandler(LOG_LEVEL_WARN);
 
 void setup() {
     // enable reset reason
@@ -28,6 +29,7 @@ void setup() {
     setupConsoleFunctions();
     setupStateMachine();
     setupWatchdog();
+    setupStatusRGB();
 
     Particle.publishVitals(900);  // 15 minutes
 }

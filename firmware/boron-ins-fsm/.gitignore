@@ -25,3 +25,5 @@ src/BraveSensorProductionFirmware.cpp
 
 # ignore unused generated compile_commands.json file
 compile_commands.json
+
+build/

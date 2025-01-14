@@ -44,10 +44,10 @@ try {
     exit;
 }
 
-$minTemperature = min($pixels);
-$maxTemperature = max($pixels);
-//$minTemperature = -10;
-//$maxTemperature = 50;
+//$minTemperature = min($pixels);
+//$maxTemperature = max($pixels);
+$minTemperature = -10;
+$maxTemperature = 50;
 function colorGradiant($value, $minTemperature, $maxTemperature, $ironPalette) {
     //set the value to a normalized value between 0 and 1 (for the ironPallate mapping)
     $normalized = ($value - $minTemperature) / ($maxTemperature - $minTemperature);

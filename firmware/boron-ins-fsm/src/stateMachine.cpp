@@ -10,9 +10,17 @@
 #include "flashAddresses.h"
 #include "imDoorSensor.h"
 #include "ins3331.h"
+#include <stdlib.h> 
 
 // define and initialize state machine pointer
 StateHandler stateHandler = state0_idle;
+
+CellularSignal g_Signal;
+
+int g_doorStatus;
+
+char tx_buffer[68] = {0};
+
 
 // define global variables so they are allocated in memory
 unsigned long state1_timer;
@@ -57,7 +65,10 @@ void setupStateMachine() {
     System.setPowerConfiguration(conf);
 
     Wire.begin(9);  //join i2c as slave address 9
-    Wire.onReceive(sendAlphaUpdate);
+
+    Wire.onReceive(populateAlphaUpdate);
+
+    Wire.onRequest(sendAlphaUpdate);
 
     // default to not publishing debug logs
     stateMachineDebugFlag = 0;
@@ -68,7 +79,6 @@ void setupStateMachine() {
     // default to no stillness alert sent
     hasStillnessAlertBeenSent = false;
 
-    alpha_update_time = millis();
 }
 
 void initializeStateMachineConsts() {
@@ -146,6 +156,7 @@ void state0_idle() {
     // this returns the previous door event value until a new door event is received
     // on code boot up it initializes to returning INITIAL_DOOR_STATUS
     checkDoor = checkIM();
+    g_doorStatus = isDoorOpen(checkDoor.doorStatus);
     // this returns 0.0 if the INS has no new data to transmit
     checkINS = checkINS3331();
     // session is over in idle state, so reset the whether alert has been sent flags
@@ -157,6 +168,7 @@ void state0_idle() {
     number_of_alerts_published = 0;
 
     // do stuff in the state
+    populateAlphaUpdate(1);
     digitalWrite(D2, LOW);
     digitalWrite(D3, LOW);
     digitalWrite(D4, LOW);
@@ -181,6 +193,8 @@ void state0_idle() {
         // if we don't meet the exit conditions above, we remain here
         // stateHandler = state0_idle;
     }
+    g_Signal = Cellular.RSSI();
+
 
 }
 
@@ -192,10 +206,12 @@ void state1_15sCountdown() {
     // this returns the previous door event value until a new door event is received
     // on code boot up it initializes to returning INITIAL_DOOR_STATUS
     checkDoor = checkIM();
+    g_doorStatus = isDoorOpen(checkDoor.doorStatus);
     // this returns 0.0 if the INS has no new data to transmit
     checkINS = checkINS3331();
 
     // do stuff in the state
+    populateAlphaUpdate(1);
     digitalWrite(D2, HIGH);
     Log.info("You are in state 1, initial countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
              (millis() - state1_timer));
@@ -207,6 +223,7 @@ void state1_15sCountdown() {
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 1);
         stateHandler = state0_idle;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
@@ -214,6 +231,7 @@ void state1_15sCountdown() {
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(1, 2);
         stateHandler = state0_idle;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else if (millis() - state1_timer >= state1_max_time) {
@@ -224,6 +242,7 @@ void state1_15sCountdown() {
         state2_duration_timer = millis();
         // head to duration state
         stateHandler = state2_duration;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else {
@@ -239,13 +258,13 @@ void state2_duration() {
     // this returns the previous door event value until a new door event is received
     // on code boot up it initializes to returning INITIAL_DOOR_STATUS
     checkDoor = checkIM();
+    g_doorStatus = isDoorOpen(checkDoor.doorStatus);
     // this returns 0.0 if the INS has no new data to transmit
     checkINS = checkINS3331();
     // will contain the data for a Stillness Alert; max 622 chars as per Particle docs
     char alertMessage[622];
 
     // do stuff in the state
-    digitalWrite(D3, HIGH);
     Log.info("You are in state 2, duration: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
              (millis() - state2_duration_timer));
     publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
@@ -259,6 +278,7 @@ void state2_duration() {
         state3_stillness_timer = millis();
         // go to stillness state
         stateHandler = state3_stillness;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
@@ -266,7 +286,9 @@ void state2_duration() {
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(2, 2);
         stateHandler = state0_idle;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
+        
     }
     else if (millis() - state2_duration_timer >= state2_max_duration) {
         Log.warn("See duration alert, remaining in state2_duration after alert publish");
@@ -278,6 +300,7 @@ void state2_duration() {
         hasDurationAlertBeenSent = true;
         state2_duration_timer = millis();
         stateHandler = state2_duration;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else {
@@ -297,11 +320,11 @@ void state3_stillness() {
     // this returns the previous door event value until a new door event is received
     // on code boot up it initializes to returning INITIAL_DOOR_STATUS
     checkDoor = checkIM();
+    g_doorStatus = isDoorOpen(checkDoor.doorStatus);
     // this returns 0.0 if the INS has no new data to transmit
     checkINS = checkINS3331();
 
     // do stuff in the state
-    digitalWrite(D4, HIGH);
     Log.info("You are in state 3, stillness: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
              (millis() - state3_stillness_timer));
     publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
@@ -313,6 +336,7 @@ void state3_stillness() {
         saveStateChangeOrAlert(3, 0);
         // go back to state 2, duration
         stateHandler = state2_duration;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
@@ -320,6 +344,7 @@ void state3_stillness() {
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
         saveStateChangeOrAlert(3, 2);
         stateHandler = state0_idle;
+        populateAlphaUpdate(1);
         digitalWrite(D2, HIGH);
     }
     else if (millis() - state3_stillness_timer >= *max_stillness_time) {
@@ -527,9 +552,9 @@ void getHeartbeat() {
 
 constexpr size_t I2C_BUFFER_SIZE = 512;
 
-HAL_I2C_Config acquireWireBuffer() {
-    HAL_I2C_Config config = {
-        .size = sizeof(HAL_I2C_Config),
+hal_i2c_config_t acquireWireBuffer() {
+    hal_i2c_config_t config = {
+        .size = sizeof(hal_i2c_config_t),
         .version = HAL_I2C_CONFIG_VERSION_1,
         .rx_buffer = new (std::nothrow) uint8_t[I2C_BUFFER_SIZE],
         .rx_buffer_size = I2C_BUFFER_SIZE,
@@ -540,31 +565,47 @@ HAL_I2C_Config acquireWireBuffer() {
 }
 
 void sendAlphaUpdate() {
+    Log.warn("sending alpha update");
 
-    //MOVING_AVERAGE_BUFFER_SIZE * 2 bytes for g_iValues and g_qValues,
-    // 10 bytes for RSSI, 1 byte for state machine, 1 byte for door sensor status
-    uint8_t tx_buffer[MOVING_AVERAGE_BUFFER_SIZE + MOVING_AVERAGE_BUFFER_SIZE + 10 + 1 + 1];
-    uint8_t rx_buffer[sizeof(tx_buffer)];
+    Wire.write(tx_buffer);
+    
+    digitalWrite(D2, LOW); //ready for next state
+    
+}
+
+void populateAlphaUpdate(int a){
+
     int index = 0;
+
+    tx_buffer[index++] = 0xDE;
+    tx_buffer[index++] = 0xAD;
 
     // Add the g_iValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
     for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
-        tx_buffer[index++] = g_iValues[i] & 0xFF;
+        if(g_iValues[i] != NULL){
+            tx_buffer[index++] = g_iValues[i] & 0xFF;
+        }
+        else{
+            tx_buffer[index++] = 0xFF;
+        }
     }
 
     // Then, add the g_qValues buffer (MOVING_AVERAGE_BUFFER_SIZE)
     for (int i = 0; i < MOVING_AVERAGE_BUFFER_SIZE; i++) {
-        tx_buffer[index++] = g_qValues[i] & 0xFF; 
+        if(g_qValues[i] != NULL){
+            tx_buffer[index++] = g_qValues[i] & 0xFF;
+        }
+        else{
+            tx_buffer[index++] = 0xFF;
+        }
     }
-
-    // Add the RSSI value (2 bytes)
-    CellularSignal sig = Cellular.RSSI();
-    int signalStr = (int) sig.getStrength() * 100; // Signal strength % as an int
-    int signalQual = (int) sig.getQuality() * 100; // Quality % as an int
-    int signalStrAbs = (int) sig.getStrengthValue() * 10; // Strength * 10 as an int
-    int signalQualAbs = (int) sig.getQualityValue() * 10; // Quality * 10 as an int
-    int ratAsInteger = (int) sig.getAccessTechnology(); // Will return one of 5 RAT constants, see below.
-
+    
+    int signalStr = (int) g_Signal.getStrength(); // Signal strength % as an int
+    int signalQual = (int) g_Signal.getQuality(); // Quality % as an int
+    int signalStrAbs = (int) g_Signal.getStrengthValue(); // Strength as an int
+    int signalQualAbs = (int) g_Signal.getQualityValue(); // Quality as an int
+    int ratAsInteger = (int) g_Signal.getAccessTechnology(); // Will return one of 5 RAT constants, see below.*/
+    
     // NET_ACCESS_TECHNOLOGY_GSM: 2G RAT
     // NET_ACCESS_TECHNOLOGY_EDGE: 2G RAT with EDGE
     // NET_ACCESS_TECHNOLOGY_UMTS/NET_ACCESS_TECHNOLOGY_UTRAN/NET_ACCESS_TECHNOLOGY_WCDMA: UMTS RAT
@@ -572,25 +613,38 @@ void sendAlphaUpdate() {
     // NET_ACCESS_TECHNOLOGY_LTE_CAT_M1: LTE Cat M1 RAT
     int signalData[5] = { signalStr, signalQual, signalStrAbs, signalQualAbs, ratAsInteger };
     for (int i = 0; i < 5; i++) {
-        tx_buffer[index++] = (signalData[i] >> 8) & 0xFF;
-        tx_buffer[index++] = signalData[i] & 0xFF;
+       if(tx_buffer[index] != NULL && tx_buffer[index] != 0){
+            tx_buffer[index] = signalData[i] & 0xFF;
+       }
+       else {
+            tx_buffer[index] = 0xFF; //Invalid
+       }
+       index++;
     }
 
     // Add the state machine value (1 byte)
-    if (!stateQueue.empty()) {
+    if (!stateQueue.empty() && stateQueue.back() != 0) {
         tx_buffer[index++] = stateQueue.back() & 0xFF; //We need to ensure one byte, although will probably never be 2 bytes
     }
+    else if(!stateQueue.empty() && stateQueue.back() == 0){
+        tx_buffer[index++] = 0xFE; //There's some weird 0 handling so if we send 0xFE, this will mean state 0
+    } 
     else {
-        tx_buffer[index++] = 0x00; //if stateQueue is empty for whatever reason, send 0;
+        tx_buffer[index++] = 0xFF; //if stateQueue is empty for whatever reason, send 0xFF;
     }
-    
-    doorData checkDoor;
-    checkDoor = checkIM();
 
     // Add the door sensor status (1 byte)
-    tx_buffer[index++] = isDoorOpen(checkDoor.doorStatus);  // 1 for open, 0 for closed, no byte mask needed
+    if(g_doorStatus == 1){
+        tx_buffer[index++] = g_doorStatus;  // 1 for open, 0 for closed, no byte mask needed
+    }
+    else if(g_doorStatus == 0){
+        tx_buffer[index++] = 0xFE; //There's some weird 0 handling so if we send 0xFE, this will mean door sensor 0
+    }
+    else {
+        tx_buffer[index++] = 0xFF; //unknown
+    }
 
-    Wire.write(tx_buffer);
-    
-    digitalWrite(D2, LOW); //ready for next state
+    tx_buffer[index++] = 0xDE;
+    tx_buffer[index++] = 0xAD;
+
 }

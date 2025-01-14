@@ -38,7 +38,7 @@
 #define CO2SCD
 //#define PIR
 //#define MULTI_MOTION
-#define BORON
+//#define BORON
 
 
 #define FAST_I2C        1
@@ -50,7 +50,7 @@
 #define DLP_SER         "/dev/ttyACM0"
 #define DLP_BAUD        57600
 
-#define LOOP_TIMER      300s
+#define LOOP_TIMER      30s
 
 
 //error types
@@ -68,7 +68,8 @@
 #define BRAVEPASSWORD    "brave"
 #define BRAVEHOST        "localhost"
 #define BRAVEPORT        "5432"
+#ifndef BRAVEDBNAME
 #define BRAVEDBNAME      "testdb"
-#define BRAVESQL         "SELECT * FROM testtable"
+#endif
 
 #endif //_CURIE__H_

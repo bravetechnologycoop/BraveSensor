@@ -26,8 +26,6 @@ try {
             $array = explode(",", trim($pixels[$i], "{}"));
             
             $pixels[$i] = array_map('intval', $array);
-
-            //echo "pixels is " . " " . (string)$pixels[$i][0] . " " .(string)$pixels[$i][1] ." " . (string)$pixels[$i][2];
         }
         
 
@@ -92,6 +90,7 @@ function colorGradiant($value, $minDistance, $maxDistance, $status) {
             align-items: center;
             margin-top: 30px;
         }
+        }
         table {
             border-collapse: collapse;
         }
@@ -128,10 +127,28 @@ function colorGradiant($value, $minDistance, $maxDistance, $status) {
     </select>
 </form>
 
+<!-- Legend Table -->
+<table class="legend">
+        <tr>
+            <td style="background-color: rgb(250, 64, 255);"></td>
+            <td>Status: 255</td>
+        </tr>
+        <tr>
+            <td style="background-color: rgb(0, 255, 0);"></td>
+            <td>Status: 5 or 9</td>
+        </tr>
+        <tr>
+            <td style="background-color: rgb(207, 20, 43);"></td>
+            <td>Status: Other</td>
+        </tr>
+</table>
+
+
 <!--Programmatic table -->
-<table>
+<table class="Lidar">
     <?php
     $counter = 0;
+
     for ($row = 0; $row < 4; $row++) {
         echo "<tr>"; //Row start, 4 pixels per row
         for ($col = 0; $col < 4; $col++) {

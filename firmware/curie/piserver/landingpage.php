@@ -8,38 +8,72 @@ try {
     try {
         $pdo = new PDO("pgsql:host=$db_host;dbname=$db_name", $db_user, $db_password);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // Check if the 'occupancy' table exists, if not, create it
+        $stmt = $pdo->prepare("SELECT to_regclass('public.occupancy')");
+        $stmt->execute();
+        $table_exists = $stmt->fetchColumn();
+
+        if (!$table_exists) {
+            $create_table_sql = "
+                CREATE TABLE occupancy (
+                    occupied INT,
+                    stillness boolean,
+                    epochtime TIMESTAMP DEFAULT NOW()
+                    );";
+            $pdo->exec($create_table_sql);
+        }
         //echo "Connected successfully!";
     } catch (PDOException $e) {
         echo "Database connection failed: " . $e->getMessage();
     }
     if (isset($_POST['in'])) {
-        $stmt = $pdo->prepare("SELECT count FROM counter ORDER BY epochtime DESC LIMIT 1");
+        $stmt = $pdo->prepare("SELECT occupied FROM occupancy ORDER BY epochtime DESC LIMIT 1");
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $current_count = $row['count'];
-
-        $new_count = $current_count + 1;
-        $stmt = $pdo->prepare("INSERT INTO counter (count) VALUES (:new_count)");
-        $stmt->bindParam(':new_count', $new_count);
+        $occupied = $row['occupied'];
+        $new_occupied = $occupied + 1;
+        $stmt = $pdo->prepare("INSERT INTO occupancy (occupied) VALUES (:new_occupied)");
+        $stmt->bindParam(':new_occupied', $new_occupied, PDO::PARAM_INT);
         $stmt->execute();
     }
 
     if (isset($_POST['out'])) {
-        $stmt = $pdo->prepare("SELECT count FROM counter ORDER BY epochtime DESC LIMIT 1");
+        $stmt = $pdo->prepare("SELECT occupied FROM occupancy ORDER BY epochtime DESC LIMIT 1");
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $current_count = $row['count'];
-
-        $new_count = $current_count - 1;
-        $stmt = $pdo->prepare("INSERT INTO counter (count) VALUES (:new_count)");
-        $stmt->bindParam(':new_count', $new_count);
-        $stmt->execute();
+        $occupied = $row['occupied'];
+        if($occupied){
+            $new_occupied = $occupied - 1;
+            $stmt = $pdo->prepare("INSERT INTO occupancy (occupied) VALUES (:new_occupied)");
+            $stmt->bindParam(':new_occupied', $new_occupied, PDO::PARAM_INT);
+            $stmt->execute();
+        }
     }
-    $stmt = $pdo->prepare("SELECT count, epochtime FROM counter ORDER BY epochtime DESC LIMIT 1");
+
+    if (isset($_POST['stillness'])) {
+        $stmt = $pdo->prepare("SELECT stillness, occupied FROM occupancy ORDER BY epochtime DESC LIMIT 1");
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stillness = $row['stillness'];
+        $occupied = $row['occupied'];
+        if(!$stillness && $occupied >= 1){
+            $new_stillness = 1;
+            $stmt = $pdo->prepare("UPDATE occupancy SET stillness = :new_stillness WHERE epochtime = (SELECT MAX(epochtime) FROM occupancy)");
+            $stmt->bindParam(':new_stillness', $new_stillness, PDO::PARAM_INT);
+            $stmt->execute();
+        } else {
+            echo "We need occupied to be at least 1 to have stillness";
+        }
+    }
+
+    $stmt = $pdo->prepare("SELECT occupied, stillness, epochtime FROM occupancy ORDER BY epochtime DESC LIMIT 1");
     $stmt->execute();
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    $current_count = $row['count'];
+    $current_occupied = $row['occupied'];
+    $current_stillness = $row['stillness'] ? 'true' : 'false';    
     $epochtime = $row['epochtime'];
+
     $stmt = $pdo->prepare("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'");
     $stmt->execute();
     $tables = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -64,16 +98,18 @@ try {
 </head>
 <body>
     <h1 align="center">Bathroom Counter</h1>
-    <h2 align="center">Current Count: <?php echo $current_count; ?></h2>
-    <h3 align="center">Last Updated: <?php echo $epochtime; ?></h3>
-    <h4 align="center"><a href="thermalCamera.php">Go to Thermal Camera</a></h4>
-    <h5 align="center"><a href="lidar.php">Go to Lidar</a></h5>
+    <h2 align="center">Occupied: <?php echo $current_occupied; ?></h2>
+    <h3 align="center">Stillness: <?php echo $current_stillness; ?></h3>
+    <h4 align="center">Last Updated: <?php echo $epochtime; ?></h4>
+    <h5 align="center"><a href="thermalCamera.php">Go to Thermal Camera</a></h5>
+    <h6 align="center"><a href="lidar.php">Go to Lidar</a></h6>
 
 
     <div style="text-align: center;">
         <form method="POST">
             <button type="submit" name="in">IN</button>
             <button type="submit" name="out">OUT</button>
+            <button type="submit" name="stillness">STILLNESS</button>
         </form>
     </div>
 

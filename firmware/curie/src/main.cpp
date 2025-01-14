@@ -56,6 +56,41 @@ int initiateBusses(){
 	return err;
 }
 
+u_int16_t commandByteCreate(){
+
+	int command[8] = {0};
+
+	#ifndef MULTI_GAS
+	command[7] = 1;
+	#endif
+	#ifndef CO2SCD
+	command[6] = 1;
+	#endif
+	#ifndef PIR
+	command[5] = 1;
+	#endif
+	#ifndef USONIC_RANGE
+	command[4] = 1;
+	#endif
+	#ifndef LIDAR_L5
+	command[3] = 0;
+	#endif
+	#ifndef LIDAR_L1
+	command[2] = 1;
+	#endif
+	#ifndef THERMAL_CAMERA
+	command[1] = 1;
+	#endif
+	command[0] = 1;
+	u_int16_t commandByte = 0;
+	for (int i = 0; i <= 8; ++i) {
+        commandByte |= (command[i] << (7 - i));
+    }
+	std::cout << "Command byte: " << std::hex << commandByte << std::endl;
+
+	return commandByte;
+}
+
 void cleanUp(){
 	bDebug(TRACE, "Cleaning up busses and device assignments");
 
@@ -86,6 +121,18 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	int err = OK;
 	bDebug(TRACE, "Initializing the DataSources");
 
+	uint16_t commandByte = commandByteCreate();
+
+	std::stringstream ss;
+    ss << "0x" << std::hex << std::uppercase << commandByte;
+    
+    std::string hexCommandByte = ss.str();
+	string shellCommand = "./src/sensorControl.sh " + hexCommandByte;
+
+	bDebug(TRACE, shellCommand);
+
+	std::system(shellCommand.c_str());
+	
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
 		#ifdef THERMAL_CAMERA
@@ -148,33 +195,34 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 
 void RxThread()
 {
-	int  signal = 0;
-	timespec ts = {30,0};
-	g_gpioBoron->openForEvent();
+    int signal = 0;
+    timespec ts = {30, 0};
+    g_gpioBoron->open(false);
 
+    while (g_loop) {
+        // Lock the mutex for thread synchronization
+        g_interthreadMutex.lock();
+        bDebug(TRACE, "RX is doing stuff");
 
-	while (g_loop){
-		g_interthreadMutex.lock();
-		bDebug(TRACE, "RX is doing stuff");
-		signal = 0;
-		while (!signal){
-			signal = g_gpioBoron->waitForPin(ts);
-			if (0 == signal){
-				bDebug(TRACE, "time cycle");
-				this_thread::sleep_for(30s);
-			}			
-		}
-		if (-1 == signal){
-			bDebug(ERROR, "rx fault");
-			break;
-		}
-		g_interthreadMutex.unlock();
-		this_thread::sleep_for(5s);
-	}
+        signal = 0;
+        while (!signal) {
+            signal = g_gpioBoron->waitForPin(ts);
+            if (0 == signal) {
+                bDebug(TRACE, "time cycle");
+                this_thread::sleep_for(30s);
+            }
+        }
 
+        if (-1 == signal) {
+            bDebug(ERROR, "rx fault");
+            break;
+        }
+
+        // Unlock the mutex after processing
+        g_interthreadMutex.unlock();
+        this_thread::sleep_for(5s);
+    }
 }
-
-
 
 int main()
 {
