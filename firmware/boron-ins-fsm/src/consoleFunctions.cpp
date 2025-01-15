@@ -22,14 +22,15 @@
 void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
     Particle.function("Force_Reset", force_reset);
-    Particle.function("Turn_Debugging_Publishes_On_Off", toggle_debugging_publishes);
-    Particle.function("Change_Occupant_Detection_Timer", occupant_detection_timer_set);
-    Particle.function("Change_Initial_Timer", initial_timer_set);
-    Particle.function("Change_Duration_Timer", duration_timer_set);
-    Particle.function("Change_Stillness_Timer", stillness_timer_set);
-    Particle.function("Change_Long_Stillness_Timer", long_stillness_timer_set);
-    Particle.function("Change_INS_Threshold", ins_threshold_set);
-    Particle.function("Change_IM21_Door_ID", im21_door_id_set);
+    Particle.function("Toggle_Debug_Publish", toggle_debugging_publishes);
+    Particle.function("Occupant_Detection_INS_Threshold", occupant_detection_ins_threshold_set);
+    Particle.function("Occupant_Detection_Timer", occupant_detection_timer_set);
+    Particle.function("Initial_Timer", initial_timer_set);
+    Particle.function("Duration_Timer", duration_timer_set);
+    Particle.function("Stillness_Timer", stillness_timer_set);
+    Particle.function("Long_Stillness_Timer", long_stillness_timer_set);
+    Particle.function("Stillness_INS_Threshold", ins_threshold_set);
+    Particle.function("IM21_Door_ID", im21_door_id_set);
     Particle.function("Reset_Stillness_Timer_For_Alerting_Session", reset_stillness_timer_for_alerting_session);
 }
 
@@ -276,8 +277,8 @@ int ins_threshold_set(String input) {
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
-        returnFlag = ins_threshold;
+        EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
+        returnFlag = stillness_ins_threshold;
     }
     // else parse new threshold
     else {
@@ -292,9 +293,42 @@ int ins_threshold_set(String input) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_INS_THRESHOLD, threshold);
-            ins_threshold = threshold;
-            returnFlag = ins_threshold;
+            EEPROM.put(ADDR_STILLNESS_INS_THRESHOLD, threshold);
+            stillness_ins_threshold = threshold;
+            returnFlag = stillness_ins_threshold;
+        }
+    }
+
+    return returnFlag;
+}
+
+// returns threshold if valid input is given, otherwise returns -1
+int occupant_detection_ins_threshold_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    // if e, echo the current threshold
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_OCCUPATION_INS_THRESHOLD, occupation_detection_ins_threshold);
+        returnFlag = occupation_detection_ins_threshold;
+    }
+    // else parse new threshold
+    else {
+        int threshold = input.toInt();
+
+        if (threshold == 0) {
+            // string.toInt() returns 0 if input not an int
+            // and a threshold value of 0 makes no sense, so return -1
+            returnFlag = -1;
+        }
+        else if (threshold < 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_OCCUPATION_INS_THRESHOLD, threshold);
+            occupation_detection_ins_threshold = threshold;
+            returnFlag = occupation_detection_ins_threshold;
         }
     }
 

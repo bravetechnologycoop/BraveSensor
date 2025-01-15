@@ -13,6 +13,8 @@ the code was deployed.
 
 ### Added
 
+- Added INS threshold for Occupant Detection, state0 <-> state1 entry/exit condition (CU-86dvnjxk7).
+- Added Initialization procedures for firmware coming from v1924 and v10160 (CU-86dvnjxk7).
 - Added `sensorDoorDisconnectionInitial`, `sensorRadarDisconnectionInitial`, `sensorDoorDisconnectionReminder` and `sensorRadarDisconnectionReminder` to english and spanish messages (CU-86duu0vdu).
 - Added functions for the above messages in `vitals.js` (CU-86duu0vdu).
 - Added migration script 54 which adds the `status` and `first_device_live_at` column to clients (CU-86dv9uxta).
@@ -22,6 +24,7 @@ the code was deployed.
 
 ### Changed
 
+- Names of particle functions to make them (CU-86dvnjx2q).
 - Updated `checkHeartbeat` function in `vitals.js` to send the 2 different messages (CU-86duu0vdu).
 - Removed `sendDisconnectionMessage` and `sendDisconnectionReminder`function in `vitals.js` (CU-86duu0vdu).
 - Updated dashboard homepage to include and sort by Organization (CU-86dva4dxd).
@@ -33,6 +36,7 @@ the code was deployed.
 
 ### Removed
 
+- Removed toggling of GPIO pins in state machine
 - Deleted old CSS code `locationCSSPartial.mst` and `locationFormCSSPartial.mst` (CU-86dup4jg7).
 
 ## [10.16.0] - 2024-11-14
