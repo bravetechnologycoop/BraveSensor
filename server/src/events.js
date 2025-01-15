@@ -70,7 +70,7 @@ async function sendNonAttendingConfirmation(session, responderPhoneNumber, devic
   }
 }
 
-async function sendInvalidResponse(session, responderPhoneNumber, deviceTwilioNumber, client, clientLanguage, pgClient) {
+async function sendInvalidResponse(session, responderPhoneNumber, deviceTwilioNumber, clientLanguage, pgClient) {
   const responseMessageKey = 'invalidResponseTryAgain'
   const responseMessage = i18next.t(responseMessageKey, { lng: clientLanguage })
   await sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, responseMessage)
@@ -101,7 +101,7 @@ async function handleDurationAlertSurveyPromptDoorOpened(
 
       await db_new.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, true, true, pgClient)
     } else {
-      await sendInvalidResponse(session, responderPhoneNumber, deviceTwilioNumber, client, clientLanguage, pgClient)
+      await sendInvalidResponse(session, responderPhoneNumber, deviceTwilioNumber, clientLanguage, pgClient)
     }
   } catch (error) {
     helpers.logError(`handleDurationAlertSurveyPromptDoorOpened: Error handling message: ${error}`)
@@ -184,15 +184,20 @@ async function handleDurationAlertSurveyOtherFollowup(session, responderPhoneNum
 
 // Trigger function
 async function handleStillnessAlertFollowupTrigger(session, responderPhoneNumber, deviceTwilioNumber, clientLanguage, surveyCategories, pgClient) {
-  const stillnessAlertSurveySent = await db_new.getSessionSurveySent(session.sessionId, pgClient)
-  if (!stillnessAlertSurveySent) {
-    const responseMessageKey = 'stillnessAlertSurvey'
-    const responseMessage = i18next.t(responseMessageKey, { lng: clientLanguage, surveyCategories })
+  try {
+    const stillnessAlertSurveySent = await db_new.getSessionSurveySent(session.sessionId, pgClient)
+    if (!stillnessAlertSurveySent) {
+      const responseMessageKey = 'stillnessAlertSurvey'
+      const responseMessage = i18next.t(responseMessageKey, { lng: clientLanguage, surveyCategories })
 
-    await sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, responseMessage)
-    await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, responseMessageKey, pgClient)
+      await sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, responseMessage)
+      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, responseMessageKey, pgClient)
 
-    await db_new.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, false, true, pgClient)
+      await db_new.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, false, true, pgClient)
+    }
+  } catch (error) {
+    helpers.logError(`handleStillnessAlertFollowupTrigger: Error handling message: ${error}`)
+    throw error
   }
 }
 
@@ -228,9 +233,8 @@ async function handleStillnessAlertSurvey(session, responderPhoneNumber, deviceT
     if (messageIndex >= 0 || messageIndex <= surveyCategories.length) {
       await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, 'stillnessAlertSurvey', pgClient)
 
-      const selectedCategory = surveyCategories[messageIndex]
       let responseMessageKey
-
+      const selectedCategory = surveyCategories[messageIndex]
       switch (selectedCategory) {
         case 'Overdose Event':
         case 'Emergency Event':
@@ -265,7 +269,7 @@ async function handleStillnessAlertSurvey(session, responderPhoneNumber, deviceT
       return
     }
   } catch (error) {
-    helpers.logError(`handleStillnessAlertSurveyDoorOpened: Error handling message: ${error}`)
+    helpers.logError(`handleStillnessAlertSurvey: Error handling message: ${error}`)
     throw error
   }
 }
@@ -281,7 +285,8 @@ async function handleStillnessAlertSurveyDoorOpened(
 ) {
   try {
     const messageIndex = parseInt(message, 10)
-    if (messageIndex >= 0 || messageIndex <= surveyCategories.length) {
+    const stillnessAlertSurveySent = await db_new.getSessionSurveySent(session.sessionId, pgClient)
+    if (messageIndex >= 0 || (messageIndex <= surveyCategories.length && !stillnessAlertSurveySent)) {
       await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, 'stillnessAlertSurveyDoorOpened', pgClient)
 
       let responseMessageKey
@@ -592,9 +597,7 @@ async function selectMessageKeyForExistingSession(eventType, eventData, currentS
       if (eventData.numStillnessAlertsSent === 4) {
         return 'stillnessAlertFallback'
       }
-      const errorMessage = `selectMessageKeyForExistingSession: Too many stillness alerts sent: ${eventData.numStillnessAlertsSent} for session ID: ${currentSession.sessionId}`
-      helpers.logError(errorMessage)
-      throw new Error(errorMessage)
+      break
     }
     case EVENT_TYPE.DOOR_OPENED: {
       const latestAlertEvent = await db_new.getLatestAlertEvent(currentSession.sessionId, pgClient)
@@ -640,18 +643,21 @@ async function handleExistingSession(device, eventType, eventData, currentSessio
       surveyCategories,
     })
 
-    // send message to responders
     const fallbackPhoneNumbers = client.fallbackPhoneNumbers
     const responderPhoneNumbers = client.responderPhoneNumbers
     const deviceTwilioNumber = device.deviceTwilioNumber
+
+    // send message to responders only if survey is not already sent
+    const surveySent = await db_new.getSessionSurveySent(currentSession.sessionId, pgClient)
     if (
       eventData.numStillnessAlertsSent === 4 &&
       messageKey === 'stillnessAlertFallback' &&
       fallbackPhoneNumbers &&
-      fallbackPhoneNumbers.length > 0
+      fallbackPhoneNumbers.length > 0 &&
+      !surveySent
     ) {
       await sendMessageToAllResponders(deviceTwilioNumber, fallbackPhoneNumbers, textMessage)
-    } else {
+    } else if (!surveySent) {
       await sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumbers, textMessage)
     }
 
