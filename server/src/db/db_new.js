@@ -248,7 +248,6 @@ async function getDeviceWithParticleDeviceId(particleDeviceId, pgClient) {
 }
 
 async function createSession(deviceId, pgClient) {
-  helpers.log('Creating new session')
   try {
     const results = await helpers.runQuery(
       'createSession',
@@ -277,35 +276,8 @@ async function createSession(deviceId, pgClient) {
   return null
 }
 
-async function getCurrentActiveSessionWithDeviceId(deviceId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getCurrentSessionWithDeviceId',
-      `
-      SELECT *
-      FROM sessions_new
-      WHERE device_id = $1
-      AND session_status = $2
-      AND door_opened = $3
-      `,
-      [deviceId, SESSION_STATUS.ACTIVE, false],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    // returns a session object
-    return createSessionFromRow(results.rows[0])
-  } catch (err) {
-    helpers.logError(`Error running the getCurrentSessionWithDeviceId query: ${err.toString()}`)
-    return null
-  }
-}
-
 async function updateSession(sessionId, sessionStatus, doorOpened, surveySent, pgClient) {
+  helpers.log(`UPDATE SESSION: sessionStatus: ${sessionStatus}, doorOpened: ${doorOpened}, surveySent: ${surveySent}`)
   try {
     const results = await helpers.runQuery(
       'updateSession',
@@ -361,6 +333,7 @@ async function updateSessionAttendingResponder(sessionId, responderPhoneNumber, 
 }
 
 async function getLatestSession(deviceTwilioNumber, pgClient) {
+  helpers.log(`NEW SESSION: deviceTwilioNumber: ${deviceTwilioNumber}`)
   try {
     const results = await helpers.runQuery(
       'getLatestSession',
@@ -389,8 +362,90 @@ async function getLatestSession(deviceTwilioNumber, pgClient) {
   }
 }
 
+async function getCurrentActiveSessionWithDeviceId(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getCurrentSessionWithDeviceId',
+      `
+      SELECT *
+      FROM sessions_new
+      WHERE device_id = $1
+      AND session_status = $2
+      AND door_opened = $3
+      `,
+      [deviceId, SESSION_STATUS.ACTIVE, false],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    // returns a session object
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getCurrentSessionWithDeviceId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getSessionDoorOpened(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getSessionDoorOpened',
+      `
+      SELECT door_opened
+      FROM sessions_new
+      WHERE session_id = $1
+      LIMIT 1
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return false
+    }
+
+    // returns the door_opened value as a boolean
+    return results.rows[0].door_opened
+  } catch (err) {
+    helpers.logError(`Error running the getSessionDoorOpened query: ${err.toString()}`)
+    return false
+  }
+}
+
+async function getSessionSurveySent(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getSessionSurveySent',
+      `
+      SELECT survey_sent
+      FROM sessions_new
+      WHERE session_id = $1
+      LIMIT 1
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return false
+    }
+
+    // returns the survey_sent value as a boolean
+    return results.rows[0].survey_sent
+  } catch (err) {
+    helpers.logError(`Error running the getSessionSurveySent query: ${err.toString()}`)
+    return false
+  }
+}
+
 async function createEvent(sessionId, eventType, eventTypeDetails, pgClient) {
-  helpers.log('Creating an event')
+  helpers.log(`NEW EVENT: sessionId: ${sessionId}, eventType: ${eventType}, eventTypeDetails: ${eventTypeDetails}`)
   try {
     const results = await helpers.runQuery(
       'createEvent',
@@ -533,6 +588,8 @@ module.exports = {
   updateSessionAttendingResponder,
   getLatestSession,
   getCurrentActiveSessionWithDeviceId,
+  getSessionDoorOpened,
+  getSessionSurveySent,
 
   createEvent,
   getLatestRespondableEvent,
