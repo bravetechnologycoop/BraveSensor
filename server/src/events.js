@@ -12,6 +12,7 @@ const twilio = require('twilio')
 // In-house dependencies
 const { helpers, twilioHelpers } = require('./utils/index')
 const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
+const resumeStateMachineMonitoring = require('./particle')
 const db_new = require('./db/db_new')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
@@ -56,7 +57,7 @@ async function sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, 
 
 async function setAttendingResponder(session, responderPhoneNumber, pgClient) {
   if (!session.attendingResponderNumber) {
-    await db_new.updateSessionAttendingResponder(session.session_id, responderPhoneNumber, pgClient);
+    await db_new.updateSessionAttendingResponder(session.session_id, responderPhoneNumber, pgClient)
   }
 }
 
@@ -65,19 +66,17 @@ async function sendNonAttendingConfirmation(session, responderPhoneNumber, devic
   const nonAttendingResponseMessage = i18next.t(nonAttendingResponseMessageKey, { lng: clientLanguage })
 
   const nonAttendingResponderPhoneNumbers = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
-  
+
   const nonAttendingConfirmationSent = await db_new.checkEventExists(session.sessionId, EVENT_TYPE.MSG_SENT, nonAttendingResponseMessageKey, pgClient)
   if (!nonAttendingConfirmationSent) {
     for (const phoneNumber of nonAttendingResponderPhoneNumbers) {
       await sendMessageToResponder(phoneNumber, deviceTwilioNumber, nonAttendingResponseMessage)
-      await createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, nonAttendingResponseMessageKey, pgClient)
+      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, nonAttendingResponseMessageKey, pgClient)
     }
   }
 }
 
 async function sendInvalidResponse(session, responderPhoneNumber, deviceTwilioNumber, client, clientLanguage, pgClient) {
-  const client = await db_new.getClientWithDeviceId(session.deviceId)
-
   await setAttendingResponder(session, responderPhoneNumber, pgClient)
 
   const responseMessageKey = 'invalidResponseTryAgain'
@@ -94,7 +93,7 @@ async function handleDurationAlertSurveyPromptDoorOpened(session, responderPhone
   const client = await db_new.getClientWithDeviceId(session.deviceId)
   const clientLanguage = client.language || 'en'
   const surveyCategories = client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n')
-  
+
   try {
     if (message === '0') {
       await setAttendingResponder(session, responderPhoneNumber, pgClient)
@@ -192,18 +191,16 @@ async function handleDurationAlertSurveyOtherFollowup(session, responderPhoneNum
 // ----------------------------------------------------------------------------------------------------------------------------
 
 // Trigger function
-async function handleStillnessAlertFollowupTrigger(session, clientLanguage, surveyCategories, pgClient) {
+async function handleStillnessAlertFollowupTrigger(session, responderPhoneNumber, deviceTwilioNumber, clientLanguage, surveyCategories, pgClient) {
   const stillnessAlertSurveySent = await db_new.getSessionSurveySent(session.sessionId, pgClient)
   if (!stillnessAlertSurveySent) {
     const responseMessageKey = 'stillnessAlertSurvey'
     const responseMessage = i18next.t(responseMessageKey, { lng: clientLanguage, surveyCategories })
     await sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, responseMessage)
-    await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, responseMessageKey, pgClient) 
+    await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, responseMessageKey, pgClient)
 
     await db_new.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, false, true, pgClient)
   }
-
-  return
 }
 
 async function handleStillnessAlert(session, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
@@ -260,6 +257,7 @@ async function handleStillnessAlertSurvey(session, responderPhoneNumber, deviceT
           break
         case 'Occupant Okay':
           responseMessageKey = 'stillnessAlertSurveyOccupantOkayFollowup'
+          break
         case 'Other':
           responseMessageKey = 'stillnessAlertSurveyOtherFollowup'
           break
@@ -311,13 +309,13 @@ async function handleStillnessAlertSurveyDoorOpened(session, responderPhoneNumbe
         case 'Space Empty':
           responseMessageKey = 'thankYou'
           break
-        case 'Occupant Okay': {
+        case 'Occupant Okay':
           if (!isDoorOpened) {
             responseMessageKey = 'stillnessAlertSurveyOccupantOkayFollowup'
           } else {
             responseMessageKey = 'thankYou'
           }
-        }
+          break
         case 'Other':
           responseMessageKey = 'stillnessAlertSurveyOtherFollowup'
           break
@@ -524,7 +522,7 @@ async function sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumb
 
   try {
     const sendPromises = responderPhoneNumbers.map(toPhoneNumber => twilioHelpers.sendTwilioMessage(toPhoneNumber, deviceTwilioNumber, textMessage))
-    
+
     const responses = await Promise.all(sendPromises)
 
     const failedResponses = responses.filter(response => !response)
