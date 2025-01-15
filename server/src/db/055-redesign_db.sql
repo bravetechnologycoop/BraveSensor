@@ -45,7 +45,7 @@ BEGIN
     -- Create the Devices_new table
     CREATE TABLE Devices_new (
         device_id                   UUID                NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-        display_name                TEXT                NOT NULL UNIQUE,
+        display_name                TEXT                NOT NULL,
         location_id                 TEXT                NOT NULL UNIQUE,
         client_id                   UUID                NOT NULL REFERENCES Clients_new(client_id) ON DELETE CASCADE,
         created_at                  TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
@@ -195,7 +195,7 @@ BEGIN
             fallback_phone_numbers,
             from_phone_number,
             heartbeat_phone_numbers,
-            incident_categories,
+            '{"Overdose Event","Emergency Event","Occupant Okay","Space Empty","Other","I would like to contact Brave"}'::text[],
             is_displayed,
             is_sending_alerts,
             is_sending_vitals,

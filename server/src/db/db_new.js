@@ -332,6 +332,60 @@ async function updateSessionAttendingResponder(sessionId, responderPhoneNumber, 
   }
 }
 
+async function updateSessionResponseTime(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateSessionResponseTime',
+      `
+      UPDATE sessions_new
+      SET response_time = NOW() - created_at
+      WHERE session_id = $1
+      RETURNING *
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (!results || results.rows.length === 0) {
+      return null
+    }
+
+    // returns a session object
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSessionResponseTime query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateSessionSelectedSurveyCategory(sessionId, selectedCategory, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateSessionSelectedSurveyCategory',
+      `
+      UPDATE sessions_new
+      SET selected_survey_category = $2
+      WHERE session_id = $1
+      RETURNING *
+      `,
+      [sessionId, selectedCategory],
+      pool,
+      pgClient,
+    )
+
+    if (!results || results.rows.length === 0) {
+      return null
+    }
+
+    // returns a session object
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSessionSelectedSurveyCategory query: ${err.toString()}`)
+    return null
+  }
+}
+
 async function getLatestSession(deviceTwilioNumber, pgClient) {
   helpers.log(`NEW SESSION: deviceTwilioNumber: ${deviceTwilioNumber}`)
   try {
@@ -586,6 +640,8 @@ module.exports = {
   createSession,
   updateSession,
   updateSessionAttendingResponder,
+  updateSessionResponseTime,
+  updateSessionSelectedSurveyCategory,
   getLatestSession,
   getCurrentActiveSessionWithDeviceId,
   getSessionDoorOpened,
