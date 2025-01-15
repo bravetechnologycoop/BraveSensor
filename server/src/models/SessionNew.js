@@ -4,22 +4,22 @@ class SessionNew {
     deviceId,
     createdAt,
     updatedAt,
-    endedAt,
     sessionStatus,
+    attendingResponderNumber,
+    doorOpened,
     surveySent,
     selectedSurveyCategory,
-    attendingResponderNumber,
     responseTime,
   ) {
     this.sessionId = sessionId
     this.deviceId = deviceId
     this.createdAt = createdAt
     this.updatedAt = updatedAt
-    this.endedAt = endedAt
     this.sessionStatus = sessionStatus
+    this.attendingResponderNumber = attendingResponderNumber
+    this.doorOpened = doorOpened
     this.surveySent = surveySent
     this.selectedSurveyCategory = selectedSurveyCategory
-    this.attendingResponderNumber = attendingResponderNumber
     this.responseTime = responseTime
   }
 }

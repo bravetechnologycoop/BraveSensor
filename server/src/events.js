@@ -27,7 +27,310 @@ function validateTwilioRequest(request, response, next) {
   }
 }
 
+// ------------------------------------------------------------------------------------------------
+// Helper Handler Functions
+
+async function sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, textMessage) {
+  if (!deviceTwilioNumber || !responderPhoneNumber) {
+    const errorMessage = 'sendMessageToResponder: Missing device twilio number or responder phone number'
+    helpers.logError(errorMessage)
+    throw new Error(errorMessage)
+  }
+
+  try {
+    const response = await twilioHelpers.sendTwilioMessage(responderPhoneNumber, deviceTwilioNumber, textMessage)
+
+    if (!response) {
+      const errorMessage = `sendMessageToResponder: Failed to send message to ${responderPhoneNumber}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    return response
+  } catch (error) {
+    helpers.logError(`sendMessageToResponder: Error sending message: ${error}`)
+    throw error
+  }
+}
+
+async function sendInvalidResponse(latestSession, responderPhoneNumber, deviceTwilioNumber, clientLanguage, pgClient) {
+  const client = await db_new.getClientWithDeviceId(latestSession.deviceId)
+
+  // set attending responder phone number if not already set
+  if (!latestSession.attendingResponderNumber) {
+    await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+  }
+
+  // construct the try again message and send it to the attending phone
+  const responseMessageKey = 'invalidResponseTryAgain'
+  const responseMessage = i18next.t(responseMessageKey, { lng: clientLanguage })
+  await sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, responseMessage)
+  await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, responseMessageKey, pgClient)
+
+  // check if nonAttendingResponderConfirmation was sent
+  const nonAttendingResponseMessageKey = 'nonAttendingResponderConfirmation'
+  const nonAttendingResponseMessage = i18next.t(nonAttendingResponseMessageKey, { lng: clientLanguage })
+  const nonAttendingResponderPhoneNumbers = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
+  const nonAttendingConfirmationSent = await db_new.checkEventExists(
+    latestSession.sessionId,
+    EVENT_TYPE.MSG_SENT,
+    nonAttendingResponseMessageKey,
+    pgClient,
+  )
+  if (!nonAttendingConfirmationSent) {
+    for (const phoneNumber of nonAttendingResponderPhoneNumbers) {
+      await sendMessageToResponder(phoneNumber, deviceTwilioNumber, nonAttendingResponseMessage)
+      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, nonAttendingResponseMessageKey, pgClient)
+    }
+  }
+}
+
+// ------------------------------------------------------------------------------------------------
+// Incoming message handlers
+
+async function handleDurationAlertSurveyPromptDoorOpened(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
+  const client = await db_new.getClientWithDeviceId(latestSession.deviceId)
+  const clientLanguage = client.language || 'en'
+
+  try {
+    if (message === '0') {
+      // set attending responder phone number if not already set
+      if (!latestSession.attendingResponderNumber) {
+        await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+      }
+      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'durationAlertSurveyPromptDoorOpened', pgClient)
+
+      // construct response message and send it to the attending phone
+      const responseMessageKey = 'durationAlertSurveyDoorOpened'
+      const surveyCategories = client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n')
+      const responseMessage = i18next.t(responseMessageKey, {
+        lng: clientLanguage,
+        surveyCategories,
+      })
+      await sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, responseMessage)
+      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, responseMessageKey, pgClient)
+
+      // update the session survey sent
+      await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.ACTIVE, true, true, pgClient)
+
+      // construct response message for non attending phones and send it
+      const nonAttendingResponseMessageKey = 'nonAttendingResponderConfirmation'
+      const nonAttendingResponseMessage = i18next.t(nonAttendingResponseMessageKey, { lng: clientLanguage })
+      const nonAttendingResponderPhoneNumbers = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
+      const nonAttendingConfirmationSent = await db_new.checkEventExists(
+        latestSession.sessionId,
+        EVENT_TYPE.MSG_SENT,
+        nonAttendingResponseMessageKey,
+        pgClient,
+      )
+      if (!nonAttendingConfirmationSent) {
+        for (const phoneNumber of nonAttendingResponderPhoneNumbers) {
+          await sendMessageToResponder(phoneNumber, deviceTwilioNumber, nonAttendingResponseMessage)
+          await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, nonAttendingResponseMessageKey, pgClient)
+        }
+      }
+    } else {
+      await sendInvalidResponse(latestSession, responderPhoneNumber, deviceTwilioNumber, clientLanguage, pgClient)
+    }
+  } catch (error) {
+    helpers.logError(`handleDurationAlertSurveyPromptDoorOpened: Error handling message: ${error}`)
+    throw error
+  }
+}
+
+async function handleDurationAlertSurveyDoorOpened(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
+  const client = await db_new.getClientWithDeviceId(latestSession.deviceId)
+  const clientLanguage = client.language || 'en'
+  const surveyCategories = client.surveyCategories
+
+  try {
+    // Validate the message to ensure it's a valid index
+    const messageIndex = parseInt(message, 10)
+    if (messageIndex < 0 || messageIndex >= surveyCategories.length) {
+      await sendInvalidResponse(latestSession, responderPhoneNumber, deviceTwilioNumber, clientLanguage, pgClient)
+      return
+    }
+
+    // set attending responder phone number if not already set
+    if (!latestSession.attendingResponderNumber) {
+      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+    }
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'durationAlertSurveyDoorOpened', pgClient)
+
+    // construct the response message and send it to the attending phone
+    const selectedCategory = surveyCategories[messageIndex]
+    let responseMessageKey
+
+    switch (selectedCategory) {
+      case 'Overdose Event':
+      case 'Emergency Event':
+      case 'Occupant Okay':
+      case 'Space Empty':
+        responseMessageKey = 'thankYou'
+        break
+      case 'Other':
+        responseMessageKey = 'durationAlertSurveyOtherFollowup'
+        break
+      case 'I would like to contact Brave':
+        responseMessageKey = 'braveContactInfo'
+        break
+      default:
+        await sendInvalidResponse(latestSession, responderPhoneNumber, deviceTwilioNumber, clientLanguage, pgClient)
+        return
+    }
+    const responseMessage = i18next.t(responseMessageKey, { lng: clientLanguage })
+    await sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, responseMessage)
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, responseMessageKey, pgClient)
+
+    // update the session to be completed
+    if (responseMessageKey === 'thankYou' || responseMessageKey === 'braveContactInfo') {
+      await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
+    }
+
+    // check if nonAttendingResponderConfirmation was sent
+    const nonAttendingResponseMessageKey = 'nonAttendingResponderConfirmation'
+    const nonAttendingResponseMessage = i18next.t(nonAttendingResponseMessageKey, { lng: clientLanguage })
+    const nonAttendingResponderPhoneNumbers = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
+    const nonAttendingConfirmationSent = await db_new.checkEventExists(
+      latestSession.sessionId,
+      EVENT_TYPE.MSG_SENT,
+      nonAttendingResponseMessageKey,
+      pgClient,
+    )
+    if (!nonAttendingConfirmationSent) {
+      for (const phoneNumber of nonAttendingResponderPhoneNumbers) {
+        await sendMessageToResponder(phoneNumber, deviceTwilioNumber, nonAttendingResponseMessage)
+        await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, nonAttendingResponseMessageKey, pgClient)
+      }
+    }
+  } catch (error) {
+    helpers.logError(`handleDurationAlertSurveyDoorOpened: Error handling message: ${error}`)
+    throw error
+  }
+}
+
+async function handleDurationAlertSurveyOtherFollowup(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
+  const client = await db_new.getClientWithDeviceId(latestSession.deviceId)
+  const clientLanguage = client.language || 'en'
+
+  try {
+    // set attending responder phone number if not already set
+    if (!latestSession.attendingResponderNumber) {
+      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+    }
+    const eventTypeDetails = `durationAlertSurveyOtherFollowup: ${message}`
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, eventTypeDetails, pgClient)
+
+    // construct the response message and send it to the attending phone
+    const responseMessageKey = 'thankYou'
+    const responseMessage = i18next.t(responseMessageKey, { lng: clientLanguage })
+    await sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, responseMessage)
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, responseMessageKey, pgClient)
+
+    // update the session to be completed
+    await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
+
+    // check if nonAttendingResponderConfirmation was sent
+    const nonAttendingResponseMessageKey = 'nonAttendingResponderConfirmation'
+    const nonAttendingResponseMessage = i18next.t(nonAttendingResponseMessageKey, { lng: clientLanguage })
+    const nonAttendingResponderPhoneNumbers = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
+    const nonAttendingConfirmationSent = await db_new.checkEventExists(
+      latestSession.sessionId,
+      EVENT_TYPE.MSG_SENT,
+      nonAttendingResponseMessageKey,
+      pgClient,
+    )
+    if (!nonAttendingConfirmationSent) {
+      for (const phoneNumber of nonAttendingResponderPhoneNumbers) {
+        await sendMessageToResponder(phoneNumber, deviceTwilioNumber, nonAttendingResponseMessage)
+        await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, nonAttendingResponseMessageKey, pgClient)
+      }
+    }
+  } catch (error) {
+    helpers.logError(`handleDurationAlertSurveyOtherFollowup: Error handling message: ${error}`)
+    throw error
+  }
+}
+
+async function handleStillnessAlert(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
+  helpers.log(
+    `handleStillnessAlert called with parameters: latestSession=${JSON.stringify(
+      latestSession,
+    )}, responderPhoneNumber=${responderPhoneNumber}, deviceTwilioNumber=${deviceTwilioNumber}, message=${message}, pgClient=${pgClient}`,
+  )
+}
+
+async function handleStillnessAlertSurvey(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
+  helpers.log(
+    `handleStillnessAlertSurvey called with parameters: latestSession=${JSON.stringify(
+      latestSession,
+    )}, responderPhoneNumber=${responderPhoneNumber}, deviceTwilioNumber=${deviceTwilioNumber}, message=${message}, pgClient=${pgClient}`,
+  )
+}
+
+async function handleStillnessAlertSurveyDoorOpened(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
+  helpers.log(
+    `handleStillnessAlertSurveyDoorOpened called with parameters: latestSession=${JSON.stringify(
+      latestSession,
+    )}, responderPhoneNumber=${responderPhoneNumber}, deviceTwilioNumber=${deviceTwilioNumber}, message=${message}, pgClient=${pgClient}`,
+  )
+}
+
+async function handleStillnessAlertSurveyOtherFollowup(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
+  helpers.log(
+    `handleStillnessAlertSurveyOtherFollowup called with parameters: latestSession=${JSON.stringify(
+      latestSession,
+    )}, responderPhoneNumber=${responderPhoneNumber}, deviceTwilioNumber=${deviceTwilioNumber}, message=${message}, pgClient=${pgClient}`,
+  )
+}
+
+async function handleStillnessAlertSurveyOccupantOkayFollowup(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
+  helpers.log(
+    `handleStillnessAlertSurveyOccupantOkayFollowup called with parameters: latestSession=${JSON.stringify(
+      latestSession,
+    )}, responderPhoneNumber=${responderPhoneNumber}, deviceTwilioNumber=${deviceTwilioNumber}, message=${message}, pgClient=${pgClient}`,
+  )
+}
+
+async function handleIncomingMessage(latestSession, latestRespondableEvent, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
+  const latestRespondableEventDetails = latestRespondableEvent.eventTypeDetails
+
+  switch (latestRespondableEventDetails) {
+    case 'durationAlertSurveyPromptDoorOpened':
+      await handleDurationAlertSurveyPromptDoorOpened(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient)
+      break
+    case 'durationAlertSurveyDoorOpened':
+      await handleDurationAlertSurveyDoorOpened(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient)
+      break
+    case 'durationAlertSurveyOtherFollowup':
+      await handleDurationAlertSurveyOtherFollowup(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient)
+      break
+    case 'stillnessAlert':
+      await handleStillnessAlert(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient)
+      break
+    case 'stillnessAlertSurvey':
+      await handleStillnessAlertSurvey(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient)
+      break
+    case 'stillnessAlertSurveyDoorOpened':
+      await handleStillnessAlertSurveyDoorOpened(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient)
+      break
+    case 'stillnessAlertSurveyOtherFollowup':
+      await handleStillnessAlertSurveyOtherFollowup(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient)
+      break
+    case 'stillnessAlertSurveyOccupantOkayFollowup':
+      await handleStillnessAlertSurveyOccupantOkayFollowup(latestSession, responderPhoneNumber, deviceTwilioNumber, message, pgClient)
+      break
+    default: {
+      const errorMessage = `Unhandled event type: ${latestRespondableEventDetails}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
+    }
+  }
+}
+
 async function handleTwilioRequest(request, response) {
+  let pgClient
+
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
     if (!validationErrors.isEmpty()) {
@@ -49,15 +352,47 @@ async function handleTwilioRequest(request, response) {
     const deviceTwilioNumber = request.body.To
     const message = request.body.Body
 
-    helpers.log('Request Details:', JSON.stringify(request, null, 2))
-    helpers.log(responderPhoneNumber)
-    helpers.log(deviceTwilioNumber)
-    helpers.log(message)
+    pgClient = await db_new.beginTransaction()
+    if (!pgClient) {
+      const errorMessage = 'Failed to start database transaction'
+      helpers.logError(errorMessage)
+      response.status(500).send(errorMessage)
+      return
+    }
 
-    response.status(200).send()
-  } catch (err) {
-    helpers.logError(err)
-    response.status(500).send(err.toString())
+    try {
+      // Get the latest session for the device
+      const latestSession = await db_new.getLatestSession(deviceTwilioNumber, pgClient)
+      if (!latestSession) {
+        const errorMessage = `No session found for device: ${deviceTwilioNumber}`
+        helpers.logError(errorMessage)
+        response.status(404).send(errorMessage)
+        return
+      }
+
+      // Get the latest respondable event for the session
+      // Respondable events are the events that the server expects a response too
+      // These are certain events identified by their event details and are handled in handleIncomingMessage
+      const latestRespondableEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, pgClient)
+      if (!latestRespondableEvent) {
+        const errorMessage = `No event found for session: ${latestSession.sessionId}`
+        helpers.logError(errorMessage)
+        response.status(404).send(errorMessage)
+        return
+      }
+
+      await handleIncomingMessage(latestSession, latestRespondableEvent, responderPhoneNumber, deviceTwilioNumber, message, pgClient)
+
+      await db_new.commitTransaction(pgClient)
+      response.status(200).send()
+    } catch (error) {
+      helpers.logError(`handleTwilioRequest: Rolled back transaction because of error: ${error}`)
+      await db_new.rollbackTransaction(pgClient)
+      response.status(500).send(error.toString())
+    }
+  } catch (error) {
+    helpers.logError(error)
+    response.status(500).send(error.toString())
   }
 }
 
@@ -65,7 +400,7 @@ async function handleTwilioRequest(request, response) {
 
 async function sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumbers, textMessage) {
   if (!deviceTwilioNumber || !Array.isArray(responderPhoneNumbers) || responderPhoneNumbers.length === 0) {
-    const errorMessage = 'sendMessageToAllResponders: Missing device twilio number or responder phone numbers'
+    const errorMessage = 'sendMessageToAllResponders: Missing device Twilio number or responder phone numbers'
     helpers.logError(errorMessage)
     throw new Error(errorMessage)
   }
@@ -84,17 +419,21 @@ async function sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumb
 
     return responses
   } catch (error) {
-    helpers.logError(`sendMessageToAllResponders: Error sending message: ${error}`)
-    throw error
+    const errorMessage = `sendMessageToAllResponders: Error sending message: ${error}`
+    helpers.logError(errorMessage)
+    throw new Error(errorMessage)
   }
 }
 
 async function updateSessionBasedOnEventType(eventType, messageKey, sessionId) {
   if (eventType === EVENT_TYPE.DURATION_ALERT || eventType === EVENT_TYPE.STILLNESS_ALERT) {
-    await db_new.updateSession(sessionId, SESSION_STATUS.ACTIVE, false)
+    await db_new.updateSession(sessionId, SESSION_STATUS.ACTIVE, false, false)
   } else if (eventType === EVENT_TYPE.DOOR_OPENED) {
-    const surveySent = !!(messageKey === 'stillnessAlertSurveyDoorOpened' || messageKey === 'durationAlertDoorOpened')
-    await db_new.updateSession(sessionId, SESSION_STATUS.COMPLETED, surveySent)
+    // If we get a door opened event, the session's door opened is toggled to true
+    // This makes it so that server is able to create a new session
+    const doorOpened = true
+    const surveySent = !!(messageKey === 'stillnessAlertSurveyDoorOpened' || messageKey === 'durationAlertSurveyDoorOpened')
+    await db_new.updateSession(sessionId, SESSION_STATUS.ACTIVE, doorOpened, surveySent)
   }
 }
 
@@ -102,36 +441,42 @@ async function selectMessageKeyForExistingSession(eventType, eventData, currentS
   switch (eventType) {
     case EVENT_TYPE.DURATION_ALERT:
       return 'durationAlert'
-    case EVENT_TYPE.STILLNESS_ALERT:
+    case EVENT_TYPE.STILLNESS_ALERT: {
       if (eventData.numStillnessAlertsSent >= 1 && eventData.numStillnessAlertsSent <= 3) {
         return 'stillnessAlert'
       }
       if (eventData.numStillnessAlertsSent === 4) {
-        return 'call'
+        return 'stillnessAlertFallback'
       }
-      helpers.log(`Too many stillness alerts sent: ${eventData.numStillnessAlertsSent}`)
-      throw new Error('Too many stillness alerts')
-
+      const errorMessage = `selectMessageKeyForExistingSession: Too many stillness alerts sent: ${eventData.numStillnessAlertsSent} for session ID: ${currentSession.sessionId}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
+    }
     case EVENT_TYPE.DOOR_OPENED: {
       const latestAlertEvent = await db_new.getLatestAlertEvent(currentSession.sessionId, pgClient)
       if (!latestAlertEvent) {
-        helpers.log(`No latest event found for session ID: ${currentSession.sessionId}`)
-        throw new Error('No latest event found')
+        const errorMessage = `selectMessageKeyForExistingSession: No latest alert event found for session ID: ${currentSession.sessionId}`
+        helpers.logError(errorMessage)
+        throw new Error(errorMessage)
       }
 
       switch (latestAlertEvent.eventType) {
         case EVENT_TYPE.DURATION_ALERT:
-          return 'durationAlertDoorOpened'
+          return 'durationAlertSurveyPromptDoorOpened'
         case EVENT_TYPE.STILLNESS_ALERT:
           return 'stillnessAlertSurveyDoorOpened'
-        default:
-          helpers.log(`Invalid latest event type for session ID: ${currentSession.sessionId}`)
-          throw new Error('Invalid latest event type')
+        default: {
+          const errorMessage = `selectMessageKeyForExistingSession: Invalid latest event type: ${latestAlertEvent.eventType} for session ID: ${currentSession.sessionId}`
+          helpers.logError(errorMessage)
+          throw new Error(errorMessage)
+        }
       }
     }
-    default:
-      helpers.logError('Invalid event type')
-      throw new Error('Invalid event type')
+    default: {
+      const errorMessage = `selectMessageKeyForExistingSession: Invalid event type: ${eventType} for session ID: ${currentSession.sessionId}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
+    }
   }
 }
 
@@ -153,18 +498,32 @@ async function handleExistingSession(device, eventType, eventData, currentSessio
 
     helpers.log(textMessage)
 
-    // send message to all responders
+    // send message to responders
+    const fallbackPhoneNumbers = client.fallbackPhoneNumbers
     const responderPhoneNumbers = client.responderPhoneNumbers
     const deviceTwilioNumber = device.deviceTwilioNumber
-    await sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumbers, textMessage)
+    if (
+      eventData.numStillnessAlertsSent === 4 &&
+      messageKey === 'stillnessAlertFallback' &&
+      fallbackPhoneNumbers &&
+      fallbackPhoneNumbers.length > 0
+    ) {
+      await sendMessageToAllResponders(deviceTwilioNumber, fallbackPhoneNumbers, textMessage)
+    } else {
+      await sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumbers, textMessage)
+    }
 
+    // update the session
     await updateSessionBasedOnEventType(eventType, messageKey, currentSession.sessionId)
 
     // log the event
     await db_new.createEvent(currentSession.sessionId, eventType, messageKey, pgClient)
   } catch (error) {
-    helpers.logError(`handleExistingSession: Error handling existing session: ${error}`)
-    throw error
+    const errorMessage = `handleExistingSession: Error handling existing session for device ID: ${
+      device.deviceId
+    }, event type: ${eventType}, event data: ${JSON.stringify(eventData)}, session ID: ${currentSession.sessionId} - ${error}`
+    helpers.logError(errorMessage)
+    throw new Error(errorMessage)
   }
 }
 
@@ -174,9 +533,11 @@ async function selectMessageKeyForNewSession(eventType) {
       return 'durationAlert'
     case EVENT_TYPE.STILLNESS_ALERT:
       return 'stillnessAlert'
-    default:
-      helpers.logError('Invalid event type received as the first alert')
-      throw new Error('Invalid event type')
+    default: {
+      const errorMessage = `selectMessageKeyForNewSession: Invalid event type received as the first alert: ${eventType}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
+    }
   }
 }
 
@@ -185,7 +546,9 @@ async function handleNewSession(device, eventType, eventData, pgClient) {
     // create a new active session
     const newSession = await db_new.createSession(device.deviceId, pgClient)
     if (!newSession || !newSession.sessionId) {
-      throw new Error('Failed to create a new session')
+      const errorMessage = `handleNewSession: Failed to create a new session for device ID: ${device.deviceId}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
     }
 
     // find messageKey based on eventType
@@ -203,15 +566,18 @@ async function handleNewSession(device, eventType, eventData, pgClient) {
     helpers.log(textMessage)
 
     // send message to all responders
-    const responderPhoneNumbers = client.responderPhoneNumbers
-    const deviceTwilioNumber = device.deviceTwilioNumber
-    await sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumbers, textMessage)
+    // const responderPhoneNumbers = client.responderPhoneNumbers
+    // const deviceTwilioNumber = device.deviceTwilioNumber
+    // await sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumbers, textMessage)
 
     // log the event
     await db_new.createEvent(newSession.sessionId, eventType, messageKey, pgClient)
   } catch (error) {
-    helpers.logError(`handleNewSession: Error handling new session: ${error}`)
-    throw error
+    const errorMessage = `handleNewSession: Error handling new session for device ID: ${
+      device.deviceId
+    }, event type: ${eventType}, event data: ${JSON.stringify(eventData)} - ${error}`
+    helpers.logError(errorMessage)
+    throw new Error(errorMessage)
   }
 }
 
@@ -221,11 +587,14 @@ async function processSensorEvent(device, eventType, eventData) {
   try {
     pgClient = await db_new.beginTransaction()
     if (!pgClient) {
-      helpers.logError(`processEvent: Error starting transaction`)
-      return
+      const errorMessage = 'processSensorEvent: Error starting transaction'
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
     }
 
-    const currentSession = await db_new.getCurrentSessionWithDeviceId(device.deviceId, pgClient)
+    // An active session is one that has status ACTIVE and door is not opened
+    // If either of those are violated, server can create a new session
+    const currentSession = await db_new.getCurrentActiveSessionWithDeviceId(device.deviceId, pgClient)
     if (!currentSession) {
       await handleNewSession(device, eventType, eventData, pgClient)
     } else {
@@ -234,14 +603,18 @@ async function processSensorEvent(device, eventType, eventData) {
 
     await db_new.commitTransaction(pgClient)
   } catch (error) {
-    try {
-      helpers.logError(`processEvent: Rolled back transaction because of error: ${error}`)
-      if (pgClient) {
+    const errorMessage = `processSensorEvent: Rolled back transaction because of error: ${error}`
+    helpers.logError(errorMessage)
+    if (pgClient) {
+      try {
         await db_new.rollbackTransaction(pgClient)
+      } catch (rollbackError) {
+        const rollbackErrorMessage = `processSensorEvent: Error rolling back transaction: ${rollbackError}. Rollback attempted because of error: ${error}`
+        helpers.logError(rollbackErrorMessage)
+        throw new Error(rollbackErrorMessage)
       }
-    } catch (rollbackError) {
-      helpers.logError(`processEvent: Error rolling back transaction: ${rollbackError}. Rollback attempted because of error: ${error}`)
     }
+    throw new Error(errorMessage)
   }
 }
 
@@ -308,7 +681,11 @@ async function handleSensorEvent(request, response) {
     const client = await db_new.getClientWithClientId(device.clientId)
     if (client.devicesSendingAlerts && device.isSendingAlerts) {
       // process the sensor event if alerts are enabled
-      await processSensorEvent(device, eventType, eventData)
+      try {
+        await processSensorEvent(device, eventType, eventData)
+      } catch (error) {
+        return respondWithError(response, `Error processing sensor event: ${error.toString()}`, request.path)
+      }
     }
 
     response.status(200).json('OK')

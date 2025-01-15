@@ -23,14 +23,25 @@
   "sensorInactivity": "The door contact at {{ deviceDisplayName }} has not detected any activity in a long time please make sure that both parts of the door contact are fully attached to the door. If you require a replacement or have any questions, email clientsupport@brave.coop.",
   "sensorLowBatteryInitial": "The battery for the {{ deviceDisplayName }} door sensor is low, and needs replacing.\n\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w",
   "sensorReconnection": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) has been reconnected.",
-  "thankYou": "Thank you",
   "SENSOR_DURATION": "Duration",
   "SENSOR_STILLNESS": "Stillness",
   "SENSOR_UNKNOWN": "Unknown",
 
   "durationAlert": "{{deviceName}} has been occupied for {{occupancyDuration}} minutes",
+  "durationAlertSurveyPromptDoorOpened": "We see the door has opened at {{deviceName}}. Press 0 to tell us more.",
+  "durationAlertSurveyDoorOpened": "Could you please let us know the outcome?\n{{surveyCategories}}",
+  "durationAlertSurveyOtherFollowup": "Can you please describe what happened?",
+
   "stillnessAlert": "{{deviceName}} needs a SAFETY CHECK. On your way? Reply with 5 or k",
-  "call": "Placeholder for call functionality",
-  "durationAlertDoorOpened": "We see the door has opened at {{deviceName}}. Press 0 to tell us more.",
-  "stillnessAlertSurveyDoorOpened": "We see the door has been opened.\nCould you please let us know the outcome?\n{{surveyCategories}}"
+  "stillnessAlertFallback": "No response to stillness alerts for {{deviceName}}. There will be one final alert.",
+  "stillnessAlertFollowup": "Thanks, we'll follow up in 3 min",
+  "stillnessAlertSurvey": "Could you please let us know the outcome?\n{{surveyCategories}}",
+  "stillnessAlertSurveyDoorOpened": "We see the door has been opened.\nCould you please let us know the outcome?\n{{surveyCategories}}",
+  "stillnessAlertSurveyOtherFollowup": "Can you please describe what happened?",
+  "stillnessAlertSurveyOccupantOkayFollowup": "We will continue to monitor this location. Reply \"1\" to stop monitoring",
+  "stillnessAlertSurveyOccupantOkayEnd": "You will no longer receive stillness alerts until the next entry",
+
+  "nonAttendingResponderConfirmation": "One of your colleagues is on their way",
+  "braveContactInfo": "You can reach us at:\nPhone - xxx-xxx-xxxx\nEmail -",
+  "thankYou": "Thank you!"
 }

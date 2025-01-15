@@ -4,7 +4,7 @@ BEGIN
     -- Create Enum Types for status and event types
     CREATE TYPE device_status_enum AS ENUM ('TESTING', 'SHIPPED', 'LIVE');
     CREATE TYPE device_types_enum AS ENUM ('SENSOR_SINGLESTALL', 'SENSOR_MULTISTALL');
-    CREATE TYPE session_status_enum AS ENUM ('ACTIVE', 'COMPLETED', 'SUSPENDED');
+    CREATE TYPE session_status_enum AS ENUM ('ACTIVE', 'COMPLETED');
     CREATE TYPE event_type_enum AS ENUM ('DURATION_ALERT', 'STILLNESS_ALERT', 'DOOR_OPENED', 'MSG_SENT', 'CALL', 'MSG_RECEIVED');
     CREATE TYPE vital_type_enum AS ENUM ('LOW_BATTERY', 'SENSOR_DISCONNECTED', 'SENSOR_RECONNECTED', 'DOOR_DISCONNECTED', 'DOOR_RECONNECTED');
 
@@ -45,8 +45,8 @@ BEGIN
     -- Create the Devices_new table
     CREATE TABLE Devices_new (
         device_id                   UUID                NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-        location_id                 TEXT                NOT NULL,
-        display_name                TEXT                NOT NULL,
+        display_name                TEXT                NOT NULL UNIQUE,
+        location_id                 TEXT                NOT NULL UNIQUE,
         client_id                   UUID                NOT NULL REFERENCES Clients_new(client_id) ON DELETE CASCADE,
         created_at                  TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
         updated_at                  TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
@@ -64,11 +64,11 @@ BEGIN
         device_id                   UUID                NOT NULL REFERENCES Devices_new(device_id) ON DELETE CASCADE,
         created_at                  TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
         updated_at                  TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
-        ended_at                    TIMESTAMPTZ,
         session_status              session_status_enum NOT NULL,
-        survey_sent                 BOOLEAN             NOT NULL DEFAULT false,
-        selected_survey_category    INT,
         attending_responder_number  TEXT,
+        door_opened                 BOOLEAN             NOT NULL DEFAULT false,
+        survey_sent                 BOOLEAN             NOT NULL DEFAULT false,
+        selected_survey_category    TEXT,
         response_time               INTERVAL 
     );
 

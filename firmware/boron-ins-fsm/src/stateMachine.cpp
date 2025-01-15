@@ -60,20 +60,20 @@ void setupStateMachine() {
     // Default to not publishing debug logs (from debugFlags.h)
     stateMachineDebugFlag = 0;
 
-    // Initialize the state start timers
     state0_start_time = 0;
     state1_start_time = 0;
     state2_start_time = 0;
     state3_start_time = 0;
 
-    // Initialize time spent in different states
     timeInState0 = 0;
     timeInState1 = 0;
     timeInState2 = 0;
     timeInState3 = 0;
-
-    // Enable duration alerts
+    
     hasDurationAlertBeenPaused = false;
+    unsigned long numDurationAlertSent = 0;
+    unsigned long numStillnessAlertSent = 0;
+    unsigned long lastDurationAlertTime = 0;
 }
 
 void initializeStateMachineConsts() {
