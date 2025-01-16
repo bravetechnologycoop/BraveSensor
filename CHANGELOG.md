@@ -33,6 +33,7 @@ the code was deployed.
 - Updated the client details dashboard page to provide an overview of client information (CU-86dup4jg7).
 - Enhanced the landing page with a new search feature and toggle options for various views based on new pages (CU-86dup4jg7).
 - Updated the CSS for dashboard pages -- `pageCSSPartial.mst` -- including new table headers and a search bar (CU-86dup4jg7).
+- Fixed error caused due to updating client's first_device_live_at in dashboard (CU-86dvqgum0).
 
 ### Removed
 
