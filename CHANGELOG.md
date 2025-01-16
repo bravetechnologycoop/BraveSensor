@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [11.0.0] - 2025-01-16
+
 ### Added
 
 - Added INS threshold for Occupant Detection, state0 <-> state1 entry/exit condition (CU-86dvnjxk7).
@@ -24,7 +26,7 @@ the code was deployed.
 
 ### Changed
 
-- Names of particle functions to make them (CU-86dvnjx2q).
+- Names of particle functions to make them easier to use on the console (CU-86dvnjx2q).
 - Updated `checkHeartbeat` function in `vitals.js` to send the 2 different messages (CU-86duu0vdu).
 - Removed `sendDisconnectionMessage` and `sendDisconnectionReminder`function in `vitals.js` (CU-86duu0vdu).
 - Updated dashboard homepage to include and sort by Organization (CU-86dva4dxd).
@@ -883,10 +885,11 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.16.0...HEAD
-[10.16.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...10.16.0
-[10.15.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...10.15.0
-[10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...10.14.0
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v11.0.0...HEAD
+[11.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.16.0...v11.0.0
+[10.16.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...v10.16.0
+[10.15.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...v10.15.0
+[10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...v10.14.0
 [10.13.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...v10.13.0
 [10.12.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...v10.12.0
 [10.11.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.10.0...v10.11.0
