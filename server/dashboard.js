@@ -628,7 +628,7 @@ async function submitEditClient(req, res) {
           return res.status(500).send(errorMessage)
         }
       }
-      
+
       await db.updateClient(
         data.displayName,
         data.fromPhoneNumber,
