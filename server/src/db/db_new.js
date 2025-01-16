@@ -248,6 +248,7 @@ async function getDeviceWithParticleDeviceId(particleDeviceId, pgClient) {
 }
 
 async function createSession(deviceId, pgClient) {
+  helpers.log(`NEW SESSION: deviceId: ${deviceId}`)
   try {
     const results = await helpers.runQuery(
       'createSession',
@@ -387,7 +388,6 @@ async function updateSessionSelectedSurveyCategory(sessionId, selectedCategory, 
 }
 
 async function getLatestSession(deviceTwilioNumber, pgClient) {
-  helpers.log(`NEW SESSION: deviceTwilioNumber: ${deviceTwilioNumber}`)
   try {
     const results = await helpers.runQuery(
       'getLatestSession',
@@ -532,10 +532,11 @@ async function createEvent(sessionId, eventType, eventTypeDetails, pgClient) {
 async function getLatestRespondableEvent(sessionId, pgClient) {
   // IMPORTANT: Transactions log received and sent messages with the same event_sent_at timestamp.
   // The order of this array determines the priority of events, with higher priority events listed first.
+  // The latest the event, the more the priority.
   const respondableEvents = [
+    'durationAlertSurveyOtherFollowup',
     'durationAlertSurveyDoorOpened',
     'durationAlertSurveyPromptDoorOpened',
-    'durationAlertSurveyOtherFollowup',
 
     'stillnessAlertSurveyOccupantOkayFollowup',
     'stillnessAlertSurveyOtherFollowup',

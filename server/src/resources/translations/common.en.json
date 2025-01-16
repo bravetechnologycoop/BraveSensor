@@ -29,18 +29,19 @@
 
   "durationAlert": "{{deviceName}} has been occupied for {{occupancyDuration}} minutes",
   "durationAlertSurveyPromptDoorOpened": "We see the door has opened at {{deviceName}}. Press 0 to tell us more.",
-  "durationAlertSurveyDoorOpened": "Could you please let us know the outcome?\n{{surveyCategories}}",
+  "durationAlertSurveyDoorOpened": "Could you please let us know the outcome?\n{{surveyCategoriesForMessage}}",
   "durationAlertSurveyOtherFollowup": "Can you please describe what happened?",
 
   "stillnessAlert": "{{deviceName}} needs a SAFETY CHECK. On your way? Reply with 5 or k",
   "stillnessAlertFallback": "No response to stillness alerts for {{deviceName}}. There will be one final alert.",
   "stillnessAlertFollowup": "Thanks, we'll follow up in 3 min",
-  "stillnessAlertSurvey": "Could you please let us know the outcome?\n{{surveyCategories}}",
-  "stillnessAlertSurveyDoorOpened": "We see the door has been opened.\nCould you please let us know the outcome?\n{{surveyCategories}}",
+  "stillnessAlertSurvey": "Could you please let us know the outcome?\n{{surveyCategoriesForMessage}}",
+  "stillnessAlertSurveyDoorOpened": "We see the door has been opened.\nCould you please let us know the outcome?\n{{surveyCategoriesForMessage}}",
   "stillnessAlertSurveyOtherFollowup": "Can you please describe what happened?",
   "stillnessAlertSurveyOccupantOkayFollowup": "We will continue to monitor this location. Reply \"1\" to stop monitoring",
   "stillnessAlertSurveyOccupantOkayEnd": "You will no longer receive stillness alerts until the next entry",
 
+  "invalidResponseTryAgain": "Invaid response, try again.",
   "nonAttendingResponderConfirmation": "One of your colleagues is on their way",
   "braveContactInfo": "You can reach us at:\nPhone - xxx-xxx-xxxx\nEmail -",
   "thankYou": "Thank you!"
