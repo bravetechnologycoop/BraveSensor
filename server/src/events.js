@@ -51,7 +51,7 @@ async function sendMessageToResponder(responderPhoneNumber, deviceTwilioNumber, 
       throw new Error(errorMessage)
     }
 
-    // return response
+    return response
   } catch (error) {
     helpers.logError(`sendMessageToResponder: Error sending message: ${error}`)
     throw error
@@ -596,7 +596,7 @@ async function sendMessageToAllResponders(deviceTwilioNumber, responderPhoneNumb
       throw new Error(errorMessage)
     }
 
-    // return responses
+    return responses
   } catch (error) {
     const errorMessage = `sendMessageToAllResponders: Error sending message: ${error}`
     helpers.logError(errorMessage)

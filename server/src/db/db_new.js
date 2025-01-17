@@ -530,20 +530,20 @@ async function createEvent(sessionId, eventType, eventTypeDetails, pgClient) {
 }
 
 async function getLatestRespondableEvent(sessionId, pgClient) {
-  // IMPORTANT: Transactions log received and sent messages with the same event_sent_at timestamp.
-  // The order of this array determines the priority of events, with higher priority events listed first.
-  // The latest the event, the more the priority.
   const respondableEvents = [
     'durationAlertSurveyOtherFollowup',
     'durationAlertSurveyDoorOpened',
     'durationAlertSurveyPromptDoorOpened',
-
     'stillnessAlertSurveyOccupantOkayFollowup',
     'stillnessAlertSurveyOtherFollowup',
     'stillnessAlertSurveyDoorOpened',
     'stillnessAlertSurvey',
     'stillnessAlert',
   ]
+
+  // The order of event types details in the CASE statement is crucial as it defines the priority.
+  // The later the event is in the alert flow, the higher priority it has to be addressed.
+  // This way we can ensure the latest respondable event for which the message is being responded to.
 
   try {
     const results = await helpers.runQuery(
@@ -554,10 +554,20 @@ async function getLatestRespondableEvent(sessionId, pgClient) {
       WHERE session_id = $1
       AND event_type_details = ANY($2::text[])
       ORDER BY event_sent_at DESC,
-      POSITION(event_type_details IN $3)
+      CASE event_type_details
+        WHEN 'durationAlertSurveyOtherFollowup' THEN 1
+        WHEN 'durationAlertSurveyDoorOpened' THEN 2
+        WHEN 'durationAlertSurveyPromptDoorOpened' THEN 3
+        WHEN 'stillnessAlertSurveyOccupantOkayFollowup' THEN 4
+        WHEN 'stillnessAlertSurveyOtherFollowup' THEN 5
+        WHEN 'stillnessAlertSurveyDoorOpened' THEN 6
+        WHEN 'stillnessAlertSurvey' THEN 7
+        WHEN 'stillnessAlert' THEN 8
+        ELSE 9
+      END
       LIMIT 1
       `,
-      [sessionId, respondableEvents, respondableEvents.join(',')],
+      [sessionId, respondableEvents],
       pool,
       pgClient,
     )
@@ -566,7 +576,6 @@ async function getLatestRespondableEvent(sessionId, pgClient) {
       return null
     }
 
-    // returns an event object
     return createEventFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getLatestEvent query: ${err.toString()}`)
