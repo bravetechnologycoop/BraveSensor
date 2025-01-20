@@ -45,12 +45,6 @@ std::queue<unsigned long> timeQueue;
 unsigned long lastStateChangeOrAlert = millis();
 
 void setupStateMachine() {
-    // set up debug pins
-    pinMode(D2, OUTPUT);
-    pinMode(D3, OUTPUT);
-    pinMode(D4, OUTPUT);
-    pinMode(D5, OUTPUT);
-
     // default to not publishing debug logs
     stateMachineDebugFlag = 0;
 
@@ -288,6 +282,13 @@ void state2_duration() {
         state2_duration_timer = millis();
         stateHandler = state2_duration;
     }
+    else if (doorJustClosed) {
+        Log.warn("Non-heartbeat door close message recevied, going to state 0");
+        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(2, 6);
+        doorJustClosed = false;
+        stateHandler = state0_idle;
+    }
     else {
         // if we don't meet the exit conditions above hang out here
         // stateHandler = state2_duration;
@@ -352,6 +353,13 @@ void state3_stillness() {
         state2_duration_timer = millis();
         stateHandler = state3_stillness;
     }
+    else if (doorJustClosed) {
+        Log.warn("Non-heartbeat door close message recevied, going to state 0");
+        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(3, 6);
+        doorJustClosed = false;
+        stateHandler = state0_idle;
+    }
     else {
         // if we don't meet the exit conditions above, we remain here
         // stateHandler = state3_stillness;
@@ -400,6 +408,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
  * 3           | Initial timer surpassed
  * 4           | Duration alert
  * 5           | Stillness alert
+ * 6           | Open door message missed
  **/
 void saveStateChangeOrAlert(int state, int reason) {
     stateQueue.push(state);

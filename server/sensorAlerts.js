@@ -51,9 +51,6 @@ async function handleAlert(location, alertType, alertData) {
         isResettable = parsedAlertData.numberOfAlertsPublished >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
       }
 
-      if (parsedAlertData.isTrueStillnessAlert) {
-        helpers.logSentry(`True Stillness alert at ${location.displayName}`)
-      }
     } catch (error) {
       // default to isResettable false
       isResettable = false
