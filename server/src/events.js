@@ -206,55 +206,49 @@ async function handleDurationAlertSurveyOtherFollowup(session, responderPhoneNum
 // ----------------------------------------------------------------------------------------------------------------------------
 
 // Trigger function
-async function handleStillnessAlertFollowupTrigger(
-  deviceId,
-  responderPhoneNumber,
-  deviceTwilioNumber,
-  clientLanguage,
-  surveyCategoriesForMessage,
-) {
-  let pgClient;
+async function handleStillnessAlertFollowupTrigger(deviceId, responderPhoneNumber, deviceTwilioNumber, clientLanguage, surveyCategoriesForMessage) {
+  let pgClient
   try {
     // start a new transaction
-    pgClient = await db_new.beginTransaction();
+    pgClient = await db_new.beginTransaction()
     if (!pgClient) {
-      helpers.logError(`handleStillnessAlertFollowupTrigger: Failed to start transaction for deviceId: ${deviceId}`);
-      return;
+      helpers.logError(`handleStillnessAlertFollowupTrigger: Failed to start transaction for deviceId: ${deviceId}`)
+      return
     }
 
     try {
       // Use deviceId to get the latest session info
-      const session = await db_new.getCurrentActiveSessionWithDeviceId(deviceId, pgClient);
+      const session = await db_new.getCurrentActiveSessionWithDeviceId(deviceId, pgClient)
       if (!session) {
-        helpers.logError(`handleStillnessAlertFollowupTrigger: No active session found for deviceId: ${deviceId}`);
-        await db_new.rollbackTransaction(pgClient);
-        return;
+        helpers.logError(`handleStillnessAlertFollowupTrigger: No active session found for deviceId: ${deviceId}`)
+        await db_new.rollbackTransaction(pgClient)
+        return
       }
 
       // make sure the session survey is not sent due to door open while waiting for trigger
       if (!session.surveySent && !session.doorOpened) {
         // construct the response message
-        const responseMessageKey = 'stillnessAlertSurvey';
-        const responseMessage = i18next.t(responseMessageKey, { lng: clientLanguage, surveyCategoriesForMessage });
+        const responseMessageKey = 'stillnessAlertSurvey'
+        const responseMessage = i18next.t(responseMessageKey, { lng: clientLanguage, surveyCategoriesForMessage })
 
         // update the session
         // the door must have been closed when this survey was sent
-        await db_new.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, false, true, pgClient);
+        await db_new.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, false, true, pgClient)
 
         // send message to attending responder and log the message sent
-        await sendMessageToResponder(deviceTwilioNumber, responderPhoneNumber, responseMessage);
-        await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, responseMessageKey, pgClient);
+        await sendMessageToResponder(deviceTwilioNumber, responderPhoneNumber, responseMessage)
+        await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, responseMessageKey, pgClient)
       }
 
       // commit the transaction
-      await db_new.commitTransaction(pgClient);
+      await db_new.commitTransaction(pgClient)
     } catch (error) {
-      helpers.logError(`handleStillnessAlertFollowupTrigger: Error handling message: ${error}`);
-      await db_new.rollbackTransaction(pgClient);
+      helpers.logError(`handleStillnessAlertFollowupTrigger: Error handling message: ${error}`)
+      await db_new.rollbackTransaction(pgClient)
     }
   } catch (error) {
-    helpers.logError(`handleStillnessAlertFollowupTrigger: Error starting transaction: ${error}`);
-  } 
+    helpers.logError(`handleStillnessAlertFollowupTrigger: Error starting transaction: ${error}`)
+  }
 }
 
 async function handleStillnessAlert(
@@ -273,9 +267,9 @@ async function handleStillnessAlert(
 
       // construct the response message
       const responseMessageKey = 'stillnessAlertFollowup'
-      const responseMessage = i18next.t(responseMessageKey, { 
-        lng: clientLanguage, 
-        stillnessAlertFollowupTimer: STILLNESS_ALERT_SURVEY_FOLLOWUP 
+      const responseMessage = i18next.t(responseMessageKey, {
+        lng: clientLanguage,
+        stillnessAlertFollowupTimer: STILLNESS_ALERT_SURVEY_FOLLOWUP,
       })
 
       // update the session
@@ -288,13 +282,7 @@ async function handleStillnessAlert(
 
       // Trigger the function STILLNESS_ALERT_SURVEY_FOLLOWUP minutes later to send survey
       setTimeout(() => {
-        handleStillnessAlertFollowupTrigger(
-          session.deviceId,
-          responderPhoneNumber,
-          deviceTwilioNumber,
-          clientLanguage,
-          surveyCategoriesForMessage,
-        )
+        handleStillnessAlertFollowupTrigger(session.deviceId, responderPhoneNumber, deviceTwilioNumber, clientLanguage, surveyCategoriesForMessage)
       }, STILLNESS_ALERT_SURVEY_FOLLOWUP * 60 * 1000)
 
       // send message to attending responder and log the message sent
@@ -783,13 +771,13 @@ async function handleExistingSession(device, eventType, eventData, currentSessio
       } else if (currentSession.selectedSurveyCategory !== null) {
         if (eventType === EVENT_TYPE.DOOR_OPENED) {
           await db_new.updateSession(currentSession.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
-          return  // end here
+          return // end here
         }
         // no category was selected
       } else if (currentSession.selectedSurveyCategory === null) {
         if (eventType === EVENT_TYPE.DOOR_OPENED) {
           await db_new.updateSession(currentSession.sessionId, SESSION_STATUS.ACTIVE, true, true, pgClient)
-          return  // end here
+          return // end here
         }
         throw new Error('handleExistingSession: Received alert when no survey category was selected. Ignoring alert.')
       }
