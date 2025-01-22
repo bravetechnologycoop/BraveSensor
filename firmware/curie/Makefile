@@ -2,7 +2,7 @@ CXX      := -c++
 #CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror
 DBID	 := -DBRAVEDBNAME=\"testdb\"
 CXXFLAGS := -Wall -D_LINUX_ $(DBID)
-LDFLAGS  := -L/usr/lib -L/usr/lib/aarch64-linux-gnu/ -lstdc++ -lm -lpqxx -lpq -lgpiod -lpigpio -li2c
+LDFLAGS  := -L/usr/lib -L/usr/lib/aarch64-linux-gnu/ -lstdc++ -lm -lpqxx -lpq -li2c -lgpiod
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 BIN_DIR  := $(BUILD)/bin

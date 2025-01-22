@@ -78,9 +78,10 @@ int gpioInterface::openForEvent(){
     this->chip = gpiod_chip_open_by_name((this->busID).c_str());
     this->line = gpiod_chip_get_line(this->chip, this->pinID);
 
-    err = gpiod_line_request_both_edges_events(this->line, "boron");
+    err = gpiod_line_request_rising_edge_events(this->line, "boron");
     if (-1 == err){
-        perror("gpiod_line_request_both_edges_events");
+        perror("gpiod_line_request_rising_edge_events");
+        bDebug(ERROR, "gpiod_line_request_rising_edge_events");
     }
 
     return err;
@@ -98,8 +99,14 @@ int gpioInterface::readPin(bool *bData){
     int err = BAD_PARAMS;
 
     if ((NULL != bData) && (!this->output) && (NULL != this->line)) {
+        int val = 0;
         err = OK;
-        *bData =  true;
+        val = gpiod_line_get_value(this->line);
+        if (0 > val) {
+            err = val;
+        } else {
+            *bData = !!val;
+        }
     }
 
     return err;
@@ -111,6 +118,12 @@ int gpioInterface::writePin(bool bData){
 
     if ((this->output) && (NULL != this->line)){
         err = OK;
+         int val = 0;
+        err = OK;
+        val = gpiod_line_set_value(this->line, !!bData);
+        if (0 > val){
+            err = val;
+        } 
     }
 
     return err;
@@ -122,8 +135,13 @@ int gpioInterface::waitForPin(timespec ts){
     
     err = gpiod_line_event_wait(this->line, &ts);
     if (0 > err){
-         perror("gpiod_line_event_wait");
+        perror("gpiod_line_event_wait");
         bDebug(ERROR, "Failing to Wait");
+    } if (0 == err){
+        bDebug(TRACE, "gpio event timeout");
+    } else {
+        gpiod_line_event val;
+        err = gpiod_line_event_read(this->line, &val);
     }
 
     return err;

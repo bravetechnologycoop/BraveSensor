@@ -83,7 +83,7 @@ u_int16_t commandByteCreate(){
 	#endif
 	command[0] = 1;
 	u_int16_t commandByte = 0;
-	for (int i = 0; i <= 8; ++i) {
+	for (int i = 0; i <= 7; ++i) {
         commandByte |= (command[i] << (7 - i));
     }
 	std::cout << "Command byte: " << std::hex << commandByte << std::endl;
@@ -196,8 +196,9 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 void RxThread()
 {
     int signal = 0;
+	bool ioState = false;
     timespec ts = {30, 0};
-    g_gpioBoron->open(false);
+    g_gpioBoron->openForEvent();
 
     while (g_loop) {
         // Lock the mutex for thread synchronization
@@ -209,8 +210,10 @@ void RxThread()
             signal = g_gpioBoron->waitForPin(ts);
             if (0 == signal) {
                 bDebug(TRACE, "time cycle");
-                this_thread::sleep_for(30s);
-            }
+                
+            } else {
+				bDebug(TRACE, "boron triggered event");
+			}
         }
 
         if (-1 == signal) {
@@ -271,7 +274,7 @@ int main()
 			if (g_loop){
 				bDebug(TRACE, "Loop Sleep");
 				if (g_interthreadMutex.try_lock_for(LOOP_TIMER)){
-					bDebug(TRACE, "Spi Thread Sent us Something");
+					bDebug(TRACE, "Rx Thread Sent us Something");
 					g_interthreadMutex.unlock();
 				} else {
 					bDebug(TRACE, "Mutex wait expired read anyways");
