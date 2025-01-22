@@ -43,7 +43,7 @@ int lidarL5::getData(string * sqlTable, std::vector<string> * vData){
     //check incoming pointers
     *sqlTable = LIDAR5_SQL_TABLE;
    vl53l5cx_start_ranging(&(this->conf));
-   sleep(2);
+   sleep(10);
    //VL53L5CX_wait_for_dataready(&(this->conf.platform));
    err = vl53l5cx_check_data_ready(&(this->conf), &isReady);
    bDebug(TRACE, "err: " + to_string(err) + " isReady: " + to_string(isReady));

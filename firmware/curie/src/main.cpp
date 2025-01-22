@@ -58,34 +58,33 @@ int initiateBusses(){
 
 u_int16_t commandByteCreate(){
 
-	int command[8] = {0};
+	//int command[8] = {0};
+	uint16_t commandByte = 0x80;
 
 	#ifndef MULTI_GAS
-	command[7] = 1;
+	commandByte |= 0x01;
 	#endif
 	#ifndef CO2SCD
-	command[6] = 1;
+	commandByte |= 0x02;
 	#endif
 	#ifndef PIR
-	command[5] = 1;
+	commandByte |= 0x04;
 	#endif
 	#ifndef USONIC_RANGE
-	command[4] = 1;
+	commandByte |= 0x08;
 	#endif
 	#ifndef LIDAR_L5
-	command[3] = 0;
+	commandByte |= 0x10;
 	#endif
 	#ifndef LIDAR_L1
-	command[2] = 1;
+	commandByte |= 0x20;
 	#endif
 	#ifndef THERMAL_CAMERA
-	command[1] = 1;
+	commandByte |= 0x40;
 	#endif
-	command[0] = 1;
-	u_int16_t commandByte = 0;
-	for (int i = 0; i <= 7; ++i) {
-        commandByte |= (command[i] << (7 - i));
-    }
+	
+	//u_int16_t commandByte = 0;
+	
 	std::cout << "Command byte: " << std::hex << commandByte << std::endl;
 
 	return commandByte;
@@ -196,7 +195,6 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 void RxThread()
 {
     int signal = 0;
-	bool ioState = false;
     timespec ts = {30, 0};
     g_gpioBoron->openForEvent();
 
