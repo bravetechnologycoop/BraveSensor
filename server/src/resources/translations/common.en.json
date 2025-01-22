@@ -34,15 +34,16 @@
 
   "stillnessAlert": "{{deviceName}} needs a SAFETY CHECK. On your way? Reply with 5 or k",
   "stillnessAlertFallback": "No response to stillness alerts for {{deviceName}}. There will be one final alert.",
-  "stillnessAlertFollowup": "Thanks, we'll follow up in 3 min",
+  "stillnessAlertFollowup": "Thanks, we'll follow up in {{stillnessAlertFollowupTimer}} min",
   "stillnessAlertSurvey": "Could you please let us know the outcome?\n{{surveyCategoriesForMessage}}",
   "stillnessAlertSurveyDoorOpened": "We see the door has been opened.\nCould you please let us know the outcome?\n{{surveyCategoriesForMessage}}",
   "stillnessAlertSurveyOtherFollowup": "Can you please describe what happened?",
   "stillnessAlertSurveyOccupantOkayFollowup": "We will continue to monitor this location. Reply \"1\" to stop monitoring",
   "stillnessAlertSurveyOccupantOkayEnd": "You will no longer receive stillness alerts until the next entry. Thank you!",
 
-  "invalidResponseTryAgain": "Invaid response, try again.",
+  "notifyDoorOpened": "The door was opened at {{deviceName}}. Thank you!",
   "nonAttendingResponderConfirmation": "One of your colleagues is on their way",
-  "braveContactInfo": "You can reach us at:\nPhone - xxx-xxx-xxxx\nEmail -",
+  "invalidResponseTryAgain": "Invaid response, try again.",
+  "braveContactInfo": "You can reach us at:\nPhone: +18338332100\nEmail: clientsupport@brave.coop",
   "thankYou": "Thank you!"
 }

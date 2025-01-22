@@ -17,7 +17,13 @@ const { helpers } = require('./utils/index')
 // const particleApi = new ParticleApi()
 
 async function resumeStateMachineMonitoring(deviceId) {
-  helpers.log(`Calling resumeStateMachineMonitoring for device: ${deviceId}`)
+  try {
+    helpers.log(`Calling resumeStateMachineMonitoring for device: ${deviceId}`)
+    return
+  } catch (error) {
+    throw new Error(`resumeStateMachineMonitoring: ${error.errorDescription} : for device ${deviceId}`)
+  }
+
   // try {
   //   await particleApi.callFunction({
   //     deviceId,

@@ -419,15 +419,16 @@ async function getLatestSession(deviceTwilioNumber, pgClient) {
 async function getCurrentActiveSessionWithDeviceId(deviceId, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getCurrentSessionWithDeviceId',
+      'getCurrentActiveSessionWithDeviceId',
       `
       SELECT *
       FROM sessions_new
       WHERE device_id = $1
-      AND session_status = $2
-      AND door_opened = $3
+      AND NOT (session_status = $2 AND door_opened = $3)
+      ORDER BY created_at DESC
+      LIMIT 1
       `,
-      [deviceId, SESSION_STATUS.ACTIVE, false],
+      [deviceId, SESSION_STATUS.COMPLETED, true],
       pool,
       pgClient,
     )
@@ -439,62 +440,8 @@ async function getCurrentActiveSessionWithDeviceId(deviceId, pgClient) {
     // returns a session object
     return createSessionFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getCurrentSessionWithDeviceId query: ${err.toString()}`)
+    helpers.logError(`Error running the getCurrentActiveSessionWithDeviceId query: ${err.toString()}`)
     return null
-  }
-}
-
-async function getSessionDoorOpened(sessionId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getSessionDoorOpened',
-      `
-      SELECT door_opened
-      FROM sessions_new
-      WHERE session_id = $1
-      LIMIT 1
-      `,
-      [sessionId],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return false
-    }
-
-    // returns the door_opened value as a boolean
-    return results.rows[0].door_opened
-  } catch (err) {
-    helpers.logError(`Error running the getSessionDoorOpened query: ${err.toString()}`)
-    return false
-  }
-}
-
-async function getSessionSurveySent(sessionId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getSessionSurveySent',
-      `
-      SELECT survey_sent
-      FROM sessions_new
-      WHERE session_id = $1
-      LIMIT 1
-      `,
-      [sessionId],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return false
-    }
-
-    // returns the survey_sent value as a boolean
-    return results.rows[0].survey_sent
-  } catch (err) {
-    helpers.logError(`Error running the getSessionSurveySent query: ${err.toString()}`)
-    return false
   }
 }
 
@@ -648,14 +595,12 @@ module.exports = {
   getDeviceWithParticleDeviceId,
 
   createSession,
+  getLatestSession,
+  getCurrentActiveSessionWithDeviceId,
   updateSession,
   updateSessionAttendingResponder,
   updateSessionResponseTime,
   updateSessionSelectedSurveyCategory,
-  getLatestSession,
-  getCurrentActiveSessionWithDeviceId,
-  getSessionDoorOpened,
-  getSessionSurveySent,
 
   createEvent,
   getLatestRespondableEvent,
