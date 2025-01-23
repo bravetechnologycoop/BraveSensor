@@ -629,12 +629,10 @@ async function submitEditClient(req, res) {
       if (!firstDeviceLiveAt || firstDeviceLiveAt.trim() === '') {
         try {
           firstDeviceLiveAt = await db.getCurrentFirstDeviceLiveAt(req.params.id)
-          if (!firstDeviceLiveAt) {
-            helpers.logError(`No current firstDeviceLiveAt found for client ID: ${req.params.id}`)
-          }
         } catch (error) {
-          helpers.logError(`Error retrieving current firstDeviceLiveAt for client ID: ${req.params.id} - ${error.toString()}`)
-          return res.status(500).send('Internal Server Error')
+          const errorMessage = `Error retrieving current firstDeviceLiveAt for client ID: ${req.params.id} - ${error.toString()}`
+          helpers.logError(errorMessage)
+          return res.status(500).send(errorMessage)
         }
       }
 

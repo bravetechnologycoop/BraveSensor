@@ -1709,4 +1709,5 @@ module.exports = {
   updateLocation,
   updateLowBatteryAlertTime,
   updateSentAlerts,
+  getCurrentFirstDeviceLiveAt,
 }

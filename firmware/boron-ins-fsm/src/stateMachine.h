@@ -10,31 +10,31 @@
 
 // ***************************** Macro defintions *****************************
 
-// ASCII table goes up to 7F, so pick something greater than that
-#define INITIALIZE_STATE_MACHINE_CONSTS_FLAG           0x8888
-#define INITIALIZE_STATE0_OCCUPANT_DETECTION_FLAG      0x8888
+// This flag determines if the state machine constants are set
+#define INITIALIZATION_FLAG_SET             0x8888
+#define INITIALIZATION_FLAG_HIGH_CONF       0x9999
 
 // Initial values for state machine, can be changed via console function
-#define INS_THRESHOLD                       60         
-#define STATE0_OCCUPANT_DETECTION_TIMER     172800000   // 2 days in ms
-#define STATE1_MAX_TIME                     15000       // 15 secs in ms
-#define DURATION_ALERT_THRESHOLD            1800000     // 30 mins in ms          
-#define INITIAL_STILLNESS_ALERT_THRESHOLD   300000      // 5 mins in ms
-#define FOLLOWUP_STILLNESS_ALERT_THRESHOLD  180000      // 3 mins in ms
+#define STILLNESS_INS_THRESHOLD             60         
+#define OCCUPANCY_DETECTION_INS_THRESHOLD   60         
+
+#define STATE0_OCCUPANCY_DETECTION_TIME     60000       // 1 min
+#define STATE1_INITIAL_TIME                 5000        // 5 secs
+
+#define DURATION_ALERT_TIME                 1200000     // 20 mins          
+#define INITIAL_STILLNESS_ALERT_TIME        300000      // 5 mins
+#define FOLLOWUP_STILLNESS_ALERT_TIME       180000      // 3 mins
 
 // Heartbeat message intervals and thresholds
-#define SM_HEARTBEAT_INTERVAL               660000      // 11 mins in ms
+#define SM_HEARTBEAT_INTERVAL               660000      // 11 mins
 #define SM_HEARTBEAT_DID_MISS_QUEUE_SIZE    3           // Track last 3 heartbeats
 #define SM_HEARTBEAT_DID_MISS_THRESHOLD     1           // Threshold for missed heartbeats
 
 // Minimize time between restart and first Heartbeat message
-#define DEVICE_RESET_THRESHOLD              540000      // 9 mins in ms
-
-// Max characters for states array in Heartbeat messages
-#define HEARTBEAT_STATES_CUTOFF             603         // 622 - 17 (sub state array) - 2 (closing brackets)
+#define DEVICE_RESET_THRESHOLD              540000      // 9 mins
 
 // Restrict heartbeat to being published once from 3 IM Door Sensor broadcasts
-#define HEARTBEAT_PUBLISH_DELAY             1000        // 1 sec in ms
+#define HEARTBEAT_PUBLISH_DELAY             1000        // 1 sec
 
 // ***************************** Global variables *****************************
 
@@ -43,6 +43,15 @@ typedef void (*StateHandler)();
 
 // Extern declaration of the state handler pointer
 extern StateHandler stateHandler;
+
+// State machine constants firmware code definition
+extern unsigned long stillness_ins_threshold;
+extern unsigned long occupancy_detection_ins_threshold;
+extern unsigned long state0_occupancy_detection_time;
+extern unsigned long state1_initial_time;
+extern unsigned long duration_alert_time;
+extern unsigned long initial_stillness_alert_time;
+extern unsigned long followup_stillness_alert_time;
 
 // Start timers for different states
 extern unsigned long state0_start_time;
@@ -55,14 +64,6 @@ extern unsigned long timeInState0;
 extern unsigned long timeInState1;
 extern unsigned long timeInState2;
 extern unsigned long timeInState3;
-
-// State machine constants stored in flash
-extern unsigned long ins_threshold;
-extern unsigned long state0_occupant_detection_timer;
-extern unsigned long state1_max_time;
-extern unsigned long duration_alert_threshold;
-extern unsigned long initial_stillness_alert_threshold;
-extern unsigned long followup_stillness_alert_threshold; 
 
 // Flag to pause duration alerts
 extern bool hasDurationAlertBeenPaused;
@@ -82,12 +83,11 @@ void getHeartbeat();
 
 // state functions, called by stateHandler
 void state0_idle();
-void state1_countdown();
+void state1_initial_countdown();
 void state2_monitoring();
 void state3_stillness();
 
 void publishDebugMessage(int, unsigned char, float, unsigned long);
 void publishStateTransition(int, int, unsigned char, float);
-void saveStateChangeOrAlert(int, int);
 
 #endif

@@ -49,8 +49,8 @@ void loop() {
 
     // Do once
     if (!initialized && Particle.connected()) {
-        initializeStateMachineConsts();
         initializeDoorID();
+        initializeStateMachineConsts();
         startINSSerial();
         initialized = true;
     }

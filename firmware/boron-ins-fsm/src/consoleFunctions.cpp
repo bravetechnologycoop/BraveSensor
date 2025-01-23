@@ -16,14 +16,18 @@ void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
     Particle.function("Force_Reset", force_reset);
     Particle.function("Reset_State_To_Zero", reset_state_to_zero);
-    Particle.function("Turn_Debugging_Publishes_On_Off", toggle_debugging_publishes);
-    Particle.function("Change_Occupant_Detection_Timer", occupant_detection_timer_set);
-    Particle.function("Change_Initial_Timer", initial_timer_set);
-    Particle.function("Change_Duration_Threshold", duration_alert_threshold_set);
-    Particle.function("Change_Initial_Stillness_Threshold", initial_stillness_alert_threshold_set);
-    Particle.function("Change_Followup_Stillness_Threshold", followup_stillness_alert_threshold_set);
-    Particle.function("Change_INS_Threshold", ins_threshold_set);
-    Particle.function("Change_IM21_Door_ID", im21_door_id_set);
+    Particle.function("Toggle_Debug_Publish", toggle_debugging_publishes);
+    
+    Particle.function("Occupancy_Detection_INS_Threshold", occupancy_detection_ins_threshold_set);
+    Particle.function("Stillness_INS_Threshold", stillness_ins_threshold_set);
+
+    Particle.function("Occupancy_Detection_Time", occupancy_detection_time_set);
+    Particle.function("Initial_Time", initial_time_set);
+    Particle.function("Duration_Time", duration_alert_time_set);
+    Particle.function("Initial_Stillness_Time", initial_stillness_alert_time_set);
+    Particle.function("Followup_Stillness_Time", followup_stillness_alert_time_set);
+
+    Particle.function("IM21_Door_ID", im21_door_id_set);
 }
 
 int force_reset(String command) {
@@ -113,89 +117,20 @@ int toggle_debugging_publishes(String command) {
     return returnFlag;
 }
 
-// returns occupant detection timer if valid input is given, otherwise returns -1
-int occupant_detection_timer_set(String input) {
+// returns threshold if valid input is given, otherwise returns -1
+int occupancy_detection_ins_threshold_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
-        returnFlag = state0_occupant_detection_timer / 1000;
-    }
-    // else parse new threshold
-    else {
-        int timeout = input.toInt();
-        // increase timeout value to from seconds to ms
-        timeout = timeout * 1000;
-
-        if (timeout == 0) {
-            // string.toInt() returns 0 if input not an int
-            // and a threshold value of 0 makes no sense, so return -1
-            returnFlag = -1;
-        }
-        else if (timeout < 0) {
-            returnFlag = -1;
-        }
-        else {
-            EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, timeout);
-            state0_occupant_detection_timer = timeout;
-            returnFlag = state0_occupant_detection_timer / 1000;
-        }
-    }
-    return returnFlag;
-}
-
-// returns initial timer length if valid input is given, otherwise returns -1
-int initial_timer_set(String input) {
-    int returnFlag = -1;
-
-    const char* holder = input.c_str();
-
-    // if e, echo the current threshold
-    if (*holder == 'e') {
-        EEPROM.get(ADDR_STATE1_MAX_TIME, state1_max_time);
-        returnFlag = state1_max_time / 1000;
-    }
-    // else parse new threshold
-    else {
-        int timeout = input.toInt();
-        // increase timeout value to from seconds to ms
-        timeout = timeout * 1000;
-
-        if (timeout == 0) {
-            // string.toInt() returns 0 if input not an int
-            // and a threshold value of 0 makes no sense, so return -1
-            returnFlag = -1;
-        }
-        else if (timeout < 0) {
-            returnFlag = -1;
-        }
-        else {
-            EEPROM.put(ADDR_STATE1_MAX_TIME, timeout);
-            state1_max_time = timeout;
-            returnFlag = state1_max_time / 1000;
-        }
-    }
-    return returnFlag;
-}
-
-int duration_alert_threshold_set(String input) {
-    int returnFlag = -1;
-
-    const char* holder = input.c_str();
-
-    // if e, echo the current threshold
-    if (*holder == 'e') {
-        EEPROM.get(ADDR_DURATION_ALERT_THRESHOLD, duration_alert_threshold);
-        returnFlag = duration_alert_threshold / 1000;
+        EEPROM.get(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
+        returnFlag = occupancy_detection_ins_threshold;
     }
     // else parse new threshold
     else {
         int threshold = input.toInt();
-        // increase threshold value from seconds to ms
-        threshold = threshold * 1000;
 
         if (threshold == 0) {
             // string.toInt() returns 0 if input not an int
@@ -206,90 +141,25 @@ int duration_alert_threshold_set(String input) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_DURATION_ALERT_THRESHOLD, threshold);
-            duration_alert_threshold = threshold;
-            returnFlag = duration_alert_threshold / 1000;
+            EEPROM.put(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, threshold);
+            occupancy_detection_ins_threshold = threshold;
+            returnFlag = occupancy_detection_ins_threshold;
         }
     }
-    return returnFlag;
-}
 
-int initial_stillness_alert_threshold_set(String input) {
-    int returnFlag = -1;
-
-    const char* holder = input.c_str();
-
-    // if e, echo the current threshold
-    if (*holder == 'e') {
-        EEPROM.get(ADDR_INITIAL_STILLNESS_ALERT_THRESHOLD, initial_stillness_alert_threshold);
-        returnFlag = initial_stillness_alert_threshold / 1000;
-    }
-    // else parse new threshold
-    else {
-        int threshold = input.toInt();
-        // increase threshold value from seconds to ms
-        threshold = threshold * 1000;
-
-        if (threshold == 0) {
-            // string.toInt() returns 0 if input not an int
-            // and a threshold value of 0 makes no sense, so return -1
-            returnFlag = -1;
-        }
-        else if (threshold < 0) {
-            returnFlag = -1;
-        }
-        else {
-            EEPROM.put(ADDR_INITIAL_STILLNESS_ALERT_THRESHOLD, threshold);
-            initial_stillness_alert_threshold = threshold;
-            returnFlag = initial_stillness_alert_threshold / 1000;
-        }
-    }
-    return returnFlag;
-}
-
-int followup_stillness_alert_threshold_set(String input) {
-    int returnFlag = -1;
-
-    const char* holder = input.c_str();
-
-    // if e, echo the current threshold
-    if (*holder == 'e') {
-        EEPROM.get(ADDR_FOLLOWUP_STILLNESS_ALERT_THRESHOLD, followup_stillness_alert_threshold);
-        returnFlag = followup_stillness_alert_threshold / 1000;
-    }
-    // else parse new threshold
-    else {
-        int threshold = input.toInt();
-        // increase threshold value from seconds to ms
-        threshold = threshold * 1000;
-
-        if (threshold == 0) {
-            // string.toInt() returns 0 if input not an int
-            // and a threshold value of 0 makes no sense, so return -1
-            returnFlag = -1;
-        }
-        else if (threshold < 0) {
-            returnFlag = -1;
-        }
-        else {
-            EEPROM.put(ADDR_FOLLOWUP_STILLNESS_ALERT_THRESHOLD, threshold);
-            followup_stillness_alert_threshold = threshold;
-            returnFlag = followup_stillness_alert_threshold / 1000;
-        }
-    }
     return returnFlag;
 }
 
 // returns threshold if valid input is given, otherwise returns -1
-int ins_threshold_set(String input) {
+int stillness_ins_threshold_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
 
     // if e, echo the current threshold
     if (*holder == 'e') {
-        EEPROM.get(ADDR_INS_THRESHOLD, ins_threshold);
-        returnFlag = ins_threshold;
+        EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
+        returnFlag = stillness_ins_threshold;
     }
     // else parse new threshold
     else {
@@ -304,12 +174,179 @@ int ins_threshold_set(String input) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_INS_THRESHOLD, threshold);
-            ins_threshold = threshold;
-            returnFlag = ins_threshold;
+            EEPROM.put(ADDR_STILLNESS_INS_THRESHOLD, threshold);
+            stillness_ins_threshold = threshold;
+            returnFlag = stillness_ins_threshold;
         }
     }
 
+    return returnFlag;
+}
+
+// returns occupancy detection time if valid input is given, otherwise returns -1
+int occupancy_detection_time_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    // if e, echo the current time
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_STATE0_OCCUPANCY_DETECTION_TIME, state0_occupancy_detection_time);
+        returnFlag = state0_occupancy_detection_time / 1000;
+    }
+    // else parse new time
+    else {
+        int timeout = input.toInt();
+        // increase timeout value to from seconds to ms
+        timeout = timeout * 1000;
+
+        if (timeout == 0) {
+            // string.toInt() returns 0 if input not an int
+            // and a time value of 0 makes no sense, so return -1
+            returnFlag = -1;
+        }
+        else if (timeout < 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_STATE0_OCCUPANCY_DETECTION_TIME, timeout);
+            state0_occupancy_detection_time = timeout;
+            returnFlag = state0_occupancy_detection_time / 1000;
+        }
+    }
+    return returnFlag;
+}
+
+// returns initial time length if valid input is given, otherwise returns -1
+int initial_time_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    // if e, echo the current time
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_STATE1_INITIAL_TIME, state1_initial_time);
+        returnFlag = state1_initial_time / 1000;
+    }
+    // else parse new time
+    else {
+        int timeout = input.toInt();
+        // increase timeout value to from seconds to ms
+        timeout = timeout * 1000;
+
+        if (timeout == 0) {
+            // string.toInt() returns 0 if input not an int
+            // and a time value of 0 makes no sense, so return -1
+            returnFlag = -1;
+        }
+        else if (timeout < 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_STATE1_INITIAL_TIME, timeout);
+            state1_initial_time = timeout;
+            returnFlag = state1_initial_time / 1000;
+        }
+    }
+    return returnFlag;
+}
+
+int duration_alert_time_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    // if e, echo the current time
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_DURATION_ALERT_TIME, duration_alert_time);
+        returnFlag = duration_alert_time / 1000;
+    }
+    // else parse new time
+    else {
+        int time = input.toInt();
+        // increase time value from seconds to ms
+        time = time * 1000;
+
+        if (time == 0) {
+            // string.toInt() returns 0 if input not an int
+            // and a time value of 0 makes no sense, so return -1
+            returnFlag = -1;
+        }
+        else if (time < 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_DURATION_ALERT_TIME, time);
+            duration_alert_time = time;
+            returnFlag = duration_alert_time / 1000;
+        }
+    }
+    return returnFlag;
+}
+
+int initial_stillness_alert_time_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    // if e, echo the current time
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_INITIAL_STILLNESS_ALERT_TIME, initial_stillness_alert_time);
+        returnFlag = initial_stillness_alert_time / 1000;
+    }
+    // else parse new time
+    else {
+        int time = input.toInt();
+        // increase time value from seconds to ms
+        time = time * 1000;
+
+        if (time == 0) {
+            // string.toInt() returns 0 if input not an int
+            // and a time value of 0 makes no sense, so return -1
+            returnFlag = -1;
+        }
+        else if (time < 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_INITIAL_STILLNESS_ALERT_TIME, time);
+            initial_stillness_alert_time = time;
+            returnFlag = initial_stillness_alert_time / 1000;
+        }
+    }
+    return returnFlag;
+}
+
+int followup_stillness_alert_time_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    // if e, echo the current time
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_FOLLOWUP_STILLNESS_ALERT_TIME, followup_stillness_alert_time);
+        returnFlag = followup_stillness_alert_time / 1000;
+    }
+    // else parse new time
+    else {
+        int time = input.toInt();
+        // increase time value from seconds to ms
+        time = time * 1000;
+
+        if (time == 0) {
+            // string.toInt() returns 0 if input not an int
+            // and a time value of 0 makes no sense, so return -1
+            returnFlag = -1;
+        }
+        else if (time < 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_FOLLOWUP_STILLNESS_ALERT_TIME, time);
+            followup_stillness_alert_time = time;
+            returnFlag = followup_stillness_alert_time / 1000;
+        }
+    }
     return returnFlag;
 }
 

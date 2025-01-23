@@ -14,20 +14,22 @@ extern StateHandler stateHandler;
 // Mock variables
 bool stateMachineDebugFlag;
 unsigned long debugFlagTurnedOnAt;
-long unsigned state0_occupant_detection_timer;
-long unsigned state1_max_time;
-long unsigned duration_alert_threshold;
-long unsigned initial_stillness_alert_threshold;
-long unsigned followup_stillness_alert_threshold;
-long unsigned ins_threshold;
+
+unsigned long stillness_ins_threshold;
+unsigned long occupancy_detection_ins_threshold;
+unsigned long state0_occupancy_detection_time;
+unsigned long state1_initial_time;
+unsigned long duration_alert_time;
+unsigned long initial_stillness_alert_time;
+unsigned long followup_stillness_alert_time;
 
 // Mock implementations of different states
 void state0_idle() {
     std::cout << "Mock state0_idle called" << std::endl;
 }
 
-void state1_countdown() {
-    std::cout << "Mock state1_countdown called" << std::endl;
+void state1_initial_countdown() {
+    std::cout << "Mock state1_initial_countdown called" << std::endl;
 }
 
 StateHandler stateHandler = state0_idle;

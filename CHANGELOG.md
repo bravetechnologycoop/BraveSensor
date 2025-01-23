@@ -11,8 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [11.0.0] - 2025-01-16
+
 ### Added
 
+- Added INS threshold for Occupant Detection, state0 <-> state1 entry/exit condition (CU-86dvnjxk7).
+- Added Initialization procedures for firmware coming from v1924 and v10160 (CU-86dvnjxk7).
 - Added `sensorDoorDisconnectionInitial`, `sensorRadarDisconnectionInitial`, `sensorDoorDisconnectionReminder` and `sensorRadarDisconnectionReminder` to english and spanish messages (CU-86duu0vdu).
 - Added functions for the above messages in `vitals.js` (CU-86duu0vdu).
 - Added migration script 54 which adds the `status` and `first_device_live_at` column to clients (CU-86dv9uxta).
@@ -22,6 +26,7 @@ the code was deployed.
 
 ### Changed
 
+- Names of particle functions to make them easier to use on the console (CU-86dvnjx2q).
 - Updated `checkHeartbeat` function in `vitals.js` to send the 2 different messages (CU-86duu0vdu).
 - Removed `sendDisconnectionMessage` and `sendDisconnectionReminder`function in `vitals.js` (CU-86duu0vdu).
 - Updated dashboard homepage to include and sort by Organization (CU-86dva4dxd).
@@ -30,9 +35,11 @@ the code was deployed.
 - Updated the client details dashboard page to provide an overview of client information (CU-86dup4jg7).
 - Enhanced the landing page with a new search feature and toggle options for various views based on new pages (CU-86dup4jg7).
 - Updated the CSS for dashboard pages -- `pageCSSPartial.mst` -- including new table headers and a search bar (CU-86dup4jg7).
+- Fixed error caused due to updating client's first_device_live_at in dashboard (CU-86dvqgum0).
 
 ### Removed
 
+- Removed toggling of GPIO pins in state machine
 - Deleted old CSS code `locationCSSPartial.mst` and `locationFormCSSPartial.mst` (CU-86dup4jg7).
 
 ## [10.16.0] - 2024-11-14
@@ -878,10 +885,11 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.16.0...HEAD
-[10.16.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...10.16.0
-[10.15.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...10.15.0
-[10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...10.14.0
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v11.0.0...HEAD
+[11.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.16.0...v11.0.0
+[10.16.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...v10.16.0
+[10.15.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...v10.15.0
+[10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...v10.14.0
 [10.13.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...v10.13.0
 [10.12.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...v10.12.0
 [10.11.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.10.0...v10.11.0
