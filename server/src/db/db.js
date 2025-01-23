@@ -1699,7 +1699,6 @@ module.exports = {
   getRecentSensorsVitalsWithClientId,
   getSessionWithSessionId,
   getUnrespondedSessionWithDeviceId,
-  getCurrentFirstDeviceLiveAt,
   logSensorsVital,
   numberOfStillnessAlertsInIntervalOfTime,
   rollbackTransaction,
