@@ -28,7 +28,7 @@ async function resumeStateMachineMonitoring(deviceId) {
   } catch (error) {
     helpers.logError(`resumeStateMachineMonitoring: ${error.errorDescription} : for device ${deviceId}`)
   }
-  
+
   // try {
   //   helpers.log(`Calling resumeStateMachineMonitoring for device: ${deviceId}`)
   //   return
