@@ -17,6 +17,7 @@ void setupConsoleFunctions();
 int force_reset(String);
 int reset_state_to_zero(String);
 int toggle_debugging_publishes(String);
+int reset_monitoring(String);
 
 int occupancy_detection_ins_threshold_set(String);
 int stillness_ins_threshold_set(String);

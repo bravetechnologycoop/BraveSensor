@@ -17,7 +17,8 @@ void setupConsoleFunctions() {
     Particle.function("Force_Reset", force_reset);
     Particle.function("Reset_State_To_Zero", reset_state_to_zero);
     Particle.function("Toggle_Debug_Publish", toggle_debugging_publishes);
-    
+    Particle.function("Reset_Monitoring", reset_monitoring);
+
     Particle.function("Occupancy_Detection_INS_Threshold", occupancy_detection_ins_threshold_set);
     Particle.function("Stillness_INS_Threshold", stillness_ins_threshold_set);
 
@@ -88,8 +89,6 @@ int toggle_debugging_publishes(String command) {
     // default to invalid input
     int returnFlag = -1;
 
-    // string.toInt() returns 0 if it fails, so can't distinguish between user
-    // entering 0 vs entering bad input. So convert to char and use ascii table
     const char* holder = command.c_str();
 
     if (*(holder + 1) != 0) {
@@ -110,6 +109,42 @@ int toggle_debugging_publishes(String command) {
         returnFlag = 1;
     }
     else {
+        // anything else is bad input so
+        returnFlag = -1;
+    }
+
+    return returnFlag;
+}
+
+int reset_monitoring(String command) {
+    // default to invalid input
+    int returnFlag = -1;
+
+    const char* holder = command.c_str();
+
+    if (*(holder + 1) != 0) {
+        // any string longer than 1 char is invalid input, so
+        returnFlag = -1;
+    } 
+    else if (*holder == '1') {
+        // Check if the current state is either 2 or 3
+        if (stateHandler == state2_monitoring || stateHandler == state3_stillness) {
+            returnFlag = 1;
+            // Reset alert counts
+            numDurationAlertSent = 0;
+            numStillnessAlertSent = 0;
+
+            // Unpause duration alerts
+            hasDurationAlertBeenPaused = false;
+
+            // Publish reset message
+            Particle.publish("Monitoring Reset", "Monitoring has been reset.", PRIVATE | WITH_ACK);
+        } else {
+            // Publish invalid state message
+            Particle.publish("Monitoring Reset", "Invalid state for reset. Must be in state 2 or 3.", PRIVATE | WITH_ACK);
+            returnFlag = -1;
+        }
+    } else {
         // anything else is bad input so
         returnFlag = -1;
     }

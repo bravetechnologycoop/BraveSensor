@@ -179,6 +179,82 @@ SCENARIO("Turn_Debugging_Publishes_On_Off", "[toggle debug flag]") {
     }
 }
 
+SCENARIO("Reset Monitoring", "[reset monitoring]") {
+    GIVEN("The state handler is set to state2_monitoring") {
+        stateHandler = state2_monitoring;
+
+        WHEN("the function is called with '1'") {
+            int returnFlag = reset_monitoring("1");
+
+            THEN("the function should return 1 to indicate success") {
+                REQUIRE(returnFlag == 1);
+            }
+
+            THEN("the alert counts should be reset") {
+                REQUIRE(numDurationAlertSent == 0);
+                REQUIRE(numStillnessAlertSent == 0);
+            }
+
+            THEN("duration alerts should be unpaused") {
+                REQUIRE(hasDurationAlertBeenPaused == false);
+            }
+        }
+    }
+
+    GIVEN("The state handler is set to state3_stillness") {
+        stateHandler = state3_stillness;
+
+        WHEN("the function is called with '1'") {
+            int returnFlag = reset_monitoring("1");
+
+            THEN("the function should return 1 to indicate success") {
+                REQUIRE(returnFlag == 1);
+            }
+
+            THEN("the alert counts should be reset") {
+                REQUIRE(numDurationAlertSent == 0);
+                REQUIRE(numStillnessAlertSent == 0);
+            }
+
+            THEN("duration alerts should be unpaused") {
+                REQUIRE(hasDurationAlertBeenPaused == false);
+            }
+        }
+    }
+
+    GIVEN("The state handler is set to a state other than 2 or 3") {
+        stateHandler = state1_initial_countdown;
+
+        WHEN("the function is called with '1'") {
+            int returnFlag = reset_monitoring("1");
+
+            THEN("the function should return -1 to indicate failure") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+    }
+
+    GIVEN("The function is called with an invalid input") {
+        stateHandler = state2_monitoring;
+
+        WHEN("the function is called with '0'") {
+            int returnFlag = reset_monitoring("0");
+
+            THEN("the function should return -1 to indicate failure") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+
+        WHEN("the function is called with 'invalid'") {
+            int returnFlag = reset_monitoring("invalid");
+
+            THEN("the function should return -1 to indicate failure") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+    }
+}
+
 SCENARIO("Set Occupancy Detection INS Threshold", "[occupancy detection threshold]") {
     GIVEN("A starting initial threshold of 10") {
         occupancy_detection_ins_threshold = 10;
