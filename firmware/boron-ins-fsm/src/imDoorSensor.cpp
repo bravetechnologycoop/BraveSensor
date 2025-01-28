@@ -80,7 +80,7 @@ doorData checkIM() {
             // Reset timer on receiving a door close message or transition from open to closed + heartbeat
             if ((currentDoorData.doorStatus & 0b1000) == 0 || (previousDoorData.doorStatus & 0b0010) != 0) {
                 timeWhenDoorClosed = millis();
-                doorJustClosed = true;
+                resetOccupationOnDoorClose = true;
             }
 
             // reset consecutive door open counter since the door is closed
