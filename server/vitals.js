@@ -186,8 +186,7 @@ function convertStateArrayToObject(stateTransition) {
     'initial_timer',
     'duration_alert',
     'stillness_alert',
-    'no_movement',
-    'true_stillness_alert',
+    'missed_open_door'
   ]
   const stateObject = {
     state: statesTable[stateTransition[0]],
