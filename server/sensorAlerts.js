@@ -50,7 +50,6 @@ async function handleAlert(location, alertType, alertData) {
         //   the door opening), not the number of alerts in a server-side session (number of alerts received since the session began).
         isResettable = parsedAlertData.numberOfAlertsPublished >= helpers.getEnvVar('SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST')
       }
-
     } catch (error) {
       // default to isResettable false
       isResettable = false
