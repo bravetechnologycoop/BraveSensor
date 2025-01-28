@@ -1,7 +1,7 @@
 /*
  * Particle.h - Mock implementations for Particle.h library functions
  *
- * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  *
  * The mock implementations are necessary so that unit tests
  * can be compiled using GCC and run automatically in Travis.

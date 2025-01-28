@@ -1,6 +1,6 @@
 /* stateMachine.h - Boron firmware state machine constants, global variables and function definitions
  *
- * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  * 
  * File created by: Heidi Fedorak, Apr 2021
  */

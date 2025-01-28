@@ -1,6 +1,6 @@
 /* consoleFunctionTests.cpp - Unit tests for console functions
  *
- * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  */
 
 #define CATCH_CONFIG_MAIN

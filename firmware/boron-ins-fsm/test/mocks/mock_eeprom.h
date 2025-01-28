@@ -1,6 +1,6 @@
 /* mock_eeprom.h - Mock EEPROM memory for Particle Boron
  *
- * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  */
 
 #pragma once

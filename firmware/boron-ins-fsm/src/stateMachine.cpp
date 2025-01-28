@@ -1,6 +1,6 @@
 /* stateMachine.cpp - Boron firmware state machine source code
  *
- * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  * 
  * File created by: Heidi Fedorak, Apr 2021
  */
@@ -66,9 +66,9 @@ void setupStateMachine() {
     timeInState3 = 0;
     
     hasDurationAlertBeenPaused = false;
-    unsigned long numDurationAlertSent = 0;
-    unsigned long numStillnessAlertSent = 0;
-    unsigned long lastDurationAlertTime = 0;
+    numDurationAlertSent = 0;
+    numStillnessAlertSent = 0;
+    lastDurationAlertTime = 0;
 }
 
 void initializeStateMachineConsts() {
@@ -379,7 +379,8 @@ void state3_stillness() {
         // Transition to state 0
         stateHandler = state0_idle;
     } 
-    else if ((unsigned long)checkINS.iAverage > stillness_ins_threshold) {  // Movement detected again
+    // Transition to state 2 if movement exceeds the stillness threshold
+    else if ((unsigned long)checkINS.iAverage > stillness_ins_threshold) {
         Log.warn("State 3 --> State 2: Motion detected again.");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
 
@@ -605,7 +606,7 @@ void getHeartbeat() {
         // Log the reason for the last reset
         writer.name("resetReason").value(resetReasonString(resetReason));
 
-        // Subsequent heartbeats will not display the reset reason
+        // Reset reason is only logged once after startup
         resetReason = RESET_REASON_NONE;
 
         // ----------------------------------------------------------------------------------------

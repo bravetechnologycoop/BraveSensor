@@ -1,6 +1,6 @@
 /* tpl5010watchdog.h - Function declarations for the TPL5010 watchdog timer.
  *
- * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  * 
  * File created by: James Seto, June 2021
  */

@@ -1,6 +1,6 @@
 /* mock_serial.h - Mock implementation for Serial functions and classes
  *
- * Copyright (C) 2024 Brave Technology Coop. All rights reserved.
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  */
 
 #pragma once
