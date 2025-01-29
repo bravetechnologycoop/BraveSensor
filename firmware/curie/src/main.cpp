@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <vector>
 #include <curie.h>
@@ -56,9 +57,8 @@ int initiateBusses(){
 	return err;
 }
 
-u_int16_t commandByteCreate(){
+u_int16_t powerPeripherals(){
 
-	//int command[8] = {0};
 	uint16_t commandByte = 0x80;
 
 	#ifndef MULTI_GAS
@@ -84,8 +84,15 @@ u_int16_t commandByteCreate(){
 	#endif
 	
 	//u_int16_t commandByte = 0;
-	
-	std::cout << "Command byte: " << std::hex << commandByte << std::endl;
+	char c1[64];
+	char c2[64];
+
+	sprintf(c1, "i2cset -y 22 0x1a 0x03 %0X", commandByte);
+	sprintf(c2, "i2cset -y 22 0x1a 0x01 %0X", commandByte);
+
+	system(c1);
+	system(c2);
+	//std::cout << "Command byte: " << std::hex << commandByte << std::endl;
 
 	return commandByte;
 }
@@ -120,17 +127,9 @@ int initiateDataSources(vector<dataSource*> * dataVector){
 	int err = OK;
 	bDebug(TRACE, "Initializing the DataSources");
 
-	uint16_t commandByte = commandByteCreate();
+	powerPeripherals();
 
-	std::stringstream ss;
-    ss << "0x" << std::hex << std::uppercase << commandByte;
-    
-    std::string hexCommandByte = ss.str();
-	string shellCommand = "./src/sensorControl.sh " + hexCommandByte;
-
-	bDebug(TRACE, shellCommand);
-
-	std::system(shellCommand.c_str());
+	
 	
 	if (g_fastI2C->isReady()){
 		//fast i2c is ready to go
