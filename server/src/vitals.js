@@ -17,13 +17,6 @@ const db_new = require('./db/db_new')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
-// Expects JS Date objects and returns an int
-function differenceInSeconds(date1, date2) {
-  const dateTime1 = DateTime.fromJSDate(date1)
-  const dateTime2 = DateTime.fromJSDate(date2)
-  return dateTime1.diff(dateTime2, 'seconds').seconds
-}
-
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function handleDeviceConnectionVitals(device, client, currentDBTime, pgClient) {
@@ -39,8 +32,8 @@ async function handleDeviceConnectionVitals(device, client, currentDBTime, pgCli
       throw new Error(`No vitals found for device ${device.deviceId}`)
     }
 
-    const timeSinceLastVital = differenceInSeconds(currentDBTime, latestVital.createdAt)
-    const timeSinceLastDoorContact = differenceInSeconds(currentDBTime, latestVital.doorLastSeenAt)
+    const timeSinceLastVital = helpers.differenceInSeconds(currentDBTime, latestVital.createdAt)
+    const timeSinceLastDoorContact = helpers.differenceInSeconds(currentDBTime, latestVital.doorLastSeenAt)
 
     const deviceDisconnectionThreshold = helpers.getEnvVar('DEVICE_DISCONNECTION_THRESHOLD_SECONDS')
     const doorDisconnectionThreshold = helpers.getEnvVar('DOOR_DISCONNECTION_THRESHOLD_SECONDS')
@@ -59,7 +52,8 @@ async function handleDeviceConnectionVitals(device, client, currentDBTime, pgCli
     if (deviceDisconnected || doorDisconnected) {
       const isInitialAlert = !latestConnectionNotification
       const isReminderDue =
-        latestConnectionNotification && differenceInSeconds(currentDBTime, latestConnectionNotification.notificationSentAt) > reminderThreshold
+        latestConnectionNotification &&
+        helpers.differenceInSeconds(currentDBTime, latestConnectionNotification.notificationSentAt) > reminderThreshold
       if (isInitialAlert || isReminderDue) {
         // if device is disconnected OR both device and door are disconnected, then send device messages
         // if only door is disconnected, then send door messages

@@ -23,7 +23,6 @@
   "sensorInactivity": "El sensor de puerta en {{ deviceDisplayName }} no ha detectado ninguna actividad durante mucho tiempo. Asegúrese de que ambas partes del sensor de puerta estén completamente conectadas a la puerta. Si necesita un sensor de puerta de repuesto o tiene alguna pregunta al respecto, contáctenos enviando un correo electrónico a clientsupport@brave.coop.",
   "sensorLowBatteryInitial": "La batería del sensor de puerta {{ deviceDisplayName }} está baja y debe reemplazarse.\nPara ver un video que muestra cómo reemplazar la batería, vaya a https://bit.ly/sensor-battery",
   "sensorReconnection": "El Sensor Brave en {{ deviceDisplayName }} ({{ clientDisplayName }}) se ha reconectado.",
-  "thankYou": "Gracias",
   "SENSOR_DURATION": "Duración",
   "SENSOR_STILLNESS": "Tranquilidad",
   "SENSOR_UNKNOWN": "Incógnita",
@@ -32,9 +31,34 @@
   "Overdose": "Sobredosis",
   "None of the above": "Ninguna de las anteriores",
 
-  "durationAlert": "{{deviceName}} ha estado ocupado durante {{occupancyDuration}} minutos",
-  "stillnessAlert": "{{deviceName}} necesita una REVISIÓN DE SEGURIDAD. ¿Vas en camino? Responde con 5 o k",
-  "call": "Marcador de posición para la funcionalidad de llamada",
-  "durationAlertDoorOpened": "Vemos que la puerta se ha abierto en {{deviceName}}. Presiona 0 para contarnos más.",
-  "stillnessAlertSurveyDoorOpened": "Vemos que la puerta se ha abierto.\n¿Podrías informarnos el resultado?\n{{surveyCategories}}"
+  "durationAlert": "{{ deviceDisplayName }} ha estado ocupado durante {{ occupancyDuration }} minutos.",
+  "durationAlertSurveyPromptDoorOpened": "Vemos que la puerta se ha abierto en {{ deviceDisplayName }}. Presione 0 para decirnos más.",
+  "durationAlertSurveyDoorOpened": "¿Podría informarnos del resultado?\n{{ surveyCategoriesForMessage }}",
+  "durationAlertSurveyOtherFollowup": "¿Puede describir qué sucedió?",
+
+  "stillnessAlert": "{{ deviceDisplayName }} necesita una VERIFICACIÓN DE SEGURIDAD. ¿En camino? Responda con 5 o k.",
+  "stillnessAlertFallback": "No hay respuesta a las alertas de inmovilidad para {{ deviceDisplayName }}.",
+  "stillnessAlertFollowup": "Gracias, haremos seguimiento en {{ stillnessAlertFollowupTimer }} minutos.",
+  "stillnessAlertSurvey": "¿Podría informarnos del resultado?\n{{ surveyCategoriesForMessage }}",
+  "stillnessAlertSurveyDoorOpened": "Vemos que la puerta se ha abierto.\n¿Podría informarnos del resultado?\n{{ surveyCategoriesForMessage }}",
+  "stillnessAlertSurveyOtherFollowup": "¿Puede describir qué sucedió?",
+  "stillnessAlertSurveyOccupantOkayFollowup": "Continuaremos monitoreando esta ubicación. Responda \"1\" para detener el monitoreo.",
+  "stillnessAlertSurveyOccupantOkayEnd": "Ya no recibirá alertas de inmovilidad hasta la próxima entrada. ¡Gracias!",
+
+  "invalidResponseTryAgain": "Respuesta inválida, intente nuevamente.",
+  "nonAttendingResponderConfirmation": "Uno de sus colegas está en camino.",
+
+  "notifyDoorOpened": "La puerta se abrió en {{ deviceDisplayName }}. ¡Gracias!",
+  "braveContactInfo": "Puede contactarnos en:\nTeléfono: +18338332100\nEmail: clientsupport@brave.coop",
+  "thankYou": "¡Gracias!",
+
+  "doorLowBattery": "La batería del sensor de la puerta {{ deviceDisplayName }} está baja y necesita reemplazo.\nPara ver un video que muestra cómo reemplazar la batería, visite https://youtu.be/-mfk4-qQc4w",
+  "doorTampered": "El contacto de la puerta en {{ deviceDisplayName }} no está completamente fijado a la puerta. Para un reemplazo o cualquier pregunta, envíe un correo a clientsupport@brave.coop.",
+  "doorInactivity": "El contacto de la puerta en {{ deviceDisplayName }} no ha detectado actividad durante mucho tiempo. Asegúrese de que ambas partes del contacto de la puerta estén completamente fijadas. Si necesita un reemplazo o tiene preguntas, envíe un correo a clientsupport@brave.coop.",
+
+  "deviceDisconnectedInitial": "El Sensor Brave en {{ deviceDisplayName }} ({{ clientDisplayName }}) se ha desconectado. Por favor, presione el botón de reinicio dentro del orificio circular en el Sensor Brave usando un pin. Si no recibe un mensaje de reconexión dentro de 20 minutos, envíe un correo a clientsupport@brave.coop.",
+  "deviceDisconnectedReminder": "El Sensor Brave en {{ deviceDisplayName }} ({{ clientDisplayName }}) sigue desconectado. Por favor, presione el botón de reinicio dentro del orificio circular en el Sensor Brave usando un pin. Si no recibe un mensaje de reconexión dentro de 20 minutos, envíe un correo a clientsupport@brave.coop.",
+  "doorDisconnectedInitial": "El Contacto de Puerta para {{ deviceDisplayName }} ({{ clientDisplayName }}) se ha desconectado. Por favor, vuelva a fijar el contacto de la puerta o reemplace la batería si es necesario. Envíe un correo a clientsupport@brave.coop si se requiere un reemplazo.",
+  "doorDisconnectedReminder": "El Contacto de Puerta para {{ deviceDisplayName }} ({{ clientDisplayName }}) sigue desconectado. Por favor, vuelva a fijar el contacto de la puerta o reemplace la batería si es necesario. Envíe un correo a clientsupport@brave.coop si se requiere un reemplazo.",
+  "deviceReconnected": "El Sensor Brave en {{ deviceDisplayName }} ({{ clientDisplayName }}) se ha reconectado."
 }

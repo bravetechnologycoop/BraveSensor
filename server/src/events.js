@@ -709,7 +709,7 @@ async function handleExistingSession(device, eventType, eventData, currentSessio
     const surveyCategoriesForMessage = client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n')
     const textMessage = i18next.t(messageKey, {
       lng: clientLanguage,
-      deviceName: device.displayName,
+      deviceDisplayName: device.displayName,
       occupancyDuration: eventData.occupancyDuration,
       surveyCategoriesForMessage,
     })
@@ -801,7 +801,7 @@ async function handleNewSession(device, eventType, eventData, pgClient) {
     const clientLanguage = client.language || 'en'
     const textMessage = i18next.t(messageKey, {
       lng: clientLanguage,
-      deviceName: device.displayName,
+      deviceDisplayName: device.displayName,
       occupancyDuration: eventData.occupancyDuration,
     })
 

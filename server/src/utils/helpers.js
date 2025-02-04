@@ -121,8 +121,11 @@ async function runQuery(functionName, queryString, queryParams, pool, clientPara
   }
 }
 
-function getAlertTypeDisplayName(alertType, language, t) {
-  return t(alertType, { lng: language })
+// Expects JS Date objects and returns an int
+function differenceInSeconds(date1, date2) {
+  const dateTime1 = DateTime.fromJSDate(date1)
+  const dateTime2 = DateTime.fromJSDate(date2)
+  return dateTime1.diff(dateTime2, 'seconds').seconds
 }
 
 async function generateCalculatedTimeDifferenceString(timeToCompare, db) {
@@ -174,10 +177,6 @@ function formatDateTimeForDashboard(date) {
 }
 
 module.exports = {
-  formatDateTimeForDashboard,
-  formatExpressValidationErrors,
-  generateCalculatedTimeDifferenceString,
-  getAlertTypeDisplayName,
   getEnvVar,
   isDbLogging,
   isTestEnvironment,
@@ -188,4 +187,8 @@ module.exports = {
   runQuery,
   sleep,
   setupSentry,
+  formatExpressValidationErrors,
+  differenceInSeconds,
+  generateCalculatedTimeDifferenceString,
+  formatDateTimeForDashboard,
 }
