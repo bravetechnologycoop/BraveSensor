@@ -174,7 +174,8 @@ void threadBLEScanner(void *param) {
         spark::Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter);
 
         for (BleScanResult scanResult : scanResults) {
-            // Extract manufacturer-specific data from BLE scan result 
+            // Extract manufacturer-specific data from BLE scan result
+            // More info: https://drive.google.com/file/d/1ZbnHi7uA_xMWVIiMbQjZlbT3OOoykbr4/view?usp=sharing
             // dooradvertisingdata structure:
             // [0]: Firmware Version
             // [1-3]: Last 3 bytes of door sensor address

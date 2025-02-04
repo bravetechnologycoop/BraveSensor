@@ -14,6 +14,8 @@
 #include "stateMachine.h"
 #include "Particle.h"
 
+#define PARTICLE_MAX_MESSAGE_LENGTH    622
+
 // State machine pointer
 StateHandler stateHandler = state0_idle;
 
@@ -304,7 +306,7 @@ void state2_monitoring() {
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
 
         // Publish door opened message to particle 
-        char doorOpenedMessage[622];
+        char doorOpenedMessage[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(doorOpenedMessage, sizeof(doorOpenedMessage),
                  "{\"alertSentFromState\": %lu, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu}",
                  2, numDurationAlertSent, numStillnessAlertSent);
@@ -333,7 +335,7 @@ void state2_monitoring() {
         numDurationAlertSent += 1;
         lastDurationAlertTime = millis();
         unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
-        char alertMessage[622];
+        char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(alertMessage, sizeof(alertMessage),
                  "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
                  2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
@@ -370,7 +372,7 @@ void state3_stillness() {
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
 
         // Publish door opened message to particle
-        char doorOpenedMessage[622];
+        char doorOpenedMessage[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(doorOpenedMessage, sizeof(doorOpenedMessage), 
                  "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu}", 
                  3, numDurationAlertSent, numStillnessAlertSent);
@@ -397,7 +399,7 @@ void state3_stillness() {
         // Publish duration alert to particle
         numDurationAlertSent += 1;
         unsigned long occupancy_duration = calculateTimeSince(timeWhenDoorClosed) / 60000; // Convert to minutes
-        char alertMessage[622];
+        char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(alertMessage, sizeof(alertMessage), 
                  "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
                  3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
@@ -417,7 +419,7 @@ void state3_stillness() {
         // Publish stillness alert to particle
         numStillnessAlertSent += 1;
         unsigned long occupancy_duration = calculateTimeSince(timeWhenDoorClosed) / 60000; // Convert to minutes
-        char alertMessage[622];
+        char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(alertMessage, sizeof(alertMessage), 
                  "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
                  3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
@@ -438,7 +440,7 @@ void state3_stillness() {
         // Publish follow-up stillness alert to particle
         numStillnessAlertSent += 1;
         unsigned long occupancy_duration = calculateTimeSince(timeWhenDoorClosed) / 60000; // Convert to minutes
-        char alertMessage[622];
+        char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(alertMessage, sizeof(alertMessage), 
                  "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
                  3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
@@ -455,8 +457,7 @@ void state3_stillness() {
 
 void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue) {
     if (stateMachineDebugFlag) {
-        // From particle docs, max length of publish is 622 chars, I am assuming this includes null char
-        char stateTransition[622];
+        char stateTransition[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(stateTransition, sizeof(stateTransition),
                  "{"
                     "\"prev_state\":\"%d\", "
@@ -475,8 +476,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
             stateMachineDebugFlag = false;
         }
         else if (calculateTimeSince(lastDebugPublish) > DEBUG_PUBLISH_INTERVAL) {
-            // From particle docs, max length of publish is 622 chars, I am assuming this includes null char
-            char debugMessage[622];
+            char debugMessage[PARTICLE_MAX_MESSAGE_LENGTH];
             snprintf(debugMessage, sizeof(debugMessage),
                      "{"
                         "\"state\":\"%d\", "
@@ -544,12 +544,9 @@ void getHeartbeat() {
         (doorMessageReceivedFlag && (calculateTimeSince(doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY))) {
             
         // Prepare the heartbeat message
-        // From particle docs, max length of publish is 622 chars, I am assuming this includes null char
-        char heartbeatMessage[622] = {0};
+        char heartbeatMessage[PARTICLE_MAX_MESSAGE_LENGTH] = {0};
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
         writer.beginObject();
-
-        // ----------------------------------------------------------------------------------------
 
         // Log the time since the last door message, battery status, and tamper status
         // if a door message has been received, otherwise default to -1
@@ -608,8 +605,6 @@ void getHeartbeat() {
 
         // Reset reason is only logged once after startup
         resetReason = RESET_REASON_NONE;
-
-        // ----------------------------------------------------------------------------------------
 
         // Publish the heartbeat message to particle
         writer.endObject();
