@@ -3,7 +3,7 @@ const pg = require('pg')
 
 // In-house dependencies
 const { helpers } = require('../utils/index')
-const { ALERT_TYPE, CHATBOT_STATE, DEVICE_TYPE, STATUS } = require('../enums/index')
+const { ALERT_TYPE, CHATBOT_STATE, DEVICE_TYPE, DEVICE_STATUS } = require('../enums/index')
 const { Client, ClientExtension, Device, SensorsVital, Session } = require('../models/index')
 
 const pool = new pg.Pool({
@@ -1247,7 +1247,7 @@ async function createClient(
         isSendingAlerts,
         isSendingVitals,
         language,
-        STATUS.TESTING,
+        DEVICE_STATUS.TESTING,
         null,
       ],
       pool,

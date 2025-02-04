@@ -8,10 +8,11 @@ const SensorsVital = require('./SensorsVital')
 
 const ClientNew = require('./ClientNew')
 const ClientExtensionNew = require('./ClientExtensionNew')
-const SessionNew = require('./SessionNew')
 const DeviceNew = require('./DeviceNew')
+const SessionNew = require('./SessionNew')
 const EventNew = require('./EventNew')
 const VitalNew = require('./VitalNew')
+const NotificationNew = require('./NotificationNew')
 
 module.exports = {
   Client,
@@ -19,10 +20,12 @@ module.exports = {
   Device,
   Session,
   SensorsVital,
+
   ClientNew,
   ClientExtensionNew,
   SessionNew,
   DeviceNew,
   EventNew,
   VitalNew,
+  NotificationNew,
 }

@@ -4,7 +4,6 @@ const EVENT_TYPE = {
   DOOR_OPENED: 'DOOR_OPENED',
   MSG_SENT: 'MSG_SENT',
   MSG_RECEIVED: 'MSG_RECEIVED',
-  CALL: 'CALL',
 }
 
 module.exports = Object.freeze(EVENT_TYPE)

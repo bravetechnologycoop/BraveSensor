@@ -17,6 +17,13 @@ const productId = helpers.getEnvVar('PARTICLE_PRODUCT_GROUP')
 const particleApi = new ParticleApi()
 
 async function resumeStateMachineMonitoring(deviceId) {
+  // try {
+  //   helpers.log(`Calling resumeStateMachineMonitoring for device: ${deviceId}`)
+  //   return
+  // } catch (error) {
+  //   throw new Error(`resumeStateMachineMonitoring: ${error.errorDescription} : for device ${deviceId}`)
+  // }
+
   try {
     await particleApi.callFunction({
       deviceId,
@@ -26,15 +33,8 @@ async function resumeStateMachineMonitoring(deviceId) {
       auth: particleAccessToken,
     })
   } catch (error) {
-    helpers.logError(`resumeStateMachineMonitoring: ${error.errorDescription} : for device ${deviceId}`)
+    throw new Error(`resumeStateMachineMonitoring: ${error.errorDescription} : for device ${deviceId}`)
   }
-
-  // try {
-  //   helpers.log(`Calling resumeStateMachineMonitoring for device: ${deviceId}`)
-  //   return
-  // } catch (error) {
-  //   throw new Error(`resumeStateMachineMonitoring: ${error.errorDescription} : for device ${deviceId}`)
-  // }
 }
 
 module.exports = {

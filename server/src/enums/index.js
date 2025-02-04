@@ -1,19 +1,15 @@
 // index.js
 
-const ALERT_TYPE = require('./alertTypeEnum')
-const CHATBOT_STATE = require('./chatbotStateEnum')
 const DEVICE_TYPE = require('./deviceTypeEnum')
-const STATUS = require('./deviceStatusEnum')
-
-const EVENT_TYPE = require('./eventTypeEnum')
+const DEVICE_STATUS = require('./deviceStatusEnum')
 const SESSION_STATUS = require('./sessionStatusEnum')
+const EVENT_TYPE = require('./eventTypeEnum')
+const NOTIFICATION_TYPE = require('./notificationTypeEnum')
 
 module.exports = {
-  ALERT_TYPE,
-  CHATBOT_STATE,
   DEVICE_TYPE,
-  STATUS,
-
-  EVENT_TYPE,
+  DEVICE_STATUS,
   SESSION_STATUS,
+  EVENT_TYPE,
+  NOTIFICATION_TYPE,
 }
