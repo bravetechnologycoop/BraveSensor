@@ -17,31 +17,6 @@ const db_new = require('./db/db_new')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
-async function sendMessageToPhoneNumbers(fromNumber, toNumbers, textMessage) {
-  const numbersToSend = Array.isArray(toNumbers) ? toNumbers : [toNumbers]
-  if (!fromNumber || !numbersToSend || numbersToSend.length === 0) {
-    throw new Error('sendMessageToPhoneNumbers: Missing from number or to numbers')
-  }
-
-  try {
-    // helpers.log(`Sending Message to ${toNumbers}: ${textMessage}`)
-    // return
-
-    const sendPromises = numbersToSend.map(toNumber => twilioHelpers.sendTwilioMessage(toNumber, fromNumber, textMessage))
-
-    const responses = await Promise.all(sendPromises)
-
-    const failedResponses = responses.filter(response => !response)
-    if (failedResponses.length > 0) {
-      throw new Error(`sendMessageToPhoneNumbers: Failed to send ${failedResponses.length} messages out of ${numbersToSend.length}`)
-    }
-
-    return responses
-  } catch (error) {
-    throw new Error(`sendMessageToPhoneNumbers: Error sending message: ${error}`)
-  }
-}
-
 // Expects JS Date objects and returns an int
 function differenceInSeconds(date1, date2) {
   const dateTime1 = DateTime.fromJSDate(date1)
@@ -110,7 +85,11 @@ async function handleDeviceConnectionVitals(device, client, currentDBTime, pgCli
         deviceDisplayName: device.displayName,
         clientDisplayName: client.displayName,
       })
-      await sendMessageToPhoneNumbers(client.vitalsTwilioNumber, [...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers], message)
+      await twilioHelpers.sendMessageToPhoneNumbers(
+        client.vitalsTwilioNumber,
+        [...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers],
+        message,
+      )
     }
   } catch (error) {
     throw new Error(`handleDeviceConnectionVitals: ${error.message}`)
@@ -216,7 +195,11 @@ async function handleVitalNotifications(
         lng: client.language || 'en',
         deviceDisplayName: device.displayName,
       })
-      await sendMessageToPhoneNumbers(client.vitalsTwilioNumber, [...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers], message)
+      await twilioHelpers.sendMessageToPhoneNumbers(
+        client.vitalsTwilioNumber,
+        [...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers],
+        message,
+      )
     }
   } catch (error) {
     throw new Error(`handleHeartbeatNotification: ${error.message}`)

@@ -41,6 +41,31 @@ async function sendTwilioResponse(response, message) {
   response.end(twiml.toString())
 }
 
+async function sendMessageToPhoneNumbers(fromNumber, toNumbers, textMessage) {
+  const numbersToSend = Array.isArray(toNumbers) ? toNumbers : [toNumbers]
+  if (!fromNumber || !numbersToSend || numbersToSend.length === 0) {
+    throw new Error('sendMessageToPhoneNumbers: Missing from number or to numbers')
+  }
+
+  try {
+    // helpers.log(`Sending Message to ${toNumbers}: ${textMessage}`)
+    // return
+
+    const sendPromises = numbersToSend.map(toNumber => sendTwilioMessage(toNumber, fromNumber, textMessage))
+
+    const responses = await Promise.all(sendPromises)
+
+    const failedResponses = responses.filter(response => !response)
+    if (failedResponses.length > 0) {
+      throw new Error(`sendMessageToPhoneNumbers: Failed to send ${failedResponses.length} messages out of ${numbersToSend.length}`)
+    }
+
+    return responses
+  } catch (error) {
+    throw new Error(`sendMessageToPhoneNumbers: Error sending message: ${error}`)
+  }
+}
+
 async function buyAndConfigureTwilioPhoneNumber(areaCode, friendlyName) {
   const twilioClient = getTwilioClient()
 
@@ -72,7 +97,8 @@ async function buyAndConfigureTwilioPhoneNumber(areaCode, friendlyName) {
 }
 
 module.exports = {
-  buyAndConfigureTwilioPhoneNumber,
   sendTwilioMessage,
+  sendMessageToPhoneNumbers,
   sendTwilioResponse,
+  buyAndConfigureTwilioPhoneNumber,
 }
