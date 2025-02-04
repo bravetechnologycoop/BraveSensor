@@ -199,7 +199,7 @@ async function handleStillnessAlertFollowupTrigger(deviceId, responderPhoneNumbe
 
     try {
       // Use deviceId to get the latest session info
-      const session = await db_new.getCurrentActiveSessionWithDeviceId(deviceId, pgClient)
+      const session = await db_new.getLatestActiveSessionWithDeviceId(deviceId, pgClient)
       if (!session) {
         helpers.logError(`handleStillnessAlertFollowupTrigger: No active session found for deviceId: ${deviceId}`)
         await db_new.rollbackTransaction(pgClient)
@@ -467,7 +467,7 @@ async function handleStillnessAlertSurveyOtherFollowup(session, responderPhoneNu
 // Incoming Twilio Message Events (/alert/sms)
 
 async function handleIncomingMessage(latestSession, latestRespondableEvent, responderPhoneNumber, deviceTwilioNumber, message, pgClient) {
-  const client = await db_new.getClientWithDeviceId(latestSession.deviceId)
+  const client = await db_new.getClientWithDeviceId(latestSession.deviceId, pgClient)
   const clientLanguage = client.language || 'en'
   const surveyCategories = client.surveyCategories
   const surveyCategoriesForMessage = surveyCategories.map((category, index) => `${index}: ${category}`).join('\n')
@@ -704,7 +704,7 @@ async function handleExistingSession(device, eventType, eventData, currentSessio
     }
 
     // construct the translated text message using message key
-    const client = await db_new.getClientWithClientId(device.clientId)
+    const client = await db_new.getClientWithClientId(device.clientId, pgClient)
     const clientLanguage = client.language || 'en'
     const surveyCategoriesForMessage = client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n')
     const textMessage = i18next.t(messageKey, {
@@ -797,7 +797,7 @@ async function handleNewSession(device, eventType, eventData, pgClient) {
     const messageKey = selectMessageKeyForNewSession(eventType)
 
     // construct the translated text message using message key
-    const client = await db_new.getClientWithClientId(device.clientId)
+    const client = await db_new.getClientWithClientId(device.clientId, pgClient)
     const clientLanguage = client.language || 'en'
     const textMessage = i18next.t(messageKey, {
       lng: clientLanguage,
@@ -838,7 +838,7 @@ async function processSensorEvent(device, eventType, eventData) {
     // A session is finished only if its session_status is COMPLETED and door_opened is true.
     // Ever other session is considered as an "active" session and should be selected here.
     // Those are (status, doorOpened) --> (ACTIVE, true), (ACTIVE, false), (COMPLETED, false)
-    const currentSession = await db_new.getCurrentActiveSessionWithDeviceId(device.deviceId, pgClient)
+    const currentSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId, pgClient)
     if (!currentSession) {
       await handleNewSession(device, eventType, eventData, pgClient)
     } else {
@@ -902,7 +902,7 @@ async function handleSensorEvent(request, response) {
         return respondWithError(response, request.path, `Error parsing eventData: ${error.toString()}`)
       }
     }
-
+    
     const device = await db_new.getDeviceWithParticleDeviceId(particleDeviceID)
     if (!device) {
       return respondWithError(response, request.path, `No device matches the coreID ${particleDeviceID}`)
