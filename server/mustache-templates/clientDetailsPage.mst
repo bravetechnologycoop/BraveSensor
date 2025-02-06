@@ -18,19 +18,36 @@
     <div class="content-area">
         <div class="content-wrapper">
             {{#currentClient}}
-                <h3>{{displayName}} Sessions Overview</h3>
+                <h3>Client:  {{displayName}}</h3>
 
                 <a href="/clients/{{id}}/vitals" class="btn btn-secondary btn-sm" role="button">View Vitals</a>
                 <a href="/clients/{{id}}/edit" class="btn btn-secondary btn-sm ml-1" role="button">Edit Client</a>
                 <br>
                 <br>
-                
+                <br>
+
+                <h5>Client Information</h5>
+                <div class="client-info">
+                    <p><strong>Responder Phone Numbers:</strong> {{#responderPhoneNumbers}}{{.}}, {{/responderPhoneNumbers}}</p>
+                    <p><strong>Fallback Phone Numbers:</strong> {{#fallbackPhoneNumbers}}{{.}}, {{/fallbackPhoneNumbers}}</p>
+                    <p><strong>Funder:</strong> <span>{{funder}}</span></p>
+                    <p><strong>Organization:</strong> <span>{{organization}}</span></p>
+                    <p><strong>Project:</strong> <span>{{project}}</span></p>
+                    <p><strong>Country:</strong> <span>{{country}}</span></p>
+                    <p><strong>Country Subdivision:</strong> <span>{{countrySubdivision}}</span></p>
+                    <p><strong>Building Type:</strong> <span>{{buildingType}}</span></p>
+                    <p><strong>Postal Code:</strong> <span>{{postalCode}}</span></p>
+                    <p><strong>City:</strong> <span>{{city}}</span></p>
+                </div>
+
+                <h5>Locations</h5>
                 <div class="table-responsive">
                     <table class="table table-striped table-sm table-fixed">
                         <thead>
                             <tr class="table-header" scope="row">
-                                <th scope="col"><h5>Location</h5></th>
-                                <th scope="col"><h5>Last Session Started</h5></th>
+                                <th scope="col">Location Name</th>
+                                <th scope="col">Device Type</th>
+                                <th scope="col">Last Session Started</th>
                                 <th scope="col">Sends Alerts?</th>
                                 <th scope="col">Sends Vitals?</th>
                             </tr>
@@ -38,7 +55,9 @@
                         <tbody>
                         {{#locations}}
                             <tr class="table-data">
+                                {{! Clicking item renders location/device details }}
                                 <th scope="row"><a href="/locations/{{id}}">{{name}}</a></th>
+                                <td>{{deviceType}}</td>
                                 <td>{{sessionStart}}</td>
                                 <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
                                 <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>

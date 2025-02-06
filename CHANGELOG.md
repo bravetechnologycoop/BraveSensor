@@ -11,11 +11,78 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [11.0.0] - 2025-01-16
+
+### Added
+
+- Added INS threshold for Occupant Detection, state0 <-> state1 entry/exit condition (CU-86dvnjxk7).
+- Added Initialization procedures for firmware coming from v1924 and v10160 (CU-86dvnjxk7).
+- Added `sensorDoorDisconnectionInitial`, `sensorRadarDisconnectionInitial`, `sensorDoorDisconnectionReminder` and `sensorRadarDisconnectionReminder` to english and spanish messages (CU-86duu0vdu).
+- Added functions for the above messages in `vitals.js` (CU-86duu0vdu).
+- Added migration script 54 which adds the `status` and `first_device_live_at` column to clients (CU-86dv9uxta).
+- Added new status and first_device_live_at fields to edit client dashboard page (CU-86dv9uxta).
+- Created dashboard hierarchy: "Funder" -> "Projects" -> "Organization" -> "Clients" -> "Devices" using URL parameters (CU-86dup4jg7).
+- Added new routes and dashboard functions for rendering project and organization pages (CU-86dup4jg7).
+
+### Changed
+
+- Names of particle functions to make them easier to use on the console (CU-86dvnjx2q).
+- Updated `checkHeartbeat` function in `vitals.js` to send the 2 different messages (CU-86duu0vdu).
+- Removed `sendDisconnectionMessage` and `sendDisconnectionReminder`function in `vitals.js` (CU-86duu0vdu).
+- Updated dashboard homepage to include and sort by Organization (CU-86dva4dxd).
+- Updated brave-alert-lib to v15.0.6 due to client model change (CU-86dv9uxta).
+- Updated submitEditClientTest.js test cases with new client fields (CU-86dv9uxta).
+- Updated the client details dashboard page to provide an overview of client information (CU-86dup4jg7).
+- Enhanced the landing page with a new search feature and toggle options for various views based on new pages (CU-86dup4jg7).
+- Updated the CSS for dashboard pages -- `pageCSSPartial.mst` -- including new table headers and a search bar (CU-86dup4jg7).
+- Fixed error caused due to updating client's first_device_live_at in dashboard (CU-86dvqgum0).
+
+### Removed
+
+- Removed toggling of GPIO pins in state machine
+- Deleted old CSS code `locationCSSPartial.mst` and `locationFormCSSPartial.mst` (CU-86dup4jg7).
+
+## [10.16.0] - 2024-11-14
+
+### Added
+
+- Added migration script to update device_type_enum to handle multistall and singlestall sensors separately (CU-86duvwbq2).
+- Added dashboard functionality for submit new location and edit location to handle different device_types using dropdown (CU-86duvwbq2).
+- Added new integration tests for inserting a multi-stall sensor and editing single-stall to multi-stall (CU-86duvwbq2).
+
+### Changed
+
+- Updated brave-alert-lib to v15.0.4 for deviceType enum change (CU-86duvwbq2).
+- Updated device_type_enum to have 'DEVICE_SENSOR_SINGLESTALL' and 'DEVICE_SENSOR_MULTISTALL' instead of 'DEVICE_SENSOR' (CU-86duvwbq2).
+- Updated test cases for newLocation and updateLocation to use new device types (CU-86duvwbq2).
+- Updated the /pa/create-sensor-location route due to createLocationFromBrowserForm() db function change (CU-86duvwbq2).
+- Changed english messages `alertAdditionalAlertAcceptResetRequest`, `alertStartAcceptResetRequest`, `resetNoticeToRequester`, `resetNoticeToOtherResponders`, `resetRequestRejected`, `sensorDisconnectionInitial`, `sensorDisconnectionReminder`, `sensorIsTampered`, `sensorInactivity` to reduce twilio message segments (CU-86duzccj5).
+- Changed messages in test cases to match the new ones (CU-86duzccj5).
+- Updated integration tests that uses the disconnection messages to reflect the new outcomes (CU-86duu0vdu).
+
+## [10.15.0] - 2024-10-17
+
+### Added
+
+- Added new columns to the Sensor dashboard due to change in clients_extension table (CU-86dun4p2p).
+- Added new pa route: /pa/get-client-devices for extracting all devices for client (CU-86due80fw).
+- Created a new database function - getClientDevices; for retrieving all devices owned by client (CU-86due80fw).
+
+### Changed
+
+- Updated the .env.example with the latest .env structure (CU-86dun7tc2).
+- Update pw migration instructions (CU-86duhae9t).
+- Make fallback number optional for Sensors dashboard (CU-86du49q25).
+- Updated styling for landing page to match the other pages and button dashboard (CU-86dup4ghg).
+
 ## [10.14.0] - 2024-09-12
 
 ### Added 
 
 - Added new prefix for BLE door sensor ID's (CU-86duk2kpg).
+- Added information about turning on and off the AWS environments for dev (CU-86du8ncph).
+- Added information about turning on and off the AWS environments for staging (CU-86du8ncph).
+- Added a section to message clients on the PA before and after production deployment (CU-86du8ncph).
 
 ## [10.13.0] - 2024-09-10
 
@@ -818,8 +885,11 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...HEAD
-[10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...10.14.0
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v11.0.0...HEAD
+[11.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.16.0...v11.0.0
+[10.16.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...v10.16.0
+[10.15.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...v10.15.0
+[10.14.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.13.0...v10.14.0
 [10.13.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.12.0...v10.13.0
 [10.12.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.11.0...v10.12.0
 [10.11.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.10.0...v10.11.0

@@ -48,6 +48,7 @@ const validateCreateSensorLocation = Validator.body([
   'particleDeviceID',
   'twilioNumber',
   'clientID',
+  'deviceType',
   'googleIdToken',
 ])
   .trim()
@@ -59,15 +60,17 @@ async function handleCreateSensorLocation(req, res) {
   if (validationErrors.isEmpty()) {
     const braveAPIKey = req.body.braveKey
     const password = req.body.password
+
     const locationID = req.body.locationID
     const displayName = req.body.displayName
-    const particleDeviceID = req.body.particleDeviceID
+    const serialNumber = req.body.particleDeviceID
     const phoneNumber = req.body.twilioNumber
     const clientID = req.body.clientID
+    const deviceType = req.body.deviceType
 
     if (paApiKeys.includes(braveAPIKey) && paPasswords.includes(password)) {
       try {
-        const results = await db.createLocationFromBrowserForm(locationID, displayName, particleDeviceID, phoneNumber, clientID)
+        const results = await db.createLocationFromBrowserForm(locationID, displayName, serialNumber, phoneNumber, clientID, deviceType)
 
         if (results === null) {
           res.status(400).send({ message: 'Error in database insert' })
@@ -102,6 +105,42 @@ async function handleGetSensorClients(req, res) {
 
         const processedClients = clients.map(client => {
           return { name: client.displayName, id: client.id }
+        })
+
+        res.status(200).send({ message: 'success', clients: processedClients })
+      } catch (err) {
+        helpers.logError(err)
+        res.status(500).send({ message: 'Error in Database Access' })
+      }
+    } else {
+      res.status(401).send({ message: 'Invalid API Key' })
+    }
+  } else {
+    const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
+    helpers.log(errorMessage)
+    res.status(400).send(errorMessage)
+  }
+}
+
+const validateGetClientDevices = Validator.body(['braveKey', 'googleIdToken', 'displayName']).trim().notEmpty()
+
+async function handleGetClientDevices(req, res) {
+  const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+
+  if (validationErrors.isEmpty()) {
+    const braveAPIKey = req.body.braveKey
+    const displayName = req.body.displayName
+
+    if (paApiKeys.includes(braveAPIKey)) {
+      try {
+        const clientDevices = await db.getClientDevices(displayName)
+
+        const processedClients = clientDevices.map(clientDevice => {
+          return {
+            locationID: clientDevice.locationid,
+            displayName: clientDevice.display_name,
+            deviceID: clientDevice.serial_number,
+          }
         })
 
         res.status(200).send({ message: 'success', clients: processedClients })
@@ -242,10 +281,12 @@ module.exports = {
   getGooglePayload,
   handleCreateSensorLocation,
   handleGetSensorClients,
+  handleGetClientDevices,
   handleSensorPhoneNumber,
   handleMessageClients,
   validateCreateSensorLocation,
   validateGetSensorClients,
+  validateGetClientDevices,
   validateSensorPhoneNumber,
   validateMessageClients,
   validateCheckDatabaseConnection,

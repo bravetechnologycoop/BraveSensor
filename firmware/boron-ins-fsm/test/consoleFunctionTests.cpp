@@ -417,15 +417,15 @@ SCENARIO("Set Long Stillness Timer", "[long stillness timer]") {
     }
 }
 
-SCENARIO("Set INS Threshold", "[ins threshold]") {
+SCENARIO("Set Stillness INS Threshold", "[stillness threshold]") {
     GIVEN("A starting initial threshold of 10") {
-        ins_threshold = 10;
+        stillness_ins_threshold = 10;
 
         WHEN("the function is called with 'e'") {
             int returnFlag = ins_threshold_set("e");
 
             THEN("the initial timer value should remain the same") {
-                REQUIRE(ins_threshold == 10);
+                REQUIRE(stillness_ins_threshold == 10);
             }
 
             THEN("the function should return the stored value") {
@@ -437,7 +437,7 @@ SCENARIO("Set INS Threshold", "[ins threshold]") {
             int returnFlag = ins_threshold_set("15");
 
             THEN("the initial timer value should be updated to the input") {
-                REQUIRE(ins_threshold == 15);
+                REQUIRE(stillness_ins_threshold == 15);
             }
 
             THEN("the function should return the input") {
@@ -449,7 +449,7 @@ SCENARIO("Set INS Threshold", "[ins threshold]") {
             int returnFlag = ins_threshold_set("-15");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(ins_threshold == 10);
+                REQUIRE(stillness_ins_threshold == 10);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -461,7 +461,61 @@ SCENARIO("Set INS Threshold", "[ins threshold]") {
             int returnFlag = ins_threshold_set("nonint");
 
             THEN("the initial timer value should not be updated") {
-                REQUIRE(ins_threshold == 10);
+                REQUIRE(stillness_ins_threshold == 10);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+    }
+}
+
+SCENARIO("Set Occupation Detection INS Threshold", "[occupation detection threshold]") {
+    GIVEN("A starting initial threshold of 10") {
+        occupation_detection_ins_threshold = 10;
+
+        WHEN("the function is called with 'e'") {
+            int returnFlag = occupant_detection_ins_threshold_set("e");
+
+            THEN("the initial timer value should remain the same") {
+                REQUIRE(occupation_detection_ins_threshold == 10);
+            }
+
+            THEN("the function should return the stored value") {
+                REQUIRE(occupation_detection_ins_threshold == 10);
+            }
+        }
+
+        WHEN("the function is called with a positive integer") {
+            int returnFlag = occupant_detection_ins_threshold_set("15");
+
+            THEN("the initial timer value should be updated to the input") {
+                REQUIRE(occupation_detection_ins_threshold == 15);
+            }
+
+            THEN("the function should return the input") {
+                REQUIRE(occupation_detection_ins_threshold == 15);
+            }
+        }
+
+        WHEN("the function is called with a negative integer") {
+            int returnFlag = occupant_detection_ins_threshold_set("-15");
+
+            THEN("the initial timer value should not be updated") {
+                REQUIRE(occupation_detection_ins_threshold == 10);
+            }
+
+            THEN("the function should return -1 to indicate an error") {
+                REQUIRE(returnFlag == -1);
+            }
+        }
+
+        WHEN("the function is called with something other than 'e' or a positive integer") {
+            int returnFlag = occupant_detection_ins_threshold_set("nonint");
+
+            THEN("the initial timer value should not be updated") {
+                REQUIRE(occupation_detection_ins_threshold == 10);
             }
 
             THEN("the function should return -1 to indicate an error") {
