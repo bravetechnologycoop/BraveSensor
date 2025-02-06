@@ -15,6 +15,12 @@ jobs:
       PASSWORD_TEST: 1234
       SECRET_TEST: secret
 
+      PG_USER: myuser
+      PG_DATABASE: mydb
+      PG_PASSWORD: 1234
+      PG_HOST: localhost
+      PG_PORT: 5432
+
       PG_USER_TEST: myuser
       PG_DATABASE_TEST: mydb
       PG_PASSWORD_TEST: 1234
