@@ -11,7 +11,6 @@ const Mustache = require('mustache')
 const Validator = require('express-validator')
 const session = require('express-session')
 const cookieParser = require('cookie-parser')
-const { Parser } = require('json2csv')
 
 // In-house dependencies
 const { helpers } = require('./utils/index')
@@ -32,8 +31,6 @@ const clientDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templat
 const newDevicePageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newDevicePage.mst`, 'utf-8')
 const updateDevicePageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateDevicePage.mst`, 'utf-8')
 const deviceDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/deviceDetailsPage.mst`, 'utf-8')
-
-const vitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/vitals.mst`, 'utf-8')
 
 function setupDashboardSessions(app) {
   app.use(cookieParser())
@@ -360,75 +357,6 @@ async function renderDeviceDetailsPage(req, res) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
-}
-
-async function renderVitalsPage(req, res) {
-  try {
-    const clients = await db.getClients()
-
-    const viewParams = {
-      sensors: [],
-      clients: clients.filter(client => client.isDisplayed),
-      currentDateTime: helpers.formatDateTimeForDashboard(await db.getCurrentTime()),
-    }
-
-    const sensorsVitals = await db.getRecentSensorsVitals()
-
-    for (const sensorsVital of sensorsVitals) {
-      if (sensorsVital.device.isDisplayed && sensorsVital.device.client.isDisplayed) {
-        viewParams.sensors.push({
-          client: sensorsVital.device.client,
-          location: sensorsVital.device,
-          sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
-          sensorLastSeenAgo:
-            sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
-          doorLastSeenAt: sensorsVital.doorLastSeenAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt) : 'Never',
-          doorLastSeenAgo:
-            sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
-          isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
-          isTampered: sensorsVital.isTampered !== null ? sensorsVital.isTampered : 'unknown',
-          isSendingAlerts: sensorsVital.device.client.isSendingAlerts && sensorsVital.device.isSendingAlerts,
-          isSendingVitals: sensorsVital.device.client.isSendingVitals && sensorsVital.device.isSendingVitals,
-        })
-      }
-    }
-
-    res.send(Mustache.render(vitalsTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
-  } catch (err) {
-    helpers.logError(err)
-    res.status(500).send()
-  }
-}
-
-async function downloadCsv(req, res) {
-  const data = await db.getDataForExport()
-  const fields = [
-    'Client ID',
-    'Client Name',
-    'Sensor ID',
-    'Sensor Name',
-    'Radar Type',
-    'Active?',
-    'Session ID',
-    'Session Start',
-    'Session Responded At',
-    'Last Session Activity',
-    'Session Incident Type',
-    'Session State',
-    'Alert Type',
-    'Session Responded By',
-    'Country',
-    'Country Subdivision',
-    'Building Type',
-  ]
-
-  const csvParser = new Parser({ fields })
-  const csv = csvParser.parse(data)
-
-  const millis = Date.now()
-  const timestamp = new Date(millis).toISOString().slice(0, -5).replace(/T|:/g, '_')
-
-  res.set('Content-Type', 'text/csv').attachment(`sensor-data(${timestamp}).csv`).send(csv)
 }
 
 const validateNewClient = [
@@ -764,10 +692,6 @@ module.exports = {
   renderNewDevicePage,
   renderUpdateDevicePage,
   renderDeviceDetailsPage,
-
-  renderVitalsPage,
-
-  downloadCsv,
 
   validateNewClient,
   submitNewClient,

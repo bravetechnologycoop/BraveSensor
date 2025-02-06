@@ -10,28 +10,20 @@ const smokeTest = require('./smokeTest')
 function configureRoutes(app) {
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)
   app.get('/dashboard', dashboard.sessionChecker, dashboard.renderLandingPage)
-
   app.get('/projects', dashboard.sessionChecker, dashboard.renderFunderProjectsPage) // projects?funder=
   app.get('/organizations', dashboard.sessionChecker, dashboard.renderProjectOrganizationsPage) // organizations?project=
   app.get('/clients', dashboard.sessionChecker, dashboard.renderOrganizationClientsPage) // clients?organization=
-
   app.get('/clients/new', dashboard.sessionChecker, dashboard.renderNewClientPage) // Must be configured before /clients/:clientId
   app.get('/clients/:clientId/update', dashboard.sessionChecker, dashboard.renderUpdateClientPage)
   app.get('/clients/:clientId', dashboard.sessionChecker, dashboard.renderClientDetailsPage)
-
   app.get('/devices/new', dashboard.sessionChecker, dashboard.renderNewDevicePage) // Must be configured before /devices/:deviceId
   app.get('/devices/:deviceId/update', dashboard.sessionChecker, dashboard.renderUpdateDevicePage)
   app.get('/devices/:deviceId', dashboard.sessionChecker, dashboard.renderDeviceDetailsPage)
-
-  app.get('/vitals', dashboard.sessionChecker, dashboard.renderVitalsPage)
-
-  app.get('/export-data', dashboard.sessionChecker, dashboard.downloadCsv)
   app.get('/login', dashboard.renderLoginPage)
   app.get('/logout', dashboard.submitLogout)
 
   app.post('/clients', dashboard.validateNewClient, dashboard.submitNewClient)
   app.post('/clients/:clientId', dashboard.validateUpdateClient, dashboard.submitUpdateClient)
-
   app.post('/devices', dashboard.validateNewDevice, dashboard.submitNewDevice)
   app.post('/devices/:deviceId', dashboard.validateUpdateDevice, dashboard.submitUpdateDevice)
   app.post('/login', dashboard.submitLogin)
