@@ -19,6 +19,7 @@ function configureRoutes(app) {
   app.get('/devices/new', dashboard.sessionChecker, dashboard.renderNewDevicePage) // Must be configured before /devices/:deviceId
   app.get('/devices/:deviceId/update', dashboard.sessionChecker, dashboard.renderUpdateDevicePage)
   app.get('/devices/:deviceId', dashboard.sessionChecker, dashboard.renderDeviceDetailsPage)
+
   app.get('/login', dashboard.renderLoginPage)
   app.get('/logout', dashboard.submitLogout)
 
@@ -33,8 +34,8 @@ function configureRoutes(app) {
 
   app.post('/api/sensorEvent', events.validateSensorEvent, events.handleSensorEvent)
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
-  app.post('/alert/sms', events.validateTwilioRequest, events.handleTwilioRequest)
-  // app.post('/alert/sms', events.handleTwilioRequest)
+  // app.post('/alert/sms', events.validateTwilioRequest, events.handleTwilioRequest)
+  app.post('/alert/sms', events.handleTwilioRequest)
 
   app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
   app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)

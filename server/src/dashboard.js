@@ -129,6 +129,7 @@ async function fetchAndMergeLatestVitals(devices) {
       const vital = latestVitals[index]
       if (!vital) return { ...device, latestVital: null }
 
+      // calculate and add time since last vital as a field
       const vitalCreatedAt = Date.parse(vital.createdAt)
       const timeSinceLastVital = await helpers.generateCalculatedTimeDifferenceString(vitalCreatedAt, db_new)
 
@@ -153,6 +154,20 @@ function filterUniqueItems(items, key) {
     seen.add(value)
     return true
   })
+}
+
+const dateFormatters = {
+  formatDate() {
+    return function formatTimestamp(timestamp, render) {
+      const date = new Date(render(timestamp))
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    }
+  },
 }
 
 async function renderLandingPage(req, res) {
@@ -375,12 +390,20 @@ async function renderDeviceDetailsPage(req, res) {
 
     const device = await db_new.getDeviceWithDeviceId(deviceId)
     const client = await db_new.getClientWithDeviceId(deviceId)
+
     const latestVital = await db_new.getLatestVitalWithDeviceId(deviceId)
+
+    // add extra fields to latest vital for display
+    if (latestVital) {
+      latestVital.timeSinceLastVital = await helpers.generateCalculatedTimeDifferenceString(latestVital.createdAt, db_new)
+      latestVital.timeSinceLastDoorContact = await helpers.generateCalculatedTimeDifferenceString(latestVital.doorLastSeenAt, db_new)
+    }
+
     const allSessions = await db_new.getSessionsForDevice(deviceId)
 
     const viewParams = { device, client, latestVital, allSessions }
 
-    res.send(Mustache.render(deviceDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+    res.send(Mustache.render(deviceDetailsPageTemplate, { ...viewParams, ...dateFormatters }, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()

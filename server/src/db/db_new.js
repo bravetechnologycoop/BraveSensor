@@ -770,8 +770,9 @@ async function getLatestSessionWithDeviceTwilioNumber(deviceTwilioNumber, pgClie
       `
       SELECT s.*
       FROM sessions_new s
-      JOIN devices_new d ON s.device_id = d.device_id
-      WHERE d.twilio_number = $1
+      JOIN devices_new d 
+      ON s.device_id = d.device_id
+      WHERE d.device_twilio_number = $1
       ORDER BY s.created_at DESC
       LIMIT 1
       `,
