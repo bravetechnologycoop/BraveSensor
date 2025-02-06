@@ -11,17 +11,16 @@ module.exports = app => {
     server = app.listen(8000)
 
     // periodically check device connection vitals
-    setInterval(async () => {
-      try {
-        helpers.log('SERVER: Checking device connection vitals')
-        await vitals.checkDeviceConnectionVitals()
-        helpers.log('SERVER: Finished checking device connection vitals')
-      } catch (error) {
-        helpers.logError(`Error checking device connection vitals: ${error.toString()}`)
-      }
-    }, helpers.getEnvVar('CHECK_DEVICE_CONNECTION_VITALS_THRESHOLD'))
+    // setInterval(async () => {
+    //   try {
+    //     helpers.log('SERVER: Checking device connection vitals')
+    //     await vitals.checkDeviceConnectionVitals()
+    //     helpers.log('SERVER: Finished checking device connection vitals')
+    //   } catch (error) {
+    //     helpers.logError(`Error checking device connection vitals: ${error.toString()}`)
+    //   }
+    // }, helpers.getEnvVar('CHECK_DEVICE_CONNECTION_VITALS_THRESHOLD'))
   } else {
-    helpers.setupSentry(app, helpers.getEnvVar('SENTRY_DSN'), helpers.getEnvVar('ENVIRONMENT'), helpers.getEnvVar('RELEASE'))
     const httpsOptions = {
       key: fs.readFileSync(`/etc/brave/ssl/tls.key`),
       cert: fs.readFileSync(`/etc/brave/ssl/tls.crt`),
@@ -29,14 +28,23 @@ module.exports = app => {
     server = https.createServer(httpsOptions, app).listen(8080)
     helpers.log('Brave Server listening on port 8080')
 
-    // periodically check device connection vitals
+    // setup sentry after server is running
+    // ENVIROMENT and RELEASE are automatically handled by AWS Paramter store when deploying
+    helpers.setupSentry(app, helpers.getEnvVar('SENTRY_DSN'), helpers.getEnvVar('ENVIRONMENT'), helpers.getEnvVar('RELEASE'))
+
+    // periodically check device for diconnection
+    const checkInterval = helpers.getEnvVar('CHECK_DEVICE_DISCONNECTION_INTERVAL')
+    if (!checkInterval) {
+      helpers.logError('CHECK_DEVICE_DISCONNECTION_INTERVAL env variable is not set')
+      return
+    }
     setInterval(async () => {
       try {
         await vitals.checkDeviceConnectionVitals()
       } catch (error) {
         helpers.logError(`Error checking device connection vitals: ${error.toString()}`)
       }
-    }, helpers.getEnvVar('CHECK_DEVICE_CONNECTION_VITALS_THRESHOLD'))
+    }, checkInterval)
   }
 
   return server
