@@ -415,8 +415,14 @@ async function renderDeviceDetailsPage(req, res) {
 async function renderDeviceNotificationsPage(req, res) {
   try {
     const deviceId = req.params.deviceId
-    const viewParams = { deviceId }
-    res.send(Mustache.render(deviceNotificationsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+
+    const device = await db_new.getDeviceWithDeviceId(deviceId)
+    const allDeviceNotifications = await db_new.getNotificationsForDevice(deviceId)
+    const notificationsCount = allDeviceNotifications.length
+
+    const viewParams = { device, notifications: allDeviceNotifications, notificationsCount }
+
+    res.send(Mustache.render(deviceNotificationsPageTemplate, { ...viewParams, ...dateFormatters }, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()

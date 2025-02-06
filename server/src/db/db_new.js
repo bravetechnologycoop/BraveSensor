@@ -1175,6 +1175,34 @@ async function createNotification(deviceId, notificationType, pgClient) {
   return null
 }
 
+async function getNotificationsForDevice(deviceId, pgClient) {
+  try {
+    helpers.log(`Getting notifications for device: ${deviceId}`)
+    const results = await helpers.runQuery(
+      'getNotificationsForDevice',
+      `
+      SELECT *
+      FROM notifications_new
+      WHERE device_id = $1
+      ORDER BY notification_sent_at DESC
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    // Map rows to notification objects
+    return results.rows.map(row => createNotificationFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error getting notifications for device: ${err.toString()}`)
+    return []
+  }
+}
+
 async function getLatestNotification(deviceId, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -1312,6 +1340,7 @@ module.exports = {
   getLatestVitalWithDeviceId,
 
   createNotification,
+  getNotificationsForDevice,
   getLatestNotification,
   getLatestConnectionNotification,
   getLatestNotificationOfType,

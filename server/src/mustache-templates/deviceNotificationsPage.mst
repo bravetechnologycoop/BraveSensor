@@ -17,7 +17,41 @@
     {{> nav}}
     <div class="content-area">
         <div class="content-wrapper">
-            <p>DEVICE NOTIFICATIONS: {{deviceId}}<p> 
+        {{#device}}
+            <h3>Notifications For Device:  {{displayName}}<h3> 
+            <a href="/devices/{{deviceId}}" class="btn btn-secondary btn-sm" role="button">View Device</a>
+            <br>
+            <br>
+
+            <div class="info-box">
+                <p>Total Notification Sent by Device: {{notificationsCount}}<p>
+            </div>
+
+            <h5>Notifications</h5>
+            <div class="table-responsive">
+                <table class="table table-striped table-sm table-fixed">
+                    <thead>
+                        <tr class="table-header" scope="row">
+                            <th scope="col">Notification Type</th>
+                            <th scope="col">Notification Sent At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {{#notifications}}
+                        <tr class="table-data">
+                            <td>{{notificationType}}</td>
+                            <td>{{#formatDate}}{{notificationSentAt}}{{/formatDate}}</td>
+                        </tr>
+                    {{/notifications}}
+                    </tbody>
+                </table>
+            </div>
+            <br>
+
+        {{/device}}
+        {{^device}}
+            <h5>Sorry, this device does not appear to exist.</h5>
+        {{/device}}
         </div>
     </div>
     
