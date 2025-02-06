@@ -27,13 +27,9 @@
 
             <h5>Device Info</h5>
             <div class="info-box">
-                {{#latestVital}}
-                <p>Yo {{vitalId}}</p>
-                {{/latestVital}}
-                {{^latestVital}}
-                <p>No vital information available</p>
-                {{/latestVital}}
+                {{#latestVital}}<p>Latest Vital ID: {{vitalId}}</p>{{/latestVital}}{{^latestVital}}<p>No vital information available</p>{{/latestVital}}
             </div>
+            <br>
 
         {{/device}}
         {{^device}}

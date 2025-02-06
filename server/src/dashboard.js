@@ -99,8 +99,9 @@ async function redirectToHomePage(req, res) {
   res.redirect('/dashboard')
 }
 
+// For array of clients
 async function fetchAndMergeAllClientsExtension(clients) {
-  const clientExtensions = await Promise.all(clients.map(client => db.getClientExtensionWithClientId(client.id)))
+  const clientExtensions = await Promise.all(clients.map(client => db_new.getClientExtensionWithClientId(client.id)))
 
   return clients.map((client, index) => {
     const clientExtension = clientExtensions[index]
@@ -119,6 +120,29 @@ async function fetchAndMergeAllClientsExtension(clients) {
   })
 }
 
+// For array of devices
+async function fetchAndMergeLatestVitals(devices) {
+  const latestVitals = await Promise.all(devices.map(device => db_new.getLatestVitalWithDeviceId(device.deviceId)))
+
+  return Promise.all(
+    devices.map(async (device, index) => {
+      const vital = latestVitals[index]
+      if (!vital) return { ...device, latestVital: null }
+
+      const vitalCreatedAt = Date.parse(vital.createdAt)
+      const timeSinceLastVital = await helpers.generateCalculatedTimeDifferenceString(vitalCreatedAt, db_new)
+
+      return {
+        ...device,
+        latestVital: {
+          ...vital,
+          timeSinceLastVital,
+        },
+      }
+    }),
+  )
+}
+
 function filterUniqueItems(items, key) {
   const seen = new Set()
   return items.filter(item => {
@@ -134,18 +158,20 @@ function filterUniqueItems(items, key) {
 async function renderLandingPage(req, res) {
   try {
     const [clients, devices] = await Promise.all([db_new.getClients(), db_new.getDevices()])
-    const mergedClients = await fetchAndMergeAllClientsExtension(clients)
 
-    const displayedClients = mergedClients.filter(client => client.isDisplayed)
+    const displayedClients = clients.filter(client => client.isDisplayed)
+    const mergedClients = await fetchAndMergeAllClientsExtension(displayedClients)
+
     const displayedDevices = devices.filter(device => device.isDisplayed)
+    const mergedDevices = await fetchAndMergeLatestVitals(displayedDevices)
 
-    const uniqueFunders = filterUniqueItems(displayedClients, 'funder')
-    const uniqueProjects = filterUniqueItems(displayedClients, 'project')
-    const uniqueOrganizations = filterUniqueItems(displayedClients, 'organization')
+    const uniqueFunders = filterUniqueItems(mergedClients, 'funder')
+    const uniqueProjects = filterUniqueItems(mergedClients, 'project')
+    const uniqueOrganizations = filterUniqueItems(mergedClients, 'organization')
 
     const viewParams = {
-      clients: displayedClients,
-      devices: displayedDevices,
+      clients: mergedClients,
+      devices: mergedDevices,
       uniqueFunders,
       uniqueProjects,
       uniqueOrganizations,
@@ -241,7 +267,7 @@ async function renderUpdateClientPage(req, res) {
     const client = await db_new.getClientWithClientId(clientId)
     const clientExtension = await db_new.getClientExtensionWithClientId(clientId)
 
-    // can be null
+    // fields can be display as null
     const mergedClient = {
       ...client,
       country: clientExtension.country,
@@ -270,7 +296,7 @@ async function renderClientDetailsPage(req, res) {
     const client = await db_new.getClientWithClientId(clientId)
     const clientExtension = await db_new.getClientExtensionWithClientId(clientId)
 
-    // can be null
+    // fields can be displayed as null
     const mergedClient = {
       ...client,
       country: clientExtension.country,
@@ -284,10 +310,12 @@ async function renderClientDetailsPage(req, res) {
     }
 
     // get all visible devices for client to display
+    // merge latestVital for each client
     const devices = await db_new.getDevicesForClient(client.clientId)
     const displayedDevices = devices.filter(device => device.isDisplayed)
+    const mergedDevices = await fetchAndMergeLatestVitals(displayedDevices)
 
-    const viewParams = { client: mergedClient, devices: displayedDevices }
+    const viewParams = { client: mergedClient, devices: mergedDevices }
 
     res.send(Mustache.render(clientDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
