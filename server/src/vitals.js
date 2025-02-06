@@ -140,13 +140,9 @@ async function handleVitalNotifications(
   pgClient,
 ) {
   try {
-    let messageKey
-    let notificationType
+    const notifications = []
 
     // 1. Door Low Battery
-    // When door battery status is true (low battery) AND either
-    // First low battery notification (no previous notification time exists) OR
-    // Timeout period has passed since last low battery notification
     if (doorLowBatteryStatus) {
       const lastDoorLowBatteryNotification = await db_new.getLatestNotificationOfType(device.deviceId, NOTIFICATION_TYPE.DOOR_LOW_BATTERY, pgClient)
       const currentDbTime = await db_new.getCurrentTime()
@@ -156,36 +152,40 @@ async function handleVitalNotifications(
         !lastDoorLowBatteryNotification ||
         (doorLowBatteryTimeout && currentDbTime - lastDoorLowBatteryNotification.notificationSentAt >= doorLowBatteryTimeout)
       ) {
-        messageKey = 'doorLowBattery'
-        notificationType = NOTIFICATION_TYPE.DOOR_LOW_BATTERY
+        notifications.push({
+          messageKey: 'doorLowBattery',
+          notificationType: NOTIFICATION_TYPE.DOOR_LOW_BATTERY,
+        })
       }
     }
 
     // 2. Door Tampered
-    // When tamper status changes from previous heartbeat
     if (latestVital && latestVital.doorTampered !== doorTamperedStatus) {
-      messageKey = 'doorTampered'
-      notificationType = NOTIFICATION_TYPE.DOOR_TAMPERED
+      notifications.push({
+        messageKey: 'doorTampered',
+        notificationType: NOTIFICATION_TYPE.DOOR_TAMPERED,
+      })
     }
 
     // 3. Consecutive Open Door
-    // When door remains open for extended number of heartbeats
     const consecutiveOpenDoorHeartbeatThreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD'), 10)
     const consecutiveOpenDoorFollowUp = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP'), 10)
     if (
       consecutiveOpenDoorHeartbeatCount >= consecutiveOpenDoorHeartbeatThreshold &&
       (consecutiveOpenDoorHeartbeatCount - consecutiveOpenDoorHeartbeatThreshold) % consecutiveOpenDoorFollowUp === 0
     ) {
-      messageKey = 'doorInactivity'
-      notificationType = NOTIFICATION_TYPE.DOOR_INACTIVITY
+      notifications.push({
+        messageKey: 'doorInactivity',
+        notificationType: NOTIFICATION_TYPE.DOOR_INACTIVITY,
+      })
     }
 
-    // send the notification
-    if (messageKey && notificationType) {
-      helpers.logSentry(`handleHeartbeatNotification: Sending ${notificationType} notification for ${device.displayName}`)
-      await db_new.createNotification(device.deviceId, notificationType, pgClient)
+    // Send all notifications
+    for (const notification of notifications) {
+      helpers.logSentry(`handleHeartbeatNotification: Sending ${notification.notificationType} notification for ${device.displayName}`)
+      await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
 
-      const message = i18next.t(messageKey, {
+      const message = i18next.t(notification.messageKey, {
         lng: client.language || 'en',
         deviceDisplayName: device.displayName,
       })
