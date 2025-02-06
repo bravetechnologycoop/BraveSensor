@@ -10,38 +10,45 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      WEB_USERNAME_TEST: TravisDashboardUsername
-      PASSWORD_TEST: TravisDashboardPassword
-      SECRET_TEST: TravisCookieSecret
-      PG_USER_TEST: brave
-      PG_DATABASE_TEST: brave
-      PG_PASSWORD_TEST: travispassword
-      PG_PORT_TEST: 5433
+      # Test environment variables
+      WEB_USERNAME_TEST: myusername
+      PASSWORD_TEST: 1234
+      SECRET_TEST: secret
+
+      PG_USER_TEST: myuser
+      PG_DATABASE_TEST: mydb
+      PG_PASSWORD_TEST: 1234
       PG_HOST_TEST: localhost
-      PG_USER: brave
-      PG_DATABASE: brave
-      PG_PASSWORD: travispassword
-      PG_PORT: 5433
-      PG_HOST: localhost
-      SESSION_RESET_THRESHOLD_TEST: 2000
-      SESSION_NUMBER_OF_ALERTS_TO_ACCEPT_RESET_REQUEST_TEST: 4
-      LOW_BATTERY_ALERT_TIMEOUT_TEST: 2
-      MAX_STILLNESS_ALERTS_TEST: 2
-      INTERVAL_TO_CHECK_ALERTS_TEST: 60
-      SUBSEQUENT_VITALS_ALERT_THRESHOLD_TEST: 2
-      IS_DB_LOGGING: false
-      PA_API_KEY_PRIMARY_TEST: primaryPAkey
-      PA_API_KEY_SECONDARY_TEST: secondaryPAkey
-      PA_CLIENT_ID: fakeclientid.apps.googleusercontent.com
-      PA_CLIENT_SECRET: fakeclientsecret
-      PARTICLE_WEBHOOK_API_KEY_TEST: webhookKey
-      CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD_TEST: 432
-      CONSECUTIVE_OPEN_DOOR_FOLLOW_UP_TEST: 144
-      PGVER: 12
-      PGPORT: 5433
+      PG_PORT_TEST: 5432
+      IS_DB_LOGGING_TEST: false
+
+      SENTRY_DSN_TEST: localhost
+
       TWILIO_SID_TEST: ${{ secrets.TWILIO_SID_TEST }}
       TWILIO_TOKEN_TEST: ${{ secrets.TWILIO_TOKEN_TEST }}
-      DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      TWILIO_MESSAGING_SERVICE_SID_TEST: ${{ secrets.TWILIO_MESSAGING_SERVICE_SID_TEST }}
+
+      PARTICLE_ACCESS_TOKEN_TEST: ${{ secrets.PARTICLE_ACCESS_TOKEN_TEST }}
+      PARTICLE_PRODUCT_GROUP_TEST: ${{ secrets.PARTICLE_PRODUCT_GROUP_TEST }}
+      PARTICLE_WEBHOOK_API_KEY_TEST: ${{ secrets.PARTICLE_WEBHOOK_API_KEY_TEST }}
+
+      PA_API_KEY_PRIMARY_TEST: 1234
+      PA_API_KEY_SECONDARY_TEST: 1234
+      PA_PASSWORD_PRIMARY_TEST: ${{ secrets.PA_PASSWORD_PRIMARY_TEST }}
+      PA_PASSWORD_SECONDARY_TEST: ${{ secrets.PA_PASSWORD_SECONDARY_TEST }}
+      PA_CLIENT_ID_TEST: abc123
+      PA_CLIENT_SECRET_TEST: abc123
+
+      DOMAIN_TEST: domain.brave.coop
+
+      CHECK_DEVICE_CONNECTION_VITALS_THRESHOLD_TEST: 30000
+      STILLNESS_ALERT_SURVEY_FOLLOWUP_TEST: 0.5
+      LOW_BATTERY_ALERT_TIMEOUT_TEST: 30
+      CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD_TEST: 3
+      CONSECUTIVE_OPEN_DOOR_FOLLOW_UP_TEST: 1
+      DEVICE_DISCONNECTION_THRESHOLD_SECONDS_TEST: 45
+      DOOR_DISCONNECTION_THRESHOLD_SECONDS_TEST: 45
+      DISCONNECTION_REMINDER_THRESHOLD_SECONDS_TEST: 45
 
     steps:
       - name: Checkout repository
@@ -58,11 +65,11 @@ jobs:
 
       - name: Check environment variables
         run: |
-          echo "PG_USER=$PG_USER"
-          echo "PG_DATABASE=$PG_DATABASE"
-          echo "PG_PASSWORD=$PG_PASSWORD"
-          echo "PG_PORT=$PG_PORT"
-          echo "PG_HOST=$PG_HOST"
+          echo "PG_USER=$PG_USER_TEST"
+          echo "PG_DATABASE=$PG_DATABASE_TEST"
+          echo "PG_PASSWORD=$PG_PASSWORD_TEST"
+          echo "PG_PORT=$PG_PORT_TEST"
+          echo "PG_HOST=$PG_HOST_TEST"
 
       - name: Set up PSQL
         run: |
@@ -70,12 +77,12 @@ jobs:
           wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update
-          sudo apt-get install -y postgresql-12 postgresql-client-12
+          sudo apt-get install -y postgresql-16 postgresql-client-16
 
       - name: Wait for PostgreSQL to be ready
         run: |
           sudo service postgresql restart
-          until pg_isready -h localhost -p 5433 -U brave -d bravesensor; do
+          until pg_isready -h $PG_HOST_TEST -p $PG_PORT_TEST -U $PG_USER_TEST -d $PG_DATABASE_TEST; do
             echo "Waiting for PostgreSQL to be ready..."
             sleep 1
           done
@@ -99,6 +106,9 @@ jobs:
   firmware_lint:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Print message for future implementation
         run: echo 'Please implement this in the future using GitHub Actions.'
 
