@@ -19,7 +19,8 @@ function configureRoutes(app) {
   app.get('/devices/new', dashboard.sessionChecker, dashboard.renderNewDevicePage) // Must be configured before /devices/:deviceId
   app.get('/devices/:deviceId/update', dashboard.sessionChecker, dashboard.renderUpdateDevicePage)
   app.get('/devices/:deviceId', dashboard.sessionChecker, dashboard.renderDeviceDetailsPage)
-
+  app.get('/notifications/:deviceId', dashboard.sessionChecker, dashboard.renderDeviceNotificationsPage)
+  app.get('/sessions/:sessionId', dashboard.sessionChecker, dashboard.renderSessionDetailsPage)
   app.get('/login', dashboard.renderLoginPage)
   app.get('/logout', dashboard.submitLogout)
 

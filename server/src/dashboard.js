@@ -31,6 +31,8 @@ const clientDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templat
 const newDevicePageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newDevicePage.mst`, 'utf-8')
 const updateDevicePageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateDevicePage.mst`, 'utf-8')
 const deviceDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/deviceDetailsPage.mst`, 'utf-8')
+const deviceNotificationsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/deviceNotificationsPage.mst`, 'utf-8')
+const sessionDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/sessionDetailsPage.mst`, 'utf-8')
 
 function setupDashboardSessions(app) {
   app.use(cookieParser())
@@ -410,6 +412,28 @@ async function renderDeviceDetailsPage(req, res) {
   }
 }
 
+async function renderDeviceNotificationsPage(req, res) {
+  try {
+    const deviceId = req.params.deviceId
+    const viewParams = { deviceId }
+    res.send(Mustache.render(deviceNotificationsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
+async function renderSessionDetailsPage(req, res) {
+  try {
+    const sessionId = req.params.sessionId
+    const viewParams = { sessionId }
+    res.send(Mustache.render(sessionDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
 const validateNewClient = [
   Validator.body(['displayName', 'language', 'responderPhoneNumbers', 'vitalsTwilioNumber', 'vitalsPhoneNumbers', 'surveyCategories'])
     .trim()
@@ -743,6 +767,9 @@ module.exports = {
   renderNewDevicePage,
   renderUpdateDevicePage,
   renderDeviceDetailsPage,
+
+  renderDeviceNotificationsPage,
+  renderSessionDetailsPage,
 
   validateNewClient,
   submitNewClient,
