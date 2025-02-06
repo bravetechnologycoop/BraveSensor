@@ -18,7 +18,7 @@
     <div class="content-area">
         <div class="content-wrapper">
         {{#device}}
-            <h3>Notifications For Device:  {{displayName}}<h3> 
+            <h3>Notifications For Device: {{displayName}}<h3> 
             <a href="/devices/{{deviceId}}" class="btn btn-secondary btn-sm" role="button">View Device</a>
             <br>
             <br>

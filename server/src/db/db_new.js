@@ -763,6 +763,31 @@ async function getSessionsForDevice(deviceId, pgClient) {
   }
 }
 
+async function getSessionWithSessionId(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getSessionWithSessionId',
+      `
+      SELECT *
+      FROM sessions_new
+      WHERE session_id = $1
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running getSessionWithSessionId query: ${err.toString()}`)
+    return null
+  }
+}
+
 async function getLatestSessionWithDeviceTwilioNumber(deviceTwilioNumber, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -962,6 +987,33 @@ async function createEvent(sessionId, eventType, eventTypeDetails, pgClient) {
   }
 
   return null
+}
+
+async function getEventsForSession(sessionId, pgClient) {
+  try {
+    // Note: Events ordered by ascending, first event to latest event
+    const results = await helpers.runQuery(
+      'getEventsForSession',
+      `
+      SELECT *
+      FROM events_new
+      WHERE session_id = $1
+      ORDER BY event_sent_at ASC
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createEventFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error getting events for session: ${err.toString()}`)
+    return []
+  }
 }
 
 const respondableEvents = [
@@ -1324,6 +1376,7 @@ module.exports = {
 
   createSession,
   getSessionsForDevice,
+  getSessionWithSessionId,
   getLatestSessionWithDeviceTwilioNumber,
   getLatestActiveSessionWithDeviceId,
   updateSession,
@@ -1332,6 +1385,7 @@ module.exports = {
   updateSessionSelectedSurveyCategory,
 
   createEvent,
+  getEventsForSession,
   getLatestRespondableEvent,
   getLatestAlertEvent,
   checkEventExists,

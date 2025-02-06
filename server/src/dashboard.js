@@ -9,8 +9,9 @@
 const fs = require('fs')
 const Mustache = require('mustache')
 const Validator = require('express-validator')
-const session = require('express-session')
+const expressSession = require('express-session')
 const cookieParser = require('cookie-parser')
+const i18next = require('i18next')
 
 // In-house dependencies
 const { helpers } = require('./utils/index')
@@ -39,7 +40,7 @@ function setupDashboardSessions(app) {
 
   // initialize express-session to allow us track the logged-in user across sessions.
   app.use(
-    session({
+    expressSession({
       key: 'user_sid',
       secret: helpers.getEnvVar('SECRET'),
       resave: false,
@@ -432,8 +433,52 @@ async function renderDeviceNotificationsPage(req, res) {
 async function renderSessionDetailsPage(req, res) {
   try {
     const sessionId = req.params.sessionId
-    const viewParams = { sessionId }
-    res.send(Mustache.render(sessionDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+
+    const session = await db_new.getSessionWithSessionId(sessionId)
+    if (!session) {
+      res.status(404).send('Session not found')
+      return
+    }
+
+    const client = await db_new.getClientWithDeviceId(session.deviceId)
+    const device = await db_new.getDeviceWithDeviceId(session.deviceId)
+    const allEvents = await db_new.getEventsForSession(sessionId)
+
+    // translate and format the messages for timeline display on dashboard
+    const surveyCategoriesForMessage = client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n')
+    const expectedSurveyResponseEvents = ['durationAlertSurveyDoorOpened', 'stillnessAlertSurvey', 'stillnessAlertSurveyDoorOpened']
+    const eventsWithMessages = allEvents.map(event => {
+      if (event.eventType === 'MSG_RECEIVED') {
+        if (expectedSurveyResponseEvents.includes(event.eventTypeDetails)) {
+          return {
+            ...event,
+            message: `Responded to sent message - Selected Category: ${session.selectedSurveyCategory}`,
+          }
+        }
+        return {
+          ...event,
+          message: 'Responded to sent message',
+        }
+      }
+
+      return {
+        ...event,
+        message: i18next.t(event.eventTypeDetails, {
+          lng: 'en',
+          deviceDisplayName: device.displayName,
+          surveyCategoriesForMessage,
+        }),
+      }
+    })
+
+    const sessionWithEndDate = {
+      ...session,
+      sessionEndedAt: session.sessionStatus === 'COMPLETED' ? session.updatedAt : null,
+    }
+
+    const viewParams = { session: sessionWithEndDate, events: eventsWithMessages }
+
+    res.send(Mustache.render(sessionDetailsPageTemplate, { ...viewParams, ...dateFormatters }, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
