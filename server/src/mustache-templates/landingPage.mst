@@ -102,7 +102,6 @@
                     <tr class="table-header" scope="row">
                         <th scope="col">Location Name</th>
                         <th scope="col">Device Type</th>
-                        <th scope="col">Last Session Started At</th>
                         <th scope="col">Sends Alerts?</th>
                         <th scope="col">Sends Vitals?</th>
                     </tr>
@@ -152,26 +151,25 @@
                     {{#clients}}
                         <tr class="table-data client-row">
                             {{! Clicking item renders client details and the devices for that client }}
-                            <th scope="row"><a href="/clients/{{id}}">{{displayName}}</a></th>
-                            <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
-                            <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
+                            <th scope="row"><a href="/clients/{{clientId}}">{{displayName}}</a></th>
+                            <td>{{#devicesSendingAlerts}}y{{/devicesSendingAlerts}}{{^devicesSendingAlerts}}NOPE{{/devicesSendingAlerts}}</td>
+                            <td>{{#devicesSendingVitals}}y{{/devicesSendingVitals}}{{^devicesSendingVitals}}NOPE{{/devicesSendingVitals}}</td>
                         </tr>
                     {{/clients}}
                 `;
             } else if (view === 'device') {
                 bodyHtml = `
-                    {{#locations}}
+                    {{#devices}}
                         <tr class="table-data device-row">
-                            {{! Clicking item renders location/device details }}
-                            <th scope="row"><a href="/locations/{{id}}">{{name}}</a></th>
+                            {{! Clicking item renders device details }}
+                            <th scope="row"><a href="/devices/{{deviceId}}">{{displayName}}</a></th>
                             <td>{{deviceType}}</td>
-                            <td>{{sessionStart}}</td>
                             <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
                             <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
                         </tr>
-                    {{/locations}}
+                    {{/devices}}
                 `;
-            } 
+            }
 
             tableBody.innerHTML = bodyHtml;
             filterTable();

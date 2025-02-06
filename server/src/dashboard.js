@@ -1,7 +1,7 @@
 /*
  * dashboard.js - Brave Sensor Dashboard
  *
- * Handles rendering and managing dashboard pages and sessions
+ * Handles rendering and managing dashboard pages
  * Also contains various dashboard functions configured in routes
  */
 
@@ -15,8 +15,9 @@ const { Parser } = require('json2csv')
 
 // In-house dependencies
 const { helpers } = require('./utils/index')
-const { ALERT_TYPE } = require('./enums/index')
+const { DEVICE_STATUS } = require('./enums/index')
 const db = require('./db/db')
+const db_new = require('./db/db_new')
 
 const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')
 const pageCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/pageCSSPartial.mst`, 'utf-8')
@@ -25,13 +26,13 @@ const landingPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/lan
 const funderProjectsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/funderProjectsPage.mst`, 'utf-8')
 const projectOrganizationsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/projectOrganizationsPage.mst`, 'utf-8')
 const organizationClientsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/organizationClientsPage.mst`, 'utf-8')
+const newClientPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newClientPage.mst`, 'utf-8')
+const updateClientPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateClientPage.mst`, 'utf-8')
 const clientDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientDetailsPage.mst`, 'utf-8')
-const clientVitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/clientVitals.mst`, 'utf-8')
-const newClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newClient.mst`, 'utf-8')
-const updateClientTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateClient.mst`, 'utf-8')
-const locationDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/locationDetailsPage.mst`, 'utf-8')
-const newLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newLocation.mst`, 'utf-8')
-const updateLocationTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateLocation.mst`, 'utf-8')
+const newDevicePageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newDevicePage.mst`, 'utf-8')
+const updateDevicePageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateDevicePage.mst`, 'utf-8')
+const deviceDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/deviceDetailsPage.mst`, 'utf-8')
+
 const vitalsTemplate = fs.readFileSync(`${__dirname}/mustache-templates/vitals.mst`, 'utf-8')
 
 function setupDashboardSessions(app) {
@@ -71,19 +72,6 @@ function sessionChecker(req, res, next) {
   }
 }
 
-function getAlertTypeDisplayName(alertType) {
-  let displayName = ''
-  if (alertType === ALERT_TYPE.SENSOR_DURATION) {
-    displayName = 'Duration'
-  } else if (alertType === ALERT_TYPE.SENSOR_STILLNESS) {
-    displayName = 'Stillness'
-  } else {
-    displayName = 'Unknown'
-  }
-
-  return displayName
-}
-
 async function renderLoginPage(req, res) {
   res.sendFile(`${__dirname}/login.html`)
 }
@@ -114,21 +102,22 @@ async function redirectToHomePage(req, res) {
   res.redirect('/dashboard')
 }
 
-async function fetchAndMergeClientExtensions(clients) {
+async function fetchAndMergeAllClientsExtension(clients) {
   const clientExtensions = await Promise.all(clients.map(client => db.getClientExtensionWithClientId(client.id)))
 
   return clients.map((client, index) => {
     const clientExtension = clientExtensions[index]
+    // N/A added to group clients in dashboard with null values
     return {
       ...client,
       country: clientExtension.country || 'N/A',
       countrySubdivision: clientExtension.countrySubdivision || 'N/A',
       buildingType: clientExtension.buildingType || 'N/A',
-      organization: clientExtension.organization || 'N/A',
-      funder: clientExtension.funder || 'N/A',
-      postalCode: clientExtension.postalCode || 'N/A',
       city: clientExtension.city || 'N/A',
+      postalCode: clientExtension.postalCode || 'N/A',
+      funder: clientExtension.funder || 'N/A',
       project: clientExtension.project || 'N/A',
+      organization: clientExtension.organization || 'N/A',
     }
   })
 }
@@ -147,27 +136,19 @@ function filterUniqueItems(items, key) {
 
 async function renderLandingPage(req, res) {
   try {
-    const [clients, locations] = await Promise.all([db.getClients(), db.getLocations()])
-    const displayedClients = await fetchAndMergeClientExtensions(clients)
+    const [clients, devices] = await Promise.all([db_new.getClients(), db_new.getDevices()])
+    const mergedClients = await fetchAndMergeAllClientsExtension(clients)
+
+    const displayedClients = mergedClients.filter(client => client.isDisplayed)
+    const displayedDevices = devices.filter(device => device.isDisplayed)
 
     const uniqueFunders = filterUniqueItems(displayedClients, 'funder')
     const uniqueProjects = filterUniqueItems(displayedClients, 'project')
     const uniqueOrganizations = filterUniqueItems(displayedClients, 'organization')
 
-    const displayedLocations = locations
-      .filter(location => location.isDisplayed)
-      .map(location => ({
-        name: location.displayName,
-        id: location.id,
-        deviceType: location.deviceType,
-        sessionStart: location.sessionStart,
-        isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
-        isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
-      }))
-
     const viewParams = {
-      locations: displayedLocations,
       clients: displayedClients,
+      devices: displayedDevices,
       uniqueFunders,
       uniqueProjects,
       uniqueOrganizations,
@@ -183,17 +164,17 @@ async function renderLandingPage(req, res) {
 async function renderFunderProjectsPage(req, res) {
   try {
     const funder = req.query.funder
-    const clients = await db.getClients()
-    const displayedClients = await fetchAndMergeClientExtensions(clients)
 
-    const filteredClients =
-      funder === 'N/A'
-        ? displayedClients.filter(client => client.funder === 'N/A' || client.funder === null)
-        : displayedClients.filter(client => client.funder === funder)
+    const clients = await db_new.getClients()
+    const mergedClients = await fetchAndMergeAllClientsExtension(clients)
+    const filteredClients = mergedClients.filter(
+      client => client.isDisplayed && (funder === 'N/A' ? client.funder === 'N/A' || client.funder === null : client.funder === funder),
+    )
 
     const uniqueProjects = filterUniqueItems(filteredClients, 'project')
 
     const viewParams = { funder, clients: uniqueProjects }
+
     res.send(Mustache.render(funderProjectsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
@@ -204,17 +185,18 @@ async function renderFunderProjectsPage(req, res) {
 async function renderProjectOrganizationsPage(req, res) {
   try {
     const project = req.query.project
-    const clients = await db.getClients()
-    const displayedClients = await fetchAndMergeClientExtensions(clients)
 
-    const filteredClients =
-      project === 'N/A'
-        ? displayedClients.filter(client => client.project === 'N/A' || client.project === null)
-        : displayedClients.filter(client => client.project === project)
+    const clients = await db_new.getClients()
+    const mergedClients = await fetchAndMergeAllClientsExtension(clients)
+
+    const filteredClients = mergedClients.filter(
+      client => client.isDisplayed && (project === 'N/A' ? client.project === 'N/A' || client.project === null : client.project === project),
+    )
 
     const uniqueOrganizations = filterUniqueItems(filteredClients, 'organization')
 
     const viewParams = { project, clients: uniqueOrganizations }
+
     res.send(Mustache.render(projectOrganizationsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
@@ -225,54 +207,21 @@ async function renderProjectOrganizationsPage(req, res) {
 async function renderOrganizationClientsPage(req, res) {
   try {
     const organization = req.query.organization
-    const clients = await db.getClients()
-    const displayedClients = await fetchAndMergeClientExtensions(clients)
 
-    const filteredClients =
-      organization === 'N/A'
-        ? displayedClients.filter(client => client.organization === 'N/A' || client.organization === null)
-        : displayedClients.filter(client => client.organization === organization)
+    const clients = await db_new.getClients()
+    const mergedClients = await fetchAndMergeAllClientsExtension(clients)
 
-    const uniqueClients = filterUniqueItems(filteredClients, 'id')
+    const filteredClients = mergedClients.filter(
+      client =>
+        client.isDisplayed &&
+        (organization === 'N/A' ? client.organization === 'N/A' || client.organization === null : client.organization === organization),
+    )
+
+    const uniqueClients = filterUniqueItems(filteredClients, 'clientId')
 
     const viewParams = { organization, clients: uniqueClients }
+
     res.send(Mustache.render(organizationClientsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
-  } catch (err) {
-    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
-    res.status(500).send()
-  }
-}
-
-async function renderClientDetailsPage(req, res) {
-  try {
-    const clients = await db.getClients()
-    const displayedClients = await fetchAndMergeClientExtensions(clients)
-    const currentClient = displayedClients.find(client => client.id === req.params.id)
-    const locations = await db.getLocationsFromClientId(currentClient.id)
-
-    for (const location of locations) {
-      const recentSession = await db.getMostRecentSessionWithDevice(location)
-      if (recentSession !== null) {
-        const sessionCreatedAt = Date.parse(recentSession.createdAt)
-        const timeSinceLastSession = await helpers.generateCalculatedTimeDifferenceString(sessionCreatedAt, db)
-        location.sessionStart = timeSinceLastSession
-      }
-    }
-
-    const displayedLocations = locations
-      .filter(location => location.isDisplayed)
-      .map(location => ({
-        name: location.displayName,
-        id: location.id,
-        deviceType: location.deviceType,
-        sessionStart: location.sessionStart,
-        isSendingAlerts: location.isSendingAlerts && location.client.isSendingAlerts,
-        isSendingVitals: location.isSendingVitals && location.client.isSendingVitals,
-      }))
-
-    const viewParams = { currentClient, locations: displayedLocations }
-
-    res.send(Mustache.render(clientDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -281,96 +230,132 @@ async function renderClientDetailsPage(req, res) {
 
 async function renderNewClientPage(req, res) {
   try {
-    res.send(Mustache.render(newClientTemplate, {}, { nav: navPartial, css: pageCSSPartial }))
+    res.send(Mustache.render(newClientPageTemplate, {}, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
 }
 
-async function renderClientEditPage(req, res) {
+async function renderUpdateClientPage(req, res) {
   try {
-    const clients = await db.getClients()
-    const displayedClients = await fetchAndMergeClientExtensions(clients)
-    const currentClient = displayedClients.find(client => client.id === req.params.id)
+    const clientId = req.params.clientId
 
-    const viewParams = { currentClient }
+    const client = await db_new.getClientWithClientId(clientId)
+    const clientExtension = await db_new.getClientExtensionWithClientId(clientId)
 
-    res.send(Mustache.render(updateClientTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+    // can be null
+    const mergedClient = {
+      ...client,
+      country: clientExtension.country,
+      countrySubdivision: clientExtension.countrySubdivision,
+      buildingType: clientExtension.buildingType,
+      city: clientExtension.city,
+      postalCode: clientExtension.postalCode,
+      funder: clientExtension.funder,
+      project: clientExtension.project,
+      organization: clientExtension.organization,
+    }
+
+    const viewParams = { client: mergedClient }
+
+    res.send(Mustache.render(updateClientPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
 }
 
-async function renderNewLocationPage(req, res) {
+async function renderClientDetailsPage(req, res) {
   try {
-    const clients = await db.getClients()
-    const viewParams = { clients: clients.filter(client => client.isDisplayed) }
+    const clientId = req.params.clientId
 
-    res.send(Mustache.render(newLocationTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+    const client = await db_new.getClientWithClientId(clientId)
+    const clientExtension = await db_new.getClientExtensionWithClientId(clientId)
+
+    // can be null
+    const mergedClient = {
+      ...client,
+      country: clientExtension.country,
+      countrySubdivision: clientExtension.countrySubdivision,
+      buildingType: clientExtension.buildingType,
+      city: clientExtension.city,
+      postalCode: clientExtension.postalCode,
+      funder: clientExtension.funder,
+      project: clientExtension.project,
+      organization: clientExtension.organization,
+    }
+
+    // get all visible devices for client to display
+    const devices = await db_new.getDevicesForClient(client.clientId)
+    const displayedDevices = devices.filter(device => device.isDisplayed)
+
+    const viewParams = { client: mergedClient, devices: displayedDevices }
+
+    res.send(Mustache.render(clientDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
 }
 
-async function renderLocationDetailsPage(req, res) {
+async function renderNewDevicePage(req, res) {
   try {
-    const clients = await db.getClients()
-    const location = await db.getLocationWithDeviceId(req.params.id)
-    const recentSessions = await db.getHistoryOfSessions(req.params.id)
+    // all visible devices so user can select what client the device belongs to
+    const clients = await db_new.getClients()
+    const displayedClients = clients.filter(client => client.isDisplayed)
+
+    const viewParams = { clients: displayedClients }
+
+    res.send(Mustache.render(newDevicePageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
+async function renderUpdateDevicePage(req, res) {
+  try {
+    const deviceId = req.params.deviceId
+
+    const device = await db_new.getDeviceWithDeviceId(deviceId)
+
+    // add a boolean "selected" field to all displayed clients
+    // selected is true if client's clientId matches with device's clientId
+    // used to select the current client
+    const clients = await db_new.getClients()
+    const displayedClients = clients.filter(client => client.isDisplayed)
+    const clientsWithSelection = displayedClients.map(client => ({
+      ...client,
+      selected: client.clientId === device.clientId,
+    }))
 
     const viewParams = {
-      clients: clients.filter(client => client.isDisplayed),
-      recentSessions: [],
-      currentLocation: location,
-      clientid: location.client.id,
+      device,
+      clients: clientsWithSelection,
+      isSingleStallSelected: device.deviceType === 'SENSOR_SINGLESTALL',
+      isMultiStallSelected: device.deviceType === 'SENSOR_MULTISTALL',
     }
 
-    for (const recentSession of recentSessions) {
-      const createdAt = recentSession.createdAt
-      const updatedAt = recentSession.updatedAt
-
-      viewParams.recentSessions.push({
-        createdAt,
-        updatedAt,
-        incidentCategory: recentSession.incidentCategory,
-        id: recentSession.id,
-        chatbotState: recentSession.chatbotState,
-        alertType: getAlertTypeDisplayName(recentSession.alertType),
-        respondedAt: recentSession.respondedAt,
-        respondedByPhoneNumber: recentSession.respondedByPhoneNumber,
-      })
-    }
-
-    res.send(Mustache.render(locationDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+    res.send(Mustache.render(updateDevicePageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
   }
 }
 
-async function renderLocationEditPage(req, res) {
+async function renderDeviceDetailsPage(req, res) {
   try {
-    const clients = await db.getClients()
-    const location = await db.getLocationWithDeviceId(req.params.id)
+    const deviceId = req.params.deviceId
 
-    const viewParams = {
-      currentLocation: location,
-      clients: clients
-        .filter(client => client.isDisplayed)
-        .map(client => {
-          return {
-            ...client,
-            selected: client.id === location.client.id,
-          }
-        }),
-      isSingleStallSelected: location.deviceType === 'SENSOR_SINGLESTALL',
-      isMultiStallSelected: location.deviceType === 'SENSOR_MULTISTALL',
-    }
+    const device = await db_new.getDeviceWithDeviceId(deviceId)
+    const client = await db_new.getClientWithDeviceId(deviceId)
+    const latestVital = await db_new.getLatestVitalWithDeviceId(deviceId)
+    const allSessions = await db_new.getSessionsForDevice(deviceId)
 
-    res.send(Mustache.render(updateLocationTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+    const viewParams = { device, client, latestVital, allSessions }
+
+    res.send(Mustache.render(deviceDetailsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     res.status(500).send()
@@ -415,50 +400,6 @@ async function renderVitalsPage(req, res) {
   }
 }
 
-async function renderClientVitalsPage(req, res) {
-  try {
-    const allClients = await db.getClients()
-    const currentClient = allClients.filter(client => client.id === req.params.id)[0]
-
-    const viewParams = {
-      sensors: [],
-      clients: allClients.filter(client => client.isDisplayed),
-      currentDateTime: helpers.formatDateTimeForDashboard(await db.getCurrentTime()),
-    }
-
-    if (currentClient !== undefined) {
-      viewParams.currentClientName = currentClient.displayName
-      viewParams.currentClientId = currentClient.id
-
-      const sensorsVitals = await db.getRecentSensorsVitalsWithClientId(currentClient.id)
-      for (const sensorsVital of sensorsVitals) {
-        if (sensorsVital.device.isDisplayed) {
-          viewParams.sensors.push({
-            location: sensorsVital.device,
-            sensorLastSeenAt: sensorsVital.createdAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.createdAt) : 'Never',
-            sensorLastSeenAgo:
-              sensorsVital.createdAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.createdAt, db) : 'Never',
-            doorLastSeenAt: sensorsVital.doorLastSeenAt !== null ? helpers.formatDateTimeForDashboard(sensorsVital.doorLastSeenAt) : 'Never',
-            doorLastSeenAgo:
-              sensorsVital.doorLastSeenAt !== null ? await helpers.generateCalculatedTimeDifferenceString(sensorsVital.doorLastSeenAt, db) : 'Never',
-            isDoorBatteryLow: sensorsVital.isDoorBatteryLow !== null ? sensorsVital.isDoorBatteryLow : 'unknown',
-            isTampered: sensorsVital.isTampered !== null ? sensorsVital.isTampered : 'unknown',
-            isSendingAlerts: sensorsVital.device.client.isSendingAlerts && sensorsVital.device.isSendingAlerts,
-            isSendingVitals: sensorsVital.device.client.isSendingVitals && sensorsVital.device.isSendingVitals,
-          })
-        }
-      }
-    } else {
-      viewParams.viewMessage = 'No client to display'
-    }
-
-    res.send(Mustache.render(clientVitalsTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
-  } catch (err) {
-    helpers.logError(err)
-    res.status(500).send()
-  }
-}
-
 async function downloadCsv(req, res) {
   const data = await db.getDataForExport()
   const fields = [
@@ -491,10 +432,11 @@ async function downloadCsv(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'responderPhoneNumbers', 'fromPhoneNumber', 'language', 'incidentCategories']).trim().notEmpty(),
+  Validator.body(['displayName', 'language', 'responderPhoneNumbers', 'vitalsTwilioNumber', 'vitalsPhoneNumbers', 'surveyCategories'])
+    .trim()
+    .notEmpty(),
   Validator.body(['fallbackPhoneNumbers']).trim(),
-  Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
-  Validator.body(['country', 'countrySubdivision', 'buildingType', 'organization', 'funder', 'postalCode', 'city', 'project'])
+  Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),
 ]
@@ -510,10 +452,10 @@ async function submitNewClient(req, res) {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
-      const clients = await db.getClients()
       const data = req.body
 
-      for (const client of clients) {
+      const allClients = await db_new.getClients()
+      for (const client of allClients) {
         if (client.displayName === data.displayName) {
           const errorMessage = `Client Display Name already exists: ${data.displayName}`
           helpers.log(errorMessage)
@@ -521,45 +463,56 @@ async function submitNewClient(req, res) {
         }
       }
 
-      const newResponderPhoneNumbers =
-        data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== ''
-          ? data.responderPhoneNumbers.split(',').map(phone => phone.trim())
-          : null
-      const newHeartbeatPhoneNumbers =
-        data.heartbeatPhoneNumbers !== undefined && data.heartbeatPhoneNumbers.trim() !== ''
-          ? data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim())
+      const responderPhoneNumbers =
+        data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== '' ? data.responderPhoneNumbers.split(',').map(phone => phone.trim()) : []
+      const vitalsPhoneNumbers =
+        data.vitalsPhoneNumbers !== undefined && data.vitalsPhoneNumbers.trim() !== ''
+          ? data.vitalsPhoneNumbers.split(',').map(phone => phone.trim())
           : []
       const fallbackPhoneNumbers =
         data.fallbackPhoneNumbers && data.fallbackPhoneNumbers.trim() !== '' ? data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()) : []
+      const surveyCategories =
+        data.surveyCategories && data.surveyCategories.trim() !== '' ? data.surveyCategories.split(',').map(category => category.trim()) : []
 
-      const newClient = await db.createClient(
+      // default values for new clients created using dashboard
+      const isDisplayed = true
+      const devicesSendingAlerts = false
+      const devicesSendingVitals = false
+      const devicesStatus = DEVICE_STATUS.TESTING
+      const firstDeviceLiveAt = null
+
+      const newClient = await db_new.createClient(
         data.displayName,
-        newResponderPhoneNumbers,
-        data.reminderTimeout,
-        fallbackPhoneNumbers,
-        data.fromPhoneNumber,
-        data.fallbackTimeout,
-        newHeartbeatPhoneNumbers,
-        data.incidentCategories.split(',').map(category => category.trim()),
-        true,
-        false,
-        false,
         data.language,
+        responderPhoneNumbers,
+        fallbackPhoneNumbers,
+        data.vitalsTwilioNumber,
+        vitalsPhoneNumbers,
+        surveyCategories,
+        isDisplayed,
+        devicesSendingAlerts,
+        devicesSendingVitals,
+        devicesStatus,
+        firstDeviceLiveAt,
       )
 
-      await db.updateClientExtension(
-        newClient.id,
+      if (!newClient) {
+        throw new Error('Client creation failed')
+      }
+
+      await db_new.updateClientExtension(
+        newClient.clientId,
         data.country || null,
         data.countrySubdivision || null,
         data.buildingType || null,
-        data.organization || null,
-        data.funder || null,
-        data.postalCode || null,
         data.city || null,
+        data.postalCode || null,
+        data.funder || null,
         data.project || null,
+        data.organization || null,
       )
 
-      res.redirect(`/clients/${newClient.id}`)
+      res.redirect(`/clients/${newClient.clientId}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.log(errorMessage)
@@ -571,28 +524,28 @@ async function submitNewClient(req, res) {
   }
 }
 
-const validateEditClient = [
+const validateUpdateClient = [
   Validator.body([
     'displayName',
-    'responderPhoneNumbers',
-    'fromPhoneNumber',
-    'incidentCategories',
-    'isDisplayed',
-    'isSendingAlerts',
-    'isSendingVitals',
     'language',
-    'status',
+    'responderPhoneNumbers',
+    'vitalsTwilioNumber',
+    'vitalsPhoneNumbers',
+    'surveyCategories',
+    'isDisplayed',
+    'devicesSendingAlerts',
+    'devicesSendingVitals',
+    'devicesStatus',
   ])
     .trim()
     .notEmpty(),
-  Validator.body(['fallbackPhoneNumbers']).trim(),
-  Validator.body(['reminderTimeout', 'fallbackTimeout']).trim().isInt({ min: 0 }),
-  Validator.body(['firstDeviceLiveAt', 'country', 'countrySubdivision', 'buildingType', 'organization', 'funder', 'postalCode', 'city', 'project'])
+  Validator.body(['firstDeviceLiveAt', 'fallbackPhoneNumbers']).trim(),
+  Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),
 ]
 
-async function submitEditClient(req, res) {
+async function submitUpdateClient(req, res) {
   try {
     if (!req.session.user || !req.cookies.user_sid) {
       helpers.logError('Unauthorized')
@@ -603,70 +556,62 @@ async function submitEditClient(req, res) {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
-      const clients = await db.getClients()
+      const clientId = req.params.clientId
       const data = req.body
 
-      for (const client of clients) {
-        if (client.displayName === data.displayName && client.id !== req.params.id) {
-          const errorMessage = `Client Display Name already exists: ${data.displayName}`
-          helpers.log(errorMessage)
-          return res.status(409).send(errorMessage)
-        }
-      }
+      const client = await db_new.getClientWithClientId(clientId)
 
-      const newResponderPhoneNumbers =
-        data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== ''
-          ? data.responderPhoneNumbers.split(',').map(phone => phone.trim())
-          : null
-      const newHeartbeatPhoneNumbers =
-        data.heartbeatPhoneNumbers !== undefined && data.heartbeatPhoneNumbers.trim() !== ''
-          ? data.heartbeatPhoneNumbers.split(',').map(phone => phone.trim())
+      const responderPhoneNumbers =
+        data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== '' ? data.responderPhoneNumbers.split(',').map(phone => phone.trim()) : []
+      const vitalsPhoneNumbers =
+        data.vitalsPhoneNumbers !== undefined && data.vitalsPhoneNumbers.trim() !== ''
+          ? data.vitalsPhoneNumbers.split(',').map(phone => phone.trim())
           : []
       const fallbackPhoneNumbers =
         data.fallbackPhoneNumbers && data.fallbackPhoneNumbers.trim() !== '' ? data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()) : []
+      const surveyCategories =
+        data.surveyCategories && data.surveyCategories.trim() !== '' ? data.surveyCategories.split(',').map(category => category.trim()) : []
 
       let firstDeviceLiveAt = data.firstDeviceLiveAt
       if (!firstDeviceLiveAt || firstDeviceLiveAt.trim() === '') {
         try {
-          firstDeviceLiveAt = await db.getCurrentFirstDeviceLiveAt(req.params.id)
+          firstDeviceLiveAt = client.firstDeviceLiveAt
         } catch (error) {
-          const errorMessage = `Error retrieving current firstDeviceLiveAt for client ID: ${req.params.id} - ${error.toString()}`
+          const errorMessage = `Error retrieving current firstDeviceLiveAt for client ID: ${clientId} - ${error.toString()}`
           helpers.logError(errorMessage)
           return res.status(500).send(errorMessage)
         }
       }
 
-      await db.updateClient(
+      await db_new.updateClient(
+        clientId,
         data.displayName,
-        data.fromPhoneNumber,
-        newResponderPhoneNumbers,
-        data.reminderTimeout,
-        fallbackPhoneNumbers,
-        data.fallbackTimeout,
-        newHeartbeatPhoneNumbers,
-        data.incidentCategories.split(',').map(category => category.trim()),
-        data.isDisplayed,
-        data.isSendingAlerts,
-        data.isSendingVitals,
         data.language,
-        data.status,
+        responderPhoneNumbers,
+        fallbackPhoneNumbers,
+        data.vitalsTwilioNumber,
+        vitalsPhoneNumbers,
+        surveyCategories,
+        data.isDisplayed,
+        data.devicesSendingAlerts,
+        data.devicesSendingVitals,
+        data.devicesStatus,
         firstDeviceLiveAt,
-        req.params.id,
       )
 
-      await db.updateClientExtension(
-        req.params.id,
+      await db_new.updateClientExtension(
+        clientId,
         data.country || null,
         data.countrySubdivision || null,
         data.buildingType || null,
-        data.organization || null,
-        data.funder || null,
-        data.postalCode || null,
         data.city || null,
+        data.postalCode || null,
+        data.funder || null,
         data.project || null,
+        data.organization || null,
       )
 
-      res.redirect(`/clients/${req.params.id}`)
+      res.redirect(`/clients/${req.params.clientId}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.log(errorMessage)
@@ -678,9 +623,11 @@ async function submitEditClient(req, res) {
   }
 }
 
-const validateNewLocation = Validator.body(['locationid', 'displayName', 'serialNumber', 'phoneNumber', 'clientId', 'deviceType']).trim().notEmpty()
+const validateNewDevice = Validator.body(['locationId', 'displayName', 'clientId', 'particleDeviceId', 'deviceType', 'deviceTwilioNumber'])
+  .trim()
+  .notEmpty()
 
-async function submitNewLocation(req, res) {
+async function submitNewDevice(req, res) {
   try {
     if (!req.session.user || !req.cookies.user_sid) {
       helpers.logError('Unauthorized')
@@ -691,33 +638,41 @@ async function submitNewLocation(req, res) {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
-      const allLocations = await db.getLocations()
       const data = req.body
 
-      for (const location of allLocations) {
-        if (location.locationid === data.locationid) {
+      const allDevices = await db_new.getDevices()
+      for (const device of allDevices) {
+        if (device.locationId === data.locationId) {
           helpers.log('Location ID already exists')
           return res.status(409).send('Location ID already exists')
         }
       }
 
-      const client = await db.getClientWithClientId(data.clientId)
+      const client = await db_new.getClientWithClientId(data.clientId)
       if (client === null) {
         const errorMessage = `Client ID '${data.clientId}' does not exist`
         helpers.log(errorMessage)
         return res.status(400).send(errorMessage)
       }
 
-      const newLocation = await db.createLocationFromBrowserForm(
-        data.locationid,
+      // default values for new devices created using dashboard
+      const isDisplayed = true
+      const isSendingAlerts = false
+      const isSendingVitals = false
+
+      const newDevice = await db_new.createDevice(
+        data.locationId,
         data.displayName,
-        data.serialNumber,
-        data.phoneNumber,
         data.clientId,
+        data.particleDeviceId,
         data.deviceType,
+        data.deviceTwilioNumber,
+        isDisplayed,
+        isSendingAlerts,
+        isSendingVitals,
       )
 
-      res.redirect(`/locations/${newLocation.id}`)
+      res.redirect(`/devices/${newDevice.deviceId}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.log(errorMessage)
@@ -729,20 +684,21 @@ async function submitNewLocation(req, res) {
   }
 }
 
-const validateEditLocation = Validator.body([
+const validateUpdateDevice = Validator.body([
+  'locationId',
   'displayName',
-  'serialNumber',
-  'phoneNumber',
+  'clientId',
+  'particleDeviceId',
+  'deviceType',
+  'deviceTwilioNumber',
   'isDisplayed',
   'isSendingAlerts',
   'isSendingVitals',
-  'clientId',
-  'deviceType',
 ])
   .trim()
   .notEmpty()
 
-async function submitEditLocation(req, res) {
+async function submitUpdateDevice(req, res) {
   try {
     if (!req.session.user || !req.cookies.user_sid) {
       helpers.logError('Unauthorized')
@@ -753,8 +709,8 @@ async function submitEditLocation(req, res) {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (validationErrors.isEmpty()) {
+      const deviceId = req.params.deviceId
       const data = req.body
-      data.deviceId = req.params.id
 
       const client = await db.getClientWithClientId(data.clientId)
       if (client === null) {
@@ -763,19 +719,20 @@ async function submitEditLocation(req, res) {
         return res.status(400).send(errorMessage)
       }
 
-      await db.updateLocation(
+      await db_new.updateDevice(
+        deviceId,
+        data.locationId,
         data.displayName,
-        data.serialNumber,
-        data.phoneNumber,
-        data.isDisplayed === 'true',
-        data.isSendingAlerts === 'true',
-        data.isSendingVitals === 'true',
         data.clientId,
+        data.particleDeviceId,
         data.deviceType,
-        data.deviceId,
+        data.deviceTwilioNumber,
+        data.isDisplayed,
+        data.isSendingAlerts,
+        data.isSendingVitals,
       )
 
-      res.redirect(`/locations/${data.deviceId}`)
+      res.redirect(`/device/${deviceId}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.log(errorMessage)
@@ -794,25 +751,31 @@ module.exports = {
   submitLogin,
   submitLogout,
   redirectToHomePage,
+
   renderLandingPage,
   renderFunderProjectsPage,
   renderProjectOrganizationsPage,
   renderOrganizationClientsPage,
+
   renderNewClientPage,
+  renderUpdateClientPage,
   renderClientDetailsPage,
-  renderClientEditPage,
-  renderNewLocationPage,
-  renderLocationDetailsPage,
-  renderLocationEditPage,
+
+  renderNewDevicePage,
+  renderUpdateDevicePage,
+  renderDeviceDetailsPage,
+
   renderVitalsPage,
-  renderClientVitalsPage,
+
   downloadCsv,
+
   validateNewClient,
-  validateEditClient,
-  validateNewLocation,
-  validateEditLocation,
   submitNewClient,
-  submitEditClient,
-  submitNewLocation,
-  submitEditLocation,
+  validateUpdateClient,
+  submitUpdateClient,
+
+  validateNewDevice,
+  submitNewDevice,
+  validateUpdateDevice,
+  submitUpdateDevice,
 }

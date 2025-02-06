@@ -41,7 +41,7 @@
   "stillnessAlertSurveyOccupantOkayFollowup": "We will continue to monitor this location. Reply \"1\" to stop monitoring.",
   "stillnessAlertSurveyOccupantOkayEnd": "You will no longer receive stillness alerts until the next entry. Thank you!",
 
-  "invalidResponseTryAgain": "Invaid response, try again.",
+  "invalidResponseTryAgain": "Invalid response, try again.",
   "nonAttendingResponderConfirmation": "One of your colleagues is on their way.",
 
   "notifyDoorOpened": "The door was opened at {{ deviceDisplayName }}. Thank you!",

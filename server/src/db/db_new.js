@@ -4,7 +4,7 @@ const pg = require('pg')
 // In-house dependencies
 const { helpers } = require('../utils/index')
 const { SESSION_STATUS, EVENT_TYPE, NOTIFICATION_TYPE } = require('../enums/index')
-const { ClientNew, DeviceNew, SessionNew, EventNew, VitalNew, NotificationNew } = require('../models/index')
+const { ClientNew, ClientExtensionNew, DeviceNew, SessionNew, EventNew, VitalNew, NotificationNew } = require('../models/index')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -42,6 +42,22 @@ function createClientFromRow(r) {
     r.devices_sending_vitals,
     r.devices_status,
     r.first_device_live_at,
+  )
+}
+
+function createClientExtensionFromRow(r) {
+  return new ClientExtensionNew(
+    r.client_id,
+    r.country,
+    r.country_subdivision,
+    r.building_type,
+    r.created_at,
+    r.updated_at,
+    r.organization,
+    r.funder,
+    r.postal_code,
+    r.city,
+    r.project,
   )
 }
 
@@ -215,6 +231,155 @@ async function getCurrentTime(pgClient) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+async function createClient(
+  displayName,
+  language,
+  responderPhoneNumbers,
+  fallbackPhoneNumbers,
+  vitalsTwilioNumber,
+  vitalsPhoneNumbers,
+  surveyCategories,
+  isDisplayed,
+  devicesSendingAlerts,
+  devicesSendingVitals,
+  devicesStatus,
+  firstDeviceLiveAt,
+  pgClient,
+) {
+  try {
+    const results = await helpers.runQuery(
+      'createClient',
+      `
+      INSERT INTO clients_new (
+        display_name, 
+        language,
+        responder_phone_numbers, 
+        fallback_phone_numbers,
+        vitals_twilio_number,
+        vitals_phone_numbers,
+        survey_categories,
+        is_displayed,
+        devices_sending_alerts,
+        devices_sending_vitals,
+        devices_status,
+        first_device_live_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *
+      `,
+      [
+        displayName,
+        language,
+        responderPhoneNumbers,
+        fallbackPhoneNumbers,
+        vitalsTwilioNumber,
+        vitalsPhoneNumbers,
+        surveyCategories,
+        isDisplayed,
+        devicesSendingAlerts,
+        devicesSendingVitals,
+        devicesStatus,
+        firstDeviceLiveAt,
+      ],
+      pool,
+      pgClient,
+    )
+
+    return createClientFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createClient query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateClient(
+  clientId,
+  displayName,
+  language,
+  responderPhoneNumbers,
+  fallbackPhoneNumbers,
+  vitalsTwilioNumber,
+  vitalsPhoneNumbers,
+  surveyCategories,
+  isDisplayed,
+  devicesSendingAlerts,
+  devicesSendingVitals,
+  devicesStatus,
+  firstDeviceLiveAt,
+  pgClient,
+) {
+  try {
+    const results = await helpers.runQuery(
+      'updateClient',
+      `
+      UPDATE clients_new 
+      SET 
+        display_name = $2,
+        language = $3,
+        responder_phone_numbers = $4,
+        fallback_phone_numbers = $5,
+        vitals_twilio_number = $6,
+        vitals_phone_numbers = $7,
+        survey_categories = $8,
+        is_displayed = $9,
+        devices_sending_alerts = $10,
+        devices_sending_vitals = $11,
+        devices_status = $12,
+        first_device_live_at = $13
+      WHERE client_id = $1
+      RETURNING *
+      `,
+      [
+        clientId,
+        displayName,
+        language,
+        responderPhoneNumbers,
+        fallbackPhoneNumbers,
+        vitalsTwilioNumber,
+        vitalsPhoneNumbers,
+        surveyCategories,
+        isDisplayed,
+        devicesSendingAlerts,
+        devicesSendingVitals,
+        devicesStatus,
+        firstDeviceLiveAt,
+      ],
+      pool,
+      pgClient,
+    )
+
+    return createClientFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateClient query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getClients(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClients',
+      `
+      SELECT *
+      FROM clients_new
+      ORDER BY display_name
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined) {
+      return null
+    }
+
+    // map each row to a client object
+    return results.rows.map(r => createClientFromRow(r))
+  } catch (err) {
+    helpers.logError(`Error running the getClients query: ${err.toString()}`)
+  }
+}
+
 async function getClientWithClientId(clientId, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -267,6 +432,175 @@ async function getClientWithDeviceId(deviceId, pgClient) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+async function createClientExtension(clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'createClientExtension',
+      `
+      INSERT INTO clients_extension_new (
+        client_id,
+        country,
+        country_subdivision,
+        building_type,
+        city,
+        postal_code,
+        funder,
+        project,
+        organization
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+      `,
+      [clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization],
+      pool,
+      pgClient,
+    )
+
+    return createClientExtensionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createClientExtension query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateClientExtension(clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateClientExtension',
+      `
+      UPDATE clients_extension_new
+      SET country = $2, country_subdivision = $3, building_type = $4, organization = $5, funder = $6, postal_code = $7, city = $8, project = $9
+      WHERE client_id = $1
+      RETURNING *
+      `,
+      [clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization],
+      pool,
+      pgClient,
+    )
+
+    // NOTE: this shouldn't happen, as insertion into clients_extension is a trigger for insertion into clients, but it's good to be safe!
+    if (results === undefined || results.rows.length === 0) {
+      return await createClientExtension(clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization)
+    }
+
+    return createClientExtensionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateClientExtension query: ${err.toString()}`)
+  }
+}
+
+async function getClientExtensionWithClientId(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClientExtensionWithClientId',
+      `
+      SELECT *
+      FROM clients_extension_new
+      WHERE client_id = $1
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return createClientExtensionFromRow({})
+    }
+
+    // returns a client extension object
+    return createClientExtensionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getClientExtensionWithClientId query: ${err.toString()}`)
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function createDevice(
+  locationId,
+  displayName,
+  clientId,
+  particleDeviceId,
+  deviceType,
+  deviceTwilioNumber,
+  isDisplayed,
+  isSendingAlerts,
+  isSendingVitals,
+  pgClient,
+) {
+  try {
+    const results = await helpers.runQuery(
+      'createDevice',
+      `
+      INSERT INTO devices_new (
+        location_id,
+        display_name,
+        client_id,
+        particle_device_id,
+        device_type,
+        device_twilio_number,
+        is_displayed,
+        is_sending_alerts,
+        is_sending_vitals
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+      `,
+      [locationId, displayName, clientId, particleDeviceId, deviceType, deviceTwilioNumber, isDisplayed, isSendingAlerts, isSendingVitals],
+      pool,
+      pgClient,
+    )
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createDevice query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateDevice(
+  deviceId,
+  locationId,
+  displayName,
+  clientId,
+  particleDeviceId,
+  deviceType,
+  deviceTwilioNumber,
+  isDisplayed,
+  isSendingAlerts,
+  isSendingVitals,
+  pgClient,
+) {
+  try {
+    const results = await helpers.runQuery(
+      'updateDevice',
+      `
+      UPDATE devices_new 
+      SET 
+        location_id = $2,
+        display_name = $3,
+        client_id = $4,
+        particle_device_id = $5,
+        device_type = $6,
+        device_twilio_number = $7,
+        is_displayed = $8,
+        is_sending_alerts = $9,
+        is_sending_vitals = $10
+      WHERE device_id = $1
+      RETURNING *
+      `,
+      [deviceId, locationId, displayName, clientId, particleDeviceId, deviceType, deviceTwilioNumber, isDisplayed, isSendingAlerts, isSendingVitals],
+      pool,
+      pgClient,
+    )
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateDevice query: ${err.toString()}`)
+    return null
+  }
+}
+
 async function getDevices(pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -290,6 +624,57 @@ async function getDevices(pgClient) {
     return results.rows.map(row => createDeviceFromRow(row))
   } catch (err) {
     helpers.logError(`Error running the getDevices query: ${err.toString()}`)
+  }
+}
+
+async function getDevicesForClient(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getDevicesForClient',
+      `
+      SELECT d.*
+      FROM devices_new AS d
+      LEFT JOIN clients_new AS c ON d.client_id = c.client_id
+      WHERE d.client_id = $1
+      ORDER BY c.display_name, d.display_name
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined) {
+      return null
+    }
+
+    // map each row to a device object
+    return results.rows.map(row => createDeviceFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getDevicesForClient query: ${err.toString()}`)
+  }
+}
+
+async function getDeviceWithDeviceId(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getDeviceWithDeviceId',
+      `
+      SELECT *
+      FROM devices_new
+      WHERE device_id = $1
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined) {
+      return null
+    }
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getDeviceWithDeviceId query: ${err.toString()}`)
   }
 }
 
@@ -349,6 +734,33 @@ async function createSession(deviceId, pgClient) {
   }
 
   return null
+}
+
+async function getSessionsForDevice(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getSessionsForDevice',
+      `
+      SELECT s.*
+      FROM sessions_new s
+      JOIN devices_new d ON s.device_id = d.device_id
+      WHERE d.device_id = $1
+      ORDER BY s.created_at DESC
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createSessionFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running getSessionsForDevice query: ${err.toString()}`)
+    return []
+  }
 }
 
 async function getLatestSessionWithDeviceTwilioNumber(deviceTwilioNumber, pgClient) {
@@ -865,13 +1277,24 @@ module.exports = {
   rollbackTransaction,
   getCurrentTime,
 
+  createClient,
+  updateClient,
+  getClients,
   getClientWithClientId,
   getClientWithDeviceId,
 
+  updateClientExtension,
+  getClientExtensionWithClientId,
+
+  createDevice,
+  updateDevice,
   getDevices,
+  getDevicesForClient,
+  getDeviceWithDeviceId,
   getDeviceWithParticleDeviceId,
 
   createSession,
+  getSessionsForDevice,
   getLatestSessionWithDeviceTwilioNumber,
   getLatestActiveSessionWithDeviceId,
   updateSession,

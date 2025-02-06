@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Brave Sensor Dashboard: Edit Location</title>
+    <title>Brave Sensor Dashboard</title>
 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -17,26 +17,27 @@
     {{> nav}}
     <div class="content-area">
         <div class="content-wrapper">
-          {{#currentLocation}}
-            <h4 class="no-locations">Edit Location: {{displayName}}</h4>
+          {{#device}}
+            <h4 class="no-locations">Update Device: {{displayName}}</h4>
             <br>
-            <form class="needs-validation" action="/locations/{{id}}" method="POST">
+            <form class="needs-validation" action="/device/{{deviceId}}" method="POST">
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="" class="col-sm-3 col-form-label">ID:</label>
+                    <label for="" class="col-sm-3 col-form-label">Device ID:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="id" value="{{id}}" disabled>
+                        <input type="text" class="form-control" name="deviceId" value="{{deviceId}}" disabled>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="locationid" class="col-sm-3 col-form-label">Location ID:</label>
+                    <label for="locationId" class="col-sm-3 col-form-label">Location ID:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="locationid" value="{{locationid}}" disabled>
+                        <input type="text" class="form-control" name="locationId" value={{locationId}} pattern="^[\S]+$" required>
+                        <small id="locationIdHelp" class="form-text text-muted">No spaces, please. </small>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="displayName" class="col-sm-3 col-form-label">Display Name:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="displayName" placeholder="Display Name" value="{{displayName}}" required>
+                        <input type="text" class="form-control" name="displayName" value={{displayName}} required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
@@ -44,9 +45,15 @@
                     <div class="col-sm-5">
                         <select class="form-control" name="clientId" required>
                             {{#clients}}
-                                <option {{#selected}} selected {{/selected}} value="{{id}}">{{displayName}}</option>
+                                <option {{#selected}} selected {{/selected}} value="{{clientId}}">{{displayName}}</option>
                             {{/clients}}
                         </select>
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="particleDeviceId" class="col-sm-3 col-form-label">Particle Device ID:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="particleDeviceId" value={{particleDeviceId}} required>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
@@ -59,16 +66,10 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="radarCoreID" class="col-sm-3 col-form-label">Radar Particle Core ID:</label>
+                    <label for="deviceTwilioNumber" class="col-sm-3 col-form-label">Device Twilio Number:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="serialNumber" placeholder="Radar Particle Core ID" value="{{serialNumber}}" required>
-                    </div>
-                </div>
-                <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="phoneNumber" class="col-sm-3 col-form-label">Twilio Phone Number:</label>
-                    <div class="col-sm-5">
-                        <input type="text" class="form-control" name="phoneNumber" value="{{phoneNumber}}" required pattern="[+][1]\d{10}">
-                        <small id="phoneNumberHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
+                        <input type="text" class="form-control" name="deviceTwilioNumber" value={{deviceTwilioNumber}} pattern="[+][1]\d{10}" required>
+                        <small id="deviceTwilioNumberHelp" class="form-text text-muted">+1 in front and no dashes or other delimiters, please (eg. +14445556789)</small>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
@@ -95,10 +96,10 @@
                 <br>
                 <button type="submit" class="btn btn-primary btn-large">Submit</button>
               </form>
-              {{/currentLocation}}
-              {{^currentLocation}}
-                  <h5>Sorry, this location does not appear to exist. Please select an option from the dropdown and then the "edit" button if you would like to update an existing location.</h5>
-              {{/currentLocation}}
+              {{/device}}
+              {{^device}}
+                  <h5>Sorry, this device does not appear to exist. Please select an option from the dropdown and then the "edit" button if you would like to update an existing device.</h5>
+              {{/device}}
         </div>
     </div>
     

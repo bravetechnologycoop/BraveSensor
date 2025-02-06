@@ -82,7 +82,7 @@
         outline: none; 
     }
 
-    .client-info {
+    .info-box {
         font-size: 0.9rem;
         line-height: 1.4;
         background-color: #f9f9f9;
@@ -92,11 +92,11 @@
         margin-bottom: 20px;
     }
 
-    .client-info p {
+    .info-box p {
         margin-bottom: 5px;
     }
 
-    .client-info span {
+    .info-box span {
         display: inline-block;
         margin-left: 5px;
     }

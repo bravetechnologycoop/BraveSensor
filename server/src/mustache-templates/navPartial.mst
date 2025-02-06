@@ -13,7 +13,7 @@
             </li>
             <li class="nav-item">
                 <button class="btn btn-logout">
-                    <a href="/locations/new" class="text-decoration-none">New Location</a>
+                    <a href="/devices/new" class="text-decoration-none">New Device</a>
                 </button>
             </li>
             <li class="nav-item">

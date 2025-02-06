@@ -902,7 +902,7 @@ async function handleSensorEvent(request, response) {
         return respondWithError(response, request.path, `Error parsing eventData: ${error.toString()}`)
       }
     }
-    
+
     const device = await db_new.getDeviceWithParticleDeviceId(particleDeviceID)
     if (!device) {
       return respondWithError(response, request.path, `No device matches the coreID ${particleDeviceID}`)
