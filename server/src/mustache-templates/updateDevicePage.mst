@@ -20,7 +20,7 @@
           {{#device}}
             <h4 class="no-locations">Update Device: {{displayName}}</h4>
             <br>
-            <form class="needs-validation" action="/device/{{deviceId}}" method="POST">
+            <form class="needs-validation" action="/devices/{{deviceId}}" method="POST">
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="" class="col-sm-3 col-form-label">Device ID:</label>
                     <div class="col-sm-5">
