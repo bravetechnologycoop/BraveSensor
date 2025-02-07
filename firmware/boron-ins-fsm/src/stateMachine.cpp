@@ -173,10 +173,6 @@ void state0_idle() {
     // set the total number of alerts generated to 0
     number_of_alerts_published = 0;
 
-<<<<<<< HEAD
-    // do stuff in the state
-=======
->>>>>>> main
     Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f", checkDoor.doorStatus, checkINS.iAverage);
     // default timer to 0 when state doesn't have a timer
     publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, (millis() - timeWhenDoorClosed));
