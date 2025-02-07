@@ -79,7 +79,7 @@ async function submitLogin(req, res) {
   const username = req.body.username
   const password = req.body.password
 
-  if (username === helpers.getEnvVar('WEB_USERNAME') && password === helpers.getEnvVar('PASSWORD')) {
+  if (username === helpers.getEnvVar('WEB_USERNAME') && password === helpers.getEnvVar('WEB_PASSWORD')) {
     req.session.user = username
     res.redirect('/dashboard')
   } else {
