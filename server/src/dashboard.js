@@ -785,7 +785,7 @@ async function submitUpdateDevice(req, res) {
         data.isSendingVitals,
       )
 
-      res.redirect(`/device/${deviceId}`)
+      res.redirect(`/devices/${deviceId}`)
     } else {
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array()}`
       helpers.log(errorMessage)

@@ -1169,7 +1169,6 @@ async function createVital(
 }
 
 async function getLatestVitalWithDeviceId(deviceId, pgClient) {
-  helpers.log(`Getting Latest Vital For Device ID: ${deviceId}`)
   try {
     const results = await helpers.runQuery(
       'getLatestVitalWithDeviceId',
@@ -1229,7 +1228,6 @@ async function createNotification(deviceId, notificationType, pgClient) {
 
 async function getNotificationsForDevice(deviceId, pgClient) {
   try {
-    helpers.log(`Getting notifications for device: ${deviceId}`)
     const results = await helpers.runQuery(
       'getNotificationsForDevice',
       `

@@ -32,12 +32,12 @@
                 <p><strong>Door Last Seen At:</strong> {{timeSinceLastDoorContact}}</p>
                 <p><strong>Door Battery Low:</strong> {{#doorLowBattery}}Yes{{/doorLowBattery}}{{^doorLowBattery}}No{{/doorLowBattery}}</p>
                 <p><strong>Door Tampered:</strong> {{#doorTampered}}Yes{{/doorTampered}}{{^doorTampered}}No{{/doorTampered}}</p>
-                <br>
-                <a href="/notifications/{{deviceId}}" class="btn btn-secondary btn-sm" role="button">View Notifications</a>
                 {{/latestVital}}
                 {{^latestVital}}
                 <p>No vital information available</p>
                 {{/latestVital}}
+                <br>
+                <a href="/notifications/{{deviceId}}" class="btn btn-secondary btn-sm" role="button">View Notifications</a>
             </div>
             <br>
             
