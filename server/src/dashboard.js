@@ -15,8 +15,7 @@ const i18next = require('i18next')
 
 // In-house dependencies
 const { helpers } = require('./utils/index')
-const { DEVICE_STATUS } = require('./enums/index')
-const db = require('./db/db')
+const { DEVICE_STATUS, SESSION_STATUS } = require('./enums/index')
 const db_new = require('./db/db_new')
 
 const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')
@@ -104,7 +103,7 @@ async function redirectToHomePage(req, res) {
 
 // For array of clients
 async function fetchAndMergeAllClientsExtension(clients) {
-  const clientExtensions = await Promise.all(clients.map(client => db_new.getClientExtensionWithClientId(client.id)))
+  const clientExtensions = await Promise.all(clients.map(client => db_new.getClientExtensionWithClientId(client.clientId)))
 
   return clients.map((client, index) => {
     const clientExtension = clientExtensions[index]
@@ -473,7 +472,7 @@ async function renderSessionDetailsPage(req, res) {
 
     const sessionWithEndDate = {
       ...session,
-      sessionEndedAt: session.sessionStatus === 'COMPLETED' ? session.updatedAt : null,
+      sessionEndedAt: session.sessionStatus === SESSION_STATUS.COMPLETED ? session.updatedAt : null,
     }
 
     const viewParams = { session: sessionWithEndDate, events: eventsWithMessages }
@@ -766,7 +765,7 @@ async function submitUpdateDevice(req, res) {
       const deviceId = req.params.deviceId
       const data = req.body
 
-      const client = await db.getClientWithClientId(data.clientId)
+      const client = await db_new.getClientWithClientId(data.clientId)
       if (client === null) {
         const errorMessage = `Client ID '${data.clientId}' does not exist`
         helpers.log(errorMessage)
