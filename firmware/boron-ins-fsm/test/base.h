@@ -35,4 +35,5 @@ long unsigned state1_max_time;
 long unsigned state2_max_duration;
 long unsigned state3_max_stillness_time;
 long unsigned state3_max_long_stillness_time;
-long unsigned ins_threshold;
+long unsigned stillness_ins_threshold;
+long unsigned occupation_detection_ins_threshold;

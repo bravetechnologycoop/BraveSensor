@@ -2,7 +2,7 @@
 const pg = require('pg')
 
 // In-house dependencies
-const { ALERT_TYPE, CHATBOT_STATE, Client, DEVICE_TYPE, Device, Session, helpers } = require('brave-alert-lib')
+const { ALERT_TYPE, CHATBOT_STATE, Client, DEVICE_TYPE, Device, Session, helpers, STATUS } = require('brave-alert-lib')
 const ClientExtension = require('../ClientExtension')
 const SensorsVital = require('../SensorsVital')
 
@@ -12,7 +12,7 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  ssl: { rejectUnauthorized: false },
+  ssl: false,
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -58,6 +58,8 @@ function createClientFromRow(r) {
     r.language,
     r.created_at,
     r.updated_at,
+    r.status,
+    r.first_device_live_at,
   )
 }
 
@@ -1021,6 +1023,8 @@ async function updateClient(
   isSendingAlerts,
   isSendingVitals,
   language,
+  status,
+  firstDeviceLiveAt,
   clientId,
   pgClient,
 ) {
@@ -1029,8 +1033,8 @@ async function updateClient(
       'updateClient',
       `
       UPDATE clients
-      SET display_name = $1, from_phone_number = $2, responder_phone_numbers = $3, reminder_timeout = $4, fallback_phone_numbers = $5, fallback_timeout = $6, heartbeat_phone_numbers = $7, incident_categories = $8, is_displayed = $9, is_sending_alerts = $10, is_sending_vitals = $11, language = $12
-      WHERE id = $13
+      SET display_name = $1, from_phone_number = $2, responder_phone_numbers = $3, reminder_timeout = $4, fallback_phone_numbers = $5, fallback_timeout = $6, heartbeat_phone_numbers = $7, incident_categories = $8, is_displayed = $9, is_sending_alerts = $10, is_sending_vitals = $11, language = $12, status = $13, first_device_live_at = $14
+      WHERE id = $15
       RETURNING *
       `,
       [
@@ -1046,6 +1050,8 @@ async function updateClient(
         isSendingAlerts,
         isSendingVitals,
         language,
+        status,
+        firstDeviceLiveAt,
         clientId,
       ],
       pool,
@@ -1224,8 +1230,8 @@ async function createClient(
     const results = await helpers.runQuery(
       'createClient',
       `
-      INSERT INTO clients (display_name, responder_phone_numbers, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_displayed, is_sending_alerts, is_sending_vitals, language)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      INSERT INTO clients (display_name, responder_phone_numbers, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_displayed, is_sending_alerts, is_sending_vitals, language, status, first_device_live_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
       `,
       [
@@ -1241,6 +1247,8 @@ async function createClient(
         isSendingAlerts,
         isSendingVitals,
         language,
+        STATUS.TESTING,
+        null,
       ],
       pool,
       pgClient,
@@ -1624,6 +1632,31 @@ async function createDevice(
   return null
 }
 
+async function getCurrentFirstDeviceLiveAt(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getCurrentFirstDeviceLiveAt',
+      `
+      SELECT first_device_live_at
+      FROM clients
+      WHERE id = $1
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return results.rows[0].first_device_live_at
+  } catch (err) {
+    helpers.logError(`Error running the getCurrentFirstDeviceLiveAt query: ${err.toString()}`)
+    return null
+  }
+}
+
 module.exports = {
   beginTransaction,
   clearClientWithDisplayName,
@@ -1675,4 +1708,5 @@ module.exports = {
   updateLocation,
   updateLowBatteryAlertTime,
   updateSentAlerts,
+  getCurrentFirstDeviceLiveAt,
 }

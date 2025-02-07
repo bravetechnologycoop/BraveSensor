@@ -12,7 +12,7 @@
 #include "statusRGB.h"
 
 #define DEBUG_LEVEL            LOG_LEVEL_INFO
-#define BRAVE_FIRMWARE_VERSION 10060  // see versioning notes in the readme
+#define BRAVE_FIRMWARE_VERSION 11000  // see versioning notes in the readme
 
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);  // must be an int, see versioning notes above
 SYSTEM_THREAD(ENABLED);
