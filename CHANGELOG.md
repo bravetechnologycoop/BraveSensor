@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- RGB mirroring of Boron LED status for Sensor Hardware v4.2 (CU-86dvy9n3y).
+
 ## [11.0.0] - 2025-01-16
 
 ### Added
