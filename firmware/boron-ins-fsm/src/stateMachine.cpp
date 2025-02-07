@@ -45,12 +45,6 @@ std::queue<unsigned long> timeQueue;
 unsigned long lastStateChangeOrAlert = millis();
 
 void setupStateMachine() {
-    // set up debug pins
-    pinMode(D2, OUTPUT);
-    pinMode(D3, OUTPUT);
-    pinMode(D4, OUTPUT);
-    pinMode(D5, OUTPUT);
-
     // default to not publishing debug logs
     stateMachineDebugFlag = 0;
 

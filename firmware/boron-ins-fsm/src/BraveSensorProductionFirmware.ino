@@ -9,6 +9,7 @@
 #include "stateMachine.h"
 #include "consoleFunctions.h"
 #include "tpl5010watchdog.h"
+#include "statusRGB.h"
 
 #define DEBUG_LEVEL            LOG_LEVEL_INFO
 #define BRAVE_FIRMWARE_VERSION 11000  // see versioning notes in the readme
@@ -28,6 +29,7 @@ void setup() {
     setupConsoleFunctions();
     setupStateMachine();
     setupWatchdog();
+    setupStatusRGB();
 
     Particle.publishVitals(900);  // 15 minutes
 }
