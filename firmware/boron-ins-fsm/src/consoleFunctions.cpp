@@ -25,7 +25,7 @@ void setupConsoleFunctions() {
     Particle.function("Occupancy_Detection_Time", occupancy_detection_time_set);
     Particle.function("Initial_Time", initial_time_set);
     Particle.function("Duration_Time", duration_alert_time_set);
-    Particle.function("Initial_Stillness_Time", initial_stillness_alert_time_set);
+    Particle.function("Stillness_Time", stillness_alert_time_set);
 
     Particle.function("IM21_Door_ID", im21_door_id_set);
 }
@@ -318,15 +318,15 @@ int duration_alert_time_set(String input) {
     return returnFlag;
 }
 
-int initial_stillness_alert_time_set(String input) {
+int stillness_alert_time_set(String input) {
     int returnFlag = -1;
 
     const char* holder = input.c_str();
 
     // if e, echo the current time
     if (*holder == 'e') {
-        EEPROM.get(ADDR_INITIAL_STILLNESS_ALERT_TIME, initial_stillness_alert_time);
-        returnFlag = initial_stillness_alert_time / 1000;
+        EEPROM.get(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
+        returnFlag = stillness_alert_time / 1000;
     }
     // else parse new time
     else {
@@ -343,9 +343,9 @@ int initial_stillness_alert_time_set(String input) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_INITIAL_STILLNESS_ALERT_TIME, time);
-            initial_stillness_alert_time = time;
-            returnFlag = initial_stillness_alert_time / 1000;
+            EEPROM.put(ADDR_STILLNESS_ALERT_TIME, time);
+            stillness_alert_time = time;
+            returnFlag = stillness_alert_time / 1000;
         }
     }
     return returnFlag;

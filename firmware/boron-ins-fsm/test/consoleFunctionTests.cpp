@@ -525,15 +525,15 @@ SCENARIO("Set Duration Alert Time", "[duration alert time]") {
     }
 }
 
-SCENARIO("Set Initial Stillness Alert Time", "[initial stillness alert time]") {
-    GIVEN("A starting initial stillness alert time of 5 minutes") {
-        initial_stillness_alert_time = 300000;
+SCENARIO("Set Stillness Alert Time", "[stillness alert time]") {
+    GIVEN("A starting stillness alert time of 5 minutes") {
+        stillness_alert_time = 300000;
 
         WHEN("the function is called with 'e'") {
-            int returnFlag = initial_stillness_alert_time_set("e");
+            int returnFlag = stillness_alert_time_set("e");
 
             THEN("the initial stillness alert time value should remain the same") {
-                REQUIRE(initial_stillness_alert_time == 300000);
+                REQUIRE(stillness_alert_time == 300000);
             }
 
             THEN("the function should return the stored value in seconds") {
@@ -542,10 +542,10 @@ SCENARIO("Set Initial Stillness Alert Time", "[initial stillness alert time]") {
         }
 
         WHEN("the function is called with a positive integer") {
-            int returnFlag = initial_stillness_alert_time_set("10");
+            int returnFlag = stillness_alert_time_set("10");
 
             THEN("the initial stillness alert time value should be updated to the input * 1000") {
-                REQUIRE(initial_stillness_alert_time == 10000);
+                REQUIRE(stillness_alert_time == 10000);
             }
 
             THEN("the function should return the input in seconds") {
@@ -554,10 +554,10 @@ SCENARIO("Set Initial Stillness Alert Time", "[initial stillness alert time]") {
         }
 
         WHEN("the function is called with a negative integer") {
-            int returnFlag = initial_stillness_alert_time_set("-10");
+            int returnFlag = stillness_alert_time_set("-10");
 
             THEN("the initial stillness alert time value should not be updated") {
-                REQUIRE(initial_stillness_alert_time == 300000);
+                REQUIRE(stillness_alert_time == 300000);
             }
 
             THEN("the function should return -1 to indicate an error") {
@@ -566,10 +566,10 @@ SCENARIO("Set Initial Stillness Alert Time", "[initial stillness alert time]") {
         }
 
         WHEN("the function is called with something other than 'e' or a positive integer") {
-            int returnFlag = initial_stillness_alert_time_set("nonInt");
+            int returnFlag = stillness_alert_time_set("nonInt");
 
             THEN("the initial stillness alert time value should not be updated") {
-                REQUIRE(initial_stillness_alert_time == 300000);
+                REQUIRE(stillness_alert_time == 300000);
             }
 
             THEN("the function should return -1 to indicate an error") {

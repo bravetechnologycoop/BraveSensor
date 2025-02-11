@@ -20,7 +20,7 @@ unsigned long occupancy_detection_ins_threshold;
 unsigned long state0_occupancy_detection_time;
 unsigned long state1_initial_time;
 unsigned long duration_alert_time;
-unsigned long initial_stillness_alert_time;
+unsigned long stillness_alert_time;
 
 bool hasDurationAlertBeenPaused;
 unsigned long numDurationAlertSent;

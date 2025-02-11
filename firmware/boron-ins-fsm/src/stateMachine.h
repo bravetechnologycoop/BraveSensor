@@ -22,7 +22,7 @@
 #define STATE1_INITIAL_TIME                 5000        // 5 secs
 
 #define DURATION_ALERT_TIME                 1200000     // 20 mins          
-#define INITIAL_STILLNESS_ALERT_TIME        300000      // 5 mins
+#define STILLNESS_ALERT_TIME                300000      // 5 mins
 
 // Heartbeat message intervals and thresholds
 #define SM_HEARTBEAT_INTERVAL               660000      // 11 mins
@@ -49,7 +49,7 @@ extern unsigned long occupancy_detection_ins_threshold;
 extern unsigned long state0_occupancy_detection_time;
 extern unsigned long state1_initial_time;
 extern unsigned long duration_alert_time;
-extern unsigned long initial_stillness_alert_time;
+extern unsigned long stillness_alert_time;
 
 // Start timers for different states
 extern unsigned long state0_start_time;
