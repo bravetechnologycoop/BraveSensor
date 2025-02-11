@@ -27,7 +27,7 @@ TEST_DIR := $(APPDIR)/test
 # Possible command line arguments
 BINARY_NAME ?= firmware
 
-all: build
+all: clean build
 
 build: check-cpp 
 	@echo "------ Creating build directory... ------"

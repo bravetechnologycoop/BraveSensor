@@ -63,12 +63,20 @@ extern unsigned long timeInState1;
 extern unsigned long timeInState2;
 extern unsigned long timeInState3;
 
-// Flag to pause duration alerts
-extern bool hasDurationAlertBeenPaused;
+// Time since the door was closed
+extern unsigned long timeSinceDoorClosed;
 
-// Counter for the number of alerts sent 
+// Duration alert variables
 extern unsigned long numDurationAlertSent;
+extern unsigned long lastDurationAlertTime;
+extern unsigned long timeSinceLastDurationAlert;
+extern bool hasDurationAlertBeenPaused;
+extern bool isDurationAlertThresholdExceeded;
+
+// Stillness alert variables
 extern unsigned long numStillnessAlertSent;
+extern bool hasStillnessAlertBeenPaused;
+extern bool isStillnessAlertThresholdExceeded;
 
 // ************************** Function declarations **************************
 

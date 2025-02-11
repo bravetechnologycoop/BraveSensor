@@ -482,7 +482,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
                         "\"occupancy_detection_timer\":\"%lu\", "
                         "\"initial_timer\":\"%lu\", "
                         "\"duration_alert_time\":\"%lu\", "
-                        "\"stillness_alert_time\":\"%lu\", "
+                        "\"stillness_alert_time\":\"%lu\" "
                      "}",
                      state, doorStatus, state_timer, INSValue, occupancy_detection_ins_threshold, stillness_ins_threshold,
                      state0_occupancy_detection_time, state1_initial_time, 
