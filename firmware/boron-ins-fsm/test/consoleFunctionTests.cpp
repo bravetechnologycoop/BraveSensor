@@ -579,61 +579,6 @@ SCENARIO("Set Initial Stillness Alert Time", "[initial stillness alert time]") {
     }
 }
 
-SCENARIO("Set Followup Stillness Alert Time", "[followup stillness alert time]") {
-    GIVEN("A starting followup stillness alert time of 3 minutes") {
-        followup_stillness_alert_time = 180000;
-
-        WHEN("the function is called with 'e'") {
-            int returnFlag = followup_stillness_alert_time_set("e");
-
-            THEN("the followup stillness alert time value should remain the same") {
-                REQUIRE(followup_stillness_alert_time == 180000);
-            }
-
-            THEN("the function should return the stored value in seconds") {
-                REQUIRE(returnFlag == 180);
-            }
-        }
-
-        WHEN("the function is called with a positive integer") {
-            int returnFlag = followup_stillness_alert_time_set("20");
-
-            THEN("the followup stillness alert time value should be updated to the input * 1000") {
-                REQUIRE(followup_stillness_alert_time == 20000);
-            }
-
-            THEN("the function should return the input in seconds") {
-                REQUIRE(returnFlag == 20);
-            }
-        }
-
-        WHEN("the function is called with a negative integer") {
-            int returnFlag = followup_stillness_alert_time_set("-20");
-
-            THEN("the followup stillness alert time value should not be updated") {
-                REQUIRE(followup_stillness_alert_time == 180000);
-            }
-
-            THEN("the function should return -1 to indicate an error") {
-                REQUIRE(returnFlag == -1);
-            }
-        }
-
-        WHEN("the function is called with something other than 'e' or a positive integer") {
-            int returnFlag = followup_stillness_alert_time_set("nonInt");
-
-            THEN("the followup stillness alert time value should not be updated") {
-                REQUIRE(followup_stillness_alert_time == 180000);
-            }
-
-            THEN("the function should return -1 to indicate an error") {
-                REQUIRE(returnFlag == -1);
-            }
-        }
-    }
-}
-
-
 SCENARIO("Change_IM21_Door_ID", "[change door id]") {
     GIVEN("A valid global door ID") {
         String doorID = "AB,CD,EF";

@@ -26,7 +26,6 @@ unsigned long state0_occupancy_detection_time = STATE0_OCCUPANCY_DETECTION_TIME;
 unsigned long state1_initial_time = STATE1_INITIAL_TIME;
 unsigned long duration_alert_time = DURATION_ALERT_TIME;
 unsigned long initial_stillness_alert_time = INITIAL_STILLNESS_ALERT_TIME;
-unsigned long followup_stillness_alert_time = FOLLOWUP_STILLNESS_ALERT_TIME;
 
 // Start timers for different states
 unsigned long state0_start_time;
@@ -139,7 +138,6 @@ void initializeStateMachineConsts() {
     if (initializeAlertTimeFlag != INITIALIZATION_FLAG_SET) {
         EEPROM.put(ADDR_DURATION_ALERT_TIME, duration_alert_time);
         EEPROM.put(ADDR_INITIAL_STILLNESS_ALERT_TIME, initial_stillness_alert_time);
-        EEPROM.put(ADDR_FOLLOWUP_STILLNESS_ALERT_TIME, followup_stillness_alert_time);
 
         initializeAlertTimeFlag = INITIALIZATION_FLAG_SET;
         EEPROM.put(ADDR_INITIALIZE_ALERT_TIME_FLAG, initializeAlertTimeFlag);
@@ -147,7 +145,6 @@ void initializeStateMachineConsts() {
     } else {
         EEPROM.get(ADDR_DURATION_ALERT_TIME, duration_alert_time);
         EEPROM.get(ADDR_INITIAL_STILLNESS_ALERT_TIME, initial_stillness_alert_time);
-        EEPROM.get(ADDR_FOLLOWUP_STILLNESS_ALERT_TIME, followup_stillness_alert_time);
         Log.warn("Alert times read from EEPROM.");
     }
 }
@@ -432,27 +429,6 @@ void state3_stillness() {
         state3_start_time = millis();
         stateHandler = state3_stillness;
     } 
-    // Send a follow-up stillness alert if initial stillness alert is sent and the stillness duration exceeds the follow-up threshold
-    else if ((numStillnessAlertSent > 0) && (timeInState3 >= followup_stillness_alert_time)) {
-        Log.warn("--Followup Stillness Alert-- TimeSinceDoorClosed: %lu, TimeInState: %lu", timeSinceDoorClosed, timeInState3);
-        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
-
-        // Publish follow-up stillness alert to particle
-        numStillnessAlertSent += 1;
-        unsigned long occupancy_duration = calculateTimeSince(timeWhenDoorClosed) / 60000; // Convert to minutes
-        char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
-        snprintf(alertMessage, sizeof(alertMessage), 
-                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
-                 3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
-        Particle.publish("Stillness Alert", alertMessage, PRIVATE);
-
-        // Pause the duration alerts
-        hasDurationAlertBeenPaused = true;
-
-        // Reset state 3 timer for the next follow-up alert
-        state3_start_time = millis();
-        stateHandler = state3_stillness;
-    }
 }
 
 void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue) {
@@ -489,11 +465,10 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
                         "\"initial_timer\":\"%lu\", "
                         "\"duration_alert_time\":\"%lu\", "
                         "\"initial_stillness_time\":\"%lu\", "
-                        "\"followup_stillness_time\":\"%lu\""
                      "}",
                      state, doorStatus, state_timer, INSValue, occupancy_detection_ins_threshold, stillness_ins_threshold,
                      state0_occupancy_detection_time, state1_initial_time, 
-                     duration_alert_time, initial_stillness_alert_time, followup_stillness_alert_time);
+                     duration_alert_time, initial_stillness_alert_time);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
         }

@@ -26,7 +26,6 @@ int occupancy_detection_time_set(String);
 int initial_time_set(String);
 int duration_alert_time_set(String);
 int initial_stillness_alert_time_set(String);
-int followup_stillness_alert_time_set(String);
 
 int im21_door_id_set(String);
 

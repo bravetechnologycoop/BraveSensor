@@ -47,8 +47,7 @@
 #define ADDR_INITIALIZE_ALERT_TIME_FLAG    43  // uint16_t = 2 bytes
 #define ADDR_DURATION_ALERT_TIME           45  // uint32_t = 4 bytes
 #define ADDR_INITIAL_STILLNESS_ALERT_TIME  49  // uint32_t = 4 bytes
-#define ADDR_FOLLOWUP_STILLNESS_ALERT_TIME 53  // uint32_t = 4 bytes
 
-// next available address is 53 + 4 = 57
+// next available address is 49 + 4 = 53
 
 #endif

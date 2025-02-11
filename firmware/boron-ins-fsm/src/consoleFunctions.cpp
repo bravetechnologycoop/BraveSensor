@@ -26,7 +26,6 @@ void setupConsoleFunctions() {
     Particle.function("Initial_Time", initial_time_set);
     Particle.function("Duration_Time", duration_alert_time_set);
     Particle.function("Initial_Stillness_Time", initial_stillness_alert_time_set);
-    Particle.function("Followup_Stillness_Time", followup_stillness_alert_time_set);
 
     Particle.function("IM21_Door_ID", im21_door_id_set);
 }
@@ -347,39 +346,6 @@ int initial_stillness_alert_time_set(String input) {
             EEPROM.put(ADDR_INITIAL_STILLNESS_ALERT_TIME, time);
             initial_stillness_alert_time = time;
             returnFlag = initial_stillness_alert_time / 1000;
-        }
-    }
-    return returnFlag;
-}
-
-int followup_stillness_alert_time_set(String input) {
-    int returnFlag = -1;
-
-    const char* holder = input.c_str();
-
-    // if e, echo the current time
-    if (*holder == 'e') {
-        EEPROM.get(ADDR_FOLLOWUP_STILLNESS_ALERT_TIME, followup_stillness_alert_time);
-        returnFlag = followup_stillness_alert_time / 1000;
-    }
-    // else parse new time
-    else {
-        int time = input.toInt();
-        // increase time value from seconds to ms
-        time = time * 1000;
-
-        if (time == 0) {
-            // string.toInt() returns 0 if input not an int
-            // and a time value of 0 makes no sense, so return -1
-            returnFlag = -1;
-        }
-        else if (time < 0) {
-            returnFlag = -1;
-        }
-        else {
-            EEPROM.put(ADDR_FOLLOWUP_STILLNESS_ALERT_TIME, time);
-            followup_stillness_alert_time = time;
-            returnFlag = followup_stillness_alert_time / 1000;
         }
     }
     return returnFlag;
