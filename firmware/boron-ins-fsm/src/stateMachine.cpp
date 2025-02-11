@@ -58,7 +58,7 @@ bool isStillnessAlertThresholdExceeded = false;
 int resetReason = System.resetReason();
 
 void setupStateMachine() {
-    // From debugFlags.h
+    // From debugFlags.h (default to not publish debug messages)
     stateMachineDebugFlag = 0;
 
     state0_start_time = 0;
