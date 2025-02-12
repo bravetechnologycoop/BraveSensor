@@ -2,7 +2,7 @@
  * vitals.js
  *
  * Manages device heartbeats and notifications
- * Heatbeat events are recieved via particle webhook on /api/heartbeat
+ * Heartbeat events are recieved via particle webhook on /api/heartbeat
  */
 
 // Third-party dependencies
@@ -20,13 +20,11 @@ const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function handleDeviceConnectionVitals(device, client, currentDBTime, pgClient) {
-  helpers.log(`Checking connection for device: ${device.displayName}`)
+  if (!device || !client || !currentDBTime || !pgClient) {
+    throw new Error('Missing required parameters')
+  }
 
   try {
-    if (!device || !client || !currentDBTime || !pgClient) {
-      throw new Error('Missing required parameters')
-    }
-
     const latestVital = await db_new.getLatestVitalWithDeviceId(device.deviceId, pgClient)
     if (!latestVital) {
       throw new Error(`No vitals found for device ${device.deviceId}`)
@@ -58,20 +56,21 @@ async function handleDeviceConnectionVitals(device, client, currentDBTime, pgCli
         // if device is disconnected OR both device and door are disconnected, then send device messages
         // if only door is disconnected, then send door messages
         if (deviceDisconnected) {
-          messageKey = isInitialAlert ? 'deviceDisconnectionInitial' : 'deviceDisconnectionReminder'
+          messageKey = isInitialAlert ? 'deviceDisconnectedInitial' : 'deviceDisconnectedReminder'
           notificationType = isInitialAlert ? NOTIFICATION_TYPE.DEVICE_DISCONNECTED : NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER
         } else {
-          messageKey = isInitialAlert ? 'doorDisconnectionInitial' : 'doorDisconnectionReminder'
+          messageKey = isInitialAlert ? 'doorDisconnectedInitial' : 'doorDisconnectedReminder'
           notificationType = isInitialAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
         }
       }
     } else if (fullyConnected && latestConnectionNotification && latestConnectionNotification.notificationType.includes('DISCONNECTED')) {
-      messageKey = 'deviceReconnection'
+      messageKey = 'deviceReconnected'
       notificationType = 'DEVICE_RECONNECTED'
     }
 
     // send the notification
     if (notificationType && messageKey) {
+      helpers.logSentry(`handleDeviceConnectionVitals: Sending ${notificationType} notification for ${device.displayName}`)
       await db_new.createNotification(device.deviceId, notificationType, pgClient)
 
       const message = i18next.t(messageKey, {
@@ -79,9 +78,11 @@ async function handleDeviceConnectionVitals(device, client, currentDBTime, pgCli
         deviceDisplayName: device.displayName,
         clientDisplayName: client.displayName,
       })
+
+      const phoneNumbers = [...new Set([...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers])]
       await twilioHelpers.sendMessageToPhoneNumbers(
         client.vitalsTwilioNumber,
-        [...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers],
+        phoneNumbers,
         message,
       )
     }
@@ -99,31 +100,28 @@ async function checkDeviceConnectionVitals() {
       throw new Error('Error starting transaction')
     }
 
-    // get all devices and map them with respective clients
+    const currentDBTime = await db_new.getCurrentTime(pgClient)
+
     const devices = await db_new.getDevices(pgClient)
     if (!devices || devices.length === 0) return
-    const clients = await Promise.all(devices.map(device => db_new.getClientWithDeviceId(device.deviceId, pgClient)))
-    if (!clients || clients.length === 0) return
 
-    // filter devices for enabled vitals
-    const vitalDevices = devices.filter((device, index) => {
-      const client = clients[index]
-      return device.isSendingVitals && client && client.devicesSendingVitals
-    })
-
-    // process each device
-    const currentDBTime = await db_new.getCurrentTime(pgClient)
-    const devicePromises = vitalDevices.map(async (device, index) => {
-      const client = clients[index]
-      await handleDeviceConnectionVitals(device, client, currentDBTime, pgClient)
-    })
-    await Promise.all(devicePromises)
+    // Process each device that has vitals enabled
+    for (const device of devices) {
+      const client = await db_new.getClientWithDeviceId(device.deviceId, pgClient)
+      if (client && client.devicesSendingVitals && device.isSendingVitals)  {
+        await handleDeviceConnectionVitals(device, client, currentDBTime, pgClient)
+      }
+    }
 
     await db_new.commitTransaction(pgClient)
   } catch (error) {
     helpers.logError(`checkDeviceConnections: ${error.message}`)
     if (pgClient) {
-      await db_new.rollbackTransaction(pgClient)
+      try {
+        await db_new.rollbackTransaction(pgClient)
+      } catch (rollbackError) {
+        helpers.logError(`Error rolling back transaction: ${rollbackError.message}`)
+      }
     }
   }
 }
@@ -138,19 +136,27 @@ async function handleVitalNotifications(
   client,
   device,
   pgClient,
+  currentDBTime
 ) {
+  if (!client || !device || !pgClient || !currentDBTime) {
+    throw new Error('Missing required parameters')
+  }
+
   try {
     const notifications = []
 
     // 1. Door Low Battery
     if (doorLowBatteryStatus) {
       const lastDoorLowBatteryNotification = await db_new.getLatestNotificationOfType(device.deviceId, NOTIFICATION_TYPE.DOOR_LOW_BATTERY, pgClient)
-      const currentDbTime = await db_new.getCurrentTime()
-      const doorLowBatteryTimeout = parseInt(helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT'), 10) * 1000
+      const doorLowBatteryTimeout = parseInt(helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT'), 10)
+      
+      if (isNaN(doorLowBatteryTimeout)) {
+        throw new Error('Invalid LOW_BATTERY_ALERT_TIMEOUT configuration')
+      }
 
       if (
         !lastDoorLowBatteryNotification ||
-        (doorLowBatteryTimeout && currentDbTime - lastDoorLowBatteryNotification.notificationSentAt >= doorLowBatteryTimeout)
+        (doorLowBatteryTimeout && currentDBTime - lastDoorLowBatteryNotification.notificationSentAt >= doorLowBatteryTimeout * 1000)
       ) {
         notifications.push({
           messageKey: 'doorLowBattery',
@@ -170,6 +176,10 @@ async function handleVitalNotifications(
     // 3. Consecutive Open Door
     const consecutiveOpenDoorHeartbeatThreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD'), 10)
     const consecutiveOpenDoorFollowUp = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP'), 10)
+    if (isNaN(consecutiveOpenDoorHeartbeatThreshold) || isNaN(consecutiveOpenDoorFollowUp)) {
+      throw new Error('Invalid configuration for CONSECUTIVE_OPEN_DOOR thresholds')
+    }
+
     if (
       consecutiveOpenDoorHeartbeatCount >= consecutiveOpenDoorHeartbeatThreshold &&
       (consecutiveOpenDoorHeartbeatCount - consecutiveOpenDoorHeartbeatThreshold) % consecutiveOpenDoorFollowUp === 0
@@ -182,54 +192,66 @@ async function handleVitalNotifications(
 
     // Send all notifications
     for (const notification of notifications) {
-      helpers.logSentry(`handleHeartbeatNotification: Sending ${notification.notificationType} notification for ${device.displayName}`)
+      helpers.logSentry(`handleVitalNotifications: Sending ${notification.notificationType} notification for ${device.displayName}`)
       await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
 
       const message = i18next.t(notification.messageKey, {
         lng: client.language || 'en',
         deviceDisplayName: device.displayName,
       })
+      
+      const phoneNumbers = [...new Set([...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers])]
       await twilioHelpers.sendMessageToPhoneNumbers(
         client.vitalsTwilioNumber,
-        [...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers],
+        phoneNumbers,
         message,
       )
     }
   } catch (error) {
-    throw new Error(`handleHeartbeatNotification: ${error.message}`)
+    throw new Error(`handleVitalNotifications: ${error.message}`)
   }
 }
 
 // Note: A heartbeat is logged as a vital in the database
 async function processHeartbeat(eventData, client, device) {
-  let pgClient
+  if (!eventData || !client || !device) {
+    throw new Error('Missing required parameters')
+  }
 
+  const {
+    resetReason: deviceLastResetReason,
+    doorLastMessage,
+    doorLowBatt: doorLowBattery,
+    doorTampered,
+    doorMissedMsg: doorMissedCount,
+    consecutiveOpenDoorHeartbeatCount,
+  } = eventData
+
+  // Validate required eventData fields
+  if ([deviceLastResetReason, doorLastMessage, doorLowBattery, doorTampered, doorMissedCount, consecutiveOpenDoorHeartbeatCount]
+      .some(val => val === undefined)) {
+    throw new Error('Missing required eventData fields')
+  }
+
+  let pgClient
   try {
     pgClient = await db_new.beginTransaction()
     if (!pgClient) {
       throw new Error('Error starting transaction')
     }
 
-    // decode eventData into variables
-    const {
-      resetReason: deviceLastResetReason,
-      doorLastMessage,
-      doorLowBatt: doorLowBattery,
-      doorTampered,
-      doorMissedMsg: doorMissedCount,
-      consecutiveOpenDoorHeartbeatCount,
-    } = eventData
-
-    // Get latest vital
+    const currentDBTime = await db_new.getCurrentTime()
     const latestVital = await db_new.getLatestVitalWithDeviceId(device.deviceId, pgClient)
 
     let doorLastSeenAt
     let doorTamperedStatus
     let doorLowBatteryStatus
+
+    // Handle -1 values (indicating no change from previous state)
     if (doorLastMessage.toString() === '-1' || doorTampered.toString() === '-1' || doorLowBattery.toString() === '-1') {
       if (!latestVital) {
         // New device - use defaults
-        doorLastSeenAt = await db_new.getCurrentTime()
+        doorLastSeenAt = currentDBTime
         doorTamperedStatus = false
         doorLowBatteryStatus = false
       } else {
@@ -240,16 +262,24 @@ async function processHeartbeat(eventData, client, device) {
       }
     } else {
       // Use current values
-      const currentDbTime = await db_new.getCurrentTime()
-      doorLastSeenAt = DateTime.fromJSDate(currentDbTime).minus({ milliseconds: doorLastMessage }).toJSDate()
+      doorLastSeenAt = DateTime.fromJSDate(currentDBTime).minus({ milliseconds: doorLastMessage }).toJSDate()
       doorTamperedStatus = doorTampered
       doorLowBatteryStatus = doorLowBattery
     }
 
     // Handle vital notifications
-    await handleVitalNotifications(doorLowBatteryStatus, doorTamperedStatus, consecutiveOpenDoorHeartbeatCount, latestVital, client, device, pgClient)
+    await handleVitalNotifications(
+      doorLowBatteryStatus,
+      doorTamperedStatus,
+      consecutiveOpenDoorHeartbeatCount,
+      latestVital,
+      client,
+      device,
+      pgClient,
+      currentDBTime
+    )
 
-    // log the heartbeat as a new vital
+    // Log the heartbeat as a new vital
     await db_new.createVital(
       device.deviceId,
       deviceLastResetReason,
@@ -263,18 +293,22 @@ async function processHeartbeat(eventData, client, device) {
 
     await db_new.commitTransaction(pgClient)
   } catch (error) {
-    try {
-      await db_new.rollbackTransaction(pgClient)
-    } catch (rollbackError) {
-      throw new Error(
-        `processHeartbeat: Error rolling back transaction: ${rollbackError.message}. Rollback attempted because of error: ${error.message}`,
-      )
+    if (pgClient) {
+      try {
+        await db_new.rollbackTransaction(pgClient)
+      } catch (rollbackError) {
+        throw new Error(`Transaction rollback failed: ${rollbackError.message}. Original error: ${error.message}`)
+      }
     }
-    throw new Error(`processHeartbeat: ${error.message}`)
+    throw error
   }
 }
 
 function logHeartbeatWarnings(eventData, device) {
+  if (!eventData || !device) {
+    throw new Error('Missing required parameters')
+  }
+
   if (eventData.isINSZero) {
     helpers.logSentry(`Sensor Warning for ${device.displayName} - INS is equal to or less than zero.`)
   }
@@ -286,13 +320,12 @@ function logHeartbeatWarnings(eventData, device) {
 // ----------------------------------------------------------------------------------------------------------------------------
 // Sensor Heartbeats (/api/heartbeat)
 
-const validateHeartbeat = Validator.body(['event', 'data', 'coreid', 'api_key']).exists()
-
-function respondWithError(response, path, errorMessage) {
-  helpers.logError(`Error on ${path}: ${errorMessage}`)
-  // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
-  response.status(200).json(errorMessage)
-}
+const validateHeartbeat = [
+  Validator.body('event').exists().isString().equals('Heartbeat'),
+  Validator.body('data').exists(),
+  Validator.body('coreid').exists().isString(),
+  Validator.body('api_key').exists().isString(),
+]
 
 async function handleHeartbeat(request, response) {
   try {
@@ -301,25 +334,18 @@ async function handleHeartbeat(request, response) {
       return respondWithError(response, request.path, `Bad request: ${validationErrors.array()}`)
     }
 
-    const { api_key, event: receivedEventType, data: receivedEventData, coreid: particleDeviceID } = request.body
+    const { api_key, data: receivedEventData, coreid: particleDeviceID } = request.body
 
     if (api_key !== particleWebhookAPIKey) {
       return respondWithError(response, request.path, 'Access not allowed')
     }
-    if (receivedEventType !== 'Heartbeat') {
-      return respondWithError(response, request.path, `Unknown event type: ${receivedEventType}`)
-    }
 
     // convert json string to object
     let eventData
-    if (typeof receivedEventData !== 'string') {
-      eventData = receivedEventData
-    } else {
-      try {
-        eventData = JSON.parse(receivedEventData)
-      } catch (error) {
-        return respondWithError(response, request.path, `Error parsing eventData: ${error.toString()}`)
-      }
+    try {
+      eventData = typeof receivedEventData === 'string' ? JSON.parse(receivedEventData) : receivedEventData
+    } catch (error) {
+      return respondWithError(response, request.path, `Error parsing eventData: ${error.message}`)
     }
 
     const device = await db_new.getDeviceWithParticleDeviceId(particleDeviceID)
@@ -332,11 +358,18 @@ async function handleHeartbeat(request, response) {
 
     // process the heartbeat (logged in db as vitals) if enabled
     const client = await db_new.getClientWithClientId(device.clientId)
+    if (!client) {
+      return respondWithError(response, request.path, `No client found for device ${particleDeviceID}`)
+    }
     if (client.devicesSendingVitals && device.isSendingVitals) {
-      await processHeartbeat(eventData, client, device)
+      try {
+        await processHeartbeat(eventData, client, device)
+      } catch (error) {
+        return respondWithError(response, request.path, `Error processing heartbeat: ${error.message}`)
+      }
     }
 
-    response.status(200).json('OK')
+    response.status(200).json({ status: 'OK' })
   } catch (error) {
     respondWithError(response, request.path, `Error processing request: ${error.message}`)
   }
