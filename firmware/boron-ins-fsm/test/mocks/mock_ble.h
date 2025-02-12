@@ -1,5 +1,6 @@
-/*
- * Mock implementation for BLE functions and classes
+/* mock_ble.h - Mock implementation for BLE functions and classes
+ *
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  */
 
 #pragma once
@@ -7,7 +8,7 @@
 #define BLE_GAP_ADV_SET_DATA_SIZE_MAX (31)  //< Maximum data length for an advertising set.
 #define BLE_MAX_ADV_DATA_LEN          BLE_GAP_ADV_SET_DATA_SIZE_MAX
 
-#include "../inc/spark_wiring_vector.h"
+#include "../../inc/spark_wiring_vector.h"
 
 // Defines fake BleAdvertisingDataType values
 enum class BleAdvertisingDataType : uint8_t

@@ -1,15 +1,19 @@
-/*
- * Mock EEPROM memory for Particle Boron
- * Reference: https://docs.particle.io/reference/device-os/api/eeprom/eeprom/
+/* mock_eeprom.h - Mock EEPROM memory for Particle Boron
  *
- * The mock EEPROM is coded such that calling get() to get the IM door ID will
- * always set the data variable to 0x56 for the first byte of ADDR_IM_DOORID,
- * 0x34 for the second byte, and 0x12 for the third byte.
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  */
 
 #pragma once
 
 #include "../../src/flashAddresses.h"
+
+/* 
+   The mock EEPROM is coded such that calling get() to get the IM door ID will
+   always set the data variable to 0x56 for the first byte of ADDR_IM_DOORID,
+   0x34 for the second byte, and 0x12 for the third byte.
+
+   Reference: https://docs.particle.io/reference/device-os/api/eeprom/eeprom/
+*/
 
 class MockEEPROM {
 public:

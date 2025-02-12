@@ -5,10 +5,10 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 
 // In-house dependencies
-const { helpers, twilioHelpers } = require('brave-alert-lib')
-const { mockResponse } = require('../../../testingHelpers')
-const pa = require('../../../pa')
-const db = require('../../../db/db')
+const { helpers, twilioHelpers } = require('../../../src/utils/index')
+const { mockResponse } = require('../../testingHelpers')
+const pa = require('../../../src/pa')
+const db = require('../../../src/db/db')
 
 const successfulPhoneNumbers = [
   '+16040000000',

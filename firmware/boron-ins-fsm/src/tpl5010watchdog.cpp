@@ -1,14 +1,18 @@
+/* tpl5010watchdog.cpp - Functions to setup and service the TPL5010 watchdog timer.
+ *
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
+ * 
+ * File created by: Heidi Fedorak, Apr 2021
+ */
+
 #include "Particle.h"
 #include "tpl5010watchdog.h"
 
-//******************global variable initialization*******************
-
 // Pin used to service the watchdog
 const pin_t WATCHDOG_PIN = D6;
+
 // Period of servicing watchdog
 const std::chrono::milliseconds WATCHDOG_PERIOD = 2min;
-
-//********************setup() functions*************************/
 
 void setupWatchdog() {
     pinMode(WATCHDOG_PIN, OUTPUT);
@@ -16,8 +20,6 @@ void setupWatchdog() {
         Log.info("RESET_REASON_PIN_RESET: either RESET or hardware watchdog");
     }
 }
-
-//********************loop() functions*************************/
 
 // Pulses the watchdog service pin once WATCHDOG_PERIOD has passed
 void serviceWatchdog() {
