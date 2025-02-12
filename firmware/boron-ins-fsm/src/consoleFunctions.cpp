@@ -130,16 +130,14 @@ int reset_monitoring(String command) {
         if (stateHandler == state2_monitoring || stateHandler == state3_stillness) {
             returnFlag = 1;
 
-            // Reset alert counts
+            // Reset duration alerts
             numDurationAlertSent = 0;
-            numStillnessAlertSent = 0;
-
-            // Reset the state times
-            // state2_start_time = millis();
-            // state3_start_time = millis();
-
-            // Unpause alerts
+            timeSinceLastDurationAlert = 0;
             hasDurationAlertBeenPaused = false;
+
+            // Reset stillness alerts
+            numStillnessAlertSent = 0;
+            state3_start_time = millis();
             hasStillnessAlertBeenPaused = false;
 
             // Publish reset message

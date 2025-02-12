@@ -171,18 +171,41 @@ unsigned long calculateTimeSince(unsigned long startTime) {
 }
 
 /*
- * Helper Functions - Alert Status Updates
- * Updates the global alert variables
+ * Duration Alert Logic:
+ * - Can trigger from states 2 and 3
+ * - First duration alert is triggered when time since door close exceeds the duration alert threshold
+ * - Subsequent duration alerts are triggered when time since the last alert exceeds the duration alert threshold
+ * - Uses modulo to ensure alerts align with intervals with 1s interval
  */
 void updateDurationAlertStatus() {
     if (!hasDurationAlertBeenPaused) {
         timeSinceDoorClosed = calculateTimeSince(timeWhenDoorClosed);
         timeSinceLastDurationAlert = (numDurationAlertSent > 0) ? calculateTimeSince(lastDurationAlertTime) : 0;
-        isDurationAlertThresholdExceeded = (numDurationAlertSent == 0 && timeSinceDoorClosed >= duration_alert_time) || 
-                                         (numDurationAlertSent > 0 && timeSinceLastDurationAlert >= duration_alert_time);
+         
+        // First duration alert
+        if (numDurationAlertSent == 0) {
+            isDurationAlertThresholdExceeded = (
+                (timeSinceDoorClosed >= duration_alert_time) &&
+                (timeSinceDoorClosed % duration_alert_time < 1000)
+            );
+        }
+        // Subsequent duration alerts
+        else {
+            isDurationAlertThresholdExceeded = (
+                (timeSinceDoorClosed % duration_alert_time < 1000) &&
+                (timeSinceLastDurationAlert >= duration_alert_time - 1000)
+            );
+        }
     }
 }
 
+/*
+ * Stillness Alert Logic:
+ * - Only triggers in state 3
+ * - One-time alert when continuous stillness exceeds threshold
+ * - When triggered, pauses both duration and stillness alerts
+ * - Requires state reset or door open to re-enable
+ */
 void updateStillnessAlertStatus() {
     if (!hasStillnessAlertBeenPaused) {
         isStillnessAlertThresholdExceeded = timeInState3 >= stillness_alert_time;
@@ -425,7 +448,7 @@ void state3_stillness() {
         char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(alertMessage, sizeof(alertMessage),
                     "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
-                    2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+                    3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Duration Alert", alertMessage, PRIVATE);
     }
     // Stillness alert condition based on time elapsed since entering state 3
