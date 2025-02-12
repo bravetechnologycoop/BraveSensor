@@ -80,11 +80,7 @@ async function handleDeviceConnectionVitals(device, client, currentDBTime, pgCli
       })
 
       const phoneNumbers = [...new Set([...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers])]
-      await twilioHelpers.sendMessageToPhoneNumbers(
-        client.vitalsTwilioNumber,
-        phoneNumbers,
-        message,
-      )
+      await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, message)
     }
   } catch (error) {
     throw new Error(`handleDeviceConnectionVitals: ${error.message}`)
@@ -108,7 +104,7 @@ async function checkDeviceConnectionVitals() {
     // Process each device that has vitals enabled
     for (const device of devices) {
       const client = await db_new.getClientWithDeviceId(device.deviceId, pgClient)
-      if (client && client.devicesSendingVitals && device.isSendingVitals)  {
+      if (client && client.devicesSendingVitals && device.isSendingVitals) {
         await handleDeviceConnectionVitals(device, client, currentDBTime, pgClient)
       }
     }
@@ -136,7 +132,7 @@ async function handleVitalNotifications(
   client,
   device,
   pgClient,
-  currentDBTime
+  currentDBTime,
 ) {
   if (!client || !device || !pgClient || !currentDBTime) {
     throw new Error('Missing required parameters')
@@ -149,11 +145,6 @@ async function handleVitalNotifications(
     if (doorLowBatteryStatus) {
       const lastDoorLowBatteryNotification = await db_new.getLatestNotificationOfType(device.deviceId, NOTIFICATION_TYPE.DOOR_LOW_BATTERY, pgClient)
       const doorLowBatteryTimeout = parseInt(helpers.getEnvVar('LOW_BATTERY_ALERT_TIMEOUT'), 10)
-      
-      if (isNaN(doorLowBatteryTimeout)) {
-        throw new Error('Invalid LOW_BATTERY_ALERT_TIMEOUT configuration')
-      }
-
       if (
         !lastDoorLowBatteryNotification ||
         (doorLowBatteryTimeout && currentDBTime - lastDoorLowBatteryNotification.notificationSentAt >= doorLowBatteryTimeout * 1000)
@@ -176,10 +167,6 @@ async function handleVitalNotifications(
     // 3. Consecutive Open Door
     const consecutiveOpenDoorHeartbeatThreshold = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_HEARTBEAT_THRESHOLD'), 10)
     const consecutiveOpenDoorFollowUp = parseInt(helpers.getEnvVar('CONSECUTIVE_OPEN_DOOR_FOLLOW_UP'), 10)
-    if (isNaN(consecutiveOpenDoorHeartbeatThreshold) || isNaN(consecutiveOpenDoorFollowUp)) {
-      throw new Error('Invalid configuration for CONSECUTIVE_OPEN_DOOR thresholds')
-    }
-
     if (
       consecutiveOpenDoorHeartbeatCount >= consecutiveOpenDoorHeartbeatThreshold &&
       (consecutiveOpenDoorHeartbeatCount - consecutiveOpenDoorHeartbeatThreshold) % consecutiveOpenDoorFollowUp === 0
@@ -199,13 +186,9 @@ async function handleVitalNotifications(
         lng: client.language || 'en',
         deviceDisplayName: device.displayName,
       })
-      
+
       const phoneNumbers = [...new Set([...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers])]
-      await twilioHelpers.sendMessageToPhoneNumbers(
-        client.vitalsTwilioNumber,
-        phoneNumbers,
-        message,
-      )
+      await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, message)
     }
   } catch (error) {
     throw new Error(`handleVitalNotifications: ${error.message}`)
@@ -226,12 +209,6 @@ async function processHeartbeat(eventData, client, device) {
     doorMissedMsg: doorMissedCount,
     consecutiveOpenDoorHeartbeatCount,
   } = eventData
-
-  // Validate required eventData fields
-  if ([deviceLastResetReason, doorLastMessage, doorLowBattery, doorTampered, doorMissedCount, consecutiveOpenDoorHeartbeatCount]
-      .some(val => val === undefined)) {
-    throw new Error('Missing required eventData fields')
-  }
 
   let pgClient
   try {
@@ -276,7 +253,7 @@ async function processHeartbeat(eventData, client, device) {
       client,
       device,
       pgClient,
-      currentDBTime
+      currentDBTime,
     )
 
     // Log the heartbeat as a new vital
@@ -327,6 +304,12 @@ const validateHeartbeat = [
   Validator.body('api_key').exists().isString(),
 ]
 
+function respondWithError(response, path, errorMessage) {
+  helpers.logError(`Error on ${path}: ${errorMessage}`)
+  // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
+  response.status(200).json(errorMessage)
+}
+
 async function handleHeartbeat(request, response) {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
@@ -353,14 +336,15 @@ async function handleHeartbeat(request, response) {
       return respondWithError(response, request.path, `No device matches the coreID ${particleDeviceID}`)
     }
 
-    // internal sentry heartbeat warnings
-    logHeartbeatWarnings(eventData, device)
-
-    // process the heartbeat (logged in db as vitals) if enabled
     const client = await db_new.getClientWithClientId(device.clientId)
     if (!client) {
       return respondWithError(response, request.path, `No client found for device ${particleDeviceID}`)
     }
+
+    // internal sentry heartbeat warnings
+    logHeartbeatWarnings(eventData, device)
+
+    // process the heartbeat if vitals are enabled
     if (client.devicesSendingVitals && device.isSendingVitals) {
       try {
         await processHeartbeat(eventData, client, device)

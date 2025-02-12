@@ -9,17 +9,6 @@ module.exports = app => {
   if (helpers.isTestEnvironment()) {
     // local http server for testing on port 8000
     server = app.listen(8000)
-
-    // periodically check device connection vitals
-    // setInterval(async () => {
-    //   try {
-    //     helpers.log('SERVER: Checking device connection vitals')
-    //     await vitals.checkDeviceConnectionVitals()
-    //     helpers.log('SERVER: Finished checking device connection vitals')
-    //   } catch (error) {
-    //     helpers.logError(`Error checking device connection vitals: ${error.toString()}`)
-    //   }
-    // }, helpers.getEnvVar('CHECK_DEVICE_CONNECTION_VITALS_THRESHOLD'))
   } else {
     const httpsOptions = {
       key: fs.readFileSync(`/etc/brave/ssl/tls.key`),
@@ -42,7 +31,7 @@ module.exports = app => {
       try {
         await vitals.checkDeviceConnectionVitals()
       } catch (error) {
-        helpers.logError(`Error checking device connection vitals: ${error.toString()}`)
+        helpers.logError(`SERVER: Error checking device connection vitals: ${error.message}`)
       }
     }, checkInterval)
   }
