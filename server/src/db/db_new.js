@@ -125,6 +125,7 @@ async function commitTransaction(pgClient) {
   }
 
   try {
+    await pgClient.query('UNLOCK TABLE clients_new, devices_new, sessions_new, events_new, vitals_new, notifications_new')
     await pgClient.query('COMMIT')
   } catch (e) {
     helpers.logError(`Error running the commitTransaction query: ${e}`)
@@ -147,6 +148,7 @@ async function rollbackTransaction(pgClient) {
   }
 
   try {
+    await pgClient.query('UNLOCK TABLE clients_new, devices_new, sessions_new, events_new, vitals_new, notifications_new')
     await pgClient.query('ROLLBACK')
   } catch (e) {
     helpers.logError(`Error running the rollbackTransaction query: ${e}`)
@@ -171,7 +173,7 @@ const BACKOFF_BASE = 100
 
 async function runBeginTransactionWithRetries(retryCount) {
   if (helpers.isDbLogging()) {
-    helpers.log('\nSTARTED: beginTransaction')
+    helpers.log('STARTED: beginTransaction')
   }
 
   let pgClient = null
@@ -189,7 +191,7 @@ async function runBeginTransactionWithRetries(retryCount) {
     await pgClient.query('BEGIN')
 
     await pgClient.query(
-      'LOCK TABLE clients_new, devices_new, sessions_new, events_new, vitals_new, notifications_new IN ACCESS EXCLUSIVE MODE NOWAIT',
+      'LOCK TABLE clients_new, devices_new, sessions_new, events_new, vitals_new, notifications_new IN SHARE UPDATE EXCLUSIVE MODE NOWAIT',
     )
   } catch (e) {
     helpers.logError(`Error running the runBeginTransactionWithRetries query: ${e}`)

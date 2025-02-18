@@ -22,7 +22,7 @@ async function resetMonitoring(particleDeviceId) {
 
   try {
     await particleApi.callFunction({
-      particleDeviceId,
+      deviceId: particleDeviceId,
       name: 'Reset_Monitoring',
       argument: '1',
       product: productId,
@@ -39,7 +39,7 @@ async function resetStateToZero(particleDeviceId) {
 
   try {
     await particleApi.callFunction({
-      particleDeviceId,
+      deviceId: particleDeviceId,
       name: 'Reset_State_To_Zero',
       argument: '1',
       product: productId,
