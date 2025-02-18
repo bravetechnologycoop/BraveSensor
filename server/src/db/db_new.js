@@ -125,7 +125,6 @@ async function commitTransaction(pgClient) {
   }
 
   try {
-    await pgClient.query('UNLOCK TABLE clients_new, devices_new, sessions_new, events_new, vitals_new, notifications_new')
     await pgClient.query('COMMIT')
   } catch (e) {
     helpers.logError(`Error running the commitTransaction query: ${e}`)
@@ -148,7 +147,6 @@ async function rollbackTransaction(pgClient) {
   }
 
   try {
-    await pgClient.query('UNLOCK TABLE clients_new, devices_new, sessions_new, events_new, vitals_new, notifications_new')
     await pgClient.query('ROLLBACK')
   } catch (e) {
     helpers.logError(`Error running the rollbackTransaction query: ${e}`)
@@ -168,7 +166,7 @@ async function rollbackTransaction(pgClient) {
 const LOCK_TIMEOUT_MS = 5000
 const STATEMENT_TIMEOUT_MS = 30000
 const IDLE_IN_TRANSACTION_TIMEOUT_MS = 60000
-const MAX_RETRIES = 3
+const MAX_RETRIES = 5
 const BACKOFF_BASE = 100
 
 async function runBeginTransactionWithRetries(retryCount) {
