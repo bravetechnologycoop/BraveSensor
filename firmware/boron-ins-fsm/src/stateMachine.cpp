@@ -353,10 +353,11 @@ void state2_monitoring() {
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
 
         // Publish door opened message to particle 
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
         char doorOpenedMessage[PARTICLE_MAX_MESSAGE_LENGTH];
-        snprintf(doorOpenedMessage, sizeof(doorOpenedMessage),
-                 "{\"alertSentFromState\": %lu, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu}",
-                 2, numDurationAlertSent, numStillnessAlertSent);
+        snprintf(doorOpenedMessage, sizeof(doorOpenedMessage), 
+                "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
+                2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
 
         // Transition to state 0
@@ -417,10 +418,11 @@ void state3_stillness() {
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
 
         // Publish door opened message to particle
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
         char doorOpenedMessage[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(doorOpenedMessage, sizeof(doorOpenedMessage), 
-                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu}", 
-                 3, numDurationAlertSent, numStillnessAlertSent);
+                "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
+                3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
 
         // Transition to state 0
