@@ -454,7 +454,11 @@ async function getClientWithResponderPhoneNumber(responderPhoneNumber, pgClient)
       `
       SELECT *
       FROM clients_new
-      WHERE $1 = ANY(responder_phone_numbers)
+      WHERE (
+        $1 = ANY(responder_phone_numbers)
+        OR
+        $1 = ANY(STRING_TO_ARRAY(responder_phone_numbers[1], ','))
+      )
       `,
       [responderPhoneNumber],
       pool,
@@ -465,7 +469,6 @@ async function getClientWithResponderPhoneNumber(responderPhoneNumber, pgClient)
       return null
     }
 
-    // returns a client object
     return createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getClientWithResponderPhoneNumber query: ${err.toString()}`)
