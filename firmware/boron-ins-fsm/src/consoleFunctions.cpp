@@ -75,6 +75,38 @@ int reset_state_to_zero(String command) {
         // reset the state handler to point to state 0
         stateHandler = state0_idle;
 
+        // Reset all state timers
+        state0_start_time = 0;
+        state1_start_time = 0;
+        state2_start_time = 0;
+        state3_start_time = 0;
+
+        // Reset time tracking in states
+        timeInState0 = 0;
+        timeInState1 = 0;
+        timeInState2 = 0;
+        timeInState3 = 0;
+    
+        // Reset duration alert variables
+        numDurationAlertSent = 0;
+        lastDurationAlertTime = 0;
+        timeSinceLastDurationAlert = 0;
+        hasDurationAlertBeenPaused = false;
+        isDurationAlertThresholdExceeded = false;
+
+        // Reset stillness alert variables
+        numStillnessAlertSent = 0;
+        hasStillnessAlertBeenPaused = false;
+        isStillnessAlertThresholdExceeded = false;
+
+        // Reset door timing
+        timeWhenDoorClosed = 0; 
+        timeSinceDoorClosed = 0;
+
+        // Reset door monitoring variables
+        consecutiveOpenDoorHeartbeatCount = 0;
+        doorMessageReceivedFlag = false;
+      
         Particle.publish("State Reset", "State has been reset to 0.", PRIVATE | WITH_ACK);
     } else {
         // anything else is bad input
