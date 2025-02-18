@@ -458,11 +458,12 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
       throw new Error('Error starting transaction')
     }
 
-    const device = await db_new.getDeviceWithDeviceTwilioNumber(deviceTwilioNumber, pgClient)
-    if (!device) throw new Error(`No device found with twilio number: ${deviceTwilioNumber}`)
+    const client = await db_new.getClientWithResponderPhoneNumber(responderPhoneNumber, pgClient)
+    if (!client) throw new Error(`No client found with responder phone number: ${responderPhoneNumber}`)
 
-    const client = await db_new.getClientWithDeviceId(device.deviceId, pgClient)
-    if (!client) throw new Error(`No client found with device ID: ${device.deviceId}`)
+    // each device has a unique twilio phone number in the client group
+    const device = await db_new.getDeviceWithDeviceTwilioNumber(client.clientId, deviceTwilioNumber, pgClient)
+    if (!device) throw new Error(`No device found with twilio number: ${deviceTwilioNumber} for client: ${clientId}`)
 
     const latestSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId, pgClient)
     if (!latestSession) throw new Error(`No active session found for device: ${device.deviceId}`)

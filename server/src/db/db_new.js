@@ -447,6 +447,32 @@ async function getClientWithDeviceId(deviceId, pgClient) {
   }
 }
 
+async function getClientWithResponderPhoneNumber(responderPhoneNumber, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClientWithResponderPhoneNumber',
+      `
+      SELECT *
+      FROM clients_new
+      WHERE $1 = ANY(responder_phone_numbers)
+      `,
+      [responderPhoneNumber],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    // returns a client object
+    return createClientFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getClientWithResponderPhoneNumber query: ${err.toString()}`)
+    return null
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function createClientExtension(clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization, pgClient) {
@@ -721,7 +747,7 @@ async function getDeviceWithParticleDeviceId(particleDeviceId, pgClient) {
   }
 }
 
-async function getDeviceWithDeviceTwilioNumber(deviceTwilioNumber, pgClient) {
+async function getDeviceWithDeviceTwilioNumber(clientId, deviceTwilioNumber, pgClient) {
   try {
     const results = await helpers.runQuery(
       'getDeviceWithDeviceTwilioNumber',
@@ -729,8 +755,9 @@ async function getDeviceWithDeviceTwilioNumber(deviceTwilioNumber, pgClient) {
       SELECT *
       FROM devices_new
       WHERE device_twilio_number = $1
+      AND client_id = $2
       `,
-      [deviceTwilioNumber],
+      [deviceTwilioNumber, clientId],
       pool,
       pgClient,
     )
@@ -1378,6 +1405,7 @@ module.exports = {
   getClients,
   getClientWithClientId,
   getClientWithDeviceId,
+  getClientWithResponderPhoneNumber,
 
   updateClientExtension,
   getClientExtensionWithClientId,
