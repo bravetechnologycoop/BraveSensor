@@ -36,7 +36,7 @@ BEGIN
             fallback_phone_numbers      TEXT[]              NOT NULL DEFAULT '{}'::text[],
             vitals_twilio_number        TEXT                NOT NULL,
             vitals_phone_numbers        TEXT[]              NOT NULL DEFAULT '{}'::text[],
-            survey_categories           TEXT[]              NOT NULL DEFAULT '{"Overdose Event","Emergency Event","Occupant Okay","Space Empty","Other","I would like to contact Brave"}'::text[], 
+            survey_categories           TEXT[]              NOT NULL DEFAULT '{"Overdose Event","Emergency Event","Occupant Okay","Space Empty","Other","Report technical issue"}'::text[], 
             is_displayed                BOOLEAN             NOT NULL,
             devices_sending_alerts      BOOLEAN             NOT NULL,
             devices_sending_vitals      BOOLEAN             NOT NULL,

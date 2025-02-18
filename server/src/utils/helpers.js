@@ -103,9 +103,15 @@ async function runQuery(functionName, queryString, queryParams, pool, clientPara
       }
     }
 
-    return await client.query(queryString, queryParams)
+    const result = await client.query(queryString, queryParams)
+    if (result.code === '40001') {
+      throw new Error('Serialization failure - transaction must be retried')
+    }
+
+    return result
   } catch (e) {
     logError(`Error running the ${functionName} query: ${e}`)
+    throw e
   } finally {
     if (!transactionMode) {
       try {

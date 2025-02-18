@@ -32,7 +32,9 @@
   "durationAlertSurveyDoorOpened": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
   "durationAlertSurveyOtherFollowup": "Can you please describe what happened?",
 
-  "stillnessAlert": "{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with 5 or k.",
+  "stillnessAlert": "{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with 5 or ok.",
+  "stillnessAlertFirstReminder": "1st REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with 5 or ok.",
+  "stillnessAlertSecondReminder": "2nd REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with 5 or ok.",
   "stillnessAlertFallback": "There is no response to stillness alerts for {{ deviceDisplayName }}.",
   "stillnessAlertFollowup": "Thanks, we'll follow up in {{ stillnessAlertFollowupTimer }} minutes.",
   "stillnessAlertSurvey": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
@@ -42,11 +44,9 @@
   "stillnessAlertSurveyOccupantOkayEnd": "You will no longer receive stillness alerts until the next entry. Thank you!",
 
   "invalidResponseTryAgain": "Invalid response, try again.",
-  "nonAttendingResponderConfirmation": "One of your colleagues is on their way.",
-
-  "notifyDoorOpened": "The door was opened at {{ deviceDisplayName }}. Thank you!",
-  "braveContactInfo": "You can reach us at:\nPhone: +18338332100\nEmail: clientsupport@brave.coop",
-  "thankYou": "Thank you!",
+  "nonAttendingResponderConfirmation": "Another responder is attending to this alert. You do not need to reply to this message.",
+  "braveContactInfo": "You can reach us at:\nPhone: +18338332100\nEmail: clientsupport@brave.coop\n Thank you!",
+  "thankYou": "Thank you! This session has concluded.",
 
   "doorLowBattery": "The battery for the {{ deviceDisplayName }} door sensor is low, and needs replacing.\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w",
   "doorTampered": "The door contact at {{ deviceDisplayName }} is not fully attached to the door. For a replacement or any questions, email clientsupport@brave.coop.",

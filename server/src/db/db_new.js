@@ -704,6 +704,31 @@ async function getDeviceWithParticleDeviceId(particleDeviceId, pgClient) {
   }
 }
 
+async function getDeviceWithDeviceTwilioNumber(deviceTwilioNumber, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getDeviceWithDeviceTwilioNumber',
+      `
+      SELECT *
+      FROM devices_new
+      WHERE device_twilio_number = $1
+      `,
+      [deviceTwilioNumber],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getDeviceWithDeviceTwilioNumber query: ${err.toString()}`)
+    return null
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function createSession(deviceId, pgClient) {
@@ -784,35 +809,6 @@ async function getSessionWithSessionId(sessionId, pgClient) {
     return createSessionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running getSessionWithSessionId query: ${err.toString()}`)
-    return null
-  }
-}
-
-async function getLatestSessionWithDeviceTwilioNumber(deviceTwilioNumber, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getLatestSessionWithDeviceTwilioNumber',
-      `
-      SELECT s.*
-      FROM sessions_new s
-      JOIN devices_new d 
-      ON s.device_id = d.device_id
-      WHERE d.device_twilio_number = $1
-      ORDER BY s.created_at DESC
-      LIMIT 1
-      `,
-      [deviceTwilioNumber],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    return createSessionFromRow(results.rows[0])
-  } catch (err) {
-    helpers.logError(`Error running getLatestSessionWithDeviceTwilioNumber query: ${err.toString()}`)
     return null
   }
 }
@@ -1024,6 +1020,8 @@ const respondableEvents = [
   'stillnessAlertSurveyOtherFollowup',
   'stillnessAlertSurveyDoorOpened',
   'stillnessAlertSurvey',
+  'stillnessAlertSecondReminder',
+  'stillnessAlertFirstReminder',
   'stillnessAlert',
 ]
 
@@ -1048,8 +1046,10 @@ async function getLatestRespondableEvent(sessionId, pgClient) {
         WHEN 'stillnessAlertSurveyOtherFollowup' THEN 5
         WHEN 'stillnessAlertSurveyDoorOpened' THEN 6
         WHEN 'stillnessAlertSurvey' THEN 7
-        WHEN 'stillnessAlert' THEN 8
-        ELSE 9
+        WHEN 'stillnessAlertSecondReminder' THEN 8
+        WHEN 'stillnessAlertFirstReminder' THEN 9
+        WHEN 'stillnessAlert' THEN 10
+        ELSE 11
       END
       LIMIT 1
       `,
@@ -1371,11 +1371,11 @@ module.exports = {
   getDevicesForClient,
   getDeviceWithDeviceId,
   getDeviceWithParticleDeviceId,
+  getDeviceWithDeviceTwilioNumber,
 
   createSession,
   getSessionsForDevice,
   getSessionWithSessionId,
-  getLatestSessionWithDeviceTwilioNumber,
   getLatestActiveSessionWithDeviceId,
   updateSession,
   updateSessionAttendingResponder,

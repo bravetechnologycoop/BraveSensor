@@ -43,7 +43,7 @@ BEGIN
             fallback_phone_numbers,
             from_phone_number,
             heartbeat_phone_numbers,
-            '{"Overdose Event","Emergency Event","Occupant Okay","Space Empty","Other","I would like to contact Brave"}'::text[],
+            '{"Overdose Event","Emergency Event","Occupant Okay","Space Empty","Other","Report technical issue"}'::text[],
             is_displayed,
             is_sending_alerts,
             is_sending_vitals,
