@@ -166,8 +166,8 @@ async function rollbackTransaction(pgClient) {
 const LOCK_TIMEOUT_MS = 5000
 const STATEMENT_TIMEOUT_MS = 30000
 const IDLE_IN_TRANSACTION_TIMEOUT_MS = 60000
-const MAX_RETRIES = 3;
-const BACKOFF_BASE = 100;
+const MAX_RETRIES = 3
+const BACKOFF_BASE = 100
 
 async function runBeginTransactionWithRetries(retryCount) {
   if (helpers.isDbLogging()) {
@@ -182,9 +182,9 @@ async function runBeginTransactionWithRetries(retryCount) {
       helpers.log('CONNECTED: beginTransaction')
     }
 
-    await pgClient.query(`SET lock_timeout = ${LOCK_TIMEOUT_MS}`);
-    await pgClient.query(`SET statement_timeout = ${STATEMENT_TIMEOUT_MS}`);
-    await pgClient.query(`SET idle_in_transaction_session_timeout = ${IDLE_IN_TRANSACTION_TIMEOUT_MS}`);
+    await pgClient.query(`SET lock_timeout = ${LOCK_TIMEOUT_MS}`)
+    await pgClient.query(`SET statement_timeout = ${STATEMENT_TIMEOUT_MS}`)
+    await pgClient.query(`SET idle_in_transaction_session_timeout = ${IDLE_IN_TRANSACTION_TIMEOUT_MS}`)
 
     await pgClient.query('BEGIN')
 
@@ -203,10 +203,10 @@ async function runBeginTransactionWithRetries(retryCount) {
     }
 
     if (retryCount < MAX_RETRIES) {
-      const delay = Math.min(BACKOFF_BASE * Math.pow(2, retryCount), 2000);
-      helpers.log(`Retrying transaction after ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return await runBeginTransactionWithRetries(retryCount + 1);
+      const delay = Math.min(BACKOFF_BASE * 2 ** retryCount, 2000)
+      helpers.log(`Retrying transaction after ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+      return await runBeginTransactionWithRetries(retryCount + 1)
     }
 
     return null

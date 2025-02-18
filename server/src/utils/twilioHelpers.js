@@ -56,8 +56,8 @@ async function sendMessageToPhoneNumbers(fromNumber, toNumbers, textMessage) {
   }
 
   try {
-    helpers.log(`Sending Message to ${toNumbers}: ${textMessage}`)
-    return
+    // helpers.log(`Sending Message to ${toNumbers}: ${textMessage}`)
+    // return
 
     const sendPromises = numbersToSend.map(toNumber => sendTwilioMessage(toNumber, fromNumber, textMessage))
 
