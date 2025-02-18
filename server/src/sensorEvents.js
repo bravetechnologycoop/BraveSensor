@@ -18,137 +18,68 @@ const STILLNESS_ALERT_REMINDER = helpers.getEnvVar('STILLNESS_ALERT_REMINDER')
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-async function handleStillnessFallbackAlert(client, device) {
-  let pgClient
-
-  try {
-    pgClient = await db_new.beginTransaction()
-    if (!pgClient) {
-      throw new Error('Error starting transaction')
-    }
-
-    // Re-fetch latest session state to ensure consistency
-    const currentSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId, pgClient)
-
-    // Only send fallback if session has not been responded to and the door is closed
-    // Otherwise exit here
-    if (currentSession.attendingResponderNumber || currentSession.doorOpened) return
-
-    const messageKey = 'stillnessAlertFallback'
-    const textMessage = i18next.t(messageKey, {
-      lng: client.language || 'en',
-      deviceDisplayName: device.displayName,
-    })
-
-    // Log the event and send message to fallback numbers only
-    await db_new.createEvent(currentSession.sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey, pgClient)
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.fallbackPhoneNumbers, textMessage)
-
-    await db_new.commitTransaction(pgClient)
-  } catch (error) {
-    if (pgClient) {
-      try {
-        await db_new.rollbackTransaction(pgClient)
-      } catch (rollbackError) {
-        throw new Error(`Error rolling back transaction: ${rollbackError}. Rollback attempted because of error: ${error}`)
-      }
-    }
-    throw new Error(`handleStillnessFallbackAlert: ${error}`)
-  }
-}
-
-async function handleStillnessAlertReminder(client, device, reminderNumber) {
-  let pgClient
-
-  try {
-    pgClient = await db_new.beginTransaction()
-    if (!pgClient) {
-      throw new Error('Error starting transaction')
-    }
-
-    const currentSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId, pgClient)
-    if (!currentSession) throw new Error(`No active session found for device ID: ${device.deviceId}`)
-
-    // Only send reminders if session has not been responded to and the door is closed
-    // Otherwise exit here
-    if (currentSession.attendingResponderNumber || currentSession.doorOpened) return
-
-    const messageKey = reminderNumber === 1 ? 'stillnessAlertFirstReminder' : 'stillnessAlertSecondReminder'
-    const textMessage = i18next.t(messageKey, {
-      lng: client.language || 'en',
-      deviceDisplayName: device.displayName,
-    })
-
-    // log the event and send the message to all responders
-    await db_new.createEvent(currentSession.sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey, pgClient)
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
-
-    await db_new.commitTransaction(pgClient)
-  } catch (error) {
-    if (pgClient) {
-      try {
-        await db_new.rollbackTransaction(pgClient)
-      } catch (rollbackError) {
-        throw new Error(`Error rolling back transaction: ${rollbackError}. Rollback attempted because of error: ${error}`)
-      }
-    }
-    throw new Error(`handleStillnessAlertReminder: ${error}`)
-  }
-}
-
-async function scheduleStillnessAlerts(client, device) {
+async function scheduleStillnessAlerts(client, device, sessionId) {
   const reminderTimeout = STILLNESS_ALERT_REMINDER * 60 * 1000
+
+  async function handleReminderWithoutTransaction(reminderNumber) {
+    try {
+      const messageKey = reminderNumber === 1 ? 'stillnessAlertFirstReminder' : 'stillnessAlertSecondReminder'
+      const textMessage = i18next.t(messageKey, {
+        lng: client.language || 'en',
+        deviceDisplayName: device.displayName,
+      })
+
+      await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey)
+      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+    } catch (error) {
+      helpers.logError(`Error in reminder ${reminderNumber}: ${error.message}`)
+    }
+  }
+
+  async function handleFallbackWithoutTransaction() {
+    try {
+      const messageKey = 'stillnessAlertFallback'
+      const textMessage = i18next.t(messageKey, {
+        lng: client.language || 'en',
+        deviceDisplayName: device.displayName,
+      })
+
+      await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey)
+      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.fallbackPhoneNumbers, textMessage)
+    } catch (error) {
+      helpers.logError(`Error in fallback alert: ${error.message}`)
+    }
+  }
 
   const alertSequence = [
     {
       name: 'First Reminder',
-      handler: () => handleStillnessAlertReminder(client, device, 1),
+      handler: () => handleReminderWithoutTransaction(1),
       delay: reminderTimeout,
     },
     {
       name: 'Second Reminder',
-      handler: () => handleStillnessAlertReminder(client, device, 2),
+      handler: () => handleReminderWithoutTransaction(2),
       delay: reminderTimeout * 2,
     },
     {
       name: 'Fallback Alert',
-      handler: () => handleStillnessFallbackAlert(client, device),
+      handler: () => handleFallbackWithoutTransaction(),
       delay: reminderTimeout * 3,
     },
   ]
 
-  // Execute alerts with proper transaction handling
-  async function executeAlert(alert) {
-    return new Promise(resolve => {
-      setTimeout(async () => {
-        let pgClient
-        try {
-          pgClient = await db_new.beginTransaction()
-          if (!pgClient) {
-            throw new Error(`Failed to start transaction for ${alert.name}`)
-          }
-
-          await alert.handler()
-          await db_new.commitTransaction(pgClient)
-          resolve()
-        } catch (error) {
-          if (pgClient) {
-            try {
-              await db_new.rollbackTransaction(pgClient)
-            } catch (rollbackError) {
-              helpers.logError(`Error rolling back ${alert.name}: ${rollbackError}`)
-            }
-          }
-          helpers.logError(`Error in ${alert.name}: ${error.message}`)
-          resolve() // Still resolve to continue sequence
-        }
-      }, alert.delay)
-    })
-  }
-
-  // Execute sequentially but ensure transaction cleanup
   for (const alert of alertSequence) {
-    await executeAlert(alert)
+    setTimeout(async () => {
+      try {
+        const activeSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId)
+        if (activeSession && activeSession.sessionId === sessionId) {
+          await alert.handler()
+        }
+      } catch (error) {
+        helpers.logError(`Error in ${alert.name}: ${error.message}`)
+      }
+    }, alert.delay)
   }
 }
 
@@ -218,14 +149,12 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
       throw new Error(`Failed to create a new session`)
     }
 
-    // trigger the reminder cycle if the alert is a stillness alert
-    if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
-      scheduleStillnessAlerts(client, device)
-    }
-
     // log the event and send the message to all responders
     await db_new.createEvent(newSession.sessionId, eventType, messageKey, pgClient)
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+
+    // Return the new session
+    return newSession
   } catch (error) {
     throw new Error(`handleNewSession: Error handling new session for device ID: ${device.deviceId} - ${error.message}`)
   }
@@ -259,11 +188,6 @@ async function handleExistingSession(client, device, eventType, eventData, curre
       await db_new.updateSession(currentSession.sessionId, currentSession.sessionStatus, true, currentSession.surveySent, pgClient)
     }
 
-    // trigger the reminder and fallback chain if the alert is a stillness alert
-    if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
-      scheduleStillnessAlerts(client, device)
-    }
-
     // If survey was already sent and person responsed with 'Occupant Okay',
     // send the message to only the attending responder and log the event
     // otherwise send message to all responders and log the event
@@ -284,6 +208,7 @@ async function handleExistingSession(client, device, eventType, eventData, curre
 
 async function processSensorEvent(client, device, eventType, eventData) {
   let pgClient
+  let activeSession = null
 
   try {
     pgClient = await db_new.beginTransaction()
@@ -301,12 +226,18 @@ async function processSensorEvent(client, device, eventType, eventData) {
     // Those are (status, doorOpened) --> (ACTIVE, true), (ACTIVE, false), (COMPLETED, false)
     const currentSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId, pgClient)
     if (!currentSession) {
-      await handleNewSession(client, device, eventType, eventData, pgClient)
+      activeSession = await handleNewSession(client, device, eventType, eventData, pgClient)
     } else {
       await handleExistingSession(client, device, eventType, eventData, currentSession, pgClient)
+      activeSession = currentSession
     }
 
     await db_new.commitTransaction(pgClient)
+
+    // schedule the stillness alerts
+    if (eventType === EVENT_TYPE.STILLNESS_ALERT && activeSession) {
+      scheduleStillnessAlerts(client, device, activeSession.sessionId)
+    }
   } catch (error) {
     if (pgClient) {
       try {
