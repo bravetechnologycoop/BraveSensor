@@ -42,22 +42,14 @@ async function sendTwilioResponse(response, message) {
 }
 
 async function sendMessageToPhoneNumbers(fromNumber, toNumbers, textMessage) {
-  let numbersToSend = []
-  if (Array.isArray(toNumbers)) {
-    numbersToSend = toNumbers
-  } else if (typeof toNumbers === 'string' && toNumbers.includes(',')) {
-    numbersToSend = toNumbers.split(',').map(num => num.trim())
-  } else {
-    numbersToSend = [toNumbers]
-  }
-
+  const numbersToSend = Array.isArray(toNumbers) ? toNumbers : [toNumbers]
   if (!fromNumber || !numbersToSend || numbersToSend.length === 0) {
     throw new Error('sendMessageToPhoneNumbers: Missing from number or to numbers')
   }
 
   try {
-    // helpers.log(`Sending Message to ${toNumbers}: ${textMessage}`)
-    // return
+    helpers.log(`Sending Message to ${toNumbers}: ${textMessage}`)
+    return
 
     const sendPromises = numbersToSend.map(toNumber => sendTwilioMessage(toNumber, fromNumber, textMessage))
 

@@ -432,14 +432,7 @@ async function handleIncomingMessage(client, device, latestSession, latestRespon
 
     // after the attending responder has been notified, this should be sent
     if (shouldSendNonAttendingRespondersConfirmation) {
-      // first parse the responder numbers into an array
-      const responderNumbers = Array.isArray(client.responderPhoneNumbers[0])
-        ? client.responderPhoneNumbers[0]
-        : client.responderPhoneNumbers[0].split(',').map(num => num.trim())
-
-      // filter array for non attending responder phones
-      const nonAttendingResponderPhoneNumbers = responderNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
-
+      const nonAttendingResponderPhoneNumbers = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
       for (const nonAttendingPhoneNumber of nonAttendingResponderPhoneNumbers) {
         await handleNonAttendingConfirmation(client, device, latestSession, nonAttendingPhoneNumber, pgClient)
       }
