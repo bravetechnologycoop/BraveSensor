@@ -16,6 +16,7 @@ int missedDoorEventCount = 0;
 bool doorLowBatteryFlag = false;
 bool doorTamperedFlag = false;
 bool doorMessageReceivedFlag = false;
+bool resetOccupationOnDoorClose = false;
 unsigned long doorHeartbeatReceived = 0;
 unsigned long doorLastMessage = 0;
 unsigned long timeWhenDoorClosed = 0;
@@ -79,6 +80,7 @@ doorData checkIM() {
             // Reset timer on receiving a door close message or transition from open to closed + heartbeat
             if ((currentDoorData.doorStatus & 0b1000) == 0 || (previousDoorData.doorStatus & 0b0010) != 0) {
                 timeWhenDoorClosed = millis();
+                resetOccupationOnDoorClose = true;
             }
 
             // reset consecutive door open counter since the door is closed

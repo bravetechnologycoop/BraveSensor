@@ -168,6 +168,8 @@ void state0_idle() {
     // session is over in idle state, so reset the whether alert has been sent flags
     hasDurationAlertBeenSent = false;
     hasStillnessAlertBeenSent = false;
+    // disable check for door close to reset occupation
+    resetOccupationOnDoorClose = false;
     // set to compare against the shorter stillness threshold
     max_stillness_time = &state3_max_stillness_time;
     // set the total number of alerts generated to 0
@@ -204,6 +206,8 @@ void state1_15sCountdown() {
     checkDoor = checkIM();
     // this returns 0.0 if the INS has no new data to transmit
     checkINS = checkINS3331();
+    // disable check for door close to reset occupation in
+    resetOccupationOnDoorClose = false;
 
     // do stuff in the state
     Log.info("You are in state 1, initial countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
@@ -282,6 +286,13 @@ void state2_duration() {
         state2_duration_timer = millis();
         stateHandler = state2_duration;
     }
+    else if (resetOccupationOnDoorClose) {
+        Log.warn("Non-heartbeat door close message recevied, going to state 0");
+        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(2, 6);
+        resetOccupationOnDoorClose = false;
+        stateHandler = state0_idle;
+    }
     else {
         // if we don't meet the exit conditions above hang out here
         // stateHandler = state2_duration;
@@ -346,6 +357,13 @@ void state3_stillness() {
         state2_duration_timer = millis();
         stateHandler = state3_stillness;
     }
+    else if (resetOccupationOnDoorClose) {
+        Log.warn("Non-heartbeat door close message recevied, going to state 0");
+        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
+        saveStateChangeOrAlert(3, 6);
+        resetOccupationOnDoorClose = false;
+        stateHandler = state0_idle;
+    }
     else {
         // if we don't meet the exit conditions above, we remain here
         // stateHandler = state3_stillness;
@@ -394,6 +412,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
  * 3           | Initial timer surpassed
  * 4           | Duration alert
  * 5           | Stillness alert
+ * 6           | Open door message missed
  **/
 void saveStateChangeOrAlert(int state, int reason) {
     stateQueue.push(state);
