@@ -61,7 +61,13 @@ async function scheduleStillnessAlerts(client, device, sessionId) {
     setTimeout(async () => {
       try {
         const currentSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId)
-        if (currentSession && currentSession.sessionId === sessionId && !currentSession.doorOpened && !currentSession.attendingResponderNumber) {
+        if (
+          currentSession &&
+          currentSession.sessionId === sessionId &&
+          !currentSession.doorOpened &&
+          (!currentSession.attendingResponderNumber ||
+            (currentSession.attendingResponderNumber && currentSession.selectedSurveyCategory === 'Occupant Okay'))
+        ) {
           await alert.handler()
         }
       } catch (error) {
@@ -138,8 +144,10 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
     await db_new.createEvent(newSession.sessionId, eventType, messageKey, pgClient)
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
 
-    // Return the new session
-    return newSession
+    // schedule the stillness alerts (these don't use the current transaction)
+    if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
+      scheduleStillnessAlerts(client, device, newSession.sessionId)
+    }
   } catch (error) {
     throw new Error(`handleNewSession: Error handling new session for device ID: ${device.deviceId} - ${error.message}`)
   }
@@ -163,23 +171,36 @@ async function handleExistingSession(client, device, eventType, eventData, curre
       params: { occupancyDuration: eventData.occupancyDuration },
     })
 
-    // if door opened, update the session
+    // Update session when door is opened
     if (eventType === EVENT_TYPE.DOOR_OPENED) {
-      await db_new.updateSession(currentSession.sessionId, currentSession.sessionStatus, true, currentSession.surveySent, pgClient)
+      const newDoorOpened = true
+      let newSurveySent = currentSession.surveySent
+
+      // If this is a stillness alert survey door open event, also mark survey as sent
+      if (messageKey === 'stillnessAlertSurveyDoorOpened') {
+        newSurveySent = true
+      }
+
+      await db_new.updateSession(currentSession.sessionId, currentSession.sessionStatus, newDoorOpened, newSurveySent, pgClient)
     }
 
-    // If survey was already sent and person responsed with 'Occupant Okay',
-    // send the message to only the attending responder and log the event
-    // otherwise send message to all responders and log the event
+    // if the survey was already sent and door is opened, don't send anything
     if (eventType === EVENT_TYPE.DOOR_OPENED && currentSession.surveySent) {
       return
     }
+    // If survey was sent and selected category is 'Occupant Okay', send the message to only the attending responder
+    // otherwise send message to all the responders
     if (currentSession.attendingResponderNumber && currentSession.surveySent && currentSession.selectedSurveyCategory === 'Occupant Okay') {
       await db_new.createEvent(currentSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, pgClient)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, currentSession.attendingResponderNumber, textMessage)
     } else {
       await db_new.createEvent(currentSession.sessionId, eventType, messageKey, pgClient)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+    }
+
+    // schedule the stillness alerts (these don't use the current transaction)
+    if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
+      scheduleStillnessAlerts(client, device, currentSession.sessionId)
     }
   } catch (error) {
     throw new Error(`handleExistingSession: Error handling existing session with session ID ${currentSession.sessionId}: ${error.message}`)
@@ -188,7 +209,6 @@ async function handleExistingSession(client, device, eventType, eventData, curre
 
 async function processSensorEvent(client, device, eventType, eventData) {
   let pgClient
-  let activeSession = null
 
   try {
     pgClient = await db_new.beginTransaction()
@@ -206,18 +226,12 @@ async function processSensorEvent(client, device, eventType, eventData) {
     // Those are (status, doorOpened) --> (ACTIVE, true), (ACTIVE, false), (COMPLETED, false)
     const currentSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId, pgClient)
     if (!currentSession) {
-      activeSession = await handleNewSession(client, device, eventType, eventData, pgClient)
+      await handleNewSession(client, device, eventType, eventData, pgClient)
     } else {
       await handleExistingSession(client, device, eventType, eventData, currentSession, pgClient)
-      activeSession = currentSession
     }
 
     await db_new.commitTransaction(pgClient)
-
-    // schedule the stillness alerts
-    if (eventType === EVENT_TYPE.STILLNESS_ALERT && activeSession) {
-      scheduleStillnessAlerts(client, device, activeSession.sessionId)
-    }
   } catch (error) {
     if (pgClient) {
       try {

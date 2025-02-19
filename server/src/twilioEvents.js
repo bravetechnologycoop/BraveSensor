@@ -45,38 +45,21 @@ async function handleNonAttendingConfirmation(client, device, latestSession, non
 // ----------------------------------------------------------------------------------------------------------------------------
 // Stillness Alert Handlers
 
-// Trigger function
 async function handleStillnessAlertFollowupTrigger(client, device, responderPhoneNumber) {
-  let pgClient
-
   try {
-    pgClient = await db_new.beginTransaction()
-    if (!pgClient) {
-      throw new Error('Error starting transaction')
-    }
-
-    // Re-fetch session to ensure we have latest state
-    const latestSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId, pgClient)
+    const latestSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId)
     if (!latestSession) {
       throw new Error(`No active session found for deviceId: ${device.deviceId}`)
     }
 
-    // Add additional validation to prevent duplicate surveys
-    const surveySentExists = await db_new.checkEventExists(latestSession.sessionId, EVENT_TYPE.MSG_SENT, 'stillnessAlertSurvey', pgClient)
-
-    if (!surveySentExists && !latestSession.doorOpened && !latestSession.surveySent) {
+    if (!latestSession.doorOpened) {
       const messageKey = 'stillnessAlertSurvey'
       const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-      await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.ACTIVE, false, true, pgClient)
-      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, pgClient)
+      await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.ACTIVE, false, true)
+      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
     }
-
-    await db_new.commitTransaction(pgClient)
   } catch (error) {
-    if (pgClient) {
-      await db_new.rollbackTransaction(pgClient)
-    }
     throw new Error(`handleStillnessAlertFollowupTrigger: ${error.message}`)
   }
 }
@@ -100,7 +83,7 @@ async function handleStillnessAlert(client, device, latestSession, responderPhon
 
       await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'stillnessAlert', pgClient)
 
-      // schedule the followup trigger
+      // schedule the followup trigger (this doesn't use the current transaction)
       setTimeout(() => {
         handleStillnessAlertFollowupTrigger(client, device, responderPhoneNumber)
       }, STILLNESS_ALERT_SURVEY_FOLLOWUP * 60 * 1000)
