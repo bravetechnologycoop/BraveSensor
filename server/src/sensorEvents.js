@@ -6,7 +6,6 @@
 
 // Third-party dependencies
 const Validator = require('express-validator')
-const i18next = require('i18next')
 
 // In-house dependencies
 const { helpers, twilioHelpers } = require('./utils/index')
@@ -21,29 +20,21 @@ const STILLNESS_ALERT_REMINDER = helpers.getEnvVar('STILLNESS_ALERT_REMINDER')
 async function scheduleStillnessAlerts(client, device, sessionId) {
   const reminderTimeout = STILLNESS_ALERT_REMINDER * 60 * 1000
 
-  async function handleReminderWithoutTransaction(reminderNumber) {
+  async function handleStillnessReminder(reminderNumber) {
     try {
       const messageKey = reminderNumber === 1 ? 'stillnessAlertFirstReminder' : 'stillnessAlertSecondReminder'
-      const textMessage = i18next.t(messageKey, {
-        lng: client.language || 'en',
-        deviceDisplayName: device.displayName,
-      })
-
+      const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
       await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
     } catch (error) {
-      helpers.logError(`Error in reminder ${reminderNumber}: ${error.message}`)
+      helpers.logError(`Error in stillness reminder ${reminderNumber}: ${error.message}`)
     }
   }
 
-  async function handleFallbackWithoutTransaction() {
+  async function handleStillnessFallback() {
     try {
       const messageKey = 'stillnessAlertFallback'
-      const textMessage = i18next.t(messageKey, {
-        lng: client.language || 'en',
-        deviceDisplayName: device.displayName,
-      })
-
+      const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
       await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.fallbackPhoneNumbers, textMessage)
     } catch (error) {
@@ -53,18 +44,15 @@ async function scheduleStillnessAlerts(client, device, sessionId) {
 
   const alertSequence = [
     {
-      name: 'First Reminder',
-      handler: () => handleReminderWithoutTransaction(1),
+      handler: () => handleStillnessReminder(1),
       delay: reminderTimeout,
     },
     {
-      name: 'Second Reminder',
-      handler: () => handleReminderWithoutTransaction(2),
+      handler: () => handleStillnessReminder(2),
       delay: reminderTimeout * 2,
     },
     {
-      name: 'Fallback Alert',
-      handler: () => handleFallbackWithoutTransaction(),
+      handler: () => handleStillnessFallback(),
       delay: reminderTimeout * 3,
     },
   ]
@@ -72,12 +60,12 @@ async function scheduleStillnessAlerts(client, device, sessionId) {
   for (const alert of alertSequence) {
     setTimeout(async () => {
       try {
-        const activeSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId)
-        if (activeSession && activeSession.sessionId === sessionId) {
+        const currentSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId)
+        if (currentSession && currentSession.sessionId === sessionId && !currentSession.doorOpened && !currentSession.attendingResponderNumber) {
           await alert.handler()
         }
       } catch (error) {
-        helpers.logError(`Error in ${alert.name}: ${error.message}`)
+        helpers.logError(`scheduleStillnessAlerts: ${error.message}`)
       }
     }, alert.delay)
   }
@@ -133,14 +121,11 @@ async function selectMessageKeyForExistingSession(eventType, currentSession, pgC
 
 async function handleNewSession(client, device, eventType, eventData, pgClient) {
   try {
-    // find the message key
     const messageKey = selectMessageKeyForNewSession(eventType)
-
-    // construct the translated text message using message key
-    const textMessage = i18next.t(messageKey, {
-      lng: client.language || 'en',
-      deviceDisplayName: device.displayName,
-      occupancyDuration: eventData.occupancyDuration,
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
+      client,
+      device,
+      params: { occupancyDuration: eventData.occupancyDuration },
     })
 
     // create a new active session
@@ -171,16 +156,11 @@ async function handleExistingSession(client, device, eventType, eventData, curre
   }
 
   try {
-    // find the message key
     const messageKey = await selectMessageKeyForExistingSession(eventType, currentSession, pgClient)
-
-    // construct the translated text message using message key
-    const surveyCategoriesForMessage = client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n')
-    const textMessage = i18next.t(messageKey, {
-      lng: client.language || 'en',
-      deviceDisplayName: device.displayName,
-      occupancyDuration: eventData.occupancyDuration,
-      surveyCategoriesForMessage,
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
+      client,
+      device,
+      params: { occupancyDuration: eventData.occupancyDuration },
     })
 
     // if door opened, update the session

@@ -10,6 +10,7 @@ const Tracing = require('@sentry/tracing')
 const chalk = require('chalk')
 const dotenv = require('dotenv')
 const { DateTime } = require('luxon')
+const i18next = require('i18next')
 
 // Setup environment variables
 dotenv.config()
@@ -182,6 +183,20 @@ function formatDateTimeForDashboard(date) {
   return DateTime.fromJSDate(date, { zone: 'utc' }).setZone(DASHBOARD_TIMEZONE).toFormat(DASHBOARD_FORMAT)
 }
 
+function translateMessageKeyToMessage(messageKey, options = {}) {
+  const { client = {}, device = {}, params = {} } = options
+
+  const translationParams = {
+    lng: client.language || 'en',
+    deviceDisplayName: device.displayName,
+    surveyCategoriesForMessage: client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n') || '',
+    ...params,
+  }
+
+  Object.keys(translationParams).forEach(key => translationParams[key] === undefined && delete translationParams[key])
+  return i18next.t(messageKey, translationParams)
+}
+
 module.exports = {
   getEnvVar,
   isDbLogging,
@@ -197,4 +212,5 @@ module.exports = {
   differenceInSeconds,
   generateCalculatedTimeDifferenceString,
   formatDateTimeForDashboard,
+  translateMessageKeyToMessage,
 }
