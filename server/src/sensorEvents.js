@@ -86,8 +86,8 @@ function selectMessageKeyForNewSession(eventType) {
     case EVENT_TYPE.STILLNESS_ALERT:
       return 'stillnessAlert'
     case EVENT_TYPE.DOOR_OPENED:
-      helpers.log("Received door opened as the first alert ... ignoring alert.")
-      return null   // ignore the alert
+      helpers.log('Received door opened as the first alert ... ignoring alert.')
+      return null // ignore the alert
     default: {
       throw new Error(`selectMessageKeyForNewSession: Invalid event type received as the first alert: ${eventType}`)
     }
