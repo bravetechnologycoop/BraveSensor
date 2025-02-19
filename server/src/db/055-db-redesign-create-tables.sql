@@ -21,7 +21,7 @@ BEGIN
         -- Create Enum Types for status and event types
         CREATE TYPE device_status_enum AS ENUM ('TESTING', 'SHIPPED', 'LIVE');
         CREATE TYPE device_types_enum AS ENUM ('SENSOR_SINGLESTALL', 'SENSOR_MULTISTALL');
-        CREATE TYPE session_status_enum AS ENUM ('ACTIVE', 'COMPLETED');
+        CREATE TYPE session_status_enum AS ENUM ('ACTIVE', 'COMPLETED', 'STALE');
         CREATE TYPE event_type_enum AS ENUM ('DURATION_ALERT', 'STILLNESS_ALERT', 'DOOR_OPENED', 'MSG_SENT', 'CALL', 'MSG_RECEIVED');
         CREATE TYPE notification_type_enum AS ENUM ('DOOR_LOW_BATTERY', 'DOOR_TAMPERED', 'DOOR_INACTIVITY', 'DEVICE_DISCONNECTED', 'DEVICE_DISCONNECTED_REMINDER', 'DOOR_DISCONNECTED', 'DOOR_DISCONNECTED_REMINDER', 'DEVICE_RECONNECTED');
         

@@ -9,7 +9,7 @@ const Validator = require('express-validator')
 
 // In-house dependencies
 const { helpers, twilioHelpers } = require('./utils/index')
-const { EVENT_TYPE } = require('./enums/index')
+const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
 const db_new = require('./db/db_new')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
@@ -133,23 +133,24 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
     const messageKey = selectMessageKeyForNewSession(eventType)
     if (!messageKey) return
 
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
-      client,
-      device,
-      params: { occupancyDuration: eventData.occupancyDuration },
-    })
-
     // create a new active session
     const newSession = await db_new.createSession(device.deviceId, pgClient)
     if (!newSession) {
       throw new Error(`Failed to create a new session`)
     }
 
-    // log the event and send the message to all responders
+    // prepare message
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
+      client,
+      device,
+      params: { occupancyDuration: eventData.occupancyDuration },
+    })
+
+    // log the event and send the message
     await db_new.createEvent(newSession.sessionId, eventType, messageKey, pgClient)
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
 
-    // schedule the stillness alerts (these don't use the current transaction)
+    // schedule alerts only after everything else succeeds
     if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
       scheduleStillnessAlerts(client, device, newSession.sessionId)
     }
@@ -161,38 +162,50 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
 async function handleExistingSession(client, device, eventType, eventData, currentSession, pgClient) {
   // if an alert is published to an existing active session after the door was opened
   // it means that the alert was triggered by a different occupant afterwards
-  // in that case, discard the session and create a new one
+  // in that case, label the current session as stale and create a new one
   if (currentSession.doorOpened) {
     helpers.log(`Received sensor event for an existing session after door opened, creating new session`)
+    await updateSession(currentSession.sessionId, SESSION_STATUS.STALE, currentSession.doorOpened, currentSession.surveySent, pgClient)
     await handleNewSession(client, device, eventType, eventData, pgClient)
     return
   }
 
   try {
     const messageKey = await selectMessageKeyForExistingSession(eventType, currentSession, pgClient)
+
+    // Update session first if it's a door opened event
+    if (eventType === EVENT_TYPE.DOOR_OPENED) {
+      const sessionUpdates = {
+        doorOpened: true,
+        surveySent: messageKey === 'stillnessAlertSurveyDoorOpened' ? true : currentSession.surveySent,
+      }
+
+      // Update database with new state
+      await db_new.updateSession(
+        currentSession.sessionId,
+        currentSession.sessionStatus,
+        sessionUpdates.doorOpened,
+        sessionUpdates.surveySent,
+        pgClient,
+      )
+
+      // Apply updates to current session
+      Object.assign(currentSession, sessionUpdates)
+
+      // If we receive a door open event, and the survey was already sent
+      // Don't send anything to responders and return early
+      if (currentSession.surveySent) {
+        return
+      }
+    }
+
+    // prepare message
     const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
       client,
       device,
       params: { occupancyDuration: eventData.occupancyDuration },
     })
 
-    // Update session when door is opened
-    if (eventType === EVENT_TYPE.DOOR_OPENED) {
-      const newDoorOpened = true
-      let newSurveySent = currentSession.surveySent
-
-      // If this is a stillness alert survey door open event, also mark survey as sent
-      if (messageKey === 'stillnessAlertSurveyDoorOpened') {
-        newSurveySent = true
-      }
-
-      await db_new.updateSession(currentSession.sessionId, currentSession.sessionStatus, newDoorOpened, newSurveySent, pgClient)
-    }
-
-    // if the survey was already sent and door is opened, don't send anything
-    if (eventType === EVENT_TYPE.DOOR_OPENED && currentSession.surveySent) {
-      return
-    }
     // If survey was sent and selected category is 'Occupant Okay', send the message to only the attending responder
     // otherwise send message to all the responders
     if (currentSession.attendingResponderNumber && currentSession.surveySent && currentSession.selectedSurveyCategory === 'Occupant Okay') {
