@@ -72,27 +72,24 @@ async function handleStillnessAlert(client, device, latestSession, responderPhon
       throw new Error(`Expected door to be closed for session ID: ${latestSession.sessionId}`)
     }
 
-    // process the message
-    if (message === '5' || message.toLowerCase() === 'ok') {
-      const messageKey = 'stillnessAlertFollowup'
-      const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
-        client,
-        device,
-        params: { stillnessAlertFollowupTimer: STILLNESS_ALERT_SURVEY_FOLLOWUP },
-      })
+    // Note: Although the stillness alert message mentions accepting only '5' or 'ok',
+    // we accept any input to handle potential misclicks or typos from responders
+    const messageKey = 'stillnessAlertFollowup'
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
+      client,
+      device,
+      params: { stillnessAlertFollowupTimer: STILLNESS_ALERT_SURVEY_FOLLOWUP },
+    })
 
-      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'stillnessAlert', pgClient)
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'stillnessAlert', pgClient)
 
-      // schedule the followup trigger (this doesn't use the current transaction)
-      setTimeout(() => {
-        handleStillnessAlertFollowupTrigger(client, device, responderPhoneNumber)
-      }, STILLNESS_ALERT_SURVEY_FOLLOWUP * 60 * 1000)
+    // schedule the followup trigger (this doesn't use the current transaction)
+    setTimeout(() => {
+      handleStillnessAlertFollowupTrigger(client, device, responderPhoneNumber)
+    }, STILLNESS_ALERT_SURVEY_FOLLOWUP * 60 * 1000)
 
-      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, pgClient)
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
-    } else {
-      await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
-    }
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, pgClient)
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
   } catch (error) {
     throw new Error(`handleStillnessAlert: ${error.message}`)
   }
