@@ -36,7 +36,7 @@
   "stillnessAlertFirstReminder": "1st REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
   "stillnessAlertSecondReminder": "2nd REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
   "stillnessAlertThirdReminder": "3rd REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
-  "stillnessAlertFallback": "There is no response to stillness alerts for {{ deviceDisplayName }}.",
+  "stillnessAlertFallback": "No response to stillness alerts for {{ deviceDisplayName }}. There will be one final alert.",
   "stillnessAlertFollowup": "Thanks, we'll follow up in {{ stillnessAlertFollowupTimer }} minutes.",
   "stillnessAlertSurvey": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
   "stillnessAlertSurveyDoorOpened": "We see the door has been opened.\nCould you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
@@ -46,7 +46,7 @@
 
   "invalidResponseTryAgain": "Invalid response, try again.",
   "nonAttendingResponderConfirmation": "Another responder is attending to this alert. You do not need to reply to this message.",
-  "braveContactInfo": "You can reach us at:\nPhone: +18338332100\nEmail: clientsupport@brave.coop\n Thank you!",
+  "braveContactInfo": "You can reach us at:\nPhone: +18338332100\nEmail: clientsupport@brave.coop\nThank you!",
   "thankYou": "Thank you! This session has concluded.",
 
   "doorLowBattery": "The battery for the {{ deviceDisplayName }} door sensor is low, and needs replacing.\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w",
