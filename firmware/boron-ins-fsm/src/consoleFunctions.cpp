@@ -75,6 +75,9 @@ int reset_state_to_zero(String command) {
         // reset the state handler to point to state 0
         stateHandler = state0_idle;
 
+        // Disable state transitions until door cycle
+        allowStateTransitions = false;
+
         // Reset all state timers
         state0_start_time = 0;
         state1_start_time = 0;
@@ -100,7 +103,7 @@ int reset_state_to_zero(String command) {
         isStillnessAlertThresholdExceeded = false;
 
         // Reset door timing
-        timeWhenDoorClosed = 0; 
+        timeWhenDoorClosed = millis();
         timeSinceDoorClosed = 0;
 
         // Reset door monitoring variables

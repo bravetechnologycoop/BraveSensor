@@ -78,6 +78,9 @@ extern unsigned long numStillnessAlertSent;
 extern bool hasStillnessAlertBeenPaused;
 extern bool isStillnessAlertThresholdExceeded;
 
+// Allow state transitions
+extern bool allowStateTransitions;
+
 // ************************** Function declarations **************************
 
 // setup() functions

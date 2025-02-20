@@ -54,6 +54,9 @@ unsigned long numStillnessAlertSent = 0;
 bool hasStillnessAlertBeenPaused = false;
 bool isStillnessAlertThresholdExceeded = false;
 
+// Allow state transitions
+bool allowStateTransitions = true;
+
 // Reset reason
 int resetReason = System.resetReason();
 
@@ -82,6 +85,8 @@ void setupStateMachine() {
     numStillnessAlertSent = 0;
     hasStillnessAlertBeenPaused = false;
     isStillnessAlertThresholdExceeded = false;
+
+    allowStateTransitions = true;
 }
 
 void initializeStateMachineConsts() {
@@ -268,10 +273,12 @@ void state0_idle() {
     // 2. The INS data indicates movement (iAverage > occupancy_detection_ins_threshold).
     // 3. The door is closed.
     // 4. The door status is known.
+    // 5. State transitions are enabled.
     if (timeInState0 < state0_occupancy_detection_time && 
         ((unsigned long)checkINS.iAverage > occupancy_detection_ins_threshold) &&
         !isDoorOpen(checkDoor.doorStatus) && 
-        !isDoorStatusUnknown(checkDoor.doorStatus)) {
+        !isDoorStatusUnknown(checkDoor.doorStatus) &&
+        allowStateTransitions) {
         
         Log.warn("State 0 --> State 1: Door closed and seeing movement");
         publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);

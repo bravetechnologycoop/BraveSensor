@@ -9,6 +9,7 @@
 #include "imDoorSensor.h"
 #include "debugFlags.h"
 #include "flashAddresses.h"
+#include "stateMachine.h"
 
 // Global variables
 IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
@@ -74,6 +75,10 @@ doorData checkIM() {
              // Reset timer on receiving a door close message or transition from open to closed + heartbeat
             if ((currentDoorData.doorStatus & 0b1000) == 0 || (previousDoorData.doorStatus & 0b0010) != 0) {
                 timeWhenDoorClosed = millis();
+
+                // Enable state transitions when door closes
+                allowStateTransitions = true;
+                Log.warn("Door closed - State transitions enabled");
             }
         
             // Reset consecutive door open counter since the door is closed
