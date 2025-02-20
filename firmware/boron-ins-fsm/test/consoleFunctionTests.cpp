@@ -40,14 +40,82 @@ SCENARIO("Force_Reset", "[force reset]") {
 }
 
 SCENARIO("Reset State to Zero", "[reset state to zero]") {
-    GIVEN("The state handler is set to a non-zero state") {
+    GIVEN("The state handler is set to a non-zero state with various state variables set") {
+        // Set initial state
         stateHandler = state1_initial_countdown;
+        
+        // Set state timers
+        state0_start_time = 1000;
+        state1_start_time = 2000;
+        state2_start_time = 3000;
+        state3_start_time = 4000;
+        
+        // Set time in states
+        timeInState0 = 100;
+        timeInState1 = 200;
+        timeInState2 = 300;
+        timeInState3 = 400;
+        
+        // Set alert variables
+        numDurationAlertSent = 2;
+        lastDurationAlertTime = 5000;
+        timeSinceLastDurationAlert = 1000;
+        hasDurationAlertBeenPaused = true;
+        isDurationAlertThresholdExceeded = true;
+        
+        numStillnessAlertSent = 1;
+        hasStillnessAlertBeenPaused = true;
+        isStillnessAlertThresholdExceeded = true;
+        
+        // Set door-related variables
+        timeWhenDoorClosed = 6000;
+        timeSinceDoorClosed = 500;
+        doorMessageReceivedFlag = true;
+        consecutiveOpenDoorHeartbeatCount = 3;
+        allowStateTransitions = true;
 
         WHEN("the function is called with '1'") {
             int returnFlag = reset_state_to_zero("1");
 
             THEN("the state handler should be reset to state0_idle") {
                 REQUIRE(stateHandler == state0_idle);
+            }
+
+            THEN("all state timers should be reset to 0") {
+                REQUIRE(state0_start_time == 0);
+                REQUIRE(state1_start_time == 0);
+                REQUIRE(state2_start_time == 0);
+                REQUIRE(state3_start_time == 0);
+            }
+
+            THEN("all time in states should be reset to 0") {
+                REQUIRE(timeInState0 == 0);
+                REQUIRE(timeInState1 == 0);
+                REQUIRE(timeInState2 == 0);
+                REQUIRE(timeInState3 == 0);
+            }
+
+            THEN("duration alert variables should be reset") {
+                REQUIRE(numDurationAlertSent == 0);
+                REQUIRE(lastDurationAlertTime == 0);
+                REQUIRE(timeSinceLastDurationAlert == 0);
+                REQUIRE(hasDurationAlertBeenPaused == false);
+                REQUIRE(isDurationAlertThresholdExceeded == false);
+            }
+
+            THEN("stillness alert variables should be reset") {
+                REQUIRE(numStillnessAlertSent == 0);
+                REQUIRE(hasStillnessAlertBeenPaused == false);
+                REQUIRE(isStillnessAlertThresholdExceeded == false);
+            }
+
+            THEN("door monitoring variables should be reset") {
+                REQUIRE(doorMessageReceivedFlag == false);
+                REQUIRE(consecutiveOpenDoorHeartbeatCount == 0);
+            }
+
+            THEN("state transitions should be disabled") {
+                REQUIRE(allowStateTransitions == false);
             }
 
             THEN("the function should return 1 to indicate success") {
@@ -178,10 +246,23 @@ SCENARIO("Turn_Debugging_Publishes_On_Off", "[toggle debug flag]") {
         }
     }
 }
-
 SCENARIO("Reset Monitoring", "[reset monitoring]") {
-    GIVEN("The state handler is set to state2_monitoring") {
+    GIVEN("The state handler is set to state2_monitoring with active alerts") {
+        // Set initial state
         stateHandler = state2_monitoring;
+        
+        // Set duration alert variables
+        numDurationAlertSent = 2;
+        timeSinceLastDurationAlert = 1000;
+        hasDurationAlertBeenPaused = true;
+        lastDurationAlertTime = 5000;
+        isDurationAlertThresholdExceeded = true;
+        
+        // Set stillness alert variables
+        numStillnessAlertSent = 3;
+        hasStillnessAlertBeenPaused = true;
+        isStillnessAlertThresholdExceeded = true;
+        state3_start_time = 4000;
 
         WHEN("the function is called with '1'") {
             int returnFlag = reset_monitoring("1");
@@ -190,19 +271,39 @@ SCENARIO("Reset Monitoring", "[reset monitoring]") {
                 REQUIRE(returnFlag == 1);
             }
 
-            THEN("the alert counts should be reset") {
+            THEN("duration alert variables should be reset") {
                 REQUIRE(numDurationAlertSent == 0);
-                REQUIRE(numStillnessAlertSent == 0);
+                REQUIRE(timeSinceLastDurationAlert == 0);
+                REQUIRE(hasDurationAlertBeenPaused == false);
             }
 
-            THEN("duration alerts should be unpaused") {
-                REQUIRE(hasDurationAlertBeenPaused == false);
+            THEN("stillness alert variables should be reset") {
+                REQUIRE(numStillnessAlertSent == 0);
+                REQUIRE(hasStillnessAlertBeenPaused == false);
+            }
+
+            THEN("state3 timer should be updated") {
+                REQUIRE(state3_start_time != 4000);
             }
         }
     }
 
-    GIVEN("The state handler is set to state3_stillness") {
+    GIVEN("The state handler is set to state3_stillness with active alerts") {
+        // Set initial state
         stateHandler = state3_stillness;
+        
+        // Set duration alert variables
+        numDurationAlertSent = 2;
+        timeSinceLastDurationAlert = 1000;
+        hasDurationAlertBeenPaused = true;
+        lastDurationAlertTime = 5000;
+        isDurationAlertThresholdExceeded = true;
+        
+        // Set stillness alert variables
+        numStillnessAlertSent = 3;
+        hasStillnessAlertBeenPaused = true;
+        isStillnessAlertThresholdExceeded = true;
+        state3_start_time = 4000;
 
         WHEN("the function is called with '1'") {
             int returnFlag = reset_monitoring("1");
@@ -211,13 +312,19 @@ SCENARIO("Reset Monitoring", "[reset monitoring]") {
                 REQUIRE(returnFlag == 1);
             }
 
-            THEN("the alert counts should be reset") {
+            THEN("duration alert variables should be reset") {
                 REQUIRE(numDurationAlertSent == 0);
-                REQUIRE(numStillnessAlertSent == 0);
+                REQUIRE(timeSinceLastDurationAlert == 0);
+                REQUIRE(hasDurationAlertBeenPaused == false);
             }
 
-            THEN("duration alerts should be unpaused") {
-                REQUIRE(hasDurationAlertBeenPaused == false);
+            THEN("stillness alert variables should be reset") {
+                REQUIRE(numStillnessAlertSent == 0);
+                REQUIRE(hasStillnessAlertBeenPaused == false);
+            }
+
+            THEN("state3 timer should be updated") {
+                REQUIRE(state3_start_time != 4000);
             }
         }
     }
@@ -225,23 +332,49 @@ SCENARIO("Reset Monitoring", "[reset monitoring]") {
     GIVEN("The state handler is set to a state other than 2 or 3") {
         stateHandler = state1_initial_countdown;
 
+        // Set alert variables that shouldn't be reset
+        numDurationAlertSent = 2;
+        numStillnessAlertSent = 3;
+        hasDurationAlertBeenPaused = true;
+        hasStillnessAlertBeenPaused = true;
+
         WHEN("the function is called with '1'") {
             int returnFlag = reset_monitoring("1");
 
             THEN("the function should return -1 to indicate failure") {
                 REQUIRE(returnFlag == -1);
             }
+
+            THEN("alert variables should not be changed") {
+                REQUIRE(numDurationAlertSent == 2);
+                REQUIRE(numStillnessAlertSent == 3);
+                REQUIRE(hasDurationAlertBeenPaused == true);
+                REQUIRE(hasStillnessAlertBeenPaused == true);
+            }
         }
     }
 
     GIVEN("The function is called with an invalid input") {
         stateHandler = state2_monitoring;
+        
+        // Set alert variables that shouldn't be reset
+        numDurationAlertSent = 2;
+        numStillnessAlertSent = 3;
+        hasDurationAlertBeenPaused = true;
+        hasStillnessAlertBeenPaused = true;
 
         WHEN("the function is called with '0'") {
             int returnFlag = reset_monitoring("0");
 
             THEN("the function should return -1 to indicate failure") {
                 REQUIRE(returnFlag == -1);
+            }
+
+            THEN("alert variables should not be changed") {
+                REQUIRE(numDurationAlertSent == 2);
+                REQUIRE(numStillnessAlertSent == 3);
+                REQUIRE(hasDurationAlertBeenPaused == true);
+                REQUIRE(hasStillnessAlertBeenPaused == true);
             }
         }
 
@@ -250,6 +383,13 @@ SCENARIO("Reset Monitoring", "[reset monitoring]") {
 
             THEN("the function should return -1 to indicate failure") {
                 REQUIRE(returnFlag == -1);
+            }
+
+            THEN("alert variables should not be changed") {
+                REQUIRE(numDurationAlertSent == 2);
+                REQUIRE(numStillnessAlertSent == 3);
+                REQUIRE(hasDurationAlertBeenPaused == true);
+                REQUIRE(hasStillnessAlertBeenPaused == true);
             }
         }
     }
