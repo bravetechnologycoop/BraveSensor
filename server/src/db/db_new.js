@@ -447,14 +447,15 @@ async function getClientWithDeviceId(deviceId, pgClient) {
   }
 }
 
-async function getClientWithResponderPhoneNumber(responderPhoneNumber, pgClient) {
+async function getClientsWithResponderPhoneNumber(responderPhoneNumber, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getClientWithResponderPhoneNumber',
+      'getClientsWithResponderPhoneNumber',
       `
       SELECT *
       FROM clients_new
       WHERE $1 = ANY(responder_phone_numbers)
+      ORDER BY display_name
       `,
       [responderPhoneNumber],
       pool,
@@ -465,9 +466,10 @@ async function getClientWithResponderPhoneNumber(responderPhoneNumber, pgClient)
       return null
     }
 
-    return createClientFromRow(results.rows[0])
+    // map each row to a client object
+    return results.rows.map(r => createClientFromRow(r))
   } catch (err) {
-    helpers.logError(`Error running the getClientWithResponderPhoneNumber query: ${err.toString()}`)
+    helpers.logError(`Error running the getClientsWithResponderPhoneNumber query: ${err.toString()}`)
     return null
   }
 }
@@ -1404,7 +1406,7 @@ module.exports = {
   getClients,
   getClientWithClientId,
   getClientWithDeviceId,
-  getClientWithResponderPhoneNumber,
+  getClientsWithResponderPhoneNumber,
 
   updateClientExtension,
   getClientExtensionWithClientId,

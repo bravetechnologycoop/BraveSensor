@@ -165,7 +165,7 @@ async function handleExistingSession(client, device, eventType, eventData, curre
   // in that case, label the current session as stale and create a new one
   if (currentSession.doorOpened) {
     helpers.log(`Received sensor event for an existing session after door opened, creating new session`)
-    await updateSession(currentSession.sessionId, SESSION_STATUS.STALE, currentSession.doorOpened, currentSession.surveySent, pgClient)
+    await db_new.updateSession(currentSession.sessionId, SESSION_STATUS.STALE, currentSession.doorOpened, currentSession.surveySent, pgClient)
     await handleNewSession(client, device, eventType, eventData, pgClient)
     return
   }
