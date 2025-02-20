@@ -1065,6 +1065,7 @@ const respondableEvents = [
   'stillnessAlertSurveyOtherFollowup',
   'stillnessAlertSurveyDoorOpened',
   'stillnessAlertSurvey',
+  'stillnessAlertThirdReminder',
   'stillnessAlertSecondReminder',
   'stillnessAlertFirstReminder',
   'stillnessAlert',

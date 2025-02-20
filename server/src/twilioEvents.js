@@ -375,6 +375,7 @@ const EVENT_HANDLERS = {
   stillnessAlert: handleStillnessAlert,
   stillnessAlertFirstReminder: handleStillnessAlert,
   stillnessAlertSecondReminder: handleStillnessAlert,
+  stillnessAlertThirdReminder: handleStillnessAlert,
   stillnessAlertSurvey: handleStillnessAlertSurvey,
   stillnessAlertSurveyDoorOpened: handleStillnessAlertSurveyDoorOpened,
   stillnessAlertSurveyOccupantOkayFollowup: handleStillnessAlertSurveyOccupantOkayFollowup,

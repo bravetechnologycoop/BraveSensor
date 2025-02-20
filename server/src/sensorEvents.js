@@ -22,7 +22,13 @@ async function scheduleStillnessAlerts(client, device, sessionId) {
 
   async function handleStillnessReminder(reminderNumber) {
     try {
-      const messageKey = reminderNumber === 1 ? 'stillnessAlertFirstReminder' : 'stillnessAlertSecondReminder'
+      const reminderType = {
+        1: 'First',
+        2: 'Second',
+        3: 'Third',
+      }[reminderNumber]
+
+      const messageKey = `stillnessAlert${reminderType}Reminder`
       const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
       await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
@@ -48,11 +54,14 @@ async function scheduleStillnessAlerts(client, device, sessionId) {
       delay: reminderTimeout,
     },
     {
-      handler: () => handleStillnessReminder(2),
+      handler: async () => {
+        // Send both second reminder and fallback simultaneously
+        await Promise.all([handleStillnessReminder(2), handleStillnessFallback()])
+      },
       delay: reminderTimeout * 2,
     },
     {
-      handler: () => handleStillnessFallback(),
+      handler: () => handleStillnessReminder(3),
       delay: reminderTimeout * 3,
     },
   ]

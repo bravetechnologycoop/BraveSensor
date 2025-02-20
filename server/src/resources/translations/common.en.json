@@ -32,9 +32,10 @@
   "durationAlertSurveyDoorOpened": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
   "durationAlertSurveyOtherFollowup": "Can you please describe what happened?",
 
-  "stillnessAlert": "{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with 5 or ok.",
-  "stillnessAlertFirstReminder": "1st REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with 5 or ok.",
-  "stillnessAlertSecondReminder": "2nd REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with 5 or ok.",
+  "stillnessAlert": "{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
+  "stillnessAlertFirstReminder": "1st REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
+  "stillnessAlertSecondReminder": "2nd REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
+  "stillnessAlertThirdReminder": "3rd REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
   "stillnessAlertFallback": "There is no response to stillness alerts for {{ deviceDisplayName }}.",
   "stillnessAlertFollowup": "Thanks, we'll follow up in {{ stillnessAlertFollowupTimer }} minutes.",
   "stillnessAlertSurvey": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
