@@ -195,6 +195,9 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
       // reset the monitoring if the occupant is okay and the door is closed
       if (selectedCategory === 'Occupant Okay' && !latestSession.doorOpened && messageKey === 'stillnessAlertSurveyOccupantOkayFollowup') {
         await resetMonitoring(device.particleDeviceId)
+
+        // clear the attending phone number so that we can allow any responder to respond.
+        await db_new.updateSessionAttendingResponder(latestSession.sessionId, null, pgClient)
       }
 
       await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, pgClient)
@@ -389,7 +392,7 @@ async function handleIncomingMessage(client, device, latestSession, latestRespon
 
     // should be called only once when the attendingRepsonderPhone is not set
     let shouldSendNonAttendingRespondersConfirmation = false
-    if (!latestSession.attendingResponderNumber && !latestSession.responseTime) {
+    if (!latestSession.attendingResponderNumber) {
       await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
       await db_new.updateSessionResponseTime(latestSession.sessionId, pgClient)
       shouldSendNonAttendingRespondersConfirmation = true

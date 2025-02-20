@@ -200,12 +200,6 @@ async function handleExistingSession(client, device, eventType, eventData, curre
 
       // Apply updates to current session
       Object.assign(currentSession, sessionUpdates)
-
-      // If we receive a door open event, and the survey was already sent
-      // Don't send anything to responders and return early
-      if (currentSession.surveySent) {
-        return
-      }
     }
 
     // prepare message
