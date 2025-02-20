@@ -30,7 +30,7 @@ async function scheduleStillnessAlerts(client, device, sessionId) {
 
       const messageKey = `stillnessAlert${reminderType}Reminder`
       const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-      await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey)
+      await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey, client.responderPhoneNumbers)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
     } catch (error) {
       helpers.logError(`Error in stillness reminder ${reminderNumber}: ${error.message}`)
@@ -41,7 +41,7 @@ async function scheduleStillnessAlerts(client, device, sessionId) {
     try {
       const messageKey = 'stillnessAlertFallback'
       const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-      await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey)
+      await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey, client.fallbackPhoneNumbers)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.fallbackPhoneNumbers, textMessage)
     } catch (error) {
       helpers.logError(`Error in fallback alert: ${error.message}`)
@@ -69,10 +69,11 @@ async function scheduleStillnessAlerts(client, device, sessionId) {
   for (const alert of alertSequence) {
     setTimeout(async () => {
       try {
-        const currentSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId)
+        const currentSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
         if (
           currentSession &&
           currentSession.sessionId === sessionId &&
+          currentSession.sessionStatus === SESSION_STATUS.ACTIVE &&
           !currentSession.doorOpened &&
           (!currentSession.attendingResponderNumber ||
             (currentSession.attendingResponderNumber && currentSession.selectedSurveyCategory === 'Occupant Okay'))
@@ -156,7 +157,7 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
     })
 
     // log the event and send the message
-    await db_new.createEvent(newSession.sessionId, eventType, messageKey, pgClient)
+    await db_new.createEvent(newSession.sessionId, eventType, messageKey, client.responderPhoneNumbers, pgClient)
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
 
     // schedule alerts only after everything else succeeds
@@ -169,16 +170,6 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
 }
 
 async function handleExistingSession(client, device, eventType, eventData, currentSession, pgClient) {
-  // if an alert is published to an existing active session after the door was opened
-  // it means that the alert was triggered by a different occupant afterwards
-  // in that case, label the current session as stale and create a new one
-  if (currentSession.doorOpened) {
-    helpers.log(`Received sensor event for an existing session after door opened, creating new session`)
-    await db_new.updateSession(currentSession.sessionId, SESSION_STATUS.STALE, currentSession.doorOpened, currentSession.surveySent, pgClient)
-    await handleNewSession(client, device, eventType, eventData, pgClient)
-    return
-  }
-
   try {
     const messageKey = await selectMessageKeyForExistingSession(eventType, currentSession, pgClient)
 
@@ -212,10 +203,10 @@ async function handleExistingSession(client, device, eventType, eventData, curre
     // If survey was sent and selected category is 'Occupant Okay', send the message to only the attending responder
     // otherwise send message to all the responders
     if (currentSession.attendingResponderNumber && currentSession.surveySent && currentSession.selectedSurveyCategory === 'Occupant Okay') {
-      await db_new.createEvent(currentSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, pgClient)
+      await db_new.createEvent(currentSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, currentSession.attendingResponderNumber, pgClient)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, currentSession.attendingResponderNumber, textMessage)
     } else {
-      await db_new.createEvent(currentSession.sessionId, eventType, messageKey, pgClient)
+      await db_new.createEvent(currentSession.sessionId, eventType, messageKey, client.responderPhoneNumbers, pgClient)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
     }
 
@@ -242,11 +233,23 @@ async function processSensorEvent(client, device, eventType, eventData) {
       throw new Error(`More than one stillness alert received for device: ${device.deviceId}`)
     }
 
-    // A session is finished only if its session_status is COMPLETED and door_opened is true.
-    // Ever other session is considered as an "active" session and should be selected here.
-    // Those are (status, doorOpened) --> (ACTIVE, true), (ACTIVE, false), (COMPLETED, false)
-    const currentSession = await db_new.getLatestActiveSessionWithDeviceId(device.deviceId, pgClient)
+    const currentSession = await db_new.getLatestSessionWithDeviceId(device.deviceId, pgClient)
     if (!currentSession) {
+      await handleNewSession(client, device, eventType, eventData, pgClient)
+    }
+    // Case 1: Alert received for active session after door was opened (new occupant)
+    else if (currentSession.sessionStatus === SESSION_STATUS.ACTIVE && currentSession.doorOpened) {
+      helpers.log('Received sensor event for session with opened door, creating new session')
+
+      // Mark current session as stale since door was opened
+      await db_new.updateSession(currentSession.sessionId, SESSION_STATUS.STALE, currentSession.doorOpened, currentSession.surveySent, pgClient)
+
+      // Create new session for new occupant
+      await handleNewSession(client, device, eventType, eventData, pgClient)
+    }
+    // Case 2: Alert received for completed session
+    else if (currentSession.sessionStatus === SESSION_STATUS.COMPLETED && currentSession.doorOpened) {
+      helpers.log('Received sensor event for completed session, creating new session')
       await handleNewSession(client, device, eventType, eventData, pgClient)
     } else {
       await handleExistingSession(client, device, eventType, eventData, currentSession, pgClient)

@@ -95,7 +95,8 @@ BEGIN
             session_id                  UUID                NOT NULL REFERENCES Sessions_new(session_id) ON DELETE CASCADE,
             event_type                  event_type_enum     NOT NULL,
             event_type_details          TEXT,
-            event_sent_at               TIMESTAMPTZ         NOT NULL DEFAULT NOW()
+            event_sent_at               TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
+            phone_numbers               TEXT[]              NOT NULL DEFAULT '{}'::text[]
         );
 
         -- Create the Vitals_new table

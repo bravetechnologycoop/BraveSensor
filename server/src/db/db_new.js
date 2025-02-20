@@ -858,19 +858,18 @@ async function getSessionWithSessionId(sessionId, pgClient) {
   }
 }
 
-async function getLatestActiveSessionWithDeviceId(deviceId, pgClient) {
+async function getLatestSessionWithDeviceId(deviceId, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getLatestActiveSessionWithDeviceId',
+      'getLatestSessionWithDeviceId',
       `
       SELECT *
       FROM sessions_new
       WHERE device_id = $1
-      AND NOT (session_status = $2 AND door_opened = $3)
       ORDER BY created_at DESC
       LIMIT 1
       `,
-      [deviceId, SESSION_STATUS.COMPLETED, true],
+      [deviceId],
       pool,
       pgClient,
     )
@@ -882,7 +881,7 @@ async function getLatestActiveSessionWithDeviceId(deviceId, pgClient) {
     // returns a session object
     return createSessionFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getLatestActiveSessionWithDeviceId query: ${err.toString()}`)
+    helpers.logError(`Error running the getLatestSessionWithDeviceId query: ${err.toString()}`)
     return null
   }
 }
@@ -999,8 +998,12 @@ async function updateSessionSelectedSurveyCategory(sessionId, selectedCategory, 
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-async function createEvent(sessionId, eventType, eventTypeDetails, pgClient) {
-  helpers.log(`NEW EVENT: sessionId: ${sessionId}, eventType: ${eventType}, eventTypeDetails: ${eventTypeDetails}`)
+async function createEvent(sessionId, eventType, eventTypeDetails, phoneNumbers, pgClient) {
+  const phoneNumbersArray = Array.isArray(phoneNumbers) ? phoneNumbers : [phoneNumbers]
+
+  helpers.log(
+    `NEW EVENT: sessionId: ${sessionId}, eventType: ${eventType}, eventTypeDetails: ${eventTypeDetails}, phoneNumbers: ${phoneNumbersArray}`,
+  )
   try {
     const results = await helpers.runQuery(
       'createEvent',
@@ -1008,11 +1011,12 @@ async function createEvent(sessionId, eventType, eventTypeDetails, pgClient) {
       INSERT INTO events_new (
         session_id, 
         event_type,
-        event_type_details
-      ) VALUES ($1, $2, $3)
+        event_type_details,
+        phone_numbers
+      ) VALUES ($1, $2, $3, $4)
       RETURNING *
       `,
-      [sessionId, eventType, eventTypeDetails],
+      [sessionId, eventType, eventTypeDetails, phoneNumbersArray],
       pool,
       pgClient,
     )
@@ -1021,13 +1025,11 @@ async function createEvent(sessionId, eventType, eventTypeDetails, pgClient) {
       return null
     }
 
-    // returns an event object
     return createEventFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the createEvent query: ${err.toString()}`)
+    return null
   }
-
-  return null
 }
 
 async function getEventsForSession(sessionId, pgClient) {
@@ -1071,7 +1073,7 @@ const respondableEvents = [
   'stillnessAlert',
 ]
 
-async function getLatestRespondableEvent(sessionId, pgClient) {
+async function getLatestRespondableEvent(sessionId, responderPhoneNumber, pgClient) {
   // The order of event types details in the CASE statement is crucial as it defines the priority.
   // The later the event is in the alert flow, the higher priority it has to be addressed.
   // This way we can ensure the latest respondable event for which the message is being responded to.
@@ -1083,6 +1085,7 @@ async function getLatestRespondableEvent(sessionId, pgClient) {
       FROM events_new
       WHERE session_id = $1
       AND event_type_details = ANY($2::text[])
+      AND $3 = ANY(phone_numbers)
       ORDER BY event_sent_at DESC,
       CASE event_type_details
         WHEN 'durationAlertSurveyOtherFollowup' THEN 1
@@ -1099,7 +1102,7 @@ async function getLatestRespondableEvent(sessionId, pgClient) {
       END
       LIMIT 1
       `,
-      [sessionId, respondableEvents],
+      [sessionId, respondableEvents, responderPhoneNumber],
       pool,
       pgClient,
     )
@@ -1423,7 +1426,7 @@ module.exports = {
   createSession,
   getSessionsForDevice,
   getSessionWithSessionId,
-  getLatestActiveSessionWithDeviceId,
+  getLatestSessionWithDeviceId,
   updateSession,
   updateSessionAttendingResponder,
   updateSessionResponseTime,

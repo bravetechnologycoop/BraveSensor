@@ -30,6 +30,7 @@
   "durationAlert": "{{ deviceDisplayName }} has been occupied for {{ occupancyDuration }} minutes.",
   "durationAlertSurveyPromptDoorOpened": "We see the door has opened at {{ deviceDisplayName }}. Press 0 to tell us more.",
   "durationAlertSurveyDoorOpened": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
+  "durationSurveyAlreadyResponded": "Another responder has already filled out the survey.",
   "durationAlertSurveyOtherFollowup": "Can you please describe what happened?",
 
   "stillnessAlert": "{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
