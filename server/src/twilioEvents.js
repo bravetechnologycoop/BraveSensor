@@ -9,7 +9,6 @@ const Validator = require('express-validator')
 const twilio = require('twilio')
 
 // In-house dependencies
-const { curry } = require('lodash')
 const { helpers, twilioHelpers } = require('./utils/index')
 const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
 const { resetMonitoring, resetStateToZero } = require('./particle')

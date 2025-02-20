@@ -17,8 +17,8 @@ const productId = helpers.getEnvVar('PARTICLE_PRODUCT_GROUP')
 const particleApi = new ParticleApi()
 
 async function resetMonitoring(particleDeviceId) {
-  helpers.log(`Calling resetMonitoring for particle deviceId: ${particleDeviceId}`)
-  return
+  // helpers.log(`Calling resetMonitoring for particle deviceId: ${particleDeviceId}`)
+  // return
 
   try {
     await particleApi.callFunction({
@@ -34,8 +34,8 @@ async function resetMonitoring(particleDeviceId) {
 }
 
 async function resetStateToZero(particleDeviceId) {
-  helpers.log(`Calling resetStateToZero for particle deviceId: ${particleDeviceId}`)
-  return
+  // helpers.log(`Calling resetStateToZero for particle deviceId: ${particleDeviceId}`)
+  // return
 
   try {
     await particleApi.callFunction({
