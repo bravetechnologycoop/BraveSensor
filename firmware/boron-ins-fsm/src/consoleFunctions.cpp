@@ -94,12 +94,11 @@ int reset_state_to_zero(String command) {
         numDurationAlertSent = 0;
         lastDurationAlertTime = 0;
         timeSinceLastDurationAlert = 0;
-        hasDurationAlertBeenPaused = false;
         isDurationAlertThresholdExceeded = false;
 
         // Reset stillness alert variables
         numStillnessAlertSent = 0;
-        hasStillnessAlertBeenPaused = false;
+        isStillnessAlertActive = true;
         isStillnessAlertThresholdExceeded = false;
 
         // Reset door timing
@@ -168,12 +167,11 @@ int reset_monitoring(String command) {
             // Reset duration alerts
             numDurationAlertSent = 0;
             timeSinceLastDurationAlert = 0;
-            hasDurationAlertBeenPaused = false;
 
             // Reset stillness alerts
             numStillnessAlertSent = 0;
             state3_start_time = millis();
-            hasStillnessAlertBeenPaused = false;
+            isStillnessAlertActive = true;
 
             // Publish reset message
             Particle.publish("Reset Monitoring", "Monitoring has been reset.", PRIVATE | WITH_ACK);

@@ -48,12 +48,11 @@ unsigned long consecutiveOpenDoorHeartbeatCount = 0;
 unsigned long numDurationAlertSent = 0;
 unsigned long lastDurationAlertTime = 0;
 unsigned long timeSinceLastDurationAlert = 0;
-bool hasDurationAlertBeenPaused = false;
 bool isDurationAlertThresholdExceeded = false;
 
 // Stillness alert variables
 unsigned long numStillnessAlertSent = 0;
-bool hasStillnessAlertBeenPaused = false;
+bool isStillnessAlertActive = false;
 bool isStillnessAlertThresholdExceeded = false;
 
 // State transition control

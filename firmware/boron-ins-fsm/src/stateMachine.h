@@ -70,12 +70,11 @@ extern unsigned long timeSinceDoorClosed;
 extern unsigned long numDurationAlertSent;
 extern unsigned long lastDurationAlertTime;
 extern unsigned long timeSinceLastDurationAlert;
-extern bool hasDurationAlertBeenPaused;
 extern bool isDurationAlertThresholdExceeded;
 
 // Stillness alert variables
 extern unsigned long numStillnessAlertSent;
-extern bool hasStillnessAlertBeenPaused;
+extern bool isStillnessAlertActive;
 extern bool isStillnessAlertThresholdExceeded;
 
 // Allow state transitions

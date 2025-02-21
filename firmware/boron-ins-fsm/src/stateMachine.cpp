@@ -46,12 +46,11 @@ unsigned long timeSinceDoorClosed = 0;
 unsigned long numDurationAlertSent = 0;
 unsigned long lastDurationAlertTime = 0;
 unsigned long timeSinceLastDurationAlert = 0;
-bool hasDurationAlertBeenPaused = false;
 bool isDurationAlertThresholdExceeded = false;
 
 // Stillness alert variables 
 unsigned long numStillnessAlertSent = 0;
-bool hasStillnessAlertBeenPaused = false;
+bool isStillnessAlertActive = false;
 bool isStillnessAlertThresholdExceeded = false;
 
 // Allow state transitions
@@ -79,11 +78,10 @@ void setupStateMachine() {
     numDurationAlertSent = 0;
     lastDurationAlertTime = 0;
     timeSinceLastDurationAlert = 0;
-    hasDurationAlertBeenPaused = false;
     isDurationAlertThresholdExceeded = false;
 
     numStillnessAlertSent = 0;
-    hasStillnessAlertBeenPaused = false;
+    isStillnessAlertActive = false;
     isStillnessAlertThresholdExceeded = false;
 
     allowTransitionToStateOne = true;
@@ -178,12 +176,13 @@ unsigned long calculateTimeSince(unsigned long startTime) {
 /*
  * Duration Alert Logic:
  * - Can trigger from states 2 and 3
+ * - Duration alerts can only trigger if stillness alerts are active as well
  * - First duration alert is triggered when time since door close exceeds the duration alert threshold
  * - Subsequent duration alerts are triggered when time since the last alert exceeds the duration alert threshold
  * - Uses modulo to ensure alerts align with intervals with 1s interval
  */
 void updateDurationAlertStatus() {
-    if (!hasDurationAlertBeenPaused) {
+    if (isStillnessAlertActive) {
         timeSinceDoorClosed = calculateTimeSince(timeWhenDoorClosed);
         timeSinceLastDurationAlert = (numDurationAlertSent > 0) ? calculateTimeSince(lastDurationAlertTime) : 0;
          
@@ -207,12 +206,13 @@ void updateDurationAlertStatus() {
 /*
  * Stillness Alert Logic:
  * - Only triggers in state 3
+ * - isStillnessAlertActive must be true
  * - One-time alert when continuous stillness exceeds threshold
  * - When triggered, pauses both duration and stillness alerts
  * - Requires state reset or door open to re-enable
  */
 void updateStillnessAlertStatus() {
-    if (!hasStillnessAlertBeenPaused) {
+    if (isStillnessAlertActive) {
         isStillnessAlertThresholdExceeded = timeInState3 >= stillness_alert_time;
     }
 }
@@ -236,15 +236,19 @@ void state0_idle() {
     doorData checkDoor = checkIM();
     filteredINSData checkINS = checkINS3331();
 
-    // Reset alert flags and initialize variables
-    hasDurationAlertBeenPaused = false;
+    // Reset alert flags
+    isStillnessAlertActive = true;
     numDurationAlertSent = 0;
     numStillnessAlertSent = 0;
+    timeSinceLastDurationAlert = 0;
+    isDurationAlertThresholdExceeded = false;
+    isStillnessAlertThresholdExceeded = false;
 
-    // Reset the other state start timers 
+    // Reset the other variables
     state1_start_time = 0;
     state2_start_time = 0;
     state3_start_time = 0;
+    timeSinceDoorClosed = 0;
 
     // If the door is closed, calculate the time spent in state 0
     // State 0 only requires timeWhenDoorClosed
@@ -380,7 +384,7 @@ void state2_monitoring() {
         stateHandler = state3_stillness;
     }
     // Send duration alert if threshold is exceeded
-    else if (!hasDurationAlertBeenPaused && isDurationAlertThresholdExceeded) {
+    else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) {
         Log.warn("--Duration Alert-- TimeSinceDoorClosed: %lu, TimeSinceLastDurationAlert: %lu, TimeInState: %lu", timeSinceDoorClosed, timeSinceLastDurationAlert, timeInState2);
 
         // Update the duration alert counter and time
@@ -445,7 +449,7 @@ void state3_stillness() {
         stateHandler = state2_monitoring;
     }
     // Duration alert condition based on time elapsed since door closed or last alert
-    else if (!hasDurationAlertBeenPaused && isDurationAlertThresholdExceeded) { 
+    else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) { 
         Log.warn("--Duration Alert-- TimeSinceDoorClosed: %lu, TimeSinceLastAlert: %lu, TimeInState: %lu", timeSinceDoorClosed, timeSinceLastDurationAlert, timeInState3);
 
         // Update the duration alert counter and time
@@ -461,15 +465,14 @@ void state3_stillness() {
         Particle.publish("Duration Alert", alertMessage, PRIVATE);
     }
     // Stillness alert condition based on time elapsed since entering state 3
-    else if (!hasStillnessAlertBeenPaused && isStillnessAlertThresholdExceeded) {
+    else if (isStillnessAlertActive && isStillnessAlertThresholdExceeded) {
         Log.warn("--Stillness Alert-- TimeSinceDoorClosed: %lu, TimeInState: %lu", timeSinceDoorClosed, timeInState3);
 
         // Update the stillness alert counter
         numStillnessAlertSent += 1;
 
-        // Pause both duration and stillness alerts
-        hasStillnessAlertBeenPaused = true;
-        hasDurationAlertBeenPaused = true;
+        // Turning off this flag will pause both duration and stillness alerts
+        isStillnessAlertActive = false;
 
         // Publish stillness alert to particle
         unsigned long occupancy_duration = timeSinceDoorClosed / 60000; // Convert to minutes
