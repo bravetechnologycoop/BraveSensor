@@ -36,14 +36,6 @@ unsigned long timeInState1 = 0;
 unsigned long timeInState2 = 0;
 unsigned long timeInState3 = 0;
 
-// Door related variables
-unsigned long timeWhenDoorClosed = 0;
-unsigned long timeSinceDoorClosed = 0;
-bool doorMessageReceivedFlag = false;
-unsigned long doorHeartbeatReceived = 0;
-unsigned long doorLastMessage = 0;
-unsigned long consecutiveOpenDoorHeartbeatCount = 0;
-
 // Duration alert variables
 unsigned long numDurationAlertSent = 0;
 unsigned long lastDurationAlertTime = 0;
