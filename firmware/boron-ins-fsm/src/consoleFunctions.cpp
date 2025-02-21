@@ -76,7 +76,7 @@ int reset_state_to_zero(String command) {
         stateHandler = state0_idle;
 
         // Disable state transitions until door cycle
-        allowStateTransitions = false;
+        allowTransitionToStateOne = false;
 
         // Reset all state timers
         state0_start_time = 0;

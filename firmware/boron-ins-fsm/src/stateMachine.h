@@ -79,7 +79,7 @@ extern bool hasStillnessAlertBeenPaused;
 extern bool isStillnessAlertThresholdExceeded;
 
 // Allow state transitions
-extern bool allowStateTransitions;
+extern bool allowTransitionToStateOne;
 
 // ************************** Function declarations **************************
 

@@ -57,7 +57,7 @@ bool hasStillnessAlertBeenPaused = false;
 bool isStillnessAlertThresholdExceeded = false;
 
 // State transition control
-bool allowStateTransitions = true;
+bool allowTransitionToStateOne = true;
 
 // Mock state functions
 void state0_idle() {

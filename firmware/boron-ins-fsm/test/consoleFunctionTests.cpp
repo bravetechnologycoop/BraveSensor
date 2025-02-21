@@ -72,7 +72,7 @@ SCENARIO("Reset State to Zero", "[reset state to zero]") {
         timeSinceDoorClosed = 500;
         doorMessageReceivedFlag = true;
         consecutiveOpenDoorHeartbeatCount = 3;
-        allowStateTransitions = true;
+        allowTransitionToStateOne = true;
 
         WHEN("the function is called with '1'") {
             int returnFlag = reset_state_to_zero("1");
@@ -114,8 +114,8 @@ SCENARIO("Reset State to Zero", "[reset state to zero]") {
                 REQUIRE(consecutiveOpenDoorHeartbeatCount == 0);
             }
 
-            THEN("state transitions should be disabled") {
-                REQUIRE(allowStateTransitions == false);
+            THEN("transition to state one should be disabled") {
+                REQUIRE(allowTransitionToStateOne == false);
             }
 
             THEN("the function should return 1 to indicate success") {

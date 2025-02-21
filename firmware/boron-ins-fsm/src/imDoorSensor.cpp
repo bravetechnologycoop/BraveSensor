@@ -77,7 +77,7 @@ doorData checkIM() {
                 timeWhenDoorClosed = millis();
 
                 // Enable state transitions when door closes
-                allowStateTransitions = true;
+                allowTransitionToStateOne = true;
                 Log.warn("Door closed - State transitions enabled");
             }
         
