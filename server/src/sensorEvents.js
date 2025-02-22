@@ -108,7 +108,7 @@ function selectMessageKeyForNewSession(eventType) {
   }
 }
 
-async function selectMessageKeyForExistingSession(eventType, currentSession, pgClient) {
+async function selectMessageKeyForExistingSession(eventType, latestSession, pgClient) {
   try {
     switch (eventType) {
       case EVENT_TYPE.DURATION_ALERT:
@@ -116,9 +116,9 @@ async function selectMessageKeyForExistingSession(eventType, currentSession, pgC
       case EVENT_TYPE.STILLNESS_ALERT:
         return 'stillnessAlert'
       case EVENT_TYPE.DOOR_OPENED: {
-        const latestEvent = await db_new.getLatestRespondableEvent(currentSession.sessionId, null, pgClient)
+        const latestEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, null, pgClient)
         if (!latestEvent) {
-          throw new Error(`No latest event found for session ID: ${currentSession.sessionId}`)
+          throw new Error(`No latest event found for session ID: ${latestSession.sessionId}`)
         }
 
         switch (latestEvent.eventType) {
@@ -177,29 +177,29 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
   }
 }
 
-async function handleExistingSession(client, device, eventType, eventData, currentSession, pgClient) {
+async function handleExistingSession(client, device, eventType, eventData, latestSession, pgClient) {
   try {
-    const messageKey = await selectMessageKeyForExistingSession(eventType, currentSession, pgClient)
+    const messageKey = await selectMessageKeyForExistingSession(eventType, latestSession, pgClient)
 
     // If messageKey is null, only update door opened status for DOOR_OPENED events
     // For other event types, do nothing
     if (!messageKey) {
       if (eventType === EVENT_TYPE.DOOR_OPENED) {
         const updatedSession = await db_new.updateSession(
-          currentSession.sessionId,
-          currentSession.sessionStatus,
+          latestSession.sessionId,
+          latestSession.sessionStatus,
           true,
-          currentSession.surveySent,
+          latestSession.surveySent,
           pgClient,
         )
-        if (!updatedSession) throw new Error(`Failed to update session ${currentSession.sessionId}`)
+        if (!updatedSession) throw new Error(`Failed to update session ${latestSession.sessionId}`)
         return
       }
       return
     }
 
     // Only send the stillness alert survey door opened if survey was NOT sent
-    if (messageKey === 'stillnessAlertSurveyDoorOpened' && currentSession.surveySent) {
+    if (messageKey === 'stillnessAlertSurveyDoorOpened' && latestSession.surveySent) {
       throw new Error('Attempting to send door opened stillness survey, but survey was already sent')
     }
 
@@ -211,34 +211,34 @@ async function handleExistingSession(client, device, eventType, eventData, curre
 
     // send the message to all responders
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
-    await db_new.createEvent(currentSession.sessionId, eventType, messageKey, client.responderPhoneNumbers, pgClient)
+    await db_new.createEvent(latestSession.sessionId, eventType, messageKey, client.responderPhoneNumbers, pgClient)
 
     // if stillness alert was sent, then schedule stillness reminders and fallbacks
     // NOTE: these are scheduled outside this transaction
     if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
-      scheduleStillnessAlertReminders(client, device, currentSession.sessionId)
+      scheduleStillnessAlertReminders(client, device, latestSession.sessionId)
     }
 
     // handle door opened event updates
     if (eventType === EVENT_TYPE.DOOR_OPENED) {
       const sessionUpdates = {
         doorOpened: true,
-        surveySent: messageKey === 'stillnessAlertSurveyDoorOpened' ? true : currentSession.surveySent,
+        surveySent: messageKey === 'stillnessAlertSurveyDoorOpened' ? true : latestSession.surveySent,
       }
 
       const updatedSession = await db_new.updateSession(
-        currentSession.sessionId,
-        currentSession.sessionStatus,
+        latestSession.sessionId,
+        latestSession.sessionStatus,
         sessionUpdates.doorOpened,
         sessionUpdates.surveySent,
         pgClient,
       )
       if (!updatedSession) {
-        throw new Error(`Failed to update session ${currentSession.sessionId}`)
+        throw new Error(`Failed to update session ${latestSession.sessionId}`)
       }
     }
   } catch (error) {
-    throw new Error(`handleExistingSession: Error handling existing session with session ID ${currentSession.sessionId}: ${error.message}`)
+    throw new Error(`handleExistingSession: Error handling existing session with session ID ${latestSession.sessionId}: ${error.message}`)
   }
 }
 
@@ -255,26 +255,26 @@ async function processSensorEvent(client, device, eventType, eventData) {
       throw new Error(`More than one stillness alert received for device: ${device.deviceId}`)
     }
 
-    const currentSession = await db_new.getLatestSessionWithDeviceId(device.deviceId, pgClient)
+    const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId, pgClient)
 
     // Create new session if none exists
-    if (!currentSession) {
+    if (!latestSession) {
       await handleNewSession(client, device, eventType, eventData, pgClient)
     }
     // If door was opened, create a new session and mark pervious one as stale
-    else if (currentSession.sessionStatus === SESSION_STATUS.ACTIVE && currentSession.doorOpened) {
+    else if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && latestSession.doorOpened) {
       await handleNewSession(client, device, eventType, eventData, pgClient)
-      helpers.log(`Marking session ${currentSession.sessionId} as stale (door opened) and creating new session`)
-      await db_new.updateSession(currentSession.sessionId, SESSION_STATUS.STALE, currentSession.doorOpened, currentSession.surveySent, pgClient)
+      helpers.log(`Marking session ${latestSession.sessionId} as stale (door opened) and creating new session`)
+      await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.STALE, latestSession.doorOpened, latestSession.surveySent, pgClient)
     }
     // Create new session if previous one was completed
-    else if (currentSession.sessionStatus === SESSION_STATUS.COMPLETED && currentSession.doorOpened) {
-      helpers.log(`Creating new session after completed session ${currentSession.sessionId}`)
+    else if (latestSession.sessionStatus === SESSION_STATUS.COMPLETED && latestSession.doorOpened) {
+      helpers.log(`Creating new session after completed session ${latestSession.sessionId}`)
       await handleNewSession(client, device, eventType, eventData, pgClient)
     }
     // Handle event for existing active session
     else {
-      await handleExistingSession(client, device, eventType, eventData, currentSession, pgClient)
+      await handleExistingSession(client, device, eventType, eventData, latestSession, pgClient)
     }
 
     await db_new.commitTransaction(pgClient)
