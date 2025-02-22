@@ -1059,53 +1059,58 @@ async function getEventsForSession(sessionId, pgClient) {
   }
 }
 
-const respondableEvents = [
-  'durationAlertSurveyOtherFollowup',
-  'durationAlertSurveyDoorOpened',
-  'durationAlertSurveyPromptDoorOpened',
-  'stillnessAlertSurveyOccupantOkayFollowup',
-  'stillnessAlertSurveyOtherFollowup',
-  'stillnessAlertSurveyDoorOpened',
-  'stillnessAlertSurvey',
-  'stillnessAlertThirdReminder',
-  'stillnessAlertSecondReminder',
-  'stillnessAlertFirstReminder',
-  'stillnessAlert',
-]
+/**
+ * Event priority hierarchy (lower = higher priority)
+ * Order is crucial as it determines which event takes precedence when multiple events exist at same time
+ * Duration alerts: 1-3  (Other followup → Door opened → Prompt)
+ * Stillness alerts: 4-7 (Occupant okay → Other → Door → Survey)
+ * Reminders: 8-11 (Third → Second → First → Initial)
+ */
+const RESPONDABLE_EVENT_HIERARCHY = {
+  durationAlertSurveyOtherFollowup: 1,
+  durationAlertSurveyDoorOpened: 2,
+  durationAlertSurveyPromptDoorOpened: 3,
+  stillnessAlertSurveyOccupantOkayFollowup: 4,
 
-async function getLatestRespondableEvent(sessionId, responderPhoneNumber, pgClient) {
-  // The order of event types details in the CASE statement is crucial as it defines the priority.
-  // The later the event is in the alert flow, the higher priority it has to be addressed.
-  // This way we can ensure the latest respondable event for which the message is being responded to.
+  stillnessAlertSurveyOtherFollowup: 5,
+  stillnessAlertSurveyDoorOpened: 6,
+  stillnessAlertSurvey: 7,
+  stillnessAlertThirdReminder: 8,
+  stillnessAlertSecondReminder: 9,
+  stillnessAlertFirstReminder: 10,
+  stillnessAlert: 11,
+}
+
+async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null, pgClient) {
   try {
-    const results = await helpers.runQuery(
-      'getLatestEvent',
-      `
+    let queryText = `
       SELECT *
       FROM events_new
       WHERE session_id = $1
       AND event_type_details = ANY($2::text[])
-      AND $3 = ANY(phone_numbers)
+    `
+    const queryParams = [sessionId, Object.keys(RESPONDABLE_EVENT_HIERARCHY)]
+
+    if (responderPhoneNumber) {
+      queryText += ` AND $3 = ANY(phone_numbers)`
+      queryParams.push(responderPhoneNumber)
+    }
+
+    const caseStatements = Object.entries(RESPONDABLE_EVENT_HIERARCHY)
+      .map(([event, priority]) => `WHEN '${event}' THEN ${priority}`)
+      .join('\n        ')
+
+    // Add ordering based on the hierarchy
+    queryText += `
       ORDER BY event_sent_at DESC,
       CASE event_type_details
-        WHEN 'durationAlertSurveyOtherFollowup' THEN 1
-        WHEN 'durationAlertSurveyDoorOpened' THEN 2
-        WHEN 'durationAlertSurveyPromptDoorOpened' THEN 3
-        WHEN 'stillnessAlertSurveyOccupantOkayFollowup' THEN 4
-        WHEN 'stillnessAlertSurveyOtherFollowup' THEN 5
-        WHEN 'stillnessAlertSurveyDoorOpened' THEN 6
-        WHEN 'stillnessAlertSurvey' THEN 7
-        WHEN 'stillnessAlertSecondReminder' THEN 8
-        WHEN 'stillnessAlertFirstReminder' THEN 9
-        WHEN 'stillnessAlert' THEN 10
-        ELSE 11
+        ${caseStatements}
+        ELSE ${Object.keys(RESPONDABLE_EVENT_HIERARCHY).length + 1}
       END
       LIMIT 1
-      `,
-      [sessionId, respondableEvents, responderPhoneNumber],
-      pool,
-      pgClient,
-    )
+    `
+
+    const results = await helpers.runQuery('getLatestRespondableEvent', queryText, queryParams, pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return null
@@ -1113,7 +1118,7 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber, pgClie
 
     return createEventFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getLatestEvent query: ${err.toString()}`)
+    helpers.logError(`Error running the getLatestRespondableEvent query: ${err.toString()}`)
     return null
   }
 }

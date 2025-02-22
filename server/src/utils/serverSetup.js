@@ -3,6 +3,8 @@ const https = require('https')
 const helpers = require('./helpers')
 const vitals = require('../vitals')
 
+const checkIntervalinSeconds = helpers.getEnvVar('CHECK_DEVICE_DISCONNECTION_INTERVAL')
+
 module.exports = app => {
   let server
 
@@ -22,18 +24,13 @@ module.exports = app => {
     helpers.setupSentry(app, helpers.getEnvVar('SENTRY_DSN'), helpers.getEnvVar('ENVIRONMENT'), helpers.getEnvVar('RELEASE'))
 
     // periodically check device for diconnection
-    const checkInterval = helpers.getEnvVar('CHECK_DEVICE_DISCONNECTION_INTERVAL')
-    if (!checkInterval) {
-      helpers.logError('CHECK_DEVICE_DISCONNECTION_INTERVAL env variable is not set')
-      return
-    }
     setInterval(async () => {
       try {
         await vitals.checkDeviceConnectionVitals()
       } catch (error) {
         helpers.logError(`SERVER: Error checking device connection vitals: ${error.message}`)
       }
-    }, checkInterval)
+    }, checkIntervalinSeconds * 1000)
   }
 
   return server
