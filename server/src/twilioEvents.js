@@ -31,12 +31,12 @@ async function handleInvalidResponse(client, device, latestSession, responderPho
   }
 }
 
-async function handleNonAttendingConfirmation(client, device, latestSession, nonAttendingPhoneNumber, pgClient) {
+async function handleNonAttendingConfirmation(client, device, latestSession, nonAttendingPhoneNumbers, pgClient) {
   try {
     const messageKey = 'nonAttendingResponderConfirmation'
     const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, nonAttendingPhoneNumber, pgClient)
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, nonAttendingPhoneNumber, textMessage)
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, nonAttendingPhoneNumbers, textMessage)
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, nonAttendingPhoneNumbers, pgClient)
   } catch (error) {
     throw new Error(`handleNonAttendingConfirmation: Error sending non-attending confirmation: ${error.message}`)
   }
@@ -89,7 +89,9 @@ async function handleStillnessAlert(client, device, latestSession, responderPhon
 
       // Send non-attending confirmation to other responders
       const nonAttendingResponders = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
-      await handleNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
+      if (nonAttendingResponders && nonAttendingResponders.length > 0) {
+        await handleNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
+      }
     }
 
     // Note: Although the stillness alert message mentions accepting only '5' or 'ok',

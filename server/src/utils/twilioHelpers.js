@@ -44,7 +44,8 @@ async function sendTwilioResponse(response, message) {
 async function sendMessageToPhoneNumbers(fromNumber, toNumbers, textMessage) {
   const numbersToSend = Array.isArray(toNumbers) ? toNumbers : [toNumbers]
   if (!fromNumber || !numbersToSend || numbersToSend.length === 0) {
-    throw new Error('sendMessageToPhoneNumbers: Missing from number or to numbers')
+    helpers.log('No valid phone numbers to send message to')
+    return
   }
 
   try {
