@@ -49,17 +49,11 @@ async function sendMessageToPhoneNumbers(fromNumber, toNumbers, textMessage) {
   }
 
   try {
-    const results = await Promise.allSettled(
-      numbersToSend.map(toNumber => sendTwilioMessage(toNumber, fromNumber, textMessage))
-    )
+    const results = await Promise.allSettled(numbersToSend.map(toNumber => sendTwilioMessage(toNumber, fromNumber, textMessage)))
 
-    const successfulResponses = results
-      .filter(result => result.status === 'fulfilled' && result.value)
-      .map(result => result.value)
-    
-    const failedNumbers = results
-      .filter(result => result.status === 'rejected' || !result.value)
-      .map((_, index) => numbersToSend[index])
+    const successfulResponses = results.filter(result => result.status === 'fulfilled' && result.value).map(result => result.value)
+
+    const failedNumbers = results.filter(result => result.status === 'rejected' || !result.value).map((_, index) => numbersToSend[index])
 
     if (failedNumbers.length > 0) {
       helpers.logError(`Failed to send messages to numbers: ${failedNumbers.join(', ')}`)
