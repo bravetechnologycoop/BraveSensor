@@ -580,11 +580,11 @@ void getHeartbeat() {
         // if a door message has been received, otherwise default to -1
         if (doorLastMessage == 0) {
             writer.name("doorLastMessage").value(-1);
-            writer.name("doorLowBatt").value(-1);
+            writer.name("doorLowBattery").value(-1);
             writer.name("doorTampered").value(-1);
         } else {
             writer.name("doorLastMessage").value((unsigned int)(millis() - doorLastMessage));
-            writer.name("doorLowBatt").value(doorLowBatteryFlag);
+            writer.name("doorLowBattery").value(doorLowBatteryFlag);
             writer.name("doorTampered").value(doorTamperedFlag);
         }
 
@@ -616,7 +616,7 @@ void getHeartbeat() {
         missedDoorEventCount = 0;
 
         // Log the number of missed door events since the last heartbeat
-        writer.name("doorMissedMsg").value(instantMissedDoorEventCount);
+        writer.name("doorMissedCount").value(instantMissedDoorEventCount);
 
         // Update the missed door events queue
         // Add the current missed event status to the queue and update the sum

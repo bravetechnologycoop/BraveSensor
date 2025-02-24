@@ -189,6 +189,7 @@ function translateMessageKeyToMessage(messageKey, options = {}) {
   const translationParams = {
     lng: client.language || 'en',
     deviceDisplayName: device.displayName,
+    clientDisplayName: client.displayName,
     surveyCategoriesForMessage: client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n') || '',
     ...params,
   }

@@ -328,12 +328,13 @@ function parseSensorEventData(receivedEventData) {
     occupancyDuration: 'number',
   }
 
-  for (const [field] of Object.entries(requiredFields)) {
+  for (const [field, expectedType] of Object.entries(requiredFields)) {
     if (!(field in eventData)) {
       throw new Error(`Missing required field: ${field}`)
     }
-    if (typeof eventData[field] !== 'number') {
-      throw new Error(`Invalid type for ${field}: expected number, got ${typeof eventData[field]}`)
+    const actualType = typeof eventData[field]
+    if (expectedType === 'number' && actualType !== 'number') {
+      throw new Error(`Invalid type for ${field}: expected ${expectedType}, got ${actualType}`)
     }
   }
 
@@ -366,7 +367,7 @@ async function handleSensorEvent(request, response) {
     response.status(200).json('OK')
   } catch (error) {
     helpers.logError(`Error on ${request.path}: ${error.message}`)
-    // Must send 200 so as not to be throttled by Particle
+    // Must send 200 so as not to be throttled by Particle (ref: https://docs.particle.io/reference/device-cloud/webhooks/#limits)
     response.status(200).json(error.message)
   }
 }
