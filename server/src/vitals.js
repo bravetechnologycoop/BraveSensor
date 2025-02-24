@@ -312,7 +312,7 @@ function parseSensorHeartbeatData(receivedEventData) {
 
   const requiredFields = {
     doorLastMessage: 'number',
-    doorLowBatt: 'boolean',
+    doorLowBattery: 'boolean',
     doorTampered: 'boolean',
     isINSZero: 'boolean',
     consecutiveOpenDoorHeartbeatCount: 'number',
