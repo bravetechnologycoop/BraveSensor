@@ -9,9 +9,7 @@
 #include "../src/consoleFunctions.h"
 #include "../src/flashAddresses.h"
 #include "../src/stateMachine.h"
-
-// Mock variable for globalDoorID
-IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
+#include "../src/imDoorSensor.h"
 
 SCENARIO("Force_Reset", "[force reset]") {
     GIVEN("Any possible scenario") {

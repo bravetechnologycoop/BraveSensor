@@ -5,7 +5,6 @@
 
 #define CATCH_CONFIG_MAIN
 #include "base.h"
-#include "../src/imDoorSensor.cpp"
 #include "../src/imDoorSensor.h"
 #include "../src/flashAddresses.h"
 

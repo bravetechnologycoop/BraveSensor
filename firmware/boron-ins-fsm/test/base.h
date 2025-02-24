@@ -16,7 +16,9 @@
 #include "mocks/mock_ble.h"
 #include "mocks/mock_logging.h"
 #include "mocks/mock_ticks.h"
+
 #include "mocks/mock_stateMachine.h" 
+#include "mocks/mock_imDoorSensor.h" 
 
 // Particle.h library include files
 // Copied from local Particle toolchain files

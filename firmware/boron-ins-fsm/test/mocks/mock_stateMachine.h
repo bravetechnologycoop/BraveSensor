@@ -36,6 +36,9 @@ unsigned long timeInState1 = 0;
 unsigned long timeInState2 = 0;
 unsigned long timeInState3 = 0;
 
+// Time since the door was closed
+unsigned long timeSinceDoorClosed;
+
 // Duration alert variables
 unsigned long numDurationAlertSent = 0;
 unsigned long lastDurationAlertTime = 0;
