@@ -17,79 +17,101 @@ const stillnessReminderinSeconds = helpers.getEnvVar('STILLNESS_ALERT_REMINDER')
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+async function handleStillnessReminder(client, device, sessionId, reminderNumber, pgClient) {
+  try {
+    const reminderType = { 1: 'First', 2: 'Second', 3: 'Third' }[reminderNumber]
+    const messageKey = `stillnessAlert${reminderType}Reminder`
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+    await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey, client.responderPhoneNumbers, pgClient)
+  } catch (error) {
+    throw new Error(`Error in stillness reminder ${reminderNumber}: ${error.message}`)
+  }
+}
+
+async function handleStillnessFallback(client, device, sessionId, pgClient) {
+  try {
+    const messageKey = 'stillnessAlertFallback'
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.fallbackPhoneNumbers, textMessage)
+    await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey, client.fallbackPhoneNumbers, pgClient)
+  } catch (error) {
+    throw new Error(`Error in fallback alert: ${error.message}`)
+  }
+}
+
+async function executeAlert(alert, device, sessionId) {
+  let pgClient
+  try {
+    pgClient = await db_new.beginTransaction()
+    if (!pgClient) {
+      throw new Error('Failed to start transaction for alert handler')
+    }
+
+    const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId, pgClient)
+    if (latestSession.sessionId !== sessionId) {
+      helpers.log(`Latest session changed from ${sessionId} to ${latestSession.sessionId}, cancelling reminder`)
+      return
+    }
+
+    const latestEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, null, pgClient)
+    if (latestEvent.eventType !== EVENT_TYPE.STILLNESS_ALERT) {
+      helpers.log('Latest event is not a stillness alert, cancelling reminders')
+      return
+    }
+
+    if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened && !latestSession.surveySent) {
+      await alert.handler(pgClient)
+    } else {
+      helpers.log('Session not active or door opened or survey already sent')
+    }
+
+    await db_new.commitTransaction(pgClient)
+  } catch (error) {
+    if (pgClient) {
+      try {
+        await db_new.rollbackTransaction(pgClient)
+      } catch (rollbackError) {
+        helpers.logError(`Error rolling back transaction: ${rollbackError.message}`)
+      }
+    }
+    helpers.logError(`Alert handler error: ${error.message}`)
+  }
+}
+
 async function scheduleStillnessAlertReminders(client, device, sessionId) {
   const stillnessReminderTimeout = stillnessReminderinSeconds * 1000
 
-  async function handleStillnessReminder(reminderNumber) {
-    try {
-      const reminderType = { 1: 'First', 2: 'Second', 3: 'Third' }[reminderNumber]
-      const messageKey = `stillnessAlert${reminderType}Reminder`
-      const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
-      await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey, client.responderPhoneNumbers)
-    } catch (error) {
-      helpers.logError(`Error in stillness reminder ${reminderNumber}: ${error.message}`)
-    }
-  }
-
-  async function handleStillnessFallback() {
-    try {
-      const messageKey = 'stillnessAlertFallback'
-      const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.fallbackPhoneNumbers, textMessage)
-      await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey, client.fallbackPhoneNumbers)
-    } catch (error) {
-      helpers.logError(`Error in fallback alert: ${error.message}`)
-    }
-  }
-
   const alertSequence = [
     {
-      handler: () => handleStillnessReminder(1),
+      handler: async pgClient => {
+        await handleStillnessReminder(client, device, sessionId, 1, pgClient)
+      },
       delay: stillnessReminderTimeout,
     },
     {
-      handler: async () => {
-        await Promise.all([handleStillnessReminder(2), handleStillnessFallback()])
+      handler: async pgClient => {
+        await Promise.all([
+          handleStillnessReminder(client, device, sessionId, 2, pgClient),
+          handleStillnessFallback(client, device, sessionId, pgClient),
+        ])
       },
       delay: stillnessReminderTimeout * 2,
     },
     {
-      handler: () => handleStillnessReminder(3),
+      handler: async pgClient => {
+        await handleStillnessReminder(client, device, sessionId, 3, pgClient)
+      },
       delay: stillnessReminderTimeout * 3,
     },
   ]
 
-  for (const alert of alertSequence) {
-    setTimeout(async () => {
-      try {
-        const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
-        if (latestSession.sessionId !== sessionId) {
-          helpers.log(`Latest session changed from ${sessionId} to ${latestSession.sessionId}, cancelling reminder`)
-          return
-        }
-
-        // make sure that the latest event is a type of stillness alert
-        const latestEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, null)
-        if (latestEvent.eventType !== EVENT_TYPE.STILLNESS_ALERT) {
-          helpers.log('Latest event is not a stillness alert, cancelling reminders')
-          return
-        }
-
-        // For stillness reminder and fallback's to be send
-        // The current session should be active, door should be closed and survey should not have been sent
-        if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened && !latestSession.surveySent) {
-          await alert.handler()
-        } else {
-          helpers.log('Session not active or door opened or survey already sent')
-        }
-      } catch (error) {
-        helpers.logError(`scheduleStillnessAlertReminders: ${error.message}`)
-      }
-    }, alert.delay)
-  }
+  // Schedule each alert in the sequence
+  alertSequence.forEach(alert => {
+    setTimeout(() => executeAlert(alert, device, sessionId), alert.delay)
+  })
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------

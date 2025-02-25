@@ -21,13 +21,17 @@ async function resetMonitoring(particleDeviceId) {
   // return
 
   try {
-    await particleApi.callFunction({
+    const response = await particleApi.callFunction({
       deviceId: particleDeviceId,
       name: 'Reset_Monitoring',
       argument: '1',
       product: productId,
       auth: particleAccessToken,
     })
+
+    if (!response || !response.body || response.body.return_value !== 1) {
+      throw new Error(`Reset_Monitoring for device with particeDeviceId: ${particleDeviceId}`)
+    }
   } catch (error) {
     throw new Error(`resetMonitoring: ${error.errorDescription} for device ${particleDeviceId}`)
   }
@@ -38,13 +42,17 @@ async function resetStateToZero(particleDeviceId) {
   // return
 
   try {
-    await particleApi.callFunction({
+    const response = await particleApi.callFunction({
       deviceId: particleDeviceId,
       name: 'Reset_State_To_Zero',
       argument: '1',
       product: productId,
       auth: particleAccessToken,
     })
+
+    if (!response || !response.body || response.body.return_value !== 1) {
+      throw new Error(`Reset_State_To_Zero for device with particeDeviceId: ${particleDeviceId}`)
+    }
   } catch (error) {
     throw new Error(`resetStateToZero: ${error.errorDescription} for device ${particleDeviceId}`)
   }

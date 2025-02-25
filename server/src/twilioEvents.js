@@ -47,39 +47,38 @@ async function handleNonAttendingConfirmation(client, device, latestSession, non
 // ----------------------------------------------------------------------------------------------------------------------------
 // Stillness Alert Handlers
 
+async function sendStillnessAlertSurvey(client, device, sessionId, responderPhoneNumber) {
+  try {
+    const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
+    if (!latestSession || latestSession.sessionId !== sessionId) {
+      throw new Error(`Session changed or expired, cancelling survey for ${sessionId}`)
+    }
+
+    // Only send survey if session is active and door is still closed
+    if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened) {
+      const messageKey = 'stillnessAlertSurvey'
+      const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+
+      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
+      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber)
+
+      await db_new.updateSession(latestSession.sessionId, latestSession.sessionStatus, latestSession.doorOpened, true)
+    } else {
+      throw new Error(`Session not active or door opened, cancelling survey for ${sessionId}`)
+    }
+  } catch (error) {
+    throw new Error(`Error sending stillness survey: ${error.message}`)
+  }
+}
+
 async function scheduleStillnessAlertSurvey(client, device, sessionId, responderPhoneNumber) {
   const surveyDelay = STILLNESS_ALERT_SURVEY_FOLLOWUP * 1000
 
-  async function sendSurvey(latestSession) {
-    const messageKey = 'stillnessAlertSurvey'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-
-    // send message to responder phone number and log message sent event
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
-    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber)
-
-    // update the session's survey sent to true
-    await db_new.updateSession(latestSession.sessionId, latestSession.sessionStatus, latestSession.doorOpened, true)
-  }
-
-  setTimeout(async () => {
-    try {
-      const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
-      if (!latestSession || latestSession.sessionId !== sessionId) {
-        helpers.log(`Session changed or expired, cancelling survey for ${sessionId}`)
-        return
-      }
-
-      // Only send survey if session is active and door is still closed
-      if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened) {
-        await sendSurvey(latestSession)
-      } else {
-        helpers.log(`Session not active or door opened, cancelling survey for ${sessionId}`)
-        return
-      }
-    } catch (error) {
-      helpers.logError(`Error scheduling stillness survey: ${error.message}`)
-    }
+  // Schedule the survey
+  setTimeout(() => {
+    sendStillnessAlertSurvey(client, device, sessionId, responderPhoneNumber).catch(error =>
+      helpers.logError(`scheduleStillnessAlertSurvey: ${error.message}`),
+    )
   }, surveyDelay)
 }
 
@@ -180,7 +179,7 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
       // clear the survey sent to treat allow reminder and surveys to be published
       // clear the selected category
       await db_new.updateSessionAttendingResponder(latestSession.sessionId, null, pgClient)
-      await db_new.updateSession(latestSession.sessionId, latestSession.sessionStatus, false, latestSession.doorOpened, pgClient)
+      await db_new.updateSession(latestSession.sessionId, latestSession.sessionStatus, latestSession.doorOpened, false, pgClient)
       await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, null, pgClient)
     }
     // otherwise for any category other selected and door is still closed
@@ -188,8 +187,8 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
     else if (selectedCategory !== 'Occupant Okay' && !latestSession.doorOpened) {
       await resetStateToZero(device.particleDeviceId)
 
-      // update the session's survey door opened to true as the state is now reset
-      // this means the session will now fully completed
+      // update the session's door opened to true as the state is now reset
+      // also end the session by changing status --> completed
       // NOTE: this may not be true and the door could still be closed
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, true, latestSession.surveySent, pgClient)
     }
@@ -270,6 +269,7 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, la
     const { isValid, value: messageDigit } = helpers.parseDigits(message)
     if (!isValid || messageDigit !== VALID_RESPONSE) {
       await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
+      return
     }
 
     const messageKey = 'stillnessAlertSurveyOccupantOkayEnd'
@@ -348,6 +348,7 @@ async function handleDurationAlertSurveyPromptDoorOpened(client, device, latestS
     const { isValid, value: messageDigit } = helpers.parseDigits(message)
     if (!isValid || messageDigit !== VALID_RESPONSE) {
       await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
+      return
     }
 
     const messageKey = 'durationAlertSurveyDoorOpened'
@@ -559,6 +560,9 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
 
     // find matching client and device using twilio data
     const { client, device } = await findClientAndDevice(responderPhoneNumber, deviceTwilioNumber, pgClient)
+    if (!client || !device) {
+      throw new Error('No client or device found')
+    }
 
     // get the latest session
     const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId, pgClient)
@@ -581,7 +585,7 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
       try {
         await db_new.rollbackTransaction(pgClient)
       } catch (rollbackError) {
-        throw new Error(`Error rolling back transaction: ${rollbackError}. Rollback attempted because of error: ${error}`)
+        throw new Error(`Error rolling back transaction: ${rollbackError.message}. Rollback attempted because of error: ${error.message}`)
       }
     }
     throw new Error(`processTwilioEvent: ${error.message}`)

@@ -1070,16 +1070,17 @@ const RESPONDABLE_EVENT_HIERARCHY = new Map([
   ['stillnessAlertSurveyOtherFollowup', 2],
   ['stillnessAlertSurveyDoorOpened', 3],
   ['stillnessAlertSurvey', 4],
-  ['stillnessAlertThirdReminder', 5],
-  ['stillnessAlertSecondReminder', 6],
-  ['stillnessAlertFirstReminder', 7],
-  ['stillnessAlert', 8],
+  ['stillnessAlertFollowup', 5],
+  ['stillnessAlertThirdReminder', 6],
+  ['stillnessAlertSecondReminder', 7],
+  ['stillnessAlertFirstReminder', 8],
+  ['stillnessAlert', 9],
 
   // Duration alert types
-  ['durationAlertSurveyOtherFollowup', 9],
-  ['durationAlertSurveyDoorOpened', 10],
-  ['durationAlertSurveyPromptDoorOpened', 11],
-  ['durationAlert', 12],
+  ['durationAlertSurveyOtherFollowup', 10],
+  ['durationAlertSurveyDoorOpened', 11],
+  ['durationAlertSurveyPromptDoorOpened', 12],
+  ['durationAlert', 13],
 ])
 
 const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
