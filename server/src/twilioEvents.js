@@ -256,9 +256,6 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, la
     if (latestSession.doorOpened) {
       throw new Error(`Expected door to be still closed for session ID: ${latestSession.sessionId}`)
     }
-    if (!latestSession.surveySent) {
-      throw new Error(`Expected survey to be sent for session ID: ${latestSession.sessionId}`)
-    }
     if (!latestSession.attendingResponderNumber) {
       throw new Error(`Expected responder phone number to be set for session ID: ${latestSession.sessionId}`)
     }
