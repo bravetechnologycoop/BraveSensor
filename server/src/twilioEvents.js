@@ -177,7 +177,7 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
       // clear the survey sent to treat allow reminder and surveys to be published
       // clear the selected category
       await db_new.updateSessionAttendingResponder(latestSession.sessionId, null, pgClient)
-      await db_new.updateSession(latestSession.sessionId, latestSession.sessionStatus, latestSession.doorOpened, false, pgClient)
+      await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.ACTIVE, latestSession.doorOpened, false, pgClient)
       await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, null, pgClient)
     }
     // otherwise for any category other selected and door is still closed
@@ -253,10 +253,6 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, latestSessio
 
 async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, latestSession, responderPhoneNumber, message, pgClient) {
   try {
-    if (latestSession.doorOpened) {
-      throw new Error(`Expected door to be still closed for session ID: ${latestSession.sessionId}`)
-    }
-
     const VALID_RESPONSE = 1
     const { isValid, value: messageDigit } = helpers.parseDigits(message)
     if (!isValid || messageDigit !== VALID_RESPONSE) {
@@ -286,7 +282,7 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, la
     }
 
     // end the session by changing status to COMPLETED
-    await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, latestSession.doorOpened, latestSession.surveySent, pgClient)
+    await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
   } catch (error) {
     throw new Error(`handleStillnessAlertSurveyOccupantOkayFollowup: ${error.message}`)
   }
@@ -294,13 +290,6 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, la
 
 async function handleStillnessAlertSurveyOtherFollowup(client, device, latestSession, responderPhoneNumber, message, pgClient) {
   try {
-    if (!latestSession.surveySent) {
-      throw new Error(`Expected survey to be sent for session ID: ${latestSession.sessionId}`)
-    }
-    if (!latestSession.attendingResponderNumber) {
-      throw new Error(`Expected responder phone number to be set for session ID: ${latestSession.sessionId}`)
-    }
-
     // NOTE: we accept any response to the 'Other' followup
 
     const messageKey = 'thankYou'
@@ -321,7 +310,7 @@ async function handleStillnessAlertSurveyOtherFollowup(client, device, latestSes
     }
 
     // end the session by changing status to COMPLETED
-    await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, latestSession.doorOpened, latestSession.surveySent, pgClient)
+    await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
   } catch (error) {
     throw new Error(`handleStillnessAlertSurveyOtherFollowup: ${error.message}`)
   }
