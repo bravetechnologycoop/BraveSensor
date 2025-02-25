@@ -52,7 +52,6 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
     },
     {
       handler: async () => {
-        // Send both second reminder and fallback simultaneously
         await Promise.all([handleStillnessReminder(2), handleStillnessFallback()])
       },
       delay: stillnessReminderTimeout * 2,
@@ -83,6 +82,8 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
         // The current session should be active, door should be closed and survey should not have been sent
         if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened && !latestSession.surveySent) {
           await alert.handler()
+        } else {
+          helpers.log('Session not active or door opened or survey already sent')
         }
       } catch (error) {
         helpers.logError(`scheduleStillnessAlertReminders: ${error.message}`)
@@ -126,8 +127,17 @@ async function selectMessageKeyForExistingSession(eventType, latestSession, pgCl
             return 'durationAlertSurveyPromptDoorOpened'
           case EVENT_TYPE.STILLNESS_ALERT:
             return 'stillnessAlertSurveyDoorOpened'
+          case EVENT_TYPE.MSG_SENT: {
+            if (latestEvent.eventTypeDetails === 'stillnessAlertFollowup') {
+              return 'stillnessAlertSurveyDoorOpened'
+            }
+            helpers.log(
+              `Received door opened and latest event is MSG_SENT but not a stillness followup: ${latestEvent.eventTypeDetails}, only updating door opened status`,
+            )
+            return null
+          }
           default: {
-            helpers.log(`Latest event is not an sensor alert: ${latestEvent.eventType}, only updating door opened status`)
+            helpers.log(`Received door opened, error processing event type: ${latestEvent.eventType}, only updating door opened status`)
             return null
           }
         }
@@ -150,7 +160,7 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
     // If messageKey is null, it means the first event was a door opened alert
     // in that case throw error to stop execution
     if (!messageKey) {
-      throw new Error('Ignoring alert')
+      throw new Error('First event was door opened, ignoring alert')
     }
 
     const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
@@ -161,7 +171,9 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
 
     // create a new active session
     const newSession = await db_new.createSession(device.deviceId, pgClient)
-    if (!newSession) throw new Error(`Failed to create a new session`)
+    if (!newSession) {
+      throw new Error(`Failed to create a new session`)
+    }
 
     // send the message to all responders
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
@@ -192,13 +204,16 @@ async function handleExistingSession(client, device, eventType, eventData, lates
           latestSession.surveySent,
           pgClient,
         )
-        if (!updatedSession) throw new Error(`Failed to update session ${latestSession.sessionId}`)
+
+        if (!updatedSession) {
+          throw new Error(`Failed to update session ${latestSession.sessionId}`)
+        }
         return
       }
       return
     }
 
-    // Only send the stillness alert survey door opened if survey was NOT sent
+    // only send the stillness alert survey door opened if survey was NOT sent
     if (messageKey === 'stillnessAlertSurveyDoorOpened' && latestSession.surveySent) {
       throw new Error('Attempting to send door opened stillness survey, but survey was already sent')
     }
@@ -264,7 +279,7 @@ async function processSensorEvent(client, device, eventType, eventData) {
     // If door was opened, create a new session and mark pervious one as stale
     else if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && latestSession.doorOpened) {
       await handleNewSession(client, device, eventType, eventData, pgClient)
-      helpers.log(`Marking session ${latestSession.sessionId} as stale (door opened) and creating new session`)
+      helpers.log(`Created new session, marking previous session ${latestSession.sessionId} as stale.`)
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.STALE, latestSession.doorOpened, latestSession.surveySent, pgClient)
     }
     // Create new session if previous one was completed

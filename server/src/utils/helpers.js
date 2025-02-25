@@ -183,6 +183,15 @@ function formatDateTimeForDashboard(date) {
   return DateTime.fromJSDate(date, { zone: 'utc' }).setZone(DASHBOARD_TIMEZONE).toFormat(DASHBOARD_FORMAT)
 }
 
+function parseDigits(message) {
+  if (!message.match(/^\d+$/)) {
+    return { isValid: false, value: null }
+  }
+
+  const value = parseInt(message, 10)
+  return { isValid: true, value }
+}
+
 function translateMessageKeyToMessage(messageKey, options = {}) {
   const { client = {}, device = {}, params = {} } = options
 
@@ -213,5 +222,6 @@ module.exports = {
   differenceInSeconds,
   generateCalculatedTimeDifferenceString,
   formatDateTimeForDashboard,
+  parseDigits,
   translateMessageKeyToMessage,
 }

@@ -96,7 +96,7 @@ function createSessionFromRow(r) {
 }
 
 function createEventFromRow(r) {
-  return new EventNew(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at)
+  return new EventNew(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.phone_numbers)
 }
 
 function createVitalFromRow(r) {
@@ -1060,26 +1060,29 @@ async function getEventsForSession(sessionId, pgClient) {
 }
 
 /**
- * Event priority hierarchy (lower = higher priority)
+ * Event priority hierarchy (reverse chronological order, newest to oldest)
  * Order is crucial as it determines which event takes precedence when multiple events exist at same time
- * Duration alerts: 1-3  (Other followup → Door opened → Prompt)
- * Stillness alerts: 4-7 (Occupant okay → Other → Door → Survey)
- * Reminders: 8-11 (Third → Second → First → Initial)
+ * Stillness and Duration groups are interchangeable (not the ordering amongs them)
  */
-const RESPONDABLE_EVENT_HIERARCHY = {
-  durationAlertSurveyOtherFollowup: 1,
-  durationAlertSurveyDoorOpened: 2,
-  durationAlertSurveyPromptDoorOpened: 3,
-  stillnessAlertSurveyOccupantOkayFollowup: 4,
+const RESPONDABLE_EVENT_HIERARCHY = new Map([
+  // Stillness alert types
+  ['stillnessAlertSurveyOccupantOkayFollowup', 1],
+  ['stillnessAlertSurveyOtherFollowup', 2],
+  ['stillnessAlertSurveyDoorOpened', 3],
+  ['stillnessAlertSurvey', 4],
+  ['stillnessAlertThirdReminder', 5],
+  ['stillnessAlertSecondReminder', 6],
+  ['stillnessAlertFirstReminder', 7],
+  ['stillnessAlert', 8],
 
-  stillnessAlertSurveyOtherFollowup: 5,
-  stillnessAlertSurveyDoorOpened: 6,
-  stillnessAlertSurvey: 7,
-  stillnessAlertThirdReminder: 8,
-  stillnessAlertSecondReminder: 9,
-  stillnessAlertFirstReminder: 10,
-  stillnessAlert: 11,
-}
+  // Duration alert types
+  ['durationAlertSurveyOtherFollowup', 9],
+  ['durationAlertSurveyDoorOpened', 10],
+  ['durationAlertSurveyPromptDoorOpened', 11],
+  ['durationAlert', 12],
+])
+
+const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
 
 async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null, pgClient) {
   try {
@@ -1088,15 +1091,16 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null,
       FROM events_new
       WHERE session_id = $1
       AND event_type_details = ANY($2::text[])
+      AND event_type = ANY($3::event_type_enum[])
     `
-    const queryParams = [sessionId, Object.keys(RESPONDABLE_EVENT_HIERARCHY)]
+    const queryParams = [sessionId, Array.from(RESPONDABLE_EVENT_HIERARCHY.keys()), RESPONDABLE_EVENT_TYPES]
 
     if (responderPhoneNumber) {
-      queryText += ` AND $3 = ANY(phone_numbers)`
+      queryText += ` AND $4 = ANY(phone_numbers)`
       queryParams.push(responderPhoneNumber)
     }
 
-    const caseStatements = Object.entries(RESPONDABLE_EVENT_HIERARCHY)
+    const caseStatements = Array.from(RESPONDABLE_EVENT_HIERARCHY.entries())
       .map(([event, priority]) => `WHEN '${event}' THEN ${priority}`)
       .join('\n        ')
 
@@ -1105,7 +1109,7 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null,
       ORDER BY event_sent_at DESC,
       CASE event_type_details
         ${caseStatements}
-        ELSE ${Object.keys(RESPONDABLE_EVENT_HIERARCHY).length + 1}
+        ELSE ${RESPONDABLE_EVENT_HIERARCHY.size + 1}
       END
       LIMIT 1
     `

@@ -49,6 +49,9 @@ async function sendMessageToPhoneNumbers(fromNumber, toNumbers, textMessage) {
   }
 
   try {
+    // helpers.log(`Sending Message to ${toNumbers}: ${textMessage}`)
+    // return
+
     const results = await Promise.allSettled(numbersToSend.map(toNumber => sendTwilioMessage(toNumber, fromNumber, textMessage)))
 
     const successfulResponses = results.filter(result => result.status === 'fulfilled' && result.value).map(result => result.value)
