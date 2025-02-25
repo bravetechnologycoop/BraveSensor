@@ -365,6 +365,8 @@ async function handleHeartbeat(request, response) {
     // internal sentry heartbeat warnings
     logHeartbeatWarnings(eventData, device)
 
+    helpers.log(eventData)
+
     if (client.devicesSendingVitals && device.isSendingVitals) {
       await processHeartbeat(eventData, client, device)
     }
