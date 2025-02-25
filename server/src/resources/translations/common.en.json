@@ -48,7 +48,7 @@
   "invalidResponseTryAgain": "Invalid response, try again.",
   "nonAttendingResponderConfirmation": "Another responder is attending to this alert. You do not need to reply to this message.",
   "braveContactInfo": "You can reach us at:\nPhone: +18338332100\nEmail: clientsupport@brave.coop\nThank you!",
-  "thankYou": "Thank you! This session has concluded.",
+  "thankYou": "Thank you, monitoring will be paused until the next entry.",
 
   "doorLowBattery": "The battery for the {{ deviceDisplayName }} door sensor is low, and needs replacing.\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w",
   "doorTampered": "The door contact at {{ deviceDisplayName }} is not fully attached to the door. For a replacement or any questions, email clientsupport@brave.coop.",

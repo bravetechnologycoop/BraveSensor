@@ -51,7 +51,7 @@
   "invalidResponseTryAgain": "Respuesta inválida, intente de nuevo.",
   "nonAttendingResponderConfirmation": "Otro personal de auxilio está atendiendo esta alerta. No necesita responder a este mensaje.",
   "braveContactInfo": "Puede contactarnos en:\nTeléfono: +18338332100\nCorreo electrónico: clientsupport@brave.coop\n¡Gracias!",
-  "thankYou": "¡Gracias! Esta sesión ha concluido.",
+  "thankYou": "Gracias, el seguimiento quedará en pausa hasta la próxima entrada.",
 
   "doorLowBattery": "La batería del sensor de puerta {{ deviceDisplayName }} está baja y debe reemplazarse.\nPara ver un video que muestra cómo reemplazar la batería, vaya a https://youtu.be/-mfk4-qQc4w",
   "doorTampered": "El sensor de la puerta en {{ deviceDisplayName }} no está completamente conectado a la puerta. Para un reemplazo o cualquier pregunta, envíe un correo electrónico a clientsupport@brave.coop.",

@@ -304,10 +304,20 @@ const validateHeartbeat = [
   Validator.body('coreid').exists().isString(),
   Validator.body('api_key').exists().isString(),
 ]
+
 function parseSensorHeartbeatData(receivedEventData) {
-  const eventData = typeof receivedEventData === 'string' ? JSON.parse(receivedEventData) : receivedEventData
+  helpers.log('Raw received event data:', receivedEventData)
+
+  let eventData
+  try {
+    eventData = typeof receivedEventData === 'string' ? JSON.parse(receivedEventData) : receivedEventData
+    helpers.log('Parsed event data:', eventData)
+  } catch (error) {
+    throw new Error(`JSON parsing error: ${error.message}`)
+  }
+
   if (!eventData) {
-    throw new Error('Error parsing event data')
+    throw new Error('Error parsing event data: eventData is null or undefined')
   }
 
   const requiredFields = {
@@ -320,6 +330,11 @@ function parseSensorHeartbeatData(receivedEventData) {
     doorMissedFrequently: 'boolean',
     resetReason: 'string',
   }
+
+  // Log the actual types received
+  Object.entries(requiredFields).forEach(([field, expectedType]) => {
+    helpers.log(`Field: ${field}, Expected Type: ${expectedType}, Actual Value: ${eventData[field]}, Actual Type: ${typeof eventData[field]}`)
+  })
 
   for (const [field, expectedType] of Object.entries(requiredFields)) {
     if (!(field in eventData)) {
