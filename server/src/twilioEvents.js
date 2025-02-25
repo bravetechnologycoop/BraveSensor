@@ -47,38 +47,36 @@ async function handleNonAttendingConfirmation(client, device, latestSession, non
 // ----------------------------------------------------------------------------------------------------------------------------
 // Stillness Alert Handlers
 
-async function sendStillnessAlertSurvey(client, device, sessionId, responderPhoneNumber) {
-  try {
-    const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
-    if (!latestSession || latestSession.sessionId !== sessionId) {
-      throw new Error(`Session changed or expired, cancelling survey for ${sessionId}`)
-    }
-
-    // Only send survey if session is active and door is still closed
-    if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened) {
-      const messageKey = 'stillnessAlertSurvey'
-      const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
-      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber)
-
-      await db_new.updateSession(latestSession.sessionId, latestSession.sessionStatus, latestSession.doorOpened, true)
-    } else {
-      throw new Error(`Session not active or door opened, cancelling survey for ${sessionId}`)
-    }
-  } catch (error) {
-    throw new Error(`Error sending stillness survey: ${error.message}`)
-  }
-}
-
 async function scheduleStillnessAlertSurvey(client, device, sessionId, responderPhoneNumber) {
   const surveyDelay = STILLNESS_ALERT_SURVEY_FOLLOWUP * 1000
 
-  // Schedule the survey
-  setTimeout(() => {
-    sendStillnessAlertSurvey(client, device, sessionId, responderPhoneNumber).catch(error =>
-      helpers.logError(`scheduleStillnessAlertSurvey: ${error.message}`),
-    )
+  async function sendSurvey(latestSession) {
+    const messageKey = 'stillnessAlertSurvey'
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+
+    // send message to responder phone number and log message sent event
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber)
+
+    // update the session's survey sent to true
+    await db_new.updateSession(latestSession.sessionId, latestSession.sessionStatus, latestSession.doorOpened, true)
+  }
+
+  setTimeout(async () => {
+    try {
+      const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
+      if (!latestSession || latestSession.sessionId !== sessionId) {
+        helpers.log(`Session changed or expired, cancelling survey for ${sessionId}`)
+        return
+      }
+
+      // Only send survey if session is active and door is still closed
+      if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened) {
+        await sendSurvey(latestSession)
+      }
+    } catch (error) {
+      helpers.logError(`Error scheduling stillness survey: ${error.message}`)
+    }
   }, surveyDelay)
 }
 
