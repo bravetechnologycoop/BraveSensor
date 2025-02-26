@@ -53,11 +53,11 @@ function createClientExtensionFromRow(r) {
     r.building_type,
     r.created_at,
     r.updated_at,
-    r.organization,
-    r.funder,
-    r.postal_code,
     r.city,
+    r.postal_code,
+    r.funder,
     r.project,
+    r.organization,
   )
 }
 

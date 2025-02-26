@@ -43,7 +43,7 @@
   "stillnessAlertSurveyDoorOpened": "We see the door has been opened.\nCould you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
   "stillnessAlertSurveyOtherFollowup": "Can you please describe what happened?",
   "stillnessAlertSurveyOccupantOkayFollowup": "We will continue to monitor this location. Reply \"1\" to stop monitoring.",
-  "stillnessAlertSurveyOccupantOkayEnd": "You will no longer receive stillness alerts until the next entry. Thank you!",
+  "stillnessAlertSurveyOccupantOkayEnd": "You will no longer receive alerts until the next entry. Thank you!",
 
   "invalidResponseTryAgain": "Invalid response, try again.",
   "nonAttendingResponderConfirmation": "Another responder is attending to this alert. You do not need to reply to this message.",

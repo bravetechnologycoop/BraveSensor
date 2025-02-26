@@ -175,10 +175,9 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
 
       // clear the attending phone number so that we can allow any responder to respond.
       // clear the survey sent to treat allow reminder and surveys to be published
-      // clear the selected category
+      // the door open should automatically be false
       await db_new.updateSessionAttendingResponder(latestSession.sessionId, null, pgClient)
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.ACTIVE, latestSession.doorOpened, false, pgClient)
-      await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, null, pgClient)
     }
     // otherwise for any category other selected and door is still closed
     // reset the state to 0
@@ -239,7 +238,7 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, latestSessio
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
 
     // update the session
-    // end the session by changing status to COMPLETED if thankYou or braveContactInfo is selected
+    // end the session (session status --> COMPLETED) only if thankYou or braveContactInfo
     await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
     await db_new.updateSessionResponseTime(latestSession.sessionId, pgClient)
     await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
@@ -281,7 +280,7 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, la
       await resetStateToZero(device.particleDeviceId)
     }
 
-    // end the session by changing status to COMPLETED
+    // exit the flow by ending the session
     await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
   } catch (error) {
     throw new Error(`handleStillnessAlertSurveyOccupantOkayFollowup: ${error.message}`)
@@ -309,7 +308,7 @@ async function handleStillnessAlertSurveyOtherFollowup(client, device, latestSes
       await resetStateToZero(device.particleDeviceId)
     }
 
-    // end the session by changing status to COMPLETED
+    // exit the flow by ending the session
     await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
   } catch (error) {
     throw new Error(`handleStillnessAlertSurveyOtherFollowup: ${error.message}`)
@@ -393,7 +392,6 @@ async function handleDurationAlertSurveyDoorOpened(client, device, latestSession
         await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
         return
     }
-
     const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
 
     // log message received event
@@ -441,8 +439,8 @@ async function handleDurationAlertSurveyOtherFollowup(client, device, latestSess
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
 
-    // end the session (session status --> COMPLETED)
-    await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, latestSession.doorOpened, latestSession.surveySent, pgClient)
+    // exit the flow by ending the session
+    await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
   } catch (error) {
     throw new Error(`handleDurationAlertSurveyOtherFollowup: ${error.message}`)
   }
