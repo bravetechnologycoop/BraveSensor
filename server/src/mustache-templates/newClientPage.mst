@@ -60,8 +60,8 @@
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="vitalsPhoneNumbers" class="col-sm-3 col-form-label">Vitals Phone Numbers:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="vitalsPhoneNumbers" pattern="[+][1]\d{10}([,][+][1]\d{10})*" required>
-                        <small id="vitalsPhoneNumbersHelp" class="form-text text-muted">Each phone number has +1 in front and separated by commas with no dashes or spaces, please (eg. +14445556789,+12223334444,+11231231234)</small>
+                        <input type="text" class="form-control" name="vitalsPhoneNumbers" pattern="[+][1]\d{10}([,][+][1]\d{10})*">
+                        <small id="vitalsPhoneNumbersHelp" class="form-text text-muted">OPTIONAL - Each phone number has +1 in front and separated by commas with no dashes or spaces, please (eg. +14445556789,+12223334444,+11231231234)</small>
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">

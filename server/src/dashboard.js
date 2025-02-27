@@ -11,7 +11,6 @@ const Mustache = require('mustache')
 const Validator = require('express-validator')
 const expressSession = require('express-session')
 const cookieParser = require('cookie-parser')
-const i18next = require('i18next')
 
 // In-house dependencies
 const { helpers } = require('./utils/index')
@@ -444,7 +443,6 @@ async function renderSessionDetailsPage(req, res) {
     const allEvents = await db_new.getEventsForSession(sessionId)
 
     // translate and format the messages for timeline display on dashboard
-    const surveyCategoriesForMessage = client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n')
     const expectedSurveyResponseEvents = ['durationAlertSurveyDoorOpened', 'stillnessAlertSurvey', 'stillnessAlertSurveyDoorOpened']
     const eventsWithMessages = allEvents.map(event => {
       if (event.eventType === 'MSG_RECEIVED') {
@@ -462,11 +460,7 @@ async function renderSessionDetailsPage(req, res) {
 
       return {
         ...event,
-        message: i18next.t(event.eventTypeDetails, {
-          lng: 'en',
-          deviceDisplayName: device.displayName,
-          surveyCategoriesForMessage,
-        }),
+        message: helpers.translateMessageKeyToMessage(event.eventTypeDetails, { client, device }),
       }
     })
 
@@ -485,10 +479,8 @@ async function renderSessionDetailsPage(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'language', 'responderPhoneNumbers', 'vitalsTwilioNumber', 'vitalsPhoneNumbers', 'surveyCategories'])
-    .trim()
-    .notEmpty(),
-  Validator.body(['fallbackPhoneNumbers']).trim(),
+  Validator.body(['displayName', 'language', 'responderPhoneNumbers', 'vitalsTwilioNumber', 'surveyCategories']).trim().notEmpty(),
+  Validator.body(['fallbackPhoneNumbers', 'vitalsPhoneNumbers']).trim(),
   Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),
@@ -583,7 +575,6 @@ const validateUpdateClient = [
     'language',
     'responderPhoneNumbers',
     'vitalsTwilioNumber',
-    'vitalsPhoneNumbers',
     'surveyCategories',
     'isDisplayed',
     'devicesSendingAlerts',
@@ -592,7 +583,7 @@ const validateUpdateClient = [
   ])
     .trim()
     .notEmpty(),
-  Validator.body(['firstDeviceLiveAt', 'fallbackPhoneNumbers']).trim(),
+  Validator.body(['firstDeviceLiveAt', 'fallbackPhoneNumbers', 'vitalsPhoneNumbers']).trim(),
   Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),

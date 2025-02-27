@@ -35,6 +35,12 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
 
   async function handleStillnessFallback() {
     try {
+      // Check if fallback numbers exist and are not empty
+      if (!client.fallbackPhoneNumbers || client.fallbackPhoneNumbers.length === 0) {
+        helpers.log('No fallback phone numbers configured, skipping fallback alert')
+        return
+      }
+
       const messageKey = 'stillnessAlertFallback'
       const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
 
