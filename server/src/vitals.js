@@ -284,7 +284,7 @@ async function processHeartbeat(eventData, client, device) {
 
 function logHeartbeatWarnings(eventData, device) {
   if (!eventData || !device) {
-    throw new Error('Missing required parameters')
+    throw new Error('logHeartbeatWarnings: Missing required parameters')
   }
 
   if (eventData.isINSZero) {
@@ -311,28 +311,20 @@ function parseSensorHeartbeatData(receivedEventData) {
     throw new Error('Error parsing event data: eventData is null or undefined')
   }
 
-  const requiredFields = {
-    doorLastMessage: 'number',
-    doorLowBattery: 'boolean',
-    doorTampered: 'boolean',
-    isINSZero: 'boolean',
-    consecutiveOpenDoorHeartbeatCount: 'number',
-    doorMissedCount: 'number',
-    doorMissedFrequently: 'boolean',
-    resetReason: 'string',
-  }
+  const requiredFields = [
+    'doorLastMessage',
+    'doorLowBattery',
+    'doorTampered',
+    'isINSZero',
+    'consecutiveOpenDoorHeartbeatCount',
+    'doorMissedCount',
+    'doorMissedFrequently',
+    'resetReason',
+  ]
 
-  for (const [field, expectedType] of Object.entries(requiredFields)) {
+  for (const field of requiredFields) {
     if (!(field in eventData)) {
       throw new Error(`Missing required field: ${field}`)
-    }
-    const actualType = typeof eventData[field]
-    if (
-      (expectedType === 'number' && actualType !== 'number') ||
-      (expectedType === 'boolean' && actualType !== 'boolean') ||
-      (expectedType === 'string' && actualType !== 'string')
-    ) {
-      throw new Error(`Invalid type for ${field}: expected ${expectedType}, got ${actualType}`)
     }
   }
 
@@ -366,6 +358,7 @@ async function handleHeartbeat(request, response) {
     // internal sentry heartbeat warnings
     logHeartbeatWarnings(eventData, device)
 
+    // TEMPORARY
     helpers.log(eventData)
 
     if (client.devicesSendingVitals && device.isSendingVitals) {

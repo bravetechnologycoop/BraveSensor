@@ -343,20 +343,11 @@ function parseSensorEventData(receivedEventData) {
   const eventData = typeof receivedEventData === 'string' ? JSON.parse(receivedEventData) : receivedEventData
   if (!eventData) throw new Error('Error parsing event data')
 
-  const requiredFields = {
-    alertSentFromState: 'number',
-    numDurationAlertsSent: 'number',
-    numStillnessAlertsSent: 'number',
-    occupancyDuration: 'number',
-  }
+  const requiredFields = ['alertSentFromState', 'numDurationAlertsSent', 'numStillnessAlertsSent', 'occupancyDuration']
 
-  for (const [field, expectedType] of Object.entries(requiredFields)) {
+  for (const field of requiredFields) {
     if (!(field in eventData)) {
       throw new Error(`Missing required field: ${field}`)
-    }
-    const actualType = typeof eventData[field]
-    if (expectedType === 'number' && actualType !== 'number') {
-      throw new Error(`Invalid type for ${field}: expected ${expectedType}, got ${actualType}`)
     }
   }
 
@@ -371,16 +362,22 @@ async function handleSensorEvent(request, response) {
     }
 
     const { api_key, event: receivedEventType, data: receivedEventData, coreid: particleDeviceID } = request.body
-    if (api_key !== particleWebhookAPIKey) throw new Error('Access not allowed: Invalid API key')
+    if (api_key !== particleWebhookAPIKey) {
+      throw new Error('Access not allowed: Invalid API key')
+    }
 
     const eventType = parseSensorEventType(receivedEventType)
     const eventData = parseSensorEventData(receivedEventData)
 
     const device = await db_new.getDeviceWithParticleDeviceId(particleDeviceID)
-    if (!device) throw new Error(`No device matches the coreID: ${particleDeviceID}`)
+    if (!device) {
+      throw new Error(`No device matches the coreID: ${particleDeviceID}`)
+    }
 
     const client = await db_new.getClientWithClientId(device.clientId)
-    if (!client) throw new Error(`No client found for device: ${device.deviceId}`)
+    if (!client) {
+      throw new Error(`No client found for device: ${device.deviceId}`)
+    }
 
     if (client.devicesSendingAlerts && device.isSendingAlerts) {
       await processSensorEvent(client, device, eventType, eventData)
