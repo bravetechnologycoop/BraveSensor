@@ -31,6 +31,11 @@ async function handleDeviceConnectionVitals(device, client, currentDBTime, pgCli
     throw new Error('Missing required parameters')
   }
 
+  if (!client.vitalsPhoneNumbers || client.vitalsPhoneNumbers.length === 0) {
+    helpers.log(`No vitals phone numbers configured for client ${client.clientId}, skipping notifications`)
+    return
+  }
+
   try {
     const latestVital = await db_new.getLatestVitalWithDeviceId(device.deviceId, pgClient)
     if (!latestVital) {
@@ -144,6 +149,11 @@ async function handleVitalNotifications(
 ) {
   if (!client || !device || !pgClient || !currentDBTime) {
     throw new Error('Missing required parameters')
+  }
+
+  if (!client.vitalsPhoneNumbers || client.vitalsPhoneNumbers.length === 0) {
+    helpers.log(`No vitals phone numbers configured for client ${client.clientId}, skipping notifications`)
+    return
   }
 
   try {
@@ -358,7 +368,7 @@ async function handleHeartbeat(request, response) {
     // internal sentry heartbeat warnings
     logHeartbeatWarnings(eventData, device)
 
-    if (client.devicesSendingVitals && device.isSendingVitals && client.vitalsPhoneNumbers && client.vitalsPhoneNumbers.length > 0) {
+    if (client.devicesSendingVitals && device.isSendingVitals) {
       await processHeartbeat(eventData, client, device)
     }
 
