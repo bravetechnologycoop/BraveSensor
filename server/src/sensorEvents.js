@@ -192,8 +192,8 @@ async function handleExistingSession(client, device, eventType, eventData, lates
   try {
     const messageKey = await selectMessageKeyForExistingSession(eventType, latestSession, pgClient)
 
-    // If messageKey is null, only update door opened status for DOOR_OPENED events
-    // For other event types, do nothing
+    // If messageKey is null, only update door opened status for DOOR_OPENED events and exit
+    // For other event types, do nothing and exit
     if (!messageKey) {
       if (eventType === EVENT_TYPE.DOOR_OPENED) {
         const updatedSession = await db_new.updateSession(
@@ -223,8 +223,16 @@ async function handleExistingSession(client, device, eventType, eventData, lates
       params: { occupancyDuration: eventData.occupancyDuration },
     })
 
-    // send the message to all responders
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+    // if we are sending a door opened stillness survey after the attending responder was set (during wait for the survey)
+    // send the message to only the responder phone number
+    if (messageKey === 'stillnessAlertSurveyDoorOpened' && latestSession.attendingResponderPhoneNumber) {
+      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+    }
+    // for all other messages, send the message to all responders
+    else {
+      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+    }
+
     await db_new.createEvent(latestSession.sessionId, eventType, messageKey, client.responderPhoneNumbers, pgClient)
 
     // if stillness alert was sent, then schedule stillness reminders and fallbacks

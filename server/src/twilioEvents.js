@@ -20,13 +20,25 @@ const TWILIO_TOKEN = helpers.getEnvVar('TWILIO_TOKEN')
 // ----------------------------------------------------------------------------------------------------------------------------
 // Helper Functions
 
+async function handleCompletedSessionResponse(client, device, responderPhoneNumber) {
+  try {
+    const messageKey = 'completedSession'
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+
+    // do not log this event
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
+  } catch (error) {
+    throw new Error(`handleCompletedSessionResponse: Error sending invalid response: ${error.message}`)
+  }
+}
+
 async function handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient) {
   try {
     const messageKey = 'invalidResponseTryAgain'
     const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
 
-    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
   } catch (error) {
     throw new Error(`handleInvalidResponse: Error sending invalid response: ${error.message}`)
   }
@@ -172,10 +184,12 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
     // reset the monitoring for particle device
     if (selectedCategory === 'Occupant Okay' && !latestSession.doorOpened) {
       await resetMonitoring(device.particleDeviceId)
+      await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
 
       // clear the attending phone number so that we can allow any responder to respond.
       // clear the survey sent to treat allow reminder and surveys to be published
       // the door open should automatically be false
+      // do not clear the survey sent as it would be overwritten in next iteration.
       await db_new.updateSessionAttendingResponder(latestSession.sessionId, null, pgClient)
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.ACTIVE, latestSession.doorOpened, false, pgClient)
     }
@@ -183,6 +197,7 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
     // reset the state to 0
     else if (selectedCategory !== 'Occupant Okay' && !latestSession.doorOpened) {
       await resetStateToZero(device.particleDeviceId)
+      await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
 
       // update the session's door opened to true as the state is now reset
       // also end the session by changing status --> completed
@@ -191,6 +206,7 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
     }
     // else the door was opened after the survey was sent
     else if ((latestSession.doorOpened && messageKey === 'thankYou') || messageKey === 'braveContactInfo') {
+      await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, latestSession.doorOpened, latestSession.surveySent, pgClient)
     }
   } catch (error) {
@@ -547,6 +563,14 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
     const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId, pgClient)
     if (!latestSession) {
       throw new Error(`No active session found for device: ${device.deviceId}`)
+    }
+
+    // if the message is received for a session that is already completed (after filling out survey)
+    // default to sending the completed session response
+    if (latestSession.sessionStatus === SESSION_STATUS.COMPLETED) {
+      await handleCompletedSessionResponse(client, device, responderPhoneNumber)
+      await db_new.commitTransaction(pgClient)
+      return
     }
 
     // get the latest respondable event in the session for the responderPhoneNumber

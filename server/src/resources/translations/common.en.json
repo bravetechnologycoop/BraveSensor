@@ -28,15 +28,15 @@
   "SENSOR_UNKNOWN": "Unknown",
 
   "durationAlert": "{{ deviceDisplayName }} has been occupied for {{ occupancyDuration }} minutes.",
-  "durationAlertSurveyPromptDoorOpened": "We see the door has opened at {{ deviceDisplayName }}. Press 0 to tell us more.",
+  "durationAlertSurveyPromptDoorOpened": "We see the door has opened at {{ deviceDisplayName }}. Press \"0\" to tell us more.",
   "durationAlertSurveyDoorOpened": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
-  "durationSurveyAlreadyResponded": "Another responder has already filled out the survey.",
   "durationAlertSurveyOtherFollowup": "Can you please describe what happened?",
+  "durationSurveyAlreadyResponded": "Another responder has already filled out the survey.",
 
   "stillnessAlert": "{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
   "stillnessAlertFirstReminder": "1st REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
   "stillnessAlertSecondReminder": "2nd REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
-  "stillnessAlertThirdReminder": "3rd REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
+  "stillnessAlertThirdReminder": "FINAL REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with \"5\" or \"ok\".",
   "stillnessAlertFallback": "No response to stillness alerts for {{ deviceDisplayName }}. There will be one final alert.",
   "stillnessAlertFollowup": "Thanks, we'll follow up in {{ stillnessAlertFollowupTimer }} minutes.",
   "stillnessAlertSurvey": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
@@ -45,6 +45,7 @@
   "stillnessAlertSurveyOccupantOkayFollowup": "We will continue to monitor this location. Reply \"1\" to stop monitoring.",
   "stillnessAlertSurveyOccupantOkayEnd": "You will no longer receive alerts until the next entry. Thank you!",
 
+  "completedSession": "Invalid response - no response expected.",
   "invalidResponseTryAgain": "Invalid response, try again.",
   "nonAttendingResponderConfirmation": "Another responder is attending to this alert. You do not need to reply to this message.",
   "braveContactInfo": "You can reach us at:\nPhone: +18338332100\nEmail: clientsupport@brave.coop\nThank you!",
