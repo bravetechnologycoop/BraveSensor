@@ -68,7 +68,7 @@
                     <label for="surveyCategories" class="col-sm-3 col-form-label">Survey Categories:</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="surveyCategories" value="Overdose Event,Emergency Event,Occupant Okay,Space Empty,Other,Report technical issue" id="surveyCategoriesInput" required>
-                        <small id="surveyCategoriesHelp" class="form-text text-muted">Each survey category should be separated by commas with no quotes</small>
+                        <small id="surveyCategoriesHelp" class="form-text text-muted">Each survey category should be separated by commas with no quotes. These should be in english and will automatically get converted to the specified language.</small>
                     </div>
                 </div>
 

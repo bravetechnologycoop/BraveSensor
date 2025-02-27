@@ -194,16 +194,24 @@ function parseDigits(message) {
 
 function translateMessageKeyToMessage(messageKey, options = {}) {
   const { client = {}, device = {}, params = {} } = options
+  const language = client.language || 'en'
+
+  const translatedCategories = client.surveyCategories 
+    ? client.surveyCategories.map((category, index) => 
+        `${index}: ${i18next.t(category, { lng: language })}`)
+    : []
 
   const translationParams = {
-    lng: client.language || 'en',
+    lng: language,
     deviceDisplayName: device.displayName,
     clientDisplayName: client.displayName,
-    surveyCategoriesForMessage: client.surveyCategories.map((category, index) => `${index}: ${category}`).join('\n') || '',
+    surveyCategoriesForMessage: translatedCategories.join('\n') || '',
     ...params,
   }
 
-  Object.keys(translationParams).forEach(key => translationParams[key] === undefined && delete translationParams[key])
+  Object.keys(translationParams).forEach(key => 
+    translationParams[key] === undefined && delete translationParams[key]
+  )
   return i18next.t(messageKey, translationParams)
 }
 

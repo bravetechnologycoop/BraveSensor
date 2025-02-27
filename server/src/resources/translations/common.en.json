@@ -51,6 +51,13 @@
   "braveContactInfo": "You can reach us at:\nPhone: +18338332100\nEmail: clientsupport@brave.coop\nThank you!",
   "thankYou": "Thank you, monitoring will be paused until the next entry.",
 
+  "Overdose Event": "Overdose Event",
+  "Emergency Event": "Emergency Event",
+  "Occupant Okay": "Occupant Okay",
+  "Space Empty": "Space Empty",
+  "Other": "Other",
+  "Report technical issue": "Report technical issue",
+
   "doorLowBattery": "The battery for the {{ deviceDisplayName }} door sensor is low, and needs replacing.\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w",
   "doorTampered": "The door contact at {{ deviceDisplayName }} is not fully attached to the door. For a replacement or any questions, email clientsupport@brave.coop.",
   "doorInactivity": "The door contact at {{ deviceDisplayName }} has not detected any activity in a long time. Please make sure that both parts of the door contact are fully attached to the door. If you require a replacement or have any questions, email clientsupport@brave.coop.",

@@ -29,7 +29,7 @@
 
   "durationAlert": "{{ deviceDisplayName }} ha estado ocupado durante {{ occupancyDuration }} minutos.",
   "durationAlertSurveyPromptDoorOpened": "Vemos que la puerta se ha abierto en {{ deviceDisplayName }}. Presione \"0\" para contarnos más.",
-  "durationAlertSurveyDoorOpened": "¿Podrías informarnos el resultado?\n{{ SurveyCategoriesForMessage }}",
+  "durationAlertSurveyDoorOpened": "¿Podrías informarnos el resultado?\n{{ surveyCategoriesForMessage }}",
   "durationAlertSurveyOtherFollowup": "¿Puede describir lo que sucedió?",
   "durationSurvey AlreadyResponded": "Otro encuestado ya ha completado la encuesta.",
 
@@ -39,8 +39,8 @@
   "stillnessAlertThirdReminder": "RECORDATORIO FINAL\n{{ deviceDisplayName }} necesita una VERIFICACIÓN DE SEGURIDAD. ¿Estás en camino? Responde con \"5\" o \"ok\".",
   "stillnessAlertFallback": "No hay respuesta a las alertas de quietud para {{ deviceDisplayName }}. Habrá una alerta final.",
   "stillnessAlertFollowup": "Gracias, haremos un seguimiento en {{ stillnessAlertFollowupTimer }} minutos.",
-  "stillnessAlertSurvey": "¿Podrías informarnos el resultado?\n{{ SurveyCategoriesForMessage }}",
-  "stillnessAlertSurveyDoorOpened": "Vemos que la puerta se ha abierto.\n¿Podría informarnos el resultado?\n{{ SurveyCategoriesForMessage }}",
+  "stillnessAlertSurvey": "¿Podrías informarnos el resultado?\n{{ surveyCategoriesForMessage }}",
+  "stillnessAlertSurveyDoorOpened": "Vemos que la puerta se ha abierto.\n¿Podría informarnos el resultado?\n{{ surveyCategoriesForMessage }}",
   "stillnessAlertSurveyOtherFollowup": "¿Puedes describir lo que pasó?",
   "stillnessAlertSurveyOccupantOkayFollowup": "Continuaremos monitoreando esta ubicación. Responda \"1\" para detener el monitoreo.",
   "stillnessAlertSurveyOccupantOkayEnd": "Ya no recibirás alertas hasta la próxima entrada. ¡Gracias!",
@@ -50,7 +50,14 @@
   "nonAttendingResponderConfirmation": "Otro respondedor está atendiendo esta alerta. No es necesario que respondas a este mensaje.",
   "braveContactInfo": "Puede comunicarse con nosotros en:\nTeléfono: +18338332100\nCorreo electrónico: clientsupport@brave.coop\n¡Gracias!",
   "thankYou": "Gracias, el monitoreo se pausará hasta la siguiente entrada.",
-  
+ 
+  "Overdose Event": "Evento de sobredosis",
+  "Emergency Event": "Evento de emergencia",
+  "Occupant Okay": "Ocupante bien",
+  "Stall Empty": "Espacio vacío",
+  "Other": "Otro",
+  "Report technical issue": "Reportar problema técnico",  
+
   "doorLowBattery": "La batería del sensor de puerta {{ deviceDisplayName }} está baja y necesita ser reemplazada.\nPara ver un video que muestra cómo reemplazar la batería, vaya a https://youtu.be/-mfk4-qQc4w",
   "doorTampered": "El contacto de la puerta en {{ deviceDisplayName }} no está completamente conectado a la puerta. Para un reemplazo o cualquier pregunta, envíe un correo electrónico a clientsupport@brave.coop.",
   "doorInactivity": "El contacto de la puerta en {{ deviceDisplayName }} no ha detectado ninguna actividad en mucho tiempo. Asegúrese de que ambas partes del contacto de la puerta estén completamente conectadas a la puerta. Si necesita un reemplazo o tiene alguna pregunta, envíe un correo electrónico a clientsupport@brave.coop.",
