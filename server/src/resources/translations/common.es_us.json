@@ -58,13 +58,13 @@
   "Other": "Otro",
   "Report technical issue": "Reportar problema técnico",  
 
-  "doorLowBattery": "La batería del sensor de puerta {{ deviceDisplayName }} está baja y necesita ser reemplazada.\nPara ver un video que muestra cómo reemplazar la batería, vaya a https://youtu.be/-mfk4-qQc4w",
-  "doorTampered": "El contacto de la puerta en {{ deviceDisplayName }} no está completamente conectado a la puerta. Para un reemplazo o cualquier pregunta, envíe un correo electrónico a clientsupport@brave.coop.",
+  "doorLowBattery": "La batería del sensor de puerta {{ deviceDisplayName }} está baja y necesita ser reemplazada.\nPara ver un video que muestra cómo reemplazar la batería, vaya a https://youtu.be/-mfk4-qQc4w.",
+  "doorTampered": "El contacto de la puerta en {{ deviceDisplayName }} no está completamente conectado a la puerta. Para un reemplazo o si tiene alguna pregunta, envíe un correo electrónico a clientsupport@brave.coop.",
   "doorInactivity": "El contacto de la puerta en {{ deviceDisplayName }} no ha detectado ninguna actividad en mucho tiempo. Asegúrese de que ambas partes del contacto de la puerta estén completamente conectadas a la puerta. Si necesita un reemplazo o tiene alguna pregunta, envíe un correo electrónico a clientsupport@brave.coop.",
 
-  "deviceDisconnectedInitial": "El sensor Brave en {{ deviceDisplayName }} ({{ clientDisplayName }}) se ha desconectado. Presione el botón de reinicio dentro del orificio circular en el sensor Brave con un alfiler. Si no lo hace, Si no recibe un mensaje de reconexión en 20 minutos, envíe un correo electrónico a clientsupport@brave.coop.",
-  "deviceDisconnectedReminder": "El sensor Brave en {{ deviceDisplayName }} ({{ clientDisplayName }}) aún está desconectado. Presione el botón de reinicio dentro del orificio circular en el sensor Brave con un alfiler. Si no recibe un mensaje de reconexión en 20 minutos, envíe un correo electrónico a clientsupport@brave.coop.",
-  "doorDisconnectedInitial": "El contacto de puerta para {{ deviceDisplayName }} ({{ clientDisplayName }}) se ha desconectado. Vuelva a colocar el contacto de puerta o reemplace la batería si es necesario. Envíe un correo electrónico a clientsupport@brave.coop si se requiere un reemplazo.",
-  "doorDisconnectedReminder": "El contacto de puerta para {{ deviceDisplayName }} ({{ clientDisplayName }}) aún está desconectado. Vuelva a colocar el contacto de puerta o reemplace la batería si es necesario. Envíe un correo electrónico a clientsupport@brave.coop si necesita un reemplazo.",
-  "deviceReconnected": "El sensor Brave en {{ deviceDisplayName }} ({{ clientDisplayName }}) se ha vuelto a conectar."
+  "deviceDisconnectedInitial": "El sensor Brave en {{ deviceDisplayName }} ({{ clientDisplayName }}) se ha desconectado. Si no recibe un mensaje de reconexión, envíe un correo electrónico a clientsupport@brave.coop.",
+  "deviceDisconnectedReminder": "El sensor Brave en {{ deviceDisplayName }} ({{ clientDisplayName }}) sigue desconectado. Si no recibe un mensaje de reconexión, envíe un correo electrónico a clientsupport@brave.coop.",
+  "doorDisconnectedInitial": "El contacto de puerta de {{ deviceDisplayName }} ({{ clientDisplayName }}) se ha desconectado. Vuelva a colocar el contacto de puerta o reemplace la batería si es necesario. Envíe un correo electrónico a clientsupport@brave.coop si es necesario un reemplazo.",
+  "doorDisconnectedReminder": "El contacto de puerta de {{ deviceDisplayName }} ({{ clientDisplayName }}) sigue desconectado. Vuelva a colocar el contacto de puerta o reemplace la batería si es necesario. Envíe un correo electrónico a clientsupport@brave.coop si necesita un reemplazo.",
+  "deviceReconnected": "El sensor Brave en {{ deviceDisplayName }} ({{ clientDisplayName }}) se ha vuelto a conectar"
 }

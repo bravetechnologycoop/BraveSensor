@@ -58,12 +58,12 @@
   "Other": "Other",
   "Report technical issue": "Report technical issue",
 
-  "doorLowBattery": "The battery for the {{ deviceDisplayName }} door sensor is low, and needs replacing.\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w",
+  "doorLowBattery": "The battery for the {{ deviceDisplayName }} door sensor is low, and needs replacing.\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w.",
   "doorTampered": "The door contact at {{ deviceDisplayName }} is not fully attached to the door. For a replacement or any questions, email clientsupport@brave.coop.",
   "doorInactivity": "The door contact at {{ deviceDisplayName }} has not detected any activity in a long time. Please make sure that both parts of the door contact are fully attached to the door. If you require a replacement or have any questions, email clientsupport@brave.coop.",
 
-  "deviceDisconnectedInitial": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) has disconnected. Please press the reset button within the circular hole on the Brave Sensor using a pin. If you do not receive a reconnection message within 20 minutes, email clientsupport@brave.coop.",
-  "deviceDisconnectedReminder": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) is still disconnected. Please press the reset button within the circular hole on the Brave Sensor using a pin. If you do not receive a reconnection message within 20 minutes, email clientsupport@brave.coop.",
+  "deviceDisconnectedInitial": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) has disconnected. If you do not receive a reconnection message, email clientsupport@brave.coop.",
+  "deviceDisconnectedReminder": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) is still disconnected. If you do not receive a reconnection message, email clientsupport@brave.coop.",
   "doorDisconnectedInitial": "The Door Contact for {{ deviceDisplayName }} ({{ clientDisplayName }}) has disconnected. Please reattach the door contact or replace the battery if necessary. Email clientsupport@brave.coop if a replacement is required.",
   "doorDisconnectedReminder": "The Door Contact for {{ deviceDisplayName }} ({{ clientDisplayName }}) is still disconnected. Please reattach the door contact or replace the battery if necessary. Email clientsupport@brave.coop if a replacement is required.",
   "deviceReconnected": "The Brave Sensor at {{ deviceDisplayName }} ({{ clientDisplayName }}) has been reconnected."
