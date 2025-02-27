@@ -81,7 +81,7 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
         // make sure that the latest event is a type of stillness alert
         const latestEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, null)
         if (latestEvent.eventType !== EVENT_TYPE.STILLNESS_ALERT) {
-          helpers.log('Latest event is not a stillness alert, cancelling reminders')
+          helpers.log(`Latest event is not a stillness alert, cancelling reminders for ${sessionId}`)
           return
         }
 
@@ -89,6 +89,9 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
         // The current session should be active, door should be closed and survey should not have been sent
         if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened && !latestSession.surveySent) {
           await alert.handler()
+        } else {
+          helpers.log(`Session completed or door opened, cancelling survey for ${sessionId}`)
+          return
         }
       } catch (error) {
         helpers.logError(`scheduleStillnessAlertReminders: ${error.message}`)

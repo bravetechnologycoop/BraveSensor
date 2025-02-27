@@ -85,9 +85,12 @@ async function scheduleStillnessAlertSurvey(client, device, sessionId, responder
       // Only send survey if session is active and door is still closed
       if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened) {
         await sendSurvey(latestSession)
+      } else {
+        helpers.log(`Session completed or door opened, cancelling survey for ${sessionId}`)
+        return
       }
     } catch (error) {
-      helpers.logError(`Error scheduling stillness survey: ${error.message}`)
+      helpers.logError(`scheduleStillnessAlertSurvey: ${error.message}`)
     }
   }, surveyDelay)
 }
