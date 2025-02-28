@@ -5,7 +5,7 @@ const pa = require('./pa')
 const vitals = require('./vitals')
 const sensorEvents = require('./sensorEvents')
 const twilioEvents = require('./twilioEvents')
-const smokeTest = require('./smokeTest')
+const smokeTest = require('../test/smokeTest')
 
 function configureRoutes(app) {
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)

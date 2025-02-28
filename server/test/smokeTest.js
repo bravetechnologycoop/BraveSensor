@@ -8,10 +8,10 @@
 const axios = require('axios').default
 
 // In-house dependencies
-const { helpers } = require('./utils/index')
-const { SENSOR_EVENT } = require('./enums/index')
-const { factories } = require('../test/factories')
-const db = require('./db/db')
+const { helpers } = require('../src/utils/index')
+const { SENSOR_EVENT } = require('../src/enums/index')
+const { factories } = require('./factories')
+const db = require('../src/db/db')
 
 const radar_coreID = 'radar_coreID'
 
