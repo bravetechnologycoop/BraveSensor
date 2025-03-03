@@ -10,7 +10,7 @@
     "test:unit": "NODE_ENV=test mocha --exit --timeout 10000 'test/unit/**/*.js'",
     "test:integration": "NODE_ENV=test mocha --exit --timeout 10000 --require \"test/mochaFixtures.js\" 'test/integration/**/*.js'",
     "test:coverage": "NODE_ENV=test nyc --reporter=html --reporter=text mocha --exit --timeout 10000 'test/**/*.js'",
-    "smoketest": "node -e 'require(\"./test/smokeTest.js\")'"
+    "smoketest": "node test/smokeTest.js"
   },
   "eslintIgnore": [
     "Public/*",
