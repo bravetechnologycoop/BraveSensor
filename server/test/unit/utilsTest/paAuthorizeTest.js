@@ -7,8 +7,8 @@ const sinonChai = require('sinon-chai')
 const chai = require('chai')
 
 // In-house dependencies
+const helpers = require('../../../src/utils/helpers')
 const { mockResponse, mockGoogleIdTokenFactory, mockOAuth2Client } = require('../../testingHelpers')
-const { helpers } = require('../../../src/utils/index')
 
 const googleHelpers = rewire('../../../src/utils/googleHelpers')
 

@@ -2,7 +2,7 @@
 const pg = require('pg')
 
 // In-house dependencies
-const { helpers } = require('../utils/index')
+const helpers = require('../utils/helpers')
 const { SESSION_STATUS, EVENT_TYPE, NOTIFICATION_TYPE } = require('../enums/index')
 const { ClientNew, ClientExtensionNew, DeviceNew, SessionNew, EventNew, VitalNew, NotificationNew } = require('../models/index')
 
@@ -395,6 +395,31 @@ async function getClients(pgClient) {
   }
 }
 
+async function getClientWithDisplayName(displayName, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClientWithDisplayName',
+      `
+      SELECT *
+      FROM clients_new
+      WHERE display_name = $1
+      `,
+      [displayName],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createClientFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getClientWithDisplayName query: ${err.toString()}`)
+    return null
+  }
+}
+
 async function getClientWithClientId(clientId, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -468,6 +493,32 @@ async function getClientsWithResponderPhoneNumber(responderPhoneNumber, pgClient
     return results.rows.map(r => createClientFromRow(r))
   } catch (err) {
     helpers.logError(`Error running the getClientsWithResponderPhoneNumber query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function deleteClientWithClientId(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'deleteClientWithClientId',
+      `
+      DELETE FROM clients_new 
+      WHERE client_id = $1
+      RETURNING *
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    // Return the deleted client object
+    return createClientFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the deleteClientWithClientId query: ${err.toString()}`)
     return null
   }
 }
@@ -1416,9 +1467,11 @@ module.exports = {
   createClient,
   updateClient,
   getClients,
+  getClientWithDisplayName,
   getClientWithClientId,
   getClientWithDeviceId,
   getClientsWithResponderPhoneNumber,
+  deleteClientWithClientId,
 
   updateClientExtension,
   getClientExtensionWithClientId,

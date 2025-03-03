@@ -8,7 +8,7 @@
 const ParticleApi = require('particle-api-js')
 
 // In-house depenencies
-const { helpers } = require('./utils/index')
+const helpers = require('./utils/helpers')
 
 // Particle Webhook API Key and Particle Access Token
 const particleAccessToken = helpers.getEnvVar('PARTICLE_ACCESS_TOKEN')

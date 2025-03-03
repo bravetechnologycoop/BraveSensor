@@ -6,9 +6,9 @@
  */
 
 // In-house dependencies
+const db_new = require('../src/db/db_new')
 const { ClientNew, ClientExtensionNew, DeviceNew, SessionNew, EventNew, VitalNew, NotificationNew } = require('../src/models')
 const { DEVICE_TYPE, DEVICE_STATUS, SESSION_STATUS, EVENT_TYPE, NOTIFICATION_TYPE } = require('../src/enums')
-const db_new = require('../src/db/db_new')
 
 // JS Object Factories
 

@@ -5,12 +5,12 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",
-    "test": "NODE_ENV=test mocha --timeout 10000 --require \"test/mochaFixtures.js\" \"test/**/*.js\"",
-    "integrationtest": "NODE_ENV=test mocha --timeout 10000 --require \"test/mochaFixtures.js\" \"test/integration/**/*.js\"",
-    "unittest": "NODE_ENV=test mocha --timeout 10000 \"test/unit/**/*.js\"",
-    "smoketest": "node -e 'require(\"./src/smokeTest.js\")'",
     "start": "NODE_ENV=test node index.js",
-    "test-coverage": "nyc --reporter=html --reporter=text npm test"
+    "test": "NODE_ENV=test mocha --exit --timeout 10000 'test/**/*.js'",
+    "test:unit": "NODE_ENV=test mocha --exit --timeout 10000 'test/unit/**/*.js'",
+    "test:integration": "NODE_ENV=test mocha --exit --timeout 10000 --require \"test/mochaFixtures.js\" 'test/integration/**/*.js'",
+    "test:coverage": "NODE_ENV=test nyc --reporter=html --reporter=text mocha --exit --timeout 10000 'test/**/*.js'",
+    "smoketest": "node -e 'require(\"./test/smokeTest.js\")'"
   },
   "eslintIgnore": [
     "Public/*",

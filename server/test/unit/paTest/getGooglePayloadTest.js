@@ -5,9 +5,10 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 
 // In-house dependencies
-const { helpers, googleHelpers } = require('../../../src/utils/index')
-const { mockResponse } = require('../../testingHelpers')
+const helpers = require('../../../src/utils/helpers')
+const googleHelpers = require('../../../src/utils/googleHelpers')
 const pa = require('../../../src/pa')
+const { mockResponse } = require('../../testingHelpers')
 
 use(sinonChai)
 

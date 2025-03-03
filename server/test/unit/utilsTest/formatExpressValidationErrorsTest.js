@@ -1,7 +1,7 @@
 const expect = require('chai').expect
 const { describe, it } = require('mocha')
 
-const { formatExpressValidationErrors } = require('../../../src/utils/helpers')
+const helpers = require('../../../src/utils/helpers')
 
 describe('helpers.js unit tests: formatExpressValidationErrors', () => {
   it('given an error from a missing body parameter', () => {
@@ -11,7 +11,7 @@ describe('helpers.js unit tests: formatExpressValidationErrors', () => {
       location: 'body',
     }
 
-    const actual = formatExpressValidationErrors(validationErrors)
+    const actual = helpers.formatExpressValidationErrors(validationErrors)
 
     expect(actual).to.equal('doorCoreID (Invalid value)')
   })
@@ -24,7 +24,7 @@ describe('helpers.js unit tests: formatExpressValidationErrors', () => {
       location: 'body',
     }
 
-    const actual = formatExpressValidationErrors(validationErrors)
+    const actual = helpers.formatExpressValidationErrors(validationErrors)
 
     expect(actual).to.equal('displayName (Invalid value)')
   })
@@ -35,7 +35,7 @@ describe('helpers.js unit tests: formatExpressValidationErrors', () => {
       param: 'data',
     }
 
-    const actual = formatExpressValidationErrors(validationErrors)
+    const actual = helpers.formatExpressValidationErrors(validationErrors)
 
     expect(actual).to.equal('data (missing radar values, check for firmware or device integration errors)')
   })
@@ -59,7 +59,7 @@ describe('helpers.js unit tests: formatExpressValidationErrors', () => {
       ],
     }
 
-    const actual = formatExpressValidationErrors(validationErrors)
+    const actual = helpers.formatExpressValidationErrors(validationErrors)
 
     expect(actual).to.equal('doorCoreID/displayName (Invalid value(s))')
   })

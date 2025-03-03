@@ -13,9 +13,9 @@ const expressSession = require('express-session')
 const cookieParser = require('cookie-parser')
 
 // In-house dependencies
-const { helpers } = require('./utils/index')
-const { DEVICE_STATUS, SESSION_STATUS } = require('./enums/index')
+const helpers = require('./utils/helpers')
 const db_new = require('./db/db_new')
+const { DEVICE_STATUS, SESSION_STATUS } = require('./enums/index')
 
 const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')
 const pageCSSPartial = fs.readFileSync(`${__dirname}/mustache-templates/pageCSSPartial.mst`, 'utf-8')

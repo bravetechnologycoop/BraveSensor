@@ -10,9 +10,10 @@ const Validator = require('express-validator')
 const { DateTime } = require('luxon')
 
 // In-house dependencies
-const { helpers, twilioHelpers } = require('./utils/index')
-const { NOTIFICATION_TYPE } = require('./enums/index')
+const helpers = require('./utils/helpers')
+const twilioHelpers = require('./utils/twilioHelpers')
 const db_new = require('./db/db_new')
+const { NOTIFICATION_TYPE } = require('./enums/index')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 

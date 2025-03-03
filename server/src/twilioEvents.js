@@ -9,10 +9,11 @@ const Validator = require('express-validator')
 const twilio = require('twilio')
 
 // In-house dependencies
-const { helpers, twilioHelpers } = require('./utils/index')
-const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
-const { resetMonitoring, resetStateToZero } = require('./particle')
+const helpers = require('./utils/helpers')
+const twilioHelpers = require('./utils/twilioHelpers')
 const db_new = require('./db/db_new')
+const { resetMonitoring, resetStateToZero } = require('./particle')
+const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
 
 const STILLNESS_ALERT_SURVEY_FOLLOWUP = helpers.getEnvVar('STILLNESS_ALERT_SURVEY_FOLLOWUP')
 const TWILIO_TOKEN = helpers.getEnvVar('TWILIO_TOKEN')

@@ -8,9 +8,10 @@
 const Validator = require('express-validator')
 
 // In-house dependencies
-const { helpers, twilioHelpers } = require('./utils/index')
-const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
+const helpers = require('./utils/helpers')
+const twilioHelpers = require('./utils/twilioHelpers')
 const db_new = require('./db/db_new')
+const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 const stillnessReminderinSeconds = helpers.getEnvVar('STILLNESS_ALERT_REMINDER')

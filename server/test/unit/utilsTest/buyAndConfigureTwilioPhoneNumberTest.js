@@ -7,7 +7,7 @@ const chai = require('chai')
 const rewire = require('rewire')
 
 // In-house dependencies
-const { helpers } = require('../../../src/utils/index')
+const helpers = require('../../../src/utils/helpers')
 
 const twilioHelpers = rewire('../../../src/utils/twilioHelpers')
 

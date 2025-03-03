@@ -23,5 +23,3 @@ setupRoutes(app)
 const server = setupServer(app)
 
 module.exports.server = server
-module.exports.db = require('./src/db/db')
-module.exports.routes = require('./src/routes')
