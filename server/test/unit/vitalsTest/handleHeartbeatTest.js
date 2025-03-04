@@ -1,2 +1,0 @@
-// handleHeartbeatTest.js
-// TODO

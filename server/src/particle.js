@@ -30,10 +30,10 @@ async function resetMonitoring(particleDeviceId) {
     })
 
     if (!response || !response.body || response.body.return_value !== 1) {
-      throw new Error(`Reset_Monitoring for device with particeDeviceId: ${particleDeviceId}`)
+      throw new Error(`Error calling function for device with particleDeviceId: ${particleDeviceId}`)
     }
   } catch (error) {
-    throw new Error(`resetMonitoring: ${error.errorDescription} for device ${particleDeviceId}`)
+    throw new Error(`resetMonitoring: ${error.message}`)
   }
 }
 
@@ -51,10 +51,10 @@ async function resetStateToZero(particleDeviceId) {
     })
 
     if (!response || !response.body || response.body.return_value !== 1) {
-      throw new Error(`Reset_State_To_Zero for device with particeDeviceId: ${particleDeviceId}`)
+      throw new Error(`Error calling function for device with particleDeviceId: ${particleDeviceId}`)
     }
   } catch (error) {
-    throw new Error(`resetStateToZero: ${error.errorDescription} for device ${particleDeviceId}`)
+    throw new Error(`resetStateToZero: ${error.message}`)
   }
 }
 

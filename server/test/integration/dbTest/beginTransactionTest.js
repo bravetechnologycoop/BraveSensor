@@ -1,2 +1,0 @@
-// beginTransactionTest.js
-// TODO
