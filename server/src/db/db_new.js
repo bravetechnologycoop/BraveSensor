@@ -244,6 +244,37 @@ async function getCurrentTime(pgClient) {
   }
 }
 
+async function clearAllTables(pgClient) {
+  if (!helpers.isTestEnvironment()) {
+    helpers.log('Warning - tried to clear all tables outside of a test environment!')
+    return
+  }
+
+  try {
+    const results = await helpers.runQuery(
+      'clearTables',
+      `
+      -- Delete from tables with foreign key dependencies first
+      DELETE FROM events_new;
+      DELETE FROM notifications_new;
+      DELETE FROM vitals_cache_new;
+      DELETE FROM vitals_new;
+      DELETE FROM sessions_new;
+      DELETE FROM devices_new;
+      DELETE FROM clients_extension_new;
+      DELETE FROM clients_new;
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    return results
+  } catch (err) {
+    helpers.logError(`Error running the clearAllTables query: ${err.toString()}`)
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function createClient(
@@ -299,6 +330,10 @@ async function createClient(
       pool,
       pgClient,
     )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
 
     return createClientFromRow(results.rows[0])
   } catch (err) {
@@ -363,6 +398,10 @@ async function updateClient(
       pgClient,
     )
 
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
     return createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the updateClient query: ${err.toString()}`)
@@ -384,14 +423,14 @@ async function getClients(pgClient) {
       pgClient,
     )
 
-    if (results === undefined) {
-      return null
+    if (results === undefined || results.rows.length === 0) {
+      return []
     }
 
-    // map each row to a client object
     return results.rows.map(r => createClientFromRow(r))
   } catch (err) {
     helpers.logError(`Error running the getClients query: ${err.toString()}`)
+    return []
   }
 }
 
@@ -434,13 +473,14 @@ async function getClientWithClientId(clientId, pgClient) {
       pgClient,
     )
 
-    if (results === undefined) {
+    if (results === undefined || results.rows.length === 0) {
       return null
     }
 
     return createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getClientWithClientId query: ${err.toString()}`)
+    return null
   }
 }
 
@@ -486,21 +526,25 @@ async function getClientsWithResponderPhoneNumber(responderPhoneNumber, pgClient
     )
 
     if (results === undefined || results.rows.length === 0) {
-      return null
+      return []
     }
 
-    // map each row to a client object
     return results.rows.map(r => createClientFromRow(r))
   } catch (err) {
     helpers.logError(`Error running the getClientsWithResponderPhoneNumber query: ${err.toString()}`)
-    return null
+    return []
   }
 }
 
-async function deleteClientWithClientId(clientId, pgClient) {
+async function clearClientWithClientId(clientId, pgClient) {
+  if (!helpers.isTestEnvironment()) {
+    helpers.log('Warning - tried to clear client outside of a test environment!')
+    return
+  }
+
   try {
     const results = await helpers.runQuery(
-      'deleteClientWithClientId',
+      'clearClientWithClientId',
       `
       DELETE FROM clients_new 
       WHERE client_id = $1
@@ -515,10 +559,9 @@ async function deleteClientWithClientId(clientId, pgClient) {
       return null
     }
 
-    // Return the deleted client object
     return createClientFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the deleteClientWithClientId query: ${err.toString()}`)
+    helpers.logError(`Error running the clearClientWithClientId query: ${err.toString()}`)
     return null
   }
 }
@@ -549,6 +592,10 @@ async function createClientExtension(clientId, country, countrySubdivision, buil
       pgClient,
     )
 
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
     return createClientExtensionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the createClientExtension query: ${err.toString()}`)
@@ -562,7 +609,7 @@ async function updateClientExtension(clientId, country, countrySubdivision, buil
       'updateClientExtension',
       `
       UPDATE clients_extension_new
-      SET country = $2, country_subdivision = $3, building_type = $4, organization = $5, funder = $6, postal_code = $7, city = $8, project = $9
+      SET country = $2, country_subdivision = $3, building_type = $4, city = $5, postal_code = $6, funder = $7, project = $8, organization = $9
       WHERE client_id = $1
       RETURNING *
       `,
@@ -579,6 +626,7 @@ async function updateClientExtension(clientId, country, countrySubdivision, buil
     return createClientExtensionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the updateClientExtension query: ${err.toString()}`)
+    return null
   }
 }
 
@@ -604,6 +652,7 @@ async function getClientExtensionWithClientId(clientId, pgClient) {
     return createClientExtensionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getClientExtensionWithClientId query: ${err.toString()}`)
+    return null
   }
 }
 
@@ -643,6 +692,10 @@ async function createDevice(
       pool,
       pgClient,
     )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
 
     return createDeviceFromRow(results.rows[0])
   } catch (err) {
@@ -687,6 +740,10 @@ async function updateDevice(
       pgClient,
     )
 
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
     return createDeviceFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the updateDevice query: ${err.toString()}`)
@@ -709,14 +766,14 @@ async function getDevices(pgClient) {
       pgClient,
     )
 
-    if (results === undefined) {
-      return null
+    if (results === undefined || results.rows.length === 0) {
+      return []
     }
 
-    // map each row to a device object
     return results.rows.map(row => createDeviceFromRow(row))
   } catch (err) {
     helpers.logError(`Error running the getDevices query: ${err.toString()}`)
+    return []
   }
 }
 
@@ -736,14 +793,14 @@ async function getDevicesForClient(clientId, pgClient) {
       pgClient,
     )
 
-    if (results === undefined) {
-      return null
+    if (results === undefined || results.rows.length === 0) {
+      return []
     }
 
-    // map each row to a device object
     return results.rows.map(row => createDeviceFromRow(row))
   } catch (err) {
     helpers.logError(`Error running the getDevicesForClient query: ${err.toString()}`)
+    return []
   }
 }
 
@@ -761,13 +818,14 @@ async function getDeviceWithDeviceId(deviceId, pgClient) {
       pgClient,
     )
 
-    if (results === undefined) {
+    if (results === undefined || results.rows.length === 0) {
       return null
     }
 
     return createDeviceFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getDeviceWithDeviceId query: ${err.toString()}`)
+    return null
   }
 }
 
@@ -789,7 +847,6 @@ async function getDeviceWithParticleDeviceId(particleDeviceId, pgClient) {
       return null
     }
 
-    // returns a device object
     return createDeviceFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getDeviceWithParticleDeviceId query: ${err.toString()}`)
@@ -846,13 +903,11 @@ async function createSession(deviceId, pgClient) {
       return null
     }
 
-    // returns a session object
     return createSessionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getDeviceWithSerialNumber query: ${err.toString()}`)
+    return null
   }
-
-  return null
 }
 
 async function getSessionsForDevice(deviceId, pgClient) {
@@ -927,7 +982,6 @@ async function getLatestSessionWithDeviceId(deviceId, pgClient) {
       return null
     }
 
-    // returns a session object
     return createSessionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getLatestSessionWithDeviceId query: ${err.toString()}`)
@@ -951,12 +1005,10 @@ async function updateSession(sessionId, sessionStatus, doorOpened, surveySent, p
       pgClient,
     )
 
-    if (!results || results.rows.length === 0) {
-      helpers.log('No results found')
+    if (results === undefined || results.rows.length === 0) {
       return null
     }
 
-    // returns a session object
     return createSessionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the updateSession query: ${err.toString()}`)
@@ -979,11 +1031,10 @@ async function updateSessionAttendingResponder(sessionId, responderPhoneNumber, 
       pgClient,
     )
 
-    if (!results || results.rows.length === 0) {
+    if (results === undefined || results.rows.length === 0) {
       return null
     }
 
-    // returns a session object
     return createSessionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the updateSessionAttendingResponder query: ${err.toString()}`)
@@ -1006,11 +1057,10 @@ async function updateSessionResponseTime(sessionId, pgClient) {
       pgClient,
     )
 
-    if (!results || results.rows.length === 0) {
+    if (results === undefined || results.rows.length === 0) {
       return null
     }
 
-    // returns a session object
     return createSessionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the updateSessionResponseTime query: ${err.toString()}`)
@@ -1033,11 +1083,10 @@ async function updateSessionSelectedSurveyCategory(sessionId, selectedCategory, 
       pgClient,
     )
 
-    if (!results || results.rows.length === 0) {
+    if (results === undefined || results.rows.length === 0) {
       return null
     }
 
-    // returns a session object
     return createSessionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the updateSessionSelectedSurveyCategory query: ${err.toString()}`)
@@ -1198,7 +1247,6 @@ async function getLatestAlertEvent(sessionId, pgClient) {
       return null
     }
 
-    // returns an event object
     return createEventFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getLatestAlertEvent query: ${err.toString()}`)
@@ -1268,7 +1316,6 @@ async function createVital(
       return null
     }
 
-    // return a vitals object
     return createVitalFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the createVital query: ${err.toString()}`)
@@ -1295,7 +1342,6 @@ async function getLatestVitalWithDeviceId(deviceId, pgClient) {
       return null
     }
 
-    // returns an event object
     return createVitalFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getLatestVitalWithDeviceId query: ${err.toString()}`)
@@ -1325,13 +1371,11 @@ async function createNotification(deviceId, notificationType, pgClient) {
       return null
     }
 
-    // returns an notification object
     return createNotificationFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the createNotification query: ${err.toString()}`)
+    return null
   }
-
-  return null
 }
 
 async function getNotificationsForDevice(deviceId, pgClient) {
@@ -1353,7 +1397,6 @@ async function getNotificationsForDevice(deviceId, pgClient) {
       return []
     }
 
-    // Map rows to notification objects
     return results.rows.map(row => createNotificationFromRow(row))
   } catch (err) {
     helpers.logError(`Error getting notifications for device: ${err.toString()}`)
@@ -1381,7 +1424,6 @@ async function getLatestNotification(deviceId, pgClient) {
       return null
     }
 
-    // returns a notification object
     return createNotificationFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running getLatestNotification query: ${err.toString()}`)
@@ -1418,7 +1460,6 @@ async function getLatestConnectionNotification(deviceId, pgClient) {
       return null
     }
 
-    // returns an notification object
     return createNotificationFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getLatestConnectionNotification query: ${err.toString()}`)
@@ -1448,7 +1489,6 @@ async function getLatestNotificationOfType(deviceId, notificationType, pgClient)
       return null
     }
 
-    // returns an notification object
     return createNotificationFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getLatestNotificationOfType query: ${err.toString()}`)
@@ -1462,7 +1502,9 @@ module.exports = {
   beginTransaction,
   commitTransaction,
   rollbackTransaction,
+
   getCurrentTime,
+  clearAllTables,
 
   createClient,
   updateClient,
@@ -1471,7 +1513,7 @@ module.exports = {
   getClientWithClientId,
   getClientWithDeviceId,
   getClientsWithResponderPhoneNumber,
-  deleteClientWithClientId,
+  clearClientWithClientId,
 
   updateClientExtension,
   getClientExtensionWithClientId,

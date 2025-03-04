@@ -376,7 +376,7 @@ You can get further details about the behaviour of the build by watching logs fo
 
 1. Run `npm start`
 
-1. Get the current username (`WEB_USERNAME`) and password (`PASSWORD`) from your `.env` file
+1. Get the current username (`WEB_USERNAME`) and password (`WEB_PASSWORD`) from your `.env` file
 
 1. Navigate to `http://localhost:8000` in a browser and login
 
@@ -535,7 +535,7 @@ The same Twilio token is used between the development, staging, and production s
 ## Dashboard Password
 
 1. Generate a new dashboard password with [a password generator](https://1password.com/password-generator).
-1. Set the `PASSWORD` environment variable to the generated password.
+1. Set the `WEB_PASSWORD` environment variable to the generated password.
 
 ## Database Password
 

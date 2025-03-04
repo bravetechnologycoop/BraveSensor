@@ -504,7 +504,7 @@ async function submitNewClient(req, res) {
         if (client.displayName === data.displayName) {
           const errorMessage = `Client Display Name already exists: ${data.displayName}`
           helpers.log(errorMessage)
-          return res.status(409).send(errorMessage)
+          return res.status(400).send(errorMessage)
         }
       }
 
@@ -604,6 +604,11 @@ async function submitUpdateClient(req, res) {
       const data = req.body
 
       const client = await db_new.getClientWithClientId(clientId)
+      if (!client) {
+        const errorMessage = `Client ID '${data.clientId}' does not exist`
+        helpers.log(errorMessage)
+        return res.status(400).send(errorMessage)
+      }
 
       const responderPhoneNumbers =
         data.responderPhoneNumbers && data.responderPhoneNumbers.trim() !== '' ? data.responderPhoneNumbers.split(',').map(phone => phone.trim()) : []
@@ -687,13 +692,14 @@ async function submitNewDevice(req, res) {
       const allDevices = await db_new.getDevices()
       for (const device of allDevices) {
         if (device.locationId === data.locationId) {
-          helpers.log('Location ID already exists')
-          return res.status(409).send('Location ID already exists')
+          const errorMessage = `Location ID already exists: ${data.locationId}`
+          helpers.log(errorMessage)
+          return res.status(400).send(errorMessage)
         }
       }
 
       const client = await db_new.getClientWithClientId(data.clientId)
-      if (client === null) {
+      if (!client) {
         const errorMessage = `Client ID '${data.clientId}' does not exist`
         helpers.log(errorMessage)
         return res.status(400).send(errorMessage)
@@ -707,7 +713,7 @@ async function submitNewDevice(req, res) {
       const newDevice = await db_new.createDevice(
         data.locationId,
         data.displayName,
-        data.clientId,
+        client.clientId,
         data.particleDeviceId,
         data.deviceType,
         data.deviceTwilioNumber,
@@ -756,8 +762,15 @@ async function submitUpdateDevice(req, res) {
       const deviceId = req.params.deviceId
       const data = req.body
 
+      const device = await db_new.getDeviceWithDeviceId(deviceId)
+      if (!device) {
+        const errorMessage = `Device ID '${deviceId}' does not exist`
+        helpers.log(errorMessage)
+        return res.status(400).send(errorMessage)
+      }
+
       const client = await db_new.getClientWithClientId(data.clientId)
-      if (client === null) {
+      if (!client) {
         const errorMessage = `Client ID '${data.clientId}' does not exist`
         helpers.log(errorMessage)
         return res.status(400).send(errorMessage)
