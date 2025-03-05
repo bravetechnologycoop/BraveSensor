@@ -197,6 +197,9 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
       await db_new.updateSessionAttendingResponder(latestSession.sessionId, null, pgClient)
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.ACTIVE, latestSession.doorOpened, false, pgClient)
     }
+    else if (selectedCategory === 'Other' && !latestSession.doorOpened) {
+      await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
+    }
     // otherwise for any category other selected and door is still closed
     // reset the state to 0
     else if (selectedCategory !== 'Occupant Okay' && !latestSession.doorOpened) {

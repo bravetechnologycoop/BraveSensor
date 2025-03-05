@@ -72,7 +72,7 @@ async function handleDeviceConnectionVitals(device, client, currentDBTime, pgCli
           notificationType = isInitialAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
         }
       }
-    } else if (fullyConnected && latestConnectionNotification && latestConnectionNotification.notificationType.includes('DISCONNECTED')) {
+    } else if (fullyConnected && latestConnectionNotification && latestConnectionNotification.notificationType.includes('DEVICE_DISCONNECTED')) {
       messageKey = 'deviceReconnected'
       notificationType = 'DEVICE_RECONNECTED'
     }
