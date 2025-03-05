@@ -196,8 +196,7 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
       // do not clear the survey sent as it would be overwritten in next iteration.
       await db_new.updateSessionAttendingResponder(latestSession.sessionId, null, pgClient)
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.ACTIVE, latestSession.doorOpened, false, pgClient)
-    }
-    else if (selectedCategory === 'Other' && !latestSession.doorOpened) {
+    } else if (selectedCategory === 'Other' && !latestSession.doorOpened) {
       await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
     }
     // otherwise for any category other selected and door is still closed
