@@ -25,7 +25,7 @@
 #define STILLNESS_ALERT_TIME                300000      // 5 mins
 
 // Heartbeat message intervals and thresholds
-#define SM_HEARTBEAT_INTERVAL               660000      // 11 mins
+#define SM_HEARTBEAT_INTERVAL               120000      // 11 mins
 #define SM_HEARTBEAT_DID_MISS_QUEUE_SIZE    3           // Track last 3 heartbeats
 #define SM_HEARTBEAT_DID_MISS_THRESHOLD     1           // Threshold for missed heartbeats
 

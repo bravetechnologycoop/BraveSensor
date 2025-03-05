@@ -19,8 +19,6 @@
 #define HEARTBEAT           0x08
 #define HEARTBEAT_AND_OPEN  0x0A
 
-#define MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD 540000
-
 os_queue_t bleHeartbeatQueue;
 IMDoorID globalDoorID = {DOORID_BYTE1, DOORID_BYTE2, DOORID_BYTE3};
 

@@ -26,7 +26,7 @@
 #define HEARTBEAT_AND_OPEN 0x0A     // Heartbeat and door open status
 
 // Threshold for triggering state machine heartbeat
-#define MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD 540000   // 9 min in ms
+#define MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD 108000   // 2 min in ms
 
 // ***************************** Global typedefs ******************************
 

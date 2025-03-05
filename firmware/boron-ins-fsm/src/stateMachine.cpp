@@ -583,7 +583,7 @@ void getHeartbeat() {
             writer.name("doorLowBattery").value(-1);
             writer.name("doorTampered").value(-1);
         } else {
-            writer.name("doorLastMessage").value((unsigned int)(millis() - doorLastMessage));
+            writer.name("doorLastMessage").value((unsigned int)calculateTimeSince(doorLastMessage));
             writer.name("doorLowBattery").value(doorLowBatteryFlag);
             writer.name("doorTampered").value(doorTamperedFlag);
         }
