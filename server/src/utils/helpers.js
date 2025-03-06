@@ -135,7 +135,7 @@ function differenceInSeconds(date1, date2) {
   return dateTime1.diff(dateTime2, 'seconds').seconds
 }
 
-async function generateCalculatedTimeDifferenceString(timeToCompare, db) {
+async function generateCalculatedTimeDifferenceString(timeToCompare, db_new) {
   const daySecs = 24 * 60 * 60
   const hourSecs = 60 * 60
   const minSecs = 60
@@ -143,7 +143,7 @@ async function generateCalculatedTimeDifferenceString(timeToCompare, db) {
   let numDays = 0
   let numHours = 0
   let numMins = 0
-  const currentTime = await db.getCurrentTime()
+  const currentTime = await db_new.getCurrentTime()
 
   let diffSecs = (currentTime - timeToCompare) / 1000
 
