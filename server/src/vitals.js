@@ -47,11 +47,17 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, pg
 
     const latestConnectionNotification = await db_new.getLatestConnectionNotification(device.deviceId, pgClient)
 
-    // check if the latest notification was for the same type of disconnection
-    const isDeviceNotification = latestConnectionNotification && latestConnectionNotification.notificationType.includes('DEVICE_DISCONNECTED')
-    const isDoorNotification = latestConnectionNotification && latestConnectionNotification.notificationType.includes('DOOR_DISCONNECTED')
+    // check if the latest notification for type of disconnection
+    const isDeviceNotification =
+      latestConnectionNotification &&
+      (latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DEVICE_DISCONNECTED ||
+        latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER)
+    const isDoorNotification =
+      latestConnectionNotification &&
+      (latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DOOR_DISCONNECTED ||
+        latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER)
 
-    // determine if this is an initial alert based on notification type
+    // determine if this is a initial disconnection alert
     const isInitialDeviceAlert = deviceDisconnected && !isDeviceNotification
     const isInitialDoorAlert = doorDisconnected && !isDoorNotification && !deviceDisconnected
 
@@ -64,6 +70,8 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, pg
     let messageKey = null
     let notificationType = null
 
+    // prioritize sending device disconnected
+    // if device is connected, then only check the door
     if (deviceDisconnected && (isInitialDeviceAlert || isReminderDue)) {
       messageKey = isInitialDeviceAlert ? 'deviceDisconnectedInitial' : 'deviceDisconnectedReminder'
       notificationType = isInitialDeviceAlert ? NOTIFICATION_TYPE.DEVICE_DISCONNECTED : NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER
@@ -73,17 +81,19 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, pg
     }
 
     if (notificationType && messageKey) {
-      const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-      const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
+      try {
+        const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+        const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
 
-      if (phoneNumbers.length === 0) {
-        throw new Error(`No phone numbers configured for client ${client.clientId}, skipping notifications`)
+        if (phoneNumbers.length === 0) {
+          throw new Error(`No phone numbers configured for client ${client.clientId}, skipping notifications`)
+        }
+
+        await db_new.createNotification(device.deviceId, notificationType, pgClient)
+        await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
+      } catch (error) {
+        throw new Error(`Error sending notification: ${error.message}`)
       }
-
-      await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
-
-      helpers.logSentry(`Sent ${notificationType} notification for ${device.displayName}`)
-      await db_new.createNotification(device.deviceId, notificationType, pgClient)
     }
   } catch (error) {
     throw new Error(`handleDeviceConnectionVitals: ${error.message}`)
@@ -159,8 +169,12 @@ async function handleVitalNotifications(
     // 1. Device/Door Reconnection Notifications
     const latestConnectionNotification = await db_new.getLatestConnectionNotification(device.deviceId, pgClient)
     if (latestConnectionNotification) {
-      const deviceWasDisconnected = latestConnectionNotification.notificationType.includes('DEVICE_DISCONNECTED')
-      const doorWasDisconnected = latestConnectionNotification.notificationType.includes('DOOR_DISCONNECTED')
+      const deviceWasDisconnected =
+        latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DEVICE_DISCONNECTED ||
+        latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER
+      const doorWasDisconnected =
+        latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DOOR_DISCONNECTED ||
+        latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
 
       // If we receive a vital, it means device has reconnected
       if (deviceWasDisconnected) {
@@ -220,16 +234,19 @@ async function handleVitalNotifications(
 
     // Send all accumulated notifications
     for (const notification of notifications) {
-      const textMessage = helpers.translateMessageKeyToMessage(notification.messageKey, { client, device })
-      const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
+      try {
+        const textMessage = helpers.translateMessageKeyToMessage(notification.messageKey, { client, device })
+        const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
 
-      if (phoneNumbers.length === 0) {
-        throw new Error(`No phone numbers configured for client ${client.clientId}, skipping notifications`)
+        if (phoneNumbers.length === 0) {
+          throw new Error(`No phone numbers configured for client ${client.clientId}, skipping notifications`)
+        }
+
+        await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
+        await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
+      } catch (error) {
+        throw new Error(`Error sending notification: ${error.message}`)
       }
-
-      await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
-      helpers.logSentry(`Sent ${notification.notificationType} notification for ${device.displayName}`)
-      await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
     }
   } catch (error) {
     throw new Error(`handleVitalNotifications: ${error.message}`)
