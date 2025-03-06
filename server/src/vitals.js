@@ -70,14 +70,19 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, pg
     let messageKey = null
     let notificationType = null
 
-    // prioritize sending device disconnected
-    // if device is connected, then only check the door
-    if (deviceDisconnected && (isInitialDeviceAlert || isReminderDue)) {
+     // Only send device disconnection alerts if device is disconnected
+     if (deviceDisconnected && (isInitialDeviceAlert || isReminderDue)) {
       messageKey = isInitialDeviceAlert ? 'deviceDisconnectedInitial' : 'deviceDisconnectedReminder'
-      notificationType = isInitialDeviceAlert ? NOTIFICATION_TYPE.DEVICE_DISCONNECTED : NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER
-    } else if (doorDisconnected && (isInitialDoorAlert || isReminderDue)) {
+      notificationType = isInitialDeviceAlert 
+        ? NOTIFICATION_TYPE.DEVICE_DISCONNECTED 
+        : NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER
+    } 
+    // Only send door disconnection alerts if device is connected but door is disconnected
+    else if (!deviceDisconnected && doorDisconnected && (isInitialDoorAlert || isReminderDue)) {
       messageKey = isInitialDoorAlert ? 'doorDisconnectedInitial' : 'doorDisconnectedReminder'
-      notificationType = isInitialDoorAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
+      notificationType = isInitialDoorAlert 
+        ? NOTIFICATION_TYPE.DOOR_DISCONNECTED 
+        : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
     }
 
     if (notificationType && messageKey) {
@@ -176,20 +181,19 @@ async function handleVitalNotifications(
         latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DOOR_DISCONNECTED ||
         latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
 
-      // If we receive a vital, it means device has reconnected
+      // First handle device reconnection since it's higher priority
       if (deviceWasDisconnected) {
         notifications.push({
           messageKey: 'deviceReconnected',
           notificationType: NOTIFICATION_TYPE.DEVICE_RECONNECTED,
         })
-      }
-      // Check door reconnection only if device is connected
-      else if (doorWasDisconnected) {
-        // For the current heartbeat
+      } 
+      // Only check door reconnection if device is connected (we don't want to mix device/door notifications)
+      else if (!deviceWasDisconnected && doorWasDisconnected) {
         const timeSinceDoorContact = helpers.differenceInSeconds(currentDBTime, currDoorLastSeenAt)
         if (timeSinceDoorContact < doorDisconnectionThreshold) {
           notifications.push({
-            messageKey: 'doorReconnected',
+            messageKey: 'doorReconnected',  
             notificationType: NOTIFICATION_TYPE.DOOR_RECONNECTED,
           })
         }
