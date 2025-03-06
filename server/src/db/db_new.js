@@ -611,7 +611,7 @@ async function getActiveClients(pgClient) {
         WHERE is_sending_alerts AND is_sending_vitals
       ) AS d
       ON c.client_id = d.client_id
-      WHERE c.is_sending_alerts AND c.is_sending_vitals
+      WHERE c.devices_sending_alerts AND c.devices_sending_vitals
       ORDER BY c.display_name;
       `,
       [],

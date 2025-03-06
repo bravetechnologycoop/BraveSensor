@@ -162,7 +162,7 @@ async function handleGetClientDevices(req, res) {
 
         const processedDevices = devicesForClient.map(device => {
           return {
-            locationID: device.locationID,
+            locationID: device.locationId,
             displayName: device.displayName,
             deviceID: device.particleDeviceID,
           }
