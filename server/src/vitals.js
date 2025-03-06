@@ -70,19 +70,15 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, pg
     let messageKey = null
     let notificationType = null
 
-     // Only send device disconnection alerts if device is disconnected
-     if (deviceDisconnected && (isInitialDeviceAlert || isReminderDue)) {
+    // Only send device disconnection alerts if device is disconnected
+    if (deviceDisconnected && (isInitialDeviceAlert || isReminderDue)) {
       messageKey = isInitialDeviceAlert ? 'deviceDisconnectedInitial' : 'deviceDisconnectedReminder'
-      notificationType = isInitialDeviceAlert 
-        ? NOTIFICATION_TYPE.DEVICE_DISCONNECTED 
-        : NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER
-    } 
+      notificationType = isInitialDeviceAlert ? NOTIFICATION_TYPE.DEVICE_DISCONNECTED : NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER
+    }
     // Only send door disconnection alerts if device is connected but door is disconnected
     else if (!deviceDisconnected && doorDisconnected && (isInitialDoorAlert || isReminderDue)) {
       messageKey = isInitialDoorAlert ? 'doorDisconnectedInitial' : 'doorDisconnectedReminder'
-      notificationType = isInitialDoorAlert 
-        ? NOTIFICATION_TYPE.DOOR_DISCONNECTED 
-        : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
+      notificationType = isInitialDoorAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
     }
 
     if (notificationType && messageKey) {
@@ -187,13 +183,13 @@ async function handleVitalNotifications(
           messageKey: 'deviceReconnected',
           notificationType: NOTIFICATION_TYPE.DEVICE_RECONNECTED,
         })
-      } 
+      }
       // Only check door reconnection if device is connected (we don't want to mix device/door notifications)
       else if (!deviceWasDisconnected && doorWasDisconnected) {
         const timeSinceDoorContact = helpers.differenceInSeconds(currentDBTime, currDoorLastSeenAt)
         if (timeSinceDoorContact < doorDisconnectionThreshold) {
           notifications.push({
-            messageKey: 'doorReconnected',  
+            messageKey: 'doorReconnected',
             notificationType: NOTIFICATION_TYPE.DOOR_RECONNECTED,
           })
         }
