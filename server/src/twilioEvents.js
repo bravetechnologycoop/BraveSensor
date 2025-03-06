@@ -26,8 +26,8 @@ async function handleNoResponseExpected(client, device, responderPhoneNumber) {
     const messageKey = 'noResponseExpected'
     const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
 
-    // do not log this event
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
+    // do not log this event
   } catch (error) {
     throw new Error(`handleNoResponseExpected: Error sending invalid response: ${error.message}`)
   }
@@ -340,6 +340,15 @@ async function handleStillnessAlertSurveyOtherFollowup(client, device, latestSes
 // ----------------------------------------------------------------------------------------------------------------------------
 // Duration Alert Handlers
 
+// eslint-disable-next-line no-unused-vars
+async function handleDurationAlert(client, device, latestSession, responderPhoneNumber, message, pgClient) {
+  try {
+    await handleNoResponseExpected(client, device, responderPhoneNumber)
+  } catch (error) {
+    throw new Error(`handleDurationAlertSurveyPromptDoorOpened: ${error.message}`)
+  }
+}
+
 async function handleDurationAlertSurveyPromptDoorOpened(client, device, latestSession, responderPhoneNumber, message, pgClient) {
   try {
     if (!latestSession.doorOpened) {
@@ -472,6 +481,7 @@ async function handleDurationAlertSurveyOtherFollowup(client, device, latestSess
 
 const EVENT_HANDLERS = {
   duration: {
+    durationAlert: handleDurationAlert,
     durationAlertSurveyPromptDoorOpened: handleDurationAlertSurveyPromptDoorOpened,
     durationAlertSurveyDoorOpened: handleDurationAlertSurveyDoorOpened,
     durationAlertSurveyOtherFollowup: handleDurationAlertSurveyOtherFollowup,
@@ -507,7 +517,7 @@ async function handleIncomingMessage(client, device, latestSession, latestEvent,
     }
 
     // Only send non-attending confirmation for stillness alerts
-    // Non-attending for duration are handled in its handlers
+    // Non-attending confirmation for duration are handled in its handlers due to survey being sent to multiple responders before setting attending responder
     if (latestSession.attendingResponderNumber && latestSession.attendingResponderNumber !== responderPhoneNumber && isStillnessEvent(eventType)) {
       await handleNonAttendingConfirmation(client, device, latestSession, responderPhoneNumber, pgClient)
       return
@@ -571,19 +581,19 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
       throw new Error(`No active session found for device: ${device.deviceId}`)
     }
 
+    // get the latest respondable event in the session for the responderPhoneNumber
+    // respondable events are the events that the server expects a response too (exluding events like invalid response etc.)
+    const latestEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, responderPhoneNumber, pgClient)
+    if (!latestEvent) {
+      throw new Error(`No respondable event found for session: ${latestSession.sessionId}`)
+    }
+
     // if the message is received for a session that is already completed (after filling out survey)
     // default to sending the no response expected
     if (latestSession.sessionStatus === SESSION_STATUS.COMPLETED) {
       await handleNoResponseExpected(client, device, responderPhoneNumber)
       await db_new.commitTransaction(pgClient)
       return
-    }
-
-    // get the latest respondable event in the session for the responderPhoneNumber
-    // respondable events are the events that the server expects a response too (exluding events like invalid response etc.)
-    const latestEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, responderPhoneNumber, pgClient)
-    if (!latestEvent) {
-      throw new Error(`No respondable event found for session: ${latestSession.sessionId}`)
     }
 
     await handleIncomingMessage(client, device, latestSession, latestEvent, responderPhoneNumber, message, pgClient)
