@@ -3,7 +3,7 @@ const https = require('https')
 const helpers = require('./helpers')
 const vitals = require('../vitals')
 
-const checkIntervalinSeconds = helpers.getEnvVar('CHECK_DEVICE_DISCONNECTION_INTERVAL')
+const checkDisconnectionIntervalinSeconds = helpers.getEnvVar('CHECK_DEVICE_DISCONNECTION_INTERVAL')
 
 module.exports = app => {
   let server
@@ -26,11 +26,11 @@ module.exports = app => {
     // periodically check device for diconnection
     setInterval(async () => {
       try {
-        await vitals.checkDeviceConnectionVitals()
+        await vitals.checkDeviceDisconnectionVitals()
       } catch (error) {
         helpers.logError(`SERVER: Error checking device connection vitals: ${error.message}`)
       }
-    }, checkIntervalinSeconds * 1000)
+    }, checkDisconnectionIntervalinSeconds * 1000)
   }
 
   return server

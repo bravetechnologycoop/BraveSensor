@@ -27,14 +27,9 @@ const disconnectionReminderThreshold = helpers.getEnvVar('DISCONNECTION_REMINDER
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-async function handleDeviceConnectionVitals(device, client, currentDBTime, pgClient) {
+async function handleDeviceDisconnectionVitals(device, client, currentDBTime, pgClient) {
   if (!device || !client || !currentDBTime || !pgClient) {
     throw new Error('Missing required parameters')
-  }
-
-  if (!client.vitalsPhoneNumbers || client.vitalsPhoneNumbers.length === 0) {
-    helpers.log(`No vitals phone numbers configured for client ${client.clientId}, skipping notifications`)
-    return
   }
 
   try {
@@ -46,40 +41,45 @@ async function handleDeviceConnectionVitals(device, client, currentDBTime, pgCli
     const timeSinceLastVital = helpers.differenceInSeconds(currentDBTime, latestVital.createdAt)
     const timeSinceLastDoorContact = helpers.differenceInSeconds(currentDBTime, latestVital.doorLastSeenAt)
 
+    // based on the last seen vital and door contact times, determine disconnection
     const deviceDisconnected = timeSinceLastVital > deviceDisconnectionThreshold
     const doorDisconnected = timeSinceLastDoorContact > doorDisconnectionThreshold
-    const fullyConnected = !deviceDisconnected && !doorDisconnected
 
     const latestConnectionNotification = await db_new.getLatestConnectionNotification(device.deviceId, pgClient)
+
+    // check if the latest notification was for the same type of disconnection
+    const isDeviceNotification = latestConnectionNotification && latestConnectionNotification.notificationType.includes('DEVICE_DISCONNECTED')
+    const isDoorNotification = latestConnectionNotification && latestConnectionNotification.notificationType.includes('DOOR_DISCONNECTED')
+
+    // determine if this is an initial alert based on notification type
+    const isInitialDeviceAlert = deviceDisconnected && !isDeviceNotification
+    const isInitialDoorAlert = doorDisconnected && !isDoorNotification && !deviceDisconnected
+
+    // check for reminder
+    const timeSinceNotification = latestConnectionNotification
+      ? helpers.differenceInSeconds(currentDBTime, latestConnectionNotification.notificationSentAt)
+      : null
+    const isReminderDue = latestConnectionNotification && timeSinceNotification > disconnectionReminderThreshold
 
     let messageKey = null
     let notificationType = null
 
-    if (deviceDisconnected || doorDisconnected) {
-      const isInitialAlert = !latestConnectionNotification
-      const isReminderDue =
-        latestConnectionNotification &&
-        helpers.differenceInSeconds(currentDBTime, latestConnectionNotification.notificationSentAt) > disconnectionReminderThreshold
-
-      if (isInitialAlert || isReminderDue) {
-        // if device is disconnected OR both device and door are disconnected, then send device messages
-        // if only door is disconnected, then send door messages
-        if (deviceDisconnected) {
-          messageKey = isInitialAlert ? 'deviceDisconnectedInitial' : 'deviceDisconnectedReminder'
-          notificationType = isInitialAlert ? NOTIFICATION_TYPE.DEVICE_DISCONNECTED : NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER
-        } else {
-          messageKey = isInitialAlert ? 'doorDisconnectedInitial' : 'doorDisconnectedReminder'
-          notificationType = isInitialAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
-        }
-      }
-    } else if (fullyConnected && latestConnectionNotification && latestConnectionNotification.notificationType.includes('DEVICE_DISCONNECTED')) {
-      messageKey = 'deviceReconnected'
-      notificationType = 'DEVICE_RECONNECTED'
+    if (deviceDisconnected && (isInitialDeviceAlert || isReminderDue)) {
+      messageKey = isInitialDeviceAlert ? 'deviceDisconnectedInitial' : 'deviceDisconnectedReminder'
+      notificationType = isInitialDeviceAlert ? NOTIFICATION_TYPE.DEVICE_DISCONNECTED : NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER
+    } else if (doorDisconnected && (isInitialDoorAlert || isReminderDue)) {
+      messageKey = isInitialDoorAlert ? 'doorDisconnectedInitial' : 'doorDisconnectedReminder'
+      notificationType = isInitialDoorAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
     }
 
     if (notificationType && messageKey) {
       const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-      const phoneNumbers = [...new Set([...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers])]
+      const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
+
+      if (phoneNumbers.length === 0) {
+        throw new Error(`No phone numbers configured for client ${client.clientId}, skipping notifications`)
+      }
+
       await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
 
       helpers.logSentry(`Sent ${notificationType} notification for ${device.displayName}`)
@@ -90,7 +90,7 @@ async function handleDeviceConnectionVitals(device, client, currentDBTime, pgCli
   }
 }
 
-async function checkDeviceConnectionVitals() {
+async function checkDeviceDisconnectionVitals() {
   let pgClient
 
   try {
@@ -110,7 +110,7 @@ async function checkDeviceConnectionVitals() {
       try {
         const client = await db_new.getClientWithDeviceId(device.deviceId, pgClient)
         if (client && client.devicesSendingVitals && device.isSendingVitals) {
-          await handleDeviceConnectionVitals(device, client, currentDBTime, pgClient)
+          await handleDeviceDisconnectionVitals(device, client, currentDBTime, pgClient)
         }
       } catch (deviceError) {
         helpers.logError(`Error processing device ${device.deviceId}: ${deviceError.message}`)
@@ -127,22 +127,23 @@ async function checkDeviceConnectionVitals() {
         await db_new.rollbackTransaction(pgClient)
       } catch (rollbackError) {
         helpers.logError(
-          `checkDeviceConnections: Error rolling back transaction: ${rollbackError.message}. Rollback attempted because of error: ${error.message} `,
+          `checkDeviceDisconnectionVitals: Error rolling back transaction: ${rollbackError.message}. Rollback attempted because of error: ${error.message} `,
         )
         return
       }
     }
-    helpers.logError(`checkDeviceConnections: ${error.message}`)
+    helpers.logError(`checkDeviceDisconnectionVitals: ${error.message}`)
   }
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function handleVitalNotifications(
-  doorLowBatteryStatus,
-  doorTamperedStatus,
+  currDoorLastSeenAt,
+  currDoorLowBattery,
+  currDoorTampered,
   consecutiveOpenDoorHeartbeatCount,
-  latestVital,
+  previousVital,
   client,
   device,
   currentDBTime,
@@ -152,21 +153,44 @@ async function handleVitalNotifications(
     throw new Error('Missing required parameters')
   }
 
-  if (!client.vitalsPhoneNumbers || client.vitalsPhoneNumbers.length === 0) {
-    helpers.log(`No vitals phone numbers configured for client ${client.clientId}, skipping notifications`)
-    return
-  }
-
   try {
     const notifications = []
 
-    // 1. Door Low Battery
-    if (doorLowBatteryStatus) {
+    // 1. Device/Door Reconnection Notifications
+    const latestConnectionNotification = await db_new.getLatestConnectionNotification(device.deviceId, pgClient)
+    if (latestConnectionNotification) {
+      const deviceWasDisconnected = latestConnectionNotification.notificationType.includes('DEVICE_DISCONNECTED')
+      const doorWasDisconnected = latestConnectionNotification.notificationType.includes('DOOR_DISCONNECTED')
+
+      // If we receive a vital, it means device has reconnected
+      if (deviceWasDisconnected) {
+        notifications.push({
+          messageKey: 'deviceReconnected',
+          notificationType: NOTIFICATION_TYPE.DEVICE_RECONNECTED,
+        })
+      }
+      // Check door reconnection only if device is connected
+      else if (doorWasDisconnected) {
+        // For the current heartbeat
+        const timeSinceDoorContact = helpers.differenceInSeconds(currentDBTime, currDoorLastSeenAt)
+        if (timeSinceDoorContact < doorDisconnectionThreshold) {
+          notifications.push({
+            messageKey: 'doorReconnected',
+            notificationType: NOTIFICATION_TYPE.DOOR_RECONNECTED,
+          })
+        }
+      }
+    }
+
+    // 2. Door Low Battery Notifications
+    if (currDoorLowBattery) {
       const lastDoorLowBatteryNotification = await db_new.getLatestNotificationOfType(device.deviceId, NOTIFICATION_TYPE.DOOR_LOW_BATTERY, pgClient)
-      if (
+
+      const shouldSendBatteryNotification =
         !lastDoorLowBatteryNotification ||
         (doorLowBatteryTimeout && currentDBTime - lastDoorLowBatteryNotification.notificationSentAt >= doorLowBatteryTimeout * 1000)
-      ) {
+
+      if (shouldSendBatteryNotification) {
         notifications.push({
           messageKey: 'doorLowBattery',
           notificationType: NOTIFICATION_TYPE.DOOR_LOW_BATTERY,
@@ -174,30 +198,36 @@ async function handleVitalNotifications(
       }
     }
 
-    // 2. Door Tampered
-    if (latestVital && latestVital.doorTampered !== doorTamperedStatus) {
+    // 3. Door Tampered Status Change Notifications
+    if (previousVital && previousVital.doorTampered !== currDoorTampered) {
       notifications.push({
         messageKey: 'doorTampered',
         notificationType: NOTIFICATION_TYPE.DOOR_TAMPERED,
       })
     }
 
-    // 3. Consecutive Open Door
-    if (
+    // 4. Door Inactivity Notifications
+    const shouldSendInactivityNotification =
       consecutiveOpenDoorHeartbeatCount >= consecutiveOpenDoorHeartbeatThreshold &&
       (consecutiveOpenDoorHeartbeatCount - consecutiveOpenDoorHeartbeatThreshold) % consecutiveOpenDoorFollowUp === 0
-    ) {
+
+    if (shouldSendInactivityNotification) {
       notifications.push({
         messageKey: 'doorInactivity',
         notificationType: NOTIFICATION_TYPE.DOOR_INACTIVITY,
       })
     }
 
+    // Send all accumulated notifications
     for (const notification of notifications) {
       const textMessage = helpers.translateMessageKeyToMessage(notification.messageKey, { client, device })
-      const phoneNumbers = [...new Set([...client.vitalsPhoneNumbers, ...client.responderPhoneNumbers])]
-      await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
+      const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
 
+      if (phoneNumbers.length === 0) {
+        throw new Error(`No phone numbers configured for client ${client.clientId}, skipping notifications`)
+      }
+
+      await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
       helpers.logSentry(`Sent ${notification.notificationType} notification for ${device.displayName}`)
       await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
     }
@@ -229,37 +259,39 @@ async function processHeartbeat(eventData, client, device) {
     }
 
     const currentDBTime = await db_new.getCurrentTime()
-    const latestVital = await db_new.getLatestVitalWithDeviceId(device.deviceId, pgClient)
+    const previousVital = await db_new.getLatestVitalWithDeviceId(device.deviceId, pgClient)
 
-    let doorLastSeenAt
-    let doorTamperedStatus
-    let doorLowBatteryStatus
+    let currDoorLastSeenAt
+    let currDoorTampered
+    let currDoorLowBattery
 
-    // Handle -1 values (indicating no change from previous state)
+    // If the values are -1 (it means it is a device startup heartbeat)
     if (doorLastMessage.toString() === '-1' || doorTampered.toString() === '-1' || doorLowBattery.toString() === '-1') {
-      if (!latestVital) {
+      if (!previousVital) {
         // new device vital
-        doorLastSeenAt = currentDBTime
-        doorTamperedStatus = false
-        doorLowBatteryStatus = false
+        currDoorLastSeenAt = currentDBTime
+        currDoorLowBattery = false
+        currDoorTampered = false
       } else {
         // existing device vital
-        doorLastSeenAt = latestVital.doorLastSeenAt
-        doorTamperedStatus = latestVital.doorTampered
-        doorLowBatteryStatus = latestVital.doorLowBattery
+        // just use the last vital info as that is the best we know
+        currDoorLastSeenAt = previousVital.doorLastSeenAt
+        currDoorLowBattery = previousVital.doorLowBattery
+        currDoorTampered = previousVital.doorTampered
       }
     } else {
-      doorLastSeenAt = DateTime.fromJSDate(currentDBTime).minus({ milliseconds: doorLastMessage }).toJSDate()
-      doorTamperedStatus = doorTampered
-      doorLowBatteryStatus = doorLowBattery
+      currDoorLastSeenAt = DateTime.fromJSDate(currentDBTime).minus({ milliseconds: doorLastMessage }).toJSDate()
+      currDoorLowBattery = doorLowBattery
+      currDoorTampered = doorTampered
     }
 
     // Handle vital notifications
     await handleVitalNotifications(
-      doorLowBatteryStatus,
-      doorTamperedStatus,
+      currDoorLastSeenAt,
+      currDoorLowBattery,
+      currDoorTampered,
       consecutiveOpenDoorHeartbeatCount,
-      latestVital,
+      previousVital,
       client,
       device,
       currentDBTime,
@@ -270,9 +302,9 @@ async function processHeartbeat(eventData, client, device) {
     await db_new.createVital(
       device.deviceId,
       deviceLastResetReason,
-      doorLastSeenAt,
-      doorLowBatteryStatus,
-      doorTamperedStatus,
+      currDoorLastSeenAt,
+      currDoorLowBattery,
+      currDoorTampered,
       doorMissedCount,
       consecutiveOpenDoorHeartbeatCount,
       pgClient,
@@ -382,7 +414,7 @@ async function handleHeartbeat(request, response) {
 }
 
 module.exports = {
-  checkDeviceConnectionVitals,
+  checkDeviceDisconnectionVitals,
   validateHeartbeat,
   handleHeartbeat,
 }
