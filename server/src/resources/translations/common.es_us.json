@@ -48,7 +48,7 @@
   "completedSession": "Respuesta no válida - no se espera respuesta.",
   "invalidResponseTryAgain": "Respuesta no válida, inténtalo de nuevo.",
   "nonAttendingResponderConfirmation": "Otro respondedor está atendiendo esta alerta. No es necesario que respondas a este mensaje.",
-  "braveContactInfo": "Puede comunicarse con nosotros en:\nTeléfono: +18338332100\nCorreo electrónico: clientsupport@brave.coop\n¡Gracias!",
+  "reportIssue": "Puede comunicarse con nosotros en:\nTeléfono: +18338332100\nCorreo electrónico: clientsupport@brave.coop\n¡Gracias!",
   "thankYou": "Gracias, el monitoreo se pausará hasta la siguiente entrada.",
  
   "Overdose Event": "Evento de sobredosis",

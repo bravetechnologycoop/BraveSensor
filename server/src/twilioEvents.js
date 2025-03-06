@@ -168,7 +168,7 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
         messageKey = 'stillnessAlertSurveyOtherFollowup'
         break
       case 'Report technical issue':
-        messageKey = 'braveContactInfo'
+        messageKey = 'reportIssue'
         break
       default:
         await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
@@ -211,7 +211,7 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, true, latestSession.surveySent, pgClient)
     }
     // else the door was opened after the survey was sent
-    else if ((latestSession.doorOpened && messageKey === 'thankYou') || messageKey === 'braveContactInfo') {
+    else if ((latestSession.doorOpened && messageKey === 'thankYou') || messageKey === 'reportIssue') {
       await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, latestSession.doorOpened, latestSession.surveySent, pgClient)
     }
@@ -244,7 +244,7 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, latestSessio
         messageKey = 'stillnessAlertSurveyOtherFollowup'
         break
       case 'Report technical issue':
-        messageKey = 'braveContactInfo'
+        messageKey = 'reportIssue'
         break
       default:
         await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
@@ -260,11 +260,11 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, latestSessio
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
 
     // update the session
-    // end the session (session status --> COMPLETED) only if thankYou or braveContactInfo
+    // end the session (session status --> COMPLETED) only if thankYou or reportIssue
     await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
     await db_new.updateSessionResponseTime(latestSession.sessionId, pgClient)
     await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
-    if (messageKey === 'thankYou' || messageKey === 'braveContactInfo') {
+    if (messageKey === 'thankYou' || messageKey === 'reportIssue') {
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, latestSession.doorOpened, latestSession.surveySent, pgClient)
     }
   } catch (error) {
@@ -408,7 +408,7 @@ async function handleDurationAlertSurveyDoorOpened(client, device, latestSession
         messageKey = 'durationAlertSurveyOtherFollowup'
         break
       case 'Report technical issue':
-        messageKey = 'braveContactInfo'
+        messageKey = 'reportIssue'
         break
       default:
         await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
@@ -424,11 +424,11 @@ async function handleDurationAlertSurveyDoorOpened(client, device, latestSession
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
 
     // update the session
-    // end the session (session status --> COMPLETED) only if thankYou or braveContactInfo
+    // end the session (session status --> COMPLETED) only if thankYou or reportIssue
     await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
     await db_new.updateSessionResponseTime(latestSession.sessionId, pgClient)
     await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
-    if (messageKey === 'thankYou' || messageKey === 'braveContactInfo') {
+    if (messageKey === 'thankYou' || messageKey === 'reportIssue') {
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, latestSession.doorOpened, latestSession.surveySent, pgClient)
     }
   } catch (error) {
