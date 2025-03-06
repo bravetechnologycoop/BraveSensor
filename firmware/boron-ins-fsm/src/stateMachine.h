@@ -24,15 +24,16 @@
 #define DURATION_ALERT_TIME                 1200000     // 20 mins          
 #define STILLNESS_ALERT_TIME                300000      // 5 mins
 
-// Heartbeat message intervals and thresholds
-#define SM_HEARTBEAT_INTERVAL               120000      // 11 mins
-#define SM_HEARTBEAT_DID_MISS_QUEUE_SIZE    3           // Track last 3 heartbeats
-#define SM_HEARTBEAT_DID_MISS_THRESHOLD     1           // Threshold for missed heartbeats
-
 // Minimize time between restart and first Heartbeat message
 #define DEVICE_RESET_THRESHOLD              540000      // 9 mins
 
-// Restrict heartbeat to being published once from 3 IM Door Sensor broadcasts
+// Heartbeat message intervals and thresholds
+#define SM_HEARTBEAT_INTERVAL               660000      // 11 mins
+#define SM_HEARTBEAT_DID_MISS_QUEUE_SIZE    3           // Track last 3 heartbeats
+#define SM_HEARTBEAT_DID_MISS_THRESHOLD     1           // Threshold for missed heartbeats
+
+// The IM door sensor always broadcasts 3 of the same messages
+// This delay restrict SM heartbeat to being published once from 3 IM Door Sensor broadcasts
 #define HEARTBEAT_PUBLISH_DELAY             1000        // 1 sec
 
 // ***************************** Global variables *****************************

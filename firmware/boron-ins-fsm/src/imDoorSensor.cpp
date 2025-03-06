@@ -70,6 +70,11 @@ doorData checkIM() {
         doorTamperedFlag = (currentDoorData.doorStatus & 0b0001) != 0;
         doorLowBatteryFlag = (currentDoorData.doorStatus & 0b0100) != 0;
 
+        // Check for heartbeat received
+        if ((currentDoorData.doorStatus & (1 << 3)) != 0) {
+            doorHeartbeatReceived = millis();
+        }
+
         // Handle door close event
         if ((currentDoorData.doorStatus & 0b0010) == 0) {
              // Reset timer on receiving a door close message or transition from open to closed + heartbeat
@@ -91,16 +96,12 @@ doorData checkIM() {
             if (isDoorOpen(currentDoorData.doorStatus)) {
                 consecutiveOpenDoorHeartbeatCount++;
             }
+
             doorMessageReceivedFlag = true;
         }
 
         // Record the time an IM Door Sensor message was received
         doorLastMessage = millis();
-
-        // Check for heartbeat received
-        if ((currentDoorData.doorStatus & (1 << 3)) != 0) {
-            doorHeartbeatReceived = millis();
-        }
 
         // Handle initial door data
         if (initialDoorDataFlag) {
@@ -193,9 +194,9 @@ void threadBLEScanner(void *param) {
             scanThreadDoorData.doorStatus = doorAdvertisingData[5];
             scanThreadDoorData.controlByte = doorAdvertisingData[6];
             
-            // If the 4th bit of the door status byte is set (indicating a specific condition, such as a door event) 
+            // If the 4th bit of the door status byte is set (indicating a door heartbeat every 10 minutes)
             // and debugging is enabled, publish a debug message with the BLE advertising data.
-            if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0 && stateMachineDebugFlag) {
+            if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0) {
                 char debugMessage[622] = "";
                 for (int i = 0; i < BLE_MAX_ADV_DATA_LEN; i++) {
                     snprintf(debugMessage + strlen(debugMessage), sizeof(debugMessage), "%02X ", doorAdvertisingData[i]);

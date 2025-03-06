@@ -565,11 +565,13 @@ void getHeartbeat() {
 
     // Publish a heartbeat message if at least one of these condition meet:
     // 1. This is the first heartbeat since startup.
-    // 2. The heartbeat hasn't been published in the last SM_HEARTBEAT_INTERVAL.
-    // 3. A door message was received and enough time has passed since the last "door" heartbeat.
+    // 2. A door message was received and enough time has passed since the last "door" heartbeat.
+    //    The delay (HEARTBEAT_PUBLISH_DELAY) is to restrict the door heartbeat publish to 1 instead of 3 because the door broadcasts 3 messages. 
+    //    The doorMessageReceivedFlag is set to true when any IM Door Sensor message is received, but only after a certain threshold (see checkIM function)
+    // 3. The heartbeat hasn't been published in the last SM_HEARTBEAT_INTERVAL.
     if (lastHeartbeatPublish == 0 || 
-        (calculateTimeSince(lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) || 
-        (doorMessageReceivedFlag && (calculateTimeSince(doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY))) {
+        (doorMessageReceivedFlag && (calculateTimeSince(doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY)) ||
+        (calculateTimeSince(lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL)) {
             
         // Prepare the heartbeat message
         char heartbeatMessage[PARTICLE_MAX_MESSAGE_LENGTH] = {0};
