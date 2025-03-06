@@ -822,7 +822,7 @@ async function getDevices(pgClient) {
       `
       SELECT d.*
       FROM devices_new AS d
-      LEFT JOIN clients_new AS 
+      LEFT JOIN clients_new AS c
       ON d.client_id = c.client_id
       ORDER BY c.display_name, d.display_name
       `,
