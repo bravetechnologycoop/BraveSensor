@@ -21,15 +21,15 @@ const TWILIO_TOKEN = helpers.getEnvVar('TWILIO_TOKEN')
 // ----------------------------------------------------------------------------------------------------------------------------
 // Helper Functions
 
-async function handleCompletedSessionResponse(client, device, responderPhoneNumber) {
+async function handleNoResponseExpected(client, device, responderPhoneNumber) {
   try {
-    const messageKey = 'completedSession'
+    const messageKey = 'noResponseExpected'
     const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
 
     // do not log this event
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
   } catch (error) {
-    throw new Error(`handleCompletedSessionResponse: Error sending invalid response: ${error.message}`)
+    throw new Error(`handleNoResponseExpected: Error sending invalid response: ${error.message}`)
   }
 }
 
@@ -572,9 +572,9 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
     }
 
     // if the message is received for a session that is already completed (after filling out survey)
-    // default to sending the completed session response
+    // default to sending the no response expected
     if (latestSession.sessionStatus === SESSION_STATUS.COMPLETED) {
-      await handleCompletedSessionResponse(client, device, responderPhoneNumber)
+      await handleNoResponseExpected(client, device, responderPhoneNumber)
       await db_new.commitTransaction(pgClient)
       return
     }

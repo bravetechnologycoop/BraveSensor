@@ -45,7 +45,7 @@
   "stillnessAlertSurveyOccupantOkayFollowup": "Continuaremos monitoreando esta ubicación. Responda \"1\" para detener el monitoreo.",
   "stillnessAlertSurveyOccupantOkayEnd": "Ya no recibirás alertas hasta la próxima entrada. ¡Gracias!",
 
-  "completedSession": "Respuesta no válida - no se espera respuesta.",
+  "noResponseExpected": "Respuesta no válida - no se espera respuesta.",
   "invalidResponseTryAgain": "Respuesta no válida, inténtalo de nuevo.",
   "nonAttendingResponderConfirmation": "Otro respondedor está atendiendo esta alerta. No es necesario que respondas a este mensaje.",
   "reportIssue": "Puede comunicarse con nosotros en:\nTeléfono: +18338332100\nCorreo electrónico: clientsupport@brave.coop\n¡Gracias!",

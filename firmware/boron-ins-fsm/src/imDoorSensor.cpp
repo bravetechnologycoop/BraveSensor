@@ -196,7 +196,7 @@ void threadBLEScanner(void *param) {
             
             // If the 4th bit of the door status byte is set (indicating a door heartbeat every 10 minutes)
             // and debugging is enabled, publish a debug message with the BLE advertising data.
-            if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0) {
+            if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0 && stateMachineDebugFlag) {
                 char debugMessage[622] = "";
                 for (int i = 0; i < BLE_MAX_ADV_DATA_LEN; i++) {
                     snprintf(debugMessage + strlen(debugMessage), sizeof(debugMessage), "%02X ", doorAdvertisingData[i]);
