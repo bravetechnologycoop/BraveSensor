@@ -226,6 +226,38 @@ async function beginTransaction() {
   }
 }
 
+// Checks the database connection, if not able to connect will throw an error
+async function getCurrentTimeForHealthCheck() {
+  if (helpers.isDbLogging()) {
+    helpers.log(`STARTED: getCurrentTimeForHealthCheck`)
+  }
+
+  let pgClient = null
+
+  try {
+    pgClient = await pool.connect()
+    if (helpers.isDbLogging()) {
+      helpers.log(`CONNECTED: getCurrentTimeForHealthCheck`)
+    }
+
+    const results = await pgClient.query(`SELECT NOW()`)
+    return results.rows[0].now
+  } catch (err) {
+    helpers.logError(`Error running the getCurrentTimeForHealthCheck query: ${err}`)
+    throw err
+  } finally {
+    try {
+      pgClient.release()
+    } catch (err) {
+      helpers.logError(`getCurrentTimeForHealthCheck: Error releasing client: ${err}`)
+    }
+
+    if (helpers.isDbLogging()) {
+      helpers.log(`COMPLETED: getCurrentTimeForHealthCheck`)
+    }
+  }
+}
+
 async function getCurrentTime(pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -566,6 +598,38 @@ async function clearClientWithClientId(clientId, pgClient) {
   }
 }
 
+async function getActiveClients(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getActiveClients',
+      `
+      SELECT DISTINCT c.*
+      FROM clients_new AS c
+      INNER JOIN (
+        SELECT DISTINCT client_id 
+        FROM devices_new
+        WHERE is_sending_alerts AND is_sending_vitals
+      ) AS d
+      ON c.client_id = d.client_id
+      WHERE c.is_sending_alerts AND c.is_sending_vitals
+      ORDER BY c.display_name;
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(r => createClientFromRow(r))
+  } catch (err) {
+    helpers.logError(`Error running the getActiveClients query: ${err.toString()}`)
+    return []
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function createClientExtension(clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization, pgClient) {
@@ -758,7 +822,8 @@ async function getDevices(pgClient) {
       `
       SELECT d.*
       FROM devices_new AS d
-      LEFT JOIN clients_new AS c ON d.client_id = c.client_id
+      LEFT JOIN clients_new AS 
+      ON d.client_id = c.client_id
       ORDER BY c.display_name, d.display_name
       `,
       [],
@@ -784,7 +849,8 @@ async function getDevicesForClient(clientId, pgClient) {
       `
       SELECT d.*
       FROM devices_new AS d
-      LEFT JOIN clients_new AS c ON d.client_id = c.client_id
+      LEFT JOIN clients_new AS c 
+      ON d.client_id = c.client_id
       WHERE d.client_id = $1
       ORDER BY c.display_name, d.display_name
       `,
@@ -1504,6 +1570,7 @@ module.exports = {
   commitTransaction,
   rollbackTransaction,
 
+  getCurrentTimeForHealthCheck,
   getCurrentTime,
   clearAllTables,
 
@@ -1515,6 +1582,7 @@ module.exports = {
   getClientWithDeviceId,
   getClientsWithResponderPhoneNumber,
   clearClientWithClientId,
+  getActiveClients,
 
   updateClientExtension,
   getClientExtensionWithClientId,

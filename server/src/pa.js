@@ -11,7 +11,7 @@ const Validator = require('express-validator')
 const helpers = require('./utils/helpers')
 const twilioHelpers = require('./utils/twilioHelpers')
 const googleHelpers = require('./utils/googleHelpers')
-const db = require('./db/db')
+const db_new = require('./db/db_new')
 
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
 const paPasswords = [helpers.getEnvVar('PA_PASSWORD_PRIMARY'), helpers.getEnvVar('PA_PASSWORD_SECONDARY')]
@@ -48,6 +48,7 @@ async function getGooglePayload(req, res) {
   }
 }
 
+// TODO: Update these field names in the PA acc to db schema
 const validateCreateSensorLocation = Validator.body([
   'braveKey',
   'password',
@@ -69,18 +70,33 @@ async function handleCreateSensorLocation(req, res) {
     const braveAPIKey = req.body.braveKey
     const password = req.body.password
 
-    const locationID = req.body.locationID
-    const displayName = req.body.displayName
-    const serialNumber = req.body.particleDeviceID
-    const phoneNumber = req.body.twilioNumber
-    const clientID = req.body.clientID
+    const locationId = req.body.locationID
+    const deviceDisplayName = req.body.displayName
+    const particleDeviceID = req.body.particleDeviceID
+    const deviceTwilioNumber = req.body.twilioNumber
+    const clientId = req.body.clientID
     const deviceType = req.body.deviceType
+
+    // default values for new devices created using dashboard
+    const isDisplayed = true
+    const isSendingAlerts = false
+    const isSendingVitals = false
 
     if (paApiKeys.includes(braveAPIKey) && paPasswords.includes(password)) {
       try {
-        const results = await db.createLocationFromBrowserForm(locationID, displayName, serialNumber, phoneNumber, clientID, deviceType)
+        const newDevice = await db_new.createDevice(
+          locationId,
+          deviceDisplayName,
+          clientId,
+          particleDeviceID,
+          deviceType,
+          deviceTwilioNumber,
+          isDisplayed,
+          isSendingAlerts,
+          isSendingVitals,
+        )
 
-        if (results === null) {
+        if (!newDevice) {
           res.status(400).send({ message: 'Error in database insert' })
         } else {
           res.status(200).send({ message: 'success' })
@@ -109,10 +125,10 @@ async function handleGetSensorClients(req, res) {
 
     if (paApiKeys.includes(braveAPIKey)) {
       try {
-        const clients = await db.getClients()
+        const clients = await db_new.getClients()
 
         const processedClients = clients.map(client => {
-          return { name: client.displayName, id: client.id }
+          return { name: client.displayName, id: client.clientId }
         })
 
         res.status(200).send({ message: 'success', clients: processedClients })
@@ -137,21 +153,26 @@ async function handleGetClientDevices(req, res) {
 
   if (validationErrors.isEmpty()) {
     const braveAPIKey = req.body.braveKey
-    const displayName = req.body.displayName
+    const clientDisplayName = req.body.displayName
 
     if (paApiKeys.includes(braveAPIKey)) {
       try {
-        const clientDevices = await db.getClientDevices(displayName)
+        const client = await db_new.getClientWithDisplayName(clientDisplayName)
+        const devicesForClient = await db_new.getDevicesForClient(client.clientId)
 
-        const processedClients = clientDevices.map(clientDevice => {
+        const processedDevices = devicesForClient.map(device => {
           return {
-            locationID: clientDevice.locationid,
-            displayName: clientDevice.display_name,
-            deviceID: clientDevice.serial_number,
+            locationID: device.locationID,
+            displayName: device.displayName,
+            deviceID: device.particleDeviceID,
           }
         })
 
-        res.status(200).send({ message: 'success', clients: processedClients })
+        // ** NOTE: ERROR IN PA **
+        // In PA this function is written incorrectly and expects the field clients
+        // even thought the function fetches the devices. Please fix PA (getClientDevices in DatabaseFunctions.js)
+        // If we return the devices, it should still work as it puts the objects in a seperate array
+        res.status(200).send({ message: 'success', clients: processedDevices })
       } catch (err) {
         helpers.logError(err)
         res.status(500).send({ message: 'Error in Database Access' })
@@ -194,65 +215,83 @@ async function handleSensorPhoneNumber(req, res) {
 }
 
 const validateMessageClients = Validator.body(['twilioMessage', 'googleIdToken']).exists()
+function createTraceObject(phoneNumber, client) {
+  return {
+    to: phoneNumber,
+    from: client.vitalsTwilioNumber,
+    clientId: client.clientId,
+    clientDisplayName: client.displayName,
+  }
+}
+
+async function processClientMessages(client, twilioMessage) {
+  const uniquePhoneNumbers = [
+    ...new Set(
+      [...(client.responderPhoneNumbers || []), ...(client.fallbackPhoneNumbers || []), ...(client.vitalsPhoneNumbers || [])].filter(
+        number => number && number.trim(),
+      ),
+    ),
+  ]
+
+  if (uniquePhoneNumbers.length === 0) {
+    helpers.log(`processClientMessages: No valid phone numbers found for client: ${client.displayName}`)
+    return { successfullyMessaged: [], failedToMessage: [] }
+  }
+
+  const { successfulResponses, failedNumbers } = await twilioHelpers.sendMessageToPhoneNumbers(
+    client.vitalsTwilioNumber,
+    uniquePhoneNumbers,
+    twilioMessage,
+  )
+
+  return {
+    successfullyMessaged: successfulResponses.map(({ phoneNumber }) => createTraceObject(phoneNumber, client)),
+    failedToMessage: failedNumbers.map(phoneNumber => createTraceObject(phoneNumber, client)),
+  }
+}
 
 async function handleMessageClients(req, res) {
   const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
   try {
-    if (validationErrors.isEmpty()) {
-      const clients = await db.getActiveSensorClients()
-      const twilioMessage = req.body.twilioMessage
-      const responseObject = {
-        status: 'success',
-        twilioMessage,
-        successfullyMessaged: [],
-        failedToMessage: [],
-      }
-
-      for (const client of clients) {
-        // create array of all phone numbers for this client
-        const phoneNumbers = []
-        phoneNumbers.push(...client.responderPhoneNumbers, ...client.fallbackPhoneNumbers, ...client.heartbeatPhoneNumbers)
-
-        // create set of all unique phone numbers for this client
-        const uniquePhoneNumbers = new Set()
-        phoneNumbers.forEach(phoneNumber => {
-          uniquePhoneNumbers.add(phoneNumber)
-        })
-
-        // for each unique phone number of this client
-        for (const phoneNumber of uniquePhoneNumbers) {
-          // attempt to send Twilio SMS message from client's from phone number
-          const twilioResponse = await twilioHelpers.sendTwilioMessage(phoneNumber, client.fromPhoneNumber, twilioMessage)
-
-          // Twilio trace object: information about the sent message
-          const twilioTraceObject = {
-            to: phoneNumber,
-            from: client.fromPhoneNumber,
-            clientId: client.id,
-            clientDisplayName: client.displayName,
-          }
-
-          // check if the Twilio SMS message wasn't sent successfully
-          if (twilioResponse === undefined || twilioResponse.status === undefined || twilioResponse.status !== 'queued') {
-            responseObject.failedToMessage.push(twilioTraceObject)
-
-            // log the entire Twilio trace object
-            helpers.log(`Failed to send Twilio SMS message to specific client: ${JSON.stringify(twilioTraceObject)}`)
-          } else {
-            // Twilio SMS message was sent successfully
-            responseObject.successfullyMessaged.push(twilioTraceObject)
-          }
-        }
-      }
-
-      res.status(200).json(responseObject)
-    } else {
-      res.status(401).send({ message: 'Bad request' })
+    if (!validationErrors.isEmpty()) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Bad request',
+        errors: validationErrors.array(),
+      })
     }
+
+    const twilioMessage = req.body.twilioMessage
+    const responseObject = {
+      status: 'success',
+      twilioMessage,
+      successfullyMessaged: [],
+      failedToMessage: [],
+    }
+
+    const clients = await db_new.getActiveClients()
+    if (!clients || clients.length === 0) {
+      return res.status(200).json({
+        ...responseObject,
+        message: 'No active clients found',
+      })
+    }
+
+    // Process all clients in sequence
+    for (const client of clients) {
+      const result = await processClientMessages(client, twilioMessage)
+      responseObject.successfullyMessaged.push(...result.successfullyMessaged)
+      responseObject.failedToMessage.push(...result.failedToMessage)
+    }
+
+    return res.status(200).json(responseObject)
   } catch (error) {
-    helpers.log(`Failed to send Twilio SMS message to clients: ${error.message}`)
-    res.status(500).send({ message: 'Internal server error' })
+    helpers.logError(`Failed to send Twilio SMS message to clients: ${error.message}`)
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error',
+    })
   }
 }
 
@@ -266,7 +305,7 @@ async function handleCheckDatabaseConnection(req, res) {
 
     if (paApiKeys.includes(braveAPIKey)) {
       try {
-        await db.getCurrentTimeForHealthCheck()
+        await db_new.getCurrentTimeForHealthCheck()
         res.status(200).send({ message: 'success' })
       } catch (err) {
         helpers.logError(err)

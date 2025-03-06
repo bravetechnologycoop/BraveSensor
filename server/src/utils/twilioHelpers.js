@@ -45,7 +45,7 @@ async function sendMessageToPhoneNumbers(fromNumber, toNumbers, textMessage) {
   const numbersToSend = Array.isArray(toNumbers) ? toNumbers : [toNumbers]
   if (!fromNumber || !numbersToSend || numbersToSend.length === 0) {
     helpers.log('No valid phone numbers to send message to')
-    return
+    return { successfulResponses: [], failedNumbers: [] }
   }
 
   try {
@@ -54,15 +54,32 @@ async function sendMessageToPhoneNumbers(fromNumber, toNumbers, textMessage) {
 
     const results = await Promise.allSettled(numbersToSend.map(toNumber => sendTwilioMessage(toNumber, fromNumber, textMessage)))
 
-    const successfulResponses = results.filter(result => result.status === 'fulfilled' && result.value).map(result => result.value)
+    const successfulResponses = results
+      .filter(result => {
+        if (result.status !== 'fulfilled') return false
+        if (!result.value) return false
+        if (!result.value.status) return false
+        return result.value.status === 'queued'
+      })
+      .map((result, index) => ({
+        response: result.value,
+        phoneNumber: numbersToSend[index],
+      }))
 
-    const failedNumbers = results.filter(result => result.status === 'rejected' || !result.value).map((_, index) => numbersToSend[index])
+    const failedNumbers = results
+      .filter(result => {
+        if (result.status === 'rejected') return true
+        if (!result.value) return true
+        if (!result.value.status) return true
+        return result.value.status !== 'queued'
+      })
+      .map((_, index) => numbersToSend[index])
 
     if (failedNumbers.length > 0) {
       helpers.logError(`Failed to send messages to numbers: ${failedNumbers.join(', ')}`)
     }
 
-    return successfulResponses
+    return { successfulResponses, failedNumbers }
   } catch (error) {
     throw new Error(`sendMessageToPhoneNumbers: Error sending message: ${error}`)
   }
