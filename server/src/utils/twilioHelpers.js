@@ -1,6 +1,8 @@
-// twilioHelpers.js
-//
-// Helper functions for Twilio API interactions.
+/*
+ * twilioHelpers.js
+ *
+ * Helper functions for Twilio API interactions.
+ */
 
 // Third-party dependencies
 const twilio = require('twilio')

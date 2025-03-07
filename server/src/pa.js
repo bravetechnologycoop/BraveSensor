@@ -164,7 +164,7 @@ async function handleGetClientDevices(req, res) {
           return {
             locationID: device.locationId,
             displayName: device.displayName,
-            deviceID: device.particleDeviceID,
+            deviceID: device.particleDeviceId,
           }
         })
 

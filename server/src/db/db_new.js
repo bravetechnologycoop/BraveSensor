@@ -12,7 +12,7 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  ssl: false,
+  ssl: { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -20,7 +20,7 @@ const pool = new pg.Pool({
 pg.types.setTypeParser(1114, str => str)
 
 pool.on('error', err => {
-  helpers.logError(`unexpected database error: ${err.toString()}`)
+  helpers.logError(`Unexpected database error: ${err.toString()}`)
 })
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -273,6 +273,7 @@ async function getCurrentTime(pgClient) {
     return results.rows[0].now
   } catch (err) {
     helpers.logError(`Error running the getCurrentTime query: ${err.toString()}`)
+    return null
   }
 }
 
@@ -283,7 +284,7 @@ async function clearAllTables(pgClient) {
   }
 
   try {
-    const results = await helpers.runQuery(
+    const result = await helpers.runQuery(
       'clearTables',
       `
       -- Delete from tables with foreign key dependencies first
@@ -301,9 +302,10 @@ async function clearAllTables(pgClient) {
       pgClient,
     )
 
-    return results
+    return result
   } catch (err) {
     helpers.logError(`Error running the clearAllTables query: ${err.toString()}`)
+    return null
   }
 }
 
@@ -466,6 +468,64 @@ async function getClients(pgClient) {
   }
 }
 
+async function getActiveClients(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getActiveClients',
+      `
+      SELECT DISTINCT c.*
+      FROM clients_new AS c
+      INNER JOIN (
+        SELECT DISTINCT client_id 
+        FROM devices_new
+        WHERE is_sending_alerts AND is_sending_vitals
+      ) AS d
+      ON c.client_id = d.client_id
+      WHERE c.devices_sending_alerts AND c.devices_sending_vitals
+      ORDER BY c.display_name;
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(r => createClientFromRow(r))
+  } catch (err) {
+    helpers.logError(`Error running the getActiveClients query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getClientsWithResponderPhoneNumber(responderPhoneNumber, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClientsWithResponderPhoneNumber',
+      `
+      SELECT *
+      FROM clients_new
+      WHERE $1 = ANY(responder_phone_numbers)
+      ORDER BY display_name
+      `,
+      [responderPhoneNumber],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(r => createClientFromRow(r))
+  } catch (err) {
+    helpers.logError(`Error running the getClientsWithResponderPhoneNumber query: ${err.toString()}`)
+    return []
+  }
+}
+
 async function getClientWithDisplayName(displayName, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -542,32 +602,6 @@ async function getClientWithDeviceId(deviceId, pgClient) {
   }
 }
 
-async function getClientsWithResponderPhoneNumber(responderPhoneNumber, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getClientsWithResponderPhoneNumber',
-      `
-      SELECT *
-      FROM clients_new
-      WHERE $1 = ANY(responder_phone_numbers)
-      ORDER BY display_name
-      `,
-      [responderPhoneNumber],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return []
-    }
-
-    return results.rows.map(r => createClientFromRow(r))
-  } catch (err) {
-    helpers.logError(`Error running the getClientsWithResponderPhoneNumber query: ${err.toString()}`)
-    return []
-  }
-}
-
 async function clearClientWithClientId(clientId, pgClient) {
   if (!helpers.isTestEnvironment()) {
     helpers.log('Warning - tried to clear client outside of a test environment!')
@@ -595,38 +629,6 @@ async function clearClientWithClientId(clientId, pgClient) {
   } catch (err) {
     helpers.logError(`Error running the clearClientWithClientId query: ${err.toString()}`)
     return null
-  }
-}
-
-async function getActiveClients(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getActiveClients',
-      `
-      SELECT DISTINCT c.*
-      FROM clients_new AS c
-      INNER JOIN (
-        SELECT DISTINCT client_id 
-        FROM devices_new
-        WHERE is_sending_alerts AND is_sending_vitals
-      ) AS d
-      ON c.client_id = d.client_id
-      WHERE c.devices_sending_alerts AND c.devices_sending_vitals
-      ORDER BY c.display_name;
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return []
-    }
-
-    return results.rows.map(r => createClientFromRow(r))
-  } catch (err) {
-    helpers.logError(`Error running the getActiveClients query: ${err.toString()}`)
-    return []
   }
 }
 
@@ -712,7 +714,6 @@ async function getClientExtensionWithClientId(clientId, pgClient) {
       return createClientExtensionFromRow({})
     }
 
-    // returns a client extension object
     return createClientExtensionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getClientExtensionWithClientId query: ${err.toString()}`)
@@ -1292,34 +1293,6 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null,
   }
 }
 
-async function getLatestAlertEvent(sessionId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getLatestAlertEvent',
-      `
-      SELECT *
-      FROM events_new
-      WHERE session_id = $1
-      AND event_type IN ($2, $3)
-      ORDER BY event_sent_at DESC
-      LIMIT 1
-      `,
-      [sessionId, EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    return createEventFromRow(results.rows[0])
-  } catch (err) {
-    helpers.logError(`Error running the getLatestAlertEvent query: ${err.toString()}`)
-    return null
-  }
-}
-
 async function checkEventExists(sessionId, eventType, eventTypeDetails, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -1577,12 +1550,12 @@ module.exports = {
   createClient,
   updateClient,
   getClients,
+  getActiveClients,
+  getClientsWithResponderPhoneNumber,
   getClientWithDisplayName,
   getClientWithClientId,
   getClientWithDeviceId,
-  getClientsWithResponderPhoneNumber,
   clearClientWithClientId,
-  getActiveClients,
 
   updateClientExtension,
   getClientExtensionWithClientId,
@@ -1607,7 +1580,6 @@ module.exports = {
   createEvent,
   getEventsForSession,
   getLatestRespondableEvent,
-  getLatestAlertEvent,
   checkEventExists,
 
   createVital,

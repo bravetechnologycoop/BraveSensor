@@ -1,8 +1,15 @@
+/*
+ * middlewareSetup.js
+ *
+ * Configures express server middleware like CORS, body parsing, etc.
+ */
+
+// Third-party dependencies
 const express = require('express')
 const cors = require('cors')
 const { createProxyMiddleware } = require('http-proxy-middleware')
 
-module.exports = app => {
+function setupMiddleware(app) {
   // Configure and add ClickUp API proxy
   // Ref: https://github.com/chimurai/http-proxy-middleware/blob/master/examples/express/index.js
   /* eslint-disable no-param-reassign */
@@ -24,9 +31,15 @@ module.exports = app => {
   app.use('/clickupapi', jsonPlaceholderProxy)
 
   // Body Parser Middleware
-  app.use(express.json()) // http-proxy-middleware stops working if this middleware is added before it (ref: https://github.com/chimurai/http-proxy-middleware/issues/458#issuecomment-718919866)
-  app.use(express.urlencoded({ extended: true })) // Set to true to allow the body to contain any type of value
+  // http-proxy-middleware stops working if this middleware is added before it
+  // (ref: https://github.com/chimurai/http-proxy-middleware/issues/458#issuecomment-718919866)
+  app.use(express.json())
+  app.use(express.urlencoded({ extended: true })) // Allow body to contain any type of value
 
   // CORS Middleware (Cross Origin Resource Sharing)
   app.use(cors())
+}
+
+module.exports = {
+  setupMiddleware,
 }

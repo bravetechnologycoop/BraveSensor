@@ -1,8 +1,7 @@
 /*
  * vitals.js
  *
- * Manages device heartbeats and notifications
- * Heartbeat events are recieved via particle webhook on /api/heartbeat
+ * Manages device heartbeats and notifications on /api/heartbeat
  */
 
 // Third-party dependencies

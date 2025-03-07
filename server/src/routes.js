@@ -1,3 +1,9 @@
+/*
+ * routes.js
+ *
+ * Configures Express routes for dashboard, API endpoints, and PA
+ */
+
 // In-house dependencies
 const googleHelpers = require('./utils/googleHelpers')
 const dashboard = require('./dashboard')

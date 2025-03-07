@@ -1,8 +1,10 @@
-// helpers.js
-//
-// This file is for convenience only. It should not be expanded without careful
-// consideration. We want to avoid scope creep in this library that would require
-// changes for non-library-related things.
+/*
+ * helpers.js
+ *
+ * This file is for convenience only. It should not be expanded without careful
+ * consideration. We want to avoid scope creep in this library that would require
+ * changes for non-library-related things.
+ */
 
 // Third-party dependencies
 const Sentry = require('@sentry/node')

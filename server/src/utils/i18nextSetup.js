@@ -1,3 +1,10 @@
+/*
+ * i18nextSetup.js
+ *
+ * Setup for internationalization for server
+ * See ./resources/translations for all messages and translations
+ */
+
 // Third-party dependencies
 const i18next = require('i18next')
 

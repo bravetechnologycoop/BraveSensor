@@ -1,6 +1,8 @@
-// googleHelpers.js
-//
-// Helper functions for Google OAuth2 authentication and authorization.
+/*
+ * googleHelpers.js
+ *
+ * Helper functions for Google OAuth2 authentication and authorization.
+ */
 
 // Third-party dependencies
 const { OAuth2Client } = require('google-auth-library')

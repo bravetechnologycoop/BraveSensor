@@ -7,19 +7,13 @@ const setupMiddleware = require('./src/utils/middlewareSetup')
 const setupRoutes = require('./src/utils/routeSetup')
 const setupServer = require('./src/utils/serverSetup')
 
-// Configure internationalization
 i18nextSetup.setup()
 
-// Start Express App
 const app = express()
 
-// Setup middleware
 setupMiddleware(app)
-
-// Setup routes
 setupRoutes(app)
 
-// Setup server
 const server = setupServer(app)
 
 module.exports.server = server

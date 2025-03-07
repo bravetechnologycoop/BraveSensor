@@ -1,8 +1,8 @@
 /*
  * dashboard.js - Brave Sensor Dashboard
  *
- * Handles rendering and managing dashboard pages
- * Also contains various dashboard functions configured in routes
+ * Handles rendering and managing dashboard pages.
+ * Contains various dashboard functions like creating a new client, configured in routes
  */
 
 // Third-party dependencies

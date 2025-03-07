@@ -1,15 +1,23 @@
+/*
+ * serverSetup.js
+ *
+ * Configures and initializes HTTP/HTTPS server
+ */
+
+// Third-party dependencies
 const fs = require('fs')
 const https = require('https')
+
+// In-house dependencies
 const helpers = require('./helpers')
 const vitals = require('../vitals')
 
 const checkDisconnectionIntervalinSeconds = helpers.getEnvVar('CHECK_DEVICE_DISCONNECTION_INTERVAL')
 
-module.exports = app => {
+function setupServer(app) {
   let server
 
   if (helpers.isTestEnvironment()) {
-    // local http server for testing on port 8000
     server = app.listen(8000)
   } else {
     const httpsOptions = {
@@ -19,11 +27,10 @@ module.exports = app => {
     server = https.createServer(httpsOptions, app).listen(8080)
     helpers.log('Brave Server listening on port 8080')
 
-    // setup sentry after server is running
-    // ENVIROMENT and RELEASE are automatically handled by AWS Paramter store when deploying
+    // setup sentry monitoring
     helpers.setupSentry(app, helpers.getEnvVar('SENTRY_DSN'), helpers.getEnvVar('ENVIRONMENT'), helpers.getEnvVar('RELEASE'))
 
-    // periodically check device for diconnection
+    // setup checks for device disconnection
     setInterval(async () => {
       try {
         await vitals.checkDeviceDisconnectionVitals()
@@ -34,4 +41,8 @@ module.exports = app => {
   }
 
   return server
+}
+
+module.exports = {
+  setupServer,
 }
