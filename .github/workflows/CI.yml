@@ -71,11 +71,11 @@ jobs:
 
       - name: Check environment variables
         run: |
-          echo "PG_USER=$PG_USER_TEST"
-          echo "PG_DATABASE=$PG_DATABASE_TEST"
-          echo "PG_PASSWORD=$PG_PASSWORD_TEST"
-          echo "PG_PORT=$PG_PORT_TEST"
-          echo "PG_HOST=$PG_HOST_TEST"
+          echo "PG_USER=$PG_USER"
+          echo "PG_DATABASE=$PG_DATABASE"
+          echo "PG_PASSWORD=$PG_PASSWORD"
+          echo "PG_PORT=$PG_PORT"
+          echo "PG_HOST=$PG_HOST"
 
       - name: Set up PSQL
         run: |
