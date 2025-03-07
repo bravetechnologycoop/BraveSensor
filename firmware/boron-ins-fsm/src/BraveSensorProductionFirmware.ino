@@ -14,8 +14,7 @@
 #include "statusRGB.h"
 
 // See versioning in README.md
-#define BRAVE_FIRMWARE_VERSION  6999
-
+#define BRAVE_FIRMWARE_VERSION  11000
 #define DEBUG_LEVEL             LOG_LEVEL_WARN
 
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);
@@ -43,7 +42,9 @@ void loop() {
         serviceWatchdog();
     }
 
-    // Ensure UART modules are initialized before sending commands to peripherals
+    // Officially sanctioned Mariano (at Particle support) code
+    // aka don't send commands to peripherals via UART in setup() because
+    // particleOS may not have finished initializing its UART modules.
     static bool initialized = false;
 
     // Do once

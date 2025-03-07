@@ -1,36 +1,33 @@
-#ignore files that may contain sensitive client information
+# ignore files that may contain sensitive client information
 SetupFiles/
 setupFirmware.h
 
-#ignore vscode and visual studio settings
+# ignore vscode and visual studio settings
 .vscode/
 .vs/
 
-#ignore binary files
+# ignore binary files
 target/
 
-#ignore my logs
+# ignore my logs
 *.log
 
 # ignore compiled exe files
 *.exe
 
-#ignore PlatformIO config files
+# ignore PlatformIO config files
 workspaceconfig.code-workspace
 
-#ignore test executables
+# ignore test executables
 ConsoleTests
 ins3331Tests
 DoorSensorTests
 
-#ignore generated files
+# ignore generated files
 src/BraveSensorProductionFirmware.cpp
 
 # ignore unused generated compile_commands.json file
 compile_commands.json
 
-# build
+# ignore build
 build
-
-# ignore notes
-notes.md
