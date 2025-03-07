@@ -16,14 +16,11 @@
 // See versioning in README.md
 #define BRAVE_FIRMWARE_VERSION  6999
 
-// Note: setting debug level to LOG_LEVEL_INFO and printing a lot of output
-// may cause timing issue causing code to break, like door sensor not being 
-// found by the BLE thread. Only log required info with warn.
 #define DEBUG_LEVEL             LOG_LEVEL_WARN
 
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);
-SYSTEM_THREAD(ENABLED);
 SerialLogHandler logHandler(DEBUG_LEVEL);
+SYSTEM_THREAD(ENABLED);
 
 void setup() {
     System.enableFeature(FEATURE_RESET_INFO);

@@ -70,7 +70,7 @@ doorData checkIM() {
         doorTamperedFlag = (currentDoorData.doorStatus & 0b0001) != 0;
         doorLowBatteryFlag = (currentDoorData.doorStatus & 0b0100) != 0;
 
-        // Check for heartbeat received
+        // Check if door heartbeat is received
         if ((currentDoorData.doorStatus & (1 << 3)) != 0) {
             doorHeartbeatReceived = millis();
         }
