@@ -117,9 +117,9 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
 1. Click Target --> "Configure for device" and type `4.2.0` to choose the OS and then `boron` to choose the device
 
-1. Click Compile --> "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
+1. Use the makefile to produce a firmware binary file using: `make BINARY_NAME=v[version number]` or use the particle workbench and click "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
 
-1. Copy the generated `/target/4.2.0/boron/boron-ins-fsm.bin` file to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Rename to `v[version number].bin`, e.g., `v10080.bin`.
+1. Copy the generated file in either `/build/` or `/target/4.2.0/boron/boron-ins-fsm.bin` to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Make sure the file name is `v[version number].bin`, e.g., `v10080.bin`.
 
 1. Keep this binary file for later; you will need it for deploying the firmware on Production.
 
@@ -178,7 +178,7 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
       - Description - [leave blank]
 
-      - Drag and drop or upload the generated `.bin` file
+      - Drag and drop or upload the generated binary file
 
 1. Go to Devices
 
@@ -286,7 +286,7 @@ Before deploying to development, ensure that the AWS Environment for dev is onli
 
 1. Click Target --> "Configure for device" and type `4.2.0` to choose the OS and then `boron` to choose the device
 
-1. Click Compile --> "Local Compile"
+1. Use the makefile to produce a firmware binary file using: `make BINARY_NAME=v[version number]` or use the particle workbench and click "Local Compile".
 
 1. In your browser navigate to Particle Console --> Sandbox --> BetaTest Borons --> Firmware
 
@@ -298,7 +298,7 @@ Before deploying to development, ensure that the AWS Environment for dev is onli
 
       - Description - [leave blank]
 
-      - Drag and drop or upload the generated `/target/4.2.0/boron/boron-ins-fsm.bin` file
+      - Drag and drop or upload the generated binary file
 
 1. Go to Devices
 
@@ -364,7 +364,7 @@ You can get further details about the behaviour of the build by watching logs fo
    1. Login to the `Brave Devices [environment]` AWS Account using your SSO login
    1. Switch to the "Canada (Central)" region
    1. Navigate to AWS System Manager --> Parameter Store
-   1. The username is the value of `/brave/sensors-api/[environment]/web-app/web_username` and the password is the value of `/brave/sensors-api/[environment]/web-app/password`
+   1. The username is the value of `/brave/sensors-api/[environment]/web-app/web_username` and the password is the value of `/brave/sensors-api/[environment]/web-app/web_password`
 
 1. Navigate to `https://api.[environment].bravecoopservices.com/` in a browser and login
 
