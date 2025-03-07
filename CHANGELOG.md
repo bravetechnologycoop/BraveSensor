@@ -13,7 +13,30 @@ the code was deployed.
 
 ### Added
 
+- Implemented the new alert flow in `sensorEvents.js` and `twilioEvents.js`(CU-86dv7znd9).
+- Created `db_new.js` that uses the new db tables and defines new db functions (CU-86dv7znd9).
+- Imported all test cases, model, enums and helpers related to sensors from brave-alert-lib to this repo (CU-86dv7znd9).
+- Added a new firmware makefile that compiles source code into a binary running fw tests and cpp-check (CU-86dv7znd9).
+- Implemented door open events in state machine, creating a new `Door Opened` particle webhook (CU-86dv7znd9).
+- New partilcle console functions: `Reset_Monitoring` and `Reset_State_To_Zero` (CU-86dv7znd9).
 - RGB mirroring of Boron LED status for Sensor Hardware v4.2 (CU-86dvy9n3y).
+
+### Changed
+
+- Refactored the server to sepearte logic code from configuration files by putting all in server/src folder (CU-86dv7znd9).
+- New database schema for all the tables due to requirement's and changes in new alert system (CU-86dv7znd9).
+- New database tables: `sessions_new`, `events_new`, `vitals_new`, `notifications_new` (CU-86dv7znd9).
+- Updated messages and translations based on requirements of the new alert flow (CU-86dv7znd9).
+- Wrote new integration tests for dashboard database functions (CU-86dv7znd9).
+- Updated CI with new environment variables and new version of postgres database instance, psql-16 (CU-86dv7znd9).
+
+### Removed
+
+- Deprected brave-alert-lib and the old sensor alert system (CU-86dv7znd9).
+- Deleted all previous test cases related to the old sensor alert system deployed in brave-alert-lib (CU-86dv7znd9).
+- Removed all use of `db.js` and instead uses the new `db_new.js` (CU-86dv7znd9).
+- Removed unused enviroment variables and updated `.env.example` (CU-86dv7znd9).
+- Removed unused clang-format files from the firmware (CU-86dv7znd9).
 
 ## [11.0.0] - 2025-01-16
 
