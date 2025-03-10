@@ -1,93 +1,98 @@
-/*
- * Brave firmware state machine for single Boron
- * written by Heidi Fedorak, Apr 2021
+/* imDoorSensor.cpp - IM Door Sensor interface for Boron source code
+ *
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
+ * 
+ * File created by: Heidi Fedorak, Apr 2021
  */
 
 #include "Particle.h"
 #include "imDoorSensor.h"
 #include "debugFlags.h"
 #include "flashAddresses.h"
+#include "stateMachine.h"
 
-// define global variables so they are allocated in memory
-// initialize door ID to agreed upon intial value
+// Global variables
 IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
 os_queue_t bleQueue;
+
 int missedDoorEventCount = 0;
+
 bool doorLowBatteryFlag = false;
 bool doorTamperedFlag = false;
 bool doorMessageReceivedFlag = false;
+
 unsigned long doorHeartbeatReceived = 0;
 unsigned long doorLastMessage = 0;
 unsigned long timeWhenDoorClosed = 0;
 unsigned long consecutiveOpenDoorHeartbeatCount = 0;
 
-//**********setup()******************
-
 void setupIM() {
-    // Create a queue. Each element is an unsigned char, there are 25 elements. Last parameter is always 0.
     os_queue_create(&bleQueue, sizeof(doorData), 25, 0);
-    // Create the thread
     new Thread("scanBLEThread", threadBLEScanner);
 }
-
-//**********loop()*******************
 
 void initializeDoorID() {
     uint16_t initializeDoorIDFlag;
 
-    // Argon flash memory is initialized to all F's (1's)
     EEPROM.get(ADDR_INITIALIZE_DOOR_ID_FLAG, initializeDoorIDFlag);
-    Log.info("door ID flag is 0x%04X", initializeDoorIDFlag);
-
+    Log.warn("Door ID flag read: 0x%04X", initializeDoorIDFlag);
     if (initializeDoorIDFlag != INITIALIZE_DOOR_ID_FLAG) {
-        // initialize as uint8_t so that only 1 byte is written for each doorID byte
         uint8_t doorID_byte1 = DOORID_BYTE1;
         uint8_t doorID_byte2 = DOORID_BYTE2;
         uint8_t doorID_byte3 = DOORID_BYTE3;
         EEPROM.put(ADDR_IM_DOORID, doorID_byte1);
         EEPROM.put((ADDR_IM_DOORID + 1), doorID_byte2);
         EEPROM.put((ADDR_IM_DOORID + 2), doorID_byte3);
+
         initializeDoorIDFlag = INITIALIZE_DOOR_ID_FLAG;
         EEPROM.put(ADDR_INITIALIZE_DOOR_ID_FLAG, initializeDoorIDFlag);
-        Log.info("Door ID was written to flash on bootup.");
-    }
-    else {
+        Log.warn("Door ID initialized and written to EEPROM.");
+    } else {
         EEPROM.get(ADDR_IM_DOORID, globalDoorID.byte1);
         EEPROM.get((ADDR_IM_DOORID + 1), globalDoorID.byte2);
         EEPROM.get((ADDR_IM_DOORID + 2), globalDoorID.byte3);
-        Log.info("Door ID was read from flash on bootup.");
+        Log.warn("Door ID read from EEPROM.");
     }
 }
 
 doorData checkIM() {
+    // Static variables to hold door data, retain values across function calls
     static doorData previousDoorData = {0x00, 0x00, 0};
     static doorData currentDoorData = {0x00, 0x00, 0};
     static doorData returnDoorData = {INITIAL_DOOR_STATUS, INITIAL_DOOR_STATUS, 0};
 
-    // BLE scanner is set fast enough to load duplicate advertising data packets
-    // Every time the IM Door Sensor transmits a door event, filter out the duplicates and publish
+    // Process BLE queue doorData (struct) populated by the thread
+    // Thread is fast enough to load duplicate data packets so filter them out 
     if (os_queue_take(bleQueue, &currentDoorData, 0, 0) == 0) {
         static int initialDoorDataFlag = 1;
-
-        // Checks if the 2nd bit (counting from 0) of doorStatus is 1
+        
+        // Check if door status flags are set to 1
+        doorTamperedFlag = (currentDoorData.doorStatus & 0b0001) != 0;
         doorLowBatteryFlag = (currentDoorData.doorStatus & 0b0100) != 0;
 
-        // Checks if the 0th bit (counting from 0) of doorStatus is 1
-        doorTamperedFlag = (currentDoorData.doorStatus & 0b0001) != 0;
+        // Check if door heartbeat is received
+        if ((currentDoorData.doorStatus & (1 << 3)) != 0) {
+            doorHeartbeatReceived = millis();
+        }
 
+        // Handle door close event
         if ((currentDoorData.doorStatus & 0b0010) == 0) {
             // Reset timer on receiving a door close message or transition from open to closed + heartbeat
             if ((currentDoorData.doorStatus & 0b1000) == 0 || (previousDoorData.doorStatus & 0b0010) != 0) {
                 timeWhenDoorClosed = millis();
-            }
 
-            // reset consecutive door open counter since the door is closed
+                // Enable state transitions when door closes
+                allowTransitionToStateOne = true;
+                Log.warn("Door closed - State transitions enabled");
+            }
+        
+            // Reset consecutive door open counter since the door is closed
             consecutiveOpenDoorHeartbeatCount = 0;
         }
 
-        // After a certain thereshold, the next door message received will trigger a boron heartbeat
+        // Trigger heartbeat if threshold exceeded
         if (millis() - doorLastMessage >= MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD) {
-            // if the door is open upon sending this heartbeat, increment count
+            // If the door is open upon sending this heartbeat, increment count
             if (isDoorOpen(currentDoorData.doorStatus)) {
                 consecutiveOpenDoorHeartbeatCount++;
             }
@@ -98,22 +103,18 @@ doorData checkIM() {
         // Record the time an IM Door Sensor message was received
         doorLastMessage = millis();
 
-        // Checks if the 3rd bit of doorStatus is 1
-        if ((currentDoorData.doorStatus & (1 << 3)) != 0) {
-            doorHeartbeatReceived = millis();
-        }
-        // if this is the first door event received after firmware bootup, publish
+        // Handle initial door data
         if (initialDoorDataFlag) {
             initialDoorDataFlag = 0;
             returnDoorData = currentDoorData;
             previousDoorData = currentDoorData;
         }
-        // if this curr = prev + 1, all is well, publish
+        // Handle new door data
         else if (currentDoorData.controlByte == (previousDoorData.controlByte + 0x01)) {
             returnDoorData = currentDoorData;
             previousDoorData = currentDoorData;
         }
-        // if curr > prev + 1, missed an event, publish warning
+        // Handle missed door events
         else if (currentDoorData.controlByte > (previousDoorData.controlByte + 0x01)) {
             Log.error("curr > prev + 1, WARNING WARNING WARNING, missed door event!");
             missedDoorEventCount++;
@@ -121,29 +122,25 @@ doorData checkIM() {
             returnDoorData = currentDoorData;
             previousDoorData = currentDoorData;
         }
-        // special case for when control byte rolls over from FF to 00, don't want to lose event or publish missed door event warning
+        // Handle control byte rollover
         else if ((currentDoorData.controlByte == 0x00) && (previousDoorData.controlByte == 0xFF)) {
             returnDoorData = currentDoorData;
             previousDoorData = currentDoorData;
         }
+        // No new data
         else {
-            // no new data, do nothing
             Log.info("no new data");
+        }
 
-        }  // end publish if-else
-
-        // record the time this value was pulled from the queue and control byte was checked
-        returnDoorData.timestamp = millis();
-
-    }  // end queue if
+        // Record the time this value was pulled from the queue and control byte was checked
+        returnDoorData.timestamp = millis(); 
+    }
 
     return returnDoorData;
-
-}  // end checkIM()
+}
 
 void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData) {
     char doorPublishBuffer[128];
-
     sprintf(doorPublishBuffer, "{ \"deviceid\": \"%02X:%02X:%02X\", \"data\": \"%02X\", \"control\": \"%02X\" }", globalDoorID.byte1,
             globalDoorID.byte2, globalDoorID.byte3, currentDoorData.doorStatus, currentDoorData.controlByte);
     Particle.publish("IM Door Sensor Data", doorPublishBuffer, PRIVATE);
@@ -152,7 +149,6 @@ void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData) 
 
 void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorData) {
     char doorPublishBuffer[128];
-
     sprintf(doorPublishBuffer, "{ \"deviceid\": \"%02X:%02X:%02X\", \"prev_control_byte\": \"%02X\", \"curr_control_byte\": \"%02X\" }",
             globalDoorID.byte1, globalDoorID.byte2, globalDoorID.byte3, previousDoorData.controlByte, currentDoorData.controlByte);
     Particle.publish("IM Door Sensor Warning", doorPublishBuffer, PRIVATE);
@@ -160,87 +156,71 @@ void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorDat
              currentDoorData.controlByte);
 }
 
-//**********threads*****************
 void threadBLEScanner(void *param) {
     doorData scanThreadDoorData;
     unsigned char doorAdvertisingData[BLE_MAX_ADV_DATA_LEN];
-
-    // setting scan timeout (how long scan runs for) to 50ms = 5 centiseconds
-    // using millis() to measure, timeout(1) = 13-14 ms. timout(5) = 53-54ms
     BLE.setScanTimeout(5);
 
     while (true) {
-        // filter has to be remade each time, as globalDoorId (from eeprom) is usually read while this thread is already in while loop
+        // Create a BLE scan filter
         BleScanFilter filter;
         char address[18];
-        // add device IDs for IM21 to the filter
+
+        // Format and add multiple types of valid BLE addresses to the filter
         sprintf(address, "B8:7C:6F:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
         filter.deviceName("iSensor ").address(address);
         sprintf(address, "8C:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
         filter.address(address);
-        // add device ID for IM24 to the filter
         sprintf(address, "AC:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
         filter.address(address);
         sprintf(address, "80:FB:F1:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
         filter.address(address);
 
-        // scanning for IM21 and IM24 door sensors of correct device ID
+        // Scan for BLE devices matching the filter
         spark::Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter);
 
-        // loop over all devices found in the BLE scan
         for (BleScanResult scanResult : scanResults) {
-            // place advertising data in doorAdvertisingData buffer array
-            // Door heartbeat message:
-            // dooradvertisingdata[0] (1 byte): Firmware Version
-            // dooradvertisingdata[1-3] (3 bytes): Last 3 bytes of door sensor address
-            // dooradvertisingdata[4] (1 byte): Type ID (door sensor, thermometer, smoke detector, etc.)
-            // dooradvertisingdata[5] (1 byte): Event Data
-            // bit[3]: heartbeat?
-            // bit[2]: low battery?
-            // bit[1]: door open?
-            // bit[0]: tamper alarm?
-            // dooradvertisingdata[6] (1 byte): Control Data
+            // Extract manufacturer-specific data from BLE scan result
             // More info: https://drive.google.com/file/d/1ZbnHi7uA_xMWVIiMbQjZlbT3OOoykbr4/view?usp=sharing
+            // dooradvertisingdata structure:
+            // [0]: Firmware Version
+            // [1-3]: Last 3 bytes of door sensor address
+            // [4]: Type ID (sensor type)
+            // [5]: Event Data (bit[0]: tamper, bit[1]: door open, bit[2]: low battery, bit[3]: heartbeat)
+            // [6]: Control Data
             scanResult.advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN);
 
-            // extract door status and dump it in the queue
+            // Load the neccessary data to the scannerThreadDoorData (doorData struct)
             scanThreadDoorData.doorStatus = doorAdvertisingData[5];
             scanThreadDoorData.controlByte = doorAdvertisingData[6];
-
-            if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0 && stateMachineDebugFlag) {  //
-                // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
+            
+            // If the 4th bit of the door status byte is set (indicating a door heartbeat every 10 minutes)
+            // and debugging is enabled, publish a debug message with the BLE advertising data.
+            if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0 && stateMachineDebugFlag) {
                 char debugMessage[622] = "";
                 for (int i = 0; i < BLE_MAX_ADV_DATA_LEN; i++) {
                     snprintf(debugMessage + strlen(debugMessage), sizeof(debugMessage), "%02X ", doorAdvertisingData[i]);
                 }
                 Particle.publish("Door Heartbeat Received", debugMessage, PRIVATE);
             }
-            os_queue_put(bleQueue, (void *)&scanThreadDoorData, 0, 0);
-        }  // endfor
 
+            // Put the door sensor data into a queue for further processing
+            if (os_queue_put(bleQueue, (void *)&scanThreadDoorData, 0, 0) != 0) {
+                Log.error("Failed to put data into the queue.");
+            }
+        }
+
+        // Yield the thread to allow other threads to run
         os_thread_yield();
+    }
+}
 
-    }  // endwhile
-
-}  // end threadBLEScanner
-
-/*    Door Sensor Utility Functions    */
-
-/* Return whether the door is open or closed, according to the IM door sensor.
- *
- * Parameters: The IM door sensor door status (byte 5 of the door sensor advertising data).
- * Returns: 1 if the door is open, 0 if the door is closed.
- */
+// Return whether the door is open
 int isDoorOpen(int doorStatus) {
     return ((doorStatus & 0x02) >> 1);
 }
 
-/* Return whether the door status is unknown, according to the IM door sensor.
- * The door status is considered unknown when it is equal to INITIAL_DOOR_STATUS, which occurs upon initial startup.
- *
- * Parameters: The IM door sensor door status (byte 5 of the door sensor advertising data).
- * Returns: 1 if the door status is unknown, 0 if the door status is known.
- */
+// Return whether the door status is unknown
 int isDoorStatusUnknown(int doorStatus) {
     return (doorStatus == INITIAL_DOOR_STATUS);
 }

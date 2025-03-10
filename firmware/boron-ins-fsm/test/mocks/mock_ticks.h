@@ -1,5 +1,6 @@
-/*
- * Mock implementation for time/tick functions
+/* mock_ticks.h - Mock implementation for time/tick functions
+ *
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  */
 
 #pragma once

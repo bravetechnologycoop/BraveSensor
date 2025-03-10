@@ -1,40 +1,87 @@
-/*
- * Brave firmware state machine for single Boron
- * written by Heidi Fedorak, Apr 2021
+/* stateMachine.h - Boron firmware state machine constants, global variables and function definitions
  *
- *  State machine functions, timers, and constants are declared here
- *
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
+ * 
+ * File created by: Heidi Fedorak, Apr 2021
  */
+
 #ifndef STATEMACHINE_H
 #define STATEMACHINE_H
 
-// ascii table goes up to 7F, so pick something greater than that
-// which is also unlikely to be part of a door ID or a threshold/timer const
-#define INITIALIZATION_FLAG_SET       0x8888
-#define INITIALIZATION_FLAG_HIGH_CONF 0x9999
+// ***************************** Macro defintions *****************************
 
-// initial (default) values for state machine, can be changed via console function
-// or by writing something other than 0x8888 to the above flag in flash
-#define INS_THRESHOLD                   60
-#define STATE0_OCCUPANT_DETECTION_TIMER 60000      // 1 min
-#define STATE1_MAX_TIME                 5000       // 5 s
-#define STATE2_MAX_DURATION             1200000    // 20 min
-#define STATE3_MAX_STILLNESS_TIME       180000     // 3 min
+// This flag determines if the state machine constants are set
+#define INITIALIZATION_FLAG_SET             0x8888
+#define INITIALIZATION_FLAG_HIGH_CONF       0x9999
 
-// How often to publish Heartbeat messages
-#define SM_HEARTBEAT_INTERVAL 660000  // ms = 11 min
+// Initial values for state machine, can be changed via console function
+#define STILLNESS_INS_THRESHOLD             60         
+#define OCCUPANCY_DETECTION_INS_THRESHOLD   60         
 
-#define SM_HEARTBEAT_DID_MISS_QUEUE_SIZE 3  // keep track of whether the last 3 heartbeats did miss events
-#define SM_HEARTBEAT_DID_MISS_THRESHOLD  1  // threshold of the last N heartbeats that can miss events
+#define STATE0_OCCUPANCY_DETECTION_TIME     60000       // 1 min
+#define STATE1_INITIAL_TIME                 5000        // 5 secs
 
-// Attempt to minimize the time between a restart and the first Heartbeat message
-#define DEVICE_RESET_THRESHOLD 540000  // ms = 9 min
+#define DURATION_ALERT_TIME                 1200000     // 20 mins          
+#define STILLNESS_ALERT_TIME                300000      // 5 mins
 
-// How many characters can be used to send the states array in the Heartbeat messages
-#define HEARTBEAT_STATES_CUTOFF 603  // = 622 - 17 (max length of sub state array) - 2 (length of closing brackets)
+// Minimize time between restart and first Heartbeat message
+#define DEVICE_RESET_THRESHOLD              540000      // 9 mins
 
-// Restricts heartbeat to being published once instead of 3 times from the 3 IM Door Sensor broadcasts
-#define HEARTBEAT_PUBLISH_DELAY 1000  // ms = 1 sec
+// Heartbeat message intervals and thresholds
+#define SM_HEARTBEAT_INTERVAL               660000      // 11 mins
+#define SM_HEARTBEAT_DID_MISS_QUEUE_SIZE    3           // Track last 3 heartbeats
+#define SM_HEARTBEAT_DID_MISS_THRESHOLD     1           // Threshold for missed heartbeats
+
+// The IM door sensor always broadcasts 3 of the same messages
+// This delay restrict SM heartbeat to being published once from 3 IM Door Sensor broadcasts
+#define HEARTBEAT_PUBLISH_DELAY             1000        // 1 sec
+
+// ***************************** Global variables *****************************
+
+// Function pointer type for state handlers
+typedef void (*StateHandler)();
+
+// Extern declaration of the state handler pointer
+extern StateHandler stateHandler;
+
+// State machine constants firmware code definition
+extern unsigned long stillness_ins_threshold;
+extern unsigned long occupancy_detection_ins_threshold;
+extern unsigned long state0_occupancy_detection_time;
+extern unsigned long state1_initial_time;
+extern unsigned long duration_alert_time;
+extern unsigned long stillness_alert_time;
+
+// Start timers for different states
+extern unsigned long state0_start_time;
+extern unsigned long state1_start_time;
+extern unsigned long state2_start_time;
+extern unsigned long state3_start_time;
+
+// Time spent in different states
+extern unsigned long timeInState0;
+extern unsigned long timeInState1;
+extern unsigned long timeInState2;
+extern unsigned long timeInState3;
+
+// Time since the door was closed
+extern unsigned long timeSinceDoorClosed;
+
+// Duration alert variables
+extern unsigned long numDurationAlertSent;
+extern unsigned long lastDurationAlertTime;
+extern unsigned long timeSinceLastDurationAlert;
+extern bool isDurationAlertThresholdExceeded;
+
+// Stillness alert variables
+extern unsigned long numStillnessAlertSent;
+extern bool isStillnessAlertActive;
+extern bool isStillnessAlertThresholdExceeded;
+
+// Allow state transitions
+extern bool allowTransitionToStateOne;
+
+// ************************** Function declarations **************************
 
 // setup() functions
 void setupStateMachine();
@@ -45,41 +92,11 @@ void getHeartbeat();
 
 // state functions, called by stateHandler
 void state0_idle();
-void state1_15sCountdown();
-void state2_duration();
+void state1_initial_countdown();
+void state2_monitoring();
 void state3_stillness();
 
 void publishDebugMessage(int, unsigned char, float, unsigned long);
 void publishStateTransition(int, int, unsigned char, float);
-void saveStateChangeOrAlert(int, int);
-
-// threads
-void heartbeatTimerThread(void *param);
-
-// Global variables
-// declaring type StateHandler that points to a function that takes
-// no arguments and returns nothing
-typedef void (*StateHandler)();
-
-// declaring the state handler pointer as extern so .ino file can use it
-extern StateHandler stateHandler;
-
-// these are the timers that are zero'ed by millis()
-extern unsigned long state1_timer;
-extern unsigned long state2_duration_timer;
-extern unsigned long state3_stillness_timer;
-
-// state machine constants stored in flash
-extern unsigned long stillness_ins_threshold;
-extern unsigned long occupation_detection_ins_threshold;
-extern unsigned long state0_occupant_detection_timer;
-extern unsigned long state1_max_time;
-extern unsigned long state2_max_duration;
-extern unsigned long state3_max_stillness_time;
-extern unsigned long state3_max_long_stillness_time;
-
-// whether or not the current session has sent alerts
-extern bool hasDurationAlertBeenSent;
-extern bool hasStillnessAlertBeenSent;
 
 #endif

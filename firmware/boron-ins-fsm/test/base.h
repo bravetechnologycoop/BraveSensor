@@ -1,7 +1,11 @@
+/* base.h - Base header file for unit tests
+ *
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
+ */
+
 #include "catch.hpp"
 #include <cstdarg>
 #include <cstring>
-
 #include <iostream>
 
 // Mocks
@@ -12,6 +16,9 @@
 #include "mocks/mock_ble.h"
 #include "mocks/mock_logging.h"
 #include "mocks/mock_ticks.h"
+
+#include "mocks/mock_stateMachine.h" 
+#include "mocks/mock_imDoorSensor.h" 
 
 // Particle.h library include files
 // Copied from local Particle toolchain files
@@ -27,13 +34,3 @@ MockParticle Particle;
 MockSystem System;
 MockLogger Log;
 MockBLE BLE;
-
-bool stateMachineDebugFlag;
-unsigned long debugFlagTurnedOnAt;
-long unsigned state0_occupant_detection_timer;
-long unsigned state1_max_time;
-long unsigned state2_max_duration;
-long unsigned state3_max_stillness_time;
-long unsigned state3_max_long_stillness_time;
-long unsigned stillness_ins_threshold;
-long unsigned occupation_detection_ins_threshold;

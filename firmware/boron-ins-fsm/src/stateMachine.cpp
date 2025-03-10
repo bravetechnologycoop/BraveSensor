@@ -1,405 +1,520 @@
-/*
- * Brave firmware state machine for single Boron
- * written by Heidi Fedorak, Apr 2021
+/* stateMachine.cpp - Boron firmware state machine source code
+ *
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
+ * 
+ * File created by: Heidi Fedorak, Apr 2021
  */
 
-#include "Particle.h"
-#include "stateMachine.h"
 #include <queue>
+
 #include "debugFlags.h"
 #include "flashAddresses.h"
 #include "imDoorSensor.h"
 #include "ins3331.h"
+#include "stateMachine.h"
+#include "Particle.h"
 
-// define and initialize state machine pointer
+#define PARTICLE_MAX_MESSAGE_LENGTH    622
+
+// State machine pointer
 StateHandler stateHandler = state0_idle;
 
-// define global variables so they are allocated in memory
-unsigned long state1_timer;
-unsigned long state2_duration_timer;
-unsigned long state3_stillness_timer;
-// initialize constants to sensible default values
-unsigned long stillness_ins_threshold = INS_THRESHOLD;
-unsigned long occupation_detection_ins_threshold = INS_THRESHOLD;
-unsigned long state0_occupant_detection_timer = STATE0_OCCUPANT_DETECTION_TIMER;
-unsigned long state1_max_time = STATE1_MAX_TIME;
-unsigned long state2_max_duration = STATE2_MAX_DURATION;
-unsigned long state3_max_stillness_time = STATE3_MAX_STILLNESS_TIME;
-// By default, we use the same value for max_stillness_time and max_long_stillness_time
-unsigned long state3_max_long_stillness_time = STATE3_MAX_STILLNESS_TIME;
-int resetReason = System.resetReason();
-// record whether an alert has been sent within the same session
-bool hasDurationAlertBeenSent;
-bool hasStillnessAlertBeenSent;
-// which max stillness time are we currently comparing against
-// using pointers so that the value pointed to be max_stillness_time will be the correct values of state3_max_stillness_time or
-// state3_max_long_stillness_time even if they change due to a console function call during the session
-unsigned long *max_stillness_time = &state3_max_stillness_time;
-// the total number of alerts published while in state 2 or state 3
-// the number of alerts generated in a session should start at 0, resetting to 0 when in state 0
-unsigned long number_of_alerts_published = 0;
+// State machine constants firmware code
+unsigned long occupancy_detection_ins_threshold = OCCUPANCY_DETECTION_INS_THRESHOLD;
+unsigned long stillness_ins_threshold = STILLNESS_INS_THRESHOLD;
+unsigned long state0_occupancy_detection_time = STATE0_OCCUPANCY_DETECTION_TIME;
+unsigned long state1_initial_time = STATE1_INITIAL_TIME;
+unsigned long duration_alert_time = DURATION_ALERT_TIME;
+unsigned long stillness_alert_time = STILLNESS_ALERT_TIME;
 
-std::queue<int> stateQueue;
-std::queue<int> reasonQueue;
-std::queue<unsigned long> timeQueue;
-unsigned long lastStateChangeOrAlert = millis();
+// Start timers for different states
+unsigned long state0_start_time;
+unsigned long state1_start_time;
+unsigned long state2_start_time;
+unsigned long state3_start_time;
+
+// Time spent in different states
+unsigned long timeInState0;
+unsigned long timeInState1;
+unsigned long timeInState2;
+unsigned long timeInState3;
+
+// Time since the door was closed
+unsigned long timeSinceDoorClosed = 0;
+
+// Duration alert variables
+unsigned long numDurationAlertSent = 0;
+unsigned long lastDurationAlertTime = 0;
+unsigned long timeSinceLastDurationAlert = 0;
+bool isDurationAlertThresholdExceeded = false;
+
+// Stillness alert variables 
+unsigned long numStillnessAlertSent = 0;
+bool isStillnessAlertActive = false;
+bool isStillnessAlertThresholdExceeded = false;
+
+// Allow state transitions
+bool allowTransitionToStateOne = true;
+
+// Reset reason
+int resetReason = System.resetReason();
 
 void setupStateMachine() {
-    // default to not publishing debug logs
+    // From debugFlags.h (default to not publish debug messages)
     stateMachineDebugFlag = 0;
 
-    // default to no duration alert sent
-    hasDurationAlertBeenSent = false;
+    state0_start_time = 0;
+    state1_start_time = 0;
+    state2_start_time = 0;
+    state3_start_time = 0;
 
-    // default to no stillness alert sent
-    hasStillnessAlertBeenSent = false;
+    timeInState0 = 0;
+    timeInState1 = 0;
+    timeInState2 = 0;
+    timeInState3 = 0;
+
+    timeSinceDoorClosed = 0;
+
+    numDurationAlertSent = 0;
+    lastDurationAlertTime = 0;
+    timeSinceLastDurationAlert = 0;
+    isDurationAlertThresholdExceeded = false;
+
+    numStillnessAlertSent = 0;
+    isStillnessAlertActive = false;
+    isStillnessAlertThresholdExceeded = false;
+
+    allowTransitionToStateOne = true;
 }
 
 void initializeStateMachineConsts() {
     uint16_t initializeConstsFlag;
-    uint16_t initializeState3MaxLongStillenssTimeFlag;
-    uint16_t initializeState0OccupationDetectionFlag;
+    uint16_t initializeState0OccupantDetectionTimeFlag;
     uint16_t initializeHighConfINSThresholdFlag;
-    uint16_t initializeOccupationDetectionINSThresholdFlag;
+    uint16_t initializeOccupancyDetectionINSThresholdFlag;
+    uint16_t initializeAlertTimeFlag;
 
-    // Boron flash memory is initialized to all F's (1's)
     EEPROM.get(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
-    Log.info("state machine constants flag is 0x%04X", initializeConstsFlag);
-
+    Log.warn("State machine initialization flag read: 0x%04X", initializeConstsFlag);
     if (initializeConstsFlag != INITIALIZATION_FLAG_SET) {
         EEPROM.put(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
-        EEPROM.put(ADDR_STATE1_MAX_TIME, state1_max_time);
-        EEPROM.put(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
+        EEPROM.put(ADDR_STATE1_INITIAL_TIME, state1_initial_time);
+        EEPROM.put(ADDR_DURATION_ALERT_TIME, duration_alert_time);
+        EEPROM.put(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
+
         initializeConstsFlag = INITIALIZATION_FLAG_SET;
         EEPROM.put(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
-        Log.info("State machine constants were written to flash on bootup.");
-    }
-    else {
+        Log.warn("State machine constants initialized and written to EEPROM.");
+    } else {
         EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
-        EEPROM.get(ADDR_STATE1_MAX_TIME, state1_max_time);
-        EEPROM.get(ADDR_STATE2_MAX_DURATION, state2_max_duration);
-        EEPROM.get(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
-        Log.info("State machine constants were read from flash on bootup.");
+        EEPROM.get(ADDR_STATE1_INITIAL_TIME, state1_initial_time);
+        EEPROM.get(ADDR_DURATION_ALERT_TIME, duration_alert_time);
+        EEPROM.get(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
+        Log.warn("State machine constants read from EEPROM.");
     }
 
-    // Boron flash memory is initialized to all F's (1's)
-    // Needs separate intialization for Borons that had versions of the firmware <= 9.3.0
-    EEPROM.get(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
-    Log.info("State3MaxLongStillnessTime flag is 0x%04X", initializeState3MaxLongStillenssTimeFlag);
+    EEPROM.get(ADDR_INITIALIZE_STATE0_OCCUPANCY_DETECTION_TIME_FLAG, initializeState0OccupantDetectionTimeFlag);
+    Log.warn("State 0 Occupancy Detection Time flag read: 0x%04X", initializeState0OccupantDetectionTimeFlag);
+    if (initializeState0OccupantDetectionTimeFlag != INITIALIZATION_FLAG_SET) {
+        EEPROM.put(ADDR_STATE0_OCCUPANCY_DETECTION_TIME, state0_occupancy_detection_time);
 
-    if (initializeState3MaxLongStillenssTimeFlag != INITIALIZATION_FLAG_SET) {
-        // By default, we use the same value for max_stillness_time and max_long_stillness_time
-        EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_stillness_time);
-        state3_max_long_stillness_time = state3_max_stillness_time;
-
-        initializeState3MaxLongStillenssTimeFlag = INITIALIZATION_FLAG_SET;
-        EEPROM.put(ADDR_INITIALIZE_STATE3_MAX_LONG_STILLNESS_TIME_FLAG, initializeState3MaxLongStillenssTimeFlag);
-        Log.info("State machine constant State3MaxLongStillnessTime was written to flash on bootup.");
-    }
-    else {
-        EEPROM.get(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
-        Log.info("State machine constant State3MaxLongStillnessTime was read from flash on bootup.");
+        initializeState0OccupantDetectionTimeFlag = INITIALIZATION_FLAG_SET;
+        EEPROM.put(ADDR_INITIALIZE_STATE0_OCCUPANCY_DETECTION_TIME_FLAG, initializeState0OccupantDetectionTimeFlag);
+        Log.warn("State 0 Occupancy Detection Time initialized and written to EEPROM.");
+    } else {
+        EEPROM.get(ADDR_STATE0_OCCUPANCY_DETECTION_TIME, state0_occupancy_detection_time);
+        Log.warn("State 0 Occupancy Detection Time read from EEPROM.");
     }
 
-    // Seperate initialization for State 0 Window
-    EEPROM.get(ADDR_INITIALIZE_STATE0_OCCUPANT_DETECTION_TIMER_FLAG, initializeState0OccupationDetectionFlag);
-    Log.info("State0OccupationDetectionFlag is 0x%04X", initializeState0OccupationDetectionFlag);
-
-    if (initializeState0OccupationDetectionFlag != INITIALIZATION_FLAG_SET) {
-        EEPROM.put(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
-        initializeState0OccupationDetectionFlag = INITIALIZATION_FLAG_SET;
-        EEPROM.put(ADDR_INITIALIZE_STATE0_OCCUPANT_DETECTION_TIMER_FLAG, initializeState0OccupationDetectionFlag);
-        Log.info("State machine constant State0OccupationDetectionTimer was written to flash on bootup.");
-    }
-    else {
-        EEPROM.get(ADDR_STATE0_OCCUPANT_DETECTION_TIMER, state0_occupant_detection_timer);
-        Log.info("State machine constant State0OccupationDetectionTimer was read from flash on bootup.");
-    }
-
-    // Initialization for Occupation Detection INS threshold
-    EEPROM.get(ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG, initializeOccupationDetectionINSThresholdFlag);
+    EEPROM.get(ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG, initializeOccupancyDetectionINSThresholdFlag);
     EEPROM.get(ADDR_INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG, initializeHighConfINSThresholdFlag);
-    Log.info("OccupationDetectionINSThresholdFlag is 0x%04X", initializeOccupationDetectionINSThresholdFlag);
-
-    if (initializeOccupationDetectionINSThresholdFlag != INITIALIZATION_FLAG_SET) {
+    Log.warn("OccupancyDetectionINSThresholdFlag is 0x%04X", initializeOccupancyDetectionINSThresholdFlag);
+    
+    if (initializeOccupancyDetectionINSThresholdFlag != INITIALIZATION_FLAG_SET) {
         // firmware was never v1924
         if (initializeHighConfINSThresholdFlag != INITIALIZATION_FLAG_HIGH_CONF) {
-            EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, occupation_detection_ins_threshold);
-            EEPROM.put(ADDR_OCCUPATION_INS_THRESHOLD, occupation_detection_ins_threshold);
-            Log.info("State machine constant OccupantDetectionINSThreshold was written to flash on bootup.");
+            EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, occupancy_detection_ins_threshold);
+            EEPROM.put(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
+            Log.warn("Occupancy Detection INS Threshold initialized and written to EEPROM.");
         }
-        // firmware was previously v1924
+        // firmware was previously v1924 
         else {
-            EEPROM.get(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_stillness_time);
-            EEPROM.get(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_long_stillness_time);
-            EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, occupation_detection_ins_threshold);
-            EEPROM.get(ADDR_OCCUPATION_INS_THRESHOLD, stillness_ins_threshold);
+            EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
+            EEPROM.get(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
             EEPROM.put(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
-            EEPROM.put(ADDR_STATE3_MAX_STILLNESS_TIME, state3_max_stillness_time);
-            EEPROM.put(ADDR_STATE3_MAX_LONG_STILLNESS_TIME, state3_max_long_stillness_time);
-            EEPROM.put(ADDR_OCCUPATION_INS_THRESHOLD, occupation_detection_ins_threshold);
+            EEPROM.put(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
         }
-        initializeOccupationDetectionINSThresholdFlag = INITIALIZATION_FLAG_SET;
-        EEPROM.put(ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG, initializeOccupationDetectionINSThresholdFlag);
-    }
-    // firmware is v11000+
-    else {
-        EEPROM.get(ADDR_OCCUPATION_INS_THRESHOLD, occupation_detection_ins_threshold);
+
+        initializeOccupancyDetectionINSThresholdFlag = INITIALIZATION_FLAG_SET;
+        EEPROM.put(ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG, initializeOccupancyDetectionINSThresholdFlag);
+    } else {
+        EEPROM.get(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
+        Log.warn("Occupancy Detection INS Threshold read from EEPROM.");
     }
 }
 
-void state0_idle() {
-    if (millis() - doorHeartbeatReceived > DEVICE_RESET_THRESHOLD) {
-        System.enableReset();
+/*
+ * Helper Function - calculateTimeSince
+ * Calculates elapsed time since the given time.
+ * Overflow is handled automatically by unsigned arithmetic.
+ */
+unsigned long calculateTimeSince(unsigned long startTime) {
+    return millis() - startTime;
+}
+
+/*
+ * Duration Alert Logic:
+ * - Can trigger from states 2 and 3
+ * - Duration alerts can only trigger if stillness alerts are active as well
+ * - First duration alert is triggered when time since door close exceeds the duration alert threshold
+ * - Subsequent duration alerts are triggered when time since the last alert exceeds the duration alert threshold
+ * - Uses modulo to ensure alerts align with intervals with 1s interval
+ */
+void updateDurationAlertStatus() {
+    if (isStillnessAlertActive) {
+        timeSinceDoorClosed = calculateTimeSince(timeWhenDoorClosed);
+        timeSinceLastDurationAlert = (numDurationAlertSent > 0) ? calculateTimeSince(lastDurationAlertTime) : 0;
+         
+        // First duration alert
+        if (numDurationAlertSent == 0) {
+            isDurationAlertThresholdExceeded = (
+                (timeSinceDoorClosed >= duration_alert_time) &&
+                (timeSinceDoorClosed % duration_alert_time < 1000)
+            );
+        }
+        // Subsequent duration alerts
+        else {
+            isDurationAlertThresholdExceeded = (
+                (timeSinceDoorClosed % duration_alert_time < 1000) &&
+                (timeSinceLastDurationAlert >= duration_alert_time - 1000)
+            );
+        }
     }
+}
+
+/*
+ * Stillness Alert Logic:
+ * - Only triggers in state 3
+ * - isStillnessAlertActive must be true
+ * - One-time alert when continuous stillness exceeds threshold
+ * - When triggered, pauses both duration and stillness alerts
+ * - Requires state reset or door open to re-enable
+ */
+void updateStillnessAlertStatus() {
+    if (isStillnessAlertActive) {
+        isStillnessAlertThresholdExceeded = timeInState3 >= stillness_alert_time;
+    }
+}
+
+/*
+ * State 0 - Idle State
+ * This is the normal state of the sensor where:
+ * Door is open/closed and we don't see any movement inside the washroom stall.
+ */
+void state0_idle() {
+    // Check if device needs to be reset
+    unsigned long timeSinceDoorHeartbeat = calculateTimeSince(doorHeartbeatReceived);
+    if (timeSinceDoorHeartbeat > DEVICE_RESET_THRESHOLD) {
+        System.enableReset();
+    } 
     else {
         System.disableReset();
     }
 
-    // scan inputs
-    doorData checkDoor;
-    filteredINSData checkINS;
-    // this returns the previous door event value until a new door event is received
-    // on code boot up it initializes to returning INITIAL_DOOR_STATUS
-    checkDoor = checkIM();
-    // this returns 0.0 if the INS has no new data to transmit
-    checkINS = checkINS3331();
-    // session is over in idle state, so reset the whether alert has been sent flags
-    hasDurationAlertBeenSent = false;
-    hasStillnessAlertBeenSent = false;
-    // set to compare against the shorter stillness threshold
-    max_stillness_time = &state3_max_stillness_time;
-    // set the total number of alerts generated to 0
-    number_of_alerts_published = 0;
+    // Scan inputs
+    doorData checkDoor = checkIM();
+    filteredINSData checkINS = checkINS3331();
 
-    Log.info("You are in state 0, idle: Door status, iAverage = 0x%02X, %f", checkDoor.doorStatus, checkINS.iAverage);
-    // default timer to 0 when state doesn't have a timer
-    publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, (millis() - timeWhenDoorClosed));
+    // Reset alert flags
+    isStillnessAlertActive = true;
+    numDurationAlertSent = 0;
+    numStillnessAlertSent = 0;
+    timeSinceLastDurationAlert = 0;
+    isDurationAlertThresholdExceeded = false;
+    isStillnessAlertThresholdExceeded = false;
 
-    // fix outputs and state exit conditions accordingly
-    if (millis() - timeWhenDoorClosed < state0_occupant_detection_timer && ((unsigned long)checkINS.iAverage > occupation_detection_ins_threshold) &&
-        !isDoorOpen(checkDoor.doorStatus) && !isDoorStatusUnknown(checkDoor.doorStatus)) {
-        Log.warn("In state 0, door closed and seeing movement, heading to state 1");
+    // Reset the other variables
+    state1_start_time = 0;
+    state2_start_time = 0;
+    state3_start_time = 0;
+    timeSinceDoorClosed = 0;
+
+    // If the door is closed, calculate the time spent in state 0
+    // State 0 only requires timeWhenDoorClosed
+    if (!isDoorOpen(checkDoor.doorStatus)) {
+        state0_start_time = timeWhenDoorClosed;
+        timeInState0 = calculateTimeSince(state0_start_time);
+    }
+    // If door status is unknown 
+    else if (isDoorStatusUnknown(checkDoor.doorStatus)) {
+        state0_start_time = 0;
+        timeInState0 = 0; 
+    }
+    // If door is open, default to 0
+    else {
+        state0_start_time = 0;
+        timeInState0 = 0;
+    }
+    
+    // Log current state
+    Log.info("State 0 (Idle): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
+    publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, timeInState0);
+
+    // Check state transition conditions
+    // Transition to state 1 if:
+    // 1. The door has been closed for less than the occupancy detection time (person has entered and washroom is now occupied).
+    // 2. The INS data indicates movement (iAverage > occupancy_detection_ins_threshold).
+    // 3. The door is closed.
+    // 4. The door status is known.
+    // 5. State transitions are enabled.
+    if (timeInState0 < state0_occupancy_detection_time && 
+        ((unsigned long)checkINS.iAverage > occupancy_detection_ins_threshold) &&
+        !isDoorOpen(checkDoor.doorStatus) && 
+        !isDoorStatusUnknown(checkDoor.doorStatus) &&
+        allowTransitionToStateOne) {
+        
+        Log.warn("State 0 --> State 1: Door closed and seeing movement");
         publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(0, 0);
-        // zero the state 1 timer
-        state1_timer = millis();
-        // head to state 1
-        stateHandler = state1_15sCountdown;
-    }
-    else {
-        // if we don't meet the exit conditions above, we remain here
-        // stateHandler = state0_idle;
+
+        // Update state 1 timer and transition to state 1
+        state1_start_time = millis();
+        stateHandler = state1_initial_countdown;
     }
 }
 
-void state1_15sCountdown() {
+/*
+ * State 1 - Initial Countdown State
+ * This state is entered when the door is closed and movement is detected.
+ * The system countdowns for a short period to confirm occupancy.
+ */
+void state1_initial_countdown() {
+    // Disable system reset
     System.disableReset();
-    // scan inputs
-    doorData checkDoor;
-    filteredINSData checkINS;
-    // this returns the previous door event value until a new door event is received
-    // on code boot up it initializes to returning INITIAL_DOOR_STATUS
-    checkDoor = checkIM();
-    // this returns 0.0 if the INS has no new data to transmit
-    checkINS = checkINS3331();
 
-    // do stuff in the state
-    Log.info("You are in state 1, initial countdown: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
-             (millis() - state1_timer));
-    publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, (millis() - state1_timer));
+    // Scan inputs
+    doorData checkDoor = checkIM();
+    filteredINSData checkINS = checkINS3331();
 
-    // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < occupation_detection_ins_threshold) {
-        Log.warn("no movement, you're going back to state 0 from state 1");
+    // Calculate the time spent in state 1
+    timeInState1 = calculateTimeSince(state1_start_time);
+
+    // Log current state
+    Log.info("State 1 (Countdown): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
+    publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, timeInState1);
+
+    // Check state transition conditions
+    // Transition to state 0 if no movement is detected OR the door is opened.
+    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < occupancy_detection_ins_threshold) {
+        Log.warn("State 1 --> State 0: No movement detected");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(1, 1);
         stateHandler = state0_idle;
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
-        Log.warn("door was opened, you're going back to state 0 from state 1");
+        Log.warn("State 1 --> State 0: Door opened, session over");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(1, 2);
         stateHandler = state0_idle;
     }
-    else if (millis() - state1_timer >= state1_max_time) {
-        Log.warn("door closed && motion for > Xs, going to state 2 from state1");
+    // Transition to state 2 if the door remains closed and movement is detected for the maximum allowed time.
+    else if (timeInState1 >= state1_initial_time) {
+        Log.warn("State 1 --> State 2: Movemented detected for max detection time");
         publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(1, 3);
-        // zero the duration timer
-        state2_duration_timer = millis();
-        // head to duration state
-        stateHandler = state2_duration;
-    }
-    else {
-        // if we don't meet the exit conditions above, we remain here
-        // stateHandler = state1_15sCountdown;
+
+        // Reset state 2 timer and transition to state 2
+        state2_start_time = millis();
+        stateHandler = state2_monitoring;
     }
 }
 
-void state2_duration() {
-    // scan inputs
-    doorData checkDoor;
-    filteredINSData checkINS;
-    // this returns the previous door event value until a new door event is received
-    // on code boot up it initializes to returning INITIAL_DOOR_STATUS
-    checkDoor = checkIM();
-    // this returns 0.0 if the INS has no new data to transmit
-    checkINS = checkINS3331();
-    // will contain the data for a Stillness Alert; max 622 chars as per Particle docs
-    char alertMessage[622];
+/*
+ * State 2 - Monitoring State
+ * This state is entered when the door is closed and movement is detected for a confirmed period.
+ * The system monitors the duration of occupancy and stillness.
+ * Sends a duration alert if the not sent before and duration exceeds a threshold.
+ */
+void state2_monitoring() {
+    // Scan inputs
+    doorData checkDoor = checkIM();
+    filteredINSData checkINS = checkINS3331();
 
-    // do stuff in the state
-    Log.info("You are in state 2, duration: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
-             (millis() - state2_duration_timer));
-    publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, (millis() - state2_duration_timer));
+    // Calculate timing data
+    timeInState2 = calculateTimeSince(state2_start_time);
 
-    // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < stillness_ins_threshold) {
-        Log.warn("Seeing stillness, going to state3_stillness from state2_duration");
-        publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(2, 1);
-        // zero the stillness timer
-        state3_stillness_timer = millis();
-        // go to stillness state
-        stateHandler = state3_stillness;
-    }
-    else if (isDoorOpen(checkDoor.doorStatus)) {
-        Log.warn("Door opened, session over, going to idle from state2_duration");
+    // Update the alert status
+    updateDurationAlertStatus(); 
+
+    // Log current state
+    Log.info("State 2 (Monitoring): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
+    publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, timeInState2);
+
+    // Check state transition conditions
+    // Transition to state 0 if the door is opened
+    if (isDoorOpen(checkDoor.doorStatus)) {
+        Log.warn("State 2 --> State 0: Door opened, session over");
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(2, 2);
+
+        // Publish door opened message to particle 
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char doorOpenedMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(doorOpenedMessage, sizeof(doorOpenedMessage), 
+                "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
+                2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
+
+        // Transition to state 0
         stateHandler = state0_idle;
     }
-    else if (millis() - state2_duration_timer >= state2_max_duration) {
-        Log.warn("See duration alert, remaining in state2_duration after alert publish");
-        saveStateChangeOrAlert(2, 4);
-        Log.error("Duration Alert!!");
-        number_of_alerts_published += 1;  // increment the number of alerts published
-        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
+    // Transition to state 3 if stillness is detected
+    else if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < stillness_ins_threshold) {
+        Log.warn("State 2 --> State 3: Stillness detected");
+        publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
+
+        // Reset the state 3 timer and transition to state 3
+        state3_start_time = millis();
+        stateHandler = state3_stillness;
+    }
+    // Send duration alert if threshold is exceeded
+    else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) {
+        Log.warn("--Duration Alert-- TimeSinceDoorClosed: %lu, TimeSinceLastDurationAlert: %lu, TimeInState: %lu", timeSinceDoorClosed, timeSinceLastDurationAlert, timeInState2);
+
+        // Update the duration alert counter and time
+        numDurationAlertSent += 1;
+        lastDurationAlertTime = millis();
+
+        // Publish duration alert to particle
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(alertMessage, sizeof(alertMessage),
+                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
+                 2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Duration Alert", alertMessage, PRIVATE);
-        hasDurationAlertBeenSent = true;
-        state2_duration_timer = millis();
-        stateHandler = state2_duration;
     }
-    else {
-        // if we don't meet the exit conditions above hang out here
-        // stateHandler = state2_duration;
-    }
+}
 
-}  // end state2_duration
-
+/*
+ * State 3 - Stillness State
+ * This state is entered when the door is closed and stillness is detected.
+ * The system monitors the stillness duration.
+ * Sends a stillness alert if the stillness duration exceeds a threshold.
+ */
 void state3_stillness() {
-    // scan inputs
-    doorData checkDoor;
-    filteredINSData checkINS;
-    // will contain the data for a Stillness Alert; max 622 chars as per Particle docs
-    char alertMessage[622];
+    // Scan inputs
+    doorData checkDoor = checkIM();
+    filteredINSData checkINS = checkINS3331();
+  
+    // Calculate timing data
+    timeInState3 = calculateTimeSince(state3_start_time);
 
-    // this returns the previous door event value until a new door event is received
-    // on code boot up it initializes to returning INITIAL_DOOR_STATUS
-    checkDoor = checkIM();
-    // this returns 0.0 if the INS has no new data to transmit
-    checkINS = checkINS3331();
+    // Update alert statuses
+    updateDurationAlertStatus(); 
+    updateStillnessAlertStatus();
+    
+    Log.info("State 3 (Stillness): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
+    publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, timeInState3);
 
-    // do stuff in the state
-    Log.info("You are in state 3, stillness: Door status, iAverage, timer = 0x%02X, %f, %ld", checkDoor.doorStatus, checkINS.iAverage,
-             (millis() - state3_stillness_timer));
-    publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, (millis() - state3_stillness_timer));
-
-    // fix outputs and state exit conditions accordingly
-    if ((unsigned long)checkINS.iAverage > stillness_ins_threshold) {
-        Log.warn("motion spotted again, going from state3_stillness to state2_duration");
-        publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(3, 0);
-        // go back to state 2, duration
-        stateHandler = state2_duration;
-    }
-    else if (isDoorOpen(checkDoor.doorStatus)) {
-        Log.warn("door opened, session over, going from state3_stillness to idle");
+    // Check state transition conditions  
+    // Transition to state 0 if the door is opened
+    if (isDoorOpen(checkDoor.doorStatus)) {
+        Log.warn("State 3 --> State 0: Door opened, session over");
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(3, 2);
-        stateHandler = state0_idle;
-    }
-    else if (millis() - state3_stillness_timer >= *max_stillness_time) {
-        Log.warn("stillness alert, remaining in state3 after publish");
-        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(3, 5);
-        Log.error("Stillness Alert!!");
-        number_of_alerts_published += 1;  // increment the number of alerts published
-        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
-        Particle.publish("Stillness Alert", alertMessage, PRIVATE);
-        hasStillnessAlertBeenSent = true;
-        state3_stillness_timer = millis();                     // reset the stillness timer
-        max_stillness_time = &state3_max_long_stillness_time;  // set to compare against the longer stillness threshold for the rest of this session
-        stateHandler = state3_stillness;
-    }
-    else if (millis() - state2_duration_timer >= state2_max_duration) {
-        Log.warn("duration alert, remaining in state3 after publish");
-        publishStateTransition(3, 3, checkDoor.doorStatus, checkINS.iAverage);
-        saveStateChangeOrAlert(3, 4);
-        Log.error("Duration Alert!!");
-        number_of_alerts_published += 1;  // increment the number of alerts published
-        snprintf(alertMessage, sizeof(alertMessage), "{\"numberOfAlertsPublished\": %lu}", number_of_alerts_published);
-        Particle.publish("Duration Alert", alertMessage, PRIVATE);
-        hasDurationAlertBeenSent = true;
-        state2_duration_timer = millis();
-        stateHandler = state3_stillness;
-    }
-    else {
-        // if we don't meet the exit conditions above, we remain here
-        // stateHandler = state3_stillness;
-    }
 
-}  // end state3_stillness
+        // Publish door opened message to particle
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char doorOpenedMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(doorOpenedMessage, sizeof(doorOpenedMessage), 
+                "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
+                3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
+
+        // Transition to state 0
+        stateHandler = state0_idle;
+    } 
+    // Transition to state 2 if movement exceeds the stillness threshold
+    else if ((unsigned long)checkINS.iAverage > stillness_ins_threshold) {
+        Log.warn("State 3 --> State 2: Motion detected again.");
+        publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
+
+        // Reset the state 2 timer and transition to state 2
+        state2_start_time = millis();
+        stateHandler = state2_monitoring;
+    }
+    // Duration alert condition based on time elapsed since door closed or last alert
+    else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) { 
+        Log.warn("--Duration Alert-- TimeSinceDoorClosed: %lu, TimeSinceLastAlert: %lu, TimeInState: %lu", timeSinceDoorClosed, timeSinceLastDurationAlert, timeInState3);
+
+        // Update the duration alert counter and time
+        numDurationAlertSent += 1;
+        lastDurationAlertTime = millis();
+
+        // Publish duration alert to particle
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(alertMessage, sizeof(alertMessage),
+                    "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
+                    3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        Particle.publish("Duration Alert", alertMessage, PRIVATE);
+    }
+    // Stillness alert condition based on time elapsed since entering state 3
+    else if (isStillnessAlertActive && isStillnessAlertThresholdExceeded) {
+        Log.warn("--Stillness Alert-- TimeSinceDoorClosed: %lu, TimeInState: %lu", timeSinceDoorClosed, timeInState3);
+
+        // Update the stillness alert counter
+        numStillnessAlertSent += 1;
+
+        // Turning off this flag will pause both duration and stillness alerts
+        isStillnessAlertActive = false;
+
+        // Publish stillness alert to particle
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000; // Convert to minutes
+        char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(alertMessage, sizeof(alertMessage), 
+                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
+                 3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        Particle.publish("Stillness Alert", alertMessage, PRIVATE);
+    }
+}
 
 void publishStateTransition(int prevState, int nextState, unsigned char doorStatus, float INSValue) {
     if (stateMachineDebugFlag) {
-        // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
-        char stateTransition[622];
+        char stateTransition[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(stateTransition, sizeof(stateTransition),
-                 "{\"prev_state\":\"%d\", \"next_state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\"}", prevState, nextState, doorStatus,
-                 INSValue);
+                 "{"
+                    "\"prev_state\":\"%d\", "
+                    "\"next_state\":\"%d\", "
+                    "\"door_status\":\"0x%02X\", "
+                    "\"INS_val\":\"%f\" "
+                 "}",
+                prevState, nextState, doorStatus, INSValue);
         Particle.publish("State Transition", stateTransition, PRIVATE);
     }
 }
 
-void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, unsigned long timer) {
+void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, unsigned long state_timer) {
     if (stateMachineDebugFlag) {
-        if ((millis() - debugFlagTurnedOnAt) > DEBUG_AUTO_OFF_THRESHOLD) {
+        if (calculateTimeSince(debugFlagTurnedOnAt) > DEBUG_AUTO_OFF_THRESHOLD) {
             stateMachineDebugFlag = false;
         }
-        else if ((millis() - lastDebugPublish) > DEBUG_PUBLISH_INTERVAL) {
-            // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
-            char debugMessage[622];
+        else if (calculateTimeSince(lastDebugPublish) > DEBUG_PUBLISH_INTERVAL) {
+            char debugMessage[PARTICLE_MAX_MESSAGE_LENGTH];
             snprintf(debugMessage, sizeof(debugMessage),
-                     "{\"state\":\"%d\", \"door_status\":\"0x%02X\", \"INS_val\":\"%f\", \"occupation_detection_threshold\":\"%lu\", \"stillness_threshold\":\"%lu\", \"timer_status\":\"%lu\", "
-                     "\"occupation_detection_timer\":\"%lu\", \"initial_timer\":\"%lu\", \"duration_timer\":\"%lu\", \"stillness_timer\":\"%lu\"}",
-                     state, doorStatus, INSValue, occupation_detection_ins_threshold, stillness_ins_threshold, timer, state0_occupant_detection_timer, state1_max_time, state2_max_duration,
-                     *max_stillness_time);
+                     "{"
+                        "\"state\":\"%d\", "
+                        "\"door_status\":\"0x%02X\", "
+                        "\"time_in_curr_state\":\"%lu\", "
+                        "\"INS_val\":\"%f\", "
+                        "\"occupancy_detection_INS\":\"%lu\", "
+                        "\"stillness_INS\":\"%lu\", "
+                        "\"occupancy_detection_timer\":\"%lu\", "
+                        "\"initial_timer\":\"%lu\", "
+                        "\"duration_alert_time\":\"%lu\", "
+                        "\"stillness_alert_time\":\"%lu\" "
+                     "}",
+                     state, doorStatus, state_timer, INSValue, occupancy_detection_ins_threshold, stillness_ins_threshold,
+                     state0_occupancy_detection_time, state1_initial_time, 
+                     duration_alert_time, stillness_alert_time);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();
         }
     }
-}
-
-/**
- * Saves the state transition data onto queues, including the last state, reason of transition and time spent in state.
- *
- * Reason Code | Meaning
- * -------------------------------
- * 0           | Movement surpasses threshold
- * 1           | Movement falls below threshold
- * 2           | Door opened
- * 3           | Initial timer surpassed
- * 4           | Duration alert
- * 5           | Stillness alert
- **/
-void saveStateChangeOrAlert(int state, int reason) {
-    stateQueue.push(state);
-    reasonQueue.push(reason);
-    timeQueue.push(millis() - lastStateChangeOrAlert);
-    lastStateChangeOrAlert = millis();
 }
 
 const char *resetReasonString(int resetReason) {
@@ -434,91 +549,88 @@ const char *resetReasonString(int resetReason) {
 }
 
 void getHeartbeat() {
+    // Static variable, retained across function calls
     static unsigned long lastHeartbeatPublish = 0;
 
-    // 1st "if condition" is so that the boron publishes a heartbeat on startup
-    // 2nd "if condition" is so that the boron publishes a heartbeat, when the doorMessageReceivedFlag is true.
-    //     The delay of HEARTBEAT_PUBLISH_DELAY is to restrict the heartbeat publish to 1 instead of 3 because the IM Door Sensor broadcasts 3
-    //     messages The doorMessageReceivedFlag is set to true when any IM Door Sensor message is received, but only after a certain threshold
-    // 3rd "if condition" is true only if a heartbeat hasnt been published in the last SM_HEARTBEAT_INTERVAL
-    if (lastHeartbeatPublish == 0 || (doorMessageReceivedFlag && ((millis() - doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY)) ||
-        (millis() - lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL) {
-        // Check INS value
-        filteredINSData checkINS = checkINS3331();
-        bool isINSZero = (checkINS.iAverage < 0.0001);
-        static unsigned int didMissQueueSum = 0;
-        static std::queue<bool> didMissQueue;
-        // from particle docs, max length of publish is 622 chars, I am assuming this includes null char
-        char heartbeatMessage[622] = {0};
+    // Publish a heartbeat message if at least one of these condition meet:
+    // 1. This is the first heartbeat since startup.
+    // 2. A door message was received and enough time has passed since the last "door" heartbeat.
+    //    The delay (HEARTBEAT_PUBLISH_DELAY) is to restrict the door heartbeat publish to 1 instead of 3 because the door broadcasts 3 messages. 
+    //    The doorMessageReceivedFlag is set to true when any IM Door Sensor message is received, but only after a certain threshold (see checkIM function)
+    // 3. The heartbeat hasn't been published in the last SM_HEARTBEAT_INTERVAL.
+    if (lastHeartbeatPublish == 0 || 
+        (doorMessageReceivedFlag && (calculateTimeSince(doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY)) ||
+        (calculateTimeSince(lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL)) {
+            
+        // Prepare the heartbeat message
+        char heartbeatMessage[PARTICLE_MAX_MESSAGE_LENGTH] = {0};
         JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
         writer.beginObject();
 
-        // Add "isINSZero" field to the JSON message
-        writer.name("isINSZero").value(isINSZero && lastHeartbeatPublish > 0);
-
-        // sends consecutive heartbeat count to server side to be handled
-        writer.name("consecutiveOpenDoorHeartbeatCount").value(consecutiveOpenDoorHeartbeatCount);
-
-        if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
-            // if oldest value did miss; subtract from the current amount
-            if (didMissQueue.front()) {
-                didMissQueueSum--;
-            }
-            didMissQueue.pop();
-        }
-        // store the value of missedDoorEventCount at this instant then reset it;
-        // it is possible for the value to change during the execution of this function
-        int instantMissedDoorEventCount = missedDoorEventCount;
-        missedDoorEventCount = 0;
-
-        // logs number of instances of missed door events since last heartbeat
-        writer.name("doorMissedMsg").value(instantMissedDoorEventCount);
-
-        bool didMiss = instantMissedDoorEventCount > 0;
-        didMissQueueSum += (int)didMiss;  // if did miss; add 1 to the current amount
-        didMissQueue.push(didMiss);       // enqueue whether this heartbeat did miss
-        // logs whether or not sensor is frequently missing door events
-        writer.name("doorMissedFrequently").value(didMissQueueSum > SM_HEARTBEAT_DID_MISS_THRESHOLD);
-
+        // Log the time since the last door message, battery status, and tamper status
+        // if a door message has been received, otherwise default to -1
         if (doorLastMessage == 0) {
-            // Haven't seen any door messages since the device last restarted so all of these are unknown at this point
             writer.name("doorLastMessage").value(-1);
-            writer.name("doorLowBatt").value(-1);
+            writer.name("doorLowBattery").value(-1);
             writer.name("doorTampered").value(-1);
-        }
-        else {
-            // logs time in milliseconds since last IM Door Sensor message was received
-            writer.name("doorLastMessage").value((unsigned int)(millis() - doorLastMessage));
-
-            writer.name("doorLowBatt").value(doorLowBatteryFlag);
-
+        } else {
+            writer.name("doorLastMessage").value((unsigned int)calculateTimeSince(doorLastMessage));
+            writer.name("doorLowBattery").value(doorLowBatteryFlag);
             writer.name("doorTampered").value(doorTamperedFlag);
         }
 
-        // logs the reason of the last reset
+        // If a previous hearbeat has been published, then log if the INS is zero
+        filteredINSData checkINS = checkINS3331();
+        bool isINSZero = (checkINS.iAverage < 0.0001);
+        writer.name("isINSZero").value(isINSZero && lastHeartbeatPublish > 0);
+
+        // Add consecutive open door heartbeat count
+        writer.name("consecutiveOpenDoorHeartbeatCount").value(consecutiveOpenDoorHeartbeatCount);
+        
+        // Queue to track missed door events
+        static unsigned int didMissQueueSum = 0;
+        static std::queue<bool> didMissQueue;
+
+        // Manage the queue of missed door events
+        if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
+            // If the oldest value in the queue indicates a missed event, decrement the sum
+            if (didMissQueue.front()) {
+                didMissQueueSum--;
+            }
+            // Remove the oldest value from the queue
+            didMissQueue.pop();
+        }
+
+        // Store the current missed door event count and reset it
+        // This ensures that the count is accurate even if it changes during function execution
+        int instantMissedDoorEventCount = missedDoorEventCount;
+        missedDoorEventCount = 0;
+
+        // Log the number of missed door events since the last heartbeat
+        writer.name("doorMissedCount").value(instantMissedDoorEventCount);
+
+        // Update the missed door events queue
+        // Add the current missed event status to the queue and update the sum
+        bool didMiss = instantMissedDoorEventCount > 0;
+        didMissQueueSum += (int)didMiss;
+        didMissQueue.push(didMiss);
+
+        // Log whether the sensor is frequently missing door events
+        // This is determined by comparing the sum of missed events in the queue to a threshold
+        writer.name("doorMissedFrequently").value(didMissQueueSum > SM_HEARTBEAT_DID_MISS_THRESHOLD);
+
+        // Log the reason for the last reset
         writer.name("resetReason").value(resetReasonString(resetReason));
 
-        // subsequent heartbeats will not display reset reason
+        // Reset reason is only logged once after startup
         resetReason = RESET_REASON_NONE;
 
-        // logs each state, reason of transitioning away, and time spent in state (ms)
-        writer.name("states").beginArray();
-        int numStates = stateQueue.size();
-        for (int i = 0; i < numStates; i++) {
-            // If heartbeat message is near full, break, report rest of states in next heartbeat
-            if (writer.dataSize() >= HEARTBEAT_STATES_CUTOFF) {
-                Log.warn("Heartbeat message full, remaining states will be reported next heartbeat");
-                break;
-            }
-            writer.beginArray().value(stateQueue.front()).value(reasonQueue.front()).value((unsigned int)timeQueue.front()).endArray();
-            stateQueue.pop();
-            reasonQueue.pop();
-            timeQueue.pop();
-        }                    // end states queue for
-        writer.endArray();   // end states array
-        writer.endObject();  // end heartbeat message
-        Particle.publish("Heartbeat", heartbeatMessage, PRIVATE);
+        // Publish the heartbeat message to particle
+        writer.endObject();
         Log.warn(heartbeatMessage);
+        Particle.publish("Heartbeat", heartbeatMessage, PRIVATE);
+
+        // Update the last heartbeat publish time
         lastHeartbeatPublish = millis();
         doorMessageReceivedFlag = false;
     }

@@ -1,5 +1,6 @@
-/*
- * Mock implementation for Thread functions and classes
+/* mock_thread.h - Mock implementation for Thread functions and classes
+ *
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  */
 
 #pragma once

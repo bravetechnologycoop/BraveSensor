@@ -1,16 +1,14 @@
-/*
- * TPL5010 Watchdog
+/* tpl5010watchdog.h - Function declarations for the TPL5010 watchdog timer.
  *
- * Description:  Reset particle if watchdog is not serviced for a set amount of time.
- *
- * Author: James Seto
- * Date:  June 2021
- *
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
+ * 
+ * File created by: James Seto, June 2021
  */
+
 #ifndef WATCHDOG_H
 #define WATCHDOG_H
 
-//*************************function declarations*******************
+// ************************** Function declarations **************************
 
 void setupWatchdog();
 void serviceWatchdog();

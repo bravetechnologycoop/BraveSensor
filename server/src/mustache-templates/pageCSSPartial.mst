@@ -1,0 +1,194 @@
+<style>
+    body {
+        background-color: rgb(247, 249, 250);
+        margin: 0px;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .navbar-toggler {
+        border: 2px solid rgba(255, 255, 255, .4);
+        border-radius: 5px;
+    }
+
+    .navbar, .btn-logout {
+        background-color: rgb(0, 184, 184);
+        font-size: 20px;
+    }
+
+    .nav-item a {
+        color: rgb(247, 249, 250);
+    }
+
+    .dropdown,
+    .dropdown-toggle,
+    .dropdown-menu {
+        width: 100%;	
+    }
+
+    .nav-link.dropdown-item {
+        color: rgb(88, 88, 91);
+        overflow: hidden; 
+        white-space: nowrap; 
+        text-overflow: ellipsis;
+    }
+
+    .btn-logout, .btn-logout > a {
+        width: auto;
+        text-decoration: none;
+    }    
+
+    #navbar-brand {
+        font-size: 24px;
+        color: rgb(247, 249, 250);
+    }
+
+    .content-area {
+        background-color: rgb(247, 249, 250);
+        color: rgb(88, 88, 91);
+    }
+
+    .content-wrapper {
+        margin-left: 7%;
+        margin-right: 7%;
+        margin-top: 5%;
+        margin-bottom: 5%;
+    }
+    
+    .faded-heading {
+        opacity: .75;
+    }
+
+    .input-group {
+        margin: 0 auto;
+        display: flex;
+    }
+    
+    .input-group .searchBar {
+        flex: 1;
+        border: 1px solid #00b8b8;
+        border-radius: 5px;
+        padding-left: 10px; 
+        outline: none;
+    }
+    
+    .input-group .searchBar::placeholder {
+        margin-left: 5px; 
+    }
+    
+    .input-group .input-group-append .form-control {
+        border: 1px solid #00b8b8;
+        border-radius: 5px;
+        margin-left: 5px;
+        outline: none; 
+    }
+
+    .info-box {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        background-color: #f9f9f9;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+
+    .info-box p {
+        margin-bottom: 5px;
+    }
+
+    .info-box span {
+        display: inline-block;
+        margin-left: 5px;
+    }
+
+    .table-header {
+        background-color: rgb(135, 200, 200);
+        color:rgb(255, 255, 255);
+        font-weight: bolder;
+    }
+
+    .table-data {
+        font-weight: normal; 
+    }
+
+    div.content-wrapper>table {
+        table-layout: fixed;
+        max-width: 300px;
+        border-collapse: collapse;
+        border-spacing: 5px 5px;
+        margin-right: auto;
+    }
+
+    th, td {
+        text-align: left;
+        height: auto;
+        width: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    th a{
+        text-decoration: none;
+        color: rgb(88, 88, 91);
+    }
+
+    th a:hover {
+        text-decoration: none;
+    }
+
+    .table>thead>tr>th,
+    .table>tbody>tr>th,
+    .table>tbody>tr>td {
+        border: none;
+        width: auto;
+    }
+
+    @media screen and (max-width: 770px) {
+
+        .navbar, .btn-logout, h3 {
+            font-size: 1em; 
+            font-weight: 900;
+        }
+
+        #navbar-brand {
+            font-size: 4.5vw;
+            font-weight: 700;
+        }
+
+        .nav-item {
+            text-align: right;
+        }
+
+        .navbar-toggler {
+            border: none;
+        }
+
+        .dropdown-menu {
+            background-color: rgb(0, 184, 184);
+            border: none;
+            padding-right: 3%;
+        }
+
+        .nav-link.dropdown-item {
+            color: rgb(247, 249, 250);
+            text-align: right;
+        }
+
+        .nav-link.dropdown-item:hover {
+            color: white;
+            background-color: rgb(0, 200, 200);
+        }
+
+        .dropdown-menu.show {
+            padding-top: 0%;
+        }
+
+        .btn-logout {
+            padding-right: 0%;
+        }
+
+        table {
+            font-size: 1.8vw;
+        }
+    }
+</style>

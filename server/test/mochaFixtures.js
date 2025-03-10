@@ -1,6 +1,6 @@
 // https://mochajs.org/#global-fixtures
 
-const { helpers } = require('brave-alert-lib')
+const helpers = require('../src/utils/helpers')
 const { server } = require('../index')
 
 // Runs after ALL the mocha tests

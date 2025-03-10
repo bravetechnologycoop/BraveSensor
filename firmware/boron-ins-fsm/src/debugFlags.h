@@ -1,11 +1,18 @@
+/* debugFlags.h - Debug flags for state machine
+ * 
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
+ * 
+ * File created by: Heidi Fedorak, Apr 2021
+ */
+
 #ifndef DEBUG_FLAGS_H
 #define DEBUG_FLAGS_H
 
 // Length of time between debug publishes
-#define DEBUG_PUBLISH_INTERVAL 1500  // ms
+#define DEBUG_PUBLISH_INTERVAL      1500    // 1.5 sec
 
 // Max length of time to publish debug messages
-#define DEBUG_AUTO_OFF_THRESHOLD 28800000  // ms = 8 hours
+#define DEBUG_AUTO_OFF_THRESHOLD    28800000    // 8 hours
 
 // Whether or not to publish debug messages
 extern bool stateMachineDebugFlag;

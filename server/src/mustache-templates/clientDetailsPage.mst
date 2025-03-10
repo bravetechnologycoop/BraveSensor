@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Brave Sensor Dashboard</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    {{> css}}
+</head>
+
+<body>
+    {{> nav}}
+    <div class="content-area">
+        <div class="content-wrapper">
+            {{#client}}
+                <h3>Client: {{displayName}}</h3>
+                <a href="/clients/{{clientId}}/update" class="btn btn-secondary btn-sm ml-1" role="button">Update Client</a>
+                <br>
+                <br>
+                <br>
+
+                <h5>Client Info</h5>
+                <div class="info-box">
+                    <p><strong>Responder Phone Numbers:</strong> {{#responderPhoneNumbers}}{{.}}, {{/responderPhoneNumbers}}{{^responderPhoneNumbers}}N/A{{/responderPhoneNumbers}}</p>
+                    <p><strong>Fallback Phone Numbers:</strong> {{#fallbackPhoneNumbers}}{{.}}, {{/fallbackPhoneNumbers}}{{^fallbackPhoneNumbers}}N/A{{/fallbackPhoneNumbers}}</p>
+                    <p><strong>Funder:</strong> <span>{{#funder}}{{funder}}{{/funder}}{{^funder}}N/A{{/funder}}</span></p>
+                    <p><strong>Organization:</strong> <span>{{#organization}}{{organization}}{{/organization}}{{^organization}}N/A{{/organization}}</span></p>
+                    <p><strong>Project:</strong> <span>{{#project}}{{project}}{{/project}}{{^project}}N/A{{/project}}</span></p>
+                    <p><strong>Country:</strong> <span>{{#country}}{{country}}{{/country}}{{^country}}N/A{{/country}}</span></p>
+                    <p><strong>Country Subdivision:</strong> <span>{{#countrySubdivision}}{{countrySubdivision}}{{/countrySubdivision}}{{^countrySubdivision}}N/A{{/countrySubdivision}}</span></p>
+                    <p><strong>Building Type:</strong> <span>{{#buildingType}}{{buildingType}}{{/buildingType}}{{^buildingType}}N/A{{/buildingType}}</span></p>
+                    <p><strong>Postal Code:</strong> <span>{{#postalCode}}{{postalCode}}{{/postalCode}}{{^postalCode}}N/A{{/postalCode}}</span></p>
+                    <p><strong>City:</strong> <span>{{#city}}{{city}}{{/city}}{{^city}}N/A{{/city}}</span></p>
+                </div>
+                <br>
+
+                <h5>Devices</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm table-fixed">
+                        <thead>
+                            <tr class="table-header" scope="row">
+                                <th scope="col">Device Name</th>
+                                <th scope="col">Device Type</th>
+                                <th scope="col">Device Last Seen At</th>
+                                <th scope="col">Sends Alerts?</th>
+                                <th scope="col">Sends Vitals?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {{#devices}}
+                            <tr class="table-data">
+                                {{! Clicking item renders device details }}
+                                <th scope="row"><a href="/devices/{{deviceId}}">{{displayName}}</a></th>
+                                <td>{{deviceType}}</td>
+                                <td>{{#latestVital}}{{timeSinceLastVital}}{{/latestVital}}{{^latestVital}}N/A{{/latestVital}}</td>
+                                <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
+                                <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
+                            </tr>
+                        {{/devices}}
+                        </tbody>
+                    </table>
+                </div>
+            {{/client}}
+            {{^client}}
+                <p>No matching client</p>
+            {{/client}}
+        </div>
+    </div>
+    
+    <script>
+        function reloadPage() {
+            location.reload(true)
+        }
+        setInterval(reloadPage, 30000)
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>

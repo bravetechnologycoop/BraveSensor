@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Brave Sensor Dashboard</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    {{> css}}
+</head>
+
+<body>
+{{> nav}}
+    <div class="content-area">
+        <div class="content-wrapper">
+            {{#session}}
+                <h3>Session Details</h3>
+                <a href="/devices/{{deviceId}}" class="btn btn-secondary btn-sm" role="button">View Device</a>
+                <br>
+                <br>
+                <br>
+
+                <h5>Session Info</h5>
+                <div class="info-box">
+                    <p><strong>Session Status:</strong> {{sessionStatus}}</p>
+                    <p><strong>Door Opened:</strong> {{#doorOpened}}Yes{{/doorOpened}}{{^doorOpened}}No{{/doorOpened}}</p>
+                    <p><strong>Survey Sent:</strong> {{#surveySent}}Yes{{/surveySent}}{{^surveySent}}No{{/surveySent}}</p>
+                    <p><strong>Response Time:</strong> {{#responseTime}}{{responseTime.minutes}}m {{responseTime.seconds}}s{{/responseTime}}{{^responseTime}}N/A{{/responseTime}}</p>
+                    <p><strong>Started At:</strong> {{#formatDate}}{{createdAt}}{{/formatDate}}</p>
+                    <p><strong>Ended At:</strong> {{#sessionEndedAt}}{{#formatDate}}{{sessionEndedAt}}{{/formatDate}}{{/sessionEndedAt}}{{^sessionEndedAt}}Ongoing{{/sessionEndedAt}}</p>
+                </div>
+                <br>
+                
+                <h5>Event Timeline</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm table-fixed">
+                        <thead>
+                            <tr class="table-header" scope="row">
+                                <th scope="col">Event Type</th>
+                                <th scope="col">Message</th>
+                                <th scope="col">Sent At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {{#events}}
+                            <tr class="table-data">
+                                <td>{{eventType}}</td>
+                                <td>{{message}}</td>
+                                <td>{{#formatDate}}{{eventSentAt}}{{/formatDate}}</td>
+                            </tr>
+                        {{/events}}
+                        </tbody>
+                    </table>
+                </div>
+            {{/session}}
+            {{^session}}
+                <h5>Sorry, this session does not appear to exist.</h5>
+            {{/session}}
+        </div>
+    </div>
+
+    <script>
+        function reloadPage() {
+            location.reload(true)
+        }
+        setInterval(reloadPage, 30000)
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+</html>

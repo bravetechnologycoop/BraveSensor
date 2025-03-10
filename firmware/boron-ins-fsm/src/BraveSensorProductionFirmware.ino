@@ -1,6 +1,8 @@
-/*
- * Brave firmware state machine for single Boron
- * written by Heidi Fedorak, Apr 2021
+/* BraveSensorProductionFirmware.ino - Main firmware for Brave single Boron sensor
+ * 
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
+ * 
+ * File created by: Heidi Fedorak, Apr 2021
  */
 
 #include "Particle.h"
@@ -11,19 +13,19 @@
 #include "tpl5010watchdog.h"
 #include "statusRGB.h"
 
-#define DEBUG_LEVEL            LOG_LEVEL_INFO
-#define BRAVE_FIRMWARE_VERSION 11000  // see versioning notes in the readme
+// See versioning in README.md
+#define BRAVE_FIRMWARE_VERSION  11000
+#define DEBUG_LEVEL             LOG_LEVEL_WARN
 
-PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);  // must be an int, see versioning notes above
+PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);
+SerialLogHandler logHandler(DEBUG_LEVEL);
 SYSTEM_THREAD(ENABLED);
-SerialLogHandler logHandler(WARN_LEVEL);
 
 void setup() {
-    // enable reset reason
     System.enableFeature(FEATURE_RESET_INFO);
 
-    // use internal antenna on Boron for BLE
     BLE.selectAntenna(BleAntennaType::INTERNAL);
+
     setupIM();
     setupINS3331();
     setupConsoleFunctions();
@@ -31,30 +33,29 @@ void setup() {
     setupWatchdog();
     setupStatusRGB();
 
-    Particle.publishVitals(900);  // 15 minutes
+    Particle.publishVitals(900);  // every 15 minutes
 }
 
 void loop() {
-    // service the watchdog if Particle is connected to wifi
+    // Service the watchdog if Particle is connected to cellular network
     if (Cellular.ready()) {
         serviceWatchdog();
     }
-    // officially sanctioned Mariano (at Particle support) code
+
+    // Officially sanctioned Mariano (at Particle support) code
     // aka don't send commands to peripherals via UART in setup() because
-    // particleOS may not have finished initializing its UART modules
+    // particleOS may not have finished initializing its UART modules.
     static bool initialized = false;
 
-    // do once
+    // Do once
     if (!initialized && Particle.connected()) {
-        // use external antenna on Boron
-        // BLE.selectAntenna(BleAntennaType::EXTERNAL);
-        initializeStateMachineConsts();
         initializeDoorID();
+        initializeStateMachineConsts();
         startINSSerial();
         initialized = true;
     }
 
-    // do every time loop() is called
+    // Do every time loop() is called
     if (initialized) {
         stateHandler();
         getHeartbeat();

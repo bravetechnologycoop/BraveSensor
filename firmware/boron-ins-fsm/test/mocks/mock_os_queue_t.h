@@ -1,5 +1,6 @@
-/*
- * Mock implementation for os queue functions and classes
+/* mock_os_queue_t.h - Mock implementation for os queue functions and classes
+ *
+ * Copyright (C) 2025 Brave Technology Coop. All rights reserved.
  */
 
 #pragma once
@@ -8,7 +9,6 @@
 #include <stdint.h>
 
 typedef uint32_t system_tick_t;
-
 typedef int os_result_t;
 
 int os_queue_create(os_queue_t* queue, size_t item_size, size_t item_count, void* reserved);
