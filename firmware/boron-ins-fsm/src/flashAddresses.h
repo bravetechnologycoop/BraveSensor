@@ -22,8 +22,8 @@
 // State machine constants
 #define ADDR_STILLNESS_INS_THRESHOLD   4    // uint32_t = 4 bytes
 #define ADDR_STATE1_INITIAL_TIME       8    // uint32_t = 4 bytes
-#define ADDR_STATE2_MAX_DURATION       12   // uint32_t = 4 bytes --- NOT USED
-#define ADDR_STATE3_MAX_STILLNESS_TIME 16   // uint32_t = 4 bytes --- NOT USED
+#define ADDR_DURATION_ALERT_TIME       12   // uint32_t = 4 bytes
+#define ADDR_STILLNESS_ALERT_TIME      16   // uint32_t = 4 bytes
 
 // IM Door Sensor ID
 #define ADDR_IM_DOORID                  20  // (struct)[uint8_t * 3] = 3 bytes
@@ -42,12 +42,6 @@
 #define ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD                  37 // uint32_t = 4 bytes
 #define ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG  41 // uint16_t = 2 bytes
 
-// New state machine constants and thier initialization flag
-// Alert times (threshold times for sending alerts)
-#define ADDR_INITIALIZE_ALERT_TIME_FLAG     43  // uint16_t = 2 bytes
-#define ADDR_DURATION_ALERT_TIME            45  // uint32_t = 4 bytes
-#define ADDR_STILLNESS_ALERT_TIME           49  // uint32_t = 4 bytes
-
-// next available address is 49 + 4 = 53
+// next available address is 41 + 4 = 45
 
 #endif

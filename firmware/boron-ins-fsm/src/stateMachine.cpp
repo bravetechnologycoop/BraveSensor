@@ -99,13 +99,17 @@ void initializeStateMachineConsts() {
     if (initializeConstsFlag != INITIALIZATION_FLAG_SET) {
         EEPROM.put(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
         EEPROM.put(ADDR_STATE1_INITIAL_TIME, state1_initial_time);
-    
+        EEPROM.put(ADDR_DURATION_ALERT_TIME, duration_alert_time);
+        EEPROM.put(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
+
         initializeConstsFlag = INITIALIZATION_FLAG_SET;
         EEPROM.put(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
         Log.warn("State machine constants initialized and written to EEPROM.");
     } else {
         EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
         EEPROM.get(ADDR_STATE1_INITIAL_TIME, state1_initial_time);
+        EEPROM.get(ADDR_DURATION_ALERT_TIME, duration_alert_time);
+        EEPROM.get(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
         Log.warn("State machine constants read from EEPROM.");
     }
 
@@ -146,21 +150,6 @@ void initializeStateMachineConsts() {
     } else {
         EEPROM.get(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
         Log.warn("Occupancy Detection INS Threshold read from EEPROM.");
-    }
-    
-    EEPROM.get(ADDR_INITIALIZE_ALERT_TIME_FLAG, initializeAlertTimeFlag);
-    Log.warn("AlertTimeFlag is 0x%04X", initializeAlertTimeFlag);
-    if (initializeAlertTimeFlag != INITIALIZATION_FLAG_SET) {
-        EEPROM.put(ADDR_DURATION_ALERT_TIME, duration_alert_time);
-        EEPROM.put(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
-
-        initializeAlertTimeFlag = INITIALIZATION_FLAG_SET;
-        EEPROM.put(ADDR_INITIALIZE_ALERT_TIME_FLAG, initializeAlertTimeFlag);
-        Log.warn("Alert times initialized and written to EEPROM.");
-    } else {
-        EEPROM.get(ADDR_DURATION_ALERT_TIME, duration_alert_time);
-        EEPROM.get(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
-        Log.warn("Alert times read from EEPROM.");
     }
 }
 
