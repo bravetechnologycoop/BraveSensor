@@ -158,6 +158,8 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
     switch (selectedCategory) {
       case 'Overdose Event':
       case 'Emergency Event':
+      case 'Medical Event':
+      case 'Security Event':
       case 'Space Empty':
         messageKey = 'thankYou'
         break
@@ -238,6 +240,8 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, latestSessio
       case 'Emergency Event':
       case 'Occupant Okay':
       case 'Space Empty':
+      case 'Medical Event':
+      case 'Security Event':
         messageKey = 'thankYou'
         break
       case 'Other':
@@ -411,6 +415,8 @@ async function handleDurationAlertSurveyDoorOpened(client, device, latestSession
       case 'Emergency Event':
       case 'Occupant Okay':
       case 'Space Empty':
+      case 'Medical Event':
+      case 'Security Event':
         messageKey = 'thankYou'
         break
       case 'Other':
