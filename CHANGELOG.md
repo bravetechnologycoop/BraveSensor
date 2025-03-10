@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.0.0] - 2025-03-10
+
 ### Added
 
 - Implemented the new alert flow in `sensorEvents.js` and `twilioEvents.js`(CU-86dv7znd9).
@@ -912,7 +914,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v11.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.0.0...HEAD
+[12.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v11.0.0...v12.0.0
 [11.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.16.0...v11.0.0
 [10.16.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...v10.16.0
 [10.15.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.14.0...v10.15.0
