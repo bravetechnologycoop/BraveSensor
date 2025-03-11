@@ -30,53 +30,64 @@ async function setupSmokeTest(req, res) {
     return res.status(400).send({ error: 'Missing required parameters' })
   }
 
+  let pgClient
   try {
-    const pgClient = await db_new.beginTransaction()
+    pgClient = await db_new.beginTransaction()
     if (!pgClient) {
       const errorMessage = `Error starting transaction - setupSmokeTest: responderPhoneNumber: ${reqResponderPhoneNumber}, deviceTwilioNumber: ${deviceTwilioNumber}`
       helpers.logError(errorMessage)
       throw new Error(errorMessage)
     }
 
-    try {
-      const smokeTestClient = await factories_new.clientNewDBFactory(
-        {
-          displayName: 'SmokeTestClient',
-          responderPhoneNumbers: [reqResponderPhoneNumber],
-          devicesSendingAlerts: true,
-        },
-        pgClient,
-      )
+    const smokeTestClient = await factories_new.clientNewDBFactory(
+      {
+        displayName: 'SmokeTestClient',
+        responderPhoneNumbers: [reqResponderPhoneNumber],
+        devicesSendingAlerts: true,
+      },
+      pgClient,
+    )
 
-      if (!smokeTestClient) {
-        helpers.log('Client creation returned null')
-        throw new Error('Failed to create smoke test client')
-      }
-
-      const smokeTestDevice = await factories_new.deviceNewDBFactory(
-        {
-          displayName: 'SmokeTestDevice',
-          deviceTwilioNumber: reqDeviceTwilioNumber,
-          isSendingAlerts: true,
-          clientId: smokeTestClient.clientId,
-        },
-        pgClient,
-      )
-
-      if (!smokeTestDevice) {
-        helpers.log('Device creation returned null')
-        throw new Error('Failed to create smoke test device')
-      }
-
-      await db_new.commitTransaction(pgClient)
-      res.status(200).send()
-    } catch (error) {
-      await db_new.rollbackTransaction(pgClient)
-      throw error
+    if (!smokeTestClient) {
+      helpers.log('Client creation returned null')
+      throw new Error('Failed to create smoke test client')
     }
+
+    const smokeTestDevice = await factories_new.deviceNewDBFactory(
+      {
+        displayName: 'SmokeTestDevice',
+        deviceTwilioNumber: reqDeviceTwilioNumber,
+        isSendingAlerts: true,
+        clientId: smokeTestClient.clientId,
+      },
+      pgClient,
+    )
+
+    if (!smokeTestDevice) {
+      helpers.log('Device creation returned null')
+      throw new Error('Failed to create smoke test device')
+    }
+
+    await db_new.commitTransaction(pgClient)
+    res.status(200).send()
   } catch (error) {
+    if (pgClient) {
+      try {
+        await db_new.rollbackTransaction(pgClient)
+      } catch (rollbackError) {
+        helpers.logError(`Error rolling back transaction: ${rollbackError.message}. Original error: ${error.message}`)
+      }
+    }
     helpers.log(`Setup failed: ${error.message}`)
     res.status(500).send()
+  } finally {
+    if (pgClient) {
+      try {
+        await pgClient.release()
+      } catch (releaseError) {
+        helpers.logError(`Error releasing database client: ${releaseError.message}`)
+      }
+    }
   }
 }
 
@@ -167,16 +178,32 @@ async function smokeTest(phoneNumber, twilioNumber) {
 }
 
 async function testDatabaseConnection() {
+  let pgClient
   try {
-    const pgClient = await db_new.beginTransaction()
+    pgClient = await db_new.beginTransaction()
     if (!pgClient) {
       throw new Error('Database connection failed')
     }
     await db_new.commitTransaction(pgClient)
     return true
   } catch (error) {
+    if (pgClient) {
+      try {
+        await db_new.rollbackTransaction(pgClient)
+      } catch (rollbackError) {
+        helpers.logError(`Error rolling back transaction: ${rollbackError.message}`)
+      }
+    }
     helpers.log(`Database connection test failed: ${error.message}`)
     return false
+  } finally {
+    if (pgClient) {
+      try {
+        await pgClient.release()
+      } catch (releaseError) {
+        helpers.logError(`Error releasing database client: ${releaseError.message}`)
+      }
+    }
   }
 }
 
