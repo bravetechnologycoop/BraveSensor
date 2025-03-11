@@ -185,13 +185,7 @@ async function runBeginTransactionWithRetries(retryCount) {
     await pgClient.query(`SET idle_in_transaction_session_timeout = ${IDLE_IN_TRANSACTION_TIMEOUT_MS}`)
 
     await pgClient.query('BEGIN')
-
-    await pgClient.query(
-      'LOCK TABLE clients_new, devices_new, sessions_new, events_new, vitals_new, notifications_new IN SHARE UPDATE EXCLUSIVE MODE NOWAIT',
-    )
   } catch (e) {
-    helpers.logError(`Error running the runBeginTransactionWithRetries query: ${e}`)
-
     if (pgClient) {
       try {
         await rollbackTransaction(pgClient)
