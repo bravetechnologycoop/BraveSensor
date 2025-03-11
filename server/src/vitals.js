@@ -106,7 +106,9 @@ async function checkDeviceDisconnectionVitals() {
   try {
     pgClient = await db_new.beginTransaction()
     if (!pgClient) {
-      throw new Error('Error starting transaction')
+      const errorMessage = `Error starting transaction - checkDeviceDisconnectionVitals`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
     }
 
     const currentDBTime = await db_new.getCurrentTime(pgClient)
@@ -271,7 +273,9 @@ async function processHeartbeat(eventData, client, device) {
   try {
     pgClient = await db_new.beginTransaction()
     if (!pgClient) {
-      throw new Error('Error starting transaction')
+      const errorMessage = `Error starting transaction - processHeartbeat: deviceId: ${device.deviceId}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
     }
 
     const currentDBTime = await db_new.getCurrentTime()

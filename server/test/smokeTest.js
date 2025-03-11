@@ -33,7 +33,9 @@ async function setupSmokeTest(req, res) {
   try {
     const pgClient = await db_new.beginTransaction()
     if (!pgClient) {
-      throw new Error('Failed to begin database transaction')
+      const errorMessage = `Error starting transaction - setupSmokeTest: responderPhoneNumber: ${reqResponderPhoneNumber}, deviceTwilioNumber: ${deviceTwilioNumber}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
     }
 
     try {
