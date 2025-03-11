@@ -145,14 +145,6 @@ async function checkDeviceDisconnectionVitals() {
       }
     }
     helpers.logError(`checkDeviceDisconnectionVitals: ${error.message}`)
-  } finally {
-    if (pgClient) {
-      try {
-        await pgClient.release()
-      } catch (releaseError) {
-        helpers.logError(`Error releasing database client: ${releaseError.message}`)
-      }
-    }
   }
 }
 
@@ -350,14 +342,6 @@ async function processHeartbeat(eventData, client, device) {
       }
     }
     throw new Error(`processHeartbeat: ${error.message}`)
-  } finally {
-    if (pgClient) {
-      try {
-        await pgClient.release()
-      } catch (releaseError) {
-        helpers.logError(`Error releasing database client: ${releaseError.message}`)
-      }
-    }
   }
 }
 
