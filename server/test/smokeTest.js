@@ -80,14 +80,6 @@ async function setupSmokeTest(req, res) {
     }
     helpers.log(`Setup failed: ${error.message}`)
     res.status(500).send()
-  } finally {
-    if (pgClient) {
-      try {
-        await pgClient.release()
-      } catch (releaseError) {
-        helpers.logError(`Error releasing database client: ${releaseError.message}`)
-      }
-    }
   }
 }
 
@@ -196,14 +188,6 @@ async function testDatabaseConnection() {
     }
     helpers.log(`Database connection test failed: ${error.message}`)
     return false
-  } finally {
-    if (pgClient) {
-      try {
-        await pgClient.release()
-      } catch (releaseError) {
-        helpers.logError(`Error releasing database client: ${releaseError.message}`)
-      }
-    }
   }
 }
 

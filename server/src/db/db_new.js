@@ -12,7 +12,9 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  ssl: { rejectUnauthorized: false },
+  max: 100,
+  allowExitOnIdle: true,
+  ssl: false,
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -20,7 +22,24 @@ const pool = new pg.Pool({
 pg.types.setTypeParser(1114, str => str)
 
 pool.on('error', err => {
-  helpers.logError(`Unexpected database error: ${err.toString()}`)
+  helpers.logError(`Pool error: ${err.message}`)
+  helpers.logError(`Pool stats: ${JSON.stringify(pool.totalCount, pool.idleCount, pool.waitingCount)}`)
+})
+
+let activeConnections = 0
+
+pool.on('connect', () => {
+  activeConnections += 1
+  if (helpers.isDbLogging()) {
+    helpers.log(`New connection established. Active: ${activeConnections}`)
+  }
+})
+
+pool.on('remove', () => {
+  activeConnections -= 1
+  if (helpers.isDbLogging()) {
+    helpers.log(`Connection removed. Active: ${activeConnections}`)
+  }
 })
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -124,17 +143,16 @@ async function commitTransaction(pgClient) {
 
   try {
     await pgClient.query('COMMIT')
-  } catch (e) {
-    helpers.logError(`Error running the commitTransaction query: ${e}`)
-  } finally {
-    try {
-      pgClient.release()
-    } catch (err) {
-      helpers.logError(`commitTransaction: Error releasing client: ${err}`)
-    }
-
     if (helpers.isDbLogging()) {
       helpers.log('COMPLETED: commitTransaction')
+    }
+  } catch (error) {
+    throw new Error(`Error running the commitTransaction query: ${error.message}`)
+  } finally {
+    try {
+      pgClient.release(true)
+    } catch (releaseError) {
+      helpers.logError(`commitTransaction: Error releasing client: ${releaseError}`)
     }
   }
 }
@@ -146,23 +164,22 @@ async function rollbackTransaction(pgClient) {
 
   try {
     await pgClient.query('ROLLBACK')
-  } catch (e) {
-    helpers.logError(`Error running the rollbackTransaction query: ${e}`)
-  } finally {
-    try {
-      pgClient.release()
-    } catch (err) {
-      helpers.logError(`rollbackTransaction: Error releasing client: ${err}`)
-    }
-
     if (helpers.isDbLogging()) {
       helpers.log('COMPLETED: rollbackTransaction')
+    }
+  } catch (error) {
+    throw new Error(`Error running the rollbackTransaction query: ${error.message}`)
+  } finally {
+    try {
+      pgClient.release(true)
+    } catch (releaseError) {
+      helpers.logError(`rollbackTransaction: Error releasing client: ${releaseError}`)
     }
   }
 }
 
 const LOCK_TIMEOUT_MS = 5000
-const STATEMENT_TIMEOUT_MS = 30000
+const STATEMENT_TIMEOUT_MS = 5000
 const IDLE_IN_TRANSACTION_TIMEOUT_MS = 60000
 const MAX_RETRIES = 5
 const BACKOFF_BASE = 100
@@ -183,7 +200,7 @@ async function runBeginTransactionWithRetries(retryCount) {
     await pgClient.query(`SET lock_timeout = ${LOCK_TIMEOUT_MS}`)
     await pgClient.query(`SET statement_timeout = ${STATEMENT_TIMEOUT_MS}`)
     await pgClient.query(`SET idle_in_transaction_session_timeout = ${IDLE_IN_TRANSACTION_TIMEOUT_MS}`)
-
+    await pgClient.query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE')
     await pgClient.query('BEGIN')
   } catch (e) {
     if (pgClient) {
@@ -1365,6 +1382,7 @@ async function getLatestVitalWithDeviceId(deviceId, pgClient) {
       FROM vitals_cache_new
       WHERE device_id = $1
       LIMIT 1
+      FOR UPDATE
       `,
       [deviceId],
       pool,
