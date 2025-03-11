@@ -321,6 +321,14 @@ async function processSensorEvent(client, device, eventType, eventData) {
       }
     }
     throw new Error(`processSensorEvent: ${error.message}`)
+  } finally {
+    if (pgClient) {
+      try {
+        await pgClient.release()
+      } catch (releaseError) {
+        helpers.logError(`Error releasing database client: ${releaseError.message}`)
+      }
+    }
   }
 }
 

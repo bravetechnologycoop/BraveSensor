@@ -616,6 +616,14 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
       }
     }
     throw new Error(`processTwilioEvent: ${error.message}`)
+  } finally {
+    if (pgClient) {
+      try {
+        await pgClient.release()
+      } catch (releaseError) {
+        helpers.logError(`Error releasing database client: ${releaseError.message}`)
+      }
+    }
   }
 }
 
