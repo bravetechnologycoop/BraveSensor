@@ -1023,6 +1023,7 @@ async function getSessionWithSessionId(sessionId, pgClient) {
       SELECT *
       FROM sessions_new
       WHERE session_id = $1
+      FOR UPDATE
       `,
       [sessionId],
       pool,
@@ -1050,6 +1051,7 @@ async function getLatestSessionWithDeviceId(deviceId, pgClient) {
       WHERE device_id = $1
       ORDER BY created_at DESC
       LIMIT 1
+      FOR UPDATE
       `,
       [deviceId],
       pool,
@@ -1289,6 +1291,7 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null,
         ELSE ${RESPONDABLE_EVENT_HIERARCHY.size + 1}
       END
       LIMIT 1
+      FOR UPDATE
     `
 
     const results = await helpers.runQuery('getLatestRespondableEvent', queryText, queryParams, pool, pgClient)
@@ -1465,6 +1468,7 @@ async function getLatestNotification(deviceId, pgClient) {
       WHERE device_id = $1
       ORDER BY notification_sent_at DESC
       LIMIT 1
+      FOR UPDATE
       `,
       [deviceId],
       pool,
@@ -1502,6 +1506,7 @@ async function getLatestConnectionNotification(deviceId, pgClient) {
       AND notification_type = ANY($2)
       ORDER BY notification_sent_at DESC
       LIMIT 1
+      FOR UPDATE
       `,
       [deviceId, connectionNotificationTypes],
       pool,
@@ -1531,6 +1536,7 @@ async function getLatestNotificationOfType(deviceId, notificationType, pgClient)
       AND notification_type = $2
       ORDER BY notification_sent_at DESC
       LIMIT 1
+      FOR UPDATE
       `,
       [deviceId, notificationType],
       pool,

@@ -111,7 +111,7 @@ async function checkDeviceDisconnectionVitals() {
       throw new Error(errorMessage)
     }
 
-    const currentDBTime = await db_new.getCurrentTime(pgClient)
+    const currentDBTime = await db_new.getCurrentTime()
 
     const devices = await db_new.getDevices(pgClient)
     if (!devices || devices.length === 0) {
