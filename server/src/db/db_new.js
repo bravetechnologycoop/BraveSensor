@@ -12,8 +12,10 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  max: 100,
+  max: 50,
   allowExitOnIdle: true,
+  connectionTimeoutMillis: 15000,
+  idleTimeoutMillis: 10000,
   ssl: false,
 })
 
@@ -21,9 +23,15 @@ const pool = new pg.Pool({
 // return string as is
 pg.types.setTypeParser(1114, str => str)
 
-pool.on('error', err => {
+pool.on('error', (err, client) => {
   helpers.logError(`Pool error: ${err.message}`)
-  helpers.logError(`Pool stats: ${JSON.stringify(pool.totalCount, pool.idleCount, pool.waitingCount)}`)
+  helpers.logError(`Pool stats - Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}`)
+  helpers.logSentry(`Database pool error: ${err.message}`)
+  try {
+    client.release(true)
+  } catch (releaseErr) {
+    helpers.logError(`Failed to release errored client: ${releaseErr.message}`)
+  }
 })
 
 let activeConnections = 0
@@ -31,16 +39,30 @@ let activeConnections = 0
 pool.on('connect', () => {
   activeConnections += 1
   if (helpers.isDbLogging()) {
-    helpers.log(`New connection established. Active: ${activeConnections}`)
+    helpers.log(`[${new Date().toISOString()}] New connection established. Active: ${activeConnections}`)
+  }
+})
+
+pool.on('release', () => {
+  if (helpers.isDbLogging()) {
+    helpers.log(`[${new Date().toISOString()}] Client released to pool. Active: ${activeConnections}`)
   }
 })
 
 pool.on('remove', () => {
   activeConnections -= 1
   if (helpers.isDbLogging()) {
-    helpers.log(`Connection removed. Active: ${activeConnections}`)
+    helpers.log(`[${new Date().toISOString()}] Connection removed. Active: ${activeConnections}`)
   }
 })
+
+setInterval(() => {
+  if (helpers.isDbLogging()) {
+    helpers.log(
+      `DB Pool Stats - Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}, Active connections: ${activeConnections}`,
+    )
+  }
+}, 10000)
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -180,7 +202,7 @@ async function rollbackTransaction(pgClient) {
 
 const LOCK_TIMEOUT_MS = 5000
 const STATEMENT_TIMEOUT_MS = 5000
-const IDLE_IN_TRANSACTION_TIMEOUT_MS = 60000
+const IDLE_IN_TRANSACTION_TIMEOUT_MS = 30000
 const MAX_RETRIES = 5
 const BACKOFF_BASE = 100
 
@@ -197,9 +219,11 @@ async function runBeginTransactionWithRetries(retryCount) {
       helpers.log('CONNECTED: beginTransaction')
     }
 
+    await pgClient.query(`SET application_name = 'app_transaction_${Date.now()}'`)
     await pgClient.query(`SET lock_timeout = ${LOCK_TIMEOUT_MS}`)
     await pgClient.query(`SET statement_timeout = ${STATEMENT_TIMEOUT_MS}`)
     await pgClient.query(`SET idle_in_transaction_session_timeout = ${IDLE_IN_TRANSACTION_TIMEOUT_MS}`)
+
     await pgClient.query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE')
     await pgClient.query('BEGIN')
   } catch (e) {
@@ -231,8 +255,12 @@ async function runBeginTransactionWithRetries(retryCount) {
 async function beginTransaction() {
   try {
     const pgClient = await runBeginTransactionWithRetries(0)
+    if (!pgClient) {
+      throw new Error('Failed to acquire database client after retries')
+    }
     return pgClient
   } catch (e) {
+    helpers.logError(`Failed to begin transaction: ${e.message}`)
     return null
   }
 }
@@ -258,7 +286,7 @@ async function getCurrentTimeForHealthCheck() {
     throw err
   } finally {
     try {
-      pgClient.release()
+      pgClient.release(true)
     } catch (err) {
       helpers.logError(`getCurrentTimeForHealthCheck: Error releasing client: ${err}`)
     }
