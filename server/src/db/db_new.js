@@ -23,9 +23,15 @@ const pool = new pg.Pool({
 // return string as is
 pg.types.setTypeParser(1114, str => str)
 
-pool.on('error', err => {
+pool.on('error', (err, client) => {
   helpers.logError(`Pool error: ${err.message}`)
-  helpers.logError(`Pool stats: ${JSON.stringify(pool.totalCount, pool.idleCount, pool.waitingCount)}`)
+  helpers.logError(`Pool stats - Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}`)
+  helpers.logSentry(`Database pool error: ${err.message}`)
+  try {
+    client.release(true)
+  } catch (releaseErr) {
+    helpers.logError(`Failed to release errored client: ${releaseErr.message}`)
+  }
 })
 
 let activeConnections = 0
