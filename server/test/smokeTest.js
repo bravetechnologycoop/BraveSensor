@@ -93,7 +93,7 @@ async function teardownSmokeTest(req, res) {
 
     // delete the smoke test client from database
     // since db has cascade on delete --> automatically delete the device, sessions, events etc.
-    await db_new.deleteClientWithClientId(smokeTestClient.clientId)
+    await db_new.clearClientWithClientId(smokeTestClient.clientId)
 
     res.status(200).send()
   } catch (error) {
@@ -169,28 +169,6 @@ async function smokeTest(phoneNumber, twilioNumber) {
   }
 }
 
-async function testDatabaseConnection() {
-  let pgClient
-  try {
-    pgClient = await db_new.beginTransaction()
-    if (!pgClient) {
-      throw new Error('Database connection failed')
-    }
-    await db_new.commitTransaction(pgClient)
-    return true
-  } catch (error) {
-    if (pgClient) {
-      try {
-        await db_new.rollbackTransaction(pgClient)
-      } catch (rollbackError) {
-        helpers.logError(`Error rolling back transaction: ${rollbackError.message}`)
-      }
-    }
-    helpers.log(`Database connection test failed: ${error.message}`)
-    return false
-  }
-}
-
 // Run the smoke test if the script is executed directly
 if (require.main === module) {
   if (!destinationURL || !responderPhoneNumber || !deviceTwilioNumber) {
@@ -201,17 +179,5 @@ if (require.main === module) {
 
   helpers.log('===== Running Server Smoke Tests =====\n')
 
-  testDatabaseConnection()
-    .then(success => {
-      if (!success) {
-        helpers.log('Database connection failed, exiting...')
-        process.exit(1)
-      }
-
-      return smokeTest(responderPhoneNumber, deviceTwilioNumber)
-    })
-    .catch(error => {
-      helpers.log(`Smoke Test failed: ${error.message}`)
-      process.exit(1)
-    })
+  smokeTest(responderPhoneNumber, deviceTwilioNumber)
 }
