@@ -16,8 +16,8 @@ const destinationURL = process.argv[2]
 const responderPhoneNumber = process.argv[3]
 const deviceTwilioNumber = process.argv[4]
 
-const smokeTestWait = 10000 // 10 seconds
-const particleDeviceId = 'e00111111111111111111111'
+const smokeTestWait = 60000 // 60 seconds
+const particleDeviceId = 'e00012345678901234567890'
 const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
