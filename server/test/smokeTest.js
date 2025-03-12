@@ -133,16 +133,16 @@ async function setup(recipientPhoneNumber, sensorPhoneNumber) {
   }
 }
 
-async function sendDurationAlert(deviceId) {
+async function sendStillnessAlert(deviceId) {
   try {
     await axios.post('/api/sensorEvent', {
-      event: 'Duration Alert',
-      data: '{"alertSentFromState": 2, "numDurationAlertsSent": 1, "numStillnessAlertsSent": 0, "occupancyDuration": 20}',
+      event: 'Stillness Alert',
+      data: '{"alertSentFromState": 3, "numDurationAlertsSent": 1, "numStillnessAlertsSent": 1, "occupancyDuration": 25}',
       coreid: deviceId,
       api_key: webhookAPIKey,
     })
   } catch (error) {
-    helpers.log(`sendDurationAlert: ${error.message}`)
+    helpers.log(`sendStillnessAlert: ${error.message}`)
   }
 }
 
@@ -155,7 +155,7 @@ async function smokeTest(phoneNumber, twilioNumber) {
     await setup(phoneNumber, twilioNumber)
     setupSuccessful = true
 
-    await sendDurationAlert(particleDeviceId)
+    await sendStillnessAlert(particleDeviceId)
     helpers.log(`Wait for ${smokeTestWait / 1000} seconds to finish smoke test...`)
     await helpers.sleep(smokeTestWait)
 
