@@ -280,7 +280,9 @@ async function processSensorEvent(client, device, eventType, eventData) {
   try {
     pgClient = await db_new.beginTransaction()
     if (!pgClient) {
-      throw new Error('Error starting transaction')
+      const errorMessage = `Error starting transaction - processSensorEvent: deviceId: ${device.deviceId}, eventType: ${eventType}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
     }
 
     if (eventData.numStillnessAlertsSent > 1) {
