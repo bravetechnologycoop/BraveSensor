@@ -57,6 +57,7 @@ async function setupSmokeTest(req, res) {
       {
         displayName: 'SmokeTestDevice',
         deviceTwilioNumber: reqDeviceTwilioNumber,
+        particleDeviceId,
         isSendingAlerts: true,
         clientId: smokeTestClient.clientId,
       },
@@ -109,10 +110,13 @@ module.exports = {
   teardownSmokeTest,
 }
 
-async function teardown() {
+async function teardown(expectFail) {
   try {
     await axios.post('/smokeTest/teardown', {})
   } catch (error) {
+    if (expectFail) {
+      return
+    }
     helpers.log(`Teardown failed: ${error.message}`)
   }
 }
@@ -150,7 +154,7 @@ async function smokeTest(phoneNumber, twilioNumber) {
   let setupSuccessful = false
 
   try {
-    await teardown().catch(() => {})
+    await teardown(true)
 
     await setup(phoneNumber, twilioNumber)
     setupSuccessful = true
@@ -159,13 +163,16 @@ async function smokeTest(phoneNumber, twilioNumber) {
     helpers.log(`Wait for ${smokeTestWait / 1000} seconds to finish smoke test...`)
     await helpers.sleep(smokeTestWait)
 
-    await teardown()
+    await teardown(false)
+
     helpers.log('Smoke Test successful.')
+    process.exit(0)
   } catch (error) {
     helpers.log(`Smoke Test failed: ${error.message}`)
     if (setupSuccessful) {
       await teardown().catch(() => {})
     }
+    process.exit(1)
   }
 }
 
@@ -173,11 +180,11 @@ async function smokeTest(phoneNumber, twilioNumber) {
 if (require.main === module) {
   if (!destinationURL || !responderPhoneNumber || !deviceTwilioNumber) {
     helpers.log('\nMissing required parameters. Usage:')
-    helpers.log('npm run smoketest "http://localhost:8000" "+11234567890" "+19876543210"')
+    helpers.log('npm run smoketest "<domain>" "<responderPhoneNumber>" "<deviceTwilioNumber>"')
     process.exit(1)
   }
 
-  helpers.log('===== Running Server Smoke Tests =====\n')
+  helpers.log('===== Running Server Smoke Test =====\n')
 
   smokeTest(responderPhoneNumber, deviceTwilioNumber)
 }
