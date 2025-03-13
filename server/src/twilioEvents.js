@@ -79,19 +79,17 @@ async function scheduleStillnessAlertSurvey(client, device, sessionId, responder
     try {
       const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
       if (!latestSession || latestSession.sessionId !== sessionId) {
-        helpers.log(`Session changed or expired, cancelling survey for ${sessionId}`)
-        return
+        throw new Error(`Session changed or expired, cancelling survey for ${sessionId}`)
       }
 
       // Only send survey if session is active and door is still closed
       if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened) {
         await sendSurvey(latestSession)
       } else {
-        helpers.log(`Session completed or door opened, cancelling survey for ${sessionId}`)
-        return
+        throw new Error(`Session completed or door opened, cancelling survey for ${sessionId}`)
       }
     } catch (error) {
-      helpers.logError(`scheduleStillnessAlertSurvey: ${error.message}`)
+      helpers.log(`scheduleStillnessAlertSurvey: ${error.message}`)
     }
   }, surveyDelay)
 }
