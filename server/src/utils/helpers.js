@@ -96,11 +96,13 @@ async function runQuery(functionName, queryString, queryParams, pool, clientPara
   }
 
   let client = clientParam
-  const transactionMode = client !== undefined
+  let shouldRelease = false
+  const queryStart = Date.now()
 
   try {
-    if (!transactionMode) {
+    if (!client) {
       client = await pool.connect()
+      shouldRelease = true
       if (isDbLogging()) {
         log(`CONNECTED: ${functionName}`)
       }
@@ -111,14 +113,19 @@ async function runQuery(functionName, queryString, queryParams, pool, clientPara
       throw new Error('Serialization failure - transaction must be retried')
     }
 
+    const queryDuration = Date.now() - queryStart
+    if (queryDuration > 1000) {
+      log(`SLOW QUERY: ${functionName} took ${queryDuration}ms`)
+    }
+
     return result
   } catch (e) {
     logError(`Error running the ${functionName} query: ${e}`)
     throw e
   } finally {
-    if (!transactionMode) {
+    if (shouldRelease && client) {
       try {
-        client.release()
+        client.release(true)
       } catch (err) {
         logError(`${functionName}: Error releasing client: ${err}`)
       }

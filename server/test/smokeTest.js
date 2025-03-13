@@ -16,8 +16,8 @@ const destinationURL = process.argv[2]
 const responderPhoneNumber = process.argv[3]
 const deviceTwilioNumber = process.argv[4]
 
-const smokeTestWait = 10000 // 10 seconds
-const particleDeviceId = 'e00111111111111111111111'
+const smokeTestWait = 60000 // 60 seconds
+const particleDeviceId = 'e00012345678901234567890'
 const webhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
@@ -30,49 +30,55 @@ async function setupSmokeTest(req, res) {
     return res.status(400).send({ error: 'Missing required parameters' })
   }
 
+  let pgClient
   try {
-    const pgClient = await db_new.beginTransaction()
+    pgClient = await db_new.beginTransaction()
     if (!pgClient) {
-      throw new Error('Failed to begin database transaction')
+      const errorMessage = `Error starting transaction - setupSmokeTest: responderPhoneNumber: ${reqResponderPhoneNumber}, deviceTwilioNumber: ${deviceTwilioNumber}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
     }
 
-    try {
-      const smokeTestClient = await factories_new.clientNewDBFactory(
-        {
-          displayName: 'SmokeTestClient',
-          responderPhoneNumbers: [reqResponderPhoneNumber],
-          devicesSendingAlerts: true,
-        },
-        pgClient,
-      )
+    const smokeTestClient = await factories_new.clientNewDBFactory(
+      {
+        displayName: 'SmokeTestClient',
+        responderPhoneNumbers: [reqResponderPhoneNumber],
+        devicesSendingAlerts: true,
+      },
+      pgClient,
+    )
 
-      if (!smokeTestClient) {
-        helpers.log('Client creation returned null')
-        throw new Error('Failed to create smoke test client')
-      }
-
-      const smokeTestDevice = await factories_new.deviceNewDBFactory(
-        {
-          displayName: 'SmokeTestDevice',
-          deviceTwilioNumber: reqDeviceTwilioNumber,
-          isSendingAlerts: true,
-          clientId: smokeTestClient.clientId,
-        },
-        pgClient,
-      )
-
-      if (!smokeTestDevice) {
-        helpers.log('Device creation returned null')
-        throw new Error('Failed to create smoke test device')
-      }
-
-      await db_new.commitTransaction(pgClient)
-      res.status(200).send()
-    } catch (error) {
-      await db_new.rollbackTransaction(pgClient)
-      throw error
+    if (!smokeTestClient) {
+      helpers.log('Client creation returned null')
+      throw new Error('Failed to create smoke test client')
     }
+
+    const smokeTestDevice = await factories_new.deviceNewDBFactory(
+      {
+        displayName: 'SmokeTestDevice',
+        deviceTwilioNumber: reqDeviceTwilioNumber,
+        particleDeviceId,
+        isSendingAlerts: true,
+        clientId: smokeTestClient.clientId,
+      },
+      pgClient,
+    )
+
+    if (!smokeTestDevice) {
+      helpers.log('Device creation returned null')
+      throw new Error('Failed to create smoke test device')
+    }
+
+    await db_new.commitTransaction(pgClient)
+    res.status(200).send()
   } catch (error) {
+    if (pgClient) {
+      try {
+        await db_new.rollbackTransaction(pgClient)
+      } catch (rollbackError) {
+        helpers.logError(`Error rolling back transaction: ${rollbackError.message}. Original error: ${error.message}`)
+      }
+    }
     helpers.log(`Setup failed: ${error.message}`)
     res.status(500).send()
   }
@@ -88,7 +94,7 @@ async function teardownSmokeTest(req, res) {
 
     // delete the smoke test client from database
     // since db has cascade on delete --> automatically delete the device, sessions, events etc.
-    await db_new.deleteClientWithClientId(smokeTestClient.clientId)
+    await db_new.clearClientWithClientId(smokeTestClient.clientId)
 
     res.status(200).send()
   } catch (error) {
@@ -104,10 +110,13 @@ module.exports = {
   teardownSmokeTest,
 }
 
-async function teardown() {
+async function teardown(expectFail) {
   try {
     await axios.post('/smokeTest/teardown', {})
   } catch (error) {
+    if (expectFail) {
+      return
+    }
     helpers.log(`Teardown failed: ${error.message}`)
   }
 }
@@ -128,16 +137,16 @@ async function setup(recipientPhoneNumber, sensorPhoneNumber) {
   }
 }
 
-async function sendDurationAlert(deviceId) {
+async function sendStillnessAlert(deviceId) {
   try {
     await axios.post('/api/sensorEvent', {
-      event: 'Duration Alert',
-      data: '{"alertSentFromState": 2, "numDurationAlertsSent": 1, "numStillnessAlertsSent": 0, "occupancyDuration": 20}',
+      event: 'Stillness Alert',
+      data: '{"alertSentFromState": 3, "numDurationAlertsSent": 1, "numStillnessAlertsSent": 1, "occupancyDuration": 25}',
       coreid: deviceId,
       api_key: webhookAPIKey,
     })
   } catch (error) {
-    helpers.log(`sendDurationAlert: ${error.message}`)
+    helpers.log(`sendStillnessAlert: ${error.message}`)
   }
 }
 
@@ -145,36 +154,25 @@ async function smokeTest(phoneNumber, twilioNumber) {
   let setupSuccessful = false
 
   try {
-    await teardown().catch(() => {})
+    await teardown(true)
 
     await setup(phoneNumber, twilioNumber)
     setupSuccessful = true
 
-    await sendDurationAlert(particleDeviceId)
+    await sendStillnessAlert(particleDeviceId)
     helpers.log(`Wait for ${smokeTestWait / 1000} seconds to finish smoke test...`)
     await helpers.sleep(smokeTestWait)
 
-    await teardown()
+    await teardown(false)
+
     helpers.log('Smoke Test successful.')
+    process.exit(0)
   } catch (error) {
     helpers.log(`Smoke Test failed: ${error.message}`)
     if (setupSuccessful) {
       await teardown().catch(() => {})
     }
-  }
-}
-
-async function testDatabaseConnection() {
-  try {
-    const pgClient = await db_new.beginTransaction()
-    if (!pgClient) {
-      throw new Error('Database connection failed')
-    }
-    await db_new.commitTransaction(pgClient)
-    return true
-  } catch (error) {
-    helpers.log(`Database connection test failed: ${error.message}`)
-    return false
+    process.exit(1)
   }
 }
 
@@ -182,23 +180,11 @@ async function testDatabaseConnection() {
 if (require.main === module) {
   if (!destinationURL || !responderPhoneNumber || !deviceTwilioNumber) {
     helpers.log('\nMissing required parameters. Usage:')
-    helpers.log('npm run smoketest "http://localhost:8000" "+11234567890" "+19876543210"')
+    helpers.log('npm run smoketest "<domain>" "<responderPhoneNumber>" "<deviceTwilioNumber>"')
     process.exit(1)
   }
 
-  helpers.log('===== Running Server Smoke Tests =====\n')
+  helpers.log('===== Running Server Smoke Test =====\n')
 
-  testDatabaseConnection()
-    .then(success => {
-      if (!success) {
-        helpers.log('Database connection failed, exiting...')
-        process.exit(1)
-      }
-
-      return smokeTest(responderPhoneNumber, deviceTwilioNumber)
-    })
-    .catch(error => {
-      helpers.log(`Smoke Test failed: ${error.message}`)
-      process.exit(1)
-    })
+  smokeTest(responderPhoneNumber, deviceTwilioNumber)
 }

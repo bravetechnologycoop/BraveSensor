@@ -11,6 +11,21 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added 
+
+- New database handlers for error, client connection, release, remove, and regular db logging (CU-86dw70vad).
+- Added row level locks to some queries, preventing concurrent updates from different transactions (CU-86dw70vad).
+- Made transaction level to serializable by default for safetly (CU-86dw70vad).
+
+### Changed
+
+- Max connections for db client pool increased to 50 for handling multiple concurrent transactions (CU-86dw70vad).
+- Improved sentry logs for transaction errors (CU-86dw70vad).
+
+### Removed
+
+- Removed the table-locking mechanism for each transaction (CU-86dw70vad).
+
 ## [12.0.0] - 2025-03-10
 
 ### Added
