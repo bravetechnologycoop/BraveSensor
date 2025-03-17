@@ -27,7 +27,8 @@
   "SENSOR_STILLNESS": "Stillness",
   "SENSOR_UNKNOWN": "Unknown",
 
-  "durationAlert": "{{ deviceDisplayName }} has been occupied for {{ occupancyDuration }} minutes.",
+  "durationAlert": "{{ deviceDisplayName }} has been occupied for {{ occupancyDuration }} minutes. On your way? Reply with \"5\" or \"ok\".",
+  "durationAlertSurvey": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
   "durationAlertSurveyPromptDoorOpened": "We see the door has opened at {{ deviceDisplayName }}. Press \"0\" to tell us more.",
   "durationAlertSurveyDoorOpened": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
   "durationAlertSurveyOtherFollowup": "Can you please describe what happened?",

@@ -1277,7 +1277,8 @@ const RESPONDABLE_EVENT_HIERARCHY = new Map([
   ['durationAlertSurveyOtherFollowup', 10],
   ['durationAlertSurveyDoorOpened', 11],
   ['durationAlertSurveyPromptDoorOpened', 12],
-  ['durationAlert', 13],
+  ['durationAlertSurvey', 13],
+  ['durationAlert', 14],
 ])
 
 const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
