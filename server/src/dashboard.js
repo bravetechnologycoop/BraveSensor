@@ -634,9 +634,12 @@ async function submitUpdateClient(req, res) {
         }
       }
 
-      let stillnessSurveyFollowupDelay = 180 // default to 3 mins
-      if (data.stillnessSurveyFollowupDelay !== undefined) {
-        stillnessSurveyFollowupDelay = parseInt(data.stillnessSurveyFollowupDelay, 10)
+      let stillnessSurveyFollowupDelay = 180
+      if (data.stillnessSurveyFollowupDelay) {
+        const { isValid, value } = helpers.parseDigits(data.stillnessSurveyFollowupDelay)
+        if (isValid && value >= 0 && value <= 3600) {
+          stillnessSurveyFollowupDelay = value
+        }
       } else if (client.stillnessSurveyFollowupDelay !== undefined) {
         stillnessSurveyFollowupDelay = client.stillnessSurveyFollowupDelay
       }
