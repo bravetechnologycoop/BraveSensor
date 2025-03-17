@@ -15,7 +15,6 @@ const db_new = require('./db/db_new')
 const { resetMonitoring, resetStateToZero } = require('./particle')
 const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
 
-const STILLNESS_ALERT_SURVEY_FOLLOWUP = helpers.getEnvVar('STILLNESS_ALERT_SURVEY_FOLLOWUP')
 const TWILIO_TOKEN = helpers.getEnvVar('TWILIO_TOKEN')
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -61,8 +60,6 @@ async function handleNonAttendingConfirmation(client, device, latestSession, non
 // Stillness Alert Handlers
 
 async function scheduleStillnessAlertSurvey(client, device, sessionId, responderPhoneNumber) {
-  const surveyDelay = STILLNESS_ALERT_SURVEY_FOLLOWUP * 1000
-
   async function sendSurvey(latestSession) {
     const messageKey = 'stillnessAlertSurvey'
     const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
@@ -75,25 +72,33 @@ async function scheduleStillnessAlertSurvey(client, device, sessionId, responder
     await db_new.updateSession(latestSession.sessionId, latestSession.sessionStatus, latestSession.doorOpened, true)
   }
 
-  setTimeout(async () => {
-    try {
-      const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
-      if (!latestSession || latestSession.sessionId !== sessionId) {
-        helpers.log(`Session changed or expired, cancelling survey for ${sessionId}`)
-        return
-      }
+  async function checkAndSendSurvey() {
+    const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
 
-      // Only send survey if session is active and door is still closed
-      if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened) {
-        await sendSurvey(latestSession)
-      } else {
-        helpers.log(`Session completed or door opened, cancelling survey for ${sessionId}`)
-        return
-      }
-    } catch (error) {
-      helpers.logError(`scheduleStillnessAlertSurvey: ${error.message}`)
+    // Skip if session expired or changed
+    if (!latestSession || latestSession.sessionId !== sessionId) {
+      helpers.log(`Session changed or expired, cancelling survey for ${sessionId}`)
+      return
     }
-  }, surveyDelay)
+
+    // Send survey if session active and door closed
+    if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened) {
+      await sendSurvey(latestSession)
+    } else {
+      helpers.log(`Session completed or door opened, cancelling survey for ${sessionId}`)
+    }
+  }
+
+  try {
+    // Send immediately if no delay, otherwise schedule
+    if (client.stillnessSurveyFollowupDelay === 0) {
+      await checkAndSendSurvey()
+    } else {
+      setTimeout(checkAndSendSurvey, client.stillnessSurveyFollowupDelay * 1000)
+    }
+  } catch (error) {
+    helpers.logError(`scheduleStillnessAlertSurvey: ${error.message}`)
+  }
 }
 
 async function handleStillnessAlert(client, device, latestSession, responderPhoneNumber, message, pgClient) {
@@ -117,19 +122,22 @@ async function handleStillnessAlert(client, device, latestSession, responderPhon
     // Note: Although the stillness alert message mentions accepting only '5' or 'ok',
     // we accept any input to handle potential misclicks or typos from responders
 
-    const messageKey = 'stillnessAlertFollowup'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
-      client,
-      device,
-      params: { stillnessAlertFollowupTimer: STILLNESS_ALERT_SURVEY_FOLLOWUP / 60 },
-    })
-
     // log message received event
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'stillnessAlert', responderPhoneNumber, pgClient)
 
-    // send message to responder phone number and log message sent event
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
-    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
+    // Only send followup message if there will be a delay
+    if (client.stillnessSurveyFollowupDelay > 0) {
+      const messageKey = 'stillnessAlertFollowup'
+      const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
+        client,
+        device,
+        params: { stillnessAlertFollowupTimer: client.stillnessSurveyFollowupDelay / 60 },
+      })
+
+      // send message to responder phone number and log message sent event
+      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
+      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
+    }
 
     // Schedule stillness survey outside transaction
     scheduleStillnessAlertSurvey(client, device, latestSession.sessionId, responderPhoneNumber)
