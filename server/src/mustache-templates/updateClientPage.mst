@@ -82,7 +82,14 @@
                         <small id="surveyCategoriesHelp" class="form-text text-muted">Each survey category should be separated by commas with no quotes. These should be in english and will automatically get converted to the specified language.</small>
                     </div>
                 </div>
-
+                
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="stillnessSurveyFollowupDelay" class="col-sm-3 col-form-label">Stillness Survey Followup Delay:</label>
+                    <div class="col-sm-5">
+                        <input type="number" class="form-control" name="stillnessSurveyFollowupDelay" value="{{stillnessSurveyFollowupDelay}}" min="0" max="3600">
+                        <small id="stillnessSurveyFollowupDelayHelp" class="form-text text-muted">Time in seconds to wait before sending a stillness survey (default: 180 seconds / 3 minutes). Set to 0 to send immediately.</small>
+                    </div>
+                </div>
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="isDisplayed" class="col-sm-3 col-form-label">Is this client displayed on the dashboard?</label>
                     <div class="col-sm-5">
