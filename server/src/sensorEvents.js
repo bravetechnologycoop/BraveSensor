@@ -227,7 +227,7 @@ async function handleExistingSession(client, device, eventType, eventData, lates
     })
 
     // only send the door opened surveys if survey was NOT sent
-    if (messageKey === 'stillnessAlertSurveyDoorOpened' || (messageKey === 'durationAlertSurveyDoorOpened' && latestSession.surveySent)) {
+    if ((messageKey === 'stillnessAlertSurveyDoorOpened' || messageKey === 'durationAlertSurveyDoorOpened') && latestSession.surveySent) {
       throw new Error('Attempting to send door opened survey, but survey was already sent')
     }
 
