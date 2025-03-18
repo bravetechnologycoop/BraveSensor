@@ -130,7 +130,7 @@ async function selectMessageKeyForExistingSession(eventType, latestSession, pgCl
 
         switch (latestEvent.eventType) {
           case EVENT_TYPE.DURATION_ALERT:
-            return 'durationAlertSurveyPromptDoorOpened'
+            return 'durationAlertSurveyDoorOpened'
           case EVENT_TYPE.STILLNESS_ALERT:
             return 'stillnessAlertSurveyDoorOpened'
           case EVENT_TYPE.MSG_SENT: {
@@ -165,6 +165,7 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
 
     // If messageKey is null, it means the first event was a door opened alert
     // in that case throw error to stop execution
+    // TODO - return session and null here
     if (!messageKey) {
       throw new Error('First event was door opened, ignoring alert')
     }
@@ -219,28 +220,26 @@ async function handleExistingSession(client, device, eventType, eventData, lates
       return
     }
 
-    // only send the stillness alert survey door opened if survey was NOT sent
-    if (messageKey === 'stillnessAlertSurveyDoorOpened' && latestSession.surveySent) {
-      throw new Error('Attempting to send door opened stillness survey, but survey was already sent')
-    }
-
     const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
       client,
       device,
       params: { occupancyDuration: eventData.occupancyDuration },
     })
 
-    // if we are sending a door opened stillness survey after the attending responder was set (during wait for the survey)
-    // send the message to only the responder phone number
-    if (messageKey === 'stillnessAlertSurveyDoorOpened' && latestSession.attendingResponderPhoneNumber) {
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
-    }
-    // for all other messages, send the message to all responders
-    else {
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+    // only send the door opened surveys if survey was NOT sent
+    if ((messageKey === 'stillnessAlertSurveyDoorOpened' || messageKey === 'durationAlertSurveyDoorOpened') && latestSession.surveySent) {
+      throw new Error('Attempting to send door opened survey, but survey was already sent')
     }
 
-    await db_new.createEvent(latestSession.sessionId, eventType, messageKey, client.responderPhoneNumbers, pgClient)
+    // send message to only attending responder phone number if set
+    // otherwise, send the message to all responders
+    if (latestSession.attendingResponderNumber) {
+      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, latestSession.attendingResponderNumber, textMessage)
+      await db_new.createEvent(latestSession.sessionId, eventType, messageKey, latestSession.attendingResponderNumber, pgClient)
+    } else {
+      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+      await db_new.createEvent(latestSession.sessionId, eventType, messageKey, client.responderPhoneNumbers, pgClient)
+    }
 
     // if stillness alert was sent, then schedule stillness reminders and fallbacks
     // NOTE: these are scheduled outside this transaction
@@ -252,7 +251,8 @@ async function handleExistingSession(client, device, eventType, eventData, lates
     if (eventType === EVENT_TYPE.DOOR_OPENED) {
       const sessionUpdates = {
         doorOpened: true,
-        surveySent: messageKey === 'stillnessAlertSurveyDoorOpened' ? true : latestSession.surveySent,
+        surveySent:
+          messageKey === 'stillnessAlertSurveyDoorOpened' || messageKey === 'durationAlertSurveyDoorOpened' ? true : latestSession.surveySent,
       }
 
       const updatedSession = await db_new.updateSession(
@@ -262,6 +262,7 @@ async function handleExistingSession(client, device, eventType, eventData, lates
         sessionUpdates.surveySent,
         pgClient,
       )
+
       if (!updatedSession) {
         throw new Error(`Failed to update session ${latestSession.sessionId}`)
       }

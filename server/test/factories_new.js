@@ -31,6 +31,7 @@ function clientNewFactory(overrides = {}) {
     overrides.devicesSendingVitals !== undefined ? overrides.devicesSendingVitals : true,
     overrides.devicesStatus !== undefined ? overrides.devicesStatus : DEVICE_STATUS.TESTING,
     overrides.firstDeviceLiveAt !== undefined ? overrides.firstDeviceLiveAt : '2025-01-01',
+    overrides.stillnessSurveyFollowupDelay !== undefined ? overrides.stillnessSurveyFollowupDelay : 180,
   )
 }
 
@@ -134,6 +135,7 @@ async function clientNewDBFactory(overrides = {}, pgClient) {
     overrides.devicesSendingVitals !== undefined ? overrides.devicesSendingVitals : true,
     overrides.devicesStatus !== undefined ? overrides.devicesStatus : DEVICE_STATUS.TESTING,
     overrides.firstDeviceLiveAt !== undefined ? overrides.firstDeviceLiveAt : '2025-01-01',
+    overrides.stillnessSurveyFollowupDelay !== undefined ? overrides.stillnessSurveyFollowupDelay : 180,
     pgClient,
   )
   return client

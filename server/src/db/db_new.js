@@ -77,6 +77,7 @@ function createClientFromRow(r) {
     r.devices_sending_vitals,
     r.devices_status,
     r.first_device_live_at,
+    r.stillness_survey_followup_delay,
   )
 }
 
@@ -357,6 +358,7 @@ async function createClient(
   devicesSendingVitals,
   devicesStatus,
   firstDeviceLiveAt,
+  stillnessSurveyFollowupDelay,
   pgClient,
 ) {
   try {
@@ -375,9 +377,10 @@ async function createClient(
         devices_sending_alerts,
         devices_sending_vitals,
         devices_status,
-        first_device_live_at
+        first_device_live_at,
+        stillness_survey_followup_delay
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
       `,
       [
@@ -393,6 +396,7 @@ async function createClient(
         devicesSendingVitals,
         devicesStatus,
         firstDeviceLiveAt,
+        stillnessSurveyFollowupDelay,
       ],
       pool,
       pgClient,
@@ -423,6 +427,7 @@ async function updateClient(
   devicesSendingVitals,
   devicesStatus,
   firstDeviceLiveAt,
+  stillnessSurveyFollowupDelay,
   pgClient,
 ) {
   try {
@@ -442,7 +447,8 @@ async function updateClient(
         devices_sending_alerts = $10,
         devices_sending_vitals = $11,
         devices_status = $12,
-        first_device_live_at = $13
+        first_device_live_at = $13,
+        stillness_survey_followup_delay = $14
       WHERE client_id = $1
       RETURNING *
       `,
@@ -460,6 +466,7 @@ async function updateClient(
         devicesSendingVitals,
         devicesStatus,
         firstDeviceLiveAt,
+        stillnessSurveyFollowupDelay,
       ],
       pool,
       pgClient,
@@ -631,6 +638,31 @@ async function getClientWithDeviceId(deviceId, pgClient) {
     return createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getClientWithDeviceId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getStillnessSurveyFollowupDelay(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getStillnessSurveyFollowupDelay',
+      `
+      SELECT stillness_survey_followup_delay
+      FROM clients_new
+      WHERE client_id = $1
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return results.rows[0].stillness_survey_followup_delay
+  } catch (err) {
+    helpers.logError(`Error running the getStillnessSurveyFollowupDelay query: ${err.toString()}`)
     return null
   }
 }
@@ -1278,9 +1310,13 @@ const RESPONDABLE_EVENT_HIERARCHY = new Map([
 
   // Duration alert types
   ['durationAlertSurveyOtherFollowup', 10],
-  ['durationAlertSurveyDoorOpened', 11],
-  ['durationAlertSurveyPromptDoorOpened', 12],
-  ['durationAlert', 13],
+  ['durationAlertSurveyOccupantOkayFollowup', 11],
+  ['durationAlertSurveyDoorOpened', 12],
+  ['durationAlertSurvey', 13],
+  ['durationAlert', 14],
+
+  // Other
+  ['nonAttendingResponderConfirmation', 15],
 ])
 
 const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
@@ -1595,6 +1631,7 @@ module.exports = {
   getClientWithDisplayName,
   getClientWithClientId,
   getClientWithDeviceId,
+  getStillnessSurveyFollowupDelay,
   clearClientWithClientId,
 
   updateClientExtension,

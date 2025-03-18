@@ -305,18 +305,20 @@ async function processHeartbeat(eventData, client, device) {
       currDoorTampered = doorTampered
     }
 
-    // Handle vital notifications
-    await handleVitalNotifications(
-      currDoorLastSeenAt,
-      currDoorLowBattery,
-      currDoorTampered,
-      consecutiveOpenDoorHeartbeatCount,
-      previousVital,
-      client,
-      device,
-      currentDBTime,
-      pgClient,
-    )
+    if (client.devicesSendingVitals && device.isSendingVitals) {
+      // Handle vital notifications
+      await handleVitalNotifications(
+        currDoorLastSeenAt,
+        currDoorLowBattery,
+        currDoorTampered,
+        consecutiveOpenDoorHeartbeatCount,
+        previousVital,
+        client,
+        device,
+        currentDBTime,
+        pgClient,
+      )
+    }
 
     // Log the heartbeat as a new vital
     await db_new.createVital(
@@ -421,9 +423,7 @@ async function handleHeartbeat(request, response) {
     // internal sentry heartbeat warnings
     logHeartbeatWarnings(eventData, device)
 
-    if (client.devicesSendingVitals && device.isSendingVitals) {
-      await processHeartbeat(eventData, client, device)
-    }
+    await processHeartbeat(eventData, client, device)
 
     response.status(200).json({ status: 'OK' })
   } catch (error) {

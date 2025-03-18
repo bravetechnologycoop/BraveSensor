@@ -16,9 +16,13 @@ the code was deployed.
 - New database handlers for error, client connection, release, remove, and regular db logging (CU-86dw70vad).
 - Added row level locks to some queries, preventing concurrent updates from different transactions (CU-86dw70vad).
 - Made transaction level to serializable by default for safetly (CU-86dw70vad).
+- Added migration script (#57) to add stillness_survey_followup_delay column to clients (CU-86dw9m2vd).
+- Added stillness survey followup to update client in dashboard (CU-86dw9m2vd).
 
 ### Changed
 
+- Allow response to duration alerts and added a duration alert survey (CU-86dw9m2vd).
+- Changed stillness alert survey followup timer to be configured per client (CU-86dw9m2vd).
 - Max connections for db client pool increased to 50 for handling multiple concurrent transactions (CU-86dw70vad).
 - Improved sentry logs for transaction errors (CU-86dw70vad).
 - Fixed staging smoke test (CU-86dw728ch).
@@ -26,6 +30,8 @@ the code was deployed.
 ### Removed
 
 - Removed the table-locking mechanism for each transaction (CU-86dw70vad).
+- Removed STILLNESS_ALERT_SURVEY_FOLLOWUP enviroment variable (CU-86dw9m2vd).
+- Removed duration alert door opened prompt (CU-86dw9m2vd).
 
 ## [12.0.0] - 2025-03-10
 

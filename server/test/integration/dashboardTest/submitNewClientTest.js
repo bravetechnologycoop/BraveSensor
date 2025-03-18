@@ -19,7 +19,7 @@ const sandbox = sinon.createSandbox()
 
 const expect = chai.expect
 
-describe('dashboard.js integration tests: submitNewDeviceTest', () => {
+describe('dashboard.js integration tests: submitNewClientTest', () => {
   beforeEach(async () => {
     sandbox.spy(helpers, 'log')
     sandbox.spy(helpers, 'logError')

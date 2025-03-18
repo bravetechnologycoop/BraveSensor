@@ -525,6 +525,7 @@ async function submitNewClient(req, res) {
       const devicesSendingVitals = false
       const devicesStatus = DEVICE_STATUS.TESTING
       const firstDeviceLiveAt = null
+      const stillnessSurveyFollowupDelay = 180
 
       const newClient = await db_new.createClient(
         data.displayName,
@@ -539,6 +540,7 @@ async function submitNewClient(req, res) {
         devicesSendingVitals,
         devicesStatus,
         firstDeviceLiveAt,
+        stillnessSurveyFollowupDelay,
       )
 
       if (!newClient) {
@@ -583,7 +585,7 @@ const validateUpdateClient = [
   ])
     .trim()
     .notEmpty(),
-  Validator.body(['firstDeviceLiveAt', 'fallbackPhoneNumbers', 'vitalsPhoneNumbers']).trim(),
+  Validator.body(['firstDeviceLiveAt', 'fallbackPhoneNumbers', 'vitalsPhoneNumbers', 'stillnessSurveyFollowupDelay']).trim(),
   Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),
@@ -632,6 +634,16 @@ async function submitUpdateClient(req, res) {
         }
       }
 
+      let stillnessSurveyFollowupDelay = 180
+      if (data.stillnessSurveyFollowupDelay) {
+        const { isValid, value } = helpers.parseDigits(data.stillnessSurveyFollowupDelay)
+        if (isValid && value >= 0 && value <= 3600) {
+          stillnessSurveyFollowupDelay = value
+        }
+      } else if (client.stillnessSurveyFollowupDelay !== undefined) {
+        stillnessSurveyFollowupDelay = client.stillnessSurveyFollowupDelay
+      }
+
       await db_new.updateClient(
         clientId,
         data.displayName,
@@ -646,6 +658,7 @@ async function submitUpdateClient(req, res) {
         data.devicesSendingVitals,
         data.devicesStatus,
         firstDeviceLiveAt,
+        stillnessSurveyFollowupDelay,
       )
 
       await db_new.updateClientExtension(
