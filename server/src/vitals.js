@@ -423,7 +423,7 @@ async function handleHeartbeat(request, response) {
     // internal sentry heartbeat warnings
     logHeartbeatWarnings(eventData, device)
 
-      await processHeartbeat(eventData, client, device)
+    await processHeartbeat(eventData, client, device)
 
     response.status(200).json({ status: 'OK' })
   } catch (error) {
