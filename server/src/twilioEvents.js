@@ -442,11 +442,11 @@ async function handleDurationAlertSurvey(client, device, latestSession, responde
       case 'Emergency Event':
       case 'Medical Event':
       case 'Security Event':
-      case 'Occupant Okay':
-        messageKey = !latestSession.doorOpened ? 'durationAlertSurveyOccupantOkayFollowup' : 'thankYou'
-        break
       case 'Space Empty':
         messageKey = 'thankYou'
+        break
+      case 'Occupant Okay':
+        messageKey = !latestSession.doorOpened ? 'durationAlertSurveyOccupantOkayFollowup' : 'thankYou'
         break
       case 'Other':
         messageKey = 'durationAlertSurveyOtherFollowup'
