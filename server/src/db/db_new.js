@@ -23,7 +23,7 @@ const pool = new pg.Pool({
 // return string as is
 pg.types.setTypeParser(1114, str => str)
 
-pool.on('error', (err) => {
+pool.on('error', err => {
   helpers.log(`Pool error: ${err.message}`)
   helpers.log(`Pool stats - Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}`)
 })
