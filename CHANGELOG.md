@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.1.0] - 2025-03-18
+
 ### Added 
 
 - New database handlers for error, client connection, release, remove, and regular db logging (CU-86dw70vad).
@@ -936,7 +938,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.0.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.1.0...HEAD
+[12.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.0.0...v12.1.0
 [12.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v11.0.0...v12.0.0
 [11.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.16.0...v11.0.0
 [10.16.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.15.0...v10.16.0
