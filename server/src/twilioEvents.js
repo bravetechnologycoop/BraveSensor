@@ -725,7 +725,9 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
   try {
     pgClient = await db_new.beginTransaction()
     if (!pgClient) {
-      throw new Error('Error starting transaction')
+      const errorMessage = `Error starting transaction - processTwilioEvent: responderPhoneNumber: ${responderPhoneNumber}, deviceTwilioNumber: ${deviceTwilioNumber}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
     }
 
     // find matching client and device using twilio data

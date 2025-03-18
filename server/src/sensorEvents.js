@@ -75,15 +75,13 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
       try {
         const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
         if (latestSession.sessionId !== sessionId) {
-          helpers.log(`Latest session changed from ${sessionId} to ${latestSession.sessionId}, cancelling reminder`)
-          return
+          throw new Error(`Latest session changed from ${sessionId} to ${latestSession.sessionId}, cancelling reminder`)
         }
 
         // make sure that the latest event is a type of stillness alert
         const latestEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, null)
         if (latestEvent.eventType !== EVENT_TYPE.STILLNESS_ALERT) {
-          helpers.log(`Latest event is not a stillness alert, cancelling reminders for ${sessionId}`)
-          return
+          throw new Error(`Latest event is not a stillness alert, cancelling reminders for ${sessionId}`)
         }
 
         // For stillness reminder and fallback's to be send
@@ -91,11 +89,10 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
         if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && !latestSession.doorOpened && !latestSession.surveySent) {
           await alert.handler()
         } else {
-          helpers.log(`Session completed or door opened, cancelling survey for ${sessionId}`)
-          return
+          throw new Error(`Session completed or door opened, cancelling survey for ${sessionId}`)
         }
       } catch (error) {
-        helpers.logError(`scheduleStillnessAlertReminders: ${error.message}`)
+        helpers.log(`scheduleStillnessAlertReminders: ${error.message}`)
       }
     }, alert.delay)
   }
@@ -281,7 +278,9 @@ async function processSensorEvent(client, device, eventType, eventData) {
   try {
     pgClient = await db_new.beginTransaction()
     if (!pgClient) {
-      throw new Error('Error starting transaction')
+      const errorMessage = `Error starting transaction - processSensorEvent: deviceId: ${device.deviceId}, eventType: ${eventType}`
+      helpers.logError(errorMessage)
+      throw new Error(errorMessage)
     }
 
     if (eventData.numStillnessAlertsSent > 1) {
