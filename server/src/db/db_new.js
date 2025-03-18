@@ -12,6 +12,10 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
+  max: 50,
+  allowExitOnIdle: true,
+  connectionTimeoutMillis: 15000,
+  idleTimeoutMillis: 10000,
   ssl: { rejectUnauthorized: false },
 })
 
@@ -19,9 +23,46 @@ const pool = new pg.Pool({
 // return string as is
 pg.types.setTypeParser(1114, str => str)
 
-pool.on('error', err => {
-  helpers.logError(`Unexpected database error: ${err.toString()}`)
+pool.on('error', (err, client) => {
+  helpers.logError(`Pool error: ${err.message}`)
+  helpers.logError(`Pool stats - Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}`)
+  helpers.logSentry(`Database pool error: ${err.message}`)
+  try {
+    client.release(true)
+  } catch (releaseErr) {
+    helpers.logError(`Failed to release errored client: ${releaseErr.message}`)
+  }
 })
+
+let activeConnections = 0
+
+pool.on('connect', () => {
+  activeConnections += 1
+  if (helpers.isDbLogging()) {
+    helpers.log(`[${new Date().toISOString()}] New connection established. Active: ${activeConnections}`)
+  }
+})
+
+pool.on('release', () => {
+  if (helpers.isDbLogging()) {
+    helpers.log(`[${new Date().toISOString()}] Client released to pool. Active: ${activeConnections}`)
+  }
+})
+
+pool.on('remove', () => {
+  activeConnections -= 1
+  if (helpers.isDbLogging()) {
+    helpers.log(`[${new Date().toISOString()}] Connection removed. Active: ${activeConnections}`)
+  }
+})
+
+setInterval(() => {
+  if (helpers.isDbLogging()) {
+    helpers.log(
+      `DB Pool Stats - Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}, Active connections: ${activeConnections}`,
+    )
+  }
+}, 10000)
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -124,17 +165,16 @@ async function commitTransaction(pgClient) {
 
   try {
     await pgClient.query('COMMIT')
-  } catch (e) {
-    helpers.logError(`Error running the commitTransaction query: ${e}`)
-  } finally {
-    try {
-      pgClient.release()
-    } catch (err) {
-      helpers.logError(`commitTransaction: Error releasing client: ${err}`)
-    }
-
     if (helpers.isDbLogging()) {
       helpers.log('COMPLETED: commitTransaction')
+    }
+  } catch (error) {
+    throw new Error(`Error running the commitTransaction query: ${error.message}`)
+  } finally {
+    try {
+      pgClient.release(true)
+    } catch (releaseError) {
+      helpers.logError(`commitTransaction: Error releasing client: ${releaseError}`)
     }
   }
 }
@@ -146,24 +186,23 @@ async function rollbackTransaction(pgClient) {
 
   try {
     await pgClient.query('ROLLBACK')
-  } catch (e) {
-    helpers.logError(`Error running the rollbackTransaction query: ${e}`)
-  } finally {
-    try {
-      pgClient.release()
-    } catch (err) {
-      helpers.logError(`rollbackTransaction: Error releasing client: ${err}`)
-    }
-
     if (helpers.isDbLogging()) {
       helpers.log('COMPLETED: rollbackTransaction')
+    }
+  } catch (error) {
+    throw new Error(`Error running the rollbackTransaction query: ${error.message}`)
+  } finally {
+    try {
+      pgClient.release(true)
+    } catch (releaseError) {
+      helpers.logError(`rollbackTransaction: Error releasing client: ${releaseError}`)
     }
   }
 }
 
 const LOCK_TIMEOUT_MS = 5000
-const STATEMENT_TIMEOUT_MS = 30000
-const IDLE_IN_TRANSACTION_TIMEOUT_MS = 60000
+const STATEMENT_TIMEOUT_MS = 5000
+const IDLE_IN_TRANSACTION_TIMEOUT_MS = 30000
 const MAX_RETRIES = 5
 const BACKOFF_BASE = 100
 
@@ -180,18 +219,14 @@ async function runBeginTransactionWithRetries(retryCount) {
       helpers.log('CONNECTED: beginTransaction')
     }
 
+    await pgClient.query(`SET application_name = 'app_transaction_${Date.now()}'`)
     await pgClient.query(`SET lock_timeout = ${LOCK_TIMEOUT_MS}`)
     await pgClient.query(`SET statement_timeout = ${STATEMENT_TIMEOUT_MS}`)
     await pgClient.query(`SET idle_in_transaction_session_timeout = ${IDLE_IN_TRANSACTION_TIMEOUT_MS}`)
 
+    await pgClient.query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE')
     await pgClient.query('BEGIN')
-
-    await pgClient.query(
-      'LOCK TABLE clients_new, devices_new, sessions_new, events_new, vitals_new, notifications_new IN SHARE UPDATE EXCLUSIVE MODE NOWAIT',
-    )
   } catch (e) {
-    helpers.logError(`Error running the runBeginTransactionWithRetries query: ${e}`)
-
     if (pgClient) {
       try {
         await rollbackTransaction(pgClient)
@@ -220,8 +255,12 @@ async function runBeginTransactionWithRetries(retryCount) {
 async function beginTransaction() {
   try {
     const pgClient = await runBeginTransactionWithRetries(0)
+    if (!pgClient) {
+      throw new Error('Failed to acquire database client after retries')
+    }
     return pgClient
   } catch (e) {
+    helpers.logError(`Failed to begin transaction: ${e.message}`)
     return null
   }
 }
@@ -247,7 +286,7 @@ async function getCurrentTimeForHealthCheck() {
     throw err
   } finally {
     try {
-      pgClient.release()
+      pgClient.release(true)
     } catch (err) {
       helpers.logError(`getCurrentTimeForHealthCheck: Error releasing client: ${err}`)
     }
@@ -1012,6 +1051,7 @@ async function getSessionWithSessionId(sessionId, pgClient) {
       SELECT *
       FROM sessions_new
       WHERE session_id = $1
+      FOR UPDATE
       `,
       [sessionId],
       pool,
@@ -1039,6 +1079,7 @@ async function getLatestSessionWithDeviceId(deviceId, pgClient) {
       WHERE device_id = $1
       ORDER BY created_at DESC
       LIMIT 1
+      FOR UPDATE
       `,
       [deviceId],
       pool,
@@ -1278,6 +1319,7 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null,
         ELSE ${RESPONDABLE_EVENT_HIERARCHY.size + 1}
       END
       LIMIT 1
+      FOR UPDATE
     `
 
     const results = await helpers.runQuery('getLatestRespondableEvent', queryText, queryParams, pool, pgClient)
@@ -1371,6 +1413,7 @@ async function getLatestVitalWithDeviceId(deviceId, pgClient) {
       FROM vitals_cache_new
       WHERE device_id = $1
       LIMIT 1
+      FOR UPDATE
       `,
       [deviceId],
       pool,
@@ -1453,6 +1496,7 @@ async function getLatestNotification(deviceId, pgClient) {
       WHERE device_id = $1
       ORDER BY notification_sent_at DESC
       LIMIT 1
+      FOR UPDATE
       `,
       [deviceId],
       pool,
@@ -1490,6 +1534,7 @@ async function getLatestConnectionNotification(deviceId, pgClient) {
       AND notification_type = ANY($2)
       ORDER BY notification_sent_at DESC
       LIMIT 1
+      FOR UPDATE
       `,
       [deviceId, connectionNotificationTypes],
       pool,
@@ -1519,6 +1564,7 @@ async function getLatestNotificationOfType(deviceId, notificationType, pgClient)
       AND notification_type = $2
       ORDER BY notification_sent_at DESC
       LIMIT 1
+      FOR UPDATE
       `,
       [deviceId, notificationType],
       pool,
