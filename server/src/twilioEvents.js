@@ -44,7 +44,7 @@ async function handleInvalidResponse(client, device, latestSession, responderPho
   }
 }
 
-async function handleNonAttendingConfirmation(client, device, latestSession, nonAttendingPhoneNumbers, pgClient) {
+async function sendNonAttendingConfirmation(client, device, latestSession, nonAttendingPhoneNumbers, pgClient) {
   try {
     const messageKey = 'nonAttendingResponderConfirmation'
     const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
@@ -52,7 +52,24 @@ async function handleNonAttendingConfirmation(client, device, latestSession, non
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, nonAttendingPhoneNumbers, textMessage)
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, nonAttendingPhoneNumbers, pgClient)
   } catch (error) {
-    throw new Error(`handleNonAttendingConfirmation: Error sending non-attending confirmation: ${error.message}`)
+    throw new Error(`sendNonAttendingConfirmation: Error sending non-attending confirmation: ${error.message}`)
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+// Stillness Alert Handlers
+
+async function handleNonAttendingResponderConfirmation(client, device, latestSession, responderPhoneNumber, message, pgClient) {
+  try {
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'nonAttendingResponderConfirmation', responderPhoneNumber, pgClient)
+
+    // resend the non-attending responder confirmation
+    const messageKey = 'nonAttendingResponderConfirmation'
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
+    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
+  } catch (error) {
+    throw new Error(`handleNonAttendingResponderConfirmation: ${error.message}`)
   }
 }
 
@@ -115,7 +132,7 @@ async function handleStillnessAlert(client, device, latestSession, responderPhon
       // Send non-attending confirmation to other responders
       const nonAttendingResponders = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
       if (nonAttendingResponders && nonAttendingResponders.length > 0) {
-        await handleNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
+        await sendNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
       }
     }
 
@@ -366,7 +383,7 @@ async function handleDurationAlert(client, device, latestSession, responderPhone
       // Send non-attending confirmation to other responders
       const nonAttendingResponders = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
       if (nonAttendingResponders && nonAttendingResponders.length > 0) {
-        await handleNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
+        await sendNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
       }
     }
 
@@ -410,10 +427,10 @@ async function handleDurationAlertSurvey(client, device, latestSession, responde
     switch (selectedCategory) {
       case 'Overdose Event':
       case 'Emergency Event':
+      case 'Occupant Okay':
       case 'Medical Event':
       case 'Security Event':
       case 'Space Empty':
-      case 'Occupant Okay':
         messageKey = 'thankYou'
         break
       case 'Other':
@@ -445,36 +462,6 @@ async function handleDurationAlertSurvey(client, device, latestSession, responde
   }
 }
 
-async function handleDurationAlertSurveyPromptDoorOpened(client, device, latestSession, responderPhoneNumber, message, pgClient) {
-  try {
-    if (!latestSession.doorOpened) {
-      throw new Error(`Expected door to be opened for session ID: ${latestSession.sessionId}`)
-    }
-
-    const VALID_RESPONSE = 0
-    const { isValid, value: messageDigit } = helpers.parseDigits(message)
-    if (!isValid || messageDigit !== VALID_RESPONSE) {
-      await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
-      return
-    }
-
-    const messageKey = 'durationAlertSurveyDoorOpened'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-
-    // log message received event
-    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'durationAlertSurveyPromptDoorOpened', responderPhoneNumber, pgClient)
-
-    // send message to responder phone number and log message sent event
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
-    await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
-
-    // update the session's survey sent to true
-    await db_new.updateSession(latestSession.sessionId, latestSession.sessionStatus, latestSession.doorOpened, true, pgClient)
-  } catch (error) {
-    throw new Error(`handleDurationAlertSurveyPromptDoorOpened: ${error.message}`)
-  }
-}
-
 async function handleDurationAlertSurveyDoorOpened(client, device, latestSession, responderPhoneNumber, message, pgClient) {
   try {
     if (!latestSession.doorOpened) {
@@ -484,14 +471,16 @@ async function handleDurationAlertSurveyDoorOpened(client, device, latestSession
       throw new Error(`Expected survey to be sent for session ID: ${latestSession.sessionId}`)
     }
 
-    // if someone has already responded to the duration survey,
-    // send the duration survey already responded message
-    if (latestSession.attendingResponderNumber) {
-      const messageKey = 'durationSurveyAlreadyResponded'
-      const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
-      await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
-      return
+    // Set attending responder if not set and send non-attending confirmation
+    if (!latestSession.attendingResponderNumber) {
+      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+      await db_new.updateSessionResponseTime(latestSession.sessionId, pgClient)
+
+      // Send non-attending confirmation to other responders
+      const nonAttendingResponders = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
+      if (nonAttendingResponders && nonAttendingResponders.length > 0) {
+        await sendNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
+      }
     }
 
     const { isValid, value: messageIndex } = helpers.parseDigits(message)
@@ -530,10 +519,7 @@ async function handleDurationAlertSurveyDoorOpened(client, device, latestSession
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
 
-    // update the session
     // end the session (session status --> COMPLETED) only if thankYou or reportIssue
-    await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
-    await db_new.updateSessionResponseTime(latestSession.sessionId, pgClient)
     await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
     if (messageKey === 'thankYou' || messageKey === 'reportIssue') {
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.COMPLETED, latestSession.doorOpened, latestSession.surveySent, pgClient)
@@ -545,9 +531,6 @@ async function handleDurationAlertSurveyDoorOpened(client, device, latestSession
 
 async function handleDurationAlertSurveyOtherFollowup(client, device, latestSession, responderPhoneNumber, message, pgClient) {
   try {
-    if (!latestSession.doorOpened) {
-      throw new Error(`Expected door to be opened for session ID: ${latestSession.sessionId}`)
-    }
     if (!latestSession.surveySent) {
       throw new Error(`Expected survey to be sent for session ID: ${latestSession.sessionId}`)
     }
@@ -581,7 +564,6 @@ const EVENT_HANDLERS = {
   duration: {
     durationAlert: handleDurationAlert,
     durationAlertSurvey: handleDurationAlertSurvey,
-    durationAlertSurveyPromptDoorOpened: handleDurationAlertSurveyPromptDoorOpened,
     durationAlertSurveyDoorOpened: handleDurationAlertSurveyDoorOpened,
     durationAlertSurveyOtherFollowup: handleDurationAlertSurveyOtherFollowup,
   },
@@ -595,16 +577,16 @@ const EVENT_HANDLERS = {
     stillnessAlertSurveyOccupantOkayFollowup: handleStillnessAlertSurveyOccupantOkayFollowup,
     stillnessAlertSurveyOtherFollowup: handleStillnessAlertSurveyOtherFollowup,
   },
-}
-
-function isStillnessEvent(eventType) {
-  return eventType in EVENT_HANDLERS.stillness
+  other: {
+    nonAttendingResponderConfirmation: handleNonAttendingResponderConfirmation,
+  },
 }
 
 function getEventHandler(eventType) {
   const durationHandler = EVENT_HANDLERS.duration[eventType]
   const stillnessHandler = EVENT_HANDLERS.stillness[eventType]
-  return durationHandler || stillnessHandler
+  const otherHandler = EVENT_HANDLERS.other[eventType]
+  return durationHandler || stillnessHandler || otherHandler
 }
 
 async function handleIncomingMessage(client, device, latestSession, latestEvent, responderPhoneNumber, message, pgClient) {
@@ -613,13 +595,6 @@ async function handleIncomingMessage(client, device, latestSession, latestEvent,
     const handler = getEventHandler(eventType)
     if (!handler) {
       throw new Error(`Unhandled event type: ${eventType}`)
-    }
-
-    // Only send non-attending confirmation for stillness alerts
-    // Non-attending confirmation for duration are handled in its handlers due to survey being sent to multiple responders before setting attending responder
-    if (latestSession.attendingResponderNumber && latestSession.attendingResponderNumber !== responderPhoneNumber && isStillnessEvent(eventType)) {
-      await handleNonAttendingConfirmation(client, device, latestSession, responderPhoneNumber, pgClient)
-      return
     }
 
     await handler(client, device, latestSession, responderPhoneNumber, message, pgClient)

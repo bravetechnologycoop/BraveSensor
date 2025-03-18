@@ -12,7 +12,7 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  // ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -1276,9 +1276,11 @@ const RESPONDABLE_EVENT_HIERARCHY = new Map([
   // Duration alert types
   ['durationAlertSurveyOtherFollowup', 10],
   ['durationAlertSurveyDoorOpened', 11],
-  ['durationAlertSurveyPromptDoorOpened', 12],
-  ['durationAlertSurvey', 13],
-  ['durationAlert', 14],
+  ['durationAlertSurvey', 12],
+  ['durationAlert', 13],
+
+  // Other
+  ['nonAttendingResponderConfirmation', 14],
 ])
 
 const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
