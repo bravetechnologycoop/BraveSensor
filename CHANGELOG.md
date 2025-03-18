@@ -21,6 +21,7 @@ the code was deployed.
 
 - Max connections for db client pool increased to 50 for handling multiple concurrent transactions (CU-86dw70vad).
 - Improved sentry logs for transaction errors (CU-86dw70vad).
+- Fixed staging smoke test (CU-86dw728ch).
 
 ### Removed
 
