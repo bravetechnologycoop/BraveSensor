@@ -49,6 +49,7 @@
                                 <th scope="col">Device Name</th>
                                 <th scope="col">Device Type</th>
                                 <th scope="col">Device Last Seen At</th>
+                                <th scope="col">Door Last Seen At</th>
                                 <th scope="col">Sends Alerts?</th>
                                 <th scope="col">Sends Vitals?</th>
                             </tr>
@@ -60,6 +61,7 @@
                                 <th scope="row"><a href="/devices/{{deviceId}}">{{displayName}}</a></th>
                                 <td>{{deviceType}}</td>
                                 <td>{{#latestVital}}{{timeSinceLastVital}}{{/latestVital}}{{^latestVital}}N/A{{/latestVital}}</td>
+                                <td>{{#latestVital}}{{timeSinceLastDoorContact}}{{/latestVital}}{{^latestVital}}N/A{{/latestVital}}</td>
                                 <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
                                 <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
                             </tr>
