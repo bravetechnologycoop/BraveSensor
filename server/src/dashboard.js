@@ -126,6 +126,35 @@ const dateFormatters = {
   },
 }
 
+const htmlEntities = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&apos;': "'",
+  '&#x2F;': '/',
+  '&#x2C;': ',',
+  '&ndash;': '–',
+  '&mdash;': '—',
+  '&nbsp;': ' ',
+}
+
+const stringFormatters = {
+  encodeURIParam() {
+    return function encodeParameter(text, render) {
+      const decoded = render(text).replace(/&[^;]+;/g, match => htmlEntities[match] || match)
+      return encodeURIComponent(decoded)
+    }
+  },
+
+  decodeHTMLEntities() {
+    return function decodeEntities(text, render) {
+      return render(text).replace(/&[^;]+;/g, match => htmlEntities[match] || match)
+    }
+  },
+}
+
 async function renderLandingPage(req, res) {
   try {
     const [mergedClients, mergedDevices] = await Promise.all([db_new.getMergedClientsWithExtensions(), db_new.getMergedDevicesWithVitals()])
@@ -140,6 +169,7 @@ async function renderLandingPage(req, res) {
       uniqueFunders,
       uniqueProjects,
       uniqueOrganizations,
+      ...stringFormatters,
     }
 
     res.send(Mustache.render(landingPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
@@ -151,7 +181,7 @@ async function renderLandingPage(req, res) {
 
 async function renderFunderProjectsPage(req, res) {
   try {
-    const funder = req.query.funder
+    const funder = decodeURIComponent(req.query.funder)
 
     const mergedClients = await db_new.getMergedClientsWithExtensions()
     const filteredClients = mergedClients.filter(
@@ -160,7 +190,11 @@ async function renderFunderProjectsPage(req, res) {
 
     const uniqueProjects = filterUniqueItems(filteredClients, 'project')
 
-    const viewParams = { funder, clients: uniqueProjects }
+    const viewParams = {
+      funder,
+      clients: uniqueProjects,
+      ...stringFormatters,
+    }
 
     res.send(Mustache.render(funderProjectsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
@@ -171,7 +205,7 @@ async function renderFunderProjectsPage(req, res) {
 
 async function renderProjectOrganizationsPage(req, res) {
   try {
-    const project = req.query.project
+    const project = decodeURIComponent(req.query.project)
 
     const mergedClients = await db_new.getMergedClientsWithExtensions()
     const filteredClients = mergedClients.filter(
@@ -180,7 +214,11 @@ async function renderProjectOrganizationsPage(req, res) {
 
     const uniqueOrganizations = filterUniqueItems(filteredClients, 'organization')
 
-    const viewParams = { project, clients: uniqueOrganizations }
+    const viewParams = {
+      project,
+      clients: uniqueOrganizations,
+      ...stringFormatters,
+    }
 
     res.send(Mustache.render(projectOrganizationsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
@@ -191,7 +229,7 @@ async function renderProjectOrganizationsPage(req, res) {
 
 async function renderOrganizationClientsPage(req, res) {
   try {
-    const organization = req.query.organization
+    const organization = decodeURIComponent(req.query.organization)
 
     const mergedClients = await db_new.getMergedClientsWithExtensions()
     const filteredClients = mergedClients.filter(
@@ -202,7 +240,11 @@ async function renderOrganizationClientsPage(req, res) {
 
     const uniqueClients = filterUniqueItems(filteredClients, 'clientId')
 
-    const viewParams = { organization, clients: uniqueClients }
+    const viewParams = {
+      organization,
+      clients: uniqueClients,
+      ...stringFormatters,
+    }
 
     res.send(Mustache.render(organizationClientsPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
