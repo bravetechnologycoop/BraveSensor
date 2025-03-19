@@ -1550,7 +1550,6 @@ async function createVital(
   pgClient,
 ) {
   try {
-    helpers.log(`NEW VITAL: deviceId: ${deviceId}`)
     const results = await helpers.runQuery(
       'createVital',
       `
