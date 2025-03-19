@@ -56,6 +56,9 @@ setInterval(() => {
       `DB Pool Stats - Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}, Active connections: ${activeConnections}`,
     )
   }
+  if (pool.totalCount > pool.max * 0.8) {
+    helpers.log('Warning: Connection pool near capacity')
+  }
 }, 10000)
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -195,9 +198,9 @@ async function rollbackTransaction(pgClient) {
   }
 }
 
-const LOCK_TIMEOUT_MS = 5000
-const STATEMENT_TIMEOUT_MS = 5000
-const IDLE_IN_TRANSACTION_TIMEOUT_MS = 30000
+const LOCK_TIMEOUT_MS = 15000
+const STATEMENT_TIMEOUT_MS = 15000
+const IDLE_IN_TRANSACTION_TIMEOUT_MS = 60000
 const MAX_RETRIES = 5
 const BACKOFF_BASE = 100
 

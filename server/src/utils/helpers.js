@@ -97,7 +97,6 @@ async function runQuery(functionName, queryString, queryParams, pool, clientPara
 
   let client = clientParam
   let shouldRelease = false
-  const queryStart = Date.now()
 
   try {
     if (!client) {
@@ -111,11 +110,6 @@ async function runQuery(functionName, queryString, queryParams, pool, clientPara
     const result = await client.query(queryString, queryParams)
     if (result.code === '40001') {
       throw new Error('Serialization failure - transaction must be retried')
-    }
-
-    const queryDuration = Date.now() - queryStart
-    if (queryDuration > 1000) {
-      log(`SLOW QUERY: ${functionName} took ${queryDuration}ms`)
     }
 
     return result
