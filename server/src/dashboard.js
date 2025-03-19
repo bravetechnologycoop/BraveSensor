@@ -100,51 +100,6 @@ async function redirectToHomePage(req, res) {
   res.redirect('/dashboard')
 }
 
-// For array of clients
-async function fetchAndMergeAllClientsExtension(clients) {
-  const clientExtensions = await Promise.all(clients.map(client => db_new.getClientExtensionWithClientId(client.clientId)))
-
-  return clients.map((client, index) => {
-    const clientExtension = clientExtensions[index]
-    // N/A added to group clients in dashboard with null values
-    return {
-      ...client,
-      country: clientExtension.country || 'N/A',
-      countrySubdivision: clientExtension.countrySubdivision || 'N/A',
-      buildingType: clientExtension.buildingType || 'N/A',
-      city: clientExtension.city || 'N/A',
-      postalCode: clientExtension.postalCode || 'N/A',
-      funder: clientExtension.funder || 'N/A',
-      project: clientExtension.project || 'N/A',
-      organization: clientExtension.organization || 'N/A',
-    }
-  })
-}
-
-// For array of devices
-async function fetchAndMergeLatestVitals(devices) {
-  const latestVitals = await Promise.all(devices.map(device => db_new.getLatestVitalWithDeviceId(device.deviceId)))
-
-  return Promise.all(
-    devices.map(async (device, index) => {
-      const vital = latestVitals[index]
-      if (!vital) return { ...device, latestVital: null }
-
-      // calculate and add time since last vital as a field
-      const vitalCreatedAt = Date.parse(vital.createdAt)
-      const timeSinceLastVital = await helpers.generateCalculatedTimeDifferenceString(vitalCreatedAt, db_new)
-
-      return {
-        ...device,
-        latestVital: {
-          ...vital,
-          timeSinceLastVital,
-        },
-      }
-    }),
-  )
-}
-
 function filterUniqueItems(items, key) {
   const seen = new Set()
   return items.filter(item => {
@@ -173,13 +128,7 @@ const dateFormatters = {
 
 async function renderLandingPage(req, res) {
   try {
-    const [clients, devices] = await Promise.all([db_new.getClients(), db_new.getDevices()])
-
-    const displayedClients = clients.filter(client => client.isDisplayed)
-    const mergedClients = await fetchAndMergeAllClientsExtension(displayedClients)
-
-    const displayedDevices = devices.filter(device => device.isDisplayed)
-    const mergedDevices = await fetchAndMergeLatestVitals(displayedDevices)
+    const [mergedClients, mergedDevices] = await Promise.all([db_new.getMergedClientsWithExtensions(), db_new.getMergedDevicesWithVitals()])
 
     const uniqueFunders = filterUniqueItems(mergedClients, 'funder')
     const uniqueProjects = filterUniqueItems(mergedClients, 'project')
@@ -204,8 +153,7 @@ async function renderFunderProjectsPage(req, res) {
   try {
     const funder = req.query.funder
 
-    const clients = await db_new.getClients()
-    const mergedClients = await fetchAndMergeAllClientsExtension(clients)
+    const mergedClients = await db_new.getMergedClientsWithExtensions()
     const filteredClients = mergedClients.filter(
       client => client.isDisplayed && (funder === 'N/A' ? client.funder === 'N/A' || client.funder === null : client.funder === funder),
     )
@@ -225,9 +173,7 @@ async function renderProjectOrganizationsPage(req, res) {
   try {
     const project = req.query.project
 
-    const clients = await db_new.getClients()
-    const mergedClients = await fetchAndMergeAllClientsExtension(clients)
-
+    const mergedClients = await db_new.getMergedClientsWithExtensions()
     const filteredClients = mergedClients.filter(
       client => client.isDisplayed && (project === 'N/A' ? client.project === 'N/A' || client.project === null : client.project === project),
     )
@@ -247,9 +193,7 @@ async function renderOrganizationClientsPage(req, res) {
   try {
     const organization = req.query.organization
 
-    const clients = await db_new.getClients()
-    const mergedClients = await fetchAndMergeAllClientsExtension(clients)
-
+    const mergedClients = await db_new.getMergedClientsWithExtensions()
     const filteredClients = mergedClients.filter(
       client =>
         client.isDisplayed &&
@@ -327,9 +271,7 @@ async function renderClientDetailsPage(req, res) {
 
     // get all visible devices for client to display
     // merge latestVital for each client
-    const devices = await db_new.getDevicesForClient(client.clientId)
-    const displayedDevices = devices.filter(device => device.isDisplayed)
-    const mergedDevices = await fetchAndMergeLatestVitals(displayedDevices)
+    const mergedDevices = await db_new.getMergedDevicesWithVitals()
 
     const viewParams = { client: mergedClient, devices: mergedDevices }
 
@@ -389,21 +331,26 @@ async function renderDeviceDetailsPage(req, res) {
   try {
     const deviceId = req.params.deviceId
 
-    const device = await db_new.getDeviceWithDeviceId(deviceId)
-    const client = await db_new.getClientWithDeviceId(deviceId)
+    const [device, client, latestVital, allSessions] = await Promise.all([
+      db_new.getDeviceWithDeviceId(deviceId),
+      db_new.getClientWithDeviceId(deviceId),
+      db_new.getLatestVitalWithDeviceId(deviceId),
+      db_new.getSessionsForDevice(deviceId),
+    ])
 
-    const latestVital = await db_new.getLatestVitalWithDeviceId(deviceId)
-
-    // add extra fields to latest vital for display
     if (latestVital) {
-      latestVital.timeSinceLastVital = await helpers.generateCalculatedTimeDifferenceString(latestVital.createdAt, db_new)
-      latestVital.timeSinceLastDoorContact = await helpers.generateCalculatedTimeDifferenceString(latestVital.doorLastSeenAt, db_new)
+      const [timeSinceLastVital, timeSinceLastDoorContact] = await Promise.all([
+        db_new.getFormattedTimeDifference(latestVital.createdAt),
+        db_new.getFormattedTimeDifference(latestVital.doorLastSeenAt),
+      ])
+
+      Object.assign(latestVital, {
+        timeSinceLastVital,
+        timeSinceLastDoorContact,
+      })
     }
 
-    const allSessions = await db_new.getSessionsForDevice(deviceId)
-
     const viewParams = { device, client, latestVital, allSessions }
-
     res.send(Mustache.render(deviceDetailsPageTemplate, { ...viewParams, ...dateFormatters }, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
