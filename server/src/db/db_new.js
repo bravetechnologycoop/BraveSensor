@@ -16,7 +16,7 @@ const pool = new pg.Pool({
   allowExitOnIdle: true,
   connectionTimeoutMillis: 15000,
   idleTimeoutMillis: 10000,
-  // ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
