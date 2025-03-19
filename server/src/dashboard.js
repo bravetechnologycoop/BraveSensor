@@ -224,10 +224,9 @@ async function renderUpdateClientPage(req, res) {
   try {
     const clientId = req.params.clientId
 
-    const client = await db_new.getClientWithClientId(clientId)
-    const clientExtension = await db_new.getClientExtensionWithClientId(clientId)
+    const [client, clientExtension] = await Promise.all([db_new.getClientWithClientId(clientId), db_new.getClientExtensionWithClientId(clientId)])
 
-    // fields can be display as null
+    // Merge client data (fields can be displayed as null)
     const mergedClient = {
       ...client,
       country: clientExtension.country,
@@ -253,10 +252,13 @@ async function renderClientDetailsPage(req, res) {
   try {
     const clientId = req.params.clientId
 
-    const client = await db_new.getClientWithClientId(clientId)
-    const clientExtension = await db_new.getClientExtensionWithClientId(clientId)
+    const [client, clientExtension, mergedDevices] = await Promise.all([
+      db_new.getClientWithClientId(clientId),
+      db_new.getClientExtensionWithClientId(clientId),
+      db_new.getMergedDevicesWithVitals(),
+    ])
 
-    // fields can be displayed as null
+    // Merge client data (fields can be displayed as null)
     const mergedClient = {
       ...client,
       country: clientExtension.country,
@@ -268,10 +270,6 @@ async function renderClientDetailsPage(req, res) {
       project: clientExtension.project,
       organization: clientExtension.organization,
     }
-
-    // get all visible devices for client to display
-    // merge latestVital for each client
-    const mergedDevices = await db_new.getMergedDevicesWithVitals()
 
     const viewParams = { client: mergedClient, devices: mergedDevices }
 
@@ -301,12 +299,11 @@ async function renderUpdateDevicePage(req, res) {
   try {
     const deviceId = req.params.deviceId
 
-    const device = await db_new.getDeviceWithDeviceId(deviceId)
+    const [device, clients] = await Promise.all([db_new.getDeviceWithDeviceId(deviceId), db_new.getClients()])
 
     // add a boolean "selected" field to all displayed clients
     // selected is true if client's clientId matches with device's clientId
     // used to select the current client
-    const clients = await db_new.getClients()
     const displayedClients = clients.filter(client => client.isDisplayed)
     const clientsWithSelection = displayedClients.map(client => ({
       ...client,
@@ -362,10 +359,9 @@ async function renderDeviceNotificationsPage(req, res) {
   try {
     const deviceId = req.params.deviceId
 
-    const device = await db_new.getDeviceWithDeviceId(deviceId)
-    const allDeviceNotifications = await db_new.getNotificationsForDevice(deviceId)
-    const notificationsCount = allDeviceNotifications.length
+    const [device, allDeviceNotifications] = await Promise.all([db_new.getDeviceWithDeviceId(deviceId), db_new.getNotificationsForDevice(deviceId)])
 
+    const notificationsCount = allDeviceNotifications.length
     const viewParams = { device, notifications: allDeviceNotifications, notificationsCount }
 
     res.send(Mustache.render(deviceNotificationsPageTemplate, { ...viewParams, ...dateFormatters }, { nav: navPartial, css: pageCSSPartial }))
@@ -385,11 +381,13 @@ async function renderSessionDetailsPage(req, res) {
       return
     }
 
-    const client = await db_new.getClientWithDeviceId(session.deviceId)
-    const device = await db_new.getDeviceWithDeviceId(session.deviceId)
-    const allEvents = await db_new.getEventsForSession(sessionId)
+    const [client, device, allEvents] = await Promise.all([
+      db_new.getClientWithDeviceId(session.deviceId),
+      db_new.getDeviceWithDeviceId(session.deviceId),
+      db_new.getEventsForSession(sessionId),
+    ])
 
-    // translate and format the messages for timeline display on dashboard
+    // Process events
     const expectedSurveyResponseEvents = ['durationAlertSurveyDoorOpened', 'stillnessAlertSurvey', 'stillnessAlertSurveyDoorOpened']
     const eventsWithMessages = allEvents.map(event => {
       if (event.eventType === 'MSG_RECEIVED') {
@@ -404,7 +402,6 @@ async function renderSessionDetailsPage(req, res) {
           message: 'Responded to sent message',
         }
       }
-
       return {
         ...event,
         message: helpers.translateMessageKeyToMessage(event.eventTypeDetails, { client, device }),
