@@ -33,8 +33,8 @@
                         <tr class="table-data">
                             {{! Clicking item renders client details and the devices for that client }}
                             <th scope="row"><a href="/clients/{{clientId}}">{{displayName}}</a></th>
-                            <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
-                            <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
+                            <td>{{#devicesSendingAlerts}}y{{/devicesSendingAlerts}}{{^devicesSendingAlerts}}NOPE{{/devicesSendingAlerts}}</td>
+                            <td>{{#devicesSendingVitals}}y{{/devicesSendingVitals}}{{^devicesSendingVitals}}NOPE{{/devicesSendingVitals}}</td>
                         </tr>
                     {{/clients}}
                     </tbody>

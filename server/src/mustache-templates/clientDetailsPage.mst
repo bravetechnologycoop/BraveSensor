@@ -28,6 +28,8 @@
                 <div class="info-box">
                     <p><strong>Responder Phone Numbers:</strong> {{#responderPhoneNumbers}}{{.}}, {{/responderPhoneNumbers}}{{^responderPhoneNumbers}}N/A{{/responderPhoneNumbers}}</p>
                     <p><strong>Fallback Phone Numbers:</strong> {{#fallbackPhoneNumbers}}{{.}}, {{/fallbackPhoneNumbers}}{{^fallbackPhoneNumbers}}N/A{{/fallbackPhoneNumbers}}</p>
+                    <p><strong>Vitals Twilio Number:</strong> {{#vitalsTwilioNumber}}{{vitalsTwilioNumber}}{{/vitalsTwilioNumber}}{{^vitalsTwilioNumber}}N/A{{/vitalsTwilioNumber}}</p>
+                    <p><strong>Vitals Phone Numbers:</strong> {{#vitalsPhoneNumbers}}{{.}}, {{/vitalsPhoneNumbers}}{{^vitalsPhoneNumbers}}N/A{{/vitalsPhoneNumbers}}</p>
                     <p><strong>Funder:</strong> <span>{{#funder}}{{funder}}{{/funder}}{{^funder}}N/A{{/funder}}</span></p>
                     <p><strong>Organization:</strong> <span>{{#organization}}{{organization}}{{/organization}}{{^organization}}N/A{{/organization}}</span></p>
                     <p><strong>Project:</strong> <span>{{#project}}{{project}}{{/project}}{{^project}}N/A{{/project}}</span></p>
