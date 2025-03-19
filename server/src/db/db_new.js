@@ -1039,21 +1039,15 @@ async function getMergedDevicesWithVitals(clientId = null, pgClient) {
         v.time_since_door
       FROM devices_new d
       LEFT JOIN latest_vitals v ON d.device_id = v.device_id
-      WHERE d.is_displayed = true`;
+      WHERE d.is_displayed = true`
 
     if (clientId) {
-      baseQuery += ` AND d.client_id = '${clientId}'`;
+      baseQuery += ` AND d.client_id = '${clientId}'`
     }
 
-    baseQuery += ` ORDER BY d.display_name`;
+    baseQuery += ` ORDER BY d.display_name`
 
-    const results = await helpers.runQuery(
-      'getMergedDevicesWithVitals',
-      baseQuery,
-      [],
-      pool,
-      pgClient
-    );
+    const results = await helpers.runQuery('getMergedDevicesWithVitals', baseQuery, [], pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return []

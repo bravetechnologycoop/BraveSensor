@@ -100,14 +100,14 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-function selectMessageKeyForNewSession(eventType) {
+function selectMessageKeyForNewSession(eventType, device) {
   switch (eventType) {
     case EVENT_TYPE.DURATION_ALERT:
       return 'durationAlert'
     case EVENT_TYPE.STILLNESS_ALERT:
       return 'stillnessAlert'
     case EVENT_TYPE.DOOR_OPENED:
-      helpers.log('Received door opened as the first alert ... ignoring alert.')
+      helpers.log(`Received door opened as the first alert ... ignoring alert for deviceId: ${device.deviceId}`)
       return null
     default: {
       throw new Error(`selectMessageKeyForNewSession: Invalid event type received as the first alert: ${eventType}`)
@@ -138,12 +138,14 @@ async function selectMessageKeyForExistingSession(eventType, latestSession, pgCl
               return 'stillnessAlertSurveyDoorOpened'
             }
             helpers.log(
-              `Received door opened and latest event is MSG_SENT but not a stillness followup: ${latestEvent.eventTypeDetails}, only updating door opened status`,
+              `Received door opened and latest event is MSG_SENT but not a stillness followup: ${latestEvent.eventTypeDetails}, only updating door opened status for sessionId: ${latestSession.sessionId}`,
             )
             return null
           }
           default: {
-            helpers.log(`Received door opened, error processing event type: ${latestEvent.eventType}, only updating door opened status`)
+            helpers.log(
+              `Received door opened, error processing event type: ${latestEvent.eventType}, only updating door opened status for sessionId: ${latestSession.sessionId}`,
+            )
             return null
           }
         }
@@ -161,7 +163,7 @@ async function selectMessageKeyForExistingSession(eventType, latestSession, pgCl
 
 async function handleNewSession(client, device, eventType, eventData, pgClient) {
   try {
-    const messageKey = selectMessageKeyForNewSession(eventType)
+    const messageKey = selectMessageKeyForNewSession(eventType, device)
     if (!messageKey) {
       return null // exit early (for first even as door opened)
     }
@@ -245,7 +247,7 @@ async function handleExistingSession(client, device, eventType, eventData, lates
       scheduleStillnessAlertReminders(client, device, latestSession.sessionId)
     }
 
-    let updatedSession = null;
+    let updatedSession = null
 
     // handle door opened event updates
     if (eventType === EVENT_TYPE.DOOR_OPENED) {
@@ -291,7 +293,7 @@ async function processSensorEvent(client, device, eventType, eventData) {
 
     const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId, pgClient)
 
-    let returnedSession = null;
+    let returnedSession = null
 
     // Create new session if none exists
     if (!latestSession) {
