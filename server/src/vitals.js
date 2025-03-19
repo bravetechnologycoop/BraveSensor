@@ -34,7 +34,7 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, pg
   try {
     const latestVital = await db_new.getLatestVitalWithDeviceId(device.deviceId, pgClient)
     if (!latestVital) {
-      throw new Error(`No vitals found for device ${device.deviceId}`)
+      throw new Error(`No vitals found for device`)
     }
 
     const timeSinceLastVital = helpers.differenceInSeconds(currentDBTime, latestVital.createdAt)
@@ -125,7 +125,7 @@ async function checkDeviceDisconnectionVitals() {
           await handleDeviceDisconnectionVitals(device, client, currentDBTime, pgClient)
         }
       } catch (deviceError) {
-        helpers.logError(`Error processing device ${device.deviceId}: ${deviceError.message}`)
+        helpers.log(`Error processing device ${device.deviceId}: ${deviceError.message}`)
       }
     })
 
