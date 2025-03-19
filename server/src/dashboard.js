@@ -297,7 +297,7 @@ async function renderClientDetailsPage(req, res) {
     const [client, clientExtension, mergedDevices] = await Promise.all([
       db_new.getClientWithClientId(clientId),
       db_new.getClientExtensionWithClientId(clientId),
-      db_new.getMergedDevicesWithVitals(),
+      db_new.getMergedDevicesWithVitals(clientId),  // use clientId
     ])
 
     // Merge client data (fields can be displayed as null)
@@ -430,7 +430,7 @@ async function renderSessionDetailsPage(req, res) {
     ])
 
     // Process events
-    const expectedSurveyResponseEvents = ['durationAlertSurveyDoorOpened', 'stillnessAlertSurvey', 'stillnessAlertSurveyDoorOpened']
+    const expectedSurveyResponseEvents = ['durationAlertSurvey', 'durationAlertSurveyDoorOpened', 'stillnessAlertSurvey', 'stillnessAlertSurveyDoorOpened']
     const eventsWithMessages = allEvents.map(event => {
       if (event.eventType === 'MSG_RECEIVED') {
         if (expectedSurveyResponseEvents.includes(event.eventTypeDetails)) {

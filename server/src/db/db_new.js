@@ -1007,13 +1007,11 @@ async function getDevicesForClient(clientId, pgClient) {
 
 // used for dashboard rendering (is_displayed should be true)
 // Note: Uses database function: format_time_difference (see script #58)
-async function getMergedDevicesWithVitals(pgClient) {
+// clientId is optional. If not provided, gets all devices
+async function getMergedDevicesWithVitals(clientId = null, pgClient) {
   try {
-    const results = await helpers.runQuery(
-      'getMergedDevicesWithVitals',
-      `
+    let baseQuery = `
       WITH latest_vitals AS (
-        -- Get latest vital per device
         SELECT DISTINCT ON (device_id)
           device_id,
           created_at,
@@ -1041,13 +1039,21 @@ async function getMergedDevicesWithVitals(pgClient) {
         v.time_since_door
       FROM devices_new d
       LEFT JOIN latest_vitals v ON d.device_id = v.device_id
-      WHERE d.is_displayed = true
-      ORDER BY d.display_name
-      `,
+      WHERE d.is_displayed = true`;
+
+    if (clientId) {
+      baseQuery += ` AND d.client_id = '${clientId}'`;
+    }
+
+    baseQuery += ` ORDER BY d.display_name`;
+
+    const results = await helpers.runQuery(
+      'getMergedDevicesWithVitals',
+      baseQuery,
       [],
       pool,
-      pgClient,
-    )
+      pgClient
+    );
 
     if (results === undefined || results.rows.length === 0) {
       return []
