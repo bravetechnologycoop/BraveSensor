@@ -138,47 +138,6 @@ function differenceInSeconds(date1, date2) {
   return dateTime1.diff(dateTime2, 'seconds').seconds
 }
 
-async function generateCalculatedTimeDifferenceString(timeToCompare, db_new) {
-  const daySecs = 24 * 60 * 60
-  const hourSecs = 60 * 60
-  const minSecs = 60
-  let returnString = ''
-  let numDays = 0
-  let numHours = 0
-  let numMins = 0
-  const currentTime = await db_new.getCurrentTime()
-
-  let diffSecs = (currentTime - timeToCompare) / 1000
-
-  if (diffSecs >= daySecs) {
-    numDays = Math.floor(diffSecs / daySecs)
-    diffSecs %= daySecs
-  }
-  returnString += `${numDays} ${numDays === 1 ? 'day, ' : 'days, '}`
-
-  if (diffSecs >= hourSecs) {
-    numHours = Math.floor(diffSecs / hourSecs)
-    diffSecs %= hourSecs
-  }
-  returnString += `${numHours} ${numHours === 1 ? 'hour, ' : 'hours, '}`
-
-  if (diffSecs >= minSecs) {
-    numMins = Math.floor(diffSecs / minSecs)
-  }
-  returnString += `${numMins} ${numMins === 1 ? 'minute' : 'minutes'}`
-
-  if (numDays + numHours === 0) {
-    diffSecs %= minSecs
-    const numSecs = Math.floor(diffSecs)
-
-    returnString += `, ${numSecs} ${numSecs === 1 ? 'second' : 'seconds'}`
-  }
-
-  returnString += ' ago'
-
-  return returnString
-}
-
 const DASHBOARD_TIMEZONE = 'America/Vancouver'
 const DASHBOARD_FORMAT = 'y MMM d, TTT'
 
@@ -228,7 +187,6 @@ module.exports = {
   setupSentry,
   formatExpressValidationErrors,
   differenceInSeconds,
-  generateCalculatedTimeDifferenceString,
   formatDateTimeForDashboard,
   parseDigits,
   translateMessageKeyToMessage,

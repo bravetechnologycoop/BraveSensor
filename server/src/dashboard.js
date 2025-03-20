@@ -452,7 +452,7 @@ async function renderSessionDetailsPage(req, res) {
       if (event.eventTypeDetails === 'stillnessAlertFollowup') {
         return {
           ...event,
-          message: `Thanks, we'll follow up in ${client.stillnessSurveyFollowupDelay} minutes.`,
+          message: `Thanks, we'll follow up in ${client.stillnessSurveyFollowupDelay / 60} minutes.`,
         }
       }
       return {
