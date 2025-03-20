@@ -97,7 +97,6 @@ async function runQuery(functionName, queryString, queryParams, pool, clientPara
 
   let client = clientParam
   let shouldRelease = false
-  const queryStart = Date.now()
 
   try {
     if (!client) {
@@ -111,11 +110,6 @@ async function runQuery(functionName, queryString, queryParams, pool, clientPara
     const result = await client.query(queryString, queryParams)
     if (result.code === '40001') {
       throw new Error('Serialization failure - transaction must be retried')
-    }
-
-    const queryDuration = Date.now() - queryStart
-    if (queryDuration > 1000) {
-      log(`SLOW QUERY: ${functionName} took ${queryDuration}ms`)
     }
 
     return result
@@ -142,47 +136,6 @@ function differenceInSeconds(date1, date2) {
   const dateTime1 = DateTime.fromJSDate(date1)
   const dateTime2 = DateTime.fromJSDate(date2)
   return dateTime1.diff(dateTime2, 'seconds').seconds
-}
-
-async function generateCalculatedTimeDifferenceString(timeToCompare, db_new) {
-  const daySecs = 24 * 60 * 60
-  const hourSecs = 60 * 60
-  const minSecs = 60
-  let returnString = ''
-  let numDays = 0
-  let numHours = 0
-  let numMins = 0
-  const currentTime = await db_new.getCurrentTime()
-
-  let diffSecs = (currentTime - timeToCompare) / 1000
-
-  if (diffSecs >= daySecs) {
-    numDays = Math.floor(diffSecs / daySecs)
-    diffSecs %= daySecs
-  }
-  returnString += `${numDays} ${numDays === 1 ? 'day, ' : 'days, '}`
-
-  if (diffSecs >= hourSecs) {
-    numHours = Math.floor(diffSecs / hourSecs)
-    diffSecs %= hourSecs
-  }
-  returnString += `${numHours} ${numHours === 1 ? 'hour, ' : 'hours, '}`
-
-  if (diffSecs >= minSecs) {
-    numMins = Math.floor(diffSecs / minSecs)
-  }
-  returnString += `${numMins} ${numMins === 1 ? 'minute' : 'minutes'}`
-
-  if (numDays + numHours === 0) {
-    diffSecs %= minSecs
-    const numSecs = Math.floor(diffSecs)
-
-    returnString += `, ${numSecs} ${numSecs === 1 ? 'second' : 'seconds'}`
-  }
-
-  returnString += ' ago'
-
-  return returnString
 }
 
 const DASHBOARD_TIMEZONE = 'America/Vancouver'
@@ -234,7 +187,6 @@ module.exports = {
   setupSentry,
   formatExpressValidationErrors,
   differenceInSeconds,
-  generateCalculatedTimeDifferenceString,
   formatDateTimeForDashboard,
   parseDigits,
   translateMessageKeyToMessage,
