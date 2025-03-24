@@ -26,25 +26,18 @@ const disconnectionReminderThreshold = helpers.getEnvVar('DISCONNECTION_REMINDER
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-async function handleDeviceDisconnectionVitals(device, client, currentDBTime, pgClient) {
-  if (!device || !client || !currentDBTime || !pgClient) {
+async function handleDeviceDisconnectionVitals(device, client, currentDBTime, latestVital, latestConnectionNotification, pgClient) {
+  if (!device || !client || !currentDBTime || !latestVital || !pgClient) {
     throw new Error('Missing required parameters')
   }
 
   try {
-    const latestVital = await db_new.getLatestVitalWithDeviceId(device.deviceId, pgClient)
-    if (!latestVital) {
-      throw new Error(`No vitals found for device`)
-    }
-
     const timeSinceLastVital = helpers.differenceInSeconds(currentDBTime, latestVital.createdAt)
     const timeSinceLastDoorContact = helpers.differenceInSeconds(currentDBTime, latestVital.doorLastSeenAt)
 
     // based on the last seen vital and door contact times, determine disconnection
     const deviceDisconnected = timeSinceLastVital > deviceDisconnectionThreshold
     const doorDisconnected = timeSinceLastDoorContact > doorDisconnectionThreshold
-
-    const latestConnectionNotification = await db_new.getLatestConnectionNotification(device.deviceId, pgClient)
 
     // check if the latest notification for type of disconnection
     const isDeviceNotification =
@@ -113,24 +106,45 @@ async function checkDeviceDisconnectionVitals() {
 
     const currentDBTime = await db_new.getCurrentTime()
 
-    const devices = await db_new.getDevices(pgClient)
-    if (!devices || devices.length === 0) {
-      throw new Error('No devices found')
+    // Get all active devices and clients that send vitals
+    const devicesWithClients = await db_new.getActiveVitalDevicesWithClients(pgClient)
+    if (!devicesWithClients.length) {
+      throw new Error('No active devices found')
     }
 
-    const devicePromises = devices.map(async device => {
-      try {
-        const client = await db_new.getClientWithDeviceId(device.deviceId, pgClient)
-        if (client && client.devicesSendingVitals && device.isSendingVitals) {
-          await handleDeviceDisconnectionVitals(device, client, currentDBTime, pgClient)
-        }
-      } catch (deviceError) {
-        helpers.log(`Error processing device ${device.deviceId}: ${deviceError.message}`)
-      }
-    })
+    // Batch fetch latest vitals and notifications
+    const deviceIds = devicesWithClients.map(d => d.device.deviceId)
+    const [latestVitals, latestConnectionNotifications] = await Promise.all([
+      db_new.getLatestVitalsForDeviceIds(deviceIds, pgClient),
+      db_new.getLatestConnectionNotificationsForDeviceIds(deviceIds, pgClient),
+    ])
 
-    // Process devices in parallel
-    await Promise.all(devicePromises)
+    // convert both results to maps for easier lookup
+    const vitalsMap = latestVitals.reduce((acc, vital) => {
+      acc[vital.deviceId] = vital
+      return acc
+    }, {})
+
+    const notificationsMap = latestConnectionNotifications.reduce((acc, notification) => {
+      acc[notification.deviceId] = notification
+      return acc
+    }, {})
+
+    // Process devices in parallel with all data available
+    await Promise.all(
+      devicesWithClients.map(async ({ device, client }) => {
+        try {
+          const latestVital = vitalsMap[device.deviceId]
+          if (!latestVital) {
+            throw new Error('No vitals found.')
+          }
+
+          await handleDeviceDisconnectionVitals(device, client, currentDBTime, latestVital, notificationsMap[device.deviceId], pgClient)
+        } catch (error) {
+          helpers.log(`Error processing device ${device.deviceId}: ${error.message}`)
+        }
+      }),
+    )
 
     await db_new.commitTransaction(pgClient)
   } catch (error) {

@@ -1077,6 +1077,36 @@ async function getMergedDevicesWithVitals(clientId = null, pgClient) {
   }
 }
 
+async function getActiveVitalDevicesWithClients(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getActiveVitalDevicesWithClients',
+      `
+      SELECT d.*, c.*
+      FROM devices_new d
+      JOIN clients_new c ON d.client_id = c.client_id
+      WHERE c.devices_sending_vitals = true 
+      AND d.is_sending_vitals = true
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => ({
+      device: createDeviceFromRow(row),
+      client: createClientFromRow(row),
+    }))
+  } catch (err) {
+    helpers.logError(`Error running getActiveVitalDevicesWithClients query: ${err}`)
+    return []
+  }
+}
+
 async function getDeviceWithDeviceId(deviceId, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -1601,6 +1631,32 @@ async function getLatestVitalWithDeviceId(deviceId, pgClient) {
   }
 }
 
+async function getLatestVitalsForDeviceIds(deviceIds, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestVitalsForDeviceIds',
+      `
+      SELECT DISTINCT ON (device_id) *
+      FROM vitals_cache_new
+      WHERE device_id = ANY($1)
+      ORDER BY device_id, created_at DESC
+      `,
+      [deviceIds],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createVitalFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getLatestVitalsForDeviceIds query: ${err.toString()}`)
+    return []
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function createNotification(deviceId, notificationType, pgClient) {
@@ -1722,6 +1778,33 @@ async function getLatestConnectionNotification(deviceId, pgClient) {
   }
 }
 
+async function getLatestConnectionNotificationsForDeviceIds(deviceIds, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestConnectionNotificationsForDeviceIds',
+      `
+      SELECT DISTINCT ON (device_id) *
+      FROM notifications_new
+      WHERE device_id = ANY($1)
+      AND notification_type = ANY($2)
+      ORDER BY device_id, notification_sent_at DESC
+      `,
+      [deviceIds, connectionNotificationTypes],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createNotificationFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getLatestConnectionNotificationsForDeviceIds query: ${err.toString()}`)
+    return []
+  }
+}
+
 async function getLatestNotificationOfType(deviceId, notificationType, pgClient) {
   try {
     helpers.log(`Getting last notification of type: deviceId: ${deviceId}, notificationType: ${notificationType}`)
@@ -1784,6 +1867,7 @@ module.exports = {
   getDevices,
   getDevicesForClient,
   getMergedDevicesWithVitals,
+  getActiveVitalDevicesWithClients,
   getDeviceWithDeviceId,
   getDeviceWithParticleDeviceId,
   getDeviceWithDeviceTwilioNumber,
@@ -1804,10 +1888,12 @@ module.exports = {
 
   createVital,
   getLatestVitalWithDeviceId,
+  getLatestVitalsForDeviceIds,
 
   createNotification,
   getNotificationsForDevice,
   getLatestNotification,
   getLatestConnectionNotification,
+  getLatestConnectionNotificationsForDeviceIds,
   getLatestNotificationOfType,
 }
