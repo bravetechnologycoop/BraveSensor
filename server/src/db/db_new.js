@@ -56,6 +56,9 @@ setInterval(() => {
       `DB Pool Stats - Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}, Active connections: ${activeConnections}`,
     )
   }
+  if (pool.totalCount > pool.max * 0.8) {
+    helpers.log('Warning: Connection pool near capacity')
+  }
 }, 10000)
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -195,9 +198,9 @@ async function rollbackTransaction(pgClient) {
   }
 }
 
-const LOCK_TIMEOUT_MS = 5000
-const STATEMENT_TIMEOUT_MS = 5000
-const IDLE_IN_TRANSACTION_TIMEOUT_MS = 30000
+const LOCK_TIMEOUT_MS = 15000
+const STATEMENT_TIMEOUT_MS = 15000
+const IDLE_IN_TRANSACTION_TIMEOUT_MS = 60000
 const MAX_RETRIES = 5
 const BACKOFF_BASE = 100
 
@@ -308,6 +311,24 @@ async function getCurrentTime(pgClient) {
   } catch (err) {
     helpers.logError(`Error running the getCurrentTime query: ${err.toString()}`)
     return null
+  }
+}
+
+async function getFormattedTimeDifference(timestamp, pgClient) {
+  try {
+    // Note: Uses database function: format_time_difference (see script #58)
+    const results = await helpers.runQuery(
+      'getFormattedTimeDifference',
+      `SELECT format_time_difference($1::timestamp) as formatted_time`,
+      [timestamp],
+      pool,
+      pgClient,
+    )
+
+    return results.rows[0].formatted_time
+  } catch (err) {
+    helpers.logError(`Error calculating formatted time difference: ${err}`)
+    return 'Unknown time ago'
   }
 }
 
@@ -536,6 +557,54 @@ async function getActiveClients(pgClient) {
     return results.rows.map(r => createClientFromRow(r))
   } catch (err) {
     helpers.logError(`Error running the getActiveClients query: ${err.toString()}`)
+    return []
+  }
+}
+
+// used for dashboard rendering (is_displayed should be true)
+// Note: Uses database function: format_time_difference (see script #58)
+async function getMergedClientsWithExtensions(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getMergedClientsWithExtensions',
+      `
+      SELECT 
+        c.*,
+        ce.country,
+        ce.country_subdivision,
+        ce.building_type,
+        ce.city,
+        ce.postal_code,
+        ce.funder,
+        ce.project,
+        ce.organization
+      FROM clients_new c
+      LEFT JOIN clients_extension_new ce ON c.client_id = ce.client_id
+      WHERE c.is_displayed = true
+      ORDER BY c.display_name
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => ({
+      ...createClientFromRow(row),
+      country: row.country || 'N/A',
+      countrySubdivision: row.country_subdivision || 'N/A',
+      buildingType: row.building_type || 'N/A',
+      city: row.city || 'N/A',
+      postalCode: row.postal_code || 'N/A',
+      funder: row.funder || 'N/A',
+      project: row.project || 'N/A',
+      organization: row.organization || 'N/A',
+    }))
+  } catch (err) {
+    helpers.logError(`Error running getMergedClientsWithExtensions query: ${err}`)
     return []
   }
 }
@@ -932,6 +1001,108 @@ async function getDevicesForClient(clientId, pgClient) {
     return results.rows.map(row => createDeviceFromRow(row))
   } catch (err) {
     helpers.logError(`Error running the getDevicesForClient query: ${err.toString()}`)
+    return []
+  }
+}
+
+// used for dashboard rendering (is_displayed should be true)
+// Note: Uses database function: format_time_difference (see script #58)
+// clientId is optional. If not provided, gets all devices
+async function getMergedDevicesWithVitals(clientId = null, pgClient) {
+  try {
+    let baseQuery = `
+      WITH latest_vitals AS (
+        SELECT DISTINCT ON (device_id)
+          device_id,
+          created_at,
+          device_last_reset_reason,
+          door_last_seen_at,
+          door_low_battery,
+          door_tampered,
+          door_missed_count,
+          consecutive_open_door_count,
+          format_time_difference(created_at) as time_since_vital,
+          format_time_difference(door_last_seen_at) as time_since_door
+        FROM vitals_cache_new
+        ORDER BY device_id, created_at DESC
+      )
+      SELECT 
+        d.*,
+        v.created_at as vital_created_at,
+        v.device_last_reset_reason,
+        v.door_last_seen_at,
+        v.door_low_battery,
+        v.door_tampered,
+        v.door_missed_count,
+        v.consecutive_open_door_count,
+        v.time_since_vital,
+        v.time_since_door
+      FROM devices_new d
+      LEFT JOIN latest_vitals v ON d.device_id = v.device_id
+      WHERE d.is_displayed = true`
+
+    if (clientId) {
+      baseQuery += ` AND d.client_id = '${clientId}'`
+    }
+
+    baseQuery += ` ORDER BY d.display_name`
+
+    const results = await helpers.runQuery('getMergedDevicesWithVitals', baseQuery, [], pool, pgClient)
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => {
+      const device = createDeviceFromRow(row)
+      if (!row.vital_created_at) return { ...device, latestVital: null }
+
+      const vital = {
+        createdAt: row.vital_created_at,
+        deviceLastResetReason: row.device_last_reset_reason,
+        doorLastSeenAt: row.door_last_seen_at,
+        doorLowBattery: row.door_low_battery,
+        doorTampered: row.door_tampered,
+        doorMissedCount: row.door_missed_count,
+        consecutiveOpenDoorCount: row.consecutive_open_door_count,
+        timeSinceLastVital: row.time_since_vital,
+        timeSinceLastDoorContact: row.time_since_door,
+      }
+
+      return { ...device, latestVital: vital }
+    })
+  } catch (err) {
+    helpers.logError(`Error running getMergedDevicesWithVitals query: ${err}`)
+    return []
+  }
+}
+
+async function getActiveVitalDevicesWithClients(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getActiveVitalDevicesWithClients',
+      `
+      SELECT d.*, c.*
+      FROM devices_new d
+      JOIN clients_new c ON d.client_id = c.client_id
+      WHERE c.devices_sending_vitals = true 
+      AND d.is_sending_vitals = true
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => ({
+      device: createDeviceFromRow(row),
+      client: createClientFromRow(row),
+    }))
+  } catch (err) {
+    helpers.logError(`Error running getActiveVitalDevicesWithClients query: ${err}`)
     return []
   }
 }
@@ -1403,7 +1574,6 @@ async function createVital(
   pgClient,
 ) {
   try {
-    helpers.log(`NEW VITAL: deviceId: ${deviceId}`)
     const results = await helpers.runQuery(
       'createVital',
       `
@@ -1458,6 +1628,32 @@ async function getLatestVitalWithDeviceId(deviceId, pgClient) {
   } catch (err) {
     helpers.logError(`Error running the getLatestVitalWithDeviceId query: ${err.toString()}`)
     return null
+  }
+}
+
+async function getLatestVitalsForDeviceIds(deviceIds, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestVitalsForDeviceIds',
+      `
+      SELECT DISTINCT ON (device_id) *
+      FROM vitals_cache_new
+      WHERE device_id = ANY($1)
+      ORDER BY device_id, created_at DESC
+      `,
+      [deviceIds],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createVitalFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getLatestVitalsForDeviceIds query: ${err.toString()}`)
+    return []
   }
 }
 
@@ -1582,6 +1778,33 @@ async function getLatestConnectionNotification(deviceId, pgClient) {
   }
 }
 
+async function getLatestConnectionNotificationsForDeviceIds(deviceIds, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestConnectionNotificationsForDeviceIds',
+      `
+      SELECT DISTINCT ON (device_id) *
+      FROM notifications_new
+      WHERE device_id = ANY($1)
+      AND notification_type = ANY($2)
+      ORDER BY device_id, notification_sent_at DESC
+      `,
+      [deviceIds, connectionNotificationTypes],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createNotificationFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getLatestConnectionNotificationsForDeviceIds query: ${err.toString()}`)
+    return []
+  }
+}
+
 async function getLatestNotificationOfType(deviceId, notificationType, pgClient) {
   try {
     helpers.log(`Getting last notification of type: deviceId: ${deviceId}, notificationType: ${notificationType}`)
@@ -1621,12 +1844,14 @@ module.exports = {
 
   getCurrentTimeForHealthCheck,
   getCurrentTime,
+  getFormattedTimeDifference,
   clearAllTables,
 
   createClient,
   updateClient,
   getClients,
   getActiveClients,
+  getMergedClientsWithExtensions,
   getClientsWithResponderPhoneNumber,
   getClientWithDisplayName,
   getClientWithClientId,
@@ -1641,6 +1866,8 @@ module.exports = {
   updateDevice,
   getDevices,
   getDevicesForClient,
+  getMergedDevicesWithVitals,
+  getActiveVitalDevicesWithClients,
   getDeviceWithDeviceId,
   getDeviceWithParticleDeviceId,
   getDeviceWithDeviceTwilioNumber,
@@ -1661,10 +1888,12 @@ module.exports = {
 
   createVital,
   getLatestVitalWithDeviceId,
+  getLatestVitalsForDeviceIds,
 
   createNotification,
   getNotificationsForDevice,
   getLatestNotification,
   getLatestConnectionNotification,
+  getLatestConnectionNotificationsForDeviceIds,
   getLatestNotificationOfType,
 }

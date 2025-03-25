@@ -11,6 +11,16 @@ the code was deployed.
 
 ## [Unreleased]
 
+### Added
+
+- Added migration script (#58) that adds database function to format dates for dashboard (CU-86dw9zbca).
+- Added door last seen at in devices view for the dashboard (CU-86dw9zbca).
+
+### Changed
+
+- Optimized the dashboard rendering by parallelizing database calls (CU-86dw9zbca).
+- Updated url param handling for special characters using URIComponents (CU-86dw9zbca).
+
 ## [12.1.0] - 2025-03-18
 
 ### Added 

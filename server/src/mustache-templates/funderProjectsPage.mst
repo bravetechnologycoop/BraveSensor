@@ -17,7 +17,7 @@
     {{> nav}}
     <div class="content-area">
         <div class="content-wrapper">
-            <h3>Funder:  {{funder}}</h3>
+            <h3>Funder: {{#decodeHTMLEntities}}{{funder}}{{/decodeHTMLEntities}}</h3>
             <br>
             <div class="table-responsive">
                 <table class="table table-striped table-sm table-fixed">
@@ -30,7 +30,7 @@
                     {{#clients}}
                         <tr class="table-data">
                             {{! Clicking item renders the organizations filtered by the selected project }}
-                            <th scope="row"><a href="/organizations?project={{project}}">{{project}}</a></th>
+                            <th scope="row"><a href="/organizations?project={{#encodeURIParam}}{{project}}{{/encodeURIParam}}">{{#decodeHTMLEntities}}{{project}}{{/decodeHTMLEntities}}</a></th>
                         </tr>
                     {{/clients}}
                     </tbody>

@@ -103,6 +103,7 @@
                         <th scope="col">Device Name</th>
                         <th scope="col">Device Type</th>
                         <th scope="col">Device Last Seen At</th>
+                        <th scope="col">Door Last Seen At</th>
                         <th scope="col">Sends Alerts?</th>
                         <th scope="col">Sends Vitals?</th>
                     </tr>
@@ -119,13 +120,12 @@
             const view = document.getElementById('viewSelect').value;
             const tableBody = document.getElementById('tableBody');
             let bodyHtml = '';
-
+        
             if (view === 'funder') {
                 bodyHtml = `
                     {{#uniqueFunders}}
                         <tr class="table-data funder-row">
-                            {{! Clicking item renders the projects filtered by the selected funder }}
-                            <th scope="row"><a href="/projects?funder={{funder}}">{{funder}}</a></th>
+                            <th scope="row"><a href="/projects?funder={{#encodeURIParam}}{{funder}}{{/encodeURIParam}}">{{#decodeHTMLEntities}}{{funder}}{{/decodeHTMLEntities}}</a></th>
                         </tr>
                     {{/uniqueFunders}}
                 `;
@@ -133,8 +133,7 @@
                 bodyHtml = `
                     {{#uniqueProjects}}
                         <tr class="table-data project-row">
-                            {{! Clicking item renders the organizations filtered by the selected project }}
-                            <th scope="row"><a href="/organizations?project={{project}}">{{project}}</a></th>
+                            <th scope="row"><a href="/organizations?project={{#encodeURIParam}}{{project}}{{/encodeURIParam}}">{{#decodeHTMLEntities}}{{project}}{{/decodeHTMLEntities}}</a></th>
                         </tr>
                     {{/uniqueProjects}}
                 `;
@@ -142,8 +141,7 @@
                 bodyHtml = `
                     {{#uniqueOrganizations}}
                         <tr class="table-data organization-row">
-                            {{! Clicking item renders the clients filtered by the selected organization }}
-                            <th scope="row"><a href="/clients?organization={{organization}}">{{organization}}</a></th>
+                            <th scope="row"><a href="/clients?organization={{#encodeURIParam}}{{organization}}{{/encodeURIParam}}">{{#decodeHTMLEntities}}{{organization}}{{/decodeHTMLEntities}}</a></th>
                         </tr>
                     {{/uniqueOrganizations}}
                 `;
@@ -151,8 +149,7 @@
                 bodyHtml = `
                     {{#clients}}
                         <tr class="table-data client-row">
-                            {{! Clicking item renders client details and the devices for that client }}
-                            <th scope="row"><a href="/clients/{{clientId}}">{{displayName}}</a></th>
+                            <th scope="row"><a href="/clients/{{clientId}}">{{#decodeHTMLEntities}}{{displayName}}{{/decodeHTMLEntities}}</a></th>
                             <td>{{#devicesSendingAlerts}}y{{/devicesSendingAlerts}}{{^devicesSendingAlerts}}NOPE{{/devicesSendingAlerts}}</td>
                             <td>{{#devicesSendingVitals}}y{{/devicesSendingVitals}}{{^devicesSendingVitals}}NOPE{{/devicesSendingVitals}}</td>
                         </tr>
@@ -162,17 +159,17 @@
                 bodyHtml = `
                     {{#devices}}
                         <tr class="table-data device-row">
-                            {{! Clicking item renders device details }}
-                            <th scope="row"><a href="/devices/{{deviceId}}">{{displayName}}</a></th>
+                            <th scope="row"><a href="/devices/{{deviceId}}">{{#decodeHTMLEntities}}{{displayName}}{{/decodeHTMLEntities}}</a></th>
                             <td>{{deviceType}}</td>
                             <td>{{#latestVital}}{{timeSinceLastVital}}{{/latestVital}}{{^latestVital}}N/A{{/latestVital}}</td>
+                            <td>{{#latestVital}}{{timeSinceLastDoorContact}}{{/latestVital}}{{^latestVital}}N/A{{/latestVital}}</td>
                             <td>{{#isSendingAlerts}}y{{/isSendingAlerts}}{{^isSendingAlerts}}NOPE{{/isSendingAlerts}}</td>
                             <td>{{#isSendingVitals}}y{{/isSendingVitals}}{{^isSendingVitals}}NOPE{{/isSendingVitals}}</td>
                         </tr>
                     {{/devices}}
                 `;
             }
-
+        
             tableBody.innerHTML = bodyHtml;
             filterTable();
         }
