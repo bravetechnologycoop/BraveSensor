@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.2.0] - 2025-03-25
+
 ### Added
 
 - Added migration script (#58) that adds database function to format dates for dashboard (CU-86dw9zbca).
@@ -948,7 +950,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.1.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.0...HEAD
+[12.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.1.0...v12.2.0
 [12.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.0.0...v12.1.0
 [12.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v11.0.0...v12.0.0
 [11.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v10.16.0...v11.0.0
