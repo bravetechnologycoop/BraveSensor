@@ -40,11 +40,11 @@
  * Converts the survey categories of the client to card options
  * These will be placed in the action set of the teams adaptive card
  * @param {Object} client       Database client object
- * @returns {Object}            Action set card object 
+ * @returns {Object}            Action set card object
  */
 
 // convertSurveyCategoriesToCardOptions
-// will use the createActionSet and return 
+// will use the createActionSet and return
 
 /**
  * Creates a Action.Set with Action.Submit options for an adaptive card
@@ -54,7 +54,7 @@
  */
 
 // createCardActionSet
-// returns something like: 
+// returns something like:
 // {
 //     "type": "ActionSet",
 //     "actions": [
@@ -63,7 +63,7 @@
 //     ]
 // }
 // OR
-// returns something like: 
+// returns something like:
 // {
 //     "type": "ActionSet",
 //     "actions": [
@@ -80,7 +80,7 @@
 // createCardInputBox
 // returns something like:
 // {
-//     "type": "Input.Text", 
+//     "type": "Input.Text",
 //     "id": "userInput",
 //     "placeholder": "Can you describe what happened?",
 //     "isMultiline": true
@@ -174,7 +174,7 @@ const result = createNewTeamsCard(client.teamsId, client.channelId, newAdaptiveC
 
 /**
  * DB Updates:
- * 
+ *
  * clients: (teamsId, teamsAlertChannelId, teamsVitalChannelId)
  * teams_events: (teams_event_id, session_id, event_sent_at, event_type, event_type_details, message_id)
  * sessions: (session_responded_via) ENUM (TWILIO, TEAMS)
