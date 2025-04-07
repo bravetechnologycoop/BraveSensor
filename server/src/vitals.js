@@ -75,7 +75,7 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
 
     if (notificationType && messageKey) {
       try {
-        const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+        const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
         const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
 
         if (phoneNumbers.length === 0) {
@@ -250,7 +250,7 @@ async function handleVitalNotifications(
     // Send all accumulated notifications
     for (const notification of notifications) {
       try {
-        const textMessage = helpers.translateMessageKeyToMessage(notification.messageKey, { client, device })
+        const textMessage = helpers.translateMessageKeyToMessage(notification.messageKey, client, device)
         const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
 
         if (phoneNumbers.length === 0) {

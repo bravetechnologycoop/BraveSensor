@@ -175,22 +175,15 @@ function convertSurveyCategoriesToCardActions(client) {
 
 /**
  * Higher level function to dynamically create cards based on identifiers.
- * @param {string} eventName    Identifier string for card
- * @param {Object} client       Database client object.
- * @param {Object} device       Database device object. Requires device.name.
- * @returns {Object|null}       An adaptive card object for the duration alert, or null if input is invalid or eventName is not 'teamsDurationAlert'.
+ * @param {string} messageKey       Teams message key: identifier string for card
+ * @param {Object} client           Database client object.
+ * @param {Object} device           Database device object.
+ * @param {Object} [messageData={}] Optional object containing data specific to the messageKey.
+ * @returns {Object|null}           An adaptive card object or null if input is invalid
  */
-function createAdaptiveCard(eventName, client, device) {
-  if (!eventName || typeof eventName !== 'string') {
-    helpers.log('createAdaptiveCard requires a valid string for eventName.')
-    return null
-  }
-  if (!client || typeof client !== 'object') {
-    helpers.log('createAdaptiveCard requires a valid client object.')
-    return null
-  }
-  if (!device || typeof device !== 'object') {
-    helpers.log('createAdaptiveCard requires a valid device object.')
+function createAdaptiveCard(messageKey, client, device, eventData = {}) {
+  if (!messageKey || !client || !device) {
+    helpers.log('createAdaptiveCard: Missing required parameters')
     return null
   }
 
@@ -198,23 +191,25 @@ function createAdaptiveCard(eventName, client, device) {
   let title = null
   let bodyText = null
   let inputBox = null
-  let actions = null
+  let cardActions = null
 
-  switch (eventName) {
+  helpers.log(eventData)
+
+  switch (messageKey) {
     case 'teamsDurationAlert':
       header = `${device.displayName}`
       title = 'Duration Alert'
       bodyText = `${device.displayName} has been occupied for 20 minutes. Please press the following buttons.`
       inputBox = createCardInputBox('Can you describe what happened?')
-      actions = convertSurveyCategoriesToCardActions(client)
+      cardActions = convertSurveyCategoriesToCardActions(client)
       break
 
     default:
-      helpers.log(`Unsupported eventName for createAdaptiveCard: ${eventName}.`)
+      helpers.log(`Unsupported messageKey for createAdaptiveCard: ${messageKey}.`)
       return null
   }
 
-  return assembleAdaptiveCard(header, title, bodyText, inputBox, actions)
+  return assembleAdaptiveCard(header, title, bodyText, inputBox, cardActions)
 }
 
 // ------------------------------------------------------------------------------------------------

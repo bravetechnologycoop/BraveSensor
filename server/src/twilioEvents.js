@@ -23,7 +23,7 @@ const TWILIO_TOKEN = helpers.getEnvVar('TWILIO_TOKEN')
 async function handleNoResponseExpected(client, device, responderPhoneNumber) {
   try {
     const messageKey = 'noResponseExpected'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
     // do not log this event
@@ -35,7 +35,7 @@ async function handleNoResponseExpected(client, device, responderPhoneNumber) {
 async function handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient) {
   try {
     const messageKey = 'invalidResponseTryAgain'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
@@ -47,7 +47,7 @@ async function handleInvalidResponse(client, device, latestSession, responderPho
 async function sendNonAttendingConfirmation(client, device, latestSession, nonAttendingPhoneNumbers, pgClient) {
   try {
     const messageKey = 'nonAttendingResponderConfirmation'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, nonAttendingPhoneNumbers, textMessage)
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, nonAttendingPhoneNumbers, pgClient)
@@ -65,7 +65,7 @@ async function handleNonAttendingResponderConfirmation(client, device, latestSes
 
     // resend the non-attending responder confirmation
     const messageKey = 'nonAttendingResponderConfirmation'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_SENT, messageKey, responderPhoneNumber, pgClient)
   } catch (error) {
@@ -79,7 +79,7 @@ async function handleNonAttendingResponderConfirmation(client, device, latestSes
 async function scheduleStillnessAlertSurvey(client, device, sessionId, responderPhoneNumber) {
   async function sendSurvey(latestSession) {
     const messageKey = 'stillnessAlertSurvey'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     // send message to responder phone number and log message sent event
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
@@ -145,11 +145,8 @@ async function handleStillnessAlert(client, device, latestSession, responderPhon
     // Only send followup message if there will be a delay
     if (client.stillnessSurveyFollowupDelay > 0) {
       const messageKey = 'stillnessAlertFollowup'
-      const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
-        client,
-        device,
-        params: { stillnessAlertFollowupTimer: client.stillnessSurveyFollowupDelay / 60 },
-      })
+      const messageData = { stillnessAlertFollowupTimer: Math.round(client.stillnessSurveyFollowupDelay || 0) / 60 }
+      const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device, messageData)
 
       // send message to responder phone number and log message sent event
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
@@ -201,7 +198,7 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
         await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
         return
     }
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     // log message received event
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'stillnessAlertSurvey', responderPhoneNumber, pgClient)
@@ -294,7 +291,7 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, latestSessio
         await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
         return
     }
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     // log message received event
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'stillnessAlertSurveyDoorOpened', responderPhoneNumber, pgClient)
@@ -324,7 +321,7 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, la
     }
 
     const messageKey = 'stillnessAlertSurveyOccupantOkayEnd'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     // log message received event
     await db_new.createEvent(
@@ -356,7 +353,7 @@ async function handleStillnessAlertSurveyOtherFollowup(client, device, latestSes
     // NOTE: we accept any response to the 'Other' followup
 
     const messageKey = 'thankYou'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     // log message received event
     const eventTypeDetails = `stillnessAlertSurveyOtherFollowup: ${message}`
@@ -404,7 +401,7 @@ async function handleDurationAlert(client, device, latestSession, responderPhone
     // we accept any input to handle potential misclicks or typos from responders
 
     const messageKey = 'durationAlertSurvey'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     // log message received event
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'durationAlert', responderPhoneNumber, pgClient)
@@ -458,7 +455,7 @@ async function handleDurationAlertSurvey(client, device, latestSession, responde
         await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
         return
     }
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     // log message received event
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'durationAlertSurvey', responderPhoneNumber, pgClient)
@@ -552,7 +549,7 @@ async function handleDurationAlertSurveyDoorOpened(client, device, latestSession
         await handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient)
         return
     }
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     // log message received event
     await db_new.createEvent(latestSession.sessionId, EVENT_TYPE.MSG_RECEIVED, 'durationAlertSurveyDoorOpened', responderPhoneNumber, pgClient)
@@ -581,7 +578,7 @@ async function handleDurationAlertSurveyOccupantOkayFollowup(client, device, lat
     }
 
     const messageKey = 'durationAlertSurveyOccupantOkayEnd'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     // log message received event
     await db_new.createEvent(
@@ -620,7 +617,7 @@ async function handleDurationAlertSurveyOtherFollowup(client, device, latestSess
     // NOTE: we accept any response to the 'Other' followup
 
     const messageKey = 'thankYou'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
     // log message received event
     const eventTypeDetails = `durationAlertSurveyOtherFollowup: ${message}`
