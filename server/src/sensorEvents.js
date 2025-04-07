@@ -25,7 +25,7 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
     try {
       const reminderType = { 1: 'First', 2: 'Second', 3: 'Third' }[reminderNumber]
       const messageKey = `stillnessAlert${reminderType}Reminder`
-      const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+      const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
       await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey, client.responderPhoneNumbers)
@@ -43,7 +43,7 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
       }
 
       const messageKey = 'stillnessAlertFallback'
-      const textMessage = helpers.translateMessageKeyToMessage(messageKey, { client, device })
+      const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.fallbackPhoneNumbers, textMessage)
       await db_new.createEvent(sessionId, EVENT_TYPE.STILLNESS_ALERT, messageKey, client.fallbackPhoneNumbers)
@@ -168,11 +168,8 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
       return null // exit early (for first even as door opened)
     }
 
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
-      client,
-      device,
-      params: { occupancyDuration: eventData.occupancyDuration },
-    })
+    const messageData = { occupancyDuration: eventData.occupancyDuration }
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device, messageData)
 
     // create a new active session
     const newSession = await db_new.createSession(device.deviceId, pgClient)
@@ -220,11 +217,8 @@ async function handleExistingSession(client, device, eventType, eventData, lates
       return null
     }
 
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, {
-      client,
-      device,
-      params: { occupancyDuration: eventData.occupancyDuration },
-    })
+    const messageData = { occupancyDuration: eventData.occupancyDuration }
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device, messageData)
 
     // only send the door opened surveys if survey was NOT sent
     if ((messageKey === 'stillnessAlertSurveyDoorOpened' || messageKey === 'durationAlertSurveyDoorOpened') && latestSession.surveySent) {
