@@ -1408,6 +1408,32 @@ async function updateSessionSelectedSurveyCategory(sessionId, selectedCategory, 
   }
 }
 
+async function updateSessionRespondedVia(sessionId, respondedVia, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateSessionRespondedVia',
+      `
+      UPDATE sessions_new
+      SET session_responded_via = $2
+      WHERE session_id = $1
+      RETURNING *
+      `,
+      [sessionId, respondedVia],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSessionRespondedVia query: ${err.toString()}`)
+    return null
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function createEvent(sessionId, eventType, eventTypeDetails, phoneNumbers, pgClient) {
@@ -1923,6 +1949,7 @@ module.exports = {
   updateSessionAttendingResponder,
   updateSessionResponseTime,
   updateSessionSelectedSurveyCategory,
+  updateSessionRespondedVia,
 
   createEvent,
   getEventsForSession,

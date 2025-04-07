@@ -13,7 +13,7 @@ const helpers = require('./utils/helpers')
 const twilioHelpers = require('./utils/twilioHelpers')
 const db_new = require('./db/db_new')
 const { resetMonitoring, resetStateToZero } = require('./particle')
-const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
+const { EVENT_TYPE, SESSION_STATUS, SESSION_RESPONDED_VIA } = require('./enums/index')
 
 const TWILIO_TOKEN = helpers.getEnvVar('TWILIO_TOKEN')
 
@@ -124,16 +124,21 @@ async function handleStillnessAlert(client, device, latestSession, responderPhon
       throw new Error(`Expected door to be closed for session ID: ${latestSession.sessionId}`)
     }
 
-    // Set attending responder if not set and send non-attending confirmation
-    if (!latestSession.attendingResponderNumber) {
-      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+    // Mark session as being responded via Twilio
+    if (!latestSession.sessionRespondedVia && !latestSession.attendingResponderNumber) {
+      await db_new.updateSessionRespondedVia(latestSession.sessionId, SESSION_RESPONDED_VIA.TWILIO, pgClient)
       await db_new.updateSessionResponseTime(latestSession.sessionId, pgClient)
 
-      // Send non-attending confirmation to other responders
+      // Set the number as the attending responder number
+      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+
+      // Send non-attending confirmation to other responders phone's
       const nonAttendingResponders = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
       if (nonAttendingResponders && nonAttendingResponders.length > 0) {
         await sendNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
       }
+
+      // Send non-attending for teams
     }
 
     // Note: Although the stillness alert message mentions accepting only '5' or 'ok',
@@ -214,9 +219,12 @@ async function handleStillnessAlertSurvey(client, device, latestSession, respond
       await resetMonitoring(device.particleDeviceId)
       await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
 
-      // clear the attending phone number so that we can allow any responder to respond.
-      // clear the survey sent to treat allow reminder and surveys to be published
-      // the door open should be false (since door is still closed)
+      // Clear session state
+      // session responded via == null (so all methods are enabled to receive new alerts)
+      // attending phone number == null (so that we can allow any responder to respond)
+      // survey sent == null (to treat allow reminder and surveys to be published)
+      // door open == false (since door is still closed)
+      await db_new.updateSessionRespondedVia(latestSession.sessionId, null, pgClient)
       await db_new.updateSessionAttendingResponder(latestSession.sessionId, null, pgClient)
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.ACTIVE, latestSession.doorOpened, false, pgClient)
     } else if (selectedCategory === 'Other' && !latestSession.doorOpened) {
@@ -252,16 +260,21 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, latestSessio
       throw new Error(`Expected survey to be sent for session ID: ${latestSession.sessionId}`)
     }
 
-    // Set attending responder if not set and send non-attending confirmation
-    if (!latestSession.attendingResponderNumber) {
-      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+    // Mark session as being responded via Twilio
+    if (!latestSession.sessionRespondedVia && !latestSession.attendingResponderNumber) {
+      await db_new.updateSessionRespondedVia(latestSession.sessionId, SESSION_RESPONDED_VIA.TWILIO, pgClient)
       await db_new.updateSessionResponseTime(latestSession.sessionId, pgClient)
 
-      // Send non-attending confirmation to other responders
+      // Set the number as the attending responder number
+      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+
+      // Send non-attending confirmation to other responders phone's
       const nonAttendingResponders = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
       if (nonAttendingResponders && nonAttendingResponders.length > 0) {
         await sendNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
       }
+
+      // Send non-attending for teams
     }
 
     const { isValid, value: messageIndex } = helpers.parseDigits(message)
@@ -385,16 +398,21 @@ async function handleDurationAlert(client, device, latestSession, responderPhone
       throw new Error(`Expected door to be closed for session ID: ${latestSession.sessionId}`)
     }
 
-    // Set attending responder if not set and send non-attending confirmation
-    if (!latestSession.attendingResponderNumber) {
-      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+    // Mark session as being responded via Twilio
+    if (!latestSession.sessionRespondedVia && !latestSession.attendingResponderNumber) {
+      await db_new.updateSessionRespondedVia(latestSession.sessionId, SESSION_RESPONDED_VIA.TWILIO, pgClient)
       await db_new.updateSessionResponseTime(latestSession.sessionId, pgClient)
 
-      // Send non-attending confirmation to other responders
+      // Set the number as the attending responder number
+      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+
+      // Send non-attending confirmation to other responders phone's
       const nonAttendingResponders = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
       if (nonAttendingResponders && nonAttendingResponders.length > 0) {
         await sendNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
       }
+
+      // Send non-attending for teams
     }
 
     // Note: Although the duration alert message mentions accepting only '5' or 'ok',
@@ -471,9 +489,12 @@ async function handleDurationAlertSurvey(client, device, latestSession, responde
       await resetMonitoring(device.particleDeviceId)
       await db_new.updateSessionSelectedSurveyCategory(latestSession.sessionId, selectedCategory, pgClient)
 
-      // clear the attending phone number so that we can allow any responder to respond.
-      // clear the survey sent to treat allow reminder and surveys to be published
-      // the door open should be false (since door is still closed)
+      // Clear session state
+      // session responded via == null (so all methods are enabled to receive new alerts)
+      // attending phone number == null (so that we can allow any responder to respond)
+      // survey sent == null (to treat allow reminder and surveys to be published)
+      // door open == false (since door is still closed)
+      await db_new.updateSessionRespondedVia(latestSession.sessionId, null, pgClient)
       await db_new.updateSessionAttendingResponder(latestSession.sessionId, null, pgClient)
       await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.ACTIVE, latestSession.doorOpened, false, pgClient)
     } else if (selectedCategory === 'Other' && !latestSession.doorOpened) {
@@ -510,16 +531,21 @@ async function handleDurationAlertSurveyDoorOpened(client, device, latestSession
       throw new Error(`Expected survey to be sent for session ID: ${latestSession.sessionId}`)
     }
 
-    // Set attending responder if not set and send non-attending confirmation
-    if (!latestSession.attendingResponderNumber) {
-      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+    // Mark session as being responded via Twilio
+    if (!latestSession.sessionRespondedVia && !latestSession.attendingResponderNumber) {
+      await db_new.updateSessionRespondedVia(latestSession.sessionId, SESSION_RESPONDED_VIA.TWILIO, pgClient)
       await db_new.updateSessionResponseTime(latestSession.sessionId, pgClient)
 
-      // Send non-attending confirmation to other responders
+      // Set the number as the attending responder number
+      await db_new.updateSessionAttendingResponder(latestSession.sessionId, responderPhoneNumber, pgClient)
+
+      // Send non-attending confirmation to other responders phone's
       const nonAttendingResponders = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
       if (nonAttendingResponders && nonAttendingResponders.length > 0) {
         await sendNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
       }
+
+      // Send non-attending for teams
     }
 
     const { isValid, value: messageIndex } = helpers.parseDigits(message)
