@@ -9,14 +9,17 @@ const axios = require('axios')
 
 // In-house dependencies
 const helpers = require('./helpers')
+const db_new = require('../db/db_new')
 
 const TEAMS_CARD_FLOW_URL = helpers.getEnvVar('TEAMS_CARD_FLOW_URL')
 const TEAMS_API_KEY = helpers.getEnvVar('TEAMS_API_KEY')
 
+const TEXT_SIZE_EXTRA_LARGE = 'ExtraLarge'
 const TEXT_SIZE_LARGE = 'Large'
 const TEXT_SIZE_DEFAULT = 'Default'
 const TEXT_WEIGHT_BOLDER = 'Bolder'
 const TEXT_COLOR_ACCENT = 'Accent'
+const TEXT_COLOR_ATTENTION = 'Attention'
 
 const INPUT_ID_USERINPUT = 'userInput'
 
@@ -92,6 +95,7 @@ function createCardInputBox(placeholder) {
 
 /**
  * Helper function to assemble an adaptive card object based on provided parameters.
+ * @param {string} cardType             Required: 'New' or 'Update'
  * @param {string | null} cardHeader    Optional: Top-most header text.
  * @param {string | null} cardTitle     Optional: Title text (often styled differently).
  * @param {string} cardBodyText         Required: Main body text of the card.
@@ -99,7 +103,7 @@ function createCardInputBox(placeholder) {
  * @param {Array<Object> | null} cardActions Optional: Array of Action objects (e.g., Action.Submit from createCardActions).
  * @returns {Object | null}             An adaptive card JavaScript object, or a minimal error card object if body text is missing.
  */
-function assembleAdaptiveCard(cardHeader, cardTitle, cardBodyText, cardInputBox = null, cardActions = null) {
+function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, cardInputBox = null, cardActions = null) {
   if (!cardBodyText) {
     helpers.log("assembleAdaptiveCard requires 'cardBodyText'. Returning minimal error card object.")
     return {
@@ -118,25 +122,51 @@ function assembleAdaptiveCard(cardHeader, cardTitle, cardBodyText, cardInputBox 
     actions: [],
   }
 
+  let targetBody = card.body
+
+  if (cardType !== 'New') {
+    const container = {
+      type: 'Container',
+      style: 'emphasis', // light grey color
+      items: [],
+    }
+    card.body.push(container)
+    targetBody = container.items
+  } else {
+    const container = {
+      type: 'Container',
+      style: 'attention', // red tint
+      items: [],
+    }
+    card.body.push(container)
+    targetBody = container.items
+  }
+
   // Header (Optional)
   if (cardHeader) {
-    card.body.push(createCardTextBlock(cardHeader, { size: TEXT_SIZE_LARGE, weight: TEXT_WEIGHT_BOLDER }))
+    targetBody.push(createCardTextBlock(cardHeader, { size: TEXT_SIZE_EXTRA_LARGE, weight: TEXT_WEIGHT_BOLDER }))
   }
 
   // Title (Optional)
   if (cardTitle) {
-    card.body.push(createCardTextBlock(cardTitle, { size: TEXT_SIZE_DEFAULT, weight: TEXT_WEIGHT_BOLDER, color: TEXT_COLOR_ACCENT }))
+    targetBody.push(
+      createCardTextBlock(cardTitle, {
+        size: TEXT_SIZE_LARGE,
+        weight: TEXT_WEIGHT_BOLDER,
+        color: cardType === 'New' ? TEXT_COLOR_ATTENTION : TEXT_COLOR_ACCENT,
+      }),
+    )
   }
 
   // Body (Required)
-  card.body.push(createCardTextBlock(cardBodyText))
+  targetBody.push(createCardTextBlock(cardBodyText))
 
-  // User Input Box (Optional) - use the passed cardInputBox JS Object
+  // User Input Box (Optional)
   if (cardInputBox) {
-    card.body.push(cardInputBox)
+    targetBody.push(cardInputBox)
   }
 
-  // Card Actions (Optional) - use the passed cardActions, array of Action.Submit objects
+  // Card Actions (Optional)
   if (cardActions && Array.isArray(cardActions) && cardActions.length > 0) {
     card.actions = cardActions
   }
@@ -149,40 +179,115 @@ function assembleAdaptiveCard(cardHeader, cardTitle, cardBodyText, cardInputBox 
 // ------------------------------------------------------------------------------------------------
 
 /**
- * Converts the survey categories string of the client to card actions
- * Categories are expected as a comma-separated string.
- * @param {Object} client       Database client object. Requires client.surveyCategories (string).
- * @returns {Object | null}     Action set card object or null if no valid categories found.
+ * Gets the header text for a card based on the message key and device.
+ * @param {string} messageKey   Teams message key
+ * @param {Object} device       Database device object.
+ * @returns {string}            The header text. Returns a default if device name is missing.
  */
-function convertSurveyCategoriesToCardActions(client) {
-  if (!client || typeof client.surveyCategories !== 'string' || client.surveyCategories.trim() === '') {
-    helpers.log('Client survey categories string not found, is not a string, or is empty.')
+function getCardHeader(messageKey, device) {
+  if (!device || !device.displayName) {
+    helpers.log(`getCardHeader: Device name missing for messageKey ${messageKey}. Using default.`)
+    return 'Device Alert'
+  }
+
+  const deviceName = device.displayName
+
+  switch (messageKey) {
+    case 'teamsDurationAlert':
+    default:
+      return `${deviceName}`
+  }
+}
+
+/**
+ * Gets the title text for a card based on the message key.
+ * @param {string} messageKey   Teams message key
+ * @returns {string}            The title text. Returns a default title if key not matched.
+ */
+function getCardTitle(messageKey) {
+  switch (messageKey) {
+    case 'teamsDurationAlert':
+      return 'Duration Alert'
+    case 'teamsStillnessAlert':
+      return 'Stillness Alert'
+    default:
+      helpers.log(`getCardTitle: No specific title found for messageKey ${messageKey}. Using default.`)
+      return 'Notification'
+  }
+}
+
+/**
+ * Gets the default body text for a new card based on the message key.
+ * @param {string} messageKey       Teams message key
+ * @param {Object} device           Database device object.
+ * @param {Object} client           Database client object (needed for some messages).
+ * @param {Object} [messageData={}] Optional data relevant to the message (e.g., duration).
+ * @returns {string}                The body text string. Returns a default if key not matched.
+ */
+function getCardBody(messageKey, device, client, messageData = {}) {
+  if (!device || !device.displayName) {
+    helpers.log(`getCardBody: Missing required parameters`)
+    return 'Card Body'
+  }
+
+  const deviceName = device.displayName
+
+  switch (messageKey) {
+    case 'teamsDurationAlert':
+      return `${deviceName} has been occupied for ${messageData.occupancyDuration} minutes. Please press the button below if you are on your way.`
+    default:
+      helpers.log(`getCardBody: No specific body text found for messageKey ${messageKey}. Using default.`)
+      return `Notification for ${deviceName}.`
+  }
+}
+
+/**
+ * Gets the InputBox object for a new card based on the message key.
+ * @param {string} messageKey   Teams message key (e.g., 'teamsDurationAlert').
+ * @returns {Object | null}     The InputBox object (created by createCardInputBox) or null.
+ */
+function getCardInput(messageKey) {
+  switch (messageKey) {
+    case 'teamsDurationAlertSurveyOther':
+      return createCardInputBox('Can you describe what happened? (Optional)')
+    default:
+      return null
+  }
+}
+
+/**
+ * Gets the array of card Actions for a new card based on the message key.
+ * @param {string} messageKey   Teams message key (e.g., 'teamsDurationAlert').
+ * @param {Object} client       Database client object (needed for survey categories).
+ * @returns {Array<Object> | null} An array of Action objects or null/empty array.
+ */
+function getCardActions(messageKey, client) {
+  if (!client || !client.surveyCategories) {
+    helpers.log(`getCardBody: Missing required parameters`)
     return null
   }
 
-  const categories = client.surveyCategories
-    .split(',')
-    .map(category => category.trim())
-    .filter(category => category.length > 0)
+  const iAmOnMyWay = ['I am on my way!']
 
-  if (categories.length === 0) {
-    helpers.log('No valid categories found after splitting and filtering the string.')
-    return null
+  switch (messageKey) {
+    case 'teamsDurationAlert':
+      return createCardActions(iAmOnMyWay, true)
+    default:
+      return null
   }
-
-  return createCardActions(categories, true)
 }
 
 /**
  * Higher level function to dynamically create cards based on identifiers.
  * @param {string} messageKey       Teams message key: identifier string for card
+ * @param {string} cardType         Card Type: 'New', 'Update'
  * @param {Object} client           Database client object.
  * @param {Object} device           Database device object.
  * @param {Object} [messageData={}] Optional object containing data specific to the messageKey.
  * @returns {Object|null}           An adaptive card object or null if input is invalid
  */
-function createAdaptiveCard(messageKey, client, device, eventData = {}) {
-  if (!messageKey || !client || !device) {
+function createAdaptiveCard(messageKey, cardType, client, device, messageData = {}) {
+  if (!messageKey || !cardType || !client || !device) {
     helpers.log('createAdaptiveCard: Missing required parameters')
     return null
   }
@@ -193,23 +298,24 @@ function createAdaptiveCard(messageKey, client, device, eventData = {}) {
   let inputBox = null
   let cardActions = null
 
-  helpers.log(eventData)
+  header = getCardHeader(messageKey, device)
+  title = getCardTitle(messageKey)
 
-  switch (messageKey) {
-    case 'teamsDurationAlert':
-      header = `${device.displayName}`
-      title = 'Duration Alert'
-      bodyText = `${device.displayName} has been occupied for 20 minutes. Please press the following buttons.`
-      inputBox = createCardInputBox('Can you describe what happened?')
-      cardActions = convertSurveyCategoriesToCardActions(client)
-      break
-
-    default:
-      helpers.log(`Unsupported messageKey for createAdaptiveCard: ${messageKey}.`)
-      return null
+  if (cardType === 'Update' && messageData && messageData.bodyText) {
+    bodyText = messageData.bodyText
+  } else {
+    bodyText = getCardBody(messageKey, device, client, messageData)
   }
 
-  return assembleAdaptiveCard(header, title, bodyText, inputBox, cardActions)
+  if (cardType === 'Update') {
+    inputBox = null
+    cardActions = null
+  } else {
+    inputBox = getCardInput(messageKey)
+    cardActions = getCardActions(messageKey, client)
+  }
+
+  return assembleAdaptiveCard(cardType, header, title, bodyText, inputBox, cardActions)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -249,52 +355,6 @@ async function sendTeamsRequest(payload) {
 }
 
 /**
- * Post a new adaptive card to Teams via Power Automate.
- * Sends POST request to MS Teams Power Automate card flow webhook.
- * @param {string} teamsId          TeamId for the client's teams.
- * @param {string} channelId        ChannelId for the client's channel.
- * @param {Object} adaptiveCard     Content of adaptive card to be created (object).
- * @returns {Promise<Object|null>}  The response object containing teamsId, channelId, messageId or null if failure
- */
-async function sendNewTeamsCard(teamsId, channelId, adaptiveCard) {
-  if (!teamsId || !channelId || !adaptiveCard) {
-    helpers.logError('sendNewTeamsCard missing required parameters.')
-    return null
-  }
-
-  const payload = {
-    teamsId,
-    channelId,
-    adaptiveCard,
-    requestType: 'New',
-  }
-
-  const response = await sendTeamsRequest(payload)
-
-  if (!response || response.status !== 200) {
-    if (response && response.data) {
-      helpers.logError('Failed to create new Teams card. Error response:', JSON.stringify(response.data))
-    }
-    return null
-  }
-
-  const responseData = response.data
-  const responseBody = responseData && responseData.body
-
-  if (responseBody && responseBody.messageId && responseBody.teamsId && responseBody.channelId) {
-    return {
-      teamsId: responseBody.teamsId,
-      channelId: responseBody.channelId,
-      messageId: responseBody.messageId,
-    }
-  }
-
-  helpers.logError('New Teams card request succeeded (200 OK) but response body structure is unexpected or missing required IDs.')
-  helpers.log('Received Response Data:', JSON.stringify(responseData))
-  return null
-}
-
-/**
  * Update an existing adaptive card in Teams via Power Automate.
  * Sends POST request to MS Teams Power Automate card flow webhook.
  * @param {string} teamsId      TeamId for the client's teams.
@@ -327,17 +387,99 @@ async function sendUpdateTeamsCard(teamsId, channelId, messageId, adaptiveCard) 
   }
 
   const responseData = response.data
-  const responseBody = responseData && responseData.body
-
-  if (responseBody && responseBody.messageId && responseBody.teamsId && responseBody.channelId) {
+  if (responseData && responseData.messageId && responseData.teamsId && responseData.channelId) {
     return {
-      teamsId: responseBody.teamsId,
-      channelId: responseBody.channelId,
-      messageId: responseBody.messageId,
+      teamsId: responseData.teamsId,
+      channelId: responseData.channelId,
+      messageId: responseData.messageId,
     }
   }
 
   helpers.logError('Update Teams card request succeeded (200 OK) but response body structure is unexpected or missing required IDs.')
+  helpers.log('Received Response Data:', JSON.stringify(responseData))
+  return null
+}
+
+/**
+ * Updates a previous Teams card to an "expired" state.
+ */
+async function expirePreviousTeamsCard(teamsId, channelId, session) {
+  try {
+    const previousTeamsEvent = await db_new.getLatestTeamsEvent(session.sessionId)
+    if (!previousTeamsEvent) {
+      helpers.log('No event found to expire')
+      return
+    }
+
+    const client = await db_new.getClientWithDeviceId(session.deviceId)
+    const device = await db_new.getDeviceWithDeviceId(session.deviceId)
+    if (!client || !device) {
+      helpers.log('No client/device found for session')
+      return
+    }
+
+    // create a updated adaptive card
+    const messageData = { bodyText: 'This alert has expired. Please respond to the latest alert for this washroom.' }
+    const updatedAdaptiveCard = await createAdaptiveCard(previousTeamsEvent.eventTypeDetails, 'Update', client, device, messageData)
+    if (!updatedAdaptiveCard) {
+      throw new Error(`Failed to create updated adaptive card for teams event`)
+    }
+
+    // update the previous card
+    const response = await sendUpdateTeamsCard(teamsId, channelId, previousTeamsEvent.messageId, updatedAdaptiveCard)
+    if (!response || !response.messageId) {
+      throw new Error(`Failed to update Teams card or invalid response received for session ${session.sessionId}`)
+    }
+  } catch (error) {
+    throw new Error(`expirePreviousTeamsCard: ${error.message}`)
+  }
+}
+
+/**
+ * Post a new adaptive card to Teams via Power Automate.
+ * Sends POST request to MS Teams Power Automate card flow webhook.
+ * @param {string} teamsId          TeamId for the client's teams.
+ * @param {string} channelId        ChannelId for the client's channel.
+ * @param {Object} adaptiveCard     Content of adaptive card to be created (object).
+ * @param {Object} session          Session to which the alert belongs to (Optional).
+ * @returns {Promise<Object|null>}  The response object containing teamsId, channelId, messageId or null if failure
+ */
+async function sendNewTeamsCard(teamsId, channelId, adaptiveCard, session = {}) {
+  if (!teamsId || !channelId || !adaptiveCard) {
+    helpers.logError('sendNewTeamsCard missing required parameters.')
+    return null
+  }
+
+  if (session) {
+    await expirePreviousTeamsCard(teamsId, channelId, session)
+  }
+
+  const payload = {
+    teamsId,
+    channelId,
+    adaptiveCard,
+    requestType: 'New',
+  }
+
+  const response = await sendTeamsRequest(payload)
+
+  if (!response || response.status !== 200) {
+    if (response && response.data) {
+      helpers.logError('Failed to create new Teams card. Error response:', JSON.stringify(response.data))
+    }
+    return null
+  }
+
+  const responseData = response.data
+  if (responseData && responseData.messageId && responseData.teamsId && responseData.channelId) {
+    return {
+      teamsId: responseData.teamsId,
+      channelId: responseData.channelId,
+      messageId: responseData.messageId,
+    }
+  }
+
+  helpers.logError('New Teams card request succeeded (200 OK) but response body structure is unexpected or missing required IDs.')
   helpers.log('Received Response Data:', JSON.stringify(responseData))
   return null
 }

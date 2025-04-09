@@ -142,7 +142,7 @@ function createEventFromRow(r) {
 }
 
 function createTeamsEventFromRow(r) {
-  return new TeamsEventNew(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.teams_message_id)
+  return new TeamsEventNew(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.message_id)
 }
 
 function createVitalFromRow(r) {
@@ -1600,10 +1600,8 @@ async function checkEventExists(sessionId, eventType, eventTypeDetails, pgClient
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-async function createTeamsEvent(sessionId, eventType, eventTypeDetails, teamsMessageId, pgClient) {
-  helpers.log(
-    `NEW TEAMS EVENT: sessionId: ${sessionId}, eventType: ${eventType}, eventTypeDetails: ${eventTypeDetails}, teamsMessageId: ${teamsMessageId}`,
-  )
+async function createTeamsEvent(sessionId, eventType, eventTypeDetails, messageId, pgClient) {
+  helpers.log(`NEW TEAMS EVENT: sessionId: ${sessionId}, eventType: ${eventType}, eventTypeDetails: ${eventTypeDetails}, messageId: ${messageId}`)
   try {
     const results = await helpers.runQuery(
       'createTeamsEvent',
@@ -1612,11 +1610,11 @@ async function createTeamsEvent(sessionId, eventType, eventTypeDetails, teamsMes
         session_id, 
         event_type,
         event_type_details,
-        teams_message_id
+        message_id
       ) VALUES ($1, $2, $3, $4)
       RETURNING *
       `,
-      [sessionId, eventType, eventTypeDetails, teamsMessageId],
+      [sessionId, eventType, eventTypeDetails, messageId],
       pool,
       pgClient,
     )
@@ -1628,6 +1626,33 @@ async function createTeamsEvent(sessionId, eventType, eventTypeDetails, teamsMes
     return createTeamsEventFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the createTeamsEvent query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getLatestTeamsEvent(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestTeamsEvent',
+      `
+      SELECT *
+      FROM teams_events_new
+      WHERE session_id = $1
+      ORDER BY event_sent_at DESC
+      LIMIT 1
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getLatestTeamsEvent query: ${err.toString()}`)
     return null
   }
 }
@@ -1959,6 +1984,7 @@ module.exports = {
   checkEventExists,
 
   createTeamsEvent,
+  getLatestTeamsEvent,
 
   createVital,
   getLatestVitalWithDeviceId,
