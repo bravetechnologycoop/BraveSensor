@@ -10,8 +10,9 @@ const Validator = require('express-validator')
 // In-house dependencies
 const helpers = require('./utils/helpers')
 const twilioHelpers = require('./utils/twilioHelpers')
+const teamsHelpers = require('./utils/teamsHelpers')
 const db_new = require('./db/db_new')
-const { EVENT_TYPE, SESSION_STATUS } = require('./enums/index')
+const { EVENT_TYPE, SESSION_STATUS, SESSION_RESPONDED_VIA } = require('./enums/index')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 const stillnessReminderinSeconds = helpers.getEnvVar('STILLNESS_ALERT_REMINDER')
@@ -100,29 +101,22 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
-function selectMessageKeyForNewSession(eventType, device) {
-  switch (eventType) {
-    case EVENT_TYPE.DURATION_ALERT:
-      return 'durationAlert'
-    case EVENT_TYPE.STILLNESS_ALERT:
-      return 'stillnessAlert'
-    case EVENT_TYPE.DOOR_OPENED:
-      helpers.log(`Received door opened as the first alert ... ignoring alert for deviceId: ${device.deviceId}`)
-      return null
-    default: {
-      throw new Error(`selectMessageKeyForNewSession: Invalid event type received as the first alert: ${eventType}`)
-    }
-  }
-}
-
 async function selectMessageKeyForExistingSession(eventType, latestSession, pgClient) {
   try {
     switch (eventType) {
       case EVENT_TYPE.DURATION_ALERT:
-        return 'durationAlert'
+        return {
+          twilioMessageKey: 'durationAlert',
+          teamsMessageKey: 'teamsDurationAlert',
+        }
       case EVENT_TYPE.STILLNESS_ALERT:
-        return 'stillnessAlert'
+        return {
+          twilioMessageKey: 'stillnessAlert',
+          teamsMessageKey: 'teamsStillnessAlert',
+        }
       case EVENT_TYPE.DOOR_OPENED: {
+        // check the preceding event to determine the type of message to send
+        // use any method (twilio, teams)
         const latestEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, null, pgClient)
         if (!latestEvent) {
           throw new Error(`No latest event found for session ID: ${latestSession.sessionId}`)
@@ -130,15 +124,24 @@ async function selectMessageKeyForExistingSession(eventType, latestSession, pgCl
 
         switch (latestEvent.eventType) {
           case EVENT_TYPE.DURATION_ALERT:
-            return 'durationAlertSurveyDoorOpened'
+            return {
+              twilioMessageKey: 'durationAlertSurveyDoorOpened',
+              teamsMessageKey: 'teamsDurationAlertSurveyDoorOpened',
+            }
           case EVENT_TYPE.STILLNESS_ALERT:
-            return 'stillnessAlertSurveyDoorOpened'
+            return {
+              twilioMessageKey: 'stillnessAlertSurveyDoorOpened',
+              teamsMessageKey: 'teamsStillnessAlertSurveyDoorOpened',
+            }
           case EVENT_TYPE.MSG_SENT: {
             if (latestEvent.eventTypeDetails === 'stillnessAlertFollowup') {
-              return 'stillnessAlertSurveyDoorOpened'
+              return {
+                twilioMessageKey: 'stillnessAlertSurveyDoorOpened',
+                teamsMessageKey: 'teamsStillnessAlertSurveyDoorOpened',
+              }
             }
             helpers.log(
-              `Received door opened and latest event is MSG_SENT but not a stillness followup: ${latestEvent.eventTypeDetails}, only updating door opened status for sessionId: ${latestSession.sessionId}`,
+              `Received door opened and latest event not a stillness followup: ${latestEvent.eventTypeDetails}, only updating door opened status for sessionId: ${latestSession.sessionId}`,
             )
             return null
           }
@@ -159,96 +162,100 @@ async function selectMessageKeyForExistingSession(eventType, latestSession, pgCl
   }
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
-async function handleNewSession(client, device, eventType, eventData, pgClient) {
+async function sendTwilioAlertForExistingSession(latestSession, eventType, eventData, twilioMessageKey, client, device, pgClient) {
   try {
-    const messageKey = selectMessageKeyForNewSession(eventType, device)
-    if (!messageKey) {
-      return null // exit early (for first even as door opened)
-    }
+    const messageData = { occupancyDuration: Math.round(eventData.occupancyDuration || 0) }
+    const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device, messageData)
 
-    const messageData = { occupancyDuration: eventData.occupancyDuration }
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device, messageData)
+    // send message to only attending responder phone number if set
+    // otherwise, send the message to all responders
+    const targetNumbers = latestSession.attendingResponderNumber ? latestSession.attendingResponderNumber : client.responderPhoneNumbers
 
-    // create a new active session
-    const newSession = await db_new.createSession(device.deviceId, pgClient)
-    if (!newSession) {
-      throw new Error(`Failed to create a new session`)
-    }
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage)
+    await db_new.createEvent(latestSession.sessionId, eventType, twilioMessageKey, targetNumbers, pgClient)
 
-    // send the message to all responders
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
-    await db_new.createEvent(newSession.sessionId, eventType, messageKey, client.responderPhoneNumbers, pgClient)
-
-    // if stillness alert was sent, then schedule stillness reminders and fallbacks
-    // NOTE: these are scheduled outside this transaction
-    if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
-      scheduleStillnessAlertReminders(client, device, newSession.sessionId)
-    }
-
-    return newSession
+    helpers.log(`Sent Twilio message ${twilioMessageKey} for existing session ${latestSession.sessionId}`)
   } catch (error) {
-    throw new Error(`handleNewSession: Error handling new session for device ID: ${device.deviceId} - ${error.message}`)
+    throw new Error(`sendTwilioAlertForExistingSession: ${error.message}`)
+  }
+}
+
+async function sendTeamsAlertForExistingSession(latestSession, eventType, eventData, teamsMessageKey, client, device, pgClient) {
+  if (!client.teamsId || !client.teamsAlertChannelId) {
+    helpers.log(`Skipping Teams update for session ${latestSession.sessionId}: Teams not configured for client ${client.clientId}`)
+    return
+  }
+
+  try {
+    const messageData = { occupancyDuration: Math.round(eventData.occupancyDuration || 0) }
+    const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, 'New', client, device, messageData)
+    if (!adaptiveCard) {
+      throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
+    }
+
+    // send alert to teams alert channel
+    const response = await teamsHelpers.sendNewTeamsCard(client.teamsId, client.teamsAlertChannelId, adaptiveCard, latestSession)
+    if (!response || !response.messageId) {
+      throw new Error(`Failed to send new Teams card or invalid response received for session ${latestSession.sessionId}`)
+    }
+
+    // log teams event with its messageId
+    await db_new.createTeamsEvent(latestSession.sessionId, eventType, teamsMessageKey, response.messageId, pgClient)
+    helpers.log(`Sent Teams alert ${teamsMessageKey} for new session ${latestSession.sessionId}, messageId: ${response.messageId}`)
+  } catch (error) {
+    throw new Error(`sendTeamsAlertForNewSession: ${error.message}`)
   }
 }
 
 async function handleExistingSession(client, device, eventType, eventData, latestSession, pgClient) {
   try {
-    const messageKey = await selectMessageKeyForExistingSession(eventType, latestSession, pgClient)
+    const messageKeys = await selectMessageKeyForExistingSession(eventType, latestSession, pgClient)
 
     // If messageKey is null, only update door opened status for DOOR_OPENED events and exit
-    // For other event types, do nothing and exit
-    if (!messageKey) {
-      if (eventType === EVENT_TYPE.DOOR_OPENED) {
-        const updatedSession = await db_new.updateSession(
-          latestSession.sessionId,
-          latestSession.sessionStatus,
-          true,
-          latestSession.surveySent,
-          pgClient,
-        )
+    // For other event types, do nothing and return null
+    if (!messageKeys && eventType === EVENT_TYPE.DOOR_OPENED) {
+      const updatedSession = await db_new.updateSession(
+        latestSession.sessionId,
+        latestSession.sessionStatus,
+        true,
+        latestSession.surveySent,
+        pgClient,
+      )
 
-        if (!updatedSession) {
-          throw new Error(`Failed to update session ${latestSession.sessionId}`)
-        }
-        return null
+      if (!updatedSession) {
+        throw new Error(`Failed to update session ${latestSession.sessionId}`)
       }
+    } else if (!messageKeys) {
       return null
     }
 
-    const messageData = { occupancyDuration: eventData.occupancyDuration }
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device, messageData)
+    const { twilioMessageKey, teamsMessageKey } = messageKeys
 
     // only send the door opened surveys if survey was NOT sent
-    if ((messageKey === 'stillnessAlertSurveyDoorOpened' || messageKey === 'durationAlertSurveyDoorOpened') && latestSession.surveySent) {
+    if (latestSession.surveySent && (twilioMessageKey === 'stillnessAlertSurveyDoorOpened' || twilioMessageKey === 'durationAlertSurveyDoorOpened')) {
       throw new Error('Attempting to send door opened survey, but survey was already sent')
     }
 
-    // send message to only attending responder phone number if set
-    // otherwise, send the message to all responders
-    if (latestSession.attendingResponderNumber) {
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, latestSession.attendingResponderNumber, textMessage)
-      await db_new.createEvent(latestSession.sessionId, eventType, messageKey, latestSession.attendingResponderNumber, pgClient)
-    } else {
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
-      await db_new.createEvent(latestSession.sessionId, eventType, messageKey, client.responderPhoneNumbers, pgClient)
+    // if the session is in progress, then send the message via the selected method
+    // otherwise, send using all methods (twilio, teams)
+    if (!latestSession.sessionRespondedVia) {
+      await sendTwilioAlertForExistingSession(latestSession, eventType, eventData, twilioMessageKey, client, device, pgClient)
+      await sendTeamsAlertForExistingSession(latestSession, eventType, eventData, teamsMessageKey, client, device, pgClient)
+    } else if (latestSession.sessionRespondedVia === SESSION_RESPONDED_VIA.TWILIO) {
+      await sendTwilioAlertForExistingSession(latestSession, eventType, eventData, twilioMessageKey, client, device, pgClient)
+    } else if (latestSession.sessionRespondedVia === SESSION_RESPONDED_VIA.TEAMS) {
+      await sendTeamsAlertForExistingSession(latestSession, eventType, eventData, teamsMessageKey, client, device, pgClient)
     }
 
-    // if stillness alert was sent, then schedule stillness reminders and fallbacks
-    // NOTE: these are scheduled outside this transaction
-    if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
-      scheduleStillnessAlertReminders(client, device, latestSession.sessionId)
-    }
-
+    // update the session
     let updatedSession = null
-
-    // handle door opened event updates
     if (eventType === EVENT_TYPE.DOOR_OPENED) {
       const sessionUpdates = {
         doorOpened: true,
         surveySent:
-          messageKey === 'stillnessAlertSurveyDoorOpened' || messageKey === 'durationAlertSurveyDoorOpened' ? true : latestSession.surveySent,
+          twilioMessageKey === 'stillnessAlertSurveyDoorOpened' || twilioMessageKey === 'durationAlertSurveyDoorOpened'
+            ? true
+            : latestSession.surveySent,
       }
 
       updatedSession = await db_new.updateSession(
@@ -264,11 +271,120 @@ async function handleExistingSession(client, device, eventType, eventData, lates
       }
     }
 
+    // if we sent a stillness alert was sent, then schedule stillness reminders and fallbacks
+    // NOTE: these are scheduled outside this transaction
+    if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
+      scheduleStillnessAlertReminders(client, device, latestSession.sessionId)
+    }
+
     return updatedSession
   } catch (error) {
     throw new Error(`handleExistingSession: Error handling existing session with session ID ${latestSession.sessionId}: ${error.message}`)
   }
 }
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+function getMessageKeysForNewSession(eventType, device) {
+  switch (eventType) {
+    case EVENT_TYPE.DURATION_ALERT:
+      return {
+        twilioMessageKey: 'durationAlert',
+        teamsMessageKey: 'teamsDurationAlert',
+      }
+    case EVENT_TYPE.STILLNESS_ALERT:
+      return {
+        twilioMessageKey: 'stillnessAlert',
+        teamsMessageKey: 'teamsStillnessAlert',
+      }
+    case EVENT_TYPE.DOOR_OPENED:
+      helpers.log(`Received door opened as the first alert ... ignoring alert for deviceId: ${device.deviceId}`)
+      return null
+    default: {
+      throw new Error(`getMessageKeysForNewSession: Invalid event type received as the first alert: ${eventType}`)
+    }
+  }
+}
+
+async function sendTwilioAlertForNewSession(newSession, eventType, eventData, twilioMessageKey, client, device, pgClient) {
+  try {
+    const messageData = { occupancyDuration: Math.round(eventData.occupancyDuration || 0) }
+    const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device, messageData)
+
+    // send initial alert to all client responder phone numbers
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+
+    // log event
+    await db_new.createEvent(newSession.sessionId, eventType, twilioMessageKey, client.responderPhoneNumbers, pgClient)
+    helpers.log(`Sent Twilio alert ${twilioMessageKey} for new session ${newSession.sessionId}`)
+  } catch (error) {
+    throw new Error(`sendTwilioAlertForNewSession: ${error.message}`)
+  }
+}
+
+async function sendTeamsAlertForNewSession(newSession, eventType, eventData, teamsMessageKey, client, device, pgClient) {
+  if (!client.teamsId || !client.teamsAlertChannelId) {
+    helpers.log(`Skipping Teams alert for session ${newSession.sessionId}: Teams not configured for client ${client.clientId}`)
+    return
+  }
+
+  try {
+    const messageData = { occupancyDuration: Math.round(eventData.occupancyDuration || 0) }
+    const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, 'New', client, device, messageData)
+    if (!adaptiveCard) {
+      throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
+    }
+
+    // send initial alert to teams alert channel
+    const response = await teamsHelpers.sendNewTeamsCard(client.teamsId, client.teamsAlertChannelId, adaptiveCard, newSession)
+    if (!response || !response.messageId) {
+      throw new Error(`Failed to send new Teams card or invalid response received for session ${newSession.sessionId}`)
+    }
+
+    // log teams event with its messageId
+    await db_new.createTeamsEvent(newSession.sessionId, eventType, teamsMessageKey, response.messageId, pgClient)
+    helpers.log(`Sent Teams alert ${teamsMessageKey} for new session ${newSession.sessionId}, messageId: ${response.messageId}`)
+  } catch (error) {
+    throw new Error(`sendTeamsAlertForNewSession: ${error.message}`)
+  }
+}
+
+async function handleNewSession(client, device, eventType, eventData, pgClient) {
+  try {
+    const messageKeys = getMessageKeysForNewSession(eventType, device)
+    if (!messageKeys) {
+      helpers.log(`handleNewSession: No initial action determined for eventType ${eventType}.`)
+      return null
+    }
+
+    const { twilioMessageKey, teamsMessageKey } = messageKeys
+
+    // create a new active session
+    const newSession = await db_new.createSession(device.deviceId, pgClient)
+    if (!newSession) {
+      throw new Error(`Failed to create a new session`)
+    }
+
+    // send initial alerts
+    await Promise.allSettled([
+      sendTwilioAlertForNewSession(newSession, eventType, eventData, twilioMessageKey, client, device, pgClient),
+      sendTeamsAlertForNewSession(newSession, eventType, eventData, teamsMessageKey, client, device, pgClient),
+    ])
+
+    // if we sent a stillness alert was sent, then schedule stillness reminders and fallbacks
+    // NOTE: these are scheduled outside this transaction
+    if (eventType === EVENT_TYPE.STILLNESS_ALERT) {
+      helpers.log(`Scheduling stillness reminders for new session ${newSession.sessionId}`)
+      scheduleStillnessAlertReminders(client, device, newSession.sessionId)
+    }
+
+    return newSession
+  } catch (error) {
+    throw new Error(`handleNewSession: Error handling new session for device ID: ${device.deviceId} - ${error.message}`)
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
 
 async function processSensorEvent(client, device, eventType, eventData) {
   let pgClient

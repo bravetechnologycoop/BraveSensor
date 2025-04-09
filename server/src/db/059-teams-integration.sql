@@ -32,7 +32,7 @@ BEGIN
             event_type              TEXT        NOT NULL,
             event_type_details      TEXT,
             event_sent_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            teams_message_id        TEXT        NOT NULL
+            message_id              TEXT        NOT NULL
         );
 
         -- Add indices
