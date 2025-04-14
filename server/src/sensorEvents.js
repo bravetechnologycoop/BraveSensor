@@ -41,7 +41,6 @@ async function sendTwilioReminder(session, twilioMessageKey, client, device) {
 }
 
 async function sendTeamsReminder(session, teamsMessageKey, client, device) {
-  console.log('Sending reminder to teams')
   if (!session || !session.sessionId || !teamsMessageKey || !client || !device) {
     throw new Error(`sendTeamsReminder: Missing required parameters`)
   }
@@ -64,30 +63,10 @@ async function sendTeamsReminder(session, teamsMessageKey, client, device) {
     }
 
     await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.STILLNESS_ALERT, teamsMessageKey, response.messageId)
-
-    console.log('Finished')
   } catch (error) {
     throw new Error(`sendTeamsReminder: ${error.message}`)
   }
 }
-
-async function sendTwilioFallback(session, twilioMessageKey, client, device) {
-  if (!session || !session.sessionId || !twilioMessageKey || !client || !client.responderPhoneNumbers || !device) {
-    throw new Error(`sendTwilioFallback: Missing required parameters`)
-  }
-
-  try {
-    const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
-    const targetNumbers = client.fallbackPhoneNumbers
-
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage)
-    await db_new.createEvent(session.sessionId, EVENT_TYPE.STILLNESS_ALERT, twilioMessageKey, targetNumbers)
-  } catch (error) {
-    throw new Error(`sendTwilioFallback: ${error.message}`)
-  }
-}
-
-// -----------------------------------------------------------------------------------------------
 
 async function handleStillnessReminder(reminderNumber, session, client, device, sessionId) {
   try {
@@ -120,6 +99,24 @@ async function handleStillnessReminder(reminderNumber, session, client, device, 
   }
 }
 
+// -----------------------------------------------------------------------------------------------
+
+async function sendTwilioFallback(session, twilioMessageKey, client, device) {
+  if (!session || !session.sessionId || !twilioMessageKey || !client || !client.responderPhoneNumbers || !device) {
+    throw new Error(`sendTwilioFallback: Missing required parameters`)
+  }
+
+  try {
+    const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
+    const targetNumbers = client.fallbackPhoneNumbers
+
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage)
+    await db_new.createEvent(session.sessionId, EVENT_TYPE.STILLNESS_ALERT, twilioMessageKey, targetNumbers)
+  } catch (error) {
+    throw new Error(`sendTwilioFallback: ${error.message}`)
+  }
+}
+
 async function handleStillnessFallback(session, client, device, sessionId) {
   if (!client.fallbackPhoneNumbers || client.fallbackPhoneNumbers.length === 0) {
     helpers.log(`No fallback numbers for client ${client.clientId}, skipping fallback for session ${session.sessionId}`)
@@ -137,50 +134,60 @@ async function handleStillnessFallback(session, client, device, sessionId) {
 // -----------------------------------------------------------------------------------------------
 
 async function scheduleStillnessAlertReminders(client, device, sessionId) {
-  const stillnessReminderTimeout = stillnessReminderinSeconds * 1000;
-  const startTime = Date.now();
+  const stillnessReminderTimeout = stillnessReminderinSeconds * 1000
+  const startTime = Date.now()
 
-  const scheduleAt = (targetTime, fn) => {
-    const delay = targetTime - Date.now();
-    return new Promise(resolve => setTimeout(async () => {
-      await fn();
-      resolve();
-    }, Math.max(delay, 0)));
-  };
+  function scheduleAt(targetTime, fn) {
+    const delay = targetTime - Date.now()
+    return new Promise(resolve =>
+      setTimeout(async () => {
+        await fn()
+        resolve()
+      }, Math.max(delay, 0)),
+    )
+  }
 
-  const sendReminder = (reminderNumber) => async () => {
-    const currentSession = await db_new.getLatestSessionWithDeviceId(device.deviceId);
-
-    const latestEvent = currentSession.sessionRespondedVia === SESSION_RESPONDED_VIA.TEAMS
-      ? await db_new.getLatestTeamsEvent(currentSession.sessionId, null)
-      : await db_new.getLatestRespondableEvent(currentSession.sessionId, null);
-
-    if (
-      currentSession.sessionId === sessionId &&
-      currentSession.sessionStatus === SESSION_STATUS.ACTIVE &&
-      !currentSession.doorOpened &&
-      !currentSession.surveySent &&
-      latestEvent?.eventType === EVENT_TYPE.STILLNESS_ALERT
-    ) {
-      helpers.log(`Sending Reminder ${reminderNumber} for session ${sessionId}`);
-
-      if (reminderNumber === 2) {
-        await Promise.all([
-          handleStillnessReminder(reminderNumber, currentSession, client, device, sessionId),
-          handleStillnessFallback(currentSession, client, device, sessionId)
-        ]);
-      } else {
-        await handleStillnessReminder(reminderNumber, currentSession, client, device, sessionId);
+  async function sendReminder(reminderNumber) {
+    try {
+      const currentSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
+      if (currentSession.sessionId !== sessionId) {
+        throw new Error(`Current session changed from ${sessionId} to ${currentSession.sessionId}, cancelling reminder`)
       }
-    } else {
-      helpers.log(`Reminder ${reminderNumber} skipped: session invalid or already resolved.`);
+
+      // get latest event based on the session's attending via method if any
+      // default to twilio if not teams
+      const latestEvent =
+        currentSession.sessionRespondedVia === SESSION_RESPONDED_VIA.TEAMS
+          ? await db_new.getLatestTeamsEvent(currentSession.sessionId, null)
+          : await db_new.getLatestRespondableEvent(currentSession.sessionId, null)
+
+      // make sure that the latest event is a type of stillness alert
+      if (!latestEvent || !latestEvent.eventType || latestEvent.eventType !== EVENT_TYPE.STILLNESS_ALERT) {
+        throw new Error(`Latest event is not a type of  stillness alert, cancelling reminders for ${sessionId}`)
+      }
+
+      if (currentSession.sessionStatus === SESSION_STATUS.ACTIVE && !currentSession.doorOpened && !currentSession.surveySent) {
+        // When sending second reminder, notify fallback (functionality only for twilio)
+        if (reminderNumber === 2) {
+          await Promise.all([
+            handleStillnessReminder(reminderNumber, currentSession, client, device, sessionId),
+            handleStillnessFallback(currentSession, client, device, sessionId),
+          ])
+        } else {
+          await handleStillnessReminder(reminderNumber, currentSession, client, device, sessionId)
+        }
+      } else {
+        helpers.log(`Reminder ${reminderNumber} skipped: session invalid or already resolved.`)
+      }
+    } catch (error) {
+      helpers.log(`scheduleStillnessAlertReminders: ${error.message}`)
     }
-  };
+  }
 
   // Schedule all reminders at fixed intervals from start
-  scheduleAt(startTime + stillnessReminderTimeout, sendReminder(1));
-  scheduleAt(startTime + 2 * stillnessReminderTimeout, sendReminder(2));
-  scheduleAt(startTime + 3 * stillnessReminderTimeout, sendReminder(3));
+  scheduleAt(startTime + stillnessReminderTimeout, sendReminder(1))
+  scheduleAt(startTime + 2 * stillnessReminderTimeout, sendReminder(2))
+  scheduleAt(startTime + 3 * stillnessReminderTimeout, sendReminder(3))
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------

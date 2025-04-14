@@ -127,7 +127,7 @@ function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, car
   if (cardType !== 'New') {
     const container = {
       type: 'Container',
-      style: 'emphasis', // light grey color
+      style: 'emphasis', // light grey bg
       items: [],
     }
     card.body.push(container)
@@ -135,7 +135,7 @@ function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, car
   } else {
     const container = {
       type: 'Container',
-      style: 'attention', // red tint
+      style: 'attention', // red bg
       items: [],
     }
     card.body.push(container)
@@ -182,7 +182,7 @@ function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, car
  * Gets the header text for a card based on the message key and device.
  * @param {string} messageKey   Teams message key
  * @param {Object} device       Database device object.
- * @returns {string}            The header text. Returns a default if device name is missing.
+ * @returns {string}            The header text (always the device name), if missing uses default
  */
 function getCardHeader(messageKey, device) {
   if (!device || !device.displayName) {
@@ -191,16 +191,7 @@ function getCardHeader(messageKey, device) {
   }
 
   const deviceName = device.displayName
-
-  switch (messageKey) {
-    case 'teamsDurationAlert':
-    case 'teamsStillnessAlert':
-    case 'teamsStillnessAlertFirstReminder':
-    case 'teamsStillnessAlertSecondReminder':
-    case 'teamsStillnessAlertThirdReminder':
-    default:
-      return `${deviceName}`
-  }
+  return `${deviceName}`
 }
 
 /**
@@ -215,9 +206,15 @@ function getCardTitle(messageKey) {
     case 'teamsStillnessAlert':
       return 'Stillness Alert'
     case 'teamsStillnessAlertFirstReminder':
+      return 'First Stillness Reminder'
     case 'teamsStillnessAlertSecondReminder':
+      return 'Second Stillness Reminder'
     case 'teamsStillnessAlertThirdReminder':
-      return 'Stillness Reminder'
+      return 'Final Stillness Reminder'
+    case 'teamsDurationAlertSurveyDoorOpened':
+      return 'Duration Alert Survey'
+    case 'teamsStillnessAlertSurveyDoorOpened':
+      return 'Stillness Alert Survey'
     default:
       helpers.log(`getCardTitle: No specific title found for messageKey ${messageKey}. Using default.`)
       return 'Notification'
@@ -250,7 +247,10 @@ function getCardBody(messageKey, device, client, messageData = {}) {
     case 'teamsStillnessAlertSecondReminder':
       return `2nd REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
     case 'teamsStillnessAlertThirdReminder':
-      return `3rd REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+      return `FINAL REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+    case 'teamsDurationAlertSurveyDoorOpened':
+    case 'teamsStillnessAlertSurveyDoorOpened':
+      return `We see the door has been opened.\nCould you please let us know the outcome?`
     default:
       helpers.log(`getCardBody: No specific body text found for messageKey ${messageKey}. Using default.`)
       return `Notification for ${deviceName}.`
@@ -264,8 +264,6 @@ function getCardBody(messageKey, device, client, messageData = {}) {
  */
 function getCardInput(messageKey) {
   switch (messageKey) {
-    case 'teamsDurationAlertSurveyOther':
-      return createCardInputBox('Can you describe what happened? (Optional)')
     default:
       return null
   }
@@ -287,15 +285,14 @@ function getCardActions(messageKey, client) {
 
   switch (messageKey) {
     case 'teamsDurationAlert':
-      return createCardActions(iAmOnMyWay, true)
     case 'teamsStillnessAlert':
-      return createCardActions(iAmOnMyWay, true)
     case 'teamsStillnessAlertFirstReminder':
-      return createCardActions(iAmOnMyWay, true)
     case 'teamsStillnessAlertSecondReminder':
+    case 'teamsStillnessAlertThirdReminder':
       return createCardActions(iAmOnMyWay, true)
-    case 'teamsStillnessAlertThirdReminder': 
-      return createCardActions(iAmOnMyWay, true)
+    case 'teamsDurationAlertSurveyDoorOpened':
+    case 'teamsStillnessAlertSurveyDoorOpened':
+      return createCardActions(client.surveyCategories, true)
     default:
       return null
   }
@@ -474,13 +471,10 @@ async function sendNewTeamsCard(teamsId, channelId, adaptiveCard, session = {}) 
     return null
   }
 
-  console.log('Sending request to expire previous card')
   if (session) {
     await expirePreviousTeamsCard(teamsId, channelId, session)
   }
-  console.log('Finished updating previous card')
 
-  console.log('Sending request to post new card')
   const payload = {
     teamsId,
     channelId,
@@ -489,7 +483,6 @@ async function sendNewTeamsCard(teamsId, channelId, adaptiveCard, session = {}) 
   }
 
   const response = await sendTeamsRequest(payload)
-  console.log('Finished posting new card')
 
   if (!response || response.status !== 200) {
     if (response && response.data) {
