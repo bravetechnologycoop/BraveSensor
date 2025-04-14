@@ -9,6 +9,7 @@
 #define INS3331_H
 
 #include "Particle.h"
+#include "CircularBuffer.h"
 
 // ***************************** Macro definitions *****************************
 
@@ -42,6 +43,9 @@ typedef struct filteredINSData {
 } filteredINSData;
 
 extern os_queue_t insHeartbeatQueue;
+
+extern CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> g_iValues;
+extern CircularBuffer<int, MOVING_AVERAGE_BUFFER_SIZE> g_qValues;
 
 // ***************************** Function declarations *****************************
 

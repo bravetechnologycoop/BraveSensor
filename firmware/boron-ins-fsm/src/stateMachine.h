@@ -99,4 +99,9 @@ void state3_stillness();
 void publishDebugMessage(int, unsigned char, float, unsigned long);
 void publishStateTransition(int, int, unsigned char, float);
 
+extern hal_i2c_config_t acquireWireBuffer();
+extern void sendAlphaUpdate();
+extern void populateAlphaUpdate(int a);
+extern void setState();
+
 #endif
