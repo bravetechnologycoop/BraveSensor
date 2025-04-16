@@ -288,6 +288,8 @@ function getCardBody(messageKey, device, client, messageData = {}) {
     case 'teamsStillnessAlertSurveyDoorOpened':
       cardBody = `We see the door has been opened.\nCould you please let us know the outcome?`
       break
+    case 'sessionAlreadyCompleted':
+      cardBody = `This alert has already been completed and responded to. Thank you for your response.`
     default:
       helpers.log(`getCardBody: No body found for messageKey ${messageKey}, using default`)
       cardBody = 'Default Card Body'
