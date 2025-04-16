@@ -11,7 +11,7 @@ the code was deployed.
 
 ## [Unreleased]
 
-- Fixed disconnection message bug
+- Fixed disconnection message bug (CU-86dwhm4wd).
 
 ## [12.2.0] - 2025-03-25
 
