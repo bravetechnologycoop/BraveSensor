@@ -1082,24 +1082,26 @@ async function getActiveVitalDevicesWithClients(pgClient) {
     const results = await helpers.runQuery(
       'getActiveVitalDevicesWithClients',
       `
-      SELECT d.*, c.*
+      SELECT 
+        to_jsonb(d.*) AS device,
+        to_jsonb(c.*) AS client
       FROM devices_new d
       JOIN clients_new c ON d.client_id = c.client_id
       WHERE c.devices_sending_vitals = true 
-      AND d.is_sending_vitals = true
+        AND d.is_sending_vitals = true
       `,
       [],
       pool,
       pgClient,
     )
 
-    if (results === undefined || results.rows.length === 0) {
+    if (!results || results.rows.length === 0) {
       return []
     }
 
     return results.rows.map(row => ({
-      device: createDeviceFromRow(row),
-      client: createClientFromRow(row),
+      device: createDeviceFromRow(row.device),
+      client: createClientFromRow(row.client),
     }))
   } catch (err) {
     helpers.logError(`Error running getActiveVitalDevicesWithClients query: ${err}`)
