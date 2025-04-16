@@ -1655,6 +1655,32 @@ async function getLatestTeamsEvent(sessionId, pgClient) {
   }
 }
 
+async function getTeamsEventWithMessageId(messageId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getTeamsEventWithMessageId',
+      `
+      SELECT *
+      FROM teams_events_new
+      WHERE message_id = $1
+      LIMIT 1
+      `,
+      [messageId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getTeamsEventWithMessageId query: ${err.toString()}`)
+    return null
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function createVital(
@@ -1983,6 +2009,7 @@ module.exports = {
 
   createTeamsEvent,
   getLatestTeamsEvent,
+  getTeamsEventWithMessageId,
 
   createVital,
   getLatestVitalWithDeviceId,

@@ -95,15 +95,15 @@ function createCardInputBox(placeholder) {
 
 /**
  * Helper function to assemble an adaptive card object based on provided parameters.
- * @param {string} cardType             Required: 'New' or 'Update'
- * @param {string | null} cardHeader    Optional: Top-most header text.
- * @param {string | null} cardTitle     Optional: Title text (often styled differently).
- * @param {string} cardBodyText         Required: Main body text of the card.
- * @param {Object | null} cardInputBox  Optional: Input Box object for the card (from createCardInputBox).
- * @param {Array<Object> | null} cardActions Optional: Array of Action objects (e.g., Action.Submit from createCardActions).
- * @returns {Object | null}             An adaptive card JavaScript object, or a minimal error card object if body text is missing.
+ * @param {string} cardType             Card type ('New' or 'Update')
+ * @param {Object} cardHeader           Text block object for the header
+ * @param {Object} cardTitle            Text block object for the title
+ * @param {Object} cardBodyText         Text block object for the body
+ * @param {Object} cardInputBox         Input box object for the title
+ * @param {Array<Object>} cardActions   Array of action objects for the actions
+ * @returns {Object}                    An adaptive card JS object or a minimal error card object if body text is missing.
  */
-function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, cardInputBox = null, cardActions = null) {
+function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, cardInputBox, cardActions) {
   if (!cardBodyText) {
     helpers.log("assembleAdaptiveCard requires 'cardBodyText'. Returning minimal error card object.")
     return {
@@ -122,12 +122,14 @@ function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, car
     actions: [],
   }
 
-  let targetBody = card.body
+  let targetBody = null
 
-  if (cardType !== 'New') {
+  // Add red tinted bg (attention) for cardType if 'New'
+  // otherwise, use a light grey bg (emphasis) for other request like 'Update'
+  if (cardType === 'New') {
     const container = {
       type: 'Container',
-      style: 'emphasis', // light grey bg
+      style: 'attention',
       items: [],
     }
     card.body.push(container)
@@ -135,38 +137,28 @@ function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, car
   } else {
     const container = {
       type: 'Container',
-      style: 'attention', // red bg
+      style: 'emphasis',
       items: [],
     }
     card.body.push(container)
     targetBody = container.items
   }
 
-  // Header (Optional)
+  // Body
   if (cardHeader) {
-    targetBody.push(createCardTextBlock(cardHeader, { size: TEXT_SIZE_EXTRA_LARGE, weight: TEXT_WEIGHT_BOLDER }))
+    targetBody.push(cardHeader)
   }
-
-  // Title (Optional)
   if (cardTitle) {
-    targetBody.push(
-      createCardTextBlock(cardTitle, {
-        size: TEXT_SIZE_LARGE,
-        weight: TEXT_WEIGHT_BOLDER,
-        color: cardType === 'New' ? TEXT_COLOR_ATTENTION : TEXT_COLOR_ACCENT,
-      }),
-    )
+    targetBody.push(cardTitle)
   }
-
-  // Body (Required)
-  targetBody.push(createCardTextBlock(cardBodyText))
-
-  // User Input Box (Optional)
+  if (cardBodyText) {
+    targetBody.push(cardBodyText)
+  }
   if (cardInputBox) {
     targetBody.push(cardInputBox)
   }
 
-  // Card Actions (Optional)
+  // Actions
   if (cardActions && Array.isArray(cardActions) && cardActions.length > 0) {
     card.actions = cardActions
   }
@@ -182,43 +174,80 @@ function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, car
  * Gets the header text for a card based on the message key and device.
  * @param {string} messageKey   Teams message key
  * @param {Object} device       Database device object.
- * @returns {string}            The header text (always the device name), if missing uses default
+ * @returns {Object | null}     Adaptive card text block object for the header
  */
 function getCardHeader(messageKey, device) {
   if (!device || !device.displayName) {
-    helpers.log(`getCardHeader: Device name missing for messageKey ${messageKey}. Using default.`)
-    return 'Device Alert'
+    helpers.log(`getCardHeader: Missing required parameters`)
+    return null
   }
 
   const deviceName = device.displayName
-  return `${deviceName}`
+
+  let cardHeader = null
+
+  switch (messageKey) {
+    case 'teamsDurationAlert':
+    case 'teamsStillnessAlert':
+    case 'teamsStillnessAlertFirstReminder':
+    case 'teamsStillnessAlertSecondReminder':
+    case 'teamsStillnessAlertThirdReminder':
+    case 'teamsDurationAlertSurveyDoorOpened':
+    case 'teamsStillnessAlertSurveyDoorOpened':
+      cardHeader = `${deviceName}`
+      break
+    default:
+      helpers.log(`getCardHeader: No header found for messageKey ${messageKey}`)
+      return null
+  }
+
+  return createCardTextBlock(cardHeader, {
+    size: TEXT_SIZE_EXTRA_LARGE,
+    weight: TEXT_WEIGHT_BOLDER,
+  })
 }
 
 /**
  * Gets the title text for a card based on the message key.
  * @param {string} messageKey   Teams message key
- * @returns {string}            The title text. Returns a default title if key not matched.
+ * @param {string} cardType     Card Type ('New' or 'Update') to determine card title color
+ * @returns {Object | null}     Adaptive card text block object for the title
  */
-function getCardTitle(messageKey) {
+function getCardTitle(messageKey, cardType) {
+  let cardTitle = null
+
   switch (messageKey) {
     case 'teamsDurationAlert':
-      return 'Duration Alert'
+      cardTitle = 'Duration Alert'
+      break
     case 'teamsStillnessAlert':
-      return 'Stillness Alert'
+      cardTitle = 'Stillness Alert'
+      break
     case 'teamsStillnessAlertFirstReminder':
-      return 'First Stillness Reminder'
+      cardTitle = 'First Stillness Reminder'
+      break
     case 'teamsStillnessAlertSecondReminder':
-      return 'Second Stillness Reminder'
+      cardTitle = 'Second Stillness Reminder'
+      break
     case 'teamsStillnessAlertThirdReminder':
-      return 'Final Stillness Reminder'
+      cardTitle = 'Final Stillness Reminder'
+      break
     case 'teamsDurationAlertSurveyDoorOpened':
-      return 'Duration Alert Survey'
+      cardTitle = 'Duration Alert Survey'
+      break
     case 'teamsStillnessAlertSurveyDoorOpened':
-      return 'Stillness Alert Survey'
+      cardTitle = 'Stillness Alert Survey'
+      break
     default:
-      helpers.log(`getCardTitle: No specific title found for messageKey ${messageKey}. Using default.`)
-      return 'Notification'
+      helpers.log(`getCardTitle: No title found for messageKey ${messageKey}`)
+      return null
   }
+
+  return createCardTextBlock(cardTitle, {
+    size: TEXT_SIZE_LARGE,
+    weight: TEXT_WEIGHT_BOLDER,
+    color: cardType === 'New' ? TEXT_COLOR_ATTENTION : TEXT_COLOR_ACCENT,
+  })
 }
 
 /**
@@ -227,40 +256,50 @@ function getCardTitle(messageKey) {
  * @param {Object} device           Database device object.
  * @param {Object} client           Database client object (needed for some messages).
  * @param {Object} [messageData={}] Optional data relevant to the message (e.g., duration).
- * @returns {string}                The body text string. Returns a default if key not matched.
+ * @returns {Object}                Adaptive card text block object for the body
  */
 function getCardBody(messageKey, device, client, messageData = {}) {
-  if (!device || !device.displayName) {
+  if (!client || !device || !device.displayName) {
     helpers.log(`getCardBody: Missing required parameters`)
-    return 'Card Body'
+    return null
   }
 
   const deviceName = device.displayName
 
+  let cardBody
+
   switch (messageKey) {
     case 'teamsDurationAlert':
-      return `${deviceName} has been occupied for ${messageData.occupancyDuration} minutes. Please press the button below if you are on your way.`
+      cardBody = `${deviceName} has been occupied for ${messageData.occupancyDuration} minutes. Please press the button below if you are on your way.`
+      break
     case 'teamsStillnessAlert':
-      return `${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+      cardBody = `${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+      break
     case 'teamsStillnessAlertFirstReminder':
-      return `1st REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+      cardBody = `1st REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+      break
     case 'teamsStillnessAlertSecondReminder':
-      return `2nd REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+      cardBody = `2nd REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+      break
     case 'teamsStillnessAlertThirdReminder':
-      return `FINAL REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+      cardBody = `FINAL REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+      break
     case 'teamsDurationAlertSurveyDoorOpened':
     case 'teamsStillnessAlertSurveyDoorOpened':
-      return `We see the door has been opened.\nCould you please let us know the outcome?`
+      cardBody = `We see the door has been opened.\nCould you please let us know the outcome?`
+      break
     default:
-      helpers.log(`getCardBody: No specific body text found for messageKey ${messageKey}. Using default.`)
-      return `Notification for ${deviceName}.`
+      helpers.log(`getCardBody: No body found for messageKey ${messageKey}, using default`)
+      cardBody = 'Default Card Body'
   }
+
+  return createCardTextBlock(cardBody)
 }
 
 /**
  * Gets the InputBox object for a new card based on the message key.
  * @param {string} messageKey   Teams message key (e.g., 'teamsDurationAlert').
- * @returns {Object | null}     The InputBox object (created by createCardInputBox) or null.
+ * @returns {Object | null}     Adaptive card input box object for the body
  */
 function getCardInput(messageKey) {
   switch (messageKey) {
@@ -283,19 +322,26 @@ function getCardActions(messageKey, client) {
 
   const iAmOnMyWay = ['I am on my way!']
 
+  let cardActionsArray
+
   switch (messageKey) {
     case 'teamsDurationAlert':
     case 'teamsStillnessAlert':
     case 'teamsStillnessAlertFirstReminder':
     case 'teamsStillnessAlertSecondReminder':
     case 'teamsStillnessAlertThirdReminder':
-      return createCardActions(iAmOnMyWay, true)
+      cardActionsArray = createCardActions(iAmOnMyWay, true)
+      break
     case 'teamsDurationAlertSurveyDoorOpened':
     case 'teamsStillnessAlertSurveyDoorOpened':
-      return createCardActions(client.surveyCategories, true)
+      cardActionsArray = createCardActions(client.surveyCategories, true)
+      break
     default:
+      helpers.log(`getCardActions: No card actions found messageKey ${messageKey}`)
       return null
   }
+
+  return cardActionsArray
 }
 
 /**
@@ -319,22 +365,21 @@ function createAdaptiveCard(messageKey, cardType, client, device, messageData = 
   let inputBox = null
   let cardActions = null
 
+  // header and title
   header = getCardHeader(messageKey, device)
-  title = getCardTitle(messageKey)
+  title = getCardTitle(messageKey, cardType)
 
+  // If we have an update request and the addition messageData specifies the body text, use that
+  // Useful for update request like expire previous card as they map to header/title using key but different body text
   if (cardType === 'Update' && messageData && messageData.bodyText) {
     bodyText = messageData.bodyText
   } else {
     bodyText = getCardBody(messageKey, device, client, messageData)
   }
 
-  if (cardType === 'Update') {
-    inputBox = null
-    cardActions = null
-  } else {
-    inputBox = getCardInput(messageKey)
-    cardActions = getCardActions(messageKey, client)
-  }
+  // other card items
+  inputBox = getCardInput(messageKey)
+  cardActions = getCardActions(messageKey, client)
 
   return assembleAdaptiveCard(cardType, header, title, bodyText, inputBox, cardActions)
 }

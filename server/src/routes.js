@@ -11,6 +11,7 @@ const pa = require('./pa')
 const vitals = require('./vitals')
 const sensorEvents = require('./sensorEvents')
 const twilioEvents = require('./twilioEvents')
+const teamsEvents = require('./teamsEvents')
 const smokeTest = require('../test/smokeTest')
 
 function configureRoutes(app) {
@@ -42,6 +43,7 @@ function configureRoutes(app) {
   app.post('/api/sensorEvent', sensorEvents.validateSensorEvent, sensorEvents.handleSensorEvent)
   // app.post('/alert/sms', twilioEvents.validateTwilioEvent, twilioEvents.handleTwilioEvent)
   app.post('/alert/sms', twilioEvents.handleTwilioEvent)
+  app.post('/alert/teams', teamsEvents.validateTeamsEvent, teamsEvents.handleTeamsEvent)
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
 
   app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
