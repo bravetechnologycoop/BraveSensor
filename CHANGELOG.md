@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+- Fixed disconnection message bug
+
 ## [12.2.0] - 2025-03-25
 
 ### Added
