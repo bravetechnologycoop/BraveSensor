@@ -32,6 +32,18 @@ async function handleNoResponseExpected(client, device, responderPhoneNumber) {
   }
 }
 
+async function handleTwilioRespondedByAnotherMedium(client, device, responderPhoneNumber) {
+  try {
+    const messageKey = 'nonAttendingResponderConfirmation'
+    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
+
+    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
+    // do not log this event
+  } catch (error) {
+    throw new Error(`handleTwilioRespondedByAnotherMedium: Error sending invalid response: ${error.message}`)
+  }
+}
+
 async function handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient) {
   try {
     const messageKey = 'invalidResponseTryAgain'
@@ -699,6 +711,22 @@ function getEventHandler(eventType) {
 
 async function handleIncomingMessage(client, device, latestSession, latestEvent, responderPhoneNumber, message, pgClient) {
   try {
+    // if the message is received for a session that is already completed
+    // default to sending the no response expected
+    if (latestSession.sessionStatus === SESSION_STATUS.COMPLETED) {
+      helpers.log(`Twilio response to sessionId: ${latestSession.sessionId} that was already completed session, sending no response expected.`)
+      await handleNoResponseExpected(client, device, responderPhoneNumber)
+      return
+    }
+
+    // if the session is active but already been responded by another medium except twilio (like teams)
+    // then send another responder is attending (same message as nonAttendingConfirmation)
+    if (latestSession.sessionRespondedVia && latestSession.sessionRespondedVia !== SESSION_RESPONDED_VIA.TWILIO) {
+      helpers.log(`Twilio response to sessionId: ${latestSession.sessionId} that is being responded by another medium.`)
+      await handleTwilioRespondedByAnotherMedium(client, device, responderPhoneNumber)
+      return
+    }
+
     const eventType = latestEvent.eventTypeDetails
     const handler = getEventHandler(eventType)
     if (!handler) {
@@ -770,14 +798,6 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
     const latestEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, responderPhoneNumber, pgClient)
     if (!latestEvent) {
       throw new Error(`No respondable event found for session: ${latestSession.sessionId}`)
-    }
-
-    // if the message is received for a session that is already completed (after filling out survey)
-    // default to sending the no response expected
-    if (latestSession.sessionStatus === SESSION_STATUS.COMPLETED) {
-      await handleNoResponseExpected(client, device, responderPhoneNumber)
-      await db_new.commitTransaction(pgClient)
-      return
     }
 
     await handleIncomingMessage(client, device, latestSession, latestEvent, responderPhoneNumber, message, pgClient)
