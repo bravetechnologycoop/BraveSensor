@@ -84,7 +84,6 @@ async function handleStillnessReminder(reminderNumber, session, client, device, 
         sendTwilioReminder(session, twilioMessageKey, client, device),
         sendTeamsReminder(session, teamsMessageKey, client, device),
       )
-
     } else if (session.sessionRespondedVia === SERVICES.TWILIO) {
       messagingPromises.push(sendTwilioReminder(session, twilioMessageKey, client, device))
     } else if (session.sessionRespondedVia === SERVICES.TEAMS) {
