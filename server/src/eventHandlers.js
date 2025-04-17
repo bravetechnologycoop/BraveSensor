@@ -16,17 +16,17 @@ const { resetMonitoring, resetStateToZero } = require('./particle')
 // ----------------------------------------------------------------------------------------------------------------------------
 // Helper Functions
 
-async function handleNoResponseExpected(client, device, responderPhoneNumber) {
-  try {
-    const messageKey = 'noResponseExpected'
-    const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
+// async function handleNoResponseExpected(client, device, responderPhoneNumber) {
+//   try {
+//     const messageKey = 'noResponseExpected'
+//     const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
 
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
-    // do not log this event
-  } catch (error) {
-    throw new Error(`handleNoResponseExpected: Error sending invalid response: ${error.message}`)
-  }
-}
+//     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, responderPhoneNumber, textMessage)
+//     // do not log this event
+//   } catch (error) {
+//     throw new Error(`handleNoResponseExpected: Error sending invalid response: ${error.message}`)
+//   }
+// }
 
 async function handleInvalidResponse(client, device, latestSession, responderPhoneNumber, pgClient) {
   try {
@@ -655,7 +655,7 @@ async function markSessionAsResponded(client, device, session, respondedEvent, m
         const messageData = { bodyText: 'This alert is being responded via SMS.' }
         const adaptiveCard = teamsHelpers.createAdaptiveCard(latestTeamsEvent.eventTypeDetails, cardType, client, device, messageData)
         if (!adaptiveCard) {
-          throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
+          throw new Error(`Failed to create adaptive card for teams event: ${latestTeamsEvent.eventTypeDetails}, for update to alertRespondedViaSMS`)
         }
 
         // update the latest teams event card
@@ -837,8 +837,8 @@ async function handleEvent(client, device, session, respondedEvent, message, dat
 
     // if the session has already been responded via some other service
     // then notify that this session is already being responded by other service
-    if (session.sessionRespondedVia && session.sessionRespondedVia !== respondingService) {
-      helpers.log(`Response to sessionId: ${latestSession.sessionId} that is being responded by other service: ${session.sessionRespondedVia}.`)
+    if (session.sessionRespondedVia && session.sessionRespondedVia !== data.service) {
+      helpers.log(`Response to sessionId: ${session.sessionId} that is being responded by other service: ${session.sessionRespondedVia}.`)
       // await handleRespondedByAnotherService(client, device, data)
       // TODO
       return
