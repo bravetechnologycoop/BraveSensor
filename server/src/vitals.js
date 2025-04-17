@@ -33,7 +33,7 @@ async function sendTeamsVital(client, device, teamsMessageKey) {
     if (client.teamsId && client.teamsVitalChannelId) {
       const cardType = 'New'
       const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device)
-      
+
       if (!adaptiveCard) {
         throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
       }

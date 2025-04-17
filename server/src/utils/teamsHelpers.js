@@ -8,9 +8,9 @@
 const axios = require('axios')
 
 // In-house dependencies
+// const { clientSecret } = require('particle-api-js/src/Defaults')
 const helpers = require('./helpers')
 const db_new = require('../db/db_new')
-const { clientSecret } = require('particle-api-js/src/Defaults')
 
 const TEAMS_CARD_FLOW_URL = helpers.getEnvVar('TEAMS_CARD_FLOW_URL')
 const TEAMS_API_KEY = helpers.getEnvVar('TEAMS_API_KEY')
@@ -82,17 +82,17 @@ function createCardActions(optionNames, addDataField) {
  * @param {string} placeholder  Placeholder text for the input box.
  * @returns {Object}            JS object for the Input.Text element.
  */
-function createCardInputBox(placeholder) {
-  if (!placeholder) {
-    helpers.log('createCardInputBox called without placeholder text.')
-  }
-  return {
-    type: 'Input.Text',
-    id: INPUT_ID_USERINPUT, // Use the consistent ID
-    placeholder: placeholder || 'Can you please describe what happened?',
-    isMultiline: true,
-  }
-}
+// function createCardInputBox(placeholder) {
+//   if (!placeholder) {
+//     helpers.log('createCardInputBox called without placeholder text.')
+//   }
+//   return {
+//     type: 'Input.Text',
+//     id: INPUT_ID_USERINPUT, // Use the consistent ID
+//     placeholder: placeholder || 'Can you please describe what happened?',
+//     isMultiline: true,
+//   }
+// }
 
 /**
  * Helper function to assemble an adaptive card object based on provided parameters.
@@ -217,7 +217,6 @@ function getCardHeader(messageKey, device) {
     weight: TEXT_WEIGHT_BOLDER,
   })
 }
-
 
 /**
  * Gets the title text for a card based on the message key.
@@ -344,7 +343,6 @@ function getCardBody(messageKey, device, client, messageData = {}) {
   return createCardTextBlock(cardBody)
 }
 
-
 /**
  * Gets the InputBox object for a new card based on the message key.
  * @param {string} messageKey   Teams message key (e.g., 'teamsDurationAlert').
@@ -424,10 +422,9 @@ function createAdaptiveCard(messageKey, cardType, client, device, messageData = 
   // Useful for update request like expire previous card as they map to header/title using key but different body text
   if (cardType === 'Update' && messageData && messageData.bodyText) {
     bodyText = createCardTextBlock(messageData.bodyText)
-  } else if(messageData){
+  } else if (messageData) {
     bodyText = getCardBody(messageKey, device, client, messageData)
-  }
-  else{
+  } else {
     bodyText = getCardBody(messageKey, device, client)
   }
 
@@ -579,9 +576,8 @@ async function sendNewTeamsCard(teamsId, channelId, adaptiveCard, session = {}) 
     return null
   }
   if (session && Object.keys(session).length > 0) {
-    await expirePreviousTeamsCard(teamsId, channelId, session);
+    await expirePreviousTeamsCard(teamsId, channelId, session)
   }
-
 
   const payload = {
     teamsId,
