@@ -1529,7 +1529,7 @@ const RESPONDABLE_EVENT_HIERARCHY = new Map([
 
 const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
 
-async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null, pgClient) {
+async function getLatestTwilioEvent(sessionId, responderPhoneNumber = null, pgClient) {
   try {
     let queryText = `
       SELECT *
@@ -1560,7 +1560,7 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null,
       FOR UPDATE
     `
 
-    const results = await helpers.runQuery('getLatestRespondableEvent', queryText, queryParams, pool, pgClient)
+    const results = await helpers.runQuery('getLatestTwilioEvent', queryText, queryParams, pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return null
@@ -1568,7 +1568,7 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null,
 
     return createEventFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getLatestRespondableEvent query: ${err.toString()}`)
+    helpers.logError(`Error running the getLatestTwilioEvent query: ${err.toString()}`)
     return null
   }
 }
@@ -2006,7 +2006,7 @@ module.exports = {
 
   createEvent,
   getEventsForSession,
-  getLatestRespondableEvent,
+  getLatestTwilioEvent,
   checkEventExists,
 
   createTeamsEvent,

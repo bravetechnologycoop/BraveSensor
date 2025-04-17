@@ -12,7 +12,7 @@ const helpers = require('./utils/helpers')
 const twilioHelpers = require('./utils/twilioHelpers')
 const teamsHelpers = require('./utils/teamsHelpers')
 const db_new = require('./db/db_new')
-const { EVENT_TYPE, SESSION_STATUS, SESSION_RESPONDED_VIA } = require('./enums/index')
+const { EVENT_TYPE, SESSION_STATUS, SERVICES } = require('./enums/index')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 const stillnessReminderinSeconds = helpers.getEnvVar('STILLNESS_ALERT_REMINDER')
@@ -84,9 +84,9 @@ async function handleStillnessReminder(reminderNumber, session, client, device, 
         sendTwilioReminder(session, twilioMessageKey, client, device),
         sendTeamsReminder(session, teamsMessageKey, client, device),
       )
-    } else if (session.sessionRespondedVia === SESSION_RESPONDED_VIA.TWILIO) {
+    } else if (session.sessionRespondedVia === SERVICES.TWILIO) {
       messagingPromises.push(sendTwilioReminder(session, twilioMessageKey, client, device))
-    } else if (session.sessionRespondedVia === SESSION_RESPONDED_VIA.TEAMS) {
+    } else if (session.sessionRespondedVia === SERVICES.TEAMS) {
       messagingPromises.push(sendTeamsReminder(session, teamsMessageKey, client, device))
     }
 
@@ -154,12 +154,12 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
         throw new Error(`Current session changed from ${sessionId} to ${currentSession.sessionId}, cancelling reminder`)
       }
 
-      // get latest event based on the session's attending via method if any
+      // get latest event based on the session's attending via service if any
       // default to twilio if not teams
       const latestEvent =
-        currentSession.sessionRespondedVia === SESSION_RESPONDED_VIA.TEAMS
+        currentSession.sessionRespondedVia === SERVICES.TEAMS
           ? await db_new.getLatestTeamsEvent(currentSession.sessionId, null)
-          : await db_new.getLatestRespondableEvent(currentSession.sessionId, null)
+          : await db_new.getLatestTwilioEvent(currentSession.sessionId, null)
 
       // make sure that the latest event is a type of stillness alert
       if (!latestEvent || !latestEvent.eventType || latestEvent.eventType !== EVENT_TYPE.STILLNESS_ALERT) {
@@ -270,8 +270,8 @@ async function getMessageKeysForExistingSession(eventType, latestSession, pgClie
         }
       case EVENT_TYPE.DOOR_OPENED: {
         // check the preceding event to determine the type of message to send
-        // use any method (twilio, teams)
-        const latestEvent = await db_new.getLatestRespondableEvent(latestSession.sessionId, null, pgClient)
+        // use any service (twilio, teams)
+        const latestEvent = await db_new.getLatestTwilioEvent(latestSession.sessionId, null, pgClient)
         if (!latestEvent) {
           throw new Error(`No latest event found for session ID: ${latestSession.sessionId}`)
         }
@@ -345,16 +345,16 @@ async function handleExistingSession(client, device, eventType, eventData, lates
       throw new Error('Attempting to send door opened survey, but survey was already sent')
     }
 
-    // if the session is in progress, then send the message via the selected method
+    // if the session is in progress, then send the message via the selected service
     // otherwise, send using all methods (twilio, teams)
     if (!latestSession.sessionRespondedVia) {
       await Promise.allSettled([
         sendTwilioAlertForSession(latestSession, eventType, eventData, twilioMessageKey, client, device, pgClient),
         sendTeamsAlertForSession(latestSession, eventType, eventData, teamsMessageKey, client, device, pgClient),
       ])
-    } else if (latestSession.sessionRespondedVia === SESSION_RESPONDED_VIA.TWILIO) {
+    } else if (latestSession.sessionRespondedVia === SERVICES.TWILIO) {
       await sendTwilioAlertForSession(latestSession, eventType, eventData, twilioMessageKey, client, device, pgClient)
-    } else if (latestSession.sessionRespondedVia === SESSION_RESPONDED_VIA.TEAMS) {
+    } else if (latestSession.sessionRespondedVia === SERVICES.TEAMS) {
       await sendTeamsAlertForSession(latestSession, eventType, eventData, teamsMessageKey, client, device, pgClient)
     }
 
