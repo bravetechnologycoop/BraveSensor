@@ -207,7 +207,6 @@ function getCardHeader(messageKey, device) {
       cardHeader = `${deviceName}`
       break
     default:
-      helpers.log(`getCardHeader: No header found for messageKey ${messageKey}`)
       return null
   }
 
@@ -250,7 +249,6 @@ function getCardTitle(messageKey, cardType) {
       cardTitle = 'Stillness Alert Survey'
       break
     default:
-      helpers.log(`getCardTitle: No title found for messageKey ${messageKey}`)
       return null
   }
 
@@ -335,7 +333,6 @@ function getCardBody(messageKey, device, client, messageData = {}) {
       cardBody = `The door contact at \n${deviceName} has not detected any activity in a long time please make sure that both parts of the door contact are fully attached to the door. If you require a replacement or have any questions, email clientsupport@brave.coop.`
       break
     default:
-      helpers.log(`getCardBody: No body found for messageKey ${messageKey}, using default`)
       cardBody = 'Default Card Body'
   }
 
@@ -385,7 +382,6 @@ function getCardActions(messageKey, client) {
       cardActionsArray = createCardActions(client.surveyCategories, true)
       break
     default:
-      helpers.log(`getCardActions: No card actions found messageKey ${messageKey}`)
       return null
   }
 

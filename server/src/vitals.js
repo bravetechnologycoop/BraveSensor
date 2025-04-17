@@ -29,23 +29,43 @@ const disconnectionReminderThreshold = helpers.getEnvVar('DISCONNECTION_REMINDER
 
 async function sendTeamsVital(client, device, teamsMessageKey) {
   try {
-    if (client.teamsId && client.teamsVitalChannelId) {
-      const cardType = 'New'
-      const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device)
+    const cardType = 'New'
+    const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device)
+    if (!adaptiveCard) {
+      throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
+    }
 
-      if (!adaptiveCard) {
-        throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
-      }
-      // send card to teams alert channel
-      const response = await teamsHelpers.sendNewTeamsCard(client.teamsId, client.teamsVitalChannelId, adaptiveCard)
-      if (!response || !response.messageId) {
-        throw new Error(`Failed to send new Teams card or invalid response received`)
-      }
+    const response = await teamsHelpers.sendNewTeamsCard(client.teamsId, client.teamsVitalChannelId, adaptiveCard)
+    if (!response || !response.messageId) {
+      throw new Error(`Failed to send new Teams card or invalid response received`)
     }
   } catch (error) {
     throw new Error(`sendTeamsVital: ${error.message}`)
   }
 }
+
+async function sendTwilioVital(client, device, twilioMessageKey) {
+  try {
+    const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
+    const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
+
+    // Return early without error if no phone numbers configured
+    if (phoneNumbers.length === 0) {
+      return { skipped: true, reason: 'No phone numbers configured' }
+    }
+
+    const response = await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
+    if (!response) {
+      throw new Error(`Vital failed to send via twilio`)
+    }
+
+    return { success: true }
+  } catch (error) {
+    throw new Error(`sendTwilioVital: ${error.message}`)
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
 
 async function handleDeviceDisconnectionVitals(device, client, currentDBTime, latestVital, latestConnectionNotification, pgClient) {
   if (!device || !client || !currentDBTime || !latestVital || !pgClient) {
@@ -99,16 +119,18 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
 
     if (notificationType && twilioMessageKey && teamsMessageKey) {
       try {
-        const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
-        const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
-
-        if (phoneNumbers.length === 0) {
-          throw new Error(`No phone numbers configured for client ${client.clientId}, skipping notifications`)
+        const twilioResponse = await sendTwilioVital(client, device, twilioMessageKey)
+        if (twilioResponse.skipped) {
+          return
         }
 
+        // log the notification
         await db_new.createNotification(device.deviceId, notificationType, pgClient)
-        await sendTeamsVital(client, device, teamsMessageKey)
-        await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
+
+        // check and send if teams is configured
+        if (client.teamsId && client.teamsVitalChannelId) {
+          await sendTeamsVital(client, device, teamsMessageKey)
+        }
       } catch (error) {
         throw new Error(`Error sending notification: ${error.message}`)
       }
@@ -280,17 +302,18 @@ async function handleVitalNotifications(
     // Send all accumulated notifications
     for (const notification of notifications) {
       try {
-        const textMessage = helpers.translateMessageKeyToMessage(notification.twilioMessageKey, client, device)
-        const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
-
-        if (phoneNumbers.length === 0) {
-          throw new Error(`No phone numbers configured for client ${client.clientId}, skipping notifications`)
+        const twilioResponse = await sendTwilioVital(client, device, notification.twilioMessageKey)
+        if (twilioResponse.skipped) {
+          return
         }
-        await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
 
-        await sendTeamsVital(client, device, notification.teamsMessageKey)
-
+        // log the notification
         await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
+
+        // check and send if teams is configured
+        if (client.teamsId && client.teamsVitalChannelId) {
+          await sendTeamsVital(client, device, notification.teamsMessageKey)
+        }
       } catch (error) {
         throw new Error(`Error sending notification: ${error.message}`)
       }
