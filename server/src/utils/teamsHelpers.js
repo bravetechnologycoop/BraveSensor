@@ -194,6 +194,7 @@ function getCardHeader(messageKey, device) {
     case 'teamsStillnessAlertThirdReminder':
     case 'teamsDurationAlertSurveyDoorOpened':
     case 'teamsStillnessAlertSurveyDoorOpened':
+    case 'teamsDurationAlertSurvey':
       cardHeader = `${deviceName}`
       break
     default:
@@ -232,6 +233,7 @@ function getCardTitle(messageKey, cardType) {
     case 'teamsStillnessAlertThirdReminder':
       cardTitle = 'Final Stillness Reminder'
       break
+    case 'teamsDurationAlertSurvey':
     case 'teamsDurationAlertSurveyDoorOpened':
       cardTitle = 'Duration Alert Survey'
       break
@@ -284,12 +286,17 @@ function getCardBody(messageKey, device, client, messageData = {}) {
     case 'teamsStillnessAlertThirdReminder':
       cardBody = `FINAL REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
       break
+    case 'teamsDurationAlertSurvey':
+    case 'teamsStillnessAlertSurvey':
+      cardBody = `Could you please let us know the outcome?`
+      break
     case 'teamsDurationAlertSurveyDoorOpened':
     case 'teamsStillnessAlertSurveyDoorOpened':
       cardBody = `We see the door has been opened.\nCould you please let us know the outcome?`
       break
     case 'sessionAlreadyCompleted':
-      cardBody = `This alert has already been completed and responded to. Thank you for your response.`
+      cardBody = `This alert has already been responded to. Thank you for your response.`
+      break
     default:
       helpers.log(`getCardBody: No body found for messageKey ${messageKey}, using default`)
       cardBody = 'Default Card Body'
@@ -334,6 +341,8 @@ function getCardActions(messageKey, client) {
     case 'teamsStillnessAlertThirdReminder':
       cardActionsArray = createCardActions(iAmOnMyWay, true)
       break
+    case 'teamsDurationAlertSurvey':
+    case 'teamsStillnessAlertSurvey':
     case 'teamsDurationAlertSurveyDoorOpened':
     case 'teamsStillnessAlertSurveyDoorOpened':
       cardActionsArray = createCardActions(client.surveyCategories, true)
@@ -374,14 +383,19 @@ function createAdaptiveCard(messageKey, cardType, client, device, messageData = 
   // If we have an update request and the addition messageData specifies the body text, use that
   // Useful for update request like expire previous card as they map to header/title using key but different body text
   if (cardType === 'Update' && messageData && messageData.bodyText) {
-    bodyText = messageData.bodyText
+    bodyText = createCardTextBlock(messageData.bodyText)
   } else {
     bodyText = getCardBody(messageKey, device, client, messageData)
   }
 
   // other card items
-  inputBox = getCardInput(messageKey)
-  cardActions = getCardActions(messageKey, client)
+  if (cardType === 'Update' && messageData && messageData.bodyText) {
+    inputBox = null
+    cardActions = null
+  } else {
+    inputBox = getCardInput(messageKey)
+    cardActions = getCardActions(messageKey, client)
+  }
 
   return assembleAdaptiveCard(cardType, header, title, bodyText, inputBox, cardActions)
 }
@@ -479,6 +493,7 @@ async function expirePreviousTeamsCard(teamsId, channelId, session) {
       return
     }
 
+    helpers.log('Expiring previous event')
     const client = await db_new.getClientWithDeviceId(session.deviceId)
     const device = await db_new.getDeviceWithDeviceId(session.deviceId)
     if (!client || !device) {
@@ -488,7 +503,8 @@ async function expirePreviousTeamsCard(teamsId, channelId, session) {
 
     // create a updated adaptive card
     const messageData = { bodyText: 'This alert has expired. Please respond to the latest alert for this washroom.' }
-    const updatedAdaptiveCard = await createAdaptiveCard(previousTeamsEvent.eventTypeDetails, 'Update', client, device, messageData)
+    const cardType = 'Update'
+    const updatedAdaptiveCard = await createAdaptiveCard(previousTeamsEvent.eventTypeDetails, cardType, client, device, messageData)
     if (!updatedAdaptiveCard) {
       throw new Error(`Failed to create updated adaptive card for teams event`)
     }
@@ -498,6 +514,8 @@ async function expirePreviousTeamsCard(teamsId, channelId, session) {
     if (!response || !response.messageId) {
       throw new Error(`Failed to update Teams card or invalid response received for session ${session.sessionId}`)
     }
+
+    helpers.log('Expired previous event')
   } catch (error) {
     throw new Error(`expirePreviousTeamsCard: ${error.message}`)
   }
