@@ -21,7 +21,7 @@ const TEXT_WEIGHT_BOLDER = 'Bolder'
 const TEXT_COLOR_ACCENT = 'Accent'
 const TEXT_COLOR_ATTENTION = 'Attention'
 
-const INPUT_ID_USERINPUT = 'userInput'
+// const INPUT_ID_USERINPUT = 'userInput'
 
 // ------------------------------------------------------------------------------------------------
 // Adaptive Card Creation Helper Functions
@@ -81,17 +81,17 @@ function createCardActions(optionNames, addDataField) {
  * @param {string} placeholder  Placeholder text for the input box.
  * @returns {Object}            JS object for the Input.Text element.
  */
-function createCardInputBox(placeholder) {
-  if (!placeholder) {
-    helpers.log('createCardInputBox called without placeholder text.')
-  }
-  return {
-    type: 'Input.Text',
-    id: INPUT_ID_USERINPUT, // Use the consistent ID
-    placeholder: placeholder || 'Can you please describe what happened?',
-    isMultiline: true,
-  }
-}
+// function createCardInputBox(placeholder) {
+//   if (!placeholder) {
+//     helpers.log('createCardInputBox called without placeholder text.')
+//   }
+//   return {
+//     type: 'Input.Text',
+//     id: INPUT_ID_USERINPUT, // Use the consistent ID
+//     placeholder: placeholder || 'Can you please describe what happened?',
+//     isMultiline: true,
+//   }
+// }
 
 /**
  * Helper function to assemble an adaptive card object based on provided parameters.
