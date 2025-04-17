@@ -28,7 +28,6 @@ const disconnectionReminderThreshold = helpers.getEnvVar('DISCONNECTION_REMINDER
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function sendTeamsVital(client, device, teamsMessageKey) {
-  // send next card
   try {
     if (client.teamsId && client.teamsVitalChannelId) {
       const cardType = 'New'
