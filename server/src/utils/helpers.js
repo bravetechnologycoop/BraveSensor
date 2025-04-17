@@ -154,10 +154,13 @@ function parseDigits(message) {
   return { isValid: true, value }
 }
 
-function translateMessageKeyToMessage(messageKey, options = {}) {
-  const { client = {}, device = {}, params = {} } = options
-  const language = client.language || 'en'
+function translateMessageKeyToMessage(messageKey, client, device, messageData = {}) {
+  if (!messageKey || !client || !device) {
+    log('translateMessageKeyToMessage: Missing required parameters')
+    return null
+  }
 
+  const language = client.language || 'en'
   const translatedCategories = client.surveyCategories
     ? client.surveyCategories.map((category, index) => `${index}: ${i18next.t(category, { lng: language })}`)
     : []
@@ -167,7 +170,7 @@ function translateMessageKeyToMessage(messageKey, options = {}) {
     deviceDisplayName: device.displayName,
     clientDisplayName: client.displayName,
     surveyCategoriesForMessage: translatedCategories.join('\n') || '',
-    ...params,
+    ...messageData,
   }
 
   Object.keys(translationParams).forEach(key => translationParams[key] === undefined && delete translationParams[key])

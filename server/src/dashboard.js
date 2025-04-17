@@ -457,7 +457,7 @@ async function renderSessionDetailsPage(req, res) {
       }
       return {
         ...event,
-        message: helpers.translateMessageKeyToMessage(event.eventTypeDetails, { client, device }),
+        message: helpers.translateMessageKeyToMessage(event.eventTypeDetails, client, device),
       }
     })
 

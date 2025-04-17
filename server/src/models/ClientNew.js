@@ -16,6 +16,9 @@ class ClientNew {
     devicesStatus,
     firstDeviceLiveAt,
     stillnessSurveyFollowupDelay,
+    teamsId,
+    teamsAlertChannelId,
+    teamsVitalChannelId,
   ) {
     this.clientId = clientId
     this.displayName = displayName
@@ -33,6 +36,9 @@ class ClientNew {
     this.devicesStatus = devicesStatus
     this.firstDeviceLiveAt = firstDeviceLiveAt
     this.stillnessSurveyFollowupDelay = stillnessSurveyFollowupDelay
+    this.teamsId = teamsId
+    this.teamsAlertChannelId = teamsAlertChannelId
+    this.teamsVitalChannelId = teamsVitalChannelId
   }
 }
 

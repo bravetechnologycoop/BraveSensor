@@ -11,6 +11,7 @@ const ClientExtensionNew = require('./ClientExtensionNew')
 const DeviceNew = require('./DeviceNew')
 const SessionNew = require('./SessionNew')
 const EventNew = require('./EventNew')
+const TeamsEventNew = require('./TeamsEventNew')
 const VitalNew = require('./VitalNew')
 const NotificationNew = require('./NotificationNew')
 
@@ -26,6 +27,7 @@ module.exports = {
   SessionNew,
   DeviceNew,
   EventNew,
+  TeamsEventNew,
   VitalNew,
   NotificationNew,
 }

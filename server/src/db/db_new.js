@@ -4,7 +4,7 @@ const pg = require('pg')
 // In-house dependencies
 const helpers = require('../utils/helpers')
 const { SESSION_STATUS, EVENT_TYPE, NOTIFICATION_TYPE } = require('../enums/index')
-const { ClientNew, ClientExtensionNew, DeviceNew, SessionNew, EventNew, VitalNew, NotificationNew } = require('../models/index')
+const { ClientNew, ClientExtensionNew, DeviceNew, SessionNew, EventNew, TeamsEventNew, VitalNew, NotificationNew } = require('../models/index')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -16,7 +16,8 @@ const pool = new pg.Pool({
   allowExitOnIdle: true,
   connectionTimeoutMillis: 15000,
   idleTimeoutMillis: 10000,
-  ssl: { rejectUnauthorized: false },
+  // ssl: { rejectUnauthorized: false },
+  ssl: false,
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -81,6 +82,9 @@ function createClientFromRow(r) {
     r.devices_status,
     r.first_device_live_at,
     r.stillness_survey_followup_delay,
+    r.teams_id,
+    r.teams_alert_channel_id,
+    r.teams_vital_channel_id,
   )
 }
 
@@ -129,11 +133,16 @@ function createSessionFromRow(r) {
     r.survey_sent,
     r.selected_survey_category,
     r.response_time,
+    r.session_responded_via,
   )
 }
 
 function createEventFromRow(r) {
   return new EventNew(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.phone_numbers)
+}
+
+function createTeamsEventFromRow(r) {
+  return new TeamsEventNew(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.message_id)
 }
 
 function createVitalFromRow(r) {
@@ -1401,6 +1410,32 @@ async function updateSessionSelectedSurveyCategory(sessionId, selectedCategory, 
   }
 }
 
+async function updateSessionRespondedVia(sessionId, respondedVia, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateSessionRespondedVia',
+      `
+      UPDATE sessions_new
+      SET session_responded_via = $2
+      WHERE session_id = $1
+      RETURNING *
+      `,
+      [sessionId, respondedVia],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSessionRespondedVia query: ${err.toString()}`)
+    return null
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function createEvent(sessionId, eventType, eventTypeDetails, phoneNumbers, pgClient) {
@@ -1494,7 +1529,7 @@ const RESPONDABLE_EVENT_HIERARCHY = new Map([
 
 const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
 
-async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null, pgClient) {
+async function getLatestTwilioEvent(sessionId, responderPhoneNumber = null, pgClient) {
   try {
     let queryText = `
       SELECT *
@@ -1525,7 +1560,7 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null,
       FOR UPDATE
     `
 
-    const results = await helpers.runQuery('getLatestRespondableEvent', queryText, queryParams, pool, pgClient)
+    const results = await helpers.runQuery('getLatestTwilioEvent', queryText, queryParams, pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return null
@@ -1533,7 +1568,7 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null,
 
     return createEventFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getLatestRespondableEvent query: ${err.toString()}`)
+    helpers.logError(`Error running the getLatestTwilioEvent query: ${err.toString()}`)
     return null
   }
 }
@@ -1560,6 +1595,91 @@ async function checkEventExists(sessionId, eventType, eventTypeDetails, pgClient
   } catch (err) {
     helpers.logError(`Error running the checkEventExists query: ${err.toString()}`)
     return false
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function createTeamsEvent(sessionId, eventType, eventTypeDetails, messageId, pgClient) {
+  helpers.log(`NEW TEAMS EVENT: sessionId: ${sessionId}, eventType: ${eventType}, eventTypeDetails: ${eventTypeDetails}, messageId: ${messageId}`)
+  try {
+    const results = await helpers.runQuery(
+      'createTeamsEvent',
+      `
+      INSERT INTO teams_events_new (
+        session_id, 
+        event_type,
+        event_type_details,
+        message_id
+      ) VALUES ($1, $2, $3, $4)
+      RETURNING *
+      `,
+      [sessionId, eventType, eventTypeDetails, messageId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createTeamsEvent query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getLatestTeamsEvent(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestTeamsEvent',
+      `
+      SELECT *
+      FROM teams_events_new
+      WHERE session_id = $1
+      ORDER BY event_sent_at DESC
+      LIMIT 1
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getLatestTeamsEvent query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getTeamsEventWithMessageId(messageId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getTeamsEventWithMessageId',
+      `
+      SELECT *
+      FROM teams_events_new
+      WHERE message_id = $1
+      LIMIT 1
+      `,
+      [messageId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getTeamsEventWithMessageId query: ${err.toString()}`)
+    return null
   }
 }
 
@@ -1882,11 +2002,16 @@ module.exports = {
   updateSessionAttendingResponder,
   updateSessionResponseTime,
   updateSessionSelectedSurveyCategory,
+  updateSessionRespondedVia,
 
   createEvent,
   getEventsForSession,
-  getLatestRespondableEvent,
+  getLatestTwilioEvent,
   checkEventExists,
+
+  createTeamsEvent,
+  getLatestTeamsEvent,
+  getTeamsEventWithMessageId,
 
   createVital,
   getLatestVitalWithDeviceId,
