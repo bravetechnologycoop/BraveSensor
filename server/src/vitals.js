@@ -11,6 +11,7 @@ const { DateTime } = require('luxon')
 // In-house dependencies
 const helpers = require('./utils/helpers')
 const twilioHelpers = require('./utils/twilioHelpers')
+const teamsHelpers = require('./utils/teamsHelpers')
 const db_new = require('./db/db_new')
 const { NOTIFICATION_TYPE } = require('./enums/index')
 
@@ -25,6 +26,26 @@ const doorDisconnectionThreshold = helpers.getEnvVar('DOOR_DISCONNECTION_THRESHO
 const disconnectionReminderThreshold = helpers.getEnvVar('DISCONNECTION_REMINDER_THRESHOLD_SECONDS')
 
 // ----------------------------------------------------------------------------------------------------------------------------
+
+async function sendTeamsVital(client, device, teamsMessageKey) {
+  try {
+    if (client.teamsId && client.teamsVitalChannelId) {
+      const cardType = 'New'
+      const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device)
+
+      if (!adaptiveCard) {
+        throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
+      }
+      // send card to teams alert channel
+      const response = await teamsHelpers.sendNewTeamsCard(client.teamsId, client.teamsVitalChannelId, adaptiveCard)
+      if (!response || !response.messageId) {
+        throw new Error(`Failed to send new Teams card or invalid response received`)
+      }
+    }
+  } catch (error) {
+    throw new Error(`sendTeamsVital: ${error.message}`)
+  }
+}
 
 async function handleDeviceDisconnectionVitals(device, client, currentDBTime, latestVital, latestConnectionNotification, pgClient) {
   if (!device || !client || !currentDBTime || !latestVital || !pgClient) {
@@ -59,23 +80,26 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
       : null
     const isReminderDue = latestConnectionNotification && timeSinceNotification > disconnectionReminderThreshold
 
-    let messageKey = null
+    let twilioMessageKey = null
+    let teamsMessageKey = null
     let notificationType = null
 
     // Only send device disconnection alerts if device is disconnected
     if (deviceDisconnected && (isInitialDeviceAlert || isReminderDue)) {
-      messageKey = isInitialDeviceAlert ? 'deviceDisconnectedInitial' : 'deviceDisconnectedReminder'
+      twilioMessageKey = isInitialDeviceAlert ? 'deviceDisconnectedInitial' : 'deviceDisconnectedReminder'
+      teamsMessageKey = isInitialDeviceAlert ? 'teamsDeviceDisconnectedInitial' : 'teamsDeviceDisconnectedReminder'
       notificationType = isInitialDeviceAlert ? NOTIFICATION_TYPE.DEVICE_DISCONNECTED : NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER
     }
     // Only send door disconnection alerts if device is connected but door is disconnected
     else if (!deviceDisconnected && doorDisconnected && (isInitialDoorAlert || isReminderDue)) {
-      messageKey = isInitialDoorAlert ? 'doorDisconnectedInitial' : 'doorDisconnectedReminder'
+      twilioMessageKey = isInitialDoorAlert ? 'doorDisconnectedInitial' : 'doorDisconnectedReminder'
+      teamsMessageKey = isInitialDoorAlert ? 'teamsDoorDisconnectedInitial' : 'teamsDoorDisconnectedReminder'
       notificationType = isInitialDoorAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
     }
 
-    if (notificationType && messageKey) {
+    if (notificationType && twilioMessageKey && teamsMessageKey) {
       try {
-        const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
+        const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
         const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
 
         if (phoneNumbers.length === 0) {
@@ -83,6 +107,7 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
         }
 
         await db_new.createNotification(device.deviceId, notificationType, pgClient)
+        await sendTeamsVital(client, device, teamsMessageKey)
         await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
       } catch (error) {
         throw new Error(`Error sending notification: ${error.message}`)
@@ -195,7 +220,8 @@ async function handleVitalNotifications(
       // First handle device reconnection since it's higher priority
       if (deviceWasDisconnected) {
         notifications.push({
-          messageKey: 'deviceReconnected',
+          twilioMessageKey: 'deviceReconnected',
+          teamsMessageKey: 'teamsDeviceReconnected',
           notificationType: NOTIFICATION_TYPE.DEVICE_RECONNECTED,
         })
       }
@@ -204,7 +230,8 @@ async function handleVitalNotifications(
         const timeSinceDoorContact = helpers.differenceInSeconds(currentDBTime, currDoorLastSeenAt)
         if (timeSinceDoorContact < doorDisconnectionThreshold) {
           notifications.push({
-            messageKey: 'doorReconnected',
+            twilioMessageKey: 'doorReconnected',
+            teamsMessageKey: 'teamsDoorReconnected',
             notificationType: NOTIFICATION_TYPE.DOOR_RECONNECTED,
           })
         }
@@ -221,7 +248,8 @@ async function handleVitalNotifications(
 
       if (shouldSendBatteryNotification) {
         notifications.push({
-          messageKey: 'doorLowBattery',
+          twilioMessageKey: 'doorLowBattery',
+          teamsMessageKey: 'teamsDoorLowBattery',
           notificationType: NOTIFICATION_TYPE.DOOR_LOW_BATTERY,
         })
       }
@@ -230,7 +258,8 @@ async function handleVitalNotifications(
     // 3. Door Tampered Status Change Notifications
     if (previousVital && previousVital.doorTampered !== currDoorTampered) {
       notifications.push({
-        messageKey: 'doorTampered',
+        twilioMessageKey: 'doorTampered',
+        teamsMessageKey: 'teamsDoorTampered',
         notificationType: NOTIFICATION_TYPE.DOOR_TAMPERED,
       })
     }
@@ -242,7 +271,8 @@ async function handleVitalNotifications(
 
     if (shouldSendInactivityNotification) {
       notifications.push({
-        messageKey: 'doorInactivity',
+        twilioMessageKey: 'doorInactivity',
+        teamsMessageKey: 'teamsDoorInactivity',
         notificationType: NOTIFICATION_TYPE.DOOR_INACTIVITY,
       })
     }
@@ -250,15 +280,17 @@ async function handleVitalNotifications(
     // Send all accumulated notifications
     for (const notification of notifications) {
       try {
-        const textMessage = helpers.translateMessageKeyToMessage(notification.messageKey, client, device)
+        const textMessage = helpers.translateMessageKeyToMessage(notification.twilioMessageKey, client, device)
         const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
 
         if (phoneNumbers.length === 0) {
           throw new Error(`No phone numbers configured for client ${client.clientId}, skipping notifications`)
         }
+        await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
+
+        await sendTeamsVital(client, device, notification.teamsMessageKey)
 
         await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
-        await twilioHelpers.sendMessageToPhoneNumbers(client.vitalsTwilioNumber, phoneNumbers, textMessage)
       } catch (error) {
         throw new Error(`Error sending notification: ${error.message}`)
       }
@@ -298,7 +330,6 @@ async function processHeartbeat(eventData, client, device) {
     let currDoorLastSeenAt
     let currDoorTampered
     let currDoorLowBattery
-
     // If the values are -1 (it means it is a device startup heartbeat)
     if (doorLastMessage.toString() === '-1' || doorTampered.toString() === '-1' || doorLowBattery.toString() === '-1') {
       if (!previousVital) {
