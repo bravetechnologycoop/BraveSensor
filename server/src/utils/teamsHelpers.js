@@ -22,7 +22,7 @@ const TEXT_WEIGHT_BOLDER = 'Bolder'
 const TEXT_COLOR_ACCENT = 'Accent'
 const TEXT_COLOR_ATTENTION = 'Attention'
 
-const INPUT_ID_USERINPUT = 'userInput'
+// const INPUT_ID_USERINPUT = 'userInput'
 
 // ------------------------------------------------------------------------------------------------
 // Adaptive Card Creation Helper Functions

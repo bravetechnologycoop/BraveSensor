@@ -38,8 +38,8 @@ async function resetMonitoring(particleDeviceId) {
 }
 
 async function resetStateToZero(particleDeviceId) {
-  helpers.log(`Calling resetStateToZero for particle deviceId: ${particleDeviceId}`)
-  return
+  // helpers.log(`Calling resetStateToZero for particle deviceId: ${particleDeviceId}`)
+  // return
 
   try {
     const response = await particleApi.callFunction({
