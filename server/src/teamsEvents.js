@@ -91,6 +91,7 @@ async function handleIncomingTeamsEvent(client, device, session, respondedTeamsE
     // default to sending the no response expected
     if (session.sessionStatus === SESSION_STATUS.COMPLETED) {
       helpers.log(`Teams event to sessionId: ${session.sessionId} that was already completed session, sending no response expected.`)
+      // TODO
       return
     }
 
@@ -98,6 +99,7 @@ async function handleIncomingTeamsEvent(client, device, session, respondedTeamsE
     // then update the message to say another responder is attending
     if (session.sessionRespondedVia && session.sessionRespondedVia !== SESSION_RESPONDED_VIA.TWILIO) {
       helpers.log(`Teams event to sessionId: ${session.sessionId} that is being responded by another medium.`)
+      // TODO
       return
     }
 
@@ -128,7 +130,7 @@ async function processTeamsEvent(teamsId, channelId, messageId, submittedCardDat
       throw new Error(errorMessage)
     }
 
-    // use the messageId to find the teamsEvent that was responded
+    // use the messageId to find the teams event that was responded to
     const respondedTeamsEvent = await db_new.getTeamsEventWithMessageId(messageId, pgClient)
     if (!respondedTeamsEvent) {
       throw new Error(`No teams event found with messageId: ${messageId}`)
@@ -170,7 +172,12 @@ async function processTeamsEvent(teamsId, channelId, messageId, submittedCardDat
 // ----------------------------------------------------------------------------------------------------------------------------
 // Incoming Teams Card Responses (/alert/teams)
 
-const validateTeamsEvent = Validator.body(['teamsId', 'channelId', 'messageId', 'submittedCardData']).trim().notEmpty()
+const validateTeamsEvent = [
+  Validator.body('teamsId').trim().notEmpty().withMessage('teamsId is required.'),
+  Validator.body('channelId').trim().notEmpty().withMessage('channelId is required.'),
+  Validator.body('messageId').trim().notEmpty().withMessage('messageId is required.'),
+  Validator.body('submittedCardData').exists().withMessage('submittedCardData is required.'),
+]
 
 async function handleTeamsEvent(request, response) {
   try {
@@ -179,17 +186,14 @@ async function handleTeamsEvent(request, response) {
       throw new Error(`Bad request: ${validationErrors.array()}`)
     }
 
-    const teamsId = request.body.teamsId
-    const channelId = request.body.channelId
-    const messageId = request.body.messageId
-    const submittedCardData = request.body.submittedCardData
+    const { teamsId, channelId, messageId, submittedCardData } = request.body
 
     await processTeamsEvent(teamsId, channelId, messageId, submittedCardData)
 
     response.status(200).json('OK')
   } catch (error) {
     helpers.logError(`Error on ${request.path}: ${error.message}`)
-    response.status(400).json(error.message)
+    response.status(500).json(error.message)
   }
 }
 
