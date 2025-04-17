@@ -8,7 +8,6 @@
 const axios = require('axios')
 
 // In-house dependencies
-// const { clientSecret } = require('particle-api-js/src/Defaults')
 const helpers = require('./helpers')
 const db_new = require('../db/db_new')
 
@@ -575,6 +574,7 @@ async function sendNewTeamsCard(teamsId, channelId, adaptiveCard, session = {}) 
     helpers.logError('sendNewTeamsCard missing required parameters.')
     return null
   }
+
   if (session && Object.keys(session).length > 0) {
     await expirePreviousTeamsCard(teamsId, channelId, session)
   }

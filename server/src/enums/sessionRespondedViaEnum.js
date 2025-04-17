@@ -1,6 +1,6 @@
-const SESSION_RESPONDED_VIA = {
+const SERVICES = {
   TWILIO: 'TWILIO',
   TEAMS: 'TEAMS',
 }
 
-module.exports = Object.freeze(SESSION_RESPONDED_VIA)
+module.exports = Object.freeze(SERVICES)

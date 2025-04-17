@@ -49,6 +49,7 @@
   "noResponseExpected": "Invalid response - no response expected.",
   "invalidResponseTryAgain": "Invalid response, try again.",
   "nonAttendingResponderConfirmation": "Another responder is attending to this alert. You do not need to reply to this message.",
+  "alertRespondedViaTeams": "Another responder is attending to this alert via teams. You do not need to reply to this message.",
   "reportIssue": "You can reach us at:\nPhone: +18338332100\nEmail: clientsupport@brave.coop\nThank you!",
   "thankYou": "Thank you, monitoring will be paused until the next entry.",
 
