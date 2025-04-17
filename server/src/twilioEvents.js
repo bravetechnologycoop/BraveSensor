@@ -150,7 +150,11 @@ async function handleStillnessAlert(client, device, latestSession, responderPhon
         await sendNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
       }
 
-      // Send non-attending for teams
+      // Notify for teams if configured
+      // TODO
+      if (client.teamsId && client.teamsAlertChannelId) {
+        helpers.log(`Updating the last teams message to say that this alert is being responded via another medium`)
+      }
     }
 
     // Note: Although the stillness alert message mentions accepting only '5' or 'ok',
@@ -424,7 +428,11 @@ async function handleDurationAlert(client, device, latestSession, responderPhone
         await sendNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
       }
 
-      // Send non-attending for teams
+      // Notify for teams if configured
+      // TODO
+      if (client.teamsId && client.teamsAlertChannelId) {
+        helpers.log(`Updating the last teams message to say that this alert is being responded via another medium`)
+      }
     }
 
     // Note: Although the duration alert message mentions accepting only '5' or 'ok',
@@ -557,7 +565,11 @@ async function handleDurationAlertSurveyDoorOpened(client, device, latestSession
         await sendNonAttendingConfirmation(client, device, latestSession, nonAttendingResponders, pgClient)
       }
 
-      // Send non-attending for teams
+      // Notify for teams if configured
+      // TODO
+      if (client.teamsId && client.teamsAlertChannelId) {
+        helpers.log(`Updating the last teams message to say that this alert is being responded via another medium`)
+      }
     }
 
     const { isValid, value: messageIndex } = helpers.parseDigits(message)
@@ -702,10 +714,10 @@ const EVENT_HANDLERS = {
   },
 }
 
-function getEventHandler(eventType) {
-  const durationHandler = EVENT_HANDLERS.duration[eventType]
-  const stillnessHandler = EVENT_HANDLERS.stillness[eventType]
-  const otherHandler = EVENT_HANDLERS.other[eventType]
+function getEventHandler(eventTypeDetails) {
+  const durationHandler = EVENT_HANDLERS.duration[eventTypeDetails]
+  const stillnessHandler = EVENT_HANDLERS.stillness[eventTypeDetails]
+  const otherHandler = EVENT_HANDLERS.other[eventTypeDetails]
   return durationHandler || stillnessHandler || otherHandler
 }
 
@@ -719,7 +731,7 @@ async function handleIncomingMessage(client, device, latestSession, latestEvent,
       return
     }
 
-    // if the session is active but already been responded by another medium except twilio (like teams)
+    // if the session has already been responded by another medium except twilio (like teams)
     // then send another responder is attending (same message as nonAttendingConfirmation)
     if (latestSession.sessionRespondedVia && latestSession.sessionRespondedVia !== SESSION_RESPONDED_VIA.TWILIO) {
       helpers.log(`Twilio response to sessionId: ${latestSession.sessionId} that is being responded by another medium.`)
@@ -727,10 +739,12 @@ async function handleIncomingMessage(client, device, latestSession, latestEvent,
       return
     }
 
-    const eventType = latestEvent.eventTypeDetails
-    const handler = getEventHandler(eventType)
+    // now we now that the session is active and unresponded or responded via TWILIO
+    // based on the eventTypeDetails, select event handler and process the message
+    const eventTypeDetails = latestEvent.eventTypeDetails
+    const handler = getEventHandler(eventTypeDetails)
     if (!handler) {
-      throw new Error(`Unhandled event type: ${eventType}`)
+      throw new Error(`Unhandled event type with message key: ${eventTypeDetails}`)
     }
 
     await handler(client, device, latestSession, responderPhoneNumber, message, pgClient)
