@@ -20,6 +20,7 @@ function setupServer(app) {
 
   if (helpers.isTestEnvironment()) {
     server = app.listen(8000)
+    // setup checks for device disconnection
 
     // const card = teamsHelpers.createAdaptiveCard('teamsDurationAlert', { surveyCategories: 'ABC,XYZ' }, { displayName: 'Washroom XYZ' })
     // console.log(JSON.stringify(card, null, 2))
@@ -33,15 +34,6 @@ function setupServer(app) {
 
     // setup sentry monitoring
     helpers.setupSentry(app, helpers.getEnvVar('SENTRY_DSN'), helpers.getEnvVar('ENVIRONMENT'), helpers.getEnvVar('RELEASE'))
-
-    // setup checks for device disconnection
-    setInterval(async () => {
-      try {
-        await vitals.checkDeviceDisconnectionVitals()
-      } catch (error) {
-        helpers.logError(`SERVER: Error checking device connection vitals: ${error.message}`)
-      }
-    }, checkDisconnectionIntervalinSeconds * 1000)
   }
 
   return server

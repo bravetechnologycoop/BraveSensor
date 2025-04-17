@@ -10,6 +10,7 @@ const axios = require('axios')
 // In-house dependencies
 const helpers = require('./helpers')
 const db_new = require('../db/db_new')
+const { clientSecret } = require('particle-api-js/src/Defaults')
 
 const TEAMS_CARD_FLOW_URL = helpers.getEnvVar('TEAMS_CARD_FLOW_URL')
 const TEAMS_API_KEY = helpers.getEnvVar('TEAMS_API_KEY')
@@ -195,6 +196,15 @@ function getCardHeader(messageKey, device) {
     case 'teamsDurationAlertSurveyDoorOpened':
     case 'teamsStillnessAlertSurveyDoorOpened':
     case 'teamsDurationAlertSurvey':
+    case 'teamsDoorLowBattery':
+    case 'teamsDeviceDisconnectedInitial':
+    case 'teamsDeviceDisconnectedReminder':
+    case 'teamsDoorDisconnectedInitial':
+    case 'teamsDoorDisconnectedReminder':
+    case 'teamsDeviceReconnected':
+    case 'teamsDoorReconnected':
+    case 'teamsDoorTampered':
+    case 'teamsDoorInactivity':
       cardHeader = `${deviceName}`
       break
     default:
@@ -207,6 +217,7 @@ function getCardHeader(messageKey, device) {
     weight: TEXT_WEIGHT_BOLDER,
   })
 }
+
 
 /**
  * Gets the title text for a card based on the message key.
@@ -267,6 +278,7 @@ function getCardBody(messageKey, device, client, messageData = {}) {
   }
 
   const deviceName = device.displayName
+  const clientDisplayName = client.displayName
 
   let cardBody
 
@@ -297,6 +309,33 @@ function getCardBody(messageKey, device, client, messageData = {}) {
     case 'sessionAlreadyCompleted':
       cardBody = `This alert has already been responded to. Thank you for your response.`
       break
+    case 'teamsDoorLowBattery':
+      cardBody = `The battery for the \n${deviceName} door sensor is low, and needs replacing.\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w.`
+      break
+    case 'teamsDeviceDisconnectedInitial':
+      cardBody = `The Brave Sensor at \n${deviceName} (\n${clientDisplayName} ) has disconnected. Please email clientsupport@brave.coop.`
+      break
+    case 'teamsDeviceDisconnectedReminder':
+      cardBody = `${deviceName} is still disconnected from the network. Please ensure the device is properly connected.`
+      break
+    case 'teamsDoorDisconnectedInitial':
+      cardBody = `The door contact for \n${deviceName} (\n${clientDisplayName} ) has disconnected. Please reattach the door contact or replace the battery if necessary. Email clientsupport@brave.coop if a replacement is required.`
+      break
+    case 'teamsDoorDisconnectedReminder':
+      cardBody = `The door contact for \n${deviceName} (\n${clientDisplayName} ) is still disconnected. Please reattach the door contact or replace the battery if necessary. Email clientsupport@brave.coop if a replacement is required.`
+      break
+    case 'teamsDeviceReconnected':
+      cardBody = `The Brave Sensor at \n${deviceName} (\n${clientDisplayName} ) has been reconnected.`
+      break
+    case 'teamsDoorReconnected':
+      cardBody = `The door contact at \n${deviceName} (\n${clientDisplayName} ) has been reconnected.`
+      break
+    case 'teamsDoorTampered':
+      cardBody = `The door contact at \n${deviceName} is not fully attached to the door. For a replacement or any questions, email clientsupport@brave.coop.`
+      break
+    case 'teamsDoorInactivity':
+      cardBody = `The door contact at \n${deviceName} has not detected any activity in a long time please make sure that both parts of the door contact are fully attached to the door. If you require a replacement or have any questions, email clientsupport@brave.coop.`
+      break
     default:
       helpers.log(`getCardBody: No body found for messageKey ${messageKey}, using default`)
       cardBody = 'Default Card Body'
@@ -304,6 +343,7 @@ function getCardBody(messageKey, device, client, messageData = {}) {
 
   return createCardTextBlock(cardBody)
 }
+
 
 /**
  * Gets the InputBox object for a new card based on the message key.
@@ -384,8 +424,11 @@ function createAdaptiveCard(messageKey, cardType, client, device, messageData = 
   // Useful for update request like expire previous card as they map to header/title using key but different body text
   if (cardType === 'Update' && messageData && messageData.bodyText) {
     bodyText = createCardTextBlock(messageData.bodyText)
-  } else {
+  } else if(messageData){
     bodyText = getCardBody(messageKey, device, client, messageData)
+  }
+  else{
+    bodyText = getCardBody(messageKey, device, client)
   }
 
   // other card items
@@ -535,10 +578,10 @@ async function sendNewTeamsCard(teamsId, channelId, adaptiveCard, session = {}) 
     helpers.logError('sendNewTeamsCard missing required parameters.')
     return null
   }
-
-  if (session) {
-    await expirePreviousTeamsCard(teamsId, channelId, session)
+  if (session && Object.keys(session).length > 0) {
+    await expirePreviousTeamsCard(teamsId, channelId, session);
   }
+
 
   const payload = {
     teamsId,
