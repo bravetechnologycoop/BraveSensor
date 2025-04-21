@@ -11,7 +11,7 @@ const twilioHelpers = require('./utils/twilioHelpers')
 const teamsHelpers = require('./utils/teamsHelpers')
 const db_new = require('./db/db_new')
 const { EVENT_TYPE, SESSION_STATUS, SERVICES } = require('./enums/index')
-const { cancelRemindersForSession } = require('./sensorEvents');
+const { cancelRemindersForSession } = require('./sensorEvents')
 const { resetMonitoring, resetStateToZero } = require('./particle')
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -24,8 +24,8 @@ async function setSessionAsResponded(client, device, session, data, pgClient) {
     await db_new.updateSessionResponseTime(session.sessionId, pgClient)
 
     // Cancel any scheduled reminders for this session, if any
-    cancelRemindersForSession(session.sessionId);
-     
+    cancelRemindersForSession(session.sessionId)
+
     if (data.service === SERVICES.TWILIO) {
       // extract and set responder to the session
       const responderPhoneNumber = data.responderPhoneNumber

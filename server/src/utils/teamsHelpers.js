@@ -127,9 +127,9 @@ function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, car
         type: 'Container',
         style: containerStyle,
         items: [],
-      }
+      },
     ],
-    actions: []
+    actions: [],
   }
 
   const contentContainer = card.body[0]
