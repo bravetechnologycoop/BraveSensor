@@ -61,7 +61,7 @@ async function sendTeamsReminder(session, teamsMessageKey, client, device) {
     if (!response || !response.messageId) {
       throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)
     }
-
+    
     await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.STILLNESS_ALERT, teamsMessageKey, response.messageId)
   } catch (error) {
     throw new Error(`sendTeamsReminder: ${error.message}`)
@@ -128,72 +128,124 @@ async function handleStillnessFallback(session, client, device, sessionId) {
     helpers.logError(`Error in handleStillnessFallback for session ${sessionId}: ${error.message}`)
   }
 }
+
+// map tracks scheduled reminders by sessionId
+const reminderTimers = new Map();
+
 async function scheduleStillnessAlertReminders(client, device, sessionId) {
   const stillnessReminderTimeout = stillnessReminderinSeconds * 1000
   const startTime = Date.now()
+  const timerIds = [];
 
-  helpers.log(`Starting to schedule stillness reminders for session ${sessionId}. Reminder interval: ${stillnessReminderinSeconds} seconds`)
+  // cancel any existing reminders
+  cancelRemindersForSession(sessionId);
 
-  function scheduleAt(targetTime, fn, reminderNumber) {
+  function scheduleAt(targetTime, fn) {
     const delay = targetTime - Date.now()
-    const scheduledTime = new Date(targetTime).toISOString()
-    const delayMinutes = Math.round((delay / 1000 / 60) * 10) / 10
-
-    helpers.log(`Reminder #${reminderNumber} scheduled for ${scheduledTime} (in ${delayMinutes} minutes) for session ${sessionId}`)
-
-    return new Promise(resolve =>
-      setTimeout(async () => {
-        helpers.log(`Executing reminder #${reminderNumber} for session ${sessionId}`)
-        await fn()
-        resolve()
-      }, Math.max(delay, 0)),
-    )
+    
+    const timerId = setTimeout(async () => {
+      try {
+        await fn();
+      } catch (error) {
+        helpers.logError(`Error executing scheduled reminder for session ${sessionId}: ${error.message}`);
+      } finally {
+        // Remove this timer ID from the array
+        const index = timerIds.indexOf(timerId);
+        if (index > -1) {
+          timerIds.splice(index, 1);
+        }
+        
+        // If all timers have executed, clean up the map entry
+        if (timerIds.length === 0) {
+          reminderTimers.delete(sessionId);
+        }
+      }
+    }, Math.max(delay, 0));
+    
+    return timerId;
   }
 
   async function sendReminder(reminderNumber) {
     try {
-      const currentSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
+      // check if the reminders for this session have been cancelled
+      if (!reminderTimers.has(sessionId)) {
+        helpers.log(`Reminders for session ${sessionId} have been cancelled, skipping reminder ${reminderNumber}`);
+        return;
+      }
+      
+      const currentSession = await db_new.getLatestSessionWithDeviceId(device.deviceId);
+      if (!currentSession) {
+        helpers.log(`No session found for device ${device.deviceId}, cancelling all reminders`);
+        cancelRemindersForSession(sessionId);
+        return;
+      }
+      
       if (currentSession.sessionId !== sessionId) {
-        throw new Error(`Current session changed from ${sessionId} to ${currentSession.sessionId}, cancelling reminder`)
+        helpers.log(`Current session changed from ${sessionId} to ${currentSession.sessionId}, cancelling all reminders`);
+        cancelRemindersForSession(sessionId);
+        return;
+      }
+      
+      if (currentSession.sessionRespondedVia) {
+        helpers.log(`Session ${sessionId} already responded via ${currentSession.sessionRespondedVia}, cancelling all reminders`);
+        cancelRemindersForSession(sessionId);
+        return;
+      }
+      
+      if (currentSession.sessionStatus !== SESSION_STATUS.ACTIVE || 
+          currentSession.doorOpened || 
+          currentSession.surveySent) {
+        helpers.log(`Session ${sessionId} state changed (status=${currentSession.sessionStatus}, doorOpened=${currentSession.doorOpened}, surveySent=${currentSession.surveySent}), cancelling all reminders`);
+        cancelRemindersForSession(sessionId);
+        return;
       }
 
-      // get latest event based on the session's attending via service if any
-      // default to twilio if not teams
+      // get latest event based on the session's attending via service
       const latestEvent =
         currentSession.sessionRespondedVia === SERVICES.TEAMS
           ? await db_new.getLatestRespondableTeamsEvent(currentSession.sessionId, null)
-          : await db_new.getLatestRespondableTwilioEvent(currentSession.sessionId, null)
+          : await db_new.getLatestRespondableTwilioEvent(currentSession.sessionId, null);
 
-      // make sure that the latest event is a type of stillness alert
+      // make sure the latest event is a stillness alert
       if (!latestEvent || !latestEvent.eventType || latestEvent.eventType !== EVENT_TYPE.STILLNESS_ALERT) {
-        throw new Error(`Latest event is not a type of  stillness alert, cancelling reminders for ${sessionId}`)
+        helpers.log(`Latest event for session ${sessionId} is not a stillness alert, cancelling all reminders`);
+        cancelRemindersForSession(sessionId);
+        return;
       }
 
-      if (currentSession.sessionStatus === SESSION_STATUS.ACTIVE && !currentSession.doorOpened && !currentSession.surveySent) {
-        // When sending second reminder, notify fallback (functionality only for twilio)
-        if (reminderNumber === 2) {
-          await Promise.all([
-            handleStillnessReminder(reminderNumber, currentSession, client, device, sessionId),
-            handleStillnessFallback(currentSession, client, device, sessionId),
-          ])
-        } else {
-          await handleStillnessReminder(reminderNumber, currentSession, client, device, sessionId)
-        }
+      // when sending second reminder, notify fallback (functionality only for twilio)
+      if (reminderNumber === 2) {
+        await Promise.all([
+          handleStillnessReminder(reminderNumber, currentSession, client, device, sessionId),
+          handleStillnessFallback(currentSession, client, device, sessionId),
+        ]);
       } else {
-        helpers.log(`Reminder ${reminderNumber} skipped: session invalid or already resolved.`)
+        await handleStillnessReminder(reminderNumber, currentSession, client, device, sessionId);
       }
     } catch (error) {
-      helpers.log(`scheduleStillnessAlertReminders: ${error.message}`)
+      helpers.log(`scheduleStillnessAlertReminders: ${error.message}`);
     }
   }
 
-  // Schedule all reminders at fixed intervals from start
-  scheduleAt(startTime + stillnessReminderTimeout, () => sendReminder(1), 1)
-  scheduleAt(startTime + 2 * stillnessReminderTimeout, () => sendReminder(2), 2)
-  scheduleAt(startTime + 3 * stillnessReminderTimeout, () => sendReminder(3), 3)
+  // schedule all reminders at fixed intervals from start
+  timerIds.push(scheduleAt(startTime + stillnessReminderTimeout, () => sendReminder(1)));
+  timerIds.push(scheduleAt(startTime + 2 * stillnessReminderTimeout, () => sendReminder(2)));
+  timerIds.push(scheduleAt(startTime + 3 * stillnessReminderTimeout, () => sendReminder(3)));
+  
+  // store the timer IDs for this session
+  reminderTimers.set(sessionId, timerIds);
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
+function cancelRemindersForSession(sessionId) {
+  const timerIds = reminderTimers.get(sessionId);
+  if (timerIds && timerIds.length > 0) {
+    timerIds.forEach(timerId => clearTimeout(timerId));
+    reminderTimers.delete(sessionId);
+    return true;
+  }
+  return false;
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function sendTwilioAlertForSession(session, eventType, eventData, twilioMessageKey, client, device, pgClient) {
@@ -216,8 +268,6 @@ async function sendTwilioAlertForSession(session, eventType, eventData, twilioMe
     // send alert to targetNumbers and log event
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage)
     await db_new.createEvent(session.sessionId, eventType, twilioMessageKey, targetNumbers, pgClient)
-
-    helpers.log(`Sent Twilio message ${twilioMessageKey} for existing session ${session.sessionId}`)
   } catch (error) {
     throw new Error(`sendTwilioAlertForExistingSession: ${error.message}`)
   }
@@ -252,7 +302,6 @@ async function sendTeamsAlertForSession(session, eventType, eventData, teamsMess
 
     // log teams event with its messageId
     await db_new.createTeamsEvent(session.sessionId, eventType, teamsMessageKey, response.messageId, pgClient)
-    helpers.log(`Sent Teams alert ${teamsMessageKey} for new session ${session.sessionId}, messageId: ${response.messageId}`)
   } catch (error) {
     throw new Error(`sendTeamsAlertForNewSession: ${error.message}`)
   }
@@ -597,4 +646,5 @@ async function handleSensorEvent(request, response) {
 module.exports = {
   validateSensorEvent,
   handleSensorEvent,
+  cancelRemindersForSession,
 }

@@ -21,7 +21,7 @@ const TEXT_WEIGHT_BOLDER = 'Bolder'
 const TEXT_COLOR_ACCENT = 'Accent'
 const TEXT_COLOR_ATTENTION = 'Attention'
 
-// const INPUT_ID_USERINPUT = 'userInput'
+const INPUT_ID_USERINPUT = 'userInput'
 
 // ------------------------------------------------------------------------------------------------
 // Adaptive Card Creation Helper Functions
@@ -48,7 +48,7 @@ function createCardTextBlock(text, { size = TEXT_SIZE_DEFAULT, weight = 'Default
  * Creates Action.Submit options for an adaptive card
  * @param {Array<string>} optionNames  Array of options.
  * @param {boolean} addDataField       If true, adds data: {selectedOption: title} to each action.
- * @returns {Array<Object> | null}       Array of Action.Submit object, or null if input is invalid.
+ * @returns {Array<Object> | null}     Array of Action.Submit object, or null if input is invalid.
  */
 function createCardActions(optionNames, addDataField) {
   if (!Array.isArray(optionNames) || optionNames.length === 0) {
@@ -81,17 +81,17 @@ function createCardActions(optionNames, addDataField) {
  * @param {string} placeholder  Placeholder text for the input box.
  * @returns {Object}            JS object for the Input.Text element.
  */
-// function createCardInputBox(placeholder) {
-//   if (!placeholder) {
-//     helpers.log('createCardInputBox called without placeholder text.')
-//   }
-//   return {
-//     type: 'Input.Text',
-//     id: INPUT_ID_USERINPUT, // Use the consistent ID
-//     placeholder: placeholder || 'Can you please describe what happened?',
-//     isMultiline: true,
-//   }
-// }
+function createCardInputBox(placeholder) {
+  if (!placeholder) {
+    helpers.log('createCardInputBox called without placeholder text.')
+  }
+  return {
+    type: 'Input.Text',
+    id: INPUT_ID_USERINPUT, // Use the consistent ID
+    placeholder: placeholder || 'Can you please describe what happened?',
+    isMultiline: true,
+  }
+}
 
 /**
  * Helper function to assemble an adaptive card object based on provided parameters.
@@ -114,51 +114,40 @@ function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, car
     }
   }
 
+  // determine the style based on card type
+  const containerStyle = cardType === 'New' ? 'attention' : 'emphasis'
+
+  // create the card with content in a styled container
   const card = {
     type: 'AdaptiveCard',
     $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
     version: '1.5',
-    body: [],
-    actions: [],
+    body: [
+      {
+        type: 'Container',
+        style: containerStyle,
+        items: [],
+      }
+    ],
+    actions: []
   }
 
-  let targetBody = null
+  const contentContainer = card.body[0]
+  const items = contentContainer.items
 
-  // Add red tinted bg (attention) for cardType if 'New'
-  // otherwise, use a light grey bg (emphasis) for other request like 'Update'
-  if (cardType === 'New') {
-    const container = {
-      type: 'Container',
-      style: 'attention',
-      items: [],
-    }
-    card.body.push(container)
-    targetBody = container.items
-  } else {
-    const container = {
-      type: 'Container',
-      style: 'emphasis',
-      items: [],
-    }
-    card.body.push(container)
-    targetBody = container.items
-  }
-
-  // Body
   if (cardHeader) {
-    targetBody.push(cardHeader)
+    items.push(cardHeader)
   }
   if (cardTitle) {
-    targetBody.push(cardTitle)
+    items.push(cardTitle)
   }
   if (cardBodyText) {
-    targetBody.push(cardBodyText)
+    items.push(cardBodyText)
   }
   if (cardInputBox) {
-    targetBody.push(cardInputBox)
+    items.push(cardInputBox)
   }
 
-  // Actions
   if (cardActions && Array.isArray(cardActions) && cardActions.length > 0) {
     card.actions = cardActions
   }
@@ -186,33 +175,10 @@ function getCardHeader(messageKey, device) {
 
   let cardHeader = null
 
-  switch (messageKey) {
-    case 'teamsDurationAlert':
-    case 'teamsDurationAlertSurvey':
-    case 'teamsDurationAlertSurveyDoorOpened':
-    case 'teamsDurationAlertSurveyOtherFollowup':
-    case 'teamsDurationAlertSurveyOccupantOkayFollowup':
-    case 'teamsDurationAlertSurveyOccupantOkayEnd':
-    case 'teamsStillnessAlert':
-    case 'teamsStillnessAlertFirstReminder':
-    case 'teamsStillnessAlertSecondReminder':
-    case 'teamsStillnessAlertThirdReminder':
-    case 'teamsStillnessAlertSurveyDoorOpened':
-    case 'teamsThankYou':
-    case 'teamsReportIssue':
-    case 'teamsDoorLowBattery':
-    case 'teamsDeviceDisconnectedInitial':
-    case 'teamsDeviceDisconnectedReminder':
-    case 'teamsDoorDisconnectedInitial':
-    case 'teamsDoorDisconnectedReminder':
-    case 'teamsDeviceReconnected':
-    case 'teamsDoorReconnected':
-    case 'teamsDoorTampered':
-    case 'teamsDoorInactivity':
-      cardHeader = `${deviceName}`
-      break
-    default:
-      return null
+  if (messageKey) {
+    cardHeader = `${deviceName}`
+  } else {
+    return null
   }
 
   return createCardTextBlock(cardHeader, {
@@ -231,17 +197,91 @@ function getCardTitle(messageKey, cardType) {
   let cardTitle = null
 
   switch (messageKey) {
+    // Duration Alert Types
     case 'teamsDurationAlert':
       cardTitle = 'Duration Alert'
       break
+    case 'teamsDurationAlertSurvey':
+    case 'teamsDurationAlertSurveyDoorOpened':
+      cardTitle = 'Duration Alert Survey'
+      break
+    case 'teamsDurationAlertSurveyOtherFollowup':
+      cardTitle = 'Duration Alert Follow-up'
+      break
+    case 'teamsDurationAlertSurveyOccupantOkayFollowup':
+      cardTitle = 'Occupant Okay Follow-up'
+      break
+    case 'teamsDurationAlertSurveyOccupantOkayEnd':
+      cardTitle = 'Thank You'
+      break
+
+    // Stillness Alert Types
     case 'teamsStillnessAlert':
       cardTitle = 'Stillness Alert'
       break
     case 'teamsStillnessAlertFirstReminder':
-    case 'teamsStillnessAlertSecondReminder':
-    case 'teamsStillnessAlertThirdReminder':
-      cardTitle = 'Stillness Reminder'
+      cardTitle = 'Stillness Alert - 1st Reminder'
       break
+    case 'teamsStillnessAlertSecondReminder':
+      cardTitle = 'Stillness Alert - 2nd Reminder'
+      break
+    case 'teamsStillnessAlertThirdReminder':
+      cardTitle = 'Stillness Alert - Final Reminder'
+      break
+    case 'teamsStillnessAlertSurvey':
+    case 'teamsStillnessAlertSurveyDoorOpened':
+      cardTitle = 'Stillness Alert Survey'
+      break
+    case 'teamsStillnessAlertSurveyOtherFollowup':
+      cardTitle = 'Stillness Alert Follow-up'
+      break
+    case 'teamsStillnessAlertSurveyOccupantOkayFollowup':
+      cardTitle = 'Occupant Okay Follow-up'
+      break
+    case 'teamsStillnessAlertSurveyOccupantOkayEnd':
+      cardTitle = 'Thank You'
+      break
+
+    // Other Messages
+    case 'teamsThankYou':
+      cardTitle = 'Thank You'
+      break
+    case 'teamsReportIssue':
+      cardTitle = 'Help Information'
+      break
+    case 'teamsRespondedViaTwilio':
+      cardTitle = 'Alert Handled via SMS'
+      break
+
+    // Vital Messages
+    case 'teamsDoorLowBattery':
+      cardTitle = 'Low Battery Alert'
+      break
+    case 'teamsDeviceDisconnectedInitial':
+      cardTitle = 'Device Disconnected'
+      break
+    case 'teamsDeviceDisconnectedReminder':
+      cardTitle = 'Device Still Disconnected'
+      break
+    case 'teamsDoorDisconnectedInitial':
+      cardTitle = 'Door Sensor Disconnected'
+      break
+    case 'teamsDoorDisconnectedReminder':
+      cardTitle = 'Door Sensor Still Disconnected'
+      break
+    case 'teamsDeviceReconnected':
+      cardTitle = 'Device Reconnected'
+      break
+    case 'teamsDoorReconnected':
+      cardTitle = 'Door Sensor Reconnected'
+      break
+    case 'teamsDoorTampered':
+      cardTitle = 'Door Sensor Tampered'
+      break
+    case 'teamsDoorInactivity':
+      cardTitle = 'Door Sensor Inactivity'
+      break
+
     default:
       return null
   }
@@ -273,66 +313,112 @@ function getCardBody(messageKey, device, client, messageData = {}) {
   let cardBody
 
   switch (messageKey) {
+    // Duration Alert Types
     case 'teamsDurationAlert':
       cardBody = `${deviceName} has been occupied for ${messageData.occupancyDuration} minutes. Please press the button below if you are on your way.`
       break
+    case 'teamsDurationAlertSurvey':
+      cardBody = `Could you please let us know the outcome?`
+      break
+    case 'teamsDurationAlertSurveyDoorOpened':
+      cardBody = `We see the door has been opened. Could you please let us know the outcome?`
+      break
+    case 'teamsDurationAlertSurveyOtherFollowup':
+      cardBody = `Can you please describe what happened?`
+      break
+    case 'teamsDurationAlertSurveyOccupantOkayFollowup':
+      cardBody = `We will continue to monitor this location. Select the button below to stop monitoring.`
+      break
+    case 'teamsDurationAlertSurveyOccupantOkayEnd':
+      cardBody = `You will no longer receive alerts until the next entry. Thank you!`
+      break
+
+    // Stillness Alert Types
     case 'teamsStillnessAlert':
       cardBody = `${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
       break
     case 'teamsStillnessAlertFirstReminder':
-      cardBody = `1st REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
-      break
     case 'teamsStillnessAlertSecondReminder':
-      cardBody = `2nd REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
-      break
     case 'teamsStillnessAlertThirdReminder':
-      cardBody = `FINAL REMINDER\n${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
+      cardBody = `${deviceName} needs a SAFETY CHECK. Please press the button below if you are on your way.`
       break
-    case 'teamsDurationAlertSurvey':
+    case 'teamsStillnessAlertFallback':
+      cardBody = `No response to stillness alerts for ${deviceName}. There will be one final alert.`
+      break
+    case 'teamsStillnessAlertFollowup':
+      cardBody = `Thanks, we'll follow up in ${messageData.stillnessAlertFollowupTimer} minutes.`
+      break
     case 'teamsStillnessAlertSurvey':
       cardBody = `Could you please let us know the outcome?`
       break
-    case 'teamsDurationAlertSurveyDoorOpened':
     case 'teamsStillnessAlertSurveyDoorOpened':
       cardBody = `We see the door has been opened.\nCould you please let us know the outcome?`
       break
-    case 'sessionAlreadyCompleted':
-      cardBody = `This alert has already been responded to. Thank you for your response.`
+    case 'teamsStillnessAlertSurveyOtherFollowup':
+      cardBody = `Can you please describe what happened?`
       break
+    case 'teamsStillnessAlertSurveyOccupantOkayFollowup':
+      cardBody = `We will continue to monitor this location. Select the button below to stop monitoring.`
+      break
+    case 'teamsStillnessAlertSurveyOccupantOkayEnd':
+      cardBody = `You will no longer receive alerts until the next entry. Thank you!`
+      break
+
+    // Response Messages
+    case 'teamsNoResponseExpected':
+      cardBody = `Invalid response, no response expected.`
+      break
+    case 'teamsInvalidResponseTryAgain':
+      cardBody = `Invalid response, please try again.`
+      break
+    case 'teamsNonAttendingResponderConfirmation':
+      cardBody = `Another responder is attending to this alert.`
+      break
+    case 'teamsRespondedViaTwilio':
+      cardBody = `Another responder is attending to this alert via Twilio.`
+      break
+    case 'teamsThankYou':
+      cardBody = `Thank you, monitoring will be paused until the next entry.`
+      break
+    case 'teamsReportIssue':
+      cardBody = `You can reach us at:\nPhone: +18338332100\nEmail: clientsupport@brave.coop\nThank you!`
+      break
+
+    // Device Status Messages
     case 'teamsDoorLowBattery':
-      cardBody = `The battery for the \n${deviceName} door sensor is low, and needs replacing.\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w.`
-      break
-    case 'teamsDeviceDisconnectedInitial':
-      cardBody = `The Brave Sensor at \n${deviceName} (\n${clientDisplayName} ) has disconnected. Please email clientsupport@brave.coop.`
-      break
-    case 'teamsDeviceDisconnectedReminder':
-      cardBody = `${deviceName} is still disconnected from the network. Please ensure the device is properly connected.`
-      break
-    case 'teamsDoorDisconnectedInitial':
-      cardBody = `The door contact for \n${deviceName} (\n${clientDisplayName} ) has disconnected. Please reattach the door contact or replace the battery if necessary. Email clientsupport@brave.coop if a replacement is required.`
-      break
-    case 'teamsDoorDisconnectedReminder':
-      cardBody = `The door contact for \n${deviceName} (\n${clientDisplayName} ) is still disconnected. Please reattach the door contact or replace the battery if necessary. Email clientsupport@brave.coop if a replacement is required.`
-      break
-    case 'teamsDeviceReconnected':
-      cardBody = `The Brave Sensor at \n${deviceName} (\n${clientDisplayName} ) has been reconnected.`
-      break
-    case 'teamsDoorReconnected':
-      cardBody = `The door contact at \n${deviceName} (\n${clientDisplayName} ) has been reconnected.`
+      cardBody = `The battery for the ${deviceName} door sensor is low, and needs replacing.\nTo watch a video showing how to replace the battery, go to https://youtu.be/-mfk4-qQc4w.`
       break
     case 'teamsDoorTampered':
-      cardBody = `The door contact at \n${deviceName} is not fully attached to the door. For a replacement or any questions, email clientsupport@brave.coop.`
+      cardBody = `The door contact at ${deviceName} is not fully attached to the door. For a replacement or any questions, email clientsupport@brave.coop.`
       break
     case 'teamsDoorInactivity':
-      cardBody = `The door contact at \n${deviceName} has not detected any activity in a long time please make sure that both parts of the door contact are fully attached to the door. If you require a replacement or have any questions, email clientsupport@brave.coop.`
+      cardBody = `The door contact at ${deviceName} has not detected any activity in a long time. Please make sure that both parts of the door contact are fully attached to the door. If you require a replacement or have any questions, email clientsupport@brave.coop.`
       break
+    case 'teamsDeviceDisconnectedInitial':
+      cardBody = `The Brave Sensor at ${deviceName} (${clientDisplayName}) has disconnected. Please email clientsupport@brave.coop.`
+      break
+    case 'teamsDeviceDisconnectedReminder':
+      cardBody = `The Brave Sensor at ${deviceName} (${clientDisplayName}) is still disconnected. Please email clientsupport@brave.coop.`
+      break
+    case 'teamsDoorDisconnectedInitial':
+      cardBody = `The door contact for ${deviceName} (${clientDisplayName}) has disconnected. Please reattach the door contact or replace the battery if necessary. Email clientsupport@brave.coop if a replacement is required.`
+      break
+    case 'teamsDoorDisconnectedReminder':
+      cardBody = `The door contact for ${deviceName} (${clientDisplayName}) is still disconnected. Please reattach the door contact or replace the battery if necessary. Email clientsupport@brave.coop if a replacement is required.`
+      break
+    case 'teamsDeviceReconnected':
+      cardBody = `The Brave Sensor at ${deviceName} (${clientDisplayName}) has been reconnected.`
+      break
+    case 'teamsDoorReconnected':
+      cardBody = `The door contact at ${deviceName} (${clientDisplayName}) has been reconnected.`
+      break
+
     default:
       cardBody = 'Default Card Body'
   }
 
   return createCardTextBlock(cardBody)
 }
-
 /**
  * Gets the InputBox object for a new card based on the message key.
  * @param {string} messageKey   Teams message key (e.g., 'teamsDurationAlert').
@@ -340,6 +426,9 @@ function getCardBody(messageKey, device, client, messageData = {}) {
  */
 function getCardInput(messageKey) {
   switch (messageKey) {
+    case 'teamsDurationAlertSurveyOtherFollowup':
+    case 'teamsStillnessAlertSurveyOtherFollowup':
+      return createCardInputBox('Enter text here and click submit when done. This can be empty.')
     default:
       return null
   }
@@ -358,6 +447,8 @@ function getCardActions(messageKey, client) {
   }
 
   const iAmOnMyWay = ['I am on my way!']
+  const submitInput = ['Submit']
+  const stopMonitoring = ['Stop Monitoring']
 
   let cardActionsArray
 
@@ -374,6 +465,14 @@ function getCardActions(messageKey, client) {
     case 'teamsDurationAlertSurveyDoorOpened':
     case 'teamsStillnessAlertSurveyDoorOpened':
       cardActionsArray = createCardActions(client.surveyCategories, true)
+      break
+    case 'teamsDurationAlertSurveyOccupantOkayFollowup':
+    case 'teamsStillnessAlertSurveyOccupantOkayFollowup':
+      cardActionsArray = createCardActions(stopMonitoring, true)
+      break
+    case 'teamsDurationAlertSurveyOtherFollowup':
+    case 'teamsStillnessAlertSurveyOtherFollowup':
+      cardActionsArray = createCardActions(submitInput, false) // input
       break
     default:
       return null
@@ -518,11 +617,9 @@ async function expirePreviousTeamsCard(teamsId, channelId, session) {
   try {
     const previousTeamsEvent = await db_new.getLatestRespondableTeamsEvent(session.sessionId)
     if (!previousTeamsEvent) {
-      helpers.log('No event found to expire')
       return
     }
 
-    helpers.log('Expiring previous event')
     const client = await db_new.getClientWithDeviceId(session.deviceId)
     const device = await db_new.getDeviceWithDeviceId(session.deviceId)
     if (!client || !device) {
@@ -543,8 +640,6 @@ async function expirePreviousTeamsCard(teamsId, channelId, session) {
     if (!response || !response.messageId) {
       throw new Error(`Failed to update Teams card or invalid response received for session ${session.sessionId}`)
     }
-
-    helpers.log('Expired previous event')
   } catch (error) {
     throw new Error(`expirePreviousTeamsCard: ${error.message}`)
   }

@@ -11,6 +11,7 @@ const twilioHelpers = require('./utils/twilioHelpers')
 const teamsHelpers = require('./utils/teamsHelpers')
 const db_new = require('./db/db_new')
 const { EVENT_TYPE, SESSION_STATUS, SERVICES } = require('./enums/index')
+const { cancelRemindersForSession } = require('./sensorEvents');
 const { resetMonitoring, resetStateToZero } = require('./particle')
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -22,6 +23,9 @@ async function setSessionAsResponded(client, device, session, data, pgClient) {
     await db_new.updateSessionRespondedVia(session.sessionId, data.service, pgClient)
     await db_new.updateSessionResponseTime(session.sessionId, pgClient)
 
+    // Cancel any scheduled reminders for this session, if any
+    cancelRemindersForSession(session.sessionId);
+     
     if (data.service === SERVICES.TWILIO) {
       // extract and set responder to the session
       const responderPhoneNumber = data.responderPhoneNumber
@@ -256,7 +260,8 @@ async function handleStillnessAlert(client, device, session, respondedEvent, mes
       // Otherwise new card will be sent for the survey in schedule stillness alert survey
       if (client.stillnessSurveyFollowupDelay > 0) {
         const cardType = 'Update'
-        const adaptiveCard = teamsHelpers.createAdaptiveCard(respondedEvent.eventTypeDetails, cardType, client, device)
+        const messageData = { stillnessAlertFollowupTimer: Math.round(client.stillnessSurveyFollowupDelay || 0) / 60 }
+        const adaptiveCard = teamsHelpers.createAdaptiveCard(respondedEvent.eventTypeDetails, cardType, client, device, messageData)
         if (!adaptiveCard) {
           throw new Error(`Failed to create adaptive card for teams event: ${respondedEvent.eventTypeDetails}`)
         }
