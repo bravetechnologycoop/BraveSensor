@@ -16,8 +16,7 @@ const pool = new pg.Pool({
   allowExitOnIdle: true,
   connectionTimeoutMillis: 15000,
   idleTimeoutMillis: 10000,
-  // ssl: { rejectUnauthorized: false },
-  ssl: false,
+  ssl: { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -1499,63 +1498,28 @@ async function getEventsForSession(sessionId, pgClient) {
   }
 }
 
-/**
- * Event priority hierarchy (reverse chronological order, newest to oldest)
- * Order is crucial as it determines which event takes precedence when multiple events exist at same time
- * Stillness and Duration groups are interchangeable (not the ordering amongs them)
- */
-const RESPONDABLE_EVENT_HIERARCHY = new Map([
-  // Stillness alert types
-  ['stillnessAlertSurveyOccupantOkayFollowup', 1],
-  ['stillnessAlertSurveyOtherFollowup', 2],
-  ['stillnessAlertSurveyDoorOpened', 3],
-  ['stillnessAlertSurvey', 4],
-  ['stillnessAlertFollowup', 5],
-  ['stillnessAlertThirdReminder', 6],
-  ['stillnessAlertSecondReminder', 7],
-  ['stillnessAlertFirstReminder', 8],
-  ['stillnessAlert', 9],
-
-  // Duration alert types
-  ['durationAlertSurveyOtherFollowup', 10],
-  ['durationAlertSurveyOccupantOkayFollowup', 11],
-  ['durationAlertSurveyDoorOpened', 12],
-  ['durationAlertSurvey', 13],
-  ['durationAlert', 14],
-
-  // Other
-  ['nonAttendingResponderConfirmation', 15],
-])
-
 const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
 
 async function getLatestTwilioEvent(sessionId, responderPhoneNumber = null, pgClient) {
   try {
+    const queryParams = []
+
     let queryText = `
       SELECT *
       FROM events_new
       WHERE session_id = $1
-      AND event_type_details = ANY($2::text[])
-      AND event_type = ANY($3::event_type_enum[])
+      AND event_type = ANY($2)
     `
-    const queryParams = [sessionId, Array.from(RESPONDABLE_EVENT_HIERARCHY.keys()), RESPONDABLE_EVENT_TYPES]
+    queryParams.push(sessionId)
+    queryParams.push(RESPONDABLE_EVENT_TYPES)
 
     if (responderPhoneNumber) {
-      queryText += ` AND $4 = ANY(phone_numbers)`
+      queryText += ` AND $3 = ANY(phone_numbers)`
       queryParams.push(responderPhoneNumber)
     }
 
-    const caseStatements = Array.from(RESPONDABLE_EVENT_HIERARCHY.entries())
-      .map(([event, priority]) => `WHEN '${event}' THEN ${priority}`)
-      .join('\n        ')
-
-    // Add ordering based on the hierarchy
     queryText += `
-      ORDER BY event_sent_at DESC,
-      CASE event_type_details
-        ${caseStatements}
-        ELSE ${RESPONDABLE_EVENT_HIERARCHY.size + 1}
-      END
+      ORDER BY event_sent_at DESC
       LIMIT 1
       FOR UPDATE
     `
@@ -1638,10 +1602,11 @@ async function getLatestTeamsEvent(sessionId, pgClient) {
       SELECT *
       FROM teams_events_new
       WHERE session_id = $1
+      AND event_type = ANY($2)
       ORDER BY event_sent_at DESC
       LIMIT 1
       `,
-      [sessionId],
+      [sessionId, RESPONDABLE_EVENT_TYPES],
       pool,
       pgClient,
     )

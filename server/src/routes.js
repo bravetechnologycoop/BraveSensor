@@ -41,8 +41,8 @@ function configureRoutes(app) {
   app.post('/smokeTest/teardown', smokeTest.teardownSmokeTest)
 
   app.post('/api/sensorEvent', sensorEvents.validateSensorEvent, sensorEvents.handleSensorEvent)
-  // app.post('/alert/sms', twilioEvents.validateTwilioEvent, twilioEvents.handleTwilioEvent)
-  app.post('/alert/sms', twilioEvents.handleTwilioEvent)
+  app.post('/alert/sms', twilioEvents.validateTwilioEvent, twilioEvents.handleTwilioEvent)
+  // app.post('/alert/sms', twilioEvents.handleTwilioEvent)
   app.post('/alert/teams', teamsEvents.validateTeamsEvent, teamsEvents.handleTeamsEvent)
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
 

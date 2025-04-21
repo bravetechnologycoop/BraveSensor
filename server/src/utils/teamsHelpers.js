@@ -188,13 +188,18 @@ function getCardHeader(messageKey, device) {
 
   switch (messageKey) {
     case 'teamsDurationAlert':
+    case 'teamsDurationAlertSurvey':
+    case 'teamsDurationAlertSurveyDoorOpened':
+    case 'teamsDurationAlertSurveyOtherFollowup':
+    case 'teamsDurationAlertSurveyOccupantOkayFollowup':
+    case 'teamsDurationAlertSurveyOccupantOkayEnd':
     case 'teamsStillnessAlert':
     case 'teamsStillnessAlertFirstReminder':
     case 'teamsStillnessAlertSecondReminder':
     case 'teamsStillnessAlertThirdReminder':
-    case 'teamsDurationAlertSurveyDoorOpened':
     case 'teamsStillnessAlertSurveyDoorOpened':
-    case 'teamsDurationAlertSurvey':
+    case 'teamsThankYou':
+    case 'teamsReportIssue':
     case 'teamsDoorLowBattery':
     case 'teamsDeviceDisconnectedInitial':
     case 'teamsDeviceDisconnectedReminder':
@@ -233,20 +238,9 @@ function getCardTitle(messageKey, cardType) {
       cardTitle = 'Stillness Alert'
       break
     case 'teamsStillnessAlertFirstReminder':
-      cardTitle = 'First Stillness Reminder'
-      break
     case 'teamsStillnessAlertSecondReminder':
-      cardTitle = 'Second Stillness Reminder'
-      break
     case 'teamsStillnessAlertThirdReminder':
-      cardTitle = 'Final Stillness Reminder'
-      break
-    case 'teamsDurationAlertSurvey':
-    case 'teamsDurationAlertSurveyDoorOpened':
-      cardTitle = 'Duration Alert Survey'
-      break
-    case 'teamsStillnessAlertSurveyDoorOpened':
-      cardTitle = 'Stillness Alert Survey'
+      cardTitle = 'Stillness Reminder'
       break
     default:
       return null
