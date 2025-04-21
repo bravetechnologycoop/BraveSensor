@@ -72,7 +72,7 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
 
     // find the latest respondable twilio event in the session, for the responderPhoneNumber
     // respondable events are the events that the server expects a response twilio too (exluding events like invalid response etc.)
-    const respondedEvent = await db_new.getLatestTwilioEvent(session.sessionId, responderPhoneNumber, pgClient)
+    const respondedEvent = await db_new.getLatestRespondableTwilioEvent(session.sessionId, responderPhoneNumber, pgClient)
     if (!respondedEvent) {
       throw new Error(`No respondable event found for session: ${session.sessionId}`)
     }

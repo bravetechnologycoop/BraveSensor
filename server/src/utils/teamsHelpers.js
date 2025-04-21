@@ -516,7 +516,7 @@ async function sendUpdateTeamsCard(teamsId, channelId, messageId, adaptiveCard) 
  */
 async function expirePreviousTeamsCard(teamsId, channelId, session) {
   try {
-    const previousTeamsEvent = await db_new.getLatestTeamsEvent(session.sessionId)
+    const previousTeamsEvent = await db_new.getLatestRespondableTeamsEvent(session.sessionId)
     if (!previousTeamsEvent) {
       helpers.log('No event found to expire')
       return

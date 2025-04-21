@@ -99,8 +99,6 @@ async function handleStillnessReminder(reminderNumber, session, client, device, 
   }
 }
 
-// -----------------------------------------------------------------------------------------------
-
 async function sendTwilioFallback(session, twilioMessageKey, client, device) {
   if (!session || !session.sessionId || !twilioMessageKey || !client || !client.responderPhoneNumbers || !device) {
     throw new Error(`sendTwilioFallback: Missing required parameters`)
@@ -130,17 +128,22 @@ async function handleStillnessFallback(session, client, device, sessionId) {
     helpers.logError(`Error in handleStillnessFallback for session ${sessionId}: ${error.message}`)
   }
 }
-
-// -----------------------------------------------------------------------------------------------
-
 async function scheduleStillnessAlertReminders(client, device, sessionId) {
   const stillnessReminderTimeout = stillnessReminderinSeconds * 1000
   const startTime = Date.now()
 
-  function scheduleAt(targetTime, fn) {
+  helpers.log(`Starting to schedule stillness reminders for session ${sessionId}. Reminder interval: ${stillnessReminderinSeconds} seconds`)
+
+  function scheduleAt(targetTime, fn, reminderNumber) {
     const delay = targetTime - Date.now()
+    const scheduledTime = new Date(targetTime).toISOString()
+    const delayMinutes = Math.round((delay / 1000 / 60) * 10) / 10
+
+    helpers.log(`Reminder #${reminderNumber} scheduled for ${scheduledTime} (in ${delayMinutes} minutes) for session ${sessionId}`)
+
     return new Promise(resolve =>
       setTimeout(async () => {
+        helpers.log(`Executing reminder #${reminderNumber} for session ${sessionId}`)
         await fn()
         resolve()
       }, Math.max(delay, 0)),
@@ -158,8 +161,8 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
       // default to twilio if not teams
       const latestEvent =
         currentSession.sessionRespondedVia === SERVICES.TEAMS
-          ? await db_new.getLatestTeamsEvent(currentSession.sessionId, null)
-          : await db_new.getLatestTwilioEvent(currentSession.sessionId, null)
+          ? await db_new.getLatestRespondableTeamsEvent(currentSession.sessionId, null)
+          : await db_new.getLatestRespondableTwilioEvent(currentSession.sessionId, null)
 
       // make sure that the latest event is a type of stillness alert
       if (!latestEvent || !latestEvent.eventType || latestEvent.eventType !== EVENT_TYPE.STILLNESS_ALERT) {
@@ -185,9 +188,9 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
   }
 
   // Schedule all reminders at fixed intervals from start
-  scheduleAt(startTime + stillnessReminderTimeout, sendReminder(1))
-  scheduleAt(startTime + 2 * stillnessReminderTimeout, sendReminder(2))
-  scheduleAt(startTime + 3 * stillnessReminderTimeout, sendReminder(3))
+  scheduleAt(startTime + stillnessReminderTimeout, () => sendReminder(1), 1)
+  scheduleAt(startTime + 2 * stillnessReminderTimeout, () => sendReminder(2), 2)
+  scheduleAt(startTime + 3 * stillnessReminderTimeout, () => sendReminder(3), 3)
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -271,7 +274,7 @@ async function getMessageKeysForExistingSession(eventType, latestSession, pgClie
       case EVENT_TYPE.DOOR_OPENED: {
         // check the preceding event to determine the type of message to send
         // use any service (twilio, teams)
-        const latestEvent = await db_new.getLatestTwilioEvent(latestSession.sessionId, null, pgClient)
+        const latestEvent = await db_new.getLatestRespondableTwilioEvent(latestSession.sessionId, null, pgClient)
         if (!latestEvent) {
           throw new Error(`No latest event found for session ID: ${latestSession.sessionId}`)
         }

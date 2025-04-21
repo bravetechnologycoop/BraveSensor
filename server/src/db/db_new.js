@@ -1500,7 +1500,7 @@ async function getEventsForSession(sessionId, pgClient) {
 
 const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
 
-async function getLatestTwilioEvent(sessionId, responderPhoneNumber = null, pgClient) {
+async function getLatestRespondableTwilioEvent(sessionId, responderPhoneNumber = null, pgClient) {
   try {
     const queryParams = []
 
@@ -1524,7 +1524,7 @@ async function getLatestTwilioEvent(sessionId, responderPhoneNumber = null, pgCl
       FOR UPDATE
     `
 
-    const results = await helpers.runQuery('getLatestTwilioEvent', queryText, queryParams, pool, pgClient)
+    const results = await helpers.runQuery('getLatestRespondableTwilioEvent', queryText, queryParams, pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return null
@@ -1532,7 +1532,7 @@ async function getLatestTwilioEvent(sessionId, responderPhoneNumber = null, pgCl
 
     return createEventFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getLatestTwilioEvent query: ${err.toString()}`)
+    helpers.logError(`Error running the getLatestRespondableTwilioEvent query: ${err.toString()}`)
     return null
   }
 }
@@ -1594,10 +1594,10 @@ async function createTeamsEvent(sessionId, eventType, eventTypeDetails, messageI
   }
 }
 
-async function getLatestTeamsEvent(sessionId, pgClient) {
+async function getLatestRespondableTeamsEvent(sessionId, pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getLatestTeamsEvent',
+      'getLatestRespondableTeamsEvent',
       `
       SELECT *
       FROM teams_events_new
@@ -1617,7 +1617,7 @@ async function getLatestTeamsEvent(sessionId, pgClient) {
 
     return createTeamsEventFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getLatestTeamsEvent query: ${err.toString()}`)
+    helpers.logError(`Error running the getLatestRespondableTeamsEvent query: ${err.toString()}`)
     return null
   }
 }
@@ -1971,11 +1971,11 @@ module.exports = {
 
   createEvent,
   getEventsForSession,
-  getLatestTwilioEvent,
+  getLatestRespondableTwilioEvent,
   checkEventExists,
 
   createTeamsEvent,
-  getLatestTeamsEvent,
+  getLatestRespondableTeamsEvent,
   getTeamsEventWithMessageId,
 
   createVital,
