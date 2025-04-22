@@ -229,9 +229,6 @@ async function handleStillnessAlert(client, device, session, respondedEvent, mes
     if (session.doorOpened) {
       throw new Error(`Expected door to be closed for session ID: ${session.sessionId}`)
     }
-    if (session.sessionRespondedVia) {
-      throw new Error(`Expected new session with no responder set for session ID: ${session.sessionId}`)
-    }
 
     if (data.service === SERVICES.TWILIO) {
       // Note: Although the stillness alert message mentions accepting only '5' or 'ok',
@@ -259,11 +256,12 @@ async function handleStillnessAlert(client, device, session, respondedEvent, mes
       // Update the event to say survey will be published after delay if any
       // Otherwise new card will be sent for the survey in schedule stillness alert survey
       if (client.stillnessSurveyFollowupDelay > 0) {
+        const teamsMessageKey = 'teamsStillnessAlertFollowup'
         const cardType = 'Update'
         const messageData = { stillnessAlertFollowupTimer: Math.round(client.stillnessSurveyFollowupDelay || 0) / 60 }
-        const adaptiveCard = teamsHelpers.createAdaptiveCard(respondedEvent.eventTypeDetails, cardType, client, device, messageData)
+        const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device, messageData)
         if (!adaptiveCard) {
-          throw new Error(`Failed to create adaptive card for teams event: ${respondedEvent.eventTypeDetails}`)
+          throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
         }
 
         // send card to teams alert channel
@@ -287,13 +285,6 @@ async function handleStillnessAlert(client, device, session, respondedEvent, mes
 
 async function handleStillnessAlertSurvey(client, device, session, respondedEvent, message, data, pgClient) {
   try {
-    if (!session.surveySent) {
-      throw new Error(`Expected survey to be sent for session ID: ${session.sessionId}`)
-    }
-    if (!session.sessionRespondedVia) {
-      throw new Error(`Expected session to be responded via some service for session ID: ${session.sessionId}`)
-    }
-
     let selectedCategory
 
     if (data.service === SERVICES.TWILIO) {
@@ -413,9 +404,6 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, session, res
   try {
     if (!session.doorOpened) {
       throw new Error(`Expected door to be opened for session ID: ${session.sessionId}`)
-    }
-    if (!session.surveySent) {
-      throw new Error(`Expected survey to be sent for session ID: ${session.sessionId}`)
     }
 
     let selectedCategory
@@ -573,13 +561,6 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, se
 
 async function handleStillnessAlertSurveyOtherFollowup(client, device, session, respondedEvent, message, data, pgClient) {
   try {
-    if (!session.surveySent) {
-      throw new Error(`Expected survey to be sent for session ID: ${session.sessionId}`)
-    }
-    if (!session.sessionRespondedVia) {
-      throw new Error(`Expected session to be responded via some service for session ID: ${session.sessionId}`)
-    }
-
     if (data.service === SERVICES.TWILIO) {
       // NOTE: we accept any response to the 'Other' followup
 
@@ -633,13 +614,8 @@ async function handleStillnessAlertSurveyOtherFollowup(client, device, session, 
 
 async function handleDurationAlert(client, device, session, respondedEvent, message, data, pgClient) {
   try {
-    // When responding to a duration alert, the door should be closed
-    // If the door was opened after a duration alert, the door open survey should have been sent
     if (session.doorOpened) {
       throw new Error(`Expected door to be closed for session ID: ${session.sessionId}`)
-    }
-    if (session.sessionRespondedVia) {
-      throw new Error(`Expected new session with no responder set for session ID: ${session.sessionId}`)
     }
 
     if (data.service === SERVICES.TWILIO) {
@@ -695,13 +671,6 @@ async function handleDurationAlert(client, device, session, respondedEvent, mess
 
 async function handleDurationAlertSurvey(client, device, session, respondedEvent, message, data, pgClient) {
   try {
-    if (!session.surveySent) {
-      throw new Error(`Expected survey to be sent for session ID: ${session.sessionId}`)
-    }
-    if (!session.sessionRespondedVia) {
-      throw new Error(`Expected session to be responded via some service for session ID: ${session.sessionId}`)
-    }
-
     let selectedCategory
 
     if (data.service === SERVICES.TWILIO) {
@@ -821,9 +790,6 @@ async function handleDurationAlertSurveyDoorOpened(client, device, session, resp
   try {
     if (!session.doorOpened) {
       throw new Error(`Expected door to be opened for session ID: ${session.sessionId}`)
-    }
-    if (!session.surveySent) {
-      throw new Error(`Expected survey to be sent for session ID: ${session.sessionId}`)
     }
 
     let selectedCategory
@@ -981,13 +947,6 @@ async function handleDurationAlertSurveyOccupantOkayFollowup(client, device, ses
 
 async function handleDurationAlertSurveyOtherFollowup(client, device, session, respondedEvent, message, data, pgClient) {
   try {
-    if (!session.surveySent) {
-      throw new Error(`Expected survey to be sent for session ID: ${session.sessionId}`)
-    }
-    if (!session.sessionRespondedVia) {
-      throw new Error(`Expected session to be responded via some service for session ID: ${session.sessionId}`)
-    }
-
     if (data.service === SERVICES.TWILIO) {
       // NOTE: we accept any response to the 'Other' followup
 

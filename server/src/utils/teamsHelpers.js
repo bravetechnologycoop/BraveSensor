@@ -228,6 +228,9 @@ function getCardTitle(messageKey, cardType) {
     case 'teamsStillnessAlertThirdReminder':
       cardTitle = 'Stillness Alert - Final Reminder'
       break
+    case 'teamsStillnessAlertFollowup':
+      cardTitle = 'Stillness Alert'
+      break
     case 'teamsStillnessAlertSurvey':
     case 'teamsStillnessAlertSurveyDoorOpened':
       cardTitle = 'Stillness Alert Survey'

@@ -137,6 +137,7 @@ function cancelRemindersForSession(sessionId) {
   if (timerIds && timerIds.length > 0) {
     timerIds.forEach(timerId => clearTimeout(timerId))
     reminderTimers.delete(sessionId)
+    helpers.log(`Cancelled ${timerIds.length} pending reminders for session ${sessionId}`)
     return true
   }
   return false
@@ -321,10 +322,14 @@ async function getMessageKeysForExistingSession(eventType, latestSession, pgClie
           teamsMessageKey: 'teamsStillnessAlert',
         }
       case EVENT_TYPE.DOOR_OPENED: {
-        // check the preceding event to determine the type of message to send
-        // use any service (twilio, teams)
-        const latestEvent = await db_new.getLatestRespondableTwilioEvent(latestSession.sessionId, null, pgClient)
-        if (!latestEvent) {
+        let latestEvent
+        if (latestSession.sessionRespondedVia === SERVICES.TEAMS) {
+          latestEvent = await db_new.getLatestRespondableTeamsEvent(latestSession.sessionId, pgClient)
+        } else {
+          latestEvent = await db_new.getLatestRespondableTwilioEvent(latestSession.sessionId, null, pgClient)
+        }
+
+        if (!latestEvent || !latestEvent.eventTypeDetails) {
           throw new Error(`No latest event found for session ID: ${latestSession.sessionId}`)
         }
 
@@ -339,15 +344,18 @@ async function getMessageKeysForExistingSession(eventType, latestSession, pgClie
               twilioMessageKey: 'stillnessAlertSurveyDoorOpened',
               teamsMessageKey: 'teamsStillnessAlertSurveyDoorOpened',
             }
-          case EVENT_TYPE.MSG_SENT: {
-            if (latestEvent.eventTypeDetails === 'stillnessAlertFollowup') {
+          case EVENT_TYPE.MSG_RECEIVED: {
+            // if the latest event was a message received for a stillnessAlertSurvey
+            // that means a followup was sent and we are waiting for it, otherwise survey would have been sent
+            // if a door opens in that case, send the stillness alert door opened type survey, and scheduled survey will be cancelled
+            if (latestEvent.eventTypeDetails === 'stillnessAlertSurvey' || latestEvent.eventTypeDetails === 'teamsStillnessAlertSurvey') {
               return {
                 twilioMessageKey: 'stillnessAlertSurveyDoorOpened',
                 teamsMessageKey: 'teamsStillnessAlertSurveyDoorOpened',
               }
             }
             helpers.log(
-              `Received door opened and latest event not a stillness followup: ${latestEvent.eventTypeDetails}, only updating door opened status for sessionId: ${latestSession.sessionId}`,
+              `Received door opened and detected waiting for survey followup, only updating door opened status for sessionId: ${latestSession.sessionId}`,
             )
             return null
           }
@@ -386,7 +394,10 @@ async function handleExistingSession(client, device, eventType, eventData, lates
       if (!updatedSession) {
         throw new Error(`Failed to update session ${latestSession.sessionId}`)
       }
-    } else if (!messageKeys) {
+
+      return updatedSession
+    }
+    if (!messageKeys) {
       return null
     }
 
