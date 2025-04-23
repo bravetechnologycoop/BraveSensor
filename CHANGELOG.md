@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.2.1] - 2025-04-23
+
 - Fixed disconnection message bug (CU-86dwhm4wd).
 
 ## [12.2.0] - 2025-03-25
@@ -952,7 +954,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.1...HEAD
+[12.2.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.0...v12.2.1
 [12.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.1.0...v12.2.0
 [12.1.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.0.0...v12.1.0
 [12.0.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v11.0.0...v12.0.0
