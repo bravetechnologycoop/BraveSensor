@@ -34,23 +34,23 @@ async function setSessionAsResponded(client, device, session, data, pgClient) {
       // alert non-attending responder phone numbers
       const nonAttendingPhoneNumbers = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
       if (nonAttendingPhoneNumbers && nonAttendingPhoneNumbers.length > 0) {
-        const messageKey = 'nonAttendingResponderConfirmation'
-        const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
+        const twilioMessageKey = 'nonAttendingResponderConfirmation'
+        const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
         await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, nonAttendingPhoneNumbers, textMessage)
-        await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, messageKey, nonAttendingPhoneNumbers, pgClient)
+        await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, nonAttendingPhoneNumbers, pgClient)
       }
 
       // if teams is configured, update the last message to say responded
       if (client.teamsId && client.teamsAlertChannelId) {
-        const latestTeamsEvent = await db_new.getLatestRespondableTeamsEvent(session.sessionId, pgClient)
         const cardType = 'Update'
-        const messageData = { bodyText: 'This alert is being responded via SMS.' }
-        const adaptiveCard = teamsHelpers.createAdaptiveCard(latestTeamsEvent.eventTypeDetails, cardType, client, device, messageData)
+        const teamsMessageKey = 'teamsRespondedViaTwilio'
+        const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device)
         if (!adaptiveCard) {
-          throw new Error(`Failed to create adaptive card for teams event: ${latestTeamsEvent.eventTypeDetails}, for update to alertRespondedViaSMS`)
+          throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}, for update to alertRespondedViaSMS`)
         }
 
         // update the latest teams event card
+        const latestTeamsEvent = await db_new.getLatestRespondableTeamsEvent(session.sessionId, pgClient)
         const response = await teamsHelpers.sendUpdateTeamsCard(client.teamsId, client.teamsAlertChannelId, latestTeamsEvent.messageId, adaptiveCard)
         if (!response || !response.messageId) {
           throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)

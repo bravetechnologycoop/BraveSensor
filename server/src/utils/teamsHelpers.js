@@ -19,7 +19,7 @@ const TEXT_SIZE_LARGE = 'Large'
 const TEXT_SIZE_DEFAULT = 'Default'
 const TEXT_WEIGHT_BOLDER = 'Bolder'
 const TEXT_COLOR_ACCENT = 'Accent'
-const TEXT_COLOR_ATTENTION = 'Attention'
+const TEXT_COLOR_GOOD = 'Good'
 
 const INPUT_ID_USERINPUT = 'userInput'
 
@@ -115,7 +115,7 @@ function assembleAdaptiveCard(cardType, cardHeader, cardTitle, cardBodyText, car
   }
 
   // determine the style based on card type
-  const containerStyle = cardType === 'New' ? 'attention' : 'emphasis'
+  const containerStyle = cardType === 'New' ? 'good' : 'emphasis'
 
   // create the card with content in a styled container
   const card = {
@@ -292,7 +292,7 @@ function getCardTitle(messageKey, cardType) {
   return createCardTextBlock(cardTitle, {
     size: TEXT_SIZE_LARGE,
     weight: TEXT_WEIGHT_BOLDER,
-    color: cardType === 'New' ? TEXT_COLOR_ATTENTION : TEXT_COLOR_ACCENT,
+    color: cardType === 'New' ? TEXT_COLOR_GOOD : TEXT_COLOR_ACCENT,
   })
 }
 

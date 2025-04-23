@@ -344,19 +344,17 @@ async function getMessageKeysForExistingSession(eventType, latestSession, pgClie
               twilioMessageKey: 'stillnessAlertSurveyDoorOpened',
               teamsMessageKey: 'teamsStillnessAlertSurveyDoorOpened',
             }
-          case EVENT_TYPE.MSG_RECEIVED: {
-            // if the latest event was a message received for a stillnessAlertSurvey
-            // that means a followup was sent and we are waiting for it, otherwise survey would have been sent
+          case EVENT_TYPE.MSG_SENT: {
+            // if the latest event was a stillnessAlertSurveyFollowup
+            // that means we are waiting to send a survey after delay, otherwise survey would have been sent
             // if a door opens in that case, send the stillness alert door opened type survey, and scheduled survey will be cancelled
-            if (latestEvent.eventTypeDetails === 'stillnessAlertSurvey' || latestEvent.eventTypeDetails === 'teamsStillnessAlertSurvey') {
+            if (latestEvent.eventTypeDetails === 'stillnessAlertFollowup' || latestEvent.eventTypeDetails === 'teamsStillnessAlertFollowup') {
               return {
                 twilioMessageKey: 'stillnessAlertSurveyDoorOpened',
                 teamsMessageKey: 'teamsStillnessAlertSurveyDoorOpened',
               }
             }
-            helpers.log(
-              `Received door opened and detected waiting for survey followup, only updating door opened status for sessionId: ${latestSession.sessionId}`,
-            )
+            helpers.log(`Received door opened, only updating door opened status for sessionId: ${latestSession.sessionId}`)
             return null
           }
           default: {
