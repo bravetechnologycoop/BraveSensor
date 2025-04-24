@@ -391,7 +391,7 @@ async function createClient(
   teamsId,
   teamsAlertChannelId,
   teamsVitalChannelId,
-  pgClient, // Keep pgClient as the LAST argument for clarity
+  pgClient,
 ) {
   try {
     const queryText = `
@@ -435,13 +435,7 @@ async function createClient(
       teamsVitalChannelId,
     ]
 
-    const results = await helpers.runQuery(
-      'createClient',
-      queryText,
-      queryParams,
-      pool,
-      pgClient,
-    )
+    const results = await helpers.runQuery('createClient', queryText, queryParams, pool, pgClient)
 
     if (!results || results.rows.length === 0) {
       return null
@@ -453,7 +447,6 @@ async function createClient(
     return null
   }
 }
-
 
 async function updateClient(
   clientId,
@@ -518,13 +511,7 @@ async function updateClient(
       teamsVitalChannelId,
     ]
 
-    const results = await helpers.runQuery(
-      'updateClient',
-      queryText,
-      queryParams,
-      pool,
-      pgClient,
-    )
+    const results = await helpers.runQuery('updateClient', queryText, queryParams, pool, pgClient)
 
     if (!results || results.rows.length === 0) {
       return null
@@ -536,7 +523,6 @@ async function updateClient(
     return null
   }
 }
-
 
 async function getClients(pgClient) {
   try {

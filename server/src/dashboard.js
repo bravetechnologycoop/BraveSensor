@@ -477,7 +477,7 @@ async function renderSessionDetailsPage(req, res) {
 
 const validateNewClient = [
   Validator.body(['displayName', 'language', 'responderPhoneNumbers', 'vitalsTwilioNumber', 'surveyCategories']).trim().notEmpty(),
-  Validator.body(['fallbackPhoneNumbers', 'vitalsPhoneNumbers']).trim(),
+  Validator.body(['fallbackPhoneNumbers', 'vitalsPhoneNumbers', 'teamsId', 'teamsAlertChannelId', 'teamsVitalChannelId']).trim(),
   Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),
@@ -523,9 +523,6 @@ async function submitNewClient(req, res) {
       const devicesStatus = DEVICE_STATUS.TESTING
       const firstDeviceLiveAt = null
       const stillnessSurveyFollowupDelay = 180
-      const teamsId = null
-      const teamsAlertChannelId = null
-      const teamsVitalChannelId = null
 
       const newClient = await db_new.createClient(
         data.displayName,
@@ -588,7 +585,15 @@ const validateUpdateClient = [
   ])
     .trim()
     .notEmpty(),
-  Validator.body(['firstDeviceLiveAt', 'fallbackPhoneNumbers', 'vitalsPhoneNumbers', 'stillnessSurveyFollowupDelay']).trim(),
+  Validator.body([
+    'firstDeviceLiveAt',
+    'fallbackPhoneNumbers',
+    'vitalsPhoneNumbers',
+    'stillnessSurveyFollowupDelay',
+    'teamsId',
+    'teamsAlertChannelId',
+    'teamsVitalChannelId',
+  ]).trim(),
   Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),
@@ -622,9 +627,7 @@ async function submitUpdateClient(req, res) {
           ? data.vitalsPhoneNumbers.split(',').map(phone => phone.trim())
           : []
       const fallbackPhoneNumbers =
-        data.fallbackPhoneNumbers && data.fallbackPhoneNumbers.trim() !== ''
-          ? data.fallbackPhoneNumbers.split(',').map((phone) => phone.trim())
-          : []
+        data.fallbackPhoneNumbers && data.fallbackPhoneNumbers.trim() !== '' ? data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()) : []
       const surveyCategories =
         data.surveyCategories && data.surveyCategories.trim() !== '' ? data.surveyCategories.split(',').map(category => category.trim()) : []
 
