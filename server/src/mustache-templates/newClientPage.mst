@@ -124,6 +124,26 @@
                         <input type="text" class="form-control" name="organization" placeholder="Organization">
                     </div>
                 </div>
+
+                {{!Teams}}
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="teamsid" class="col-sm-3 col-form-label">TeamsID</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="teamsId" placeholder="teamsId">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="teamsAlertChannelId" class="col-sm-3 col-form-label">Teams Alert Channel Id</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="teamsAlertChannelId" placeholder="teamsAlertChannelId">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label for="teamsVitalChannelId" class="col-sm-3 col-form-label">Teams Vital Channel Id</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="teamsVitalChannelId" placeholder="teamsVitalChannelId">
+                    </div>
+                </div>
                 <br>
                 <p><em>*** Remember: New Clients are set to be Displayed, to not send Alerts, and to not send Vitals Messages ***</em></p>
                 <button type="submit" class="btn btn-primary btn-large">Submit</button>

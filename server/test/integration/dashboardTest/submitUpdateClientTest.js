@@ -190,6 +190,9 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
         funder: 'UpdatedFunder',
         project: 'UpdatedProject',
         organization: 'UpdatedOrg',
+        teamsId: 'UpdatedTeamsId',
+        teamsAlertChannelId: 'UpdatedTeamsAlertChannelId',
+        teamsVitalChannelId: 'UpdatedTeamsVitalChannelId',
       }
 
       this.response = await this.agent.post(`/clients/${this.defaultClient.clientId}`).send(goodRequest)
