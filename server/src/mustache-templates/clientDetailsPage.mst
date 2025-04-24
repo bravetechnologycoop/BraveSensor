@@ -38,6 +38,9 @@
                     <p><strong>Building Type:</strong> <span>{{#buildingType}}{{buildingType}}{{/buildingType}}{{^buildingType}}N/A{{/buildingType}}</span></p>
                     <p><strong>Postal Code:</strong> <span>{{#postalCode}}{{postalCode}}{{/postalCode}}{{^postalCode}}N/A{{/postalCode}}</span></p>
                     <p><strong>City:</strong> <span>{{#city}}{{city}}{{/city}}{{^city}}N/A{{/city}}</span></p>
+                    <p><strong>Teams Id:</strong> <span>{{#teamsId}}{{teamsId}}{{/teamsId}}{{^teamsId}}N/A{{/teamsId}}</span></p>
+                    <p><strong>Teams Alerts Channel Id:</strong> <span>{{#teamsAlertChannelId}}{{teamsAlertChannelId}}{{/teamsAlertChannelId}}{{^teamsAlertChannelId}}N/A{{/teamsAlertChannelId}}</span></p>
+                    <p><strong>Teams Vitals Channel Id:</strong> <span>{{#teamsVitalChannelId}}{{teamsVitalChannelId}}{{/teamsVitalChannelId}}{{^teamsVitalChannelId}}N/A{{/teamsVitalChannelId}}</span></p>
                 </div>
                 <br>
 
