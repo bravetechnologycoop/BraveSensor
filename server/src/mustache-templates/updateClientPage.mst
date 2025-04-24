@@ -200,7 +200,7 @@
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
-                    <label for="teamsVitalChannelId" class="col-sm-3 col-form-label">Teams Vital Channel Idd</label>
+                    <label for="teamsVitalChannelId" class="col-sm-3 col-form-label">Teams Vital Channel Id</label>
                     <div class="col-sm-5">
                         <input type="text" class="form-control" name="teamsVitalChannelId" placeholder="teamsVitalChannelId">
                     </div>
