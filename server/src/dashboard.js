@@ -523,6 +523,9 @@ async function submitNewClient(req, res) {
       const devicesStatus = DEVICE_STATUS.TESTING
       const firstDeviceLiveAt = null
       const stillnessSurveyFollowupDelay = 180
+      const teamsId = null
+      const teamsAlertChannelId = null
+      const teamsVitalChannelId = null
 
       const newClient = await db_new.createClient(
         data.displayName,
@@ -538,6 +541,9 @@ async function submitNewClient(req, res) {
         devicesStatus,
         firstDeviceLiveAt,
         stillnessSurveyFollowupDelay,
+        data.teamsId,
+        data.teamsAlertChannelId,
+        data.teamsVitalChannelId,
       )
 
       if (!newClient) {
@@ -616,7 +622,9 @@ async function submitUpdateClient(req, res) {
           ? data.vitalsPhoneNumbers.split(',').map(phone => phone.trim())
           : []
       const fallbackPhoneNumbers =
-        data.fallbackPhoneNumbers && data.fallbackPhoneNumbers.trim() !== '' ? data.fallbackPhoneNumbers.split(',').map(phone => phone.trim()) : []
+        data.fallbackPhoneNumbers && data.fallbackPhoneNumbers.trim() !== ''
+          ? data.fallbackPhoneNumbers.split(',').map((phone) => phone.trim())
+          : []
       const surveyCategories =
         data.surveyCategories && data.surveyCategories.trim() !== '' ? data.surveyCategories.split(',').map(category => category.trim()) : []
 
@@ -641,6 +649,10 @@ async function submitUpdateClient(req, res) {
         stillnessSurveyFollowupDelay = client.stillnessSurveyFollowupDelay
       }
 
+      const teamsId = data.teamsId || null
+      const teamsAlertChannelId = data.teamsAlertChannelId || null
+      const teamsVitalChannelId = data.teamsVitalChannelId || null
+
       await db_new.updateClient(
         clientId,
         data.displayName,
@@ -656,6 +668,9 @@ async function submitUpdateClient(req, res) {
         data.devicesStatus,
         firstDeviceLiveAt,
         stillnessSurveyFollowupDelay,
+        teamsId,
+        teamsAlertChannelId,
+        teamsVitalChannelId,
       )
 
       await db_new.updateClientExtension(

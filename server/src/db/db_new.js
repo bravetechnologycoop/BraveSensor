@@ -388,12 +388,13 @@ async function createClient(
   devicesStatus,
   firstDeviceLiveAt,
   stillnessSurveyFollowupDelay,
-  pgClient,
+  teamsId,
+  teamsAlertChannelId,
+  teamsVitalChannelId,
+  pgClient, // Keep pgClient as the LAST argument for clarity
 ) {
   try {
-    const results = await helpers.runQuery(
-      'createClient',
-      `
+    const queryText = `
       INSERT INTO clients_new (
         display_name, 
         language,
@@ -407,31 +408,42 @@ async function createClient(
         devices_sending_vitals,
         devices_status,
         first_device_live_at,
-        stillness_survey_followup_delay
+        stillness_survey_followup_delay,
+        teams_id,
+        teams_alert_channel_id,
+        teams_vital_channel_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
-      `,
-      [
-        displayName,
-        language,
-        responderPhoneNumbers,
-        fallbackPhoneNumbers,
-        vitalsTwilioNumber,
-        vitalsPhoneNumbers,
-        surveyCategories,
-        isDisplayed,
-        devicesSendingAlerts,
-        devicesSendingVitals,
-        devicesStatus,
-        firstDeviceLiveAt,
-        stillnessSurveyFollowupDelay,
-      ],
+    `
+    const queryParams = [
+      displayName,
+      language,
+      responderPhoneNumbers,
+      fallbackPhoneNumbers,
+      vitalsTwilioNumber,
+      vitalsPhoneNumbers,
+      surveyCategories,
+      isDisplayed,
+      devicesSendingAlerts,
+      devicesSendingVitals,
+      devicesStatus,
+      firstDeviceLiveAt,
+      stillnessSurveyFollowupDelay,
+      teamsId,
+      teamsAlertChannelId,
+      teamsVitalChannelId,
+    ]
+
+    const results = await helpers.runQuery(
+      'createClient',
+      queryText,
+      queryParams,
       pool,
       pgClient,
     )
 
-    if (results === undefined || results.rows.length === 0) {
+    if (!results || results.rows.length === 0) {
       return null
     }
 
@@ -441,6 +453,7 @@ async function createClient(
     return null
   }
 }
+
 
 async function updateClient(
   clientId,
@@ -457,12 +470,13 @@ async function updateClient(
   devicesStatus,
   firstDeviceLiveAt,
   stillnessSurveyFollowupDelay,
+  teamsId,
+  teamsAlertChannelId,
+  teamsVitalChannelId,
   pgClient,
 ) {
   try {
-    const results = await helpers.runQuery(
-      'updateClient',
-      `
+    const queryText = `
       UPDATE clients_new 
       SET 
         display_name = $2,
@@ -477,31 +491,42 @@ async function updateClient(
         devices_sending_vitals = $11,
         devices_status = $12,
         first_device_live_at = $13,
-        stillness_survey_followup_delay = $14
+        stillness_survey_followup_delay = $14,
+        teams_id = $15,
+        teams_alert_channel_id = $16,
+        teams_vital_channel_id = $17
       WHERE client_id = $1
       RETURNING *
-      `,
-      [
-        clientId,
-        displayName,
-        language,
-        responderPhoneNumbers,
-        fallbackPhoneNumbers,
-        vitalsTwilioNumber,
-        vitalsPhoneNumbers,
-        surveyCategories,
-        isDisplayed,
-        devicesSendingAlerts,
-        devicesSendingVitals,
-        devicesStatus,
-        firstDeviceLiveAt,
-        stillnessSurveyFollowupDelay,
-      ],
+    `
+    const queryParams = [
+      clientId,
+      displayName,
+      language,
+      responderPhoneNumbers,
+      fallbackPhoneNumbers,
+      vitalsTwilioNumber,
+      vitalsPhoneNumbers,
+      surveyCategories,
+      isDisplayed,
+      devicesSendingAlerts,
+      devicesSendingVitals,
+      devicesStatus,
+      firstDeviceLiveAt,
+      stillnessSurveyFollowupDelay,
+      teamsId,
+      teamsAlertChannelId,
+      teamsVitalChannelId,
+    ]
+
+    const results = await helpers.runQuery(
+      'updateClient',
+      queryText,
+      queryParams,
       pool,
       pgClient,
     )
 
-    if (results === undefined || results.rows.length === 0) {
+    if (!results || results.rows.length === 0) {
       return null
     }
 
@@ -511,6 +536,7 @@ async function updateClient(
     return null
   }
 }
+
 
 async function getClients(pgClient) {
   try {
