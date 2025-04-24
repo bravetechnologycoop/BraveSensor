@@ -196,6 +196,9 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
         funder: 'TestFunder',
         project: 'TestProject',
         organization: 'TestOrg',
+        teamsId: 'fakeTeamsId',
+        teamsAlertChannelId: 'fakeTeamsAlertChannelId',
+        teamsVitalChannelId: 'fakeTeamsVitalChannelId',
       }
 
       this.response = await this.agent.post('/clients').send(goodRequest)
