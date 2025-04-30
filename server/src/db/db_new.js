@@ -4,7 +4,7 @@ const pg = require('pg')
 // In-house dependencies
 const helpers = require('../utils/helpers')
 const { SESSION_STATUS, EVENT_TYPE, NOTIFICATION_TYPE } = require('../enums/index')
-const { ClientNew, ClientExtensionNew, DeviceNew, SessionNew, EventNew, VitalNew, NotificationNew } = require('../models/index')
+const { ClientNew, ClientExtensionNew, DeviceNew, SessionNew, EventNew, TeamsEventNew, VitalNew, NotificationNew } = require('../models/index')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -81,6 +81,9 @@ function createClientFromRow(r) {
     r.devices_status,
     r.first_device_live_at,
     r.stillness_survey_followup_delay,
+    r.teams_id,
+    r.teams_alert_channel_id,
+    r.teams_vital_channel_id,
   )
 }
 
@@ -129,11 +132,16 @@ function createSessionFromRow(r) {
     r.survey_sent,
     r.selected_survey_category,
     r.response_time,
+    r.session_responded_via,
   )
 }
 
 function createEventFromRow(r) {
   return new EventNew(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.phone_numbers)
+}
+
+function createTeamsEventFromRow(r) {
+  return new TeamsEventNew(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.message_id)
 }
 
 function createVitalFromRow(r) {
@@ -380,12 +388,13 @@ async function createClient(
   devicesStatus,
   firstDeviceLiveAt,
   stillnessSurveyFollowupDelay,
+  teamsId,
+  teamsAlertChannelId,
+  teamsVitalChannelId,
   pgClient,
 ) {
   try {
-    const results = await helpers.runQuery(
-      'createClient',
-      `
+    const queryText = `
       INSERT INTO clients_new (
         display_name, 
         language,
@@ -399,31 +408,36 @@ async function createClient(
         devices_sending_vitals,
         devices_status,
         first_device_live_at,
-        stillness_survey_followup_delay
+        stillness_survey_followup_delay,
+        teams_id,
+        teams_alert_channel_id,
+        teams_vital_channel_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *
-      `,
-      [
-        displayName,
-        language,
-        responderPhoneNumbers,
-        fallbackPhoneNumbers,
-        vitalsTwilioNumber,
-        vitalsPhoneNumbers,
-        surveyCategories,
-        isDisplayed,
-        devicesSendingAlerts,
-        devicesSendingVitals,
-        devicesStatus,
-        firstDeviceLiveAt,
-        stillnessSurveyFollowupDelay,
-      ],
-      pool,
-      pgClient,
-    )
+    `
+    const queryParams = [
+      displayName,
+      language,
+      responderPhoneNumbers,
+      fallbackPhoneNumbers,
+      vitalsTwilioNumber,
+      vitalsPhoneNumbers,
+      surveyCategories,
+      isDisplayed,
+      devicesSendingAlerts,
+      devicesSendingVitals,
+      devicesStatus,
+      firstDeviceLiveAt,
+      stillnessSurveyFollowupDelay,
+      teamsId,
+      teamsAlertChannelId,
+      teamsVitalChannelId,
+    ]
 
-    if (results === undefined || results.rows.length === 0) {
+    const results = await helpers.runQuery('createClient', queryText, queryParams, pool, pgClient)
+
+    if (!results || results.rows.length === 0) {
       return null
     }
 
@@ -449,12 +463,13 @@ async function updateClient(
   devicesStatus,
   firstDeviceLiveAt,
   stillnessSurveyFollowupDelay,
+  teamsId,
+  teamsAlertChannelId,
+  teamsVitalChannelId,
   pgClient,
 ) {
   try {
-    const results = await helpers.runQuery(
-      'updateClient',
-      `
+    const queryText = `
       UPDATE clients_new 
       SET 
         display_name = $2,
@@ -469,31 +484,36 @@ async function updateClient(
         devices_sending_vitals = $11,
         devices_status = $12,
         first_device_live_at = $13,
-        stillness_survey_followup_delay = $14
+        stillness_survey_followup_delay = $14,
+        teams_id = $15,
+        teams_alert_channel_id = $16,
+        teams_vital_channel_id = $17
       WHERE client_id = $1
       RETURNING *
-      `,
-      [
-        clientId,
-        displayName,
-        language,
-        responderPhoneNumbers,
-        fallbackPhoneNumbers,
-        vitalsTwilioNumber,
-        vitalsPhoneNumbers,
-        surveyCategories,
-        isDisplayed,
-        devicesSendingAlerts,
-        devicesSendingVitals,
-        devicesStatus,
-        firstDeviceLiveAt,
-        stillnessSurveyFollowupDelay,
-      ],
-      pool,
-      pgClient,
-    )
+    `
+    const queryParams = [
+      clientId,
+      displayName,
+      language,
+      responderPhoneNumbers,
+      fallbackPhoneNumbers,
+      vitalsTwilioNumber,
+      vitalsPhoneNumbers,
+      surveyCategories,
+      isDisplayed,
+      devicesSendingAlerts,
+      devicesSendingVitals,
+      devicesStatus,
+      firstDeviceLiveAt,
+      stillnessSurveyFollowupDelay,
+      teamsId,
+      teamsAlertChannelId,
+      teamsVitalChannelId,
+    ]
 
-    if (results === undefined || results.rows.length === 0) {
+    const results = await helpers.runQuery('updateClient', queryText, queryParams, pool, pgClient)
+
+    if (!results || results.rows.length === 0) {
       return null
     }
 
@@ -1401,6 +1421,32 @@ async function updateSessionSelectedSurveyCategory(sessionId, selectedCategory, 
   }
 }
 
+async function updateSessionRespondedVia(sessionId, respondedVia, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateSessionRespondedVia',
+      `
+      UPDATE sessions_new
+      SET session_responded_via = $2
+      WHERE session_id = $1
+      RETURNING *
+      `,
+      [sessionId, respondedVia],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSessionRespondedVia query: ${err.toString()}`)
+    return null
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function createEvent(sessionId, eventType, eventTypeDetails, phoneNumbers, pgClient) {
@@ -1464,68 +1510,33 @@ async function getEventsForSession(sessionId, pgClient) {
   }
 }
 
-/**
- * Event priority hierarchy (reverse chronological order, newest to oldest)
- * Order is crucial as it determines which event takes precedence when multiple events exist at same time
- * Stillness and Duration groups are interchangeable (not the ordering amongs them)
- */
-const RESPONDABLE_EVENT_HIERARCHY = new Map([
-  // Stillness alert types
-  ['stillnessAlertSurveyOccupantOkayFollowup', 1],
-  ['stillnessAlertSurveyOtherFollowup', 2],
-  ['stillnessAlertSurveyDoorOpened', 3],
-  ['stillnessAlertSurvey', 4],
-  ['stillnessAlertFollowup', 5],
-  ['stillnessAlertThirdReminder', 6],
-  ['stillnessAlertSecondReminder', 7],
-  ['stillnessAlertFirstReminder', 8],
-  ['stillnessAlert', 9],
-
-  // Duration alert types
-  ['durationAlertSurveyOtherFollowup', 10],
-  ['durationAlertSurveyOccupantOkayFollowup', 11],
-  ['durationAlertSurveyDoorOpened', 12],
-  ['durationAlertSurvey', 13],
-  ['durationAlert', 14],
-
-  // Other
-  ['nonAttendingResponderConfirmation', 15],
-])
-
 const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
 
-async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null, pgClient) {
+async function getLatestRespondableTwilioEvent(sessionId, responderPhoneNumber = null, pgClient) {
   try {
+    const queryParams = []
+
     let queryText = `
       SELECT *
       FROM events_new
       WHERE session_id = $1
-      AND event_type_details = ANY($2::text[])
-      AND event_type = ANY($3::event_type_enum[])
+      AND event_type = ANY($2)
     `
-    const queryParams = [sessionId, Array.from(RESPONDABLE_EVENT_HIERARCHY.keys()), RESPONDABLE_EVENT_TYPES]
+    queryParams.push(sessionId)
+    queryParams.push(RESPONDABLE_EVENT_TYPES)
 
     if (responderPhoneNumber) {
-      queryText += ` AND $4 = ANY(phone_numbers)`
+      queryText += ` AND $3 = ANY(phone_numbers)`
       queryParams.push(responderPhoneNumber)
     }
 
-    const caseStatements = Array.from(RESPONDABLE_EVENT_HIERARCHY.entries())
-      .map(([event, priority]) => `WHEN '${event}' THEN ${priority}`)
-      .join('\n        ')
-
-    // Add ordering based on the hierarchy
     queryText += `
-      ORDER BY event_sent_at DESC,
-      CASE event_type_details
-        ${caseStatements}
-        ELSE ${RESPONDABLE_EVENT_HIERARCHY.size + 1}
-      END
+      ORDER BY event_sent_at DESC
       LIMIT 1
       FOR UPDATE
     `
 
-    const results = await helpers.runQuery('getLatestRespondableEvent', queryText, queryParams, pool, pgClient)
+    const results = await helpers.runQuery('getLatestRespondableTwilioEvent', queryText, queryParams, pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return null
@@ -1533,7 +1544,7 @@ async function getLatestRespondableEvent(sessionId, responderPhoneNumber = null,
 
     return createEventFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getLatestRespondableEvent query: ${err.toString()}`)
+    helpers.logError(`Error running the getLatestRespondableTwilioEvent query: ${err.toString()}`)
     return null
   }
 }
@@ -1560,6 +1571,92 @@ async function checkEventExists(sessionId, eventType, eventTypeDetails, pgClient
   } catch (err) {
     helpers.logError(`Error running the checkEventExists query: ${err.toString()}`)
     return false
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function createTeamsEvent(sessionId, eventType, eventTypeDetails, messageId, pgClient) {
+  helpers.log(`NEW TEAMS EVENT: sessionId: ${sessionId}, eventType: ${eventType}, eventTypeDetails: ${eventTypeDetails}, messageId: ${messageId}`)
+  try {
+    const results = await helpers.runQuery(
+      'createTeamsEvent',
+      `
+      INSERT INTO teams_events_new (
+        session_id, 
+        event_type,
+        event_type_details,
+        message_id
+      ) VALUES ($1, $2, $3, $4)
+      RETURNING *
+      `,
+      [sessionId, eventType, eventTypeDetails, messageId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createTeamsEvent query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getLatestRespondableTeamsEvent(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestRespondableTeamsEvent',
+      `
+      SELECT *
+      FROM teams_events_new
+      WHERE session_id = $1
+      AND event_type = ANY($2)
+      ORDER BY event_sent_at DESC
+      LIMIT 1
+      `,
+      [sessionId, RESPONDABLE_EVENT_TYPES],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getLatestRespondableTeamsEvent query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getTeamsEventWithMessageId(messageId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getTeamsEventWithMessageId',
+      `
+      SELECT *
+      FROM teams_events_new
+      WHERE message_id = $1
+      LIMIT 1
+      `,
+      [messageId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getTeamsEventWithMessageId query: ${err.toString()}`)
+    return null
   }
 }
 
@@ -1882,11 +1979,16 @@ module.exports = {
   updateSessionAttendingResponder,
   updateSessionResponseTime,
   updateSessionSelectedSurveyCategory,
+  updateSessionRespondedVia,
 
   createEvent,
   getEventsForSession,
-  getLatestRespondableEvent,
+  getLatestRespondableTwilioEvent,
   checkEventExists,
+
+  createTeamsEvent,
+  getLatestRespondableTeamsEvent,
+  getTeamsEventWithMessageId,
 
   createVital,
   getLatestVitalWithDeviceId,

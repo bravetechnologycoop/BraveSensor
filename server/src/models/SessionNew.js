@@ -10,6 +10,7 @@ class SessionNew {
     surveySent,
     selectedSurveyCategory,
     responseTime,
+    sessionRespondedVia,
   ) {
     this.sessionId = sessionId
     this.deviceId = deviceId
@@ -21,6 +22,7 @@ class SessionNew {
     this.surveySent = surveySent
     this.selectedSurveyCategory = selectedSurveyCategory
     this.responseTime = responseTime
+    this.sessionRespondedVia = sessionRespondedVia
   }
 }
 

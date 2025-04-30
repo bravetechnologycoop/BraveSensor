@@ -11,6 +11,7 @@ const https = require('https')
 // In-house dependencies
 const helpers = require('./helpers')
 const vitals = require('../vitals')
+// const teamsHelpers = require('./teamsHelpers')
 
 const checkDisconnectionIntervalinSeconds = helpers.getEnvVar('CHECK_DEVICE_DISCONNECTION_INTERVAL')
 
@@ -19,6 +20,9 @@ function setupServer(app) {
 
   if (helpers.isTestEnvironment()) {
     server = app.listen(8000)
+
+    // const card = teamsHelpers.createAdaptiveCard('teamsDurationAlert', { surveyCategories: 'ABC,XYZ' }, { displayName: 'Washroom XYZ' })
+    // console.log(JSON.stringify(card, null, 2))
   } else {
     const httpsOptions = {
       key: fs.readFileSync(`/etc/brave/ssl/tls.key`),

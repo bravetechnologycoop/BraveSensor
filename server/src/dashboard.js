@@ -457,7 +457,7 @@ async function renderSessionDetailsPage(req, res) {
       }
       return {
         ...event,
-        message: helpers.translateMessageKeyToMessage(event.eventTypeDetails, { client, device }),
+        message: helpers.translateMessageKeyToMessage(event.eventTypeDetails, client, device),
       }
     })
 
@@ -477,7 +477,7 @@ async function renderSessionDetailsPage(req, res) {
 
 const validateNewClient = [
   Validator.body(['displayName', 'language', 'responderPhoneNumbers', 'vitalsTwilioNumber', 'surveyCategories']).trim().notEmpty(),
-  Validator.body(['fallbackPhoneNumbers', 'vitalsPhoneNumbers']).trim(),
+  Validator.body(['fallbackPhoneNumbers', 'vitalsPhoneNumbers', 'teamsId', 'teamsAlertChannelId', 'teamsVitalChannelId']).trim(),
   Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),
@@ -538,6 +538,9 @@ async function submitNewClient(req, res) {
         devicesStatus,
         firstDeviceLiveAt,
         stillnessSurveyFollowupDelay,
+        data.teamsId,
+        data.teamsAlertChannelId,
+        data.teamsVitalChannelId,
       )
 
       if (!newClient) {
@@ -582,7 +585,15 @@ const validateUpdateClient = [
   ])
     .trim()
     .notEmpty(),
-  Validator.body(['firstDeviceLiveAt', 'fallbackPhoneNumbers', 'vitalsPhoneNumbers', 'stillnessSurveyFollowupDelay']).trim(),
+  Validator.body([
+    'firstDeviceLiveAt',
+    'fallbackPhoneNumbers',
+    'vitalsPhoneNumbers',
+    'stillnessSurveyFollowupDelay',
+    'teamsId',
+    'teamsAlertChannelId',
+    'teamsVitalChannelId',
+  ]).trim(),
   Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),
@@ -641,6 +652,10 @@ async function submitUpdateClient(req, res) {
         stillnessSurveyFollowupDelay = client.stillnessSurveyFollowupDelay
       }
 
+      const teamsId = data.teamsId || null
+      const teamsAlertChannelId = data.teamsAlertChannelId || null
+      const teamsVitalChannelId = data.teamsVitalChannelId || null
+
       await db_new.updateClient(
         clientId,
         data.displayName,
@@ -656,6 +671,9 @@ async function submitUpdateClient(req, res) {
         data.devicesStatus,
         firstDeviceLiveAt,
         stillnessSurveyFollowupDelay,
+        teamsId,
+        teamsAlertChannelId,
+        teamsVitalChannelId,
       )
 
       await db_new.updateClientExtension(
