@@ -139,6 +139,9 @@ async function clientNewDBFactory(overrides = {}, pgClient) {
     overrides.devicesStatus !== undefined ? overrides.devicesStatus : DEVICE_STATUS.TESTING,
     overrides.firstDeviceLiveAt !== undefined ? overrides.firstDeviceLiveAt : '2025-01-01',
     overrides.stillnessSurveyFollowupDelay !== undefined ? overrides.stillnessSurveyFollowupDelay : 180,
+    overrides.teamsId !== undefined ? overrides.teamsId : 'fakeTeamsId',
+    overrides.teamsAlertChannelId !== undefined ? overrides.teamsAlertChannelId : 'fakeTeamsAlertChannelId',
+    overrides.teamsVitalsChannelId !== undefined ? overrides.teamsVitalsChannelId : 'fakeTeamsVitalsChannelId',
     pgClient,
   )
   return client
