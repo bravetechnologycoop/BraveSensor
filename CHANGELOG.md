@@ -14,6 +14,7 @@ the code was deployed.
 ## [12.2.2] - 2025-04-30
 
 - Fixed smoketest
+- MS teams integration (CU-86dvba9vc)
 
 ## [12.2.1] - 2025-04-30
 
