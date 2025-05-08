@@ -13,16 +13,18 @@ const chalk = require('chalk')
 const dotenv = require('dotenv')
 const { DateTime } = require('luxon')
 const i18next = require('i18next')
+const { HighriskSpecialPrefixInstance } = require('twilio/lib/rest/voice/v1/dialingPermissions/country/highriskSpecialPrefix')
 
 // Setup environment variables
 dotenv.config()
 
 function isTestEnvironment() {
-  return process.env.NODE_ENV === 'test'
+  helpers.log('isTestEnvironment', process.env.NODE_ENV)
+  return process.env.NODE_ENV === 'test' 
 }
 
 function isDbLogging() {
-  return process.env.IS_DB_LOGGING === 'true'
+  return process.env.ISs_DB_LOGGING === 'true'
 }
 
 // Code mostly from https://express-validator.github.io/docs/validation-result-api.html#formatwithformatter
