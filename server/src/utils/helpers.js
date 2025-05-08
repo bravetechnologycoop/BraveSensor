@@ -13,14 +13,13 @@ const chalk = require('chalk')
 const dotenv = require('dotenv')
 const { DateTime } = require('luxon')
 const i18next = require('i18next')
-const { HighriskSpecialPrefixInstance } = require('twilio/lib/rest/voice/v1/dialingPermissions/country/highriskSpecialPrefix')
 
 // Setup environment variables
 dotenv.config()
 
 function isTestEnvironment() {
-  helpers.log('isTestEnvironment', process.env.NODE_ENV)
-  return process.env.NODE_ENV === 'test' 
+  console.log('isTestEnvironment', process.env.NODE_ENV)
+  return process.env.NODE_ENV === 'test'
 }
 
 function isDbLogging() {
