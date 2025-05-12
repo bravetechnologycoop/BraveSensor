@@ -25,6 +25,9 @@ const deviceDisconnectionThreshold = helpers.getEnvVar('DEVICE_DISCONNECTION_THR
 const doorDisconnectionThreshold = helpers.getEnvVar('DOOR_DISCONNECTION_THRESHOLD_SECONDS')
 const disconnectionReminderThreshold = helpers.getEnvVar('DISCONNECTION_REMINDER_THRESHOLD_SECONDS')
 
+const vitalsStartTime = helpers.getEnvVar('VITALS_START_TIME')
+const vitalsEndTime = helpers.getEnvVar('VITALS_END_TIME')
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function sendTeamsVital(client, device, teamsMessageKey) {
@@ -299,9 +302,27 @@ async function handleVitalNotifications(
       })
     }
 
+    // Retrieve current time
+    const currentTime = new Date();
+
+    // Parse the start and end times (in HH:mm format) into Date objects
+    const [startHour, startMinute] = vitalsStartTime.split(':').map(Number);
+    const [endHour, endMinute] = vitalsEndTime.split(':').map(Number);
+
+    // Create Date objects for the start and end time (set them to today's date)
+    const startTime = new Date(currentTime);
+    startTime.setHours(startHour, startMinute, 0, 0);  // Set start time with today's date
+
+    const endTime = new Date(currentTime);
+    endTime.setHours(endHour, endMinute, 0, 0);        // Set end time with today's date
+
+    // Check if the current time is within the time window
+    if (currentTime >= startTime && currentTime <= endTime) {
     // Send all accumulated notifications
     for (const notification of notifications) {
       try {
+
+
         const twilioResponse = await sendTwilioVital(client, device, notification.twilioMessageKey)
         if (twilioResponse.skipped) {
           return
@@ -317,6 +338,11 @@ async function handleVitalNotifications(
       } catch (error) {
         throw new Error(`Error sending notification: ${error.message}`)
       }
+    }
+    }
+    else {
+      // Log that notifications were skipped due to time window
+      helpers.log(`Notifications skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`)
     }
   } catch (error) {
     throw new Error(`handleVitalNotifications: ${error.message}`)
