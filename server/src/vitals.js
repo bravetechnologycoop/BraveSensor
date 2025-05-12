@@ -120,6 +120,12 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
       notificationType = isInitialDoorAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
     }
 
+    if(!isWithinTimeWindow(vitalsStartTime, vitalsEndTime)){
+      // Log that notifications were skipped due to time window
+      helpers.log(`Notifications skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`)
+      return
+    }
+
     if (notificationType && twilioMessageKey && teamsMessageKey) {
       try {
         const twilioResponse = await sendTwilioVital(client, device, twilioMessageKey)
@@ -302,42 +308,30 @@ async function handleVitalNotifications(
       })
     }
 
-    // Retrieve current time
-    const currentTime = new Date()
+    if (isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
+    // Send all accumulated notifications
+    for (const notification of notifications) {
+      try {
 
-    // Parse the start and end times (in HH:mm format) into Date objects
-    const [startHour, startMinute] = vitalsStartTime.split(':').map(Number)
-    const [endHour, endMinute] = vitalsEndTime.split(':').map(Number)
 
-    // Create Date objects for the start and end time (set them to today's date)
-    const startTime = new Date(currentTime)
-    startTime.setHours(startHour, startMinute, 0, 0) // Set start time with today's date
-
-    const endTime = new Date(currentTime)
-    endTime.setHours(endHour, endMinute, 0, 0) // Set end time with today's date
-
-    // Check if the current time is within the time window
-    if (currentTime >= startTime && currentTime <= endTime) {
-      // Send all accumulated notifications
-      for (const notification of notifications) {
-        try {
-          const twilioResponse = await sendTwilioVital(client, device, notification.twilioMessageKey)
-          if (twilioResponse.skipped) {
-            return
-          }
-
-          // log the notification
-          await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
-
-          // check and send if teams is configured
-          if (client.teamsId && client.teamsVitalChannelId) {
-            await sendTeamsVital(client, device, notification.teamsMessageKey)
-          }
-        } catch (error) {
-          throw new Error(`Error sending notification: ${error.message}`)
+        const twilioResponse = await sendTwilioVital(client, device, notification.twilioMessageKey)
+        if (twilioResponse.skipped) {
+          return
         }
+
+        // log the notification
+        await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
+
+        // check and send if teams is configured
+        if (client.teamsId && client.teamsVitalChannelId) {
+          await sendTeamsVital(client, device, notification.teamsMessageKey)
+        }
+      } catch (error) {
+        throw new Error(`Error sending notification: ${error.message}`)
       }
-    } else {
+    }
+    }
+    else {
       // Log that notifications were skipped due to time window
       helpers.log(`Notifications skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`)
     }
