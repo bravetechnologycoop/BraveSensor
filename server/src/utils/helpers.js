@@ -178,18 +178,18 @@ function translateMessageKeyToMessage(messageKey, client, device, messageData = 
 }
 
 function isWithinTimeWindow(startTime, endTime) {
-  const currentTime = new Date();
+  const currentTime = new Date()
 
-  const [startHour, startMinute] = startTime.split(':').map(Number);
-  const [endHour, endMinute] = endTime.split(':').map(Number);
+  const [startHour, startMinute] = startTime.split(':').map(Number)
+  const [endHour, endMinute] = endTime.split(':').map(Number)
 
-  const startDateTime = new Date(currentTime);
-  startDateTime.setHours(startHour, startMinute, 0, 0);
+  const startDateTime = new Date(currentTime)
+  startDateTime.setHours(startHour, startMinute, 0, 0)
 
-  const endDateTime = new Date(currentTime);
-  endDateTime.setHours(endHour, endMinute, 0, 0);
+  const endDateTime = new Date(currentTime)
+  endDateTime.setHours(endHour, endMinute, 0, 0)
 
-  return currentTime >= startDateTime && currentTime <= endDateTime;
+  return currentTime >= startDateTime && currentTime <= endDateTime
 }
 
 module.exports = {

@@ -120,7 +120,7 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
       notificationType = isInitialDoorAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
     }
 
-    if(!isWithinTimeWindow(vitalsStartTime, vitalsEndTime)){
+    if (!helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
       // Log that notifications were skipped due to time window
       helpers.log(`Notifications skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`)
       return
@@ -308,30 +308,27 @@ async function handleVitalNotifications(
       })
     }
 
-    if (isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
-    // Send all accumulated notifications
-    for (const notification of notifications) {
-      try {
+    if (helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
+      // Send all accumulated notifications
+      for (const notification of notifications) {
+        try {
+          const twilioResponse = await sendTwilioVital(client, device, notification.twilioMessageKey)
+          if (twilioResponse.skipped) {
+            return
+          }
 
+          // log the notification
+          await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
 
-        const twilioResponse = await sendTwilioVital(client, device, notification.twilioMessageKey)
-        if (twilioResponse.skipped) {
-          return
+          // check and send if teams is configured
+          if (client.teamsId && client.teamsVitalChannelId) {
+            await sendTeamsVital(client, device, notification.teamsMessageKey)
+          }
+        } catch (error) {
+          throw new Error(`Error sending notification: ${error.message}`)
         }
-
-        // log the notification
-        await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
-
-        // check and send if teams is configured
-        if (client.teamsId && client.teamsVitalChannelId) {
-          await sendTeamsVital(client, device, notification.teamsMessageKey)
-        }
-      } catch (error) {
-        throw new Error(`Error sending notification: ${error.message}`)
       }
-    }
-    }
-    else {
+    } else {
       // Log that notifications were skipped due to time window
       helpers.log(`Notifications skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`)
     }
