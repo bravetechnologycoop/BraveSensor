@@ -122,7 +122,9 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
 
     if (!helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
       // Log that notifications were skipped due to time window
-      helpers.log(`Notification ${twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`)
+      helpers.log(
+        `Notification ${twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`,
+      )
       return
     }
 
@@ -307,31 +309,31 @@ async function handleVitalNotifications(
         notificationType: NOTIFICATION_TYPE.DOOR_INACTIVITY,
       })
     }
-      // Send all accumulated notifications
-      for (const notification of notifications) {
-        try {
-
-          if (helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
-            // Log that notifications were skipped due to time window
-            helpers.log(`Notification ${notification.twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`)
-            return
-          }
-
-          const twilioResponse = await sendTwilioVital(client, device, notification.twilioMessageKey)
-          if (twilioResponse.skipped) {
-            return
-          }
-
-          // log the notification
-          await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
-
-          // check and send if teams is configured
-          if (client.teamsId && client.teamsVitalChannelId) {
-            await sendTeamsVital(client, device, notification.teamsMessageKey)
-          }
-        } catch (error) {
-          throw new Error(`Error sending notification: ${error.message}`)
+    // Send all accumulated notifications
+    for (const notification of notifications) {
+      try {
+        if (helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
+          // Log that notifications were skipped due to time window
+          helpers.log(
+            `Notification ${notification.twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`,
+          )
+          return
         }
+
+        const twilioResponse = await sendTwilioVital(client, device, notification.twilioMessageKey)
+        if (twilioResponse.skipped) {
+          return
+        }
+
+        // log the notification
+        await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
+
+        // check and send if teams is configured
+        if (client.teamsId && client.teamsVitalChannelId) {
+          await sendTeamsVital(client, device, notification.teamsMessageKey)
+        }
+      } catch (error) {
+        throw new Error(`Error sending notification: ${error.message}`)
       }
     }
   } catch (error) {
