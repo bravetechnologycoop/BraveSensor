@@ -21,6 +21,10 @@ function isTestEnvironment() {
   return process.env.NODE_ENV === 'test'
 }
 
+function isStagingEnvironment() {
+  return process.env.NODE_ENV === 'staging'
+}
+
 function isDbLogging() {
   return process.env.IS_DB_LOGGING === 'true'
 }
@@ -181,6 +185,7 @@ module.exports = {
   getEnvVar,
   isDbLogging,
   isTestEnvironment,
+  isStagingEnvironment,
   isValidRequest,
   log,
   logError,
