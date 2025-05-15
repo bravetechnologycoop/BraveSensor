@@ -187,7 +187,7 @@ function isWithinTimeWindow(startTime, endTime) {
   const startMinutes = startHour * 60 + startMinute
   const endMinutes = endHour * 60 + endMinute
 
-  return currentMinutes >= startMinutes && currentMinutes <= endMinutes
+  return ((currentMinutes >= startMinutes) && (currentMinutes <= endMinutes));
 }
 
 module.exports = {
