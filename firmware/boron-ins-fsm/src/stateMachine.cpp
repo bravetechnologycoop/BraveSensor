@@ -266,6 +266,7 @@ std::queue<int> stateQueue;
 
       // do stuff in the state
       setState();
+      g_doorStatus = isDoorOpen(checkDoor.doorStatus);
       populateAlphaUpdate(1);
       digitalWrite(D2, LOW);
       digitalWrite(D3, LOW);
@@ -331,6 +332,7 @@ std::queue<int> stateQueue;
      doorData checkDoor = checkIM();
      filteredINSData checkINS = checkINS3331();
      setState();
+     g_doorStatus = isDoorOpen(checkDoor.doorStatus);
      populateAlphaUpdate(1);
      digitalWrite(D2, HIGH);
      // Calculate the time spent in state 1
@@ -346,6 +348,7 @@ std::queue<int> stateQueue;
          publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
          stateHandler = state0_idle;
          setState();
+         g_doorStatus = isDoorOpen(checkDoor.doorStatus);
          populateAlphaUpdate(1);
          digitalWrite(D2, HIGH);
      }
@@ -354,6 +357,7 @@ std::queue<int> stateQueue;
          publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
          stateHandler = state0_idle;
          setState();
+         g_doorStatus = isDoorOpen(checkDoor.doorStatus);
          populateAlphaUpdate(1);
          digitalWrite(D2, HIGH);
      }
@@ -366,6 +370,7 @@ std::queue<int> stateQueue;
          state2_start_time = millis();
          stateHandler = state2_monitoring;
          setState();
+         g_doorStatus = isDoorOpen(checkDoor.doorStatus);
          populateAlphaUpdate(1);
          digitalWrite(D2, HIGH);
      }
@@ -409,6 +414,7 @@ std::queue<int> stateQueue;
          // Transition to state 0
          stateHandler = state0_idle;
          setState();
+         g_doorStatus = isDoorOpen(checkDoor.doorStatus);
          populateAlphaUpdate(1);
          digitalWrite(D2, HIGH);
      }
@@ -421,6 +427,7 @@ std::queue<int> stateQueue;
          state3_start_time = millis();
          stateHandler = state3_stillness;
          setState();
+         g_doorStatus = isDoorOpen(checkDoor.doorStatus);
          populateAlphaUpdate(1);
          digitalWrite(D2, HIGH);
      }
@@ -480,6 +487,7 @@ std::queue<int> stateQueue;
          // Transition to state 0
          stateHandler = state0_idle;
          setState();
+         g_doorStatus = isDoorOpen(checkDoor.doorStatus);
          populateAlphaUpdate(1);
          digitalWrite(D2, HIGH);
      } 
@@ -492,6 +500,7 @@ std::queue<int> stateQueue;
          state2_start_time = millis();
          stateHandler = state2_monitoring;
          setState();
+         g_doorStatus = isDoorOpen(checkDoor.doorStatus);
          populateAlphaUpdate(1);
          digitalWrite(D2, HIGH);
      }
@@ -767,7 +776,6 @@ std::queue<int> stateQueue;
        index++;
     }
 
-    tx_buffer[index++] = g_state & 0xFF; // Add the state (1 byte)
 
     // Add the door sensor status (1 byte)
     if(g_doorStatus == 1){
@@ -780,6 +788,8 @@ std::queue<int> stateQueue;
         tx_buffer[index++] = 0xFF; //unknown
     }
 
+    tx_buffer[index++] = g_state & 0xFF; // Add the state (1 byte)
+
     tx_buffer[index++] = 0xDE;
     tx_buffer[index++] = 0xAD;
 
@@ -788,7 +798,7 @@ std::queue<int> stateQueue;
 void setState(){
     if (stateHandler == &state0_idle) {
         g_state = 0xFE;
-    } else if (stateHandler = &state1_initial_countdown) {
+    } else if (stateHandler == &state1_initial_countdown) {
         g_state = 1;
     } else if (stateHandler == &state2_monitoring) {
         g_state = 2;
