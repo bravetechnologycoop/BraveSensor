@@ -1,6 +1,6 @@
 CXX      := -c++
 #CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror
-DBID	 := -DBRAVEDBNAME=\"testdb\"
+DBID	 := -DBRAVEDBNAME=\"alpha02\"
 CXXFLAGS := -Wall -D_LINUX_ $(DBID)
 LDFLAGS  := -L/usr/lib -L/usr/lib/aarch64-linux-gnu/ -lstdc++ -lm -lpqxx -lpq -li2c -lgpiod
 BUILD    := ./build

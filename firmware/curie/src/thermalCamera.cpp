@@ -11,6 +11,17 @@
 #include "MLX90640/MLX90640_I2C_Driver.h"
 #include <curie.h>
 
+enum FrequencySetting : uint8_t {
+    FREQ_0_5HZ = 0b000,
+    FREQ_1_0HZ = 0b001,
+    FREQ_2_0HZ = 0b010,
+    FREQ_4_0HZ = 0b011,
+    FREQ_8_0HZ = 0b100,
+    FREQ_16_0HZ = 0b101,
+    FREQ_32_0HZ = 0b110,
+    FREQ_64_0HZ = 0b111
+};
+
 thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
     bDebug(TRACE, "Thermal Camera created");
 
@@ -24,7 +35,7 @@ thermalCamera::thermalCamera(i2cInterface * i2cBus, int i2cAddress){
 
     MLX90640_I2CClass(this->i2cBus);
      //initialize the camera
-    MLX90640_SetRefreshRate(this->i2cAddress, 0b100);  //default
+    MLX90640_SetRefreshRate(this->i2cAddress, FREQ_32_0HZ); 
     MLX90640_SetChessMode(this->i2cAddress);
     MLX90640_DumpEE(this->i2cAddress, this->eeMLX90640);
     MLX90640_ExtractParameters(this->eeMLX90640, &(this->mlx90640));

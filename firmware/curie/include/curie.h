@@ -34,10 +34,10 @@
 //#define LIDAR_L1
 #define USONIC_RANGE
 #define MULTI_GAS
-//#define CO2
+#define CO2
 #define CO2SCD
 #define PIR
-//#define MULTI_MOTION
+#define MULTI_MOTION
 #define BORON
 
 
@@ -50,7 +50,7 @@
 #define DLP_SER         "/dev/ttyACM0"
 #define DLP_BAUD        57600
 
-#define LOOP_TIMER      30s
+#define LOOP_TIMER      15s
 
 
 //error types

@@ -87,8 +87,10 @@ u_int16_t powerPeripherals(){
 	char c1[64];
 	char c2[64];
 
-	sprintf(c1, "i2cset -y 22 0x1a 0x03 %0X", commandByte);
-	sprintf(c2, "i2cset -y 22 0x1a 0x01 %0X", commandByte);
+	sprintf(c1, "i2cset -y 22 0x1a 0x03 0x%0X", commandByte);
+	sprintf(c2, "i2cset -y 22 0x1a 0x01 0x%0X", commandByte);
+
+	bDebug(TRACE, c1);
 
 	system(c1);
 	system(c2);
