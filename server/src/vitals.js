@@ -25,6 +25,9 @@ const deviceDisconnectionThreshold = helpers.getEnvVar('DEVICE_DISCONNECTION_THR
 const doorDisconnectionThreshold = helpers.getEnvVar('DOOR_DISCONNECTION_THRESHOLD_SECONDS')
 const disconnectionReminderThreshold = helpers.getEnvVar('DISCONNECTION_REMINDER_THRESHOLD_SECONDS')
 
+const vitalsStartTime = helpers.getEnvVar('VITALS_START_TIME')
+const vitalsEndTime = helpers.getEnvVar('VITALS_END_TIME')
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function sendTeamsVital(client, device, teamsMessageKey) {
@@ -115,6 +118,14 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
       twilioMessageKey = isInitialDoorAlert ? 'doorDisconnectedInitial' : 'doorDisconnectedReminder'
       teamsMessageKey = isInitialDoorAlert ? 'teamsDoorDisconnectedInitial' : 'teamsDoorDisconnectedReminder'
       notificationType = isInitialDoorAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
+    }
+
+    if (!helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
+      // Log that notifications were skipped due to time window
+      helpers.log(
+        `Notification ${twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`,
+      )
+      return
     }
 
     if (notificationType && twilioMessageKey && teamsMessageKey) {
@@ -298,10 +309,17 @@ async function handleVitalNotifications(
         notificationType: NOTIFICATION_TYPE.DOOR_INACTIVITY,
       })
     }
-
     // Send all accumulated notifications
     for (const notification of notifications) {
       try {
+        if (helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
+          // Log that notifications were skipped due to time window
+          helpers.log(
+            `Notification ${notification.twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`,
+          )
+          return
+        }
+
         const twilioResponse = await sendTwilioVital(client, device, notification.twilioMessageKey)
         if (twilioResponse.skipped) {
           return

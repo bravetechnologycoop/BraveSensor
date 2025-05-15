@@ -181,6 +181,19 @@ function translateMessageKeyToMessage(messageKey, client, device, messageData = 
   return i18next.t(messageKey, translationParams)
 }
 
+function isWithinTimeWindow(startTime, endTime) {
+  const now = DateTime.now().setZone('America/Los_Angeles') // PST/PDT zone
+
+  const [startHour, startMinute] = startTime.split(':').map(Number)
+  const [endHour, endMinute] = endTime.split(':').map(Number)
+
+  const currentMinutes = now.hour * 60 + now.minute
+  const startMinutes = startHour * 60 + startMinute
+  const endMinutes = endHour * 60 + endMinute
+
+  return currentMinutes >= startMinutes && currentMinutes <= endMinutes
+}
+
 module.exports = {
   getEnvVar,
   isDbLogging,
@@ -198,4 +211,5 @@ module.exports = {
   formatDateTimeForDashboard,
   parseDigits,
   translateMessageKeyToMessage,
+  isWithinTimeWindow,
 }
