@@ -757,7 +757,7 @@ async function getStillnessSurveyFollowupDelay(clientId, pgClient) {
 }
 
 async function clearClientWithClientId(clientId, pgClient) {
-  if (!helpers.isTestEnvironment()) {
+  if (!helpers.isTestEnvironment() && !helpers.isStagingEnvironment()) {
     helpers.log('Warning - tried to clear client outside of a test environment!')
     return
   }
