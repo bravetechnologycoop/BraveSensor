@@ -312,7 +312,7 @@ async function handleVitalNotifications(
     // Send all accumulated notifications
     for (const notification of notifications) {
       try {
-        if (helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
+        if (!helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
           // Log that notifications were skipped due to time window
           helpers.log(
             `Notification ${notification.twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`,
