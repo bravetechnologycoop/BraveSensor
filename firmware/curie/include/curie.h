@@ -37,7 +37,7 @@
 //#define CO2
 #define CO2SCD
 #define PIR
-//#define MULTI_MOTION
+#define MULTI_MOTION
 #define BORON
 
 
@@ -69,7 +69,7 @@
 #define BRAVEHOST        "localhost"
 #define BRAVEPORT        "5432"
 #ifndef BRAVEDBNAME
-#define BRAVEDBNAME      "testdb"
+#define BRAVEDBNAME      "alpha01"
 #endif
 
 #endif //_CURIE__H_
