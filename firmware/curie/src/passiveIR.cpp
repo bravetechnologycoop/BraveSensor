@@ -25,14 +25,14 @@ passiveIR::~passiveIR(){
 
 int passiveIR::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "passiveIR getData");
-    int err = OK;
+    int err = B_OK;
     bool data = false;
 
     //check incoming pointers
     *sqlTable = PIR_SQL_TABLE;
 
     err = this->gpio->readPin(&data);
-    if (OK == err){
+    if (B_OK == err){
         bDebug(TRACE, ("Pin Value :" + to_string((int)data)));
         vData->push_back("'" + to_string((int)data) + "'");
     }
@@ -52,7 +52,7 @@ int passiveIR::getTableDef(string * sqlBuf){
     if (NULL != sqlBuf){
         *sqlBuf = PIR_SQL_TABLE;
         bDebug(TRACE, "passiveIR Table: " + *sqlBuf);
-        err = OK;
+        err = B_OK;
     }
 
     return err;
@@ -61,7 +61,7 @@ int passiveIR::getTableDef(string * sqlBuf){
 int passiveIR::setTableParams(){
     bDebug(TRACE, "passiveIR Set table params");
 
-    int err = OK;
+    int err = B_OK;
 
     try {
         this->dbParams.emplace_back("pirbool", "boolean");
@@ -79,7 +79,7 @@ int passiveIR::getTableParams(std::vector<std::pair<std::string, std::string>> *
     if(!dbParams.empty())
     {
         *tableData = dbParams;
-        err = OK;
+        err = B_OK;
     }
     return err;
 }

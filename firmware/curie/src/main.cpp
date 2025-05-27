@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <thread>
 #include <mutex>
+#include <crow.h>
 
 using namespace std;
 bool g_loop;
@@ -38,8 +39,20 @@ serialib * g_usbSerial = NULL;
 
 uint8_t g_buffer[32] = {0};
 
+void runCrowServer() {
+    crow::SimpleApp app; 
+    CROW_ROUTE(app, "/curieservice")([](){
+		g_interthreadMutex.unlock();
+		bDebug(TRACE, "Webpage call received!");
+        return 200;
+    });
+    app.port(18080).multithreaded().run();
+}
+
+
+
 int initiateBusses(){
-	int err = OK;
+	int err = B_OK;
 	bDebug(TRACE, "Initializing the Busses");
 
 	g_fastI2C = new i2cInterface(FAST_I2C_SZ);
@@ -126,7 +139,7 @@ void cleanUp(){
 }
 
 int initiateDataSources(vector<dataSource*> * dataVector){
-	int err = OK;
+	int err = B_OK;
 	bDebug(TRACE, "Initializing the DataSources");
 
 	powerPeripherals();
@@ -232,16 +245,17 @@ int main()
 	postgresInterface * pInterface = NULL;
 	std::vector<dataSource*> vSources;
 	int count = -1;
-    int err = OK;
+    int err = B_OK;
 	thread * boronListener;
+	thread * webpageListener;
 	g_loop = true;
     try{
         
-        if (OK != initiateBusses()){
+        if (B_OK != initiateBusses()){
 			throw(BAD_SETTINGS);
 		}
 
-		if (OK != initiateDataSources(&vSources)){
+		if (B_OK != initiateDataSources(&vSources)){
 			throw(BAD_SETTINGS);
 		}
 
@@ -253,12 +267,13 @@ int main()
 
 
 		//start child thread
+		webpageListener = new thread(runCrowServer);
 		boronListener = new thread(RxThread);
 
 		//main execution loop
 		while (g_loop){
 			err = pInterface->writeTables();
-			if (OK != err){
+			if (B_OK != err){
 				bDebug(ERROR, "Failed to writeTables Bailing");
 				g_loop = false;
 			}
@@ -269,7 +284,7 @@ int main()
 					g_loop = false;
 				} 
 			}
-
+			//g_interthreadMutex.lock();
 			if (g_loop){
 				bDebug(TRACE, "Loop Sleep");
 				if (g_interthreadMutex.try_lock_for(LOOP_TIMER)){
@@ -283,6 +298,7 @@ int main()
 
 		//wait for the thread to complete
 		boronListener->join();
+		webpageListener->join();
 
 		//cleanup
 		delete pInterface;

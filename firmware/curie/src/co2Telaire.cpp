@@ -38,7 +38,7 @@ co2Telaire::~co2Telaire(){
 
 int co2Telaire::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(INFO, "co2Telaire getData");
-    int err = OK;
+    int err = B_OK;
     uint8_t setGasCmd[5] = {0x04, 0x13, 0x8b, 0x00, 0x01};
     uint8_t getGasCmd[4];
     int32_t rawGas;
@@ -83,7 +83,7 @@ int co2Telaire::getTableDef(string * sqlBuf){
     if (NULL != sqlBuf){
         *sqlBuf = CO2_SQL_TABLE;
         bDebug(TRACE, "co2Telaire Table: " + *sqlBuf);
-        err = OK;
+        err = B_OK;
     }
 
     return err;
@@ -92,7 +92,7 @@ int co2Telaire::getTableDef(string * sqlBuf){
 int co2Telaire::setTableParams(){
     bDebug(TRACE, "co2Telaire Set table params");
 
-    int err = OK;
+    int err = B_OK;
 
     try {
         this->dbParams.emplace_back("co2read", "int"); //!!!
@@ -110,7 +110,7 @@ int co2Telaire::getTableParams(std::vector<std::pair<std::string, std::string>> 
     if(!dbParams.empty())
     {
         *tableData = dbParams;
-        err = OK;
+        err = B_OK;
     }
     return err;
 }

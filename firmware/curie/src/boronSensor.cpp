@@ -48,14 +48,14 @@ boronSensor::~boronSensor(){
 
 int boronSensor::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "boronSensor getData");
-    int err = OK;
+    int err = B_OK;
     *sqlTable = BORON_SQL_TABLE;
     uint8_t command = 0x01;
     err = writei2c(&command, 1);
     sleep(5);
     
     err = readi2c(rxBuffer, FULL_BUFFER_SIZE);
-    if(validateBuffer() == OK && err != -1)
+    if(validateBuffer() == B_OK && err != -1)
     {   
         int index = 0;
         if(rxBuffer[index++] != DELIMITER_A || rxBuffer[index++] != DELIMITER_B){
@@ -154,7 +154,7 @@ int boronSensor::getTableDef(string * sqlBuf){
     if (NULL != sqlBuf){
         *sqlBuf = BORON_SQL_TABLE;
         bDebug(TRACE, "boronSensor Table: " + *sqlBuf);
-        err = OK;
+        err = B_OK;
     }
 
     return err;
@@ -163,7 +163,7 @@ int boronSensor::getTableDef(string * sqlBuf){
 int boronSensor::setTableParams(){
     bDebug(TRACE, "boronSensor Set table params");
 
-    int err = OK;
+    int err = B_OK;
     try {
         for (int i = 0; i < 13; i++) {
             this->dbParams.emplace_back("ivalue" + to_string(i), "int");
@@ -192,7 +192,7 @@ int boronSensor::getTableParams(std::vector<std::pair<std::string, std::string>>
     if(!dbParams.empty())
     {
         *tableData = dbParams;
-        err = OK;
+        err = B_OK;
     }
     return err;
 }
@@ -222,10 +222,10 @@ int8_t boronSensor::readi2c(uint8_t *buff, uint8_t len)
 }
 
 int boronSensor::validateBuffer(){
-    int err = OK;
+    int err = B_OK;
     int length = sizeof(rxBuffer) / sizeof(rxBuffer[0]);
 
-    if(err == OK){
+    if(err == B_OK){
         string rxBufContents = "boron: ";
 	    for (int i = 0; i < FULL_BUFFER_SIZE; i++) {
     	stringstream ss;
@@ -243,7 +243,7 @@ int boronSensor::validateBuffer(){
         err = BAD_SETTINGS;
         bDebug(TRACE, "Ending delimiter invalid");
     }
-    if (err == OK){
+    if (err == B_OK){
         bDebug(TRACE, "Buffer validated!");
     }
     return err;
@@ -251,7 +251,7 @@ int boronSensor::validateBuffer(){
 }
 
 int boronSensor::signalParse(uint8_t rat, string type, float * signal){
-    int err = OK;
+    int err = B_OK;
     switch(rat){
         case 1: //2G RAT:
             if(type == "strength"){
@@ -301,7 +301,7 @@ int boronSensor::signalParse(uint8_t rat, string type, float * signal){
 
 int boronSensor::flushBuffer(){
     bDebug(TRACE, "boron flush buffer");
-    int err = OK;
+    int err = B_OK;
     this->rxBufferIndex = 0;
     std::memset(this->rxBuffer, 0, sizeof(this->rxBuffer));
     return err;

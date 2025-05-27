@@ -50,11 +50,11 @@
 #define DLP_SER         "/dev/ttyACM0"
 #define DLP_BAUD        57600
 
-#define LOOP_TIMER      15s
+#define LOOP_TIMER      300s
 
 
 //error types
-#define OK              0x00
+#define B_OK              0x00
 #define BAD_PORT        0x20
 #define BAD_SETTINGS    0x21
 #define WRITE_ERROR     0x22

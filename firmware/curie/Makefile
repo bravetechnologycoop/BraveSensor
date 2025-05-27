@@ -7,7 +7,7 @@ BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 BIN_DIR  := $(BUILD)/bin
 TARGET   := curie
-INCLUDE  := -Iinclude/ -Ivl535cx/
+INCLUDE  := -Iinclude/ -Ivl535cx/ -Ithird-party/include
 SRC      :=							\
 	$(wildcard src/vl53l1x/*.cpp)	\
 	$(wildcard src/Sensirion/*.cpp)	\

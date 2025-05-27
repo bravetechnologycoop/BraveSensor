@@ -71,9 +71,9 @@ int postgresInterface::openDB(){
     testTableIntegrity();
 
 	bDebug(TRACE, "About to test connection");
-    if (dbTest == OK) {
+    if (dbTest == B_OK) {
         bDebug(TRACE, "CONNECTED TO DB " + connStringdbName);
-        err = OK;
+        err = B_OK;
     } 
 	else { 
         err = BAD_SETTINGS;
@@ -85,7 +85,7 @@ int postgresInterface::openDB(){
 }
 // Will probably end up being private, as a helper function, keeping public for development.
 int postgresInterface::writeSQL(string sql) {
-    int err = OK;
+    int err = B_OK;
    // bDebug(TRACE, "Start writesql query: \n" + sql.substr(0, 100));
 	bDebug(TRACE, "Start writesql query: \n" + sql);
     if (connStringHost.empty() || conn == NULL || !conn->is_open()){
@@ -93,7 +93,7 @@ int postgresInterface::writeSQL(string sql) {
         err = BAD_SETTINGS;
     }
 
-    if (err == OK){
+    if (err == B_OK){
         bDebug(TRACE, "Opening connection...");
         
         pqxx::work txn(*conn);
@@ -128,7 +128,7 @@ int postgresInterface::assignDataSources(vector<dataSource*> dataVector){\
     int err = BAD_PARAMS;
 
     if (0 < dataVector.size()){
-        err = OK;
+        err = B_OK;
         this->dataVector = dataVector;
     }
     
@@ -167,10 +167,10 @@ int postgresInterface::testDataBaseIntegrity(){
         }
         else {
             bDebug(TRACE, "Target database available, continuing...");
-            err = OK;
+            err = B_OK;
         };
     
-    if (err != OK){
+    if (err != B_OK){
         bDebug(ERROR, "looks like the data vector is improper, please check");
     }
 
@@ -179,7 +179,7 @@ int postgresInterface::testDataBaseIntegrity(){
 
 int postgresInterface::writeTables(){
     bDebug(TRACE, "writeTables");
-    int err = OK;
+    int err = B_OK;
 
     if (!this->dataVector.empty()){
         bDebug(TRACE, "About to run through the data vector");
@@ -200,7 +200,7 @@ int postgresInterface::writeTables(){
         err = BAD_SETTINGS;
     }
 
-    if (OK != err){
+    if (B_OK != err){
         bDebug(ERROR, "looks like the data vector is improper, please check");
     }
 
@@ -210,7 +210,7 @@ int postgresInterface::writeTables(){
 int postgresInterface::writeVectorSQL(string sqlTable, std::vector<string> vData)
 {
     bDebug(TRACE, "enter writeVectorSQL");
-    int err = OK;
+    int err = B_OK;
     string query = "";
     query += "INSERT INTO " + sqlTable + " VALUES (";
     for (string vStr : vData) {
@@ -223,7 +223,7 @@ int postgresInterface::writeVectorSQL(string sqlTable, std::vector<string> vData
 }
 
 int postgresInterface::createDefaultTable(string table){
-    int err = OK;
+    int err = B_OK;
      if (!this->dataVector.empty()){
         bDebug(TRACE, "About to run through the data vector");
         for (dataSource * dS : this->dataVector){
@@ -253,7 +253,7 @@ int postgresInterface::createDefaultTable(string table){
 }
 
 int postgresInterface::dbConnect(){
-    int err = OK;
+    int err = B_OK;
     bDebug(TRACE, "Starting connection...");
 	string connStr = "user=" + connStringUser +
                     " password=" + connStringPassword +
@@ -273,7 +273,7 @@ int postgresInterface::dbConnect(){
 
 int postgresInterface::testTableIntegrity()
 {
-    int err = OK;
+    int err = B_OK;
     for (dataSource *dS : this->dataVector){
         pqxx::work txn(*conn);
         string tableName;
@@ -332,7 +332,7 @@ int postgresInterface::testTableIntegrity()
 
 
 int postgresInterface::rename_table(string tableName) {
-    int err = OK;
+    int err = B_OK;
 
     pqxx::work txn(*conn);
     std::string newTableName = tableName;
