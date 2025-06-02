@@ -47,7 +47,7 @@ usonicRange::~usonicRange(){
 
 int usonicRange::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(INFO, "usonicRange getData");
-    int err = OK;
+    int err = B_OK;
     uint8_t setRangeCmd = 0x51;
     uint8_t getRangeCmd = 0x00;
     int32_t rawRange;
@@ -92,7 +92,7 @@ int usonicRange::getTableDef(string * sqlBuf){
     if (NULL != sqlBuf){
         *sqlBuf = USONIC_SQL_TABLE;
         bDebug(TRACE, "usonicRange Table: " + *sqlBuf);
-        err = OK;
+        err = B_OK;
     }
 
     return err;
@@ -101,7 +101,7 @@ int usonicRange::getTableDef(string * sqlBuf){
 int usonicRange::setTableParams(){
     bDebug(TRACE, "usonicRange Set table params");
 
-    int err = OK;
+    int err = B_OK;
 
     try {
         this->dbParams.emplace_back("urangecm", "int"); //!!!
@@ -119,7 +119,7 @@ int usonicRange::getTableParams(std::vector<std::pair<std::string, std::string>>
     if(!dbParams.empty())
     {
         *tableData = dbParams;
-        err = OK;
+        err = B_OK;
     }
     return err;
 }

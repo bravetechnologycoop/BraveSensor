@@ -17,7 +17,7 @@ using namespace std;
 
 multiGasSensor::multiGasSensor(){
     bDebug(INFO, "multiGasSensor");
-    int error = OK;
+    int error = B_OK;
     setTableParams();
 
     sensirion_i2c_hal_init();
@@ -78,7 +78,7 @@ multiGasSensor::~multiGasSensor(){
 int multiGasSensor::getData(string *sqlTable, std::vector<string> * vData){
     bDebug(INFO, "multiGasSensor GetData");
     *sqlTable = MULTIGAS_SQL_TABLE;
-    int err = OK;
+    int err = B_OK;
     uint16_t mass_concentration_pm1p0;
     uint16_t mass_concentration_pm2p5;
     uint16_t mass_concentration_pm4p0;
@@ -139,11 +139,11 @@ int multiGasSensor::getData(string *sqlTable, std::vector<string> * vData){
 
 int multiGasSensor::getTableDef(string * sqlBuf){
     bDebug(INFO, "multiGasSensor getTableDef");
-    int err = OK;
+    int err = B_OK;
     if (NULL != sqlBuf){
         *sqlBuf = MULTIGAS_SQL_TABLE;
         bDebug(TRACE, "multigas Table: " + *sqlBuf);
-        err = OK;
+        err = B_OK;
     }
 
     return err;
@@ -151,7 +151,7 @@ int multiGasSensor::getTableDef(string * sqlBuf){
 
 int multiGasSensor::setTableParams(){
     bDebug(INFO, "multiGasSensor setTableParams");
-    int err = OK;
+    int err = B_OK;
 
     try {
         this->dbParams.emplace_back("mass_concentration_pm1p0", "float");
@@ -178,7 +178,7 @@ int multiGasSensor::getTableParams(std::vector<std::pair<std::string, std::strin
     if(!dbParams.empty())
     {
         *tableData = dbParams;
-        err = OK;
+        err = B_OK;
     }
     return err;
 }

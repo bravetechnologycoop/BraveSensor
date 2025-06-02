@@ -13,7 +13,7 @@
 
 lidarL5::lidarL5(int i2cBus, int i2cAddress){
     bDebug(TRACE, "Lidar created");
-    int8_t err = OK;
+    int8_t err = B_OK;
 
     this->i2cAddress = i2cAddress;
     err =  VL53L5X_UltraLite_Linux_I2C_Init(&(this->conf.platform), i2cBus, i2cAddress);
@@ -21,7 +21,7 @@ lidarL5::lidarL5(int i2cBus, int i2cAddress){
         bDebug(ERROR, "Failed to open device: " + to_string(err));
     } else {
         bDebug(TRACE, "Created the i2c bus");
-        if (OK != this->initDevice()){
+        if (B_OK != this->initDevice()){
             bDebug(ERROR, "Failed to initialize the device");
         }
     }
@@ -36,7 +36,7 @@ lidarL5::~lidarL5(){
 
 int lidarL5::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "Lidar getData");
-    int err = OK;
+    int err = B_OK;
     uint8_t isReady;
     VL53L5CX_ResultsData Results;
 
@@ -82,7 +82,7 @@ int lidarL5::getTableDef(string * sqlBuf){
     if (NULL != sqlBuf){
         *sqlBuf = LIDAR5_SQL_TABLE;
         bDebug(TRACE, "lidar Table: " + *sqlBuf);
-        err = OK;
+        err = B_OK;
     }
 
     return err;
@@ -90,7 +90,7 @@ int lidarL5::getTableDef(string * sqlBuf){
 
 int lidarL5::setTableParams(){
     bDebug(TRACE, "Lidarl5 Set table params");
-    int err = OK;
+    int err = B_OK;
 
     try {
 
@@ -113,14 +113,14 @@ int lidarL5::getTableParams(std::vector<std::pair<std::string, std::string>> * t
     if(!dbParams.empty())
     {
         *tableData = dbParams;
-        err = OK;
+        err = B_OK;
     }
     return err;
 }
 
 int lidarL5::initDevice(){
     bDebug(TRACE, "InitDevice");
-	int err = OK;
+	int err = B_OK;
     uint8_t status, isAlive;
 
     status = vl53l5cx_is_alive(&(this->conf), &isAlive);

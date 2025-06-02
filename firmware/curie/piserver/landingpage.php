@@ -4,6 +4,14 @@ $db_user = 'brave';
 $db_password = 'brave';
 $db_host = 'localhost';
 
+
+function sendToCurie(){
+    $url = "http://localhost:18080/curieservice";
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $server_output = curl_exec($ch);
+}
+
 try {
     try {
         $pdo = new PDO("pgsql:host=$db_host;dbname=$db_name", $db_user, $db_password);
@@ -36,6 +44,7 @@ try {
         $stmt = $pdo->prepare("INSERT INTO occupancy (occupied) VALUES (:new_occupied)");
         $stmt->bindParam(':new_occupied', $new_occupied, PDO::PARAM_INT);
         $stmt->execute();
+        sendToCurie();
     }
 
     if (isset($_POST['out'])) {
@@ -48,6 +57,7 @@ try {
             $stmt = $pdo->prepare("INSERT INTO occupancy (occupied) VALUES (:new_occupied)");
             $stmt->bindParam(':new_occupied', $new_occupied, PDO::PARAM_INT);
             $stmt->execute();
+            sendToCurie();
         }
     }
 

@@ -43,7 +43,7 @@ gpioInterface::~gpioInterface(){
 
 int gpioInterface::setParams(string busID, int pinID){
     bDebug(TRACE, "gpioInterface Setting params");
-    int err = OK;
+    int err = B_OK;
     
     this->busID = busID;
     this->pinID = pinID;
@@ -53,7 +53,7 @@ int gpioInterface::setParams(string busID, int pinID){
 
 int gpioInterface::open(bool output){
     bDebug(TRACE, "gpioInterface Open");
-    int err = OK;
+    int err = B_OK;
 
     this->output = output;
     this->chip = gpiod_chip_open_by_name((this->busID).c_str());
@@ -73,7 +73,7 @@ int gpioInterface::open(bool output){
 
 int gpioInterface::openForEvent(){
     bDebug(TRACE, "gpioInterface setting up the event tools");
-    int err = OK;
+    int err = B_OK;
 
     this->chip = gpiod_chip_open_by_name((this->busID).c_str());
     this->line = gpiod_chip_get_line(this->chip, this->pinID);
@@ -89,7 +89,7 @@ int gpioInterface::openForEvent(){
 
 int gpioInterface::close(){
     bDebug(TRACE, "gpioInterface Close");
-    int err = OK;
+    int err = B_OK;
 
     return err;
 }
@@ -100,7 +100,7 @@ int gpioInterface::readPin(bool *bData){
 
     if ((NULL != bData) && (!this->output) && (NULL != this->line)) {
         int val = 0;
-        err = OK;
+        err = B_OK;
         val = gpiod_line_get_value(this->line);
         if (0 > val) {
             err = val;
@@ -117,9 +117,9 @@ int gpioInterface::writePin(bool bData){
     int err = BAD_PARAMS;
 
     if ((this->output) && (NULL != this->line)){
-        err = OK;
+        err = B_OK;
          int val = 0;
-        err = OK;
+        err = B_OK;
         val = gpiod_line_set_value(this->line, !!bData);
         if (0 > val){
             err = val;

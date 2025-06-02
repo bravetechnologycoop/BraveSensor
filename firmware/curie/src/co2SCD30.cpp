@@ -48,7 +48,7 @@ co2SCD30::~co2SCD30(){
 
 int co2SCD30::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(INFO, "co2SCD30 getData");
-    int err = OK;
+    int err = B_OK;
 
     *sqlTable = CO2_SQL_TABLE;
 
@@ -74,7 +74,7 @@ int co2SCD30::getTableDef(string * sqlBuf){
     if (NULL != sqlBuf){
         *sqlBuf = CO2_SQL_TABLE;
         bDebug(TRACE, "co2SCD30 Table: " + *sqlBuf);
-        err = OK;
+        err = B_OK;
     }
 
     
@@ -85,7 +85,7 @@ int co2SCD30::getTableDef(string * sqlBuf){
 int co2SCD30::setTableParams(){
     bDebug(TRACE, "co2SCD30 Set table params");
 
-    int err = OK;
+    int err = B_OK;
 
     try {
         this->dbParams.emplace_back("co2read", "float"); //!!!
@@ -105,7 +105,7 @@ int co2SCD30::getTableParams(std::vector<std::pair<std::string, std::string>> * 
     if(!dbParams.empty())
     {
         *tableData = dbParams;
-        err = OK;
+        err = B_OK;
     }
     return err;
 }

@@ -41,7 +41,7 @@ int i2cInterface::openBus(){
 
     //check if the param has been set
     if (0 < this->busID.length()){
-        err = OK;
+        err = B_OK;
         this->fileI2C = open(this->busID.c_str(), O_RDWR);
         if (0 > this->fileI2C){
             err = BAD_PORT;
@@ -119,7 +119,7 @@ int i2cInterface::writeBytes(uint8_t slaveAddr, uint16_t writeAddress, uint16_t 
     struct i2c_rdwr_ioctl_data i2c_messageset[1];
 
     if (this->fileI2C){
-        err = OK;
+        err = B_OK;
         i2c_messages[0].addr = slaveAddr;
         i2c_messages[0].flags = 0;
         i2c_messages[0].len = 4;

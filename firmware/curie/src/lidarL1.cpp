@@ -29,7 +29,7 @@ lidarL1::~lidarL1(){
 
 int lidarL1::getData(string * sqlTable, std::vector<string> * vData){
     bDebug(TRACE, "LidarL1 getData");
-    int err = OK;
+    int err = B_OK;
     //check incoming pointers
     *sqlTable = LIDAR1_SQL_TABLE;
     uint16_t Dev = (uint16_t)i2cAddress;
@@ -72,7 +72,7 @@ int lidarL1::getTableDef(string * sqlBuf){
     if (NULL != sqlBuf){
         *sqlBuf = LIDAR1_SQL_TABLE;
         bDebug(TRACE, "LidarL1 Table: " + *sqlBuf);
-        err = OK;
+        err = B_OK;
     }
 
     return err;
@@ -80,7 +80,7 @@ int lidarL1::getTableDef(string * sqlBuf){
 
 int lidarL1::setTableParams(){
     bDebug(TRACE, "Set table params");
-    int err = OK;
+    int err = B_OK;
 
     try {
         this->dbParams.emplace_back("status", "int");
@@ -102,14 +102,14 @@ int lidarL1::getTableParams(std::vector<std::pair<std::string, std::string>> * t
     if(!dbParams.empty())
     {
         *tableData = dbParams;
-        err = OK;
+        err = B_OK;
     }
     return err;
 }
 
 int lidarL1::initDevice()
 {
-    int err = OK;
+    int err = B_OK;
     bDebug(TRACE, "init");
     uint16_t Dev = (uint16_t)i2cAddress;
     int file = VL53L1X_UltraLite_Linux_I2C_Init(Dev, adapter_nr, i2cAddress);
