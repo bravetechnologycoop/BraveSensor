@@ -3,8 +3,8 @@ const pg = require('pg')
 
 // In-house dependencies
 const helpers = require('../utils/helpers')
-const { ALERT_TYPE, CHATBOT_STATE, DEVICE_TYPE, DEVICE_STATUS } = require('../enums/index')
-const { Client, ClientExtension, Device, SensorsVital, Session } = require('../models/index')
+const { SESSION_STATUS, EVENT_TYPE, NOTIFICATION_TYPE } = require('../enums/index')
+const { Client, ClientExtension, Device, Session, Event, TeamsEvent, Vital, Notification } = require('../models/index')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -12,7 +12,11 @@ const pool = new pg.Pool({
   user: helpers.getEnvVar('PG_USER'),
   database: helpers.getEnvVar('PG_DATABASE'),
   password: helpers.getEnvVar('PG_PASSWORD'),
-  ssl: false,
+  max: 50,
+  allowExitOnIdle: true,
+  connectionTimeoutMillis: 15000,
+  idleTimeoutMillis: 10000,
+  ssl: { rejectUnauthorized: false },
 })
 
 // 1114 is OID for timestamp in Postgres
@@ -20,46 +24,66 @@ const pool = new pg.Pool({
 pg.types.setTypeParser(1114, str => str)
 
 pool.on('error', err => {
-  helpers.logError(`unexpected database error: ${err.toString()}`)
+  helpers.log(`Pool error: ${err.message}`)
+  helpers.log(`Pool stats - Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}`)
 })
 
-function createSessionFromRow(r, allDevices) {
-  const device = allDevices.filter(d => d.id === r.device_id)[0]
+let activeConnections = 0
 
-  return new Session(
-    r.id,
-    r.chatbot_state,
-    r.alert_type,
-    r.number_of_alerts,
-    r.created_at,
-    r.updated_at,
-    r.incident_category,
-    r.responded_at,
-    r.responded_by_phone_number,
-    r.is_resettable,
-    device,
-  )
-}
+pool.on('connect', () => {
+  activeConnections += 1
+  if (helpers.isDbLogging()) {
+    helpers.log(`[${new Date().toISOString()}] New connection established. Active: ${activeConnections}`)
+  }
+})
+
+pool.on('release', () => {
+  if (helpers.isDbLogging()) {
+    helpers.log(`[${new Date().toISOString()}] Client released to pool. Active: ${activeConnections}`)
+  }
+})
+
+pool.on('remove', () => {
+  activeConnections -= 1
+  if (helpers.isDbLogging()) {
+    helpers.log(`[${new Date().toISOString()}] Connection removed. Active: ${activeConnections}`)
+  }
+})
+
+setInterval(() => {
+  if (helpers.isDbLogging()) {
+    helpers.log(
+      `DB Pool Stats - Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}, Active connections: ${activeConnections}`,
+    )
+  }
+  if (pool.totalCount > pool.max * 0.8) {
+    helpers.log('Warning: Connection pool near capacity')
+  }
+}, 10000)
+
+// ----------------------------------------------------------------------------------------------------------------------------
 
 function createClientFromRow(r) {
   return new Client(
-    r.id,
+    r.client_id,
     r.display_name,
-    r.responder_phone_numbers,
-    r.reminder_timeout,
-    r.fallback_phone_numbers,
-    r.from_phone_number,
-    r.fallback_timeout,
-    r.heartbeat_phone_numbers,
-    r.incident_categories,
-    r.is_displayed,
-    r.is_sending_alerts,
-    r.is_sending_vitals,
     r.language,
     r.created_at,
     r.updated_at,
-    r.status,
+    r.responder_phone_numbers,
+    r.fallback_phone_numbers,
+    r.vitals_twilio_number,
+    r.vitals_phone_numbers,
+    r.survey_categories,
+    r.is_displayed,
+    r.devices_sending_alerts,
+    r.devices_sending_vitals,
+    r.devices_status,
     r.first_device_live_at,
+    r.stillness_survey_followup_delay,
+    r.teams_id,
+    r.teams_alert_channel_id,
+    r.teams_vital_channel_id,
   )
 }
 
@@ -71,49 +95,94 @@ function createClientExtensionFromRow(r) {
     r.building_type,
     r.created_at,
     r.updated_at,
-    r.organization,
-    r.funder,
-    r.postal_code,
     r.city,
+    r.postal_code,
+    r.funder,
     r.project,
+    r.organization,
   )
 }
 
-function createDeviceFromRow(r, allClients) {
-  const client = allClients.filter(c => c.id === r.client_id)[0]
-
+function createDeviceFromRow(r) {
   return new Device(
-    r.id,
-    r.device_type,
-    r.locationid,
-    r.phone_number,
+    r.device_id,
+    r.location_id,
     r.display_name,
-    r.serial_number,
-    r.sent_low_battery_alert_at,
-    r.sent_vitals_alert_at,
+    r.client_id,
     r.created_at,
     r.updated_at,
+    r.particle_device_id,
+    r.device_type,
+    r.device_twilio_number,
     r.is_displayed,
     r.is_sending_alerts,
     r.is_sending_vitals,
-    client,
   )
 }
 
-function createSensorsVitalFromRow(r, allSensors) {
-  const device = allSensors.filter(d => d.locationid === r.locationid)[0]
-
-  return new SensorsVital(
-    r.id,
-    r.missed_door_messages,
-    r.is_door_battery_low,
-    r.door_last_seen_at,
-    r.reset_reason,
-    r.state_transitions,
+function createSessionFromRow(r) {
+  return new Session(
+    r.session_id,
+    r.device_id,
     r.created_at,
-    r.is_tampered,
-    device,
+    r.updated_at,
+    r.session_status,
+    r.attending_responder_number,
+    r.door_opened,
+    r.survey_sent,
+    r.selected_survey_category,
+    r.response_time,
+    r.session_responded_via,
   )
+}
+
+function createEventFromRow(r) {
+  return new Event(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.phone_numbers)
+}
+
+function createTeamsEventFromRow(r) {
+  return new TeamsEvent(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.message_id)
+}
+
+function createVitalFromRow(r) {
+  return new Vital(
+    r.vital_id,
+    r.device_id,
+    r.created_at,
+    r.device_last_reset_reason,
+    r.door_last_seen_at,
+    r.door_low_battery,
+    r.door_tampered,
+    r.door_missed_count,
+    r.consecutive_open_door_count,
+  )
+}
+
+function createNotificationFromRow(r) {
+  return new Notification(r.notification_id, r.device_id, r.notification_type, r.notification_sent_at)
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function commitTransaction(pgClient) {
+  if (helpers.isDbLogging()) {
+    helpers.log('STARTED: commitTransaction')
+  }
+
+  try {
+    await pgClient.query('COMMIT')
+    if (helpers.isDbLogging()) {
+      helpers.log('COMPLETED: commitTransaction')
+    }
+  } catch (error) {
+    throw new Error(`Error running the commitTransaction query: ${error.message}`)
+  } finally {
+    try {
+      pgClient.release(true)
+    } catch (releaseError) {
+      helpers.logError(`commitTransaction: Error releasing client: ${releaseError}`)
+    }
+  }
 }
 
 async function rollbackTransaction(pgClient) {
@@ -123,20 +192,25 @@ async function rollbackTransaction(pgClient) {
 
   try {
     await pgClient.query('ROLLBACK')
-  } catch (e) {
-    helpers.logError(`Error running the rollbackTransaction query: ${e}`)
-  } finally {
-    try {
-      pgClient.release()
-    } catch (err) {
-      helpers.logError(`rollbackTransaction: Error releasing client: ${err}`)
-    }
-
     if (helpers.isDbLogging()) {
       helpers.log('COMPLETED: rollbackTransaction')
     }
+  } catch (error) {
+    throw new Error(`Error running the rollbackTransaction query: ${error.message}`)
+  } finally {
+    try {
+      pgClient.release(true)
+    } catch (releaseError) {
+      helpers.logError(`rollbackTransaction: Error releasing client: ${releaseError}`)
+    }
   }
 }
+
+const LOCK_TIMEOUT_MS = 15000
+const STATEMENT_TIMEOUT_MS = 15000
+const IDLE_IN_TRANSACTION_TIMEOUT_MS = 60000
+const MAX_RETRIES = 5
+const BACKOFF_BASE = 100
 
 async function runBeginTransactionWithRetries(retryCount) {
   if (helpers.isDbLogging()) {
@@ -151,12 +225,14 @@ async function runBeginTransactionWithRetries(retryCount) {
       helpers.log('CONNECTED: beginTransaction')
     }
 
+    await pgClient.query(`SET application_name = 'app_transaction_${Date.now()}'`)
+    await pgClient.query(`SET lock_timeout = ${LOCK_TIMEOUT_MS}`)
+    await pgClient.query(`SET statement_timeout = ${STATEMENT_TIMEOUT_MS}`)
+    await pgClient.query(`SET idle_in_transaction_session_timeout = ${IDLE_IN_TRANSACTION_TIMEOUT_MS}`)
+
+    await pgClient.query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE')
     await pgClient.query('BEGIN')
-
-    await pgClient.query('LOCK TABLE clients, sessions, devices')
   } catch (e) {
-    helpers.logError(`Error running the runBeginTransactionWithRetries query: ${e}`)
-
     if (pgClient) {
       try {
         await rollbackTransaction(pgClient)
@@ -165,10 +241,13 @@ async function runBeginTransactionWithRetries(retryCount) {
       }
     }
 
-    if (retryCount < 1) {
-      helpers.log(`Retrying runBeginTransactionWithRetries.`)
+    if (retryCount < MAX_RETRIES) {
+      const delay = Math.min(BACKOFF_BASE * 2 ** retryCount, 2000)
+      helpers.log(`Retrying transaction after ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`)
+      await new Promise(resolve => setTimeout(resolve, delay))
       return await runBeginTransactionWithRetries(retryCount + 1)
     }
+
     return null
   } finally {
     if (helpers.isDbLogging()) {
@@ -182,225 +261,13 @@ async function runBeginTransactionWithRetries(retryCount) {
 async function beginTransaction() {
   try {
     const pgClient = await runBeginTransactionWithRetries(0)
+    if (!pgClient) {
+      throw new Error('Failed to acquire database client after retries')
+    }
     return pgClient
   } catch (e) {
+    helpers.logError(`Failed to begin transaction: ${e.message}`)
     return null
-  }
-}
-
-async function commitTransaction(pgClient) {
-  if (helpers.isDbLogging()) {
-    helpers.log('STARTED: commitTransaction')
-  }
-
-  try {
-    await pgClient.query('COMMIT')
-  } catch (e) {
-    helpers.logError(`Error running the commitTransaction query: ${e}`)
-  } finally {
-    try {
-      pgClient.release()
-    } catch (err) {
-      helpers.logError(`commitTransaction: Error releasing client: ${err}`)
-    }
-
-    if (helpers.isDbLogging()) {
-      helpers.log('COMPLETED: commitTransaction')
-    }
-  }
-}
-
-async function getClients(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getClients',
-      `
-      SELECT *
-      FROM clients
-      ORDER BY display_name
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    return await Promise.all(results.rows.map(r => createClientFromRow(r)))
-  } catch (err) {
-    helpers.logError(`Error running the getClients query: ${err.toString()}`)
-  }
-}
-
-async function getActiveSensorClients(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getActiveSensorClients',
-      `
-      SELECT c.*
-      FROM clients c
-      INNER JOIN (
-        SELECT DISTINCT client_id AS id
-        FROM devices
-        WHERE device_type IN ($1, $2)
-        AND is_sending_alerts
-        AND is_sending_vitals
-      ) AS d
-      ON c.id = d.id
-      WHERE c.is_sending_alerts AND c.is_sending_vitals
-      ORDER BY c.display_name;
-      `,
-      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    return await Promise.all(results.rows.map(r => createClientFromRow(r)))
-  } catch (err) {
-    helpers.logError(`Error running the getActiveSensorClients query: ${err.toString()}`)
-  }
-}
-
-async function getDevices(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getDevices',
-      `
-      SELECT d.*
-      FROM devices AS d
-      LEFT JOIN clients AS c ON d.client_id = c.id
-      ORDER BY c.display_name, d.display_name
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return results.rows.map(r => createDeviceFromRow(r, allClients))
-  } catch (err) {
-    helpers.logError(`Error running the getDevices query: ${err.toString()}`)
-  }
-}
-
-async function getClientDevices(displayName, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getClientDevices',
-      `
-      SELECT d.*
-      FROM devices AS d
-      LEFT JOIN clients AS c ON d.client_id = c.id
-      WHERE c.display_name = $1
-      ORDER BY c.display_name, d.display_name
-      `,
-      [displayName],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    return results.rows
-  } catch (err) {
-    helpers.logError(`Error running the getDevices query: ${err.toString()}`)
-  }
-}
-
-async function getLocations(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getLocations',
-      `
-      SELECT d.*
-      FROM devices AS d
-      LEFT JOIN clients AS c ON d.client_id = c.id
-      WHERE d.device_type IN ($1, $2)
-      ORDER BY c.display_name, d.display_name
-      `,
-      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return results.rows.map(r => createDeviceFromRow(r, allClients))
-  } catch (err) {
-    helpers.logError(`Error running the getLocations query: ${err.toString()}`)
-  }
-}
-
-async function getDataForExport(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getDataForExport',
-      `
-      SELECT
-        c.id AS "Client ID",
-        c.display_name AS "Client Name",
-        d.locationid AS "Sensor ID",
-        d.display_name AS "Sensor Name",
-        NULL AS "Radar Type",
-        (d.is_sending_vitals AND d.is_sending_alerts AND c.is_sending_vitals AND c.is_sending_alerts) AS "Active?",
-        s.id AS "Session ID",
-        TO_CHAR(s.created_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Start",
-        TO_CHAR(s.responded_at, 'yyyy-MM-dd HH24:mi:ss') AS "Session Responded At",
-        TO_CHAR(s.updated_at, 'yyyy-MM-dd HH24:mi:ss') AS "Last Session Activity",
-        s.incident_category AS "Session Incident Type",
-        s.chatbot_state AS "Session State",
-        s.alert_type As "Alert Type",
-        s.responded_by_phone_number AS "Session Responded By",
-        x.country AS "Country",
-        x.country_subdivision AS "Country Subdivision",
-        x.building_type AS "Building Type"
-      FROM sessions s
-        LEFT JOIN devices d ON s.device_id = d.id
-        LEFT JOIN clients c on d.client_id = c.id
-        LEFT JOIN clients_extension x on x.client_id = c.id
-        WHERE d.device_type IN ($1, $2)
-      `,
-      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
-      pool,
-      pgClient,
-    )
-
-    return results.rows
-  } catch (err) {
-    helpers.logError(`Error running the getDataForExport query: ${err.toString()}`)
-  }
-}
-
-async function getCurrentTime(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getCurrentTime',
-      `
-      SELECT NOW()
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-
-    return results.rows[0].now
-  } catch (err) {
-    helpers.logError(`Error running the getCurrentTime query: ${err.toString()}`)
   }
 }
 
@@ -425,7 +292,7 @@ async function getCurrentTimeForHealthCheck() {
     throw err
   } finally {
     try {
-      pgClient.release()
+      pgClient.release(true)
     } catch (err) {
       helpers.logError(`getCurrentTimeForHealthCheck: Error releasing client: ${err}`)
     }
@@ -436,19 +303,368 @@ async function getCurrentTimeForHealthCheck() {
   }
 }
 
-// Gets the most recent session data in the table for a specified location
-async function getMostRecentSessionWithDevice(device, pgClient) {
+async function getCurrentTime(pgClient) {
   try {
     const results = await helpers.runQuery(
-      'getMostRecentSessionWithDevice',
+      'getCurrentTime',
+      `
+      SELECT NOW()
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    return results.rows[0].now
+  } catch (err) {
+    helpers.logError(`Error running the getCurrentTime query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getFormattedTimeDifference(timestamp, pgClient) {
+  try {
+    // Note: Uses database function: format_time_difference (see script #58)
+    const results = await helpers.runQuery(
+      'getFormattedTimeDifference',
+      `SELECT format_time_difference($1::timestamp) as formatted_time`,
+      [timestamp],
+      pool,
+      pgClient,
+    )
+
+    return results.rows[0].formatted_time
+  } catch (err) {
+    helpers.logError(`Error calculating formatted time difference: ${err}`)
+    return 'Unknown time ago'
+  }
+}
+
+async function clearAllTables(pgClient) {
+  if (!helpers.isTestEnvironment()) {
+    helpers.log('Warning - tried to clear all tables outside of a test environment!')
+    return
+  }
+
+  try {
+    const result = await helpers.runQuery(
+      'clearTables',
+      `
+      -- Delete from tables with foreign key dependencies first
+      DELETE FROM events;
+      DELETE FROM notifications;
+      DELETE FROM vitals_cache;
+      DELETE FROM vitals;
+      DELETE FROM sessions;
+      DELETE FROM devices;
+      DELETE FROM clients_extension;
+      DELETE FROM clients;
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    return result
+  } catch (err) {
+    helpers.logError(`Error running the clearAllTables query: ${err.toString()}`)
+    return null
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function createClient(
+  displayName,
+  language,
+  responderPhoneNumbers,
+  fallbackPhoneNumbers,
+  vitalsTwilioNumber,
+  vitalsPhoneNumbers,
+  surveyCategories,
+  isDisplayed,
+  devicesSendingAlerts,
+  devicesSendingVitals,
+  devicesStatus,
+  firstDeviceLiveAt,
+  stillnessSurveyFollowupDelay,
+  teamsId,
+  teamsAlertChannelId,
+  teamsVitalChannelId,
+  pgClient,
+) {
+  try {
+    const queryText = `
+      INSERT INTO clients (
+        display_name, 
+        language,
+        responder_phone_numbers, 
+        fallback_phone_numbers,
+        vitals_twilio_number,
+        vitals_phone_numbers,
+        survey_categories,
+        is_displayed,
+        devices_sending_alerts,
+        devices_sending_vitals,
+        devices_status,
+        first_device_live_at,
+        stillness_survey_followup_delay,
+        teams_id,
+        teams_alert_channel_id,
+        teams_vital_channel_id
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      RETURNING *
+    `
+    const queryParams = [
+      displayName,
+      language,
+      responderPhoneNumbers,
+      fallbackPhoneNumbers,
+      vitalsTwilioNumber,
+      vitalsPhoneNumbers,
+      surveyCategories,
+      isDisplayed,
+      devicesSendingAlerts,
+      devicesSendingVitals,
+      devicesStatus,
+      firstDeviceLiveAt,
+      stillnessSurveyFollowupDelay,
+      teamsId,
+      teamsAlertChannelId,
+      teamsVitalChannelId,
+    ]
+
+    const results = await helpers.runQuery('createClient', queryText, queryParams, pool, pgClient)
+
+    if (!results || results.rows.length === 0) {
+      return null
+    }
+
+    return createClientFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createClient query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateClient(
+  clientId,
+  displayName,
+  language,
+  responderPhoneNumbers,
+  fallbackPhoneNumbers,
+  vitalsTwilioNumber,
+  vitalsPhoneNumbers,
+  surveyCategories,
+  isDisplayed,
+  devicesSendingAlerts,
+  devicesSendingVitals,
+  devicesStatus,
+  firstDeviceLiveAt,
+  stillnessSurveyFollowupDelay,
+  teamsId,
+  teamsAlertChannelId,
+  teamsVitalChannelId,
+  pgClient,
+) {
+  try {
+    const queryText = `
+      UPDATE clients 
+      SET 
+        display_name = $2,
+        language = $3,
+        responder_phone_numbers = $4,
+        fallback_phone_numbers = $5,
+        vitals_twilio_number = $6,
+        vitals_phone_numbers = $7,
+        survey_categories = $8,
+        is_displayed = $9,
+        devices_sending_alerts = $10,
+        devices_sending_vitals = $11,
+        devices_status = $12,
+        first_device_live_at = $13,
+        stillness_survey_followup_delay = $14,
+        teams_id = $15,
+        teams_alert_channel_id = $16,
+        teams_vital_channel_id = $17
+      WHERE client_id = $1
+      RETURNING *
+    `
+    const queryParams = [
+      clientId,
+      displayName,
+      language,
+      responderPhoneNumbers,
+      fallbackPhoneNumbers,
+      vitalsTwilioNumber,
+      vitalsPhoneNumbers,
+      surveyCategories,
+      isDisplayed,
+      devicesSendingAlerts,
+      devicesSendingVitals,
+      devicesStatus,
+      firstDeviceLiveAt,
+      stillnessSurveyFollowupDelay,
+      teamsId,
+      teamsAlertChannelId,
+      teamsVitalChannelId,
+    ]
+
+    const results = await helpers.runQuery('updateClient', queryText, queryParams, pool, pgClient)
+
+    if (!results || results.rows.length === 0) {
+      return null
+    }
+
+    return createClientFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateClient query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getClients(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClients',
       `
       SELECT *
-      FROM sessions
-      WHERE device_id = $1
-      ORDER BY created_at DESC
-      LIMIT 1
+      FROM clients
+      ORDER BY display_name
       `,
-      [device.id],
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(r => createClientFromRow(r))
+  } catch (err) {
+    helpers.logError(`Error running the getClients query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getActiveClients(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getActiveClients',
+      `
+      SELECT DISTINCT c.*
+      FROM clients AS c
+      INNER JOIN (
+        SELECT DISTINCT client_id 
+        FROM devices
+        WHERE is_sending_alerts AND is_sending_vitals
+      ) AS d
+      ON c.client_id = d.client_id
+      WHERE c.devices_sending_alerts AND c.devices_sending_vitals
+      ORDER BY c.display_name;
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(r => createClientFromRow(r))
+  } catch (err) {
+    helpers.logError(`Error running the getActiveClients query: ${err.toString()}`)
+    return []
+  }
+}
+
+// used for dashboard rendering (is_displayed should be true)
+// Note: Uses database function: format_time_difference (see script #58)
+async function getMergedClientsWithExtensions(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getMergedClientsWithExtensions',
+      `
+      SELECT 
+        c.*,
+        ce.country,
+        ce.country_subdivision,
+        ce.building_type,
+        ce.city,
+        ce.postal_code,
+        ce.funder,
+        ce.project,
+        ce.organization
+      FROM clients c
+      LEFT JOIN clients_extension ce ON c.client_id = ce.client_id
+      WHERE c.is_displayed = true
+      ORDER BY c.display_name
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => ({
+      ...createClientFromRow(row),
+      country: row.country || 'N/A',
+      countrySubdivision: row.country_subdivision || 'N/A',
+      buildingType: row.building_type || 'N/A',
+      city: row.city || 'N/A',
+      postalCode: row.postal_code || 'N/A',
+      funder: row.funder || 'N/A',
+      project: row.project || 'N/A',
+      organization: row.organization || 'N/A',
+    }))
+  } catch (err) {
+    helpers.logError(`Error running getMergedClientsWithExtensions query: ${err}`)
+    return []
+  }
+}
+
+async function getClientsWithResponderPhoneNumber(responderPhoneNumber, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClientsWithResponderPhoneNumber',
+      `
+      SELECT *
+      FROM clients
+      WHERE $1 = ANY(responder_phone_numbers)
+      ORDER BY display_name
+      `,
+      [responderPhoneNumber],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(r => createClientFromRow(r))
+  } catch (err) {
+    helpers.logError(`Error running the getClientsWithResponderPhoneNumber query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getClientWithDisplayName(displayName, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClientWithDisplayName',
+      `
+      SELECT *
+      FROM clients
+      WHERE display_name = $1
+      `,
+      [displayName],
       pool,
       pgClient,
     )
@@ -457,48 +673,23 @@ async function getMostRecentSessionWithDevice(device, pgClient) {
       return null
     }
 
-    return createSessionFromRow(results.rows[0], [device])
+    return createClientFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getMostRecentSessionWithDevice query: ${err.toString()}`)
+    helpers.logError(`Error running the getClientWithDisplayName query: ${err.toString()}`)
+    return null
   }
 }
 
-// Gets session with a specific SessionID
-async function getSessionWithSessionId(id, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getSessionWithSessionId',
-      `
-      SELECT *
-      FROM sessions
-      WHERE id = $1
-      `,
-      [id],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    const allDevices = await getDevices(pgClient)
-    return createSessionFromRow(results.rows[0], allDevices)
-  } catch (err) {
-    helpers.logError(`Error running the getSessionWithSessionId query: ${err.toString()}`)
-  }
-}
-
-async function getClientWithClientId(id, pgClient) {
+async function getClientWithClientId(clientId, pgClient) {
   try {
     const results = await helpers.runQuery(
       'getClientWithClientId',
       `
       SELECT *
       FROM clients
-      WHERE id = $1
+      WHERE client_id = $1
       `,
-      [id],
+      [clientId],
       pool,
       pgClient,
     )
@@ -510,6 +701,152 @@ async function getClientWithClientId(id, pgClient) {
     return createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getClientWithClientId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getClientWithDeviceId(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getClientWithDeviceId',
+      `
+      SELECT c.*
+      FROM clients c
+      JOIN devices d ON c.client_id = d.client_id
+      WHERE d.device_id = $1
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createClientFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getClientWithDeviceId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getStillnessSurveyFollowupDelay(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getStillnessSurveyFollowupDelay',
+      `
+      SELECT stillness_survey_followup_delay
+      FROM clients
+      WHERE client_id = $1
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return results.rows[0].stillness_survey_followup_delay
+  } catch (err) {
+    helpers.logError(`Error running the getStillnessSurveyFollowupDelay query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function clearClientWithClientId(clientId, pgClient) {
+  if (!helpers.isTestEnvironment() && !helpers.isStagingEnvironment()) {
+    helpers.log('Warning - tried to clear client outside of a test environment!')
+    return
+  }
+
+  try {
+    const results = await helpers.runQuery(
+      'clearClientWithClientId',
+      `
+      DELETE FROM clients 
+      WHERE client_id = $1
+      RETURNING *
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createClientFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the clearClientWithClientId query: ${err.toString()}`)
+    return null
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function createClientExtension(clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'createClientExtension',
+      `
+      INSERT INTO clients_extension (
+        client_id,
+        country,
+        country_subdivision,
+        building_type,
+        city,
+        postal_code,
+        funder,
+        project,
+        organization
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+      `,
+      [clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createClientExtensionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createClientExtension query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateClientExtension(clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateClientExtension',
+      `
+      UPDATE clients_extension
+      SET country = $2, country_subdivision = $3, building_type = $4, city = $5, postal_code = $6, funder = $7, project = $8, organization = $9
+      WHERE client_id = $1
+      RETURNING *
+      `,
+      [clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization],
+      pool,
+      pgClient,
+    )
+
+    // NOTE: this shouldn't happen, as insertion into clients_extension is a trigger for insertion into clients, but it's good to be safe!
+    if (results === undefined || results.rows.length === 0) {
+      return await createClientExtension(clientId, country, countrySubdivision, buildingType, city, postalCode, funder, project, organization)
+    }
+
+    return createClientExtensionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateClientExtension query: ${err.toString()}`)
+    return null
   }
 }
 
@@ -528,1071 +865,25 @@ async function getClientExtensionWithClientId(clientId, pgClient) {
     )
 
     if (results === undefined || results.rows.length === 0) {
-      return createClientExtensionFromRow({}) // return empty ClientExtension object
+      return createClientExtensionFromRow({})
     }
 
     return createClientExtensionFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getClientExtensionWithClientId query: ${err.toString()}`)
-  }
-}
-
-async function getClientWithSessionId(sessionid, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getClientWithSessionId',
-      `
-      SELECT c.*
-      FROM clients AS c
-      LEFT JOIN devices AS d ON c.id = d.client_id
-      LEFT JOIN sessions AS s ON d.id = s.device_id
-      WHERE s.id = $1
-      `,
-      [sessionid],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    return createClientFromRow(results.rows[0])
-  } catch (err) {
-    helpers.logError(`Error running the getClientWithSessionId query: ${err.toString()}`)
-  }
-}
-
-// Gets the last session data in the table for a specified phone number
-async function getMostRecentSessionWithPhoneNumbers(devicePhoneNumber, responderPhoneNumber, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getMostRecentSessionWithPhoneNumbers',
-      `
-      SELECT s.*
-      FROM sessions AS s
-      LEFT JOIN devices AS d ON s.device_id = d.id
-      LEFT JOIN clients AS c ON d.client_id = c.id
-      WHERE d.phone_number = $1
-      AND $2 = ANY(c.responder_phone_numbers)
-      ORDER BY s.created_at DESC
-      LIMIT 1
-      `,
-      [devicePhoneNumber, responderPhoneNumber],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    const allDevices = await getDevices(pgClient)
-    return createSessionFromRow(results.rows[0], allDevices)
-  } catch (err) {
-    helpers.logError(`Error running the getMostRecentSessionWithPhoneNumbers query: ${err.toString()}`)
-  }
-}
-
-async function getHistoryOfSessions(deviceId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getHistoryOfSessions',
-      `
-      SELECT *
-      FROM sessions
-      WHERE device_id = $1
-      ORDER BY created_at DESC
-      LIMIT 200
-      `,
-      [deviceId],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      return null
-    }
-
-    const allDevices = await getDevices(pgClient)
-    return results.rows.map(r => createSessionFromRow(r, allDevices))
-  } catch (err) {
-    helpers.logError(`Error running the getHistoryOfSessions query: ${err.toString()}`)
-  }
-}
-
-async function getUnrespondedSessionWithDeviceId(deviceId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getUnrespondedSessionWithDeviceId',
-      `
-      SELECT *
-      FROM sessions
-      WHERE device_id = $1
-      AND chatbot_state != $2
-      AND chatbot_state != $3
-      AND chatbot_state != $4
-      ORDER BY created_at DESC 
-      LIMIT 1
-      `,
-      [deviceId, CHATBOT_STATE.WAITING_FOR_CATEGORY, CHATBOT_STATE.COMPLETED, CHATBOT_STATE.RESET],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    const allDevices = await getDevices(pgClient)
-    return createSessionFromRow(results.rows[0], allDevices)
-  } catch (err) {
-    helpers.logError(`Error running the getUnrespondedSessionWithDeviceId query: ${err.toString()}`)
-  }
-}
-
-async function getAllSessionsWithDeviceId(deviceId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getAllSessionsWithDeviceId',
-      `
-      SELECT *
-      FROM sessions
-      WHERE device_id = $1
-      ORDER BY created_at DESC
-      `,
-      [deviceId],
-      pool,
-      pgClient,
-    )
-
-    if (!results) {
-      return null
-    }
-
-    const allLocations = await getLocations(pgClient)
-    return results.rows.map(r => createSessionFromRow(r, allLocations))
-  } catch (err) {
-    helpers.logError(`Error running the getAllSessionsWithDeviceId query: ${err.toString()}`)
-  }
-}
-
-// Creates a new session for a specific location
-async function createSession(
-  deviceId,
-  incidentCategory,
-  chatbotState,
-  alertType,
-  createdAt,
-  respondedAt,
-  respondedByPhoneNumber,
-  isResettable,
-  pgClient,
-) {
-  if (createdAt !== undefined) {
-    try {
-      const results = await helpers.runQuery(
-        'createSession',
-        `
-        INSERT INTO sessions(device_id, incident_category, chatbot_state, alert_type, created_at, responded_at, responded_by_phone_number, is_resettable)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING *
-        `,
-        [deviceId, incidentCategory, chatbotState, alertType, createdAt, respondedAt, respondedByPhoneNumber, isResettable],
-        pool,
-        pgClient,
-      )
-
-      const allLocations = await getLocations(pgClient)
-      return createSessionFromRow(results.rows[0], allLocations)
-    } catch (err) {
-      helpers.logError(`Error running the createSession query: ${err.toString()}`)
-    }
-  } else {
-    try {
-      const results = await helpers.runQuery(
-        'createSession',
-        `
-        INSERT INTO sessions(device_id, incident_category, chatbot_state, alert_type, responded_at, responded_by_phone_number, is_resettable)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-        `,
-        [deviceId, incidentCategory, chatbotState, alertType, respondedAt, respondedByPhoneNumber, isResettable],
-        pool,
-        pgClient,
-      )
-
-      const allLocations = await getLocations(pgClient)
-      return createSessionFromRow(results.rows[0], allLocations)
-    } catch (err) {
-      helpers.logError(`Error running the createSession query: ${err.toString()}`)
-    }
-  }
-}
-
-async function updateSentAlerts(locationid, sentalerts, pgClient) {
-  try {
-    const query = sentalerts
-      ? `
-        UPDATE devices
-        SET sent_vitals_alert_at = NOW()
-        WHERE locationid = $1
-        RETURNING *
-      `
-      : `
-        UPDATE devices
-        SET sent_vitals_alert_at = NULL
-        WHERE locationid = $1
-        RETURNING *
-      `
-
-    const results = await helpers.runQuery('updateSentAlerts', query, [locationid], pool, pgClient)
-
-    if (results === undefined) {
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return createDeviceFromRow(results.rows[0], allClients)
-  } catch (err) {
-    helpers.logError(`Error running the updateSentAlerts query: ${err.toString()}`)
-  }
-}
-
-async function updateLowBatteryAlertTime(locationid, pgClient) {
-  try {
-    await helpers.runQuery(
-      'updateLowBatteryAlertTime',
-      `
-      UPDATE devices
-      SET sent_low_battery_alert_at = NOW()
-      WHERE locationid = $1
-      `,
-      [locationid],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.logError(`Error running the updateLowBatteryAlertTime query: ${err.toString()}`)
-  }
-}
-
-async function saveSession(session, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'saveSessionSelect',
-      `
-      SELECT *
-      FROM sessions
-      WHERE id = $1
-      LIMIT 1
-      `,
-      [session.id],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows === undefined || results.rows.length === 0) {
-      throw new Error("Tried to save a session that doesn't exist yet. Use createSession() instead.")
-    }
-
-    await helpers.runQuery(
-      'saveSessionUpdate',
-      `
-      UPDATE sessions
-      SET device_id = $1, incident_category = $2, chatbot_state = $3, alert_type = $4, responded_at = $5, responded_by_phone_number = $6, number_of_alerts = $7, is_resettable = $8
-      WHERE id = $9
-      `,
-      [
-        session.device.id,
-        session.incidentCategory,
-        session.chatbotState,
-        session.alertType,
-        session.respondedAt,
-        session.respondedByPhoneNumber,
-        session.numberOfAlerts,
-        session.isResettable,
-        session.id,
-      ],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.logError(`Error running the saveSessionUpdate query: ${err.toString()}`)
-  }
-}
-
-// Retrieves the location corresponding to a given Particle core ID (serial number)
-async function getDeviceWithSerialNumber(serialNumber, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getDeviceWithSerialNumber',
-      `
-      SELECT *
-      FROM devices
-      WHERE serial_number = $1
-      `,
-      [serialNumber],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return createDeviceFromRow(results.rows[0], allClients)
-  } catch (err) {
-    helpers.logError(`Error running the getDeviceWithSerialNumber query: ${err.toString()}`)
-  }
-
-  return null
-}
-
-// Retrieves the location corresponding to a given location ID
-async function getLocationWithLocationid(locationid, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getLocationWithLocationid',
-      `
-      SELECT *
-      FROM devices
-      WHERE locationid = $1
-      `,
-      [locationid],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return createDeviceFromRow(results.rows[0], allClients)
-  } catch (err) {
-    helpers.logError(`Error running the getLocationWithLocationid query: ${err.toString()}`)
-  }
-
-  return null
-}
-
-// Retrieves the location corresponding to a given location ID
-async function getLocationWithDeviceId(deviceId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getLocationWithDeviceId',
-      `
-      SELECT *
-      FROM devices
-      WHERE id = $1
-      `,
-      [deviceId],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return createDeviceFromRow(results.rows[0], allClients)
-  } catch (err) {
-    helpers.logError(`Error running the getLocationWithDeviceId query: ${err.toString()}`)
-  }
-
-  return null
-}
-
-async function getLocationsFromClientId(clientId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getLocationsFromClientId',
-      `
-      SELECT *
-      FROM devices
-      WHERE client_id = $1
-      AND device_type IN ($2, $3)
-      ORDER BY display_name
-      `,
-      [clientId, DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined) {
-      helpers.logError(`Error: No location with client ID ${clientId} key exists`)
-      return null
-    }
-
-    const allClients = await getClients(pgClient)
-    return results.rows.map(r => createDeviceFromRow(r, allClients))
-  } catch (err) {
-    helpers.logError(`Error running the getLocationsFromClientId query: ${err.toString()}`)
-  }
-}
-
-async function numberOfStillnessAlertsInIntervalOfTime(deviceId, pgClient) {
-  const intervalToCheckAlertsStr = helpers.getEnvVar('INTERVAL_TO_CHECK_ALERTS')
-  const intervalToCheckAlerts = parseInt(intervalToCheckAlertsStr, 10)
-
-  try {
-    const results = await helpers.runQuery(
-      'numberOfStillnessAlertsInIntervalOfTime',
-      `
-      SELECT COUNT(*)
-      FROM sessions
-      WHERE alert_type = $1
-      AND device_id = $2
-      AND created_at BETWEEN NOW() - $3 * INTERVAL '1 minute'
-      AND NOW()
-      `,
-      [ALERT_TYPE.SENSOR_STILLNESS, deviceId, intervalToCheckAlerts],
-      pool,
-      pgClient,
-    )
-    if (results === undefined) {
-      return null
-    }
-    return results.rows[0].count
-  } catch (err) {
-    helpers.logError(`Error running the numberOfStillnessAlertsInIntervalOfTime query: ${err.toString()}`)
-  }
-}
-
-// Updates the devices table entry for a specific device with the new data
-// eslint-disable-next-line prettier/prettier
-async function updateLocation(
-  displayName,
-  serialNumber,
-  phoneNumber,
-  isDisplayed,
-  isSendingAlerts,
-  isSendingVitals,
-  clientId,
-  deviceType,
-  deviceId,
-  pgClient,
-) {
-  try {
-    const results = await helpers.runQuery(
-      'updateLocation',
-      `
-      UPDATE devices
-      SET
-        display_name = $1,
-        serial_number = $2,
-        phone_number = $3,
-        is_displayed = $4,
-        is_sending_alerts = $5,
-        is_sending_vitals = $6,
-        client_id = $7,
-        device_type = $8
-      WHERE id = $9
-      RETURNING *
-      `,
-      [displayName, serialNumber, phoneNumber, isDisplayed, isSendingAlerts, isSendingVitals, clientId, deviceType, deviceId],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    helpers.log(`Location '${deviceId}' successfully updated`)
-    const allClients = await getClients(pgClient)
-    return createDeviceFromRow(results.rows[0], allClients)
-  } catch (err) {
-    helpers.logError(`Error running the updateLocation query: ${err.toString()}`)
-  }
-}
-
-async function updateClient(
-  displayName,
-  fromPhoneNumber,
-  responderPhoneNumbers,
-  reminderTimeout,
-  fallbackPhoneNumbers,
-  fallbackTimeout,
-  heartbeatPhoneNumbers,
-  incidentCategories,
-  isDisplayed,
-  isSendingAlerts,
-  isSendingVitals,
-  language,
-  status,
-  firstDeviceLiveAt,
-  clientId,
-  pgClient,
-) {
-  try {
-    const results = await helpers.runQuery(
-      'updateClient',
-      `
-      UPDATE clients
-      SET display_name = $1, from_phone_number = $2, responder_phone_numbers = $3, reminder_timeout = $4, fallback_phone_numbers = $5, fallback_timeout = $6, heartbeat_phone_numbers = $7, incident_categories = $8, is_displayed = $9, is_sending_alerts = $10, is_sending_vitals = $11, language = $12, status = $13, first_device_live_at = $14
-      WHERE id = $15
-      RETURNING *
-      `,
-      [
-        displayName,
-        fromPhoneNumber,
-        responderPhoneNumbers,
-        reminderTimeout,
-        fallbackPhoneNumbers,
-        fallbackTimeout,
-        heartbeatPhoneNumbers,
-        incidentCategories,
-        isDisplayed,
-        isSendingAlerts,
-        isSendingVitals,
-        language,
-        status,
-        firstDeviceLiveAt,
-        clientId,
-      ],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    helpers.log(`Client '${displayName}' successfully updated`)
-
-    return await createClientFromRow(results.rows[0])
-  } catch (err) {
-    helpers.logError(`Error running the updateClient query: ${err.toString()}`)
-  }
-}
-
-async function createClientExtension(clientId, country, countrySubdivision, buildingType, organization, funder, postalCode, city, project, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'createClientExtension',
-      `
-      INSERT INTO clients_extension (client_id, country, country_subdivision, building_type, organization, funder, postal_code, city, project)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *
-      `,
-      [clientId, country, countrySubdivision, buildingType, organization, funder, postalCode, city, project],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    helpers.log(`New client extension inserted into database for client ${clientId}`)
-
-    return createClientExtensionFromRow(results.rows[0])
-  } catch (err) {
-    helpers.logError(`Error running the createClientExtension query: ${err.toString()}`)
-  }
-}
-
-async function updateClientExtension(clientId, country, countrySubdivision, buildingType, organization, funder, postalCode, city, project, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'updateClientExtension',
-      `
-      UPDATE clients_extension
-      SET country = $2, country_subdivision = $3, building_type = $4, organization = $5, funder = $6, postal_code = $7, city = $8, project = $9
-      WHERE client_id = $1
-      RETURNING *
-      `,
-      [clientId, country, countrySubdivision, buildingType, organization, funder, postalCode, city, project],
-      pool,
-      pgClient,
-    )
-
-    // NOTE: this shouldn't happen, as insertion into clients_extension is a trigger for insertion into clients, but it's good to be safe!
-    if (results === undefined || results.rows.length === 0) {
-      return await createClientExtension(clientId, country, countrySubdivision, buildingType, organization, funder, postalCode, city, project)
-    }
-
-    helpers.log(`Client extension for client ${clientId} successfully updated`)
-
-    return createClientExtensionFromRow(results.rows[0])
-  } catch (err) {
-    helpers.logError(`Error running the updateClientExtension query: ${err.toString()}`)
-  }
-}
-
-// Adds a location table entry from browser form, named this way with an extra word because "FromForm" is hard to read
-// prettier-ignore
-async function createLocationFromBrowserForm(locationid, displayName, serialNumber, phoneNumber, clientId, deviceType, pgClient) {
-  try {
-    const results = await helpers.runQuery('createLocationFromBrowserForm',
-      `
-      INSERT INTO devices(locationid, display_name, serial_number, phone_number, is_displayed, is_sending_alerts, is_sending_vitals, client_id, device_type)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *
-      `,
-      [
-        locationid,
-        displayName,
-        serialNumber,
-        phoneNumber,
-        true,
-        false,
-        false,
-        clientId,
-        deviceType,
-      ],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-    
-    helpers.log(`New location inserted into database: ${locationid}`)
-
-    const allClients = await getClients(pgClient)
-    return createDeviceFromRow(results.rows[0], allClients)
-  } catch (err) {
-    helpers.logError(`Error running the createLocationFromBrowserForm query: ${err.toString()}`)
-  }
-}
-
-// Adds a singlestall location table entry
-async function createLocation(
-  locationid,
-  sentVitalsAlertAt,
-  phoneNumber,
-  displayName,
-  serialNumber,
-  isDisplayed,
-  isSendingAlerts,
-  isSendingVitals,
-  sentLowBatteryAlertAt,
-  clientId,
-  deviceType,
-  pgClient,
-) {
-  try {
-    const results = await helpers.runQuery(
-      'createLocation',
-      `
-      INSERT INTO devices(locationid, sent_vitals_alert_at, phone_number, display_name, serial_number, is_displayed, is_sending_alerts, is_sending_vitals, sent_low_battery_alert_at, client_id, device_type)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING *
-      `,
-      [
-        locationid,
-        sentVitalsAlertAt,
-        phoneNumber,
-        displayName,
-        serialNumber,
-        isDisplayed,
-        isSendingAlerts,
-        isSendingVitals,
-        sentLowBatteryAlertAt,
-        clientId,
-        deviceType,
-      ],
-      pool,
-      pgClient,
-    )
-
-    helpers.log(`New location inserted into database: ${locationid}`)
-
-    const allClients = await getClients(pgClient)
-    return createDeviceFromRow(results.rows[0], allClients)
-  } catch (err) {
-    helpers.logError(`Error running the createLocation query: ${err.toString()}`)
-  }
-}
-
-async function createClient(
-  displayName,
-  responderPhoneNumbers,
-  reminderTimeout,
-  fallbackPhoneNumbers,
-  fromPhoneNumber,
-  fallbackTimeout,
-  heartbeatPhoneNumbers,
-  incidentCategories,
-  isDisplayed,
-  isSendingAlerts,
-  isSendingVitals,
-  language,
-  pgClient,
-) {
-  try {
-    const results = await helpers.runQuery(
-      'createClient',
-      `
-      INSERT INTO clients (display_name, responder_phone_numbers, reminder_timeout, fallback_phone_numbers, from_phone_number, fallback_timeout, heartbeat_phone_numbers, incident_categories, is_displayed, is_sending_alerts, is_sending_vitals, language, status, first_device_live_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-      RETURNING *
-      `,
-      [
-        displayName,
-        responderPhoneNumbers,
-        reminderTimeout,
-        fallbackPhoneNumbers,
-        fromPhoneNumber,
-        fallbackTimeout,
-        heartbeatPhoneNumbers,
-        incidentCategories,
-        isDisplayed,
-        isSendingAlerts,
-        isSendingVitals,
-        language,
-        DEVICE_STATUS.TESTING,
-        null,
-      ],
-      pool,
-      pgClient,
-    )
-
-    return createClientFromRow(results.rows[0])
-  } catch (err) {
-    helpers.logError(`Error running the createClient query: ${err.toString()}`)
-  }
-
-  return null
-}
-
-async function getRecentSensorsVitals(pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getRecentSensorsVitals',
-      `
-      SELECT d.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at, sv.is_tampered
-      FROM devices d
-      LEFT JOIN sensors_vitals_cache sv on d.locationid = sv.locationid
-      WHERE d.device_type IN ($1, $2)
-      ORDER BY sv.created_at
-      `,
-      [DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
-      pool,
-      pgClient,
-    )
-
-    if (results !== undefined && results.rows.length > 0) {
-      const allLocations = await getLocations(pgClient)
-      return results.rows.map(r => createSensorsVitalFromRow(r, allLocations))
-    }
-  } catch (err) {
-    helpers.logError(`Error running the getRecentSensorsVitals query: ${err.toString()}`)
-  }
-
-  return []
-}
-
-async function getRecentSensorsVitalsWithClientId(clientId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getRecentSensorsVitalsWithClientId',
-      `
-      SELECT d.locationid, sv.id, sv.missed_door_messages, sv.is_door_battery_low, sv.is_tampered, sv.door_last_seen_at, sv.reset_reason, sv.state_transitions, sv.created_at
-      FROM devices d
-      LEFT JOIN sensors_vitals_cache sv on sv.locationid = d.locationid
-      WHERE d.client_id = $1
-      AND d.device_type IN ($2, $3)
-      ORDER BY sv.created_at
-      `,
-      [clientId, DEVICE_TYPE.SENSOR_SINGLESTALL, DEVICE_TYPE.SENSOR_MULTISTALL],
-      pool,
-      pgClient,
-    )
-
-    if (results !== undefined && results.rows.length > 0) {
-      const allLocations = await getLocations(pgClient)
-      return results.rows.map(r => createSensorsVitalFromRow(r, allLocations))
-    }
-  } catch (err) {
-    helpers.logError(`Error running the getRecentSensorsVitalsWithClientId query: ${err.toString()}`)
-  }
-
-  return []
-}
-
-async function getMostRecentSensorsVitalWithLocation(location, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getMostRecentSensorsVitalWithLocation',
-      `
-      SELECT *
-      FROM sensors_vitals_cache
-      WHERE locationid = $1
-      `,
-      [location.locationid],
-      pool,
-      pgClient,
-    )
-
-    if (results === undefined || results.rows.length === 0) {
-      return null
-    }
-
-    return createSensorsVitalFromRow(results.rows[0], [location])
-  } catch (err) {
-    helpers.logError(`Error running the getMostRecentSensorsVitalWithLocation query: ${err.toString()}`)
     return null
   }
 }
 
-async function logSensorsVital(location, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, isTampered, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'logSensorsVital',
-      `
-      INSERT INTO sensors_vitals (locationid, missed_door_messages, is_door_battery_low, door_last_seen_at, reset_reason, state_transitions, is_tampered)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-      `,
-      [location.locationid, missedDoorMessages, isDoorBatteryLow, doorLastSeenAt, resetReason, stateTransitions, isTampered],
-      pool,
-      pgClient,
-    )
-
-    if (results.rows.length > 0) {
-      return createSensorsVitalFromRow(results.rows[0], [location])
-    }
-  } catch (err) {
-    helpers.logError(`Error running the logSensorsVital query: ${err.toString()}`)
-  }
-
-  return null
-}
-
-async function clearSensorsVitals(pgClient) {
-  if (!helpers.isTestEnvironment()) {
-    helpers.log('warning - tried to clear sensors vitals table outside of a test environment!')
-    return
-  }
-
-  try {
-    await helpers.runQuery(
-      'clearSensorsVitals',
-      `DELETE FROM sensors_vitals
-        `,
-      [],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.logError(`Error running the clearSensorsVitals query: ${err.toString()}`)
-  }
-}
-
-async function clearSensorsVitalsCache(pgClient) {
-  if (!helpers.isTestEnvironment()) {
-    helpers.log('warning - tried to clear sensors vitals cache table outside of a test environment!')
-    return
-  }
-
-  try {
-    await helpers.runQuery(
-      'clearSensorsVitalsCache',
-      `DELETE FROM sensors_vitals_cache
-        `,
-      [],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.logError(`Error running the clearSensorsVitalsCache query: ${err.toString()}`)
-  }
-}
-
-async function clearSessions(pgClient) {
-  if (!helpers.isTestEnvironment()) {
-    helpers.log('warning - tried to clear sessions database outside of a test environment!')
-    return
-  }
-
-  try {
-    await helpers.runQuery(
-      'clearSessions',
-      `
-      DELETE FROM sessions
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.logError(`Error running the clearSessions query: ${err.toString()}`)
-  }
-}
-
-async function clearSessionsFromLocation(deviceId, pgClient) {
-  try {
-    await helpers.runQuery(
-      'clearSessionsFromLocation',
-      `
-      DELETE FROM sessions
-      WHERE device_id = $1
-      `,
-      [deviceId],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.logError(`Error running the clearSessionsFromLocation query: ${err.toString()}`)
-  }
-}
-
-async function clearDevices(pgClient) {
-  if (!helpers.isTestEnvironment()) {
-    helpers.log('warning - tried to clear devices table outside of a test environment!')
-    return
-  }
-
-  try {
-    await helpers.runQuery(
-      'clearDevices',
-      `
-      DELETE FROM devices
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.logError(`Error running the clearDevices query: ${err.toString()}`)
-  }
-}
-
-async function clearLocation(locationid, pgClient) {
-  try {
-    await helpers.runQuery(
-      'clearLocation: sensorsVitalsCache',
-      `
-      DELETE FROM sensors_vitals_cache
-      WHERE locationid = $1
-      `,
-      [locationid],
-      pool,
-      pgClient,
-    )
-
-    await helpers.runQuery(
-      'clearLocation: sensorsVitals',
-      `
-      DELETE FROM sensors_vitals
-      WHERE locationid = $1
-      `,
-      [locationid],
-      pool,
-      pgClient,
-    )
-
-    await helpers.runQuery(
-      'clearLocation: location',
-      `
-      DELETE FROM devices
-      WHERE locationid = $1
-      `,
-      [locationid],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.logError(`Error running the clearLocation query: ${err.toString()}`)
-  }
-}
-
-async function clearClients(pgClient) {
-  if (!helpers.isTestEnvironment()) {
-    helpers.log('warning - tried to clear clients table outside of a test environment!')
-    return
-  }
-
-  try {
-    await helpers.runQuery(
-      'clearClientsExtension',
-      `
-      DELETE FROM clients_extension
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-
-    await helpers.runQuery(
-      'clearClients',
-      `
-      DELETE FROM clients
-      `,
-      [],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.logError(`Error running the clearClientsExtension query: ${err.toString()}`)
-  }
-}
-
-async function clearClientWithDisplayName(displayName, pgClient) {
-  try {
-    await helpers.runQuery(
-      'clearClientWithDisplayNameClientExtension',
-      `
-      DELETE FROM clients_extension
-      WHERE client_id = (
-        SELECT id
-        FROM clients
-        WHERE display_name = $1
-      )
-      `,
-      [displayName],
-      pool,
-      pgClient,
-    )
-
-    await helpers.runQuery(
-      'clearClientWithDisplayName',
-      `
-      DELETE FROM clients
-      WHERE display_name = $1
-      `,
-      [displayName],
-      pool,
-      pgClient,
-    )
-  } catch (err) {
-    helpers.logError(`Error running the clearClientWithDisplayName query: ${err.toString()}`)
-  }
-}
-
-async function clearTables(pgClient) {
-  if (!helpers.isTestEnvironment()) {
-    helpers.log('warning - tried to clear tables outside of a test environment!')
-    return
-  }
-
-  await clearSensorsVitalsCache(pgClient)
-  await clearSensorsVitals(pgClient)
-  await clearSessions(pgClient)
-  await clearDevices(pgClient)
-  await clearClients(pgClient)
-}
-
-async function close() {
-  await pool.end()
-}
+// ----------------------------------------------------------------------------------------------------------------------------
 
 async function createDevice(
-  deviceType,
-  clientId,
-  locationid,
-  phoneNumber,
+  locationId,
   displayName,
-  serialNumber,
-  sentLowBatteryAlertAt,
-  sentVitalsAlertAt,
+  clientId,
+  particleDeviceId,
+  deviceType,
+  deviceTwilioNumber,
   isDisplayed,
   isSendingAlerts,
   isSendingVitals,
@@ -1602,46 +893,21 @@ async function createDevice(
     const results = await helpers.runQuery(
       'createDevice',
       `
-      INSERT INTO devices (device_type, client_id, locationid, phone_number, display_name, serial_number, sent_low_battery_alert_at, sent_vitals_alert_at, is_displayed, is_sending_alerts, is_sending_vitals)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      INSERT INTO devices (
+        location_id,
+        display_name,
+        client_id,
+        particle_device_id,
+        device_type,
+        device_twilio_number,
+        is_displayed,
+        is_sending_alerts,
+        is_sending_vitals
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
       `,
-      [
-        deviceType,
-        clientId,
-        locationid,
-        phoneNumber,
-        displayName,
-        serialNumber,
-        sentLowBatteryAlertAt,
-        sentVitalsAlertAt,
-        isDisplayed,
-        isSendingAlerts,
-        isSendingVitals,
-      ],
-      pool,
-      pgClient,
-    )
-
-    const allClients = await getClients(pgClient)
-    return createDeviceFromRow(results.rows[0], allClients)
-  } catch (err) {
-    helpers.logError(`Error running the createDevice query: ${err.toString()}`)
-  }
-
-  return null
-}
-
-async function getCurrentFirstDeviceLiveAt(clientId, pgClient) {
-  try {
-    const results = await helpers.runQuery(
-      'getCurrentFirstDeviceLiveAt',
-      `
-      SELECT first_device_live_at
-      FROM clients
-      WHERE id = $1
-      `,
-      [clientId],
+      [locationId, displayName, clientId, particleDeviceId, deviceType, deviceTwilioNumber, isDisplayed, isSendingAlerts, isSendingVitals],
       pool,
       pgClient,
     )
@@ -1650,63 +916,1088 @@ async function getCurrentFirstDeviceLiveAt(clientId, pgClient) {
       return null
     }
 
-    return results.rows[0].first_device_live_at
+    return createDeviceFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the getCurrentFirstDeviceLiveAt query: ${err.toString()}`)
+    helpers.logError(`Error running the createDevice query: ${err.toString()}`)
     return null
   }
 }
 
+async function updateDevice(
+  deviceId,
+  locationId,
+  displayName,
+  clientId,
+  particleDeviceId,
+  deviceType,
+  deviceTwilioNumber,
+  isDisplayed,
+  isSendingAlerts,
+  isSendingVitals,
+  pgClient,
+) {
+  try {
+    const results = await helpers.runQuery(
+      'updateDevice',
+      `
+      UPDATE devices 
+      SET 
+        location_id = $2,
+        display_name = $3,
+        client_id = $4,
+        particle_device_id = $5,
+        device_type = $6,
+        device_twilio_number = $7,
+        is_displayed = $8,
+        is_sending_alerts = $9,
+        is_sending_vitals = $10
+      WHERE device_id = $1
+      RETURNING *
+      `,
+      [deviceId, locationId, displayName, clientId, particleDeviceId, deviceType, deviceTwilioNumber, isDisplayed, isSendingAlerts, isSendingVitals],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateDevice query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getDevices(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getDevices',
+      `
+      SELECT d.*
+      FROM devices AS d
+      LEFT JOIN clients AS c
+      ON d.client_id = c.client_id
+      ORDER BY c.display_name, d.display_name
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createDeviceFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getDevices query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getDevicesForClient(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getDevicesForClient',
+      `
+      SELECT d.*
+      FROM devices AS d
+      LEFT JOIN clients AS c 
+      ON d.client_id = c.client_id
+      WHERE d.client_id = $1
+      ORDER BY c.display_name, d.display_name
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createDeviceFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getDevicesForClient query: ${err.toString()}`)
+    return []
+  }
+}
+
+// used for dashboard rendering (is_displayed should be true)
+// Note: Uses database function: format_time_difference (see script #58)
+// clientId is optional. If not provided, gets all devices
+async function getMergedDevicesWithVitals(clientId = null, pgClient) {
+  try {
+    let baseQuery = `
+      WITH latest_vitals AS (
+        SELECT DISTINCT ON (device_id)
+          device_id,
+          created_at,
+          device_last_reset_reason,
+          door_last_seen_at,
+          door_low_battery,
+          door_tampered,
+          door_missed_count,
+          consecutive_open_door_count,
+          format_time_difference(created_at) as time_since_vital,
+          format_time_difference(door_last_seen_at) as time_since_door
+        FROM vitals_cache
+        ORDER BY device_id, created_at DESC
+      )
+      SELECT 
+        d.*,
+        v.created_at as vital_created_at,
+        v.device_last_reset_reason,
+        v.door_last_seen_at,
+        v.door_low_battery,
+        v.door_tampered,
+        v.door_missed_count,
+        v.consecutive_open_door_count,
+        v.time_since_vital,
+        v.time_since_door
+      FROM devices d
+      LEFT JOIN latest_vitals v ON d.device_id = v.device_id
+      WHERE d.is_displayed = true`
+
+    if (clientId) {
+      baseQuery += ` AND d.client_id = '${clientId}'`
+    }
+
+    baseQuery += ` ORDER BY d.display_name`
+
+    const results = await helpers.runQuery('getMergedDevicesWithVitals', baseQuery, [], pool, pgClient)
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => {
+      const device = createDeviceFromRow(row)
+      if (!row.vital_created_at) return { ...device, latestVital: null }
+
+      const vital = {
+        createdAt: row.vital_created_at,
+        deviceLastResetReason: row.device_last_reset_reason,
+        doorLastSeenAt: row.door_last_seen_at,
+        doorLowBattery: row.door_low_battery,
+        doorTampered: row.door_tampered,
+        doorMissedCount: row.door_missed_count,
+        consecutiveOpenDoorCount: row.consecutive_open_door_count,
+        timeSinceLastVital: row.time_since_vital,
+        timeSinceLastDoorContact: row.time_since_door,
+      }
+
+      return { ...device, latestVital: vital }
+    })
+  } catch (err) {
+    helpers.logError(`Error running getMergedDevicesWithVitals query: ${err}`)
+    return []
+  }
+}
+
+async function getActiveVitalDevicesWithClients(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getActiveVitalDevicesWithClients',
+      `
+      SELECT 
+        to_jsonb(d.*) AS device,
+        to_jsonb(c.*) AS client
+      FROM devices d
+      JOIN clients c ON d.client_id = c.client_id
+      WHERE c.devices_sending_vitals = true 
+        AND d.is_sending_vitals = true
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (!results || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => ({
+      device: createDeviceFromRow(row.device),
+      client: createClientFromRow(row.client),
+    }))
+  } catch (err) {
+    helpers.logError(`Error running getActiveVitalDevicesWithClients query: ${err}`)
+    return []
+  }
+}
+
+async function getDeviceWithDeviceId(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getDeviceWithDeviceId',
+      `
+      SELECT *
+      FROM devices
+      WHERE device_id = $1
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getDeviceWithDeviceId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getDeviceWithParticleDeviceId(particleDeviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getDeviceWithParticleDeviceId',
+      `
+      SELECT *
+      FROM devices
+      WHERE particle_device_id = $1
+      `,
+      [particleDeviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getDeviceWithParticleDeviceId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getDeviceWithDeviceTwilioNumber(clientId, deviceTwilioNumber, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getDeviceWithDeviceTwilioNumber',
+      `
+      SELECT *
+      FROM devices
+      WHERE device_twilio_number = $1
+      AND client_id = $2
+      `,
+      [deviceTwilioNumber, clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getDeviceWithDeviceTwilioNumber query: ${err.toString()}`)
+    return null
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function createSession(deviceId, pgClient) {
+  helpers.log(`NEW SESSION: deviceId: ${deviceId}`)
+  try {
+    const results = await helpers.runQuery(
+      'createSession',
+      `
+      INSERT INTO sessions(
+        device_id, 
+        session_status
+      ) VALUES ($1, $2)
+      RETURNING *
+      `,
+      [deviceId, SESSION_STATUS.ACTIVE],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getDeviceWithSerialNumber query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getSessionsForDevice(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getSessionsForDevice',
+      `
+      SELECT s.*
+      FROM sessions s
+      JOIN devices d ON s.device_id = d.device_id
+      WHERE d.device_id = $1
+      ORDER BY s.created_at DESC
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createSessionFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running getSessionsForDevice query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getSessionWithSessionId(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getSessionWithSessionId',
+      `
+      SELECT *
+      FROM sessions
+      WHERE session_id = $1
+      FOR UPDATE
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running getSessionWithSessionId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getLatestSessionWithDeviceId(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestSessionWithDeviceId',
+      `
+      SELECT *
+      FROM sessions
+      WHERE device_id = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+      FOR UPDATE
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getLatestSessionWithDeviceId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateSession(sessionId, sessionStatus, doorOpened, surveySent, pgClient) {
+  helpers.log(`UPDATE SESSION: sessionStatus: ${sessionStatus}, doorOpened: ${doorOpened}, surveySent: ${surveySent}`)
+  try {
+    const results = await helpers.runQuery(
+      'updateSession',
+      `
+      UPDATE sessions
+      SET session_status = $2::session_status_enum, door_opened = $3::BOOLEAN, survey_sent = $4::BOOLEAN
+      WHERE session_id = $1
+      RETURNING *
+      `,
+      [sessionId, sessionStatus, doorOpened, surveySent],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSession query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateSessionAttendingResponder(sessionId, responderPhoneNumber, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateSessionAttendingResponder',
+      `
+      UPDATE sessions
+      SET attending_responder_number = $2
+      WHERE session_id = $1
+      RETURNING *
+      `,
+      [sessionId, responderPhoneNumber],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSessionAttendingResponder query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateSessionResponseTime(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateSessionResponseTime',
+      `
+      UPDATE sessions
+      SET response_time = NOW() - created_at
+      WHERE session_id = $1
+      RETURNING *
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSessionResponseTime query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateSessionSelectedSurveyCategory(sessionId, selectedCategory, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateSessionSelectedSurveyCategory',
+      `
+      UPDATE sessions
+      SET selected_survey_category = $2
+      WHERE session_id = $1
+      RETURNING *
+      `,
+      [sessionId, selectedCategory],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSessionSelectedSurveyCategory query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateSessionRespondedVia(sessionId, respondedVia, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateSessionRespondedVia',
+      `
+      UPDATE sessions
+      SET session_responded_via = $2
+      WHERE session_id = $1
+      RETURNING *
+      `,
+      [sessionId, respondedVia],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createSessionFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateSessionRespondedVia query: ${err.toString()}`)
+    return null
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function createEvent(sessionId, eventType, eventTypeDetails, phoneNumbers, pgClient) {
+  const phoneNumbersArray = Array.isArray(phoneNumbers) ? phoneNumbers : [phoneNumbers]
+
+  helpers.log(
+    `NEW EVENT: sessionId: ${sessionId}, eventType: ${eventType}, eventTypeDetails: ${eventTypeDetails}, phoneNumbers: ${phoneNumbersArray}`,
+  )
+  try {
+    const results = await helpers.runQuery(
+      'createEvent',
+      `
+      INSERT INTO events (
+        session_id, 
+        event_type,
+        event_type_details,
+        phone_numbers
+      ) VALUES ($1, $2, $3, $4)
+      RETURNING *
+      `,
+      [sessionId, eventType, eventTypeDetails, phoneNumbersArray],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createEvent query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getEventsForSession(sessionId, pgClient) {
+  try {
+    // Note: Events ordered by ascending, first event to latest event
+    const results = await helpers.runQuery(
+      'getEventsForSession',
+      `
+      SELECT *
+      FROM events
+      WHERE session_id = $1
+      ORDER BY event_sent_at ASC
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createEventFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error getting events for session: ${err.toString()}`)
+    return []
+  }
+}
+
+const RESPONDABLE_EVENT_TYPES = [EVENT_TYPE.DURATION_ALERT, EVENT_TYPE.STILLNESS_ALERT, EVENT_TYPE.DOOR_OPENED, EVENT_TYPE.MSG_SENT]
+
+async function getLatestRespondableTwilioEvent(sessionId, responderPhoneNumber = null, pgClient) {
+  try {
+    const queryParams = []
+
+    let queryText = `
+      SELECT *
+      FROM events
+      WHERE session_id = $1
+      AND event_type = ANY($2)
+    `
+    queryParams.push(sessionId)
+    queryParams.push(RESPONDABLE_EVENT_TYPES)
+
+    if (responderPhoneNumber) {
+      queryText += ` AND $3 = ANY(phone_numbers)`
+      queryParams.push(responderPhoneNumber)
+    }
+
+    queryText += `
+      ORDER BY event_sent_at DESC
+      LIMIT 1
+      FOR UPDATE
+    `
+
+    const results = await helpers.runQuery('getLatestRespondableTwilioEvent', queryText, queryParams, pool, pgClient)
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getLatestRespondableTwilioEvent query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function checkEventExists(sessionId, eventType, eventTypeDetails, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'checkEventExists',
+      `
+      SELECT 1
+      FROM events
+      WHERE session_id = $1
+      AND event_type = $2
+      AND event_type_details = $3
+      LIMIT 1
+      `,
+      [sessionId, eventType, eventTypeDetails],
+      pool,
+      pgClient,
+    )
+
+    // return boolean
+    return results.rows.length > 0
+  } catch (err) {
+    helpers.logError(`Error running the checkEventExists query: ${err.toString()}`)
+    return false
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function createTeamsEvent(sessionId, eventType, eventTypeDetails, messageId, pgClient) {
+  helpers.log(`NEW TEAMS EVENT: sessionId: ${sessionId}, eventType: ${eventType}, eventTypeDetails: ${eventTypeDetails}, messageId: ${messageId}`)
+  try {
+    const results = await helpers.runQuery(
+      'createTeamsEvent',
+      `
+      INSERT INTO teams_events (
+        session_id, 
+        event_type,
+        event_type_details,
+        message_id
+      ) VALUES ($1, $2, $3, $4)
+      RETURNING *
+      `,
+      [sessionId, eventType, eventTypeDetails, messageId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createTeamsEvent query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getLatestRespondableTeamsEvent(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestRespondableTeamsEvent',
+      `
+      SELECT *
+      FROM teams_events
+      WHERE session_id = $1
+      AND event_type = ANY($2)
+      ORDER BY event_sent_at DESC
+      LIMIT 1
+      `,
+      [sessionId, RESPONDABLE_EVENT_TYPES],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getLatestRespondableTeamsEvent query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getTeamsEventWithMessageId(messageId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getTeamsEventWithMessageId',
+      `
+      SELECT *
+      FROM teams_events
+      WHERE message_id = $1
+      LIMIT 1
+      `,
+      [messageId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createTeamsEventFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getTeamsEventWithMessageId query: ${err.toString()}`)
+    return null
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function createVital(
+  deviceId,
+  deviceLastResetReason,
+  doorLastSeenAt,
+  doorLowBatteryStatus,
+  doorTamperedStatus,
+  doorMissedCount,
+  consecutiveOpenDoorHeartbeatCount,
+  pgClient,
+) {
+  try {
+    const results = await helpers.runQuery(
+      'createVital',
+      `
+      INSERT INTO vitals (
+        device_id,
+        device_last_reset_reason,
+        door_last_seen_at,
+        door_low_battery,
+        door_tampered,
+        door_missed_count,
+        consecutive_open_door_count
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+      `,
+      [deviceId, deviceLastResetReason, doorLastSeenAt, doorLowBatteryStatus, doorTamperedStatus, doorMissedCount, consecutiveOpenDoorHeartbeatCount],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createVitalFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createVital query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getLatestVitalWithDeviceId(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestVitalWithDeviceId',
+      `
+      SELECT *
+      FROM vitals_cache
+      WHERE device_id = $1
+      LIMIT 1
+      FOR UPDATE
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createVitalFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getLatestVitalWithDeviceId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getLatestVitalsForDeviceIds(deviceIds, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestVitalsForDeviceIds',
+      `
+      SELECT DISTINCT ON (device_id) *
+      FROM vitals_cache
+      WHERE device_id = ANY($1)
+      ORDER BY device_id, created_at DESC
+      `,
+      [deviceIds],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createVitalFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getLatestVitalsForDeviceIds query: ${err.toString()}`)
+    return []
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+async function createNotification(deviceId, notificationType, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'createNotification',
+      `
+      INSERT INTO notifications (
+        device_id, 
+        notification_type
+      ) VALUES ($1, $2)
+      RETURNING *
+      `,
+      [deviceId, notificationType],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createNotificationFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the createNotification query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getNotificationsForDevice(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getNotificationsForDevice',
+      `
+      SELECT *
+      FROM notifications
+      WHERE device_id = $1
+      ORDER BY notification_sent_at DESC
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createNotificationFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error getting notifications for device: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getLatestNotification(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestNotification',
+      `
+      SELECT *
+      FROM notifications
+      WHERE device_id = $1
+      ORDER BY notification_sent_at DESC
+      LIMIT 1
+      FOR UPDATE
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createNotificationFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running getLatestNotification query: ${err.toString()}`)
+    return null
+  }
+}
+
+const connectionNotificationTypes = [
+  NOTIFICATION_TYPE.DEVICE_DISCONNECTED,
+  NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER,
+  NOTIFICATION_TYPE.DOOR_DISCONNECTED,
+  NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER,
+  NOTIFICATION_TYPE.DEVICE_RECONNECTED,
+  NOTIFICATION_TYPE.DOOR_RECONNECTED,
+]
+
+async function getLatestConnectionNotification(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestConnectionNotification',
+      `
+      SELECT *
+      FROM notifications
+      WHERE device_id = $1
+      AND notification_type = ANY($2)
+      ORDER BY notification_sent_at DESC
+      LIMIT 1
+      FOR UPDATE
+      `,
+      [deviceId, connectionNotificationTypes],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createNotificationFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getLatestConnectionNotification query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getLatestConnectionNotificationsForDeviceIds(deviceIds, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getLatestConnectionNotificationsForDeviceIds',
+      `
+      SELECT DISTINCT ON (device_id) *
+      FROM notifications
+      WHERE device_id = ANY($1)
+      AND notification_type = ANY($2)
+      ORDER BY device_id, notification_sent_at DESC
+      `,
+      [deviceIds, connectionNotificationTypes],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createNotificationFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getLatestConnectionNotificationsForDeviceIds query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getLatestNotificationOfType(deviceId, notificationType, pgClient) {
+  try {
+    helpers.log(`Getting last notification of type: deviceId: ${deviceId}, notificationType: ${notificationType}`)
+    const results = await helpers.runQuery(
+      'getLatestNotificationOfType',
+      `
+      SELECT *
+      FROM notifications
+      WHERE device_id = $1
+      AND notification_type = $2
+      ORDER BY notification_sent_at DESC
+      LIMIT 1
+      FOR UPDATE
+      `,
+      [deviceId, notificationType],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createNotificationFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getLatestNotificationOfType query: ${err.toString()}`)
+    return null
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
 module.exports = {
   beginTransaction,
-  clearClientWithDisplayName,
-  clearClients,
-  clearDevices,
-  clearLocation,
-  clearSensorsVitals,
-  clearSensorsVitalsCache,
-  clearSessions,
-  clearSessionsFromLocation,
-  clearTables,
-  close,
   commitTransaction,
-  createClient,
-  createClientExtension,
-  createDevice,
-  createLocation,
-  createLocationFromBrowserForm,
-  createSession,
-  getActiveSensorClients,
-  getAllSessionsWithDeviceId,
-  getClientExtensionWithClientId,
-  getClientWithClientId,
-  getClientWithSessionId,
-  getClientDevices,
-  getClients,
-  getCurrentTime,
-  getCurrentTimeForHealthCheck,
-  getDataForExport,
-  getDeviceWithSerialNumber,
-  getHistoryOfSessions,
-  getLocationWithDeviceId,
-  getLocationWithLocationid,
-  getLocations,
-  getLocationsFromClientId,
-  getMostRecentSensorsVitalWithLocation,
-  getMostRecentSessionWithDevice,
-  getMostRecentSessionWithPhoneNumbers,
-  getRecentSensorsVitals,
-  getRecentSensorsVitalsWithClientId,
-  getSessionWithSessionId,
-  getUnrespondedSessionWithDeviceId,
-  logSensorsVital,
-  numberOfStillnessAlertsInIntervalOfTime,
   rollbackTransaction,
-  saveSession,
+
+  getCurrentTimeForHealthCheck,
+  getCurrentTime,
+  getFormattedTimeDifference,
+  clearAllTables,
+
+  createClient,
   updateClient,
+  getClients,
+  getActiveClients,
+  getMergedClientsWithExtensions,
+  getClientsWithResponderPhoneNumber,
+  getClientWithDisplayName,
+  getClientWithClientId,
+  getClientWithDeviceId,
+  getStillnessSurveyFollowupDelay,
+  clearClientWithClientId,
+
   updateClientExtension,
-  updateLocation,
-  updateLowBatteryAlertTime,
-  updateSentAlerts,
-  getCurrentFirstDeviceLiveAt,
+  getClientExtensionWithClientId,
+
+  createDevice,
+  updateDevice,
+  getDevices,
+  getDevicesForClient,
+  getMergedDevicesWithVitals,
+  getActiveVitalDevicesWithClients,
+  getDeviceWithDeviceId,
+  getDeviceWithParticleDeviceId,
+  getDeviceWithDeviceTwilioNumber,
+
+  createSession,
+  getSessionsForDevice,
+  getSessionWithSessionId,
+  getLatestSessionWithDeviceId,
+  updateSession,
+  updateSessionAttendingResponder,
+  updateSessionResponseTime,
+  updateSessionSelectedSurveyCategory,
+  updateSessionRespondedVia,
+
+  createEvent,
+  getEventsForSession,
+  getLatestRespondableTwilioEvent,
+  checkEventExists,
+
+  createTeamsEvent,
+  getLatestRespondableTeamsEvent,
+  getTeamsEventWithMessageId,
+
+  createVital,
+  getLatestVitalWithDeviceId,
+  getLatestVitalsForDeviceIds,
+
+  createNotification,
+  getNotificationsForDevice,
+  getLatestNotification,
+  getLatestConnectionNotification,
+  getLatestConnectionNotificationsForDeviceIds,
+  getLatestNotificationOfType,
 }

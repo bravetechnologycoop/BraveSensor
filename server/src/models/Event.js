@@ -1,4 +1,4 @@
-class EventNew {
+class Event {
   constructor(eventId, sessionId, eventType, eventTypeDetails, eventSentAt, phoneNumbers) {
     this.eventId = eventId
     this.sessionId = sessionId
@@ -9,4 +9,4 @@ class EventNew {
   }
 }
 
-module.exports = EventNew
+module.exports = Event

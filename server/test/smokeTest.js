@@ -8,9 +8,9 @@
 const axios = require('axios').default
 
 // In-house dependencies
-const db_new = require('../src/db/db_new')
+const db = require('../src/db/db')
 const helpers = require('../src/utils/helpers')
-const factories_new = require('./factories_new')
+const factories = require('./factories_new')
 
 const destinationURL = process.argv[2]
 const responderPhoneNumber = process.argv[3]
@@ -32,14 +32,14 @@ async function setupSmokeTest(req, res) {
 
   let pgClient
   try {
-    pgClient = await db_new.beginTransaction()
+    pgClient = await db.beginTransaction()
     if (!pgClient) {
       const errorMessage = `Error starting transaction - setupSmokeTest: responderPhoneNumber: ${reqResponderPhoneNumber}, deviceTwilioNumber: ${deviceTwilioNumber}`
       helpers.logError(errorMessage)
       throw new Error(errorMessage)
     }
 
-    const smokeTestClient = await factories_new.clientNewDBFactory(
+    const smokeTestClient = await factories.clientNewDBFactory(
       {
         displayName: 'SmokeTestClient',
         responderPhoneNumbers: [reqResponderPhoneNumber],
@@ -53,7 +53,7 @@ async function setupSmokeTest(req, res) {
       throw new Error('Failed to create smoke test client')
     }
 
-    const smokeTestDevice = await factories_new.deviceNewDBFactory(
+    const smokeTestDevice = await factories.deviceNewDBFactory(
       {
         displayName: 'SmokeTestDevice',
         deviceTwilioNumber: reqDeviceTwilioNumber,
@@ -69,12 +69,12 @@ async function setupSmokeTest(req, res) {
       throw new Error('Failed to create smoke test device')
     }
 
-    await db_new.commitTransaction(pgClient)
+    await db.commitTransaction(pgClient)
     res.status(200).send()
   } catch (error) {
     if (pgClient) {
       try {
-        await db_new.rollbackTransaction(pgClient)
+        await db.rollbackTransaction(pgClient)
       } catch (rollbackError) {
         helpers.logError(`Error rolling back transaction: ${rollbackError.message}. Original error: ${error.message}`)
       }
@@ -87,14 +87,14 @@ async function setupSmokeTest(req, res) {
 // Route: /smokeTest/teardown
 async function teardownSmokeTest(req, res) {
   try {
-    const smokeTestClient = await db_new.getClientWithDisplayName('SmokeTestClient')
+    const smokeTestClient = await db.getClientWithDisplayName('SmokeTestClient')
     if (!smokeTestClient) {
       throw new Error('No smoke test client found')
     }
 
     // delete the smoke test client from database
     // since db has cascade on delete --> automatically delete the device, sessions, events etc.
-    await db_new.clearClientWithClientId(smokeTestClient.clientId)
+    await db.clearClientWithClientId(smokeTestClient.clientId)
 
     res.status(200).send()
   } catch (error) {

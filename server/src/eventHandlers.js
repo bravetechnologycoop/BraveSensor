@@ -9,7 +9,7 @@
 const helpers = require('./utils/helpers')
 const twilioHelpers = require('./utils/twilioHelpers')
 const teamsHelpers = require('./utils/teamsHelpers')
-const db_new = require('./db/db_new')
+const db = require('./db/db')
 const { EVENT_TYPE, SESSION_STATUS, SERVICES } = require('./enums/index')
 const { cancelRemindersForSession } = require('./sensorEvents')
 const { resetMonitoring, resetStateToZero } = require('./particle')
@@ -20,8 +20,8 @@ const { resetMonitoring, resetStateToZero } = require('./particle')
 async function setSessionAsResponded(client, device, session, data, pgClient) {
   try {
     // mark the session as responded via the service
-    await db_new.updateSessionRespondedVia(session.sessionId, data.service, pgClient)
-    await db_new.updateSessionResponseTime(session.sessionId, pgClient)
+    await db.updateSessionRespondedVia(session.sessionId, data.service, pgClient)
+    await db.updateSessionResponseTime(session.sessionId, pgClient)
 
     // Cancel any scheduled reminders for this session, if any
     cancelRemindersForSession(session.sessionId)
@@ -29,7 +29,7 @@ async function setSessionAsResponded(client, device, session, data, pgClient) {
     if (data.service === SERVICES.TWILIO) {
       // extract and set responder to the session
       const responderPhoneNumber = data.responderPhoneNumber
-      await db_new.updateSessionAttendingResponder(session.sessionId, responderPhoneNumber, pgClient)
+      await db.updateSessionAttendingResponder(session.sessionId, responderPhoneNumber, pgClient)
 
       // alert non-attending responder phone numbers
       const nonAttendingPhoneNumbers = client.responderPhoneNumbers.filter(phoneNumber => phoneNumber !== responderPhoneNumber)
@@ -37,7 +37,7 @@ async function setSessionAsResponded(client, device, session, data, pgClient) {
         const twilioMessageKey = 'nonAttendingResponderConfirmation'
         const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
         await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, nonAttendingPhoneNumbers, textMessage)
-        await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, nonAttendingPhoneNumbers, pgClient)
+        await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, nonAttendingPhoneNumbers, pgClient)
       }
 
       // if teams is configured, update the last message to say responded
@@ -50,21 +50,21 @@ async function setSessionAsResponded(client, device, session, data, pgClient) {
         }
 
         // update the latest teams event card
-        const latestTeamsEvent = await db_new.getLatestRespondableTeamsEvent(session.sessionId, pgClient)
+        const latestTeamsEvent = await db.getLatestRespondableTeamsEvent(session.sessionId, pgClient)
         const response = await teamsHelpers.sendUpdateTeamsCard(client.teamsId, client.teamsAlertChannelId, latestTeamsEvent.messageId, adaptiveCard)
         if (!response || !response.messageId) {
           throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)
         }
 
         // log message sent event
-        await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, 'alertRespondedViaTwilio', response.messageId, pgClient)
+        await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, 'alertRespondedViaTwilio', response.messageId, pgClient)
       }
     } else if (data.service === SERVICES.TEAMS && client.teamsId && client.teamsAlertChannelId) {
       // alert all responder phone numbers
       const messageKey = 'respondedViaTeams'
       const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, messageKey, client.responderPhoneNumbers, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, messageKey, client.responderPhoneNumbers, pgClient)
     } else {
       throw new Error(`Unhandled service type: ${data.service}`)
     }
@@ -84,7 +84,7 @@ async function handleNoResponseExpected(client, device, session, data) {
     } else if (data.service === SERVICES.TEAMS) {
       // do not log this event
       // update the sending card with no response expected
-      const latestTeamsEvent = await db_new.getLatestRespondableTeamsEvent(session.sessionId)
+      const latestTeamsEvent = await db.getLatestRespondableTeamsEvent(session.sessionId)
       const teamsMessageKey = 'teamsNoResponseExpected'
       const cardType = 'Update'
       const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device)
@@ -107,7 +107,7 @@ async function handleRespondedViaAnotherService(client, device, session, respond
   try {
     if (data.service === SERVICES.TWILIO) {
       // log message received event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // send message to responder phone number
       const twilioMessageKey = 'respondedViaTeams'
@@ -115,10 +115,10 @@ async function handleRespondedViaAnotherService(client, device, session, respond
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
 
       // log message sent event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
     } else if (data.service === SERVICES.TEAMS) {
       // log message received event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
 
       // update the sending card with no response expected
       const teamsMessageKey = 'teamsRespondedViaTwilio'
@@ -135,7 +135,7 @@ async function handleRespondedViaAnotherService(client, device, session, respond
       }
 
       // log message sent event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
   } catch (error) {
     throw new Error(`handleNoResponseExpected: ${error.message}`)
@@ -147,7 +147,7 @@ async function handleTwilioInvalidResponse(client, device, session, data, pgClie
     const twilioMessageKey = 'invalidResponseTryAgain'
     const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
-    await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+    await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
   } catch (error) {
     throw new Error(`handleInvalidResponse: Error sending invalid response: ${error.message}`)
   }
@@ -158,7 +158,7 @@ async function handleTwilioNonAttendingResponderConfirmation(client, device, ses
     const twilioMessageKey = 'nonAttendingResponderConfirmation'
     const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
-    await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+    await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
   } catch (error) {
     throw new Error(`handleTwilioNonAttendingResponderConfirmation: Error sending invalid response: ${error.message}`)
   }
@@ -172,7 +172,7 @@ async function scheduleStillnessAlertSurvey(client, device, callerSession) {
       const twilioMessageKey = 'stillnessAlertSurvey'
       const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, session.attendingResponderNumber, textMessage)
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, session.attendingResponderNumber)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, session.attendingResponderNumber)
     } else if (session.sessionRespondedVia === SERVICES.TEAMS) {
       const teamsMessageKey = 'teamsStillnessAlertSurvey'
       const cardType = 'New'
@@ -186,15 +186,15 @@ async function scheduleStillnessAlertSurvey(client, device, callerSession) {
         throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)
       }
 
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId)
     }
 
     // update the session's survey sent to true
-    await db_new.updateSession(session.sessionId, session.sessionStatus, session.doorOpened, true)
+    await db.updateSession(session.sessionId, session.sessionStatus, session.doorOpened, true)
   }
 
   async function checkAndSendSurvey() {
-    const session = await db_new.getLatestSessionWithDeviceId(device.deviceId)
+    const session = await db.getLatestSessionWithDeviceId(device.deviceId)
     if (!session || session.sessionId !== callerSession.sessionId) {
       helpers.log(`Session changed or expired, cancelling survey for ${callerSession.sessionId}`)
       return
@@ -235,7 +235,7 @@ async function handleStillnessAlert(client, device, session, respondedEvent, mes
       // we accept any input to handle potential misclicks or typos from responders
 
       // log message received event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // Only send followup message if there will be a delay
       // Otherwise the schedule stillness survey will be sent
@@ -246,7 +246,7 @@ async function handleStillnessAlert(client, device, session, respondedEvent, mes
 
         // send message to responder phone number and log message sent event
         await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
-        await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+        await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
       }
     } else if (data.service === SERVICES.TEAMS) {
       if (message !== 'I am on my way!') {
@@ -295,7 +295,7 @@ async function handleStillnessAlertSurvey(client, device, session, respondedEven
       }
 
       // log message received event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // send message to responder phone number
       let twilioMessageKey
@@ -325,10 +325,10 @@ async function handleStillnessAlertSurvey(client, device, session, respondedEven
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
 
       // log message sent event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
     } else if (data.service === SERVICES.TEAMS) {
       // log message received event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
 
       // construct next card
       let teamsMessageKey
@@ -367,11 +367,11 @@ async function handleStillnessAlertSurvey(client, device, session, respondedEven
       }
 
       // log message sent event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
     // update session
-    await db_new.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
+    await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
 
     // if door is closed and 'Occupant Okay', reset monitoring and clear session state
     // if door is closed and any category except 'Other' and 'Occupant Okay', reset state to zero and end session
@@ -381,19 +381,19 @@ async function handleStillnessAlertSurvey(client, device, session, respondedEven
       await resetMonitoring(device.particleDeviceId)
 
       // Clear session state (to allow alerts to published again, to all services)
-      await db_new.updateSessionRespondedVia(session.sessionId, null, pgClient)
-      await db_new.updateSessionAttendingResponder(session.sessionId, null, pgClient)
-      await db_new.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, session.doorOpened, false, pgClient)
+      await db.updateSessionRespondedVia(session.sessionId, null, pgClient)
+      await db.updateSessionAttendingResponder(session.sessionId, null, pgClient)
+      await db.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, session.doorOpened, false, pgClient)
     } else if (!session.doorOpened && selectedCategory !== 'Occupant Okay' && selectedCategory !== 'Other') {
       await resetStateToZero(device.particleDeviceId)
 
       // update the session's door opened to true as the state is now reset
       // update session status to completed
       // NOTE: this may not be true and the door could still be closed
-      await db_new.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, session.surveySent, pgClient)
+      await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, session.surveySent, pgClient)
     } else if (session.doorOpened && selectedCategory !== 'Other') {
       // update session status to completed
-      await db_new.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+      await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
     }
   } catch (error) {
     throw new Error(`handleStillnessAlertSurvey: ${error.message}`)
@@ -416,7 +416,7 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, session, res
       }
 
       // log message received event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // send message to responder phone number
       let twilioMessageKey
@@ -444,10 +444,10 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, session, res
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
 
       // log message sent event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
     } else if (data.service === SERVICES.TEAMS) {
       // log message received event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
 
       // construct next card
       let teamsMessageKey
@@ -484,7 +484,7 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, session, res
       }
 
       // log message sent event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
     // mark session as responded
@@ -493,12 +493,12 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, session, res
     }
 
     // update session
-    await db_new.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
+    await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
 
     // if door is opened and any category except 'Other', update session status to completed
     // for any other case, don't do anything
     if (session.doorOpened && selectedCategory !== 'Other') {
-      await db_new.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+      await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
     }
   } catch (error) {
     throw new Error(`handleStillnessAlertSurveyDoorOpened: ${error.message}`)
@@ -516,7 +516,7 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, se
       }
 
       // log message received event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // send message to responder phone number
       const twilioMessageKey = 'stillnessAlertSurveyOccupantOkayEnd'
@@ -524,10 +524,10 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, se
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
 
       // log message sent event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
     } else if (data.service === SERVICES.TEAMS) {
       // log message received event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
 
       // construct next card
       const teamsMessageKey = 'teamsStillnessAlertSurveyOccupantOkayEnd'
@@ -544,7 +544,7 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, se
       }
 
       // log message sent event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
     // if the door is still closed we should reset the state to 0
@@ -553,7 +553,7 @@ async function handleStillnessAlertSurveyOccupantOkayFollowup(client, device, se
     }
 
     // exit the flow by ending the session
-    await db_new.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
+    await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
   } catch (error) {
     throw new Error(`handleStillnessAlertSurveyOccupantOkayFollowup: ${error.message}`)
   }
@@ -566,7 +566,7 @@ async function handleStillnessAlertSurveyOtherFollowup(client, device, session, 
 
       // log message received event
       const eventTypeDetails = `${respondedEvent.eventTypeDetails}: ${message}`
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // send message to responder phone number
       const twilioMessageKey = 'thankYou'
@@ -574,11 +574,11 @@ async function handleStillnessAlertSurveyOtherFollowup(client, device, session, 
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
 
       // log message sent event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
     } else if (data.service === SERVICES.TEAMS) {
       // log message received event
       const eventTypeDetails = `${respondedEvent.eventTypeDetails}: ${message}`
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, eventTypeDetails, respondedEvent.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, eventTypeDetails, respondedEvent.messageId, pgClient)
 
       // construct next card
       const teamsMessageKey = 'teamsThankYou'
@@ -595,7 +595,7 @@ async function handleStillnessAlertSurveyOtherFollowup(client, device, session, 
       }
 
       // log message sent event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
     // if the door is still closed we should reset the state to 0
@@ -604,7 +604,7 @@ async function handleStillnessAlertSurveyOtherFollowup(client, device, session, 
     }
 
     // exit the flow by ending the session
-    await db_new.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
+    await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
   } catch (error) {
     throw new Error(`handleStillnessAlertSurveyOtherFollowup: ${error.message}`)
   }
@@ -623,7 +623,7 @@ async function handleDurationAlert(client, device, session, respondedEvent, mess
       // we accept any input to handle potential misclicks or typos from responders
 
       // log message received event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // send message to responder phone number
       const twilioMessageKey = 'durationAlertSurvey'
@@ -631,14 +631,14 @@ async function handleDurationAlert(client, device, session, respondedEvent, mess
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
 
       // log message sent event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
     } else if (data.service === SERVICES.TEAMS) {
       if (message !== 'I am on my way!') {
         throw new Error('Wrong message received for teams event')
       }
 
       // log message received event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
 
       // construct next card
       const teamsMessageKey = 'teamsDurationAlertSurvey'
@@ -655,7 +655,7 @@ async function handleDurationAlert(client, device, session, respondedEvent, mess
       }
 
       // log message sent event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
     // mark session as responded
@@ -663,7 +663,7 @@ async function handleDurationAlert(client, device, session, respondedEvent, mess
       await setSessionAsResponded(client, device, session, data, pgClient)
     }
     // update the session's survey sent to true
-    await db_new.updateSession(session.sessionId, session.sessionStatus, session.doorOpened, true, pgClient)
+    await db.updateSession(session.sessionId, session.sessionStatus, session.doorOpened, true, pgClient)
   } catch (error) {
     throw new Error(`handleDurationAlert: ${error.message}`)
   }
@@ -681,7 +681,7 @@ async function handleDurationAlertSurvey(client, device, session, respondedEvent
       }
 
       // log message received event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // send message to responder phone number
       let twilioMessageKey
@@ -711,10 +711,10 @@ async function handleDurationAlertSurvey(client, device, session, respondedEvent
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
 
       // log message sent event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
     } else if (data.service === SERVICES.TEAMS) {
       // log message received event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
 
       // construct next card
       let teamsMessageKey
@@ -753,11 +753,11 @@ async function handleDurationAlertSurvey(client, device, session, respondedEvent
       }
 
       // log message sent event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
     // update session
-    await db_new.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
+    await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
 
     // if door is closed and 'Occupant Okay', reset monitoring and clear session state
     // if door is closed and any category except 'Other' and 'Occupant Okay', reset state to zero and end session
@@ -767,19 +767,19 @@ async function handleDurationAlertSurvey(client, device, session, respondedEvent
       await resetMonitoring(device.particleDeviceId)
 
       // Clear session state (to allow alerts to published again, to all services)
-      await db_new.updateSessionRespondedVia(session.sessionId, null, pgClient)
-      await db_new.updateSessionAttendingResponder(session.sessionId, null, pgClient)
-      await db_new.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, session.doorOpened, false, pgClient)
+      await db.updateSessionRespondedVia(session.sessionId, null, pgClient)
+      await db.updateSessionAttendingResponder(session.sessionId, null, pgClient)
+      await db.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, session.doorOpened, false, pgClient)
     } else if (!session.doorOpened && selectedCategory !== 'Occupant Okay' && selectedCategory !== 'Other') {
       await resetStateToZero(device.particleDeviceId)
 
       // update the session's door opened to true as the state is now reset
       // update session status to completed
       // NOTE: this may not be true and the door could still be closed
-      await db_new.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, session.surveySent, pgClient)
+      await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, session.surveySent, pgClient)
     } else if (session.doorOpened && selectedCategory !== 'Other') {
       // update session status to completed
-      await db_new.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+      await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
     }
   } catch (error) {
     throw new Error(`handleDurationAlertSurvey: ${error.message}`)
@@ -802,7 +802,7 @@ async function handleDurationAlertSurveyDoorOpened(client, device, session, resp
       }
 
       // log message received event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // send message to responder phone number
       let twilioMessageKey
@@ -830,10 +830,10 @@ async function handleDurationAlertSurveyDoorOpened(client, device, session, resp
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
 
       // log message sent event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
     } else if (data.service === SERVICES.TEAMS) {
       // log message received event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
 
       // construct next card
       let teamsMessageKey
@@ -870,7 +870,7 @@ async function handleDurationAlertSurveyDoorOpened(client, device, session, resp
       }
 
       // log message sent event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
     // mark session as responded
@@ -879,12 +879,12 @@ async function handleDurationAlertSurveyDoorOpened(client, device, session, resp
     }
 
     // update session
-    await db_new.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
+    await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
 
     // if door is opened and any category except 'Other', update session status to completed
     // for any other case, don't do anything
     if (session.doorOpened && selectedCategory !== 'Other') {
-      await db_new.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+      await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
     }
   } catch (error) {
     throw new Error(`handleDurationAlertSurveyDoorOpened: ${error.message}`)
@@ -902,7 +902,7 @@ async function handleDurationAlertSurveyOccupantOkayFollowup(client, device, ses
       }
 
       // log message received event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // send message to responder phone number
       const twilioMessageKey = 'durationAlertSurveyOccupantOkayEnd'
@@ -910,10 +910,10 @@ async function handleDurationAlertSurveyOccupantOkayFollowup(client, device, ses
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
 
       // log message sent event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
     } else if (data.service === SERVICES.TEAMS) {
       // log message received event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, respondedEvent.messageId, pgClient)
 
       // construct next card
       const teamsMessageKey = 'teamsDurationAlertSurveyOccupantOkayEnd'
@@ -930,7 +930,7 @@ async function handleDurationAlertSurveyOccupantOkayFollowup(client, device, ses
       }
 
       // log message sent event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
     // if the door is still closed we should reset the state to 0
@@ -939,7 +939,7 @@ async function handleDurationAlertSurveyOccupantOkayFollowup(client, device, ses
     }
 
     // exit the flow by ending the session
-    await db_new.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
+    await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
   } catch (error) {
     throw new Error(`handleDurationAlertSurveyOccupantOkayFollowup: ${error.message}`)
   }
@@ -952,7 +952,7 @@ async function handleDurationAlertSurveyOtherFollowup(client, device, session, r
 
       // log message received event
       const eventTypeDetails = `${respondedEvent.eventTypeDetails}: ${message}`
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, eventTypeDetails, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, eventTypeDetails, data.responderPhoneNumber, pgClient)
 
       // send message to responder phone number
       const twilioMessageKey = 'thankYou'
@@ -960,11 +960,11 @@ async function handleDurationAlertSurveyOtherFollowup(client, device, session, r
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
 
       // log message sent event
-      await db_new.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
+      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
     } else if (data.service === SERVICES.TEAMS) {
       // log message received event
       const eventTypeDetails = `${respondedEvent.eventTypeDetails}: ${message}`
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, eventTypeDetails, respondedEvent.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, eventTypeDetails, respondedEvent.messageId, pgClient)
 
       // construct next card
       const teamsMessageKey = 'teamsThankYou'
@@ -981,7 +981,7 @@ async function handleDurationAlertSurveyOtherFollowup(client, device, session, r
       }
 
       // log message sent event
-      await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
+      await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
     // if the door is still closed we should reset the state to 0
@@ -990,7 +990,7 @@ async function handleDurationAlertSurveyOtherFollowup(client, device, session, r
     }
 
     // exit the flow by ending the session
-    await db_new.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
+    await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, true, pgClient)
   } catch (error) {
     throw new Error(`handleDurationAlertSurveyOtherFollowup: ${error.message}`)
   }

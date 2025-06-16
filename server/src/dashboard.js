@@ -14,7 +14,7 @@ const cookieParser = require('cookie-parser')
 
 // In-house dependencies
 const helpers = require('./utils/helpers')
-const db_new = require('./db/db_new')
+const db = require('./db/db')
 const { DEVICE_STATUS, SESSION_STATUS } = require('./enums/index')
 
 const navPartial = fs.readFileSync(`${__dirname}/mustache-templates/navPartial.mst`, 'utf-8')
@@ -157,7 +157,7 @@ const stringFormatters = {
 
 async function renderLandingPage(req, res) {
   try {
-    const [mergedClients, mergedDevices] = await Promise.all([db_new.getMergedClientsWithExtensions(), db_new.getMergedDevicesWithVitals()])
+    const [mergedClients, mergedDevices] = await Promise.all([db.getMergedClientsWithExtensions(), db.getMergedDevicesWithVitals()])
 
     const uniqueFunders = filterUniqueItems(mergedClients, 'funder')
     const uniqueProjects = filterUniqueItems(mergedClients, 'project')
@@ -183,7 +183,7 @@ async function renderFunderProjectsPage(req, res) {
   try {
     const funder = decodeURIComponent(req.query.funder)
 
-    const mergedClients = await db_new.getMergedClientsWithExtensions()
+    const mergedClients = await db.getMergedClientsWithExtensions()
     const filteredClients = mergedClients.filter(
       client => client.isDisplayed && (funder === 'N/A' ? client.funder === 'N/A' || client.funder === null : client.funder === funder),
     )
@@ -207,7 +207,7 @@ async function renderProjectOrganizationsPage(req, res) {
   try {
     const project = decodeURIComponent(req.query.project)
 
-    const mergedClients = await db_new.getMergedClientsWithExtensions()
+    const mergedClients = await db.getMergedClientsWithExtensions()
     const filteredClients = mergedClients.filter(
       client => client.isDisplayed && (project === 'N/A' ? client.project === 'N/A' || client.project === null : client.project === project),
     )
@@ -231,7 +231,7 @@ async function renderOrganizationClientsPage(req, res) {
   try {
     const organization = decodeURIComponent(req.query.organization)
 
-    const mergedClients = await db_new.getMergedClientsWithExtensions()
+    const mergedClients = await db.getMergedClientsWithExtensions()
     const filteredClients = mergedClients.filter(
       client =>
         client.isDisplayed &&
@@ -266,7 +266,7 @@ async function renderUpdateClientPage(req, res) {
   try {
     const clientId = req.params.clientId
 
-    const [client, clientExtension] = await Promise.all([db_new.getClientWithClientId(clientId), db_new.getClientExtensionWithClientId(clientId)])
+    const [client, clientExtension] = await Promise.all([db.getClientWithClientId(clientId), db.getClientExtensionWithClientId(clientId)])
 
     // Merge client data (fields can be displayed as null)
     const mergedClient = {
@@ -295,9 +295,9 @@ async function renderClientDetailsPage(req, res) {
     const clientId = req.params.clientId
 
     const [client, clientExtension, mergedDevices] = await Promise.all([
-      db_new.getClientWithClientId(clientId),
-      db_new.getClientExtensionWithClientId(clientId),
-      db_new.getMergedDevicesWithVitals(clientId), // use clientId
+      db.getClientWithClientId(clientId),
+      db.getClientExtensionWithClientId(clientId),
+      db.getMergedDevicesWithVitals(clientId), // use clientId
     ])
 
     // Merge client data (fields can be displayed as null)
@@ -325,7 +325,7 @@ async function renderClientDetailsPage(req, res) {
 async function renderNewDevicePage(req, res) {
   try {
     // all visible devices so user can select what client the device belongs to
-    const clients = await db_new.getClients()
+    const clients = await db.getClients()
     const displayedClients = clients.filter(client => client.isDisplayed)
 
     const viewParams = { clients: displayedClients }
@@ -341,7 +341,7 @@ async function renderUpdateDevicePage(req, res) {
   try {
     const deviceId = req.params.deviceId
 
-    const [device, clients] = await Promise.all([db_new.getDeviceWithDeviceId(deviceId), db_new.getClients()])
+    const [device, clients] = await Promise.all([db.getDeviceWithDeviceId(deviceId), db.getClients()])
 
     // add a boolean "selected" field to all displayed clients
     // selected is true if client's clientId matches with device's clientId
@@ -371,16 +371,16 @@ async function renderDeviceDetailsPage(req, res) {
     const deviceId = req.params.deviceId
 
     const [device, client, latestVital, allSessions] = await Promise.all([
-      db_new.getDeviceWithDeviceId(deviceId),
-      db_new.getClientWithDeviceId(deviceId),
-      db_new.getLatestVitalWithDeviceId(deviceId),
-      db_new.getSessionsForDevice(deviceId),
+      db.getDeviceWithDeviceId(deviceId),
+      db.getClientWithDeviceId(deviceId),
+      db.getLatestVitalWithDeviceId(deviceId),
+      db.getSessionsForDevice(deviceId),
     ])
 
     if (latestVital) {
       const [timeSinceLastVital, timeSinceLastDoorContact] = await Promise.all([
-        db_new.getFormattedTimeDifference(latestVital.createdAt),
-        db_new.getFormattedTimeDifference(latestVital.doorLastSeenAt),
+        db.getFormattedTimeDifference(latestVital.createdAt),
+        db.getFormattedTimeDifference(latestVital.doorLastSeenAt),
       ])
 
       Object.assign(latestVital, {
@@ -401,7 +401,7 @@ async function renderDeviceNotificationsPage(req, res) {
   try {
     const deviceId = req.params.deviceId
 
-    const [device, allDeviceNotifications] = await Promise.all([db_new.getDeviceWithDeviceId(deviceId), db_new.getNotificationsForDevice(deviceId)])
+    const [device, allDeviceNotifications] = await Promise.all([db.getDeviceWithDeviceId(deviceId), db.getNotificationsForDevice(deviceId)])
 
     const notificationsCount = allDeviceNotifications.length
     const viewParams = { device, notifications: allDeviceNotifications, notificationsCount }
@@ -417,16 +417,16 @@ async function renderSessionDetailsPage(req, res) {
   try {
     const sessionId = req.params.sessionId
 
-    const session = await db_new.getSessionWithSessionId(sessionId)
+    const session = await db.getSessionWithSessionId(sessionId)
     if (!session) {
       res.status(404).send('Session not found')
       return
     }
 
     const [client, device, allEvents] = await Promise.all([
-      db_new.getClientWithDeviceId(session.deviceId),
-      db_new.getDeviceWithDeviceId(session.deviceId),
-      db_new.getEventsForSession(sessionId),
+      db.getClientWithDeviceId(session.deviceId),
+      db.getDeviceWithDeviceId(session.deviceId),
+      db.getEventsForSession(sessionId),
     ])
 
     // Process events
@@ -496,7 +496,7 @@ async function submitNewClient(req, res) {
     if (validationErrors.isEmpty()) {
       const data = req.body
 
-      const allClients = await db_new.getClients()
+      const allClients = await db.getClients()
       for (const client of allClients) {
         if (client.displayName === data.displayName) {
           const errorMessage = `Client Display Name already exists: ${data.displayName}`
@@ -524,7 +524,7 @@ async function submitNewClient(req, res) {
       const firstDeviceLiveAt = null
       const stillnessSurveyFollowupDelay = 180
 
-      const newClient = await db_new.createClient(
+      const newClient = await db.createClient(
         data.displayName,
         data.language,
         responderPhoneNumbers,
@@ -547,7 +547,7 @@ async function submitNewClient(req, res) {
         throw new Error('Client creation failed')
       }
 
-      await db_new.updateClientExtension(
+      await db.updateClientExtension(
         newClient.clientId,
         data.country || null,
         data.countrySubdivision || null,
@@ -613,7 +613,7 @@ async function submitUpdateClient(req, res) {
       const clientId = req.params.clientId
       const data = req.body
 
-      const client = await db_new.getClientWithClientId(clientId)
+      const client = await db.getClientWithClientId(clientId)
       if (!client) {
         const errorMessage = `Client ID '${data.clientId}' does not exist`
         helpers.log(errorMessage)
@@ -656,7 +656,7 @@ async function submitUpdateClient(req, res) {
       const teamsAlertChannelId = data.teamsAlertChannelId || null
       const teamsVitalChannelId = data.teamsVitalChannelId || null
 
-      await db_new.updateClient(
+      await db.updateClient(
         clientId,
         data.displayName,
         data.language,
@@ -676,7 +676,7 @@ async function submitUpdateClient(req, res) {
         teamsVitalChannelId,
       )
 
-      await db_new.updateClientExtension(
+      await db.updateClientExtension(
         clientId,
         data.country || null,
         data.countrySubdivision || null,
@@ -717,7 +717,7 @@ async function submitNewDevice(req, res) {
     if (validationErrors.isEmpty()) {
       const data = req.body
 
-      const allDevices = await db_new.getDevices()
+      const allDevices = await db.getDevices()
       for (const device of allDevices) {
         if (device.locationId === data.locationId) {
           const errorMessage = `Location ID already exists: ${data.locationId}`
@@ -726,7 +726,7 @@ async function submitNewDevice(req, res) {
         }
       }
 
-      const client = await db_new.getClientWithClientId(data.clientId)
+      const client = await db.getClientWithClientId(data.clientId)
       if (!client) {
         const errorMessage = `Client ID '${data.clientId}' does not exist`
         helpers.log(errorMessage)
@@ -738,7 +738,7 @@ async function submitNewDevice(req, res) {
       const isSendingAlerts = false
       const isSendingVitals = false
 
-      const newDevice = await db_new.createDevice(
+      const newDevice = await db.createDevice(
         data.locationId,
         data.displayName,
         client.clientId,
@@ -790,21 +790,21 @@ async function submitUpdateDevice(req, res) {
       const deviceId = req.params.deviceId
       const data = req.body
 
-      const device = await db_new.getDeviceWithDeviceId(deviceId)
+      const device = await db.getDeviceWithDeviceId(deviceId)
       if (!device) {
         const errorMessage = `Device ID '${deviceId}' does not exist`
         helpers.log(errorMessage)
         return res.status(400).send(errorMessage)
       }
 
-      const client = await db_new.getClientWithClientId(data.clientId)
+      const client = await db.getClientWithClientId(data.clientId)
       if (!client) {
         const errorMessage = `Client ID '${data.clientId}' does not exist`
         helpers.log(errorMessage)
         return res.status(400).send(errorMessage)
       }
 
-      await db_new.updateDevice(
+      await db.updateDevice(
         deviceId,
         data.locationId,
         data.displayName,

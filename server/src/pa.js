@@ -11,7 +11,7 @@ const Validator = require('express-validator')
 const helpers = require('./utils/helpers')
 const twilioHelpers = require('./utils/twilioHelpers')
 const googleHelpers = require('./utils/googleHelpers')
-const db_new = require('./db/db_new')
+const db = require('./db/db')
 
 const paApiKeys = [helpers.getEnvVar('PA_API_KEY_PRIMARY'), helpers.getEnvVar('PA_API_KEY_SECONDARY')]
 const paPasswords = [helpers.getEnvVar('PA_PASSWORD_PRIMARY'), helpers.getEnvVar('PA_PASSWORD_SECONDARY')]
@@ -84,7 +84,7 @@ async function handleCreateSensorLocation(req, res) {
 
     if (paApiKeys.includes(braveAPIKey) && paPasswords.includes(password)) {
       try {
-        const newDevice = await db_new.createDevice(
+        const newDevice = await db.createDevice(
           locationId,
           deviceDisplayName,
           clientId,
@@ -125,7 +125,7 @@ async function handleGetSensorClients(req, res) {
 
     if (paApiKeys.includes(braveAPIKey)) {
       try {
-        const clients = await db_new.getClients()
+        const clients = await db.getClients()
 
         const processedClients = clients.map(client => {
           return { name: client.displayName, id: client.clientId }
@@ -157,8 +157,8 @@ async function handleGetClientDevices(req, res) {
 
     if (paApiKeys.includes(braveAPIKey)) {
       try {
-        const client = await db_new.getClientWithDisplayName(clientDisplayName)
-        const devicesForClient = await db_new.getDevicesForClient(client.clientId)
+        const client = await db.getClientWithDisplayName(clientDisplayName)
+        const devicesForClient = await db.getDevicesForClient(client.clientId)
 
         const processedDevices = devicesForClient.map(device => {
           return {
@@ -270,7 +270,7 @@ async function handleMessageClients(req, res) {
       failedToMessage: [],
     }
 
-    const clients = await db_new.getActiveClients()
+    const clients = await db.getActiveClients()
     if (!clients || clients.length === 0) {
       return res.status(200).json({
         ...responseObject,
@@ -305,7 +305,7 @@ async function handleCheckDatabaseConnection(req, res) {
 
     if (paApiKeys.includes(braveAPIKey)) {
       try {
-        await db_new.getCurrentTimeForHealthCheck()
+        await db.getCurrentTimeForHealthCheck()
         res.status(200).send({ message: 'success' })
       } catch (err) {
         helpers.logError(err)

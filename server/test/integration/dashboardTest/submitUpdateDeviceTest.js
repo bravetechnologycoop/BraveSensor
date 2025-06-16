@@ -7,8 +7,8 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
 const helpers = require('../../../src/utils/helpers')
-const db_new = require('../../../src/db/db_new')
-const factories_new = require('../../factories_new')
+const db = require('../../../src/db/db')
+const factories = require('../../factories_new')
 const { DEVICE_TYPE } = require('../../../src/enums/index')
 
 const { server } = require('../../../index')
@@ -23,10 +23,10 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
   beforeEach(async () => {
     sandbox.spy(helpers, 'log')
     sandbox.spy(helpers, 'logError')
-    await db_new.clearAllTables()
+    await db.clearAllTables()
 
-    this.defaultClient = await factories_new.clientNewDBFactory()
-    this.defaultDevice = await factories_new.deviceNewDBFactory({
+    this.defaultClient = await factories.clientNewDBFactory()
+    this.defaultDevice = await factories.deviceNewDBFactory({
       locationId: 'originalLocation123',
       displayName: 'Original Device',
       clientId: this.defaultClient.clientId,
@@ -43,7 +43,7 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
 
   afterEach(async () => {
     sandbox.restore()
-    await db_new.clearAllTables()
+    await db.clearAllTables()
     this.agent.close()
   })
 
@@ -61,7 +61,7 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
         isSendingVitals: true,
       }
 
-      sandbox.spy(db_new, 'updateDevice')
+      sandbox.spy(db, 'updateDevice')
       this.response = await this.agent.post(`/devices/${this.defaultDevice.deviceId}`).send(goodRequest)
     })
 
@@ -70,10 +70,10 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
     })
 
     it('should not update the device in the database', async () => {
-      const device = await db_new.getDeviceWithDeviceId(this.defaultDevice.deviceId)
+      const device = await db.getDeviceWithDeviceId(this.defaultDevice.deviceId)
       expect(device.locationId).to.equal('originalLocation123')
       expect(device.displayName).to.equal('Original Device')
-      expect(db_new.updateDevice).to.not.have.been.called
+      expect(db.updateDevice).to.not.have.been.called
     })
 
     it('should log the error', () => {
@@ -100,7 +100,7 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
         isSendingVitals: '',
       }
 
-      sandbox.spy(db_new, 'updateDevice')
+      sandbox.spy(db, 'updateDevice')
       this.response = await this.agent.post(`/devices/${this.defaultDevice.deviceId}`).send(badRequest)
     })
 
@@ -109,10 +109,10 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
     })
 
     it('should not update the device in the database', async () => {
-      const device = await db_new.getDeviceWithDeviceId(this.defaultDevice.deviceId)
+      const device = await db.getDeviceWithDeviceId(this.defaultDevice.deviceId)
       expect(device.locationId).to.equal('originalLocation123')
       expect(device.displayName).to.equal('Original Device')
-      expect(db_new.updateDevice).to.not.have.been.called
+      expect(db.updateDevice).to.not.have.been.called
     })
   })
 
@@ -148,7 +148,7 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
     })
 
     it('should not update the device in the database', async () => {
-      const device = await db_new.getDeviceWithDeviceId(this.defaultDevice.deviceId)
+      const device = await db.getDeviceWithDeviceId(this.defaultDevice.deviceId)
       expect(device.locationId).to.equal('originalLocation123')
       expect(device.displayName).to.equal('Original Device')
     })
@@ -173,7 +173,7 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
         isSendingVitals: true,
       }
 
-      sandbox.spy(db_new, 'updateDevice')
+      sandbox.spy(db, 'updateDevice')
       this.response = await this.agent.post(`/devices/${this.defaultDevice.deviceId}`).send(goodRequest)
     })
 
@@ -182,7 +182,7 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
     })
 
     it('should update the device in the database', async () => {
-      const device = await db_new.getDeviceWithDeviceId(this.defaultDevice.deviceId)
+      const device = await db.getDeviceWithDeviceId(this.defaultDevice.deviceId)
       expect(device.locationId).to.equal('updatedLocation123')
       expect(device.displayName).to.equal('Updated Device')
       expect(device.clientId).to.equal(this.defaultClient.clientId)
@@ -192,7 +192,7 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
       expect(device.isDisplayed).to.be.true
       expect(device.isSendingAlerts).to.be.true
       expect(device.isSendingVitals).to.be.true
-      expect(db_new.updateDevice).to.have.been.calledOnce
+      expect(db.updateDevice).to.have.been.calledOnce
     })
   })
 
@@ -224,7 +224,7 @@ describe('dashboard.js integration tests: submitUpdateDeviceTest', () => {
     })
 
     it('should not create or update any device', async () => {
-      const devices = await db_new.getDevices()
+      const devices = await db.getDevices()
       expect(devices.length).to.equal(1) // Only our default device exists
     })
   })

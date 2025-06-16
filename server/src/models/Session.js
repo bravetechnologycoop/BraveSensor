@@ -1,28 +1,30 @@
+// TODO rename to Session, remove suffix in all references
+
 class Session {
   constructor(
-    id,
-    chatbotState,
-    alertType,
-    numberOfAlerts,
+    sessionId,
+    deviceId,
     createdAt,
     updatedAt,
-    incidentCategory,
-    respondedAt,
-    respondedByPhoneNumber,
-    isResettable,
-    device,
+    sessionStatus,
+    attendingResponderNumber,
+    doorOpened,
+    surveySent,
+    selectedSurveyCategory,
+    responseTime,
+    sessionRespondedVia,
   ) {
-    this.id = id
-    this.chatbotState = chatbotState
-    this.alertType = alertType
-    this.numberOfAlerts = numberOfAlerts
+    this.sessionId = sessionId
+    this.deviceId = deviceId
     this.createdAt = createdAt
     this.updatedAt = updatedAt
-    this.incidentCategory = incidentCategory
-    this.respondedAt = respondedAt
-    this.respondedByPhoneNumber = respondedByPhoneNumber
-    this.isResettable = isResettable
-    this.device = device
+    this.sessionStatus = sessionStatus
+    this.attendingResponderNumber = attendingResponderNumber
+    this.doorOpened = doorOpened
+    this.surveySent = surveySent
+    this.selectedSurveyCategory = selectedSurveyCategory
+    this.responseTime = responseTime
+    this.sessionRespondedVia = sessionRespondedVia
   }
 }
 

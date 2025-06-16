@@ -9,7 +9,7 @@ const axios = require('axios')
 
 // In-house dependencies
 const helpers = require('./helpers')
-const db_new = require('../db/db_new')
+const db = require('../db/db')
 
 const TEAMS_CARD_FLOW_URL = helpers.getEnvVar('TEAMS_CARD_FLOW_URL')
 const TEAMS_API_KEY = helpers.getEnvVar('TEAMS_API_KEY')
@@ -618,13 +618,13 @@ async function sendUpdateTeamsCard(teamsId, channelId, messageId, adaptiveCard) 
  */
 async function expirePreviousTeamsCard(teamsId, channelId, session) {
   try {
-    const previousTeamsEvent = await db_new.getLatestRespondableTeamsEvent(session.sessionId)
+    const previousTeamsEvent = await db.getLatestRespondableTeamsEvent(session.sessionId)
     if (!previousTeamsEvent) {
       return
     }
 
-    const client = await db_new.getClientWithDeviceId(session.deviceId)
-    const device = await db_new.getDeviceWithDeviceId(session.deviceId)
+    const client = await db.getClientWithDeviceId(session.deviceId)
+    const device = await db.getDeviceWithDeviceId(session.deviceId)
     if (!client || !device) {
       helpers.log('No client/device found for session')
       return

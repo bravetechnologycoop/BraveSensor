@@ -1,4 +1,4 @@
-class TeamsEventNew {
+class TeamsEvent {
   constructor(eventId, sessionId, eventType, eventTypeDetails, eventSentAt, messageId) {
     this.eventId = eventId
     this.sessionId = sessionId
@@ -9,4 +9,4 @@ class TeamsEventNew {
   }
 }
 
-module.exports = TeamsEventNew
+module.exports = TeamsEvent
