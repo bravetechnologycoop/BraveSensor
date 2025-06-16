@@ -66,6 +66,7 @@ BEGIN
         CREATE TRIGGER update_vitals_cache_trigger
         AFTER INSERT ON public.vitals
         FOR EACH ROW EXECUTE PROCEDURE update_vitals_cache_fn();
+        
 
         -- ===== Record success =====
         INSERT INTO migrations (id) VALUES (migrationId);
