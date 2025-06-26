@@ -11,6 +11,11 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.2.3] - 2025-06-26
+
+- Operating hours for vitals (CU-86dwbejz7)
+- Remove _new suffix from db table names and refactor (CU-86dwkpfuv)
+
 ## [12.2.2] - 2025-04-30
 
 - Fixed smoketest
@@ -959,7 +964,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.2...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.3...HEAD
+[12.2.3]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.1...v12.2.3
 [12.2.2]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.1...v12.2.2
 [12.2.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.0...v12.2.1
 [12.2.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.1.0...v12.2.0
