@@ -1,19 +1,21 @@
 /*
- * factories_new.js
+ * factories.js
  *
  * Factory functions to create database and JavaScript instances for various models.
  * These are primarily used for unit and integration testing.
  */
 
+// TODO: Refactor these functions to not use the  suffix
+
 // In-house dependencies
-const db_new = require('../src/db/db_new')
-const { ClientNew, ClientExtensionNew, DeviceNew, SessionNew, EventNew, VitalNew, NotificationNew } = require('../src/models')
+const db = require('../src/db/db')
+const { Client, ClientExtension, Device, Session, Event, Vital, Notification } = require('../src/models')
 const { DEVICE_TYPE, DEVICE_STATUS, SESSION_STATUS, EVENT_TYPE, NOTIFICATION_TYPE } = require('../src/enums')
 
 // JS Object Factories
 
 function clientNewFactory(overrides = {}) {
-  return new ClientNew(
+  return new Client(
     overrides.clientId !== undefined ? overrides.clientId : 'fakeClientId',
     overrides.displayName !== undefined ? overrides.displayName : 'fakeClientDisplayName',
     overrides.language !== undefined ? overrides.language : 'en',
@@ -39,7 +41,7 @@ function clientNewFactory(overrides = {}) {
 }
 
 function clientExtensionNewFactory(overrides = {}) {
-  return new ClientExtensionNew(
+  return new ClientExtension(
     overrides.clientId !== undefined ? overrides.clientId : 'fakeClientId',
     overrides.country !== undefined ? overrides.country : 'fakeCountry',
     overrides.countrySubdivision !== undefined ? overrides.countrySubdivision : 'fakeCountrySubdivisio',
@@ -55,7 +57,7 @@ function clientExtensionNewFactory(overrides = {}) {
 }
 
 function deviceNewFactory(overrides = {}) {
-  return new DeviceNew(
+  return new Device(
     overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId',
     overrides.locationId !== undefined ? overrides.locationId : 'fakeLocationId',
     overrides.displayName !== undefined ? overrides.displayName : 'fakeDeviceDisplayName',
@@ -72,7 +74,7 @@ function deviceNewFactory(overrides = {}) {
 }
 
 function sessionNewFactory(overrides = {}) {
-  return new SessionNew(
+  return new Session(
     overrides.sessionId !== undefined ? overrides.sessionId : 'fakeSessionId',
     overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId',
     overrides.createdAt !== undefined ? overrides.createdAt : '2025-01-01T00:00:00.000Z',
@@ -87,7 +89,7 @@ function sessionNewFactory(overrides = {}) {
 }
 
 function eventNewFactory(overrides = {}) {
-  return new EventNew(
+  return new Event(
     overrides.eventId !== undefined ? overrides.eventId : 'fakeEventId',
     overrides.sessionId !== undefined ? overrides.sessionId : 'fakeSessionId',
     overrides.eventType !== undefined ? overrides.eventType : EVENT_TYPE.STILLNESS_ALERT,
@@ -98,7 +100,7 @@ function eventNewFactory(overrides = {}) {
 }
 
 function vitalNewFactory(overrides = {}) {
-  return new VitalNew(
+  return new Vital(
     overrides.vitalId !== undefined ? overrides.vitalId : 'fakeVitalId',
     overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId',
     overrides.createdAt !== undefined ? overrides.createdAt : '2025-01-01T00:00:00.000Z',
@@ -112,7 +114,7 @@ function vitalNewFactory(overrides = {}) {
 }
 
 function notificationNewFactory(overrides = {}) {
-  return new NotificationNew(
+  return new Notification(
     overrides.notificationId !== undefined ? overrides.notificationId : 'fakeNotificationId',
     overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId',
     overrides.notificationType !== undefined ? overrides.notificationType : NOTIFICATION_TYPE.DOOR_LOW_BATTERY,
@@ -123,7 +125,7 @@ function notificationNewFactory(overrides = {}) {
 // Database Factories
 
 async function clientNewDBFactory(overrides = {}, pgClient) {
-  const client = await db_new.createClient(
+  const client = await db.createClient(
     overrides.displayName !== undefined ? overrides.displayName : 'fakeClientDisplayName',
     overrides.language !== undefined ? overrides.language : 'en',
     overrides.responderPhoneNumbers !== undefined ? overrides.responderPhoneNumbers : ['+11234567890', '+10987654321'],
@@ -148,7 +150,7 @@ async function clientNewDBFactory(overrides = {}, pgClient) {
 }
 
 async function clientExtensionNewDBFactory(overrides = {}, pgClient) {
-  const clientExtension = await db_new.createClientExtension(
+  const clientExtension = await db.createClientExtension(
     overrides.clientId !== undefined ? overrides.clientId : 'fakeClientId',
     overrides.country !== undefined ? overrides.country : 'fakeCountry',
     overrides.countrySubdivision !== undefined ? overrides.countrySubdivision : 'fakeCountrySubdivisio',
@@ -164,7 +166,7 @@ async function clientExtensionNewDBFactory(overrides = {}, pgClient) {
 }
 
 async function deviceNewDBFactory(overrides = {}, pgClient) {
-  const device = await db_new.createDevice(
+  const device = await db.createDevice(
     overrides.locationId !== undefined ? overrides.locationId : 'fakeLocationId',
     overrides.displayName !== undefined ? overrides.displayName : 'fakeDeviceDisplayName',
     overrides.clientId !== undefined ? overrides.clientId : 'fakeClientId',
@@ -180,7 +182,7 @@ async function deviceNewDBFactory(overrides = {}, pgClient) {
 }
 
 async function sessionNewDBFactory(overrides = {}, pgClient) {
-  const session = await db_new.createSession(
+  const session = await db.createSession(
     overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId',
     overrides.sessionStatus !== undefined ? overrides.sessionStatus : SESSION_STATUS.ACTIVE,
     overrides.attendingResponderNumber !== undefined ? overrides.attendingResponderNumber : '+11234567890',
@@ -194,7 +196,7 @@ async function sessionNewDBFactory(overrides = {}, pgClient) {
 }
 
 async function eventNewDBFactory(overrides = {}, pgClient) {
-  const event = await db_new.createEvent(
+  const event = await db.createEvent(
     overrides.sessionId !== undefined ? overrides.sessionId : 'fakeSessionId',
     overrides.eventType !== undefined ? overrides.eventType : EVENT_TYPE.DOOR_OPENED,
     overrides.eventTypeDetails !== undefined ? overrides.eventTypeDetails : null,
@@ -205,7 +207,7 @@ async function eventNewDBFactory(overrides = {}, pgClient) {
 }
 
 async function vitalNewDBFactory(overrides = {}, pgClient) {
-  const vital = await db_new.createVital(
+  const vital = await db.createVital(
     overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId',
     overrides.deviceLastResetReason !== undefined ? overrides.deviceLastResetReason : 'NONE',
     overrides.doorLastSeenAt !== undefined ? overrides.doorLastSeenAt : '2025-01-01T00:00:00.000Z',
@@ -219,7 +221,7 @@ async function vitalNewDBFactory(overrides = {}, pgClient) {
 }
 
 async function notificationNewDBFactory(overrides = {}, pgClient) {
-  const notification = await db_new.createNotification(
+  const notification = await db.createNotification(
     overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId',
     overrides.notificationType !== undefined ? overrides.notificationType : NOTIFICATION_TYPE.DOOR_LOW_BATTERY,
     pgClient,

@@ -7,8 +7,8 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
 const helpers = require('../../../src/utils/helpers')
-const db_new = require('../../../src/db/db_new')
-const factories_new = require('../../factories_new')
+const db = require('../../../src/db/db')
+const factories = require('../../factories_new')
 
 const { server } = require('../../../index')
 
@@ -23,14 +23,14 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
   beforeEach(async () => {
     sandbox.spy(helpers, 'log')
     sandbox.spy(helpers, 'logError')
-    await db_new.clearAllTables()
+    await db.clearAllTables()
 
     this.agent = chai.request.agent(server)
   })
 
   afterEach(async () => {
     sandbox.restore()
-    await db_new.clearAllTables()
+    await db.clearAllTables()
 
     this.agent.close()
   })
@@ -47,8 +47,8 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
         surveyCategories: 'Category1,Category2',
       }
 
-      sandbox.spy(db_new, 'createClient')
-      sandbox.spy(db_new, 'updateClientExtension')
+      sandbox.spy(db, 'createClient')
+      sandbox.spy(db, 'updateClientExtension')
 
       this.response = await this.agent.post('/clients').send(goodRequest)
     })
@@ -58,11 +58,11 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
     })
 
     it('should not create a new client in the database', async () => {
-      const clients = await db_new.getClients()
+      const clients = await db.getClients()
       expect(clients.length).to.equal(0)
 
-      expect(db_new.createClient).to.not.have.been.called
-      expect(db_new.updateClientExtension).to.not.have.been.called
+      expect(db.createClient).to.not.have.been.called
+      expect(db.updateClientExtension).to.not.have.been.called
     })
 
     it('should log the error', () => {
@@ -87,8 +87,8 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
         surveyCategories: '',
       }
 
-      sandbox.spy(db_new, 'createClient')
-      sandbox.spy(db_new, 'updateClientExtension')
+      sandbox.spy(db, 'createClient')
+      sandbox.spy(db, 'updateClientExtension')
 
       this.response = await this.agent.post('/clients').send(badRequest)
     })
@@ -98,11 +98,11 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
     })
 
     it('should not create a new client in the database', async () => {
-      const clients = await db_new.getClients()
+      const clients = await db.getClients()
       expect(clients.length).to.equal(0)
 
-      expect(db_new.createClient).to.not.have.been.called
-      expect(db_new.updateClientExtension).to.not.have.been.called
+      expect(db.createClient).to.not.have.been.called
+      expect(db.updateClientExtension).to.not.have.been.called
     })
   })
 
@@ -119,8 +119,8 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
         surveyCategories: 'Category1,Category2',
       }
 
-      sandbox.spy(db_new, 'createClient')
-      sandbox.spy(db_new, 'updateClientExtension')
+      sandbox.spy(db, 'createClient')
+      sandbox.spy(db, 'updateClientExtension')
 
       this.response = await this.agent.post('/clients').send(badRequest)
     })
@@ -130,11 +130,11 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
     })
 
     it('should not create a new client in the database', async () => {
-      const clients = await db_new.getClients()
+      const clients = await db.getClients()
       expect(clients.length).to.equal(0)
 
-      expect(db_new.createClient).to.not.have.been.called
-      expect(db_new.updateClientExtension).to.not.have.been.called
+      expect(db.createClient).to.not.have.been.called
+      expect(db.updateClientExtension).to.not.have.been.called
     })
   })
 
@@ -153,8 +153,8 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
         surveyCategories: 'Category1,Category2',
       }
 
-      sandbox.spy(db_new, 'createClient')
-      sandbox.spy(db_new, 'updateClientExtension')
+      sandbox.spy(db, 'createClient')
+      sandbox.spy(db, 'updateClientExtension')
 
       this.response = await this.agent.post('/clients').send(goodRequest)
     })
@@ -164,12 +164,12 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
     })
 
     it('should create a new client in the database', async () => {
-      const clients = await db_new.getClients()
+      const clients = await db.getClients()
       expect(clients.length).to.equal(1)
       expect(clients[0].displayName).to.equal('fakeClientDisplayName')
 
-      expect(db_new.createClient).to.have.been.calledOnce
-      expect(db_new.updateClientExtension).to.have.been.calledOnce
+      expect(db.createClient).to.have.been.calledOnce
+      expect(db.updateClientExtension).to.have.been.calledOnce
     })
   })
 
@@ -209,13 +209,13 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
     })
 
     it('should create a new client with all fields in the database', async () => {
-      const clients = await db_new.getClients()
+      const clients = await db.getClients()
       expect(clients.length).to.equal(1)
 
       const client = clients[0]
       expect(client.displayName).to.equal('fakeClientDisplayName')
 
-      const clientExtension = await db_new.getClientExtensionWithClientId(client.clientId)
+      const clientExtension = await db.getClientExtensionWithClientId(client.clientId)
       expect(clientExtension.country).to.equal('Canada')
       expect(clientExtension.city).to.equal('Vancouver')
       expect(clientExtension.project).to.equal('TestProject')
@@ -225,7 +225,7 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
 
   describe('for a valid request attempting to create an existing client', () => {
     beforeEach(async () => {
-      await factories_new.clientNewDBFactory({
+      await factories.clientNewDBFactory({
         displayName: 'fakeClientDisplayName',
       })
 
@@ -250,7 +250,7 @@ describe('dashboard.js integration tests: submitNewClientTest', () => {
     })
 
     it('should not create a duplicate client', async () => {
-      const clients = await db_new.getClients()
+      const clients = await db.getClients()
       expect(clients.length).to.equal(1)
     })
 

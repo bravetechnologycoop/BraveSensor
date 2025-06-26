@@ -4,30 +4,18 @@ const Client = require('./Client')
 const ClientExtension = require('./ClientExtension')
 const Device = require('./Device')
 const Session = require('./Session')
-const SensorsVital = require('./SensorsVital')
-
-const ClientNew = require('./ClientNew')
-const ClientExtensionNew = require('./ClientExtensionNew')
-const DeviceNew = require('./DeviceNew')
-const SessionNew = require('./SessionNew')
-const EventNew = require('./EventNew')
-const TeamsEventNew = require('./TeamsEventNew')
-const VitalNew = require('./VitalNew')
-const NotificationNew = require('./NotificationNew')
+const Event = require('./Event')
+const TeamsEvent = require('./TeamsEvent')
+const Vital = require('./Vital')
+const Notification = require('./Notification')
 
 module.exports = {
   Client,
   ClientExtension,
   Device,
   Session,
-  SensorsVital,
-
-  ClientNew,
-  ClientExtensionNew,
-  SessionNew,
-  DeviceNew,
-  EventNew,
-  TeamsEventNew,
-  VitalNew,
-  NotificationNew,
+  Event,
+  TeamsEvent,
+  Vital,
+  Notification,
 }

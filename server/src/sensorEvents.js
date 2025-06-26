@@ -11,7 +11,7 @@ const Validator = require('express-validator')
 const helpers = require('./utils/helpers')
 const twilioHelpers = require('./utils/twilioHelpers')
 const teamsHelpers = require('./utils/teamsHelpers')
-const db_new = require('./db/db_new')
+const db = require('./db/db')
 const { EVENT_TYPE, SESSION_STATUS, SERVICES } = require('./enums/index')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
@@ -34,7 +34,7 @@ async function sendTwilioReminder(session, twilioMessageKey, client, device) {
     }
 
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage)
-    await db_new.createEvent(session.sessionId, EVENT_TYPE.STILLNESS_ALERT, twilioMessageKey, targetNumbers)
+    await db.createEvent(session.sessionId, EVENT_TYPE.STILLNESS_ALERT, twilioMessageKey, targetNumbers)
   } catch (error) {
     throw new Error(`sendTwilioReminder: ${error.message}`)
   }
@@ -62,7 +62,7 @@ async function sendTeamsReminder(session, teamsMessageKey, client, device) {
       throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)
     }
 
-    await db_new.createTeamsEvent(session.sessionId, EVENT_TYPE.STILLNESS_ALERT, teamsMessageKey, response.messageId)
+    await db.createTeamsEvent(session.sessionId, EVENT_TYPE.STILLNESS_ALERT, teamsMessageKey, response.messageId)
   } catch (error) {
     throw new Error(`sendTeamsReminder: ${error.message}`)
   }
@@ -109,7 +109,7 @@ async function sendTwilioFallback(session, twilioMessageKey, client, device) {
     const targetNumbers = client.fallbackPhoneNumbers
 
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage)
-    await db_new.createEvent(session.sessionId, EVENT_TYPE.STILLNESS_ALERT, twilioMessageKey, targetNumbers)
+    await db.createEvent(session.sessionId, EVENT_TYPE.STILLNESS_ALERT, twilioMessageKey, targetNumbers)
   } catch (error) {
     throw new Error(`sendTwilioFallback: ${error.message}`)
   }
@@ -184,7 +184,7 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
         return
       }
 
-      const currentSession = await db_new.getLatestSessionWithDeviceId(device.deviceId)
+      const currentSession = await db.getLatestSessionWithDeviceId(device.deviceId)
       if (!currentSession) {
         helpers.log(`No session found for device ${device.deviceId}, cancelling all reminders`)
         cancelRemindersForSession(sessionId)
@@ -214,8 +214,8 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
       // get latest event based on the session's attending via service
       const latestEvent =
         currentSession.sessionRespondedVia === SERVICES.TEAMS
-          ? await db_new.getLatestRespondableTeamsEvent(currentSession.sessionId, null)
-          : await db_new.getLatestRespondableTwilioEvent(currentSession.sessionId, null)
+          ? await db.getLatestRespondableTeamsEvent(currentSession.sessionId, null)
+          : await db.getLatestRespondableTwilioEvent(currentSession.sessionId, null)
 
       // make sure the latest event is a stillness alert
       if (!latestEvent || !latestEvent.eventType || latestEvent.eventType !== EVENT_TYPE.STILLNESS_ALERT) {
@@ -268,7 +268,7 @@ async function sendTwilioAlertForSession(session, eventType, eventData, twilioMe
 
     // send alert to targetNumbers and log event
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage)
-    await db_new.createEvent(session.sessionId, eventType, twilioMessageKey, targetNumbers, pgClient)
+    await db.createEvent(session.sessionId, eventType, twilioMessageKey, targetNumbers, pgClient)
   } catch (error) {
     throw new Error(`sendTwilioAlertForExistingSession: ${error.message}`)
   }
@@ -302,7 +302,7 @@ async function sendTeamsAlertForSession(session, eventType, eventData, teamsMess
     }
 
     // log teams event with its messageId
-    await db_new.createTeamsEvent(session.sessionId, eventType, teamsMessageKey, response.messageId, pgClient)
+    await db.createTeamsEvent(session.sessionId, eventType, teamsMessageKey, response.messageId, pgClient)
   } catch (error) {
     throw new Error(`sendTeamsAlertForNewSession: ${error.message}`)
   }
@@ -324,9 +324,9 @@ async function getMessageKeysForExistingSession(eventType, latestSession, pgClie
       case EVENT_TYPE.DOOR_OPENED: {
         let latestEvent
         if (latestSession.sessionRespondedVia === SERVICES.TEAMS) {
-          latestEvent = await db_new.getLatestRespondableTeamsEvent(latestSession.sessionId, pgClient)
+          latestEvent = await db.getLatestRespondableTeamsEvent(latestSession.sessionId, pgClient)
         } else {
-          latestEvent = await db_new.getLatestRespondableTwilioEvent(latestSession.sessionId, null, pgClient)
+          latestEvent = await db.getLatestRespondableTwilioEvent(latestSession.sessionId, null, pgClient)
         }
 
         if (!latestEvent || !latestEvent.eventTypeDetails) {
@@ -381,13 +381,7 @@ async function handleExistingSession(client, device, eventType, eventData, lates
     // If messageKey is null, only update door opened status for DOOR_OPENED events and exit
     // For other event types, do nothing and return null
     if (!messageKeys && eventType === EVENT_TYPE.DOOR_OPENED) {
-      const updatedSession = await db_new.updateSession(
-        latestSession.sessionId,
-        latestSession.sessionStatus,
-        true,
-        latestSession.surveySent,
-        pgClient,
-      )
+      const updatedSession = await db.updateSession(latestSession.sessionId, latestSession.sessionStatus, true, latestSession.surveySent, pgClient)
 
       if (!updatedSession) {
         throw new Error(`Failed to update session ${latestSession.sessionId}`)
@@ -430,7 +424,7 @@ async function handleExistingSession(client, device, eventType, eventData, lates
             : latestSession.surveySent,
       }
 
-      updatedSession = await db_new.updateSession(
+      updatedSession = await db.updateSession(
         latestSession.sessionId,
         latestSession.sessionStatus,
         sessionUpdates.doorOpened,
@@ -489,7 +483,7 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
     const { twilioMessageKey, teamsMessageKey } = messageKeys
 
     // create a new active session
-    const newSession = await db_new.createSession(device.deviceId, pgClient)
+    const newSession = await db.createSession(device.deviceId, pgClient)
     if (!newSession) {
       throw new Error(`Failed to create a new session`)
     }
@@ -519,7 +513,7 @@ async function processSensorEvent(client, device, eventType, eventData) {
   let pgClient
 
   try {
-    pgClient = await db_new.beginTransaction()
+    pgClient = await db.beginTransaction()
     if (!pgClient) {
       const errorMessage = `Error starting transaction - processSensorEvent: deviceId: ${device.deviceId}, eventType: ${eventType}`
       helpers.logError(errorMessage)
@@ -530,7 +524,7 @@ async function processSensorEvent(client, device, eventType, eventData) {
       throw new Error(`More than one stillness alert received for device: ${device.deviceId}`)
     }
 
-    const latestSession = await db_new.getLatestSessionWithDeviceId(device.deviceId, pgClient)
+    const latestSession = await db.getLatestSessionWithDeviceId(device.deviceId, pgClient)
 
     let returnedSession = null
 
@@ -542,11 +536,11 @@ async function processSensorEvent(client, device, eventType, eventData) {
     else if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && latestSession.doorOpened) {
       returnedSession = await handleNewSession(client, device, eventType, eventData, pgClient)
       if (!returnedSession) {
-        await db_new.commitTransaction(pgClient)
+        await db.commitTransaction(pgClient)
         return
       }
       helpers.log(`Created new session, marking previous session ${latestSession.sessionId} as stale.`)
-      await db_new.updateSession(latestSession.sessionId, SESSION_STATUS.STALE, latestSession.doorOpened, latestSession.surveySent, pgClient)
+      await db.updateSession(latestSession.sessionId, SESSION_STATUS.STALE, latestSession.doorOpened, latestSession.surveySent, pgClient)
     }
     // Create new session if previous one was completed
     else if (latestSession.sessionStatus === SESSION_STATUS.COMPLETED && latestSession.doorOpened) {
@@ -558,11 +552,11 @@ async function processSensorEvent(client, device, eventType, eventData) {
       returnedSession = await handleExistingSession(client, device, eventType, eventData, latestSession, pgClient)
     }
 
-    await db_new.commitTransaction(pgClient)
+    await db.commitTransaction(pgClient)
   } catch (error) {
     if (pgClient) {
       try {
-        await db_new.rollbackTransaction(pgClient)
+        await db.rollbackTransaction(pgClient)
       } catch (rollbackError) {
         throw new Error(`Error rolling back transaction: ${rollbackError}. Rollback attempted because of error: ${error}`)
       }
@@ -628,12 +622,12 @@ async function handleSensorEvent(request, response) {
     const eventType = parseSensorEventType(receivedEventType)
     const eventData = parseSensorEventData(receivedEventData)
 
-    const device = await db_new.getDeviceWithParticleDeviceId(particleDeviceID)
+    const device = await db.getDeviceWithParticleDeviceId(particleDeviceID)
     if (!device) {
       throw new Error(`No device matches the coreID: ${particleDeviceID}`)
     }
 
-    const client = await db_new.getClientWithClientId(device.clientId)
+    const client = await db.getClientWithClientId(device.clientId)
     if (!client) {
       throw new Error(`No client found for device: ${device.deviceId}`)
     }

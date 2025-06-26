@@ -11,7 +11,7 @@ const twilio = require('twilio')
 // In-house dependencies
 const helpers = require('./utils/helpers')
 const eventHandlers = require('./eventHandlers')
-const db_new = require('./db/db_new')
+const db = require('./db/db')
 const { SERVICES } = require('./enums/index')
 
 const TWILIO_TOKEN = helpers.getEnvVar('TWILIO_TOKEN')
@@ -21,7 +21,7 @@ const TWILIO_TOKEN = helpers.getEnvVar('TWILIO_TOKEN')
 async function findTwilioClientAndDevice(responderPhoneNumber, deviceTwilioNumber, pgClient) {
   // Match the responder phone number and pick all clients
   // Two clients can have the same responder phone number
-  const clients = await db_new.getClientsWithResponderPhoneNumber(responderPhoneNumber, pgClient)
+  const clients = await db.getClientsWithResponderPhoneNumber(responderPhoneNumber, pgClient)
   if (!clients) {
     throw new Error(`No clients found with responder phone number: ${responderPhoneNumber}`)
   }
@@ -30,7 +30,7 @@ async function findTwilioClientAndDevice(responderPhoneNumber, deviceTwilioNumbe
   // NOTE: Each device has a unique twilio phone number in the client group
   const deviceClientPairs = []
   for (const client of clients) {
-    const device = await db_new.getDeviceWithDeviceTwilioNumber(client.clientId, deviceTwilioNumber, pgClient)
+    const device = await db.getDeviceWithDeviceTwilioNumber(client.clientId, deviceTwilioNumber, pgClient)
     if (device) {
       deviceClientPairs.push({ client, device })
     }
@@ -51,7 +51,7 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
   let pgClient
 
   try {
-    pgClient = await db_new.beginTransaction()
+    pgClient = await db.beginTransaction()
     if (!pgClient) {
       const errorMessage = `Error starting transaction - processTwilioEvent: responderPhoneNumber: ${responderPhoneNumber}, deviceTwilioNumber: ${deviceTwilioNumber}`
       helpers.logError(errorMessage)
@@ -65,14 +65,14 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
     }
 
     // get the latest session
-    const session = await db_new.getLatestSessionWithDeviceId(device.deviceId, pgClient)
+    const session = await db.getLatestSessionWithDeviceId(device.deviceId, pgClient)
     if (!session) {
       throw new Error(`No active session found for device: ${device.deviceId}`)
     }
 
     // find the latest respondable twilio event in the session, for the responderPhoneNumber
     // respondable events are the events that the server expects a response twilio too (exluding events like invalid response etc.)
-    const respondedEvent = await db_new.getLatestRespondableTwilioEvent(session.sessionId, responderPhoneNumber, pgClient)
+    const respondedEvent = await db.getLatestRespondableTwilioEvent(session.sessionId, responderPhoneNumber, pgClient)
     if (!respondedEvent) {
       throw new Error(`No respondable event found for session: ${session.sessionId}`)
     }
@@ -81,11 +81,11 @@ async function processTwilioEvent(responderPhoneNumber, deviceTwilioNumber, mess
     const data = { service: SERVICES.TWILIO, responderPhoneNumber }
     await eventHandlers.handleEvent(client, device, session, respondedEvent, message, data, pgClient)
 
-    await db_new.commitTransaction(pgClient)
+    await db.commitTransaction(pgClient)
   } catch (error) {
     if (pgClient) {
       try {
-        await db_new.rollbackTransaction(pgClient)
+        await db.rollbackTransaction(pgClient)
       } catch (rollbackError) {
         throw new Error(`Error rolling back transaction: ${rollbackError.message}. Rollback attempted because of error: ${error.message}`)
       }

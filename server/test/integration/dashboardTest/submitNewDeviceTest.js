@@ -7,8 +7,8 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
 const helpers = require('../../../src/utils/helpers')
-const db_new = require('../../../src/db/db_new')
-const factories_new = require('../../factories_new')
+const db = require('../../../src/db/db')
+const factories = require('../../factories_new')
 const { DEVICE_TYPE } = require('../../../src/enums/index')
 
 const { server } = require('../../../index')
@@ -23,15 +23,15 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
   beforeEach(async () => {
     sandbox.spy(helpers, 'log')
     sandbox.spy(helpers, 'logError')
-    await db_new.clearAllTables()
+    await db.clearAllTables()
 
-    this.defaultClient = await factories_new.clientNewDBFactory()
+    this.defaultClient = await factories.clientNewDBFactory()
     this.agent = chai.request.agent(server)
   })
 
   afterEach(async () => {
     sandbox.restore()
-    await db_new.clearAllTables()
+    await db.clearAllTables()
     this.agent.close()
   })
 
@@ -46,7 +46,7 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
         deviceTwilioNumber: '+11234567890',
       }
 
-      sandbox.spy(db_new, 'createDevice')
+      sandbox.spy(db, 'createDevice')
       this.response = await this.agent.post('/devices').send(goodRequest)
     })
 
@@ -55,9 +55,9 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
     })
 
     it('should not create a new device in the database', async () => {
-      const devices = await db_new.getDevices()
+      const devices = await db.getDevices()
       expect(devices.length).to.equal(0)
-      expect(db_new.createDevice).to.not.have.been.called
+      expect(db.createDevice).to.not.have.been.called
     })
 
     it('should log the error', () => {
@@ -81,7 +81,7 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
         deviceTwilioNumber: '',
       }
 
-      sandbox.spy(db_new, 'createDevice')
+      sandbox.spy(db, 'createDevice')
       this.response = await this.agent.post('/devices').send(badRequest)
     })
 
@@ -90,9 +90,9 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
     })
 
     it('should not create a new device in the database', async () => {
-      const devices = await db_new.getDevices()
+      const devices = await db.getDevices()
       expect(devices.length).to.equal(0)
-      expect(db_new.createDevice).to.not.have.been.called
+      expect(db.createDevice).to.not.have.been.called
     })
   })
 
@@ -108,7 +108,7 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
         displayName: 'Test Device',
       }
 
-      sandbox.spy(db_new, 'createDevice')
+      sandbox.spy(db, 'createDevice')
       this.response = await this.agent.post('/devices').send(badRequest)
     })
 
@@ -117,9 +117,9 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
     })
 
     it('should not create a new device in the database', async () => {
-      const devices = await db_new.getDevices()
+      const devices = await db.getDevices()
       expect(devices.length).to.equal(0)
-      expect(db_new.createDevice).to.not.have.been.called
+      expect(db.createDevice).to.not.have.been.called
     })
   })
 
@@ -141,7 +141,7 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
         deviceTwilioNumber: '+11234567890',
       }
 
-      sandbox.spy(db_new, 'createDevice')
+      sandbox.spy(db, 'createDevice')
       this.response = await this.agent.post('/devices').send(badRequest)
     })
 
@@ -154,15 +154,15 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
     })
 
     it('should not create a new device in the database', async () => {
-      const devices = await db_new.getDevices()
+      const devices = await db.getDevices()
       expect(devices.length).to.equal(0)
-      expect(db_new.createDevice).to.not.have.been.called
+      expect(db.createDevice).to.not.have.been.called
     })
   })
 
   describe('for a valid request with existing location ID', () => {
     beforeEach(async () => {
-      await factories_new.deviceNewDBFactory({
+      await factories.deviceNewDBFactory({
         locationId: 'testLocation123',
         clientId: this.defaultClient.clientId,
       })
@@ -209,7 +209,7 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
         deviceTwilioNumber: '+11234567890',
       }
 
-      sandbox.spy(db_new, 'createDevice')
+      sandbox.spy(db, 'createDevice')
       this.response = await this.agent.post('/devices').send(goodRequest)
     })
 
@@ -218,7 +218,7 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
     })
 
     it('should create a new device in the database', async () => {
-      const devices = await db_new.getDevices()
+      const devices = await db.getDevices()
       expect(devices.length).to.equal(1)
 
       const device = devices[0]
@@ -232,7 +232,7 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
       expect(device.isSendingAlerts).to.be.false
       expect(device.isSendingVitals).to.be.false
 
-      expect(db_new.createDevice).to.have.been.calledOnce
+      expect(db.createDevice).to.have.been.calledOnce
     })
   })
 })

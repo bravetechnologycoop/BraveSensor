@@ -1,40 +1,46 @@
+// TODO rename to client, remove suffix in all references
+
 class Client {
   constructor(
-    id,
+    clientId,
     displayName,
-    responderPhoneNumbers,
-    reminderTimeout,
-    fallbackPhoneNumbers,
-    fromPhoneNumber,
-    fallbackTimeout,
-    heartbeatPhoneNumbers,
-    incidentCategories,
-    isDisplayed,
-    isSendingAlerts,
-    isSendingVitals,
     language,
     createdAt,
     updatedAt,
-    status,
+    responderPhoneNumbers,
+    fallbackPhoneNumbers,
+    vitalsTwilioNumber,
+    vitalsPhoneNumbers,
+    surveyCategories,
+    isDisplayed,
+    devicesSendingAlerts,
+    devicesSendingVitals,
+    devicesStatus,
     firstDeviceLiveAt,
+    stillnessSurveyFollowupDelay,
+    teamsId,
+    teamsAlertChannelId,
+    teamsVitalChannelId,
   ) {
-    this.id = id
+    this.clientId = clientId
     this.displayName = displayName
-    this.responderPhoneNumbers = responderPhoneNumbers
-    this.reminderTimeout = reminderTimeout
-    this.fallbackPhoneNumbers = fallbackPhoneNumbers
-    this.fromPhoneNumber = fromPhoneNumber
-    this.fallbackTimeout = fallbackTimeout
-    this.heartbeatPhoneNumbers = heartbeatPhoneNumbers
-    this.incidentCategories = incidentCategories
-    this.isDisplayed = isDisplayed
-    this.isSendingAlerts = isSendingAlerts
-    this.isSendingVitals = isSendingVitals
     this.language = language
     this.createdAt = createdAt
     this.updatedAt = updatedAt
-    this.status = status
+    this.responderPhoneNumbers = responderPhoneNumbers
+    this.fallbackPhoneNumbers = fallbackPhoneNumbers
+    this.vitalsTwilioNumber = vitalsTwilioNumber
+    this.vitalsPhoneNumbers = vitalsPhoneNumbers
+    this.surveyCategories = surveyCategories
+    this.isDisplayed = isDisplayed
+    this.devicesSendingAlerts = devicesSendingAlerts
+    this.devicesSendingVitals = devicesSendingVitals
+    this.devicesStatus = devicesStatus
     this.firstDeviceLiveAt = firstDeviceLiveAt
+    this.stillnessSurveyFollowupDelay = stillnessSurveyFollowupDelay
+    this.teamsId = teamsId
+    this.teamsAlertChannelId = teamsAlertChannelId
+    this.teamsVitalChannelId = teamsVitalChannelId
   }
 }
 

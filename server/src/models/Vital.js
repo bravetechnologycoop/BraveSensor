@@ -1,4 +1,4 @@
-class VitalNew {
+class Vital {
   constructor(
     vitalId,
     deviceId,
@@ -22,4 +22,4 @@ class VitalNew {
   }
 }
 
-module.exports = VitalNew
+module.exports = Vital

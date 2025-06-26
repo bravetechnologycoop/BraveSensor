@@ -10,7 +10,7 @@ const Validator = require('express-validator')
 // In-house dependencies
 const helpers = require('./utils/helpers')
 const eventHandlers = require('./eventHandlers')
-const db_new = require('./db/db_new')
+const db = require('./db/db')
 const { SERVICES } = require('./enums/index')
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -19,7 +19,7 @@ async function processTeamsEvent(teamsId, channelId, messageId, submittedCardDat
   let pgClient
 
   try {
-    pgClient = await db_new.beginTransaction()
+    pgClient = await db.beginTransaction()
     if (!pgClient) {
       const errorMessage = `Error starting transaction - processTeamsEvent: teamsId: ${teamsId}, channelId: ${channelId}, messageId: ${messageId}`
       helpers.logError(errorMessage)
@@ -27,25 +27,25 @@ async function processTeamsEvent(teamsId, channelId, messageId, submittedCardDat
     }
 
     // use the messageId to find the teams event that was responded to
-    const respondedEvent = await db_new.getTeamsEventWithMessageId(messageId, pgClient)
+    const respondedEvent = await db.getTeamsEventWithMessageId(messageId, pgClient)
     if (!respondedEvent) {
       throw new Error(`No teams event found with messageId: ${messageId}`)
     }
 
     // use the event to identify the session and make sure it is still active
     const sessionId = respondedEvent.sessionId
-    const session = await db_new.getSessionWithSessionId(sessionId, pgClient)
+    const session = await db.getSessionWithSessionId(sessionId, pgClient)
     if (!session) {
       throw new Error(`No session found for teamsEvent with eventId: ${respondedEvent.eventId}`)
     }
 
     // find the client and device using the session info
-    const device = await db_new.getDeviceWithDeviceId(session.deviceId, pgClient)
+    const device = await db.getDeviceWithDeviceId(session.deviceId, pgClient)
     if (!device) {
       throw new Error(`No device found for sessionId: ${session.sessionId}`)
     }
 
-    const client = await db_new.getClientWithClientId(device.clientId, pgClient)
+    const client = await db.getClientWithClientId(device.clientId, pgClient)
     if (!client) {
       throw new Error(`No client found for sessionId: ${session.sessionId}`)
     }
@@ -55,11 +55,11 @@ async function processTeamsEvent(teamsId, channelId, messageId, submittedCardDat
     const data = { service: SERVICES.TEAMS }
     await eventHandlers.handleEvent(client, device, session, respondedEvent, message, data, pgClient)
 
-    await db_new.commitTransaction(pgClient)
+    await db.commitTransaction(pgClient)
   } catch (error) {
     if (pgClient) {
       try {
-        await db_new.rollbackTransaction(pgClient)
+        await db.rollbackTransaction(pgClient)
       } catch (rollbackError) {
         throw new Error(`Error rolling back transaction: ${rollbackError.message}. Rollback attempted because of error: ${error.message}`)
       }

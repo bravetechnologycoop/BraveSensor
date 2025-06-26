@@ -1,34 +1,32 @@
+// TODO rename to device, remove suffix in all references
+
 class Device {
   constructor(
-    id,
-    deviceType,
-    locationid,
-    phoneNumber,
+    deviceId,
+    locationId,
     displayName,
-    serialNumber,
-    sentLowBatteryAlertAt,
-    sentVitalsAlertAt,
+    clientId,
     createdAt,
     updatedAt,
+    particleDeviceId,
+    deviceType,
+    deviceTwilioNumber,
     isDisplayed,
     isSendingAlerts,
     isSendingVitals,
-    client,
   ) {
-    this.id = id
-    this.deviceType = deviceType
-    this.locationid = locationid
-    this.phoneNumber = phoneNumber
+    this.deviceId = deviceId
+    this.locationId = locationId
     this.displayName = displayName
-    this.serialNumber = serialNumber
-    this.sentLowBatteryAlertAt = sentLowBatteryAlertAt
-    this.sentVitalsAlertAt = sentVitalsAlertAt
+    this.clientId = clientId
     this.createdAt = createdAt
     this.updatedAt = updatedAt
+    this.particleDeviceId = particleDeviceId
+    this.deviceType = deviceType
+    this.deviceTwilioNumber = deviceTwilioNumber
     this.isDisplayed = isDisplayed
     this.isSendingAlerts = isSendingAlerts
     this.isSendingVitals = isSendingVitals
-    this.client = client
   }
 }
 

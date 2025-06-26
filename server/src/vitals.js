@@ -12,7 +12,7 @@ const { DateTime } = require('luxon')
 const helpers = require('./utils/helpers')
 const twilioHelpers = require('./utils/twilioHelpers')
 const teamsHelpers = require('./utils/teamsHelpers')
-const db_new = require('./db/db_new')
+const db = require('./db/db')
 const { NOTIFICATION_TYPE } = require('./enums/index')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
@@ -136,7 +136,7 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
         }
 
         // log the notification
-        await db_new.createNotification(device.deviceId, notificationType, pgClient)
+        await db.createNotification(device.deviceId, notificationType, pgClient)
 
         // check and send if teams is configured
         if (client.teamsId && client.teamsVitalChannelId) {
@@ -155,17 +155,17 @@ async function checkDeviceDisconnectionVitals() {
   let pgClient
 
   try {
-    pgClient = await db_new.beginTransaction()
+    pgClient = await db.beginTransaction()
     if (!pgClient) {
       const errorMessage = `Error starting transaction - checkDeviceDisconnectionVitals`
       helpers.logError(errorMessage)
       throw new Error(errorMessage)
     }
 
-    const currentDBTime = await db_new.getCurrentTime()
+    const currentDBTime = await db.getCurrentTime()
 
     // Get all active devices and clients that send vitals
-    const devicesWithClients = await db_new.getActiveVitalDevicesWithClients(pgClient)
+    const devicesWithClients = await db.getActiveVitalDevicesWithClients(pgClient)
     if (!devicesWithClients.length) {
       throw new Error('No active devices found')
     }
@@ -173,8 +173,8 @@ async function checkDeviceDisconnectionVitals() {
     // Batch fetch latest vitals and notifications
     const deviceIds = devicesWithClients.map(d => d.device.deviceId)
     const [latestVitals, latestConnectionNotifications] = await Promise.all([
-      db_new.getLatestVitalsForDeviceIds(deviceIds, pgClient),
-      db_new.getLatestConnectionNotificationsForDeviceIds(deviceIds, pgClient),
+      db.getLatestVitalsForDeviceIds(deviceIds, pgClient),
+      db.getLatestConnectionNotificationsForDeviceIds(deviceIds, pgClient),
     ])
 
     // convert both results to maps for easier lookup
@@ -204,11 +204,11 @@ async function checkDeviceDisconnectionVitals() {
       }),
     )
 
-    await db_new.commitTransaction(pgClient)
+    await db.commitTransaction(pgClient)
   } catch (error) {
     if (pgClient) {
       try {
-        await db_new.rollbackTransaction(pgClient)
+        await db.rollbackTransaction(pgClient)
       } catch (rollbackError) {
         helpers.logError(
           `checkDeviceDisconnectionVitals: Error rolling back transaction: ${rollbackError.message}. Rollback attempted because of error: ${error.message} `,
@@ -241,7 +241,7 @@ async function handleVitalNotifications(
     const notifications = []
 
     // 1. Device/Door Reconnection Notifications
-    const latestConnectionNotification = await db_new.getLatestConnectionNotification(device.deviceId, pgClient)
+    const latestConnectionNotification = await db.getLatestConnectionNotification(device.deviceId, pgClient)
     if (latestConnectionNotification) {
       const deviceWasDisconnected =
         latestConnectionNotification.notificationType === NOTIFICATION_TYPE.DEVICE_DISCONNECTED ||
@@ -273,7 +273,7 @@ async function handleVitalNotifications(
 
     // 2. Door Low Battery Notifications
     if (currDoorLowBattery) {
-      const lastDoorLowBatteryNotification = await db_new.getLatestNotificationOfType(device.deviceId, NOTIFICATION_TYPE.DOOR_LOW_BATTERY, pgClient)
+      const lastDoorLowBatteryNotification = await db.getLatestNotificationOfType(device.deviceId, NOTIFICATION_TYPE.DOOR_LOW_BATTERY, pgClient)
 
       const shouldSendBatteryNotification =
         !lastDoorLowBatteryNotification ||
@@ -326,7 +326,7 @@ async function handleVitalNotifications(
         }
 
         // log the notification
-        await db_new.createNotification(device.deviceId, notification.notificationType, pgClient)
+        await db.createNotification(device.deviceId, notification.notificationType, pgClient)
 
         // check and send if teams is configured
         if (client.teamsId && client.teamsVitalChannelId) {
@@ -358,15 +358,15 @@ async function processHeartbeat(eventData, client, device) {
 
   let pgClient
   try {
-    pgClient = await db_new.beginTransaction()
+    pgClient = await db.beginTransaction()
     if (!pgClient) {
       const errorMessage = `Error starting transaction - processHeartbeat: deviceId: ${device.deviceId}`
       helpers.logError(errorMessage)
       throw new Error(errorMessage)
     }
 
-    const currentDBTime = await db_new.getCurrentTime()
-    const previousVital = await db_new.getLatestVitalWithDeviceId(device.deviceId, pgClient)
+    const currentDBTime = await db.getCurrentTime()
+    const previousVital = await db.getLatestVitalWithDeviceId(device.deviceId, pgClient)
 
     let currDoorLastSeenAt
     let currDoorTampered
@@ -407,7 +407,7 @@ async function processHeartbeat(eventData, client, device) {
     }
 
     // Log the heartbeat as a new vital
-    await db_new.createVital(
+    await db.createVital(
       device.deviceId,
       deviceLastResetReason,
       currDoorLastSeenAt,
@@ -418,11 +418,11 @@ async function processHeartbeat(eventData, client, device) {
       pgClient,
     )
 
-    await db_new.commitTransaction(pgClient)
+    await db.commitTransaction(pgClient)
   } catch (error) {
     if (pgClient) {
       try {
-        await db_new.rollbackTransaction(pgClient)
+        await db.rollbackTransaction(pgClient)
       } catch (rollbackError) {
         throw new Error(
           `processHeartbeat: Error rolling back transaction: ${rollbackError.message}. Rollback attempted because of error: ${error.message}`,
@@ -496,12 +496,12 @@ async function handleHeartbeat(request, response) {
 
     const eventData = parseSensorHeartbeatData(receivedEventData)
 
-    const device = await db_new.getDeviceWithParticleDeviceId(particleDeviceID)
+    const device = await db.getDeviceWithParticleDeviceId(particleDeviceID)
     if (!device) {
       throw new Error(`No device matches the coreID: ${particleDeviceID}`)
     }
 
-    const client = await db_new.getClientWithClientId(device.clientId)
+    const client = await db.getClientWithClientId(device.clientId)
     if (!client) {
       throw new Error(`No client found for device: ${device.deviceId}`)
     }

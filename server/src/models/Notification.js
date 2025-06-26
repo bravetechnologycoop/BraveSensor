@@ -1,4 +1,4 @@
-class NotificationNew {
+class Notification {
   constructor(notificationId, deviceId, notificationType, notificationSentAt) {
     this.notificationId = notificationId
     this.deviceId = deviceId
@@ -7,4 +7,4 @@ class NotificationNew {
   }
 }
 
-module.exports = NotificationNew
+module.exports = Notification

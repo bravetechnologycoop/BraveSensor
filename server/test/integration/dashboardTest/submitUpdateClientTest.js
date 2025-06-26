@@ -7,8 +7,8 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 
 // In-house dependencies
 const helpers = require('../../../src/utils/helpers')
-const db_new = require('../../../src/db/db_new')
-const factories_new = require('../../factories_new')
+const db = require('../../../src/db/db')
+const factories = require('../../factories_new')
 const { DEVICE_STATUS } = require('../../../src/enums/index')
 
 const { server } = require('../../../index')
@@ -23,9 +23,9 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
   beforeEach(async () => {
     sandbox.spy(helpers, 'log')
     sandbox.spy(helpers, 'logError')
-    await db_new.clearAllTables()
+    await db.clearAllTables()
 
-    this.defaultClient = await factories_new.clientNewDBFactory({
+    this.defaultClient = await factories.clientNewDBFactory({
       displayName: 'Original Name',
       language: 'en',
       responderPhoneNumbers: ['+11234567890'],
@@ -42,7 +42,7 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
 
   afterEach(async () => {
     sandbox.restore()
-    await db_new.clearAllTables()
+    await db.clearAllTables()
     this.agent.close()
   })
 
@@ -60,8 +60,8 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
         devicesStatus: DEVICE_STATUS.LIVE,
       }
 
-      sandbox.spy(db_new, 'updateClient')
-      sandbox.spy(db_new, 'updateClientExtension')
+      sandbox.spy(db, 'updateClient')
+      sandbox.spy(db, 'updateClientExtension')
 
       this.response = await this.agent.post(`/clients/${this.defaultClient.clientId}`).send(goodRequest)
     })
@@ -71,11 +71,11 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
     })
 
     it('should not update the client in the database', async () => {
-      const client = await db_new.getClientWithClientId(this.defaultClient.clientId)
+      const client = await db.getClientWithClientId(this.defaultClient.clientId)
       expect(client.displayName).to.equal('Original Name')
       expect(client.devicesStatus).to.equal(DEVICE_STATUS.TESTING)
-      expect(db_new.updateClient).to.not.have.been.called
-      expect(db_new.updateClientExtension).to.not.have.been.called
+      expect(db.updateClient).to.not.have.been.called
+      expect(db.updateClientExtension).to.not.have.been.called
     })
 
     it('should log the error', () => {
@@ -102,8 +102,8 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
         devicesStatus: '',
       }
 
-      sandbox.spy(db_new, 'updateClient')
-      sandbox.spy(db_new, 'updateClientExtension')
+      sandbox.spy(db, 'updateClient')
+      sandbox.spy(db, 'updateClientExtension')
 
       this.response = await this.agent.post(`/clients/${this.defaultClient.clientId}`).send(badRequest)
     })
@@ -113,11 +113,11 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
     })
 
     it('should not update the client in the database', async () => {
-      const client = await db_new.getClientWithClientId(this.defaultClient.clientId)
+      const client = await db.getClientWithClientId(this.defaultClient.clientId)
       expect(client.displayName).to.equal('Original Name')
       expect(client.devicesStatus).to.equal(DEVICE_STATUS.TESTING)
-      expect(db_new.updateClient).to.not.have.been.called
-      expect(db_new.updateClientExtension).to.not.have.been.called
+      expect(db.updateClient).to.not.have.been.called
+      expect(db.updateClientExtension).to.not.have.been.called
     })
   })
 
@@ -140,8 +140,8 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
         devicesStatus: DEVICE_STATUS.LIVE,
       }
 
-      sandbox.spy(db_new, 'updateClient')
-      sandbox.spy(db_new, 'updateClientExtension')
+      sandbox.spy(db, 'updateClient')
+      sandbox.spy(db, 'updateClientExtension')
 
       this.response = await this.agent.post(`/clients/${this.defaultClient.clientId}`).send(goodRequest)
     })
@@ -151,14 +151,14 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
     })
 
     it('should update the client in the database', async () => {
-      const client = await db_new.getClientWithClientId(this.defaultClient.clientId)
+      const client = await db.getClientWithClientId(this.defaultClient.clientId)
       expect(client.displayName).to.equal('Updated Name')
       expect(client.language).to.equal('fr')
       expect(client.devicesSendingAlerts).to.be.false
       expect(client.devicesSendingVitals).to.be.false
       expect(client.devicesStatus).to.equal(DEVICE_STATUS.LIVE)
-      expect(db_new.updateClient).to.have.been.calledOnce
-      expect(db_new.updateClientExtension).to.have.been.calledOnce
+      expect(db.updateClient).to.have.been.calledOnce
+      expect(db.updateClientExtension).to.have.been.calledOnce
     })
   })
 
@@ -203,14 +203,14 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
     })
 
     it('should update client with all fields in the database', async () => {
-      const client = await db_new.getClientWithClientId(this.defaultClient.clientId)
+      const client = await db.getClientWithClientId(this.defaultClient.clientId)
       expect(client.displayName).to.equal('Updated Name')
       expect(client.language).to.equal('fr')
       expect(client.devicesSendingAlerts).to.be.false
       expect(client.devicesSendingVitals).to.be.false
       expect(client.devicesStatus).to.equal(DEVICE_STATUS.LIVE)
 
-      const clientExtension = await db_new.getClientExtensionWithClientId(this.defaultClient.clientId)
+      const clientExtension = await db.getClientExtensionWithClientId(this.defaultClient.clientId)
       expect(clientExtension.country).to.equal('Canada')
       expect(clientExtension.city).to.equal('Vancouver')
       expect(clientExtension.project).to.equal('UpdatedProject')
@@ -246,7 +246,7 @@ describe('dashboard.js integration tests: submitUpdateClientTest', () => {
     })
 
     it('should not create or update any client', async () => {
-      const clients = await db_new.getClients()
+      const clients = await db.getClients()
       expect(clients.length).to.equal(1) // Only our default client exists
     })
   })
