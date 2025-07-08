@@ -16,7 +16,7 @@
 # Variables
 PARTICLE_CLI_PATH := $(shell which particle)
 PLATFORM := boron
-DEVICE_OS_VERSION := 4.2.0
+DEVICE_OS_VERSION := 6.2.1
 
 APPDIR := $(shell pwd)
 BUILD_DIR := $(APPDIR)/build
@@ -33,12 +33,6 @@ all: clean compile
 build-dir:
 	@echo "------ Creating build directory... ------"
 	@mkdir -p $(BUILD_DIR)
-	@echo "\n"
-
-check-cpp:
-	@command -v cppcheck >/dev/null 2>&1 || { echo >&2 "cppcheck is not installed. Please install it and try again."; exit 1; }
-	@echo "------ Checking cpp code... ------"
-	cppcheck --std=c++17 --check-level=exhaustive $(SRC_DIR)
 	@echo "\n"
 
 test: console-test ins3331-test im-door-sensor-test
