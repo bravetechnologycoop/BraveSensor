@@ -211,15 +211,14 @@ async function scheduleStillnessAlertSurvey(client, device, callerSession) {
       helpers.log(`Session completed or door opened, cancelling survey for ${session.sessionId}`)
     }
   }
-  await checkAndSendSurvey()
-  helpers.log('Sending stillness alert survey initial')
+  
   try {
     // Send immediately if no delay, otherwise schedule
     if (client.stillnessSurveyFollowupDelay === 0) {
       await checkAndSendSurvey()
     } else {
-      setTimeout(checkAndSendSurvey, client.stillnessSurveyFollowupDelay * 1000)
-      helpers.log('Sending stillness alert survey after delay')
+      await checkAndSendSurvey() // Send survey immediately
+      setTimeout(checkAndSendSurvey, client.stillnessSurveyFollowupDelay * 1000) //Send survey after delay
     }
   } catch (error) {
     helpers.logError(`scheduleStillnessAlertSurvey: ${error.message}`)
@@ -241,6 +240,7 @@ async function handleStillnessAlert(client, device, session, respondedEvent, mes
 
       // Only send followup message if there will be a delay
       // Otherwise the schedule stillness survey will be sent
+      // !!! 2025-07-10 we now send a survey immediately, above comment is no longer valid, keeping in case reverted.
       if (client.stillnessSurveyFollowupDelay > 0) {
         const twilioMessageKey = 'stillnessAlertFollowup'
         const messageData = { stillnessAlertFollowupTimer: Math.round(client.stillnessSurveyFollowupDelay || 0) / 60 }
@@ -257,6 +257,7 @@ async function handleStillnessAlert(client, device, session, respondedEvent, mes
 
       // Update the event to say survey will be published after delay if any
       // Otherwise new card will be sent for the survey in schedule stillness alert survey
+      // !!! 2025-07-10 we now send a survey immediately, above comment is no longer valid, keeping in case reverted.
       if (client.stillnessSurveyFollowupDelay > 0) {
         const teamsMessageKey = 'teamsStillnessAlertFollowup'
         const cardType = 'Update'
