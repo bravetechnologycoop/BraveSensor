@@ -115,11 +115,11 @@ Before updating Production, we deploy the server to Staging and run the smoke te
 
 1. If you haven't already, run `git checkout production && git pull origin production` to get the latest version of the the code
 
-1. Click Target --> "Configure for device" and type `4.2.0` to choose the OS and then `boron` to choose the device
+1. Click Target --> "Configure for device" and type `6.2.1` to choose the OS and then `boron` to choose the device
 
 1. Use the makefile to produce a firmware binary file using: `make BINARY_NAME=v[version number]` or use the particle workbench and click "Local Compile" (this step can take a few minutes the first time; you can work on the next step in parallel while you wait for this)
 
-1. Copy the generated file in either `/build/` or `/target/4.2.0/boron/boron-ins-fsm.bin` to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Make sure the file name is `v[version number].bin`, e.g., `v10080.bin`.
+1. Copy the generated file in either `/build/` or `/target/6.2.1/boron/boron-ins-fsm.bin` to [Google Drive](https://drive.google.com/drive/u/0/folders/1QVvBvGM3MP9VU5-8AVG3Nf0KddeE5_uz) for future reference. Make sure the file name is `v[version number].bin`, e.g., `v10080.bin`.
 
 1. Keep this binary file for later; you will need it for deploying the firmware on Production.
 
@@ -284,7 +284,7 @@ Before deploying to development, ensure that the AWS Environment for dev is onli
 
 1. In `BraveSensorProductionFirmware.ino`, change `BRAVE_FIRMWARE_VERSION` to an unused version number less than `7000` [NOTE: do NOT commit this change]
 
-1. Click Target --> "Configure for device" and type `4.2.0` to choose the OS and then `boron` to choose the device
+1. Click Target --> "Configure for device" and type `6.2.1` to choose the OS and then `boron` to choose the device
 
 1. Use the makefile to produce a firmware binary file using: `make BINARY_NAME=v[version number]` or use the particle workbench and click "Local Compile".
 
