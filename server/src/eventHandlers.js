@@ -211,13 +211,15 @@ async function scheduleStillnessAlertSurvey(client, device, callerSession) {
       helpers.log(`Session completed or door opened, cancelling survey for ${session.sessionId}`)
     }
   }
-
+  await checkAndSendSurvey()
+  helpers.log("Sending stillness alert survey initial")
   try {
     // Send immediately if no delay, otherwise schedule
     if (client.stillnessSurveyFollowupDelay === 0) {
       await checkAndSendSurvey()
     } else {
       setTimeout(checkAndSendSurvey, client.stillnessSurveyFollowupDelay * 1000)
+      helpers.log("Sending stillness alert survey after delay")
     }
   } catch (error) {
     helpers.logError(`scheduleStillnessAlertSurvey: ${error.message}`)
