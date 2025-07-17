@@ -26,7 +26,7 @@
     "dotenv": "^7.0.0",
     "execution-time": "^1.4.1",
     "express": "^4.21.2",
-    "express-session": "^1.17.1",
+    "express-session": "^1.18.2",
     "express-validator": "^6.10.0",
     "fs": "0.0.1-security",
     "google-auth-library": "^9.2.0",
