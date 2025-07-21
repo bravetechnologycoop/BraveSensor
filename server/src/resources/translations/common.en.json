@@ -39,7 +39,7 @@
   "stillnessAlertSecondReminder": "2nd REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with '5' or 'ok'.",
   "stillnessAlertThirdReminder": "FINAL REMINDER\n{{ deviceDisplayName }} needs a SAFETY CHECK. On your way? Reply with '5' or 'ok'.",
   "stillnessAlertFallback": "No response to stillness alerts for {{ deviceDisplayName }}. There will be one final alert.",
-  "stillnessAlertFollowup": "Thanks, we'll follow up in {{ stillnessAlertFollowupTimer }} minutes.",
+  "stillnessAlertFollowup": "Thank you! We'll send a survey. If not responded, we'll send another in {{ stillnessAlertFollowupTimer }} minutes.",
   "stillnessAlertSurvey": "Could you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
   "stillnessAlertSurveyDoorOpened": "We see the door has been opened.\nCould you please let us know the outcome?\n{{ surveyCategoriesForMessage }}",
   "stillnessAlertSurveyOtherFollowup": "Can you please describe what happened?",
