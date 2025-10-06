@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.2.4] - 2025-07-21
+- Remove survey delay and add survey reminder (CU-86dx034d5)
+- Upgrade to device OS 6.2.1 (CU-86dx3n9c6)
+
 ## [12.2.3] - 2025-06-26
 
 - Operating hours for vitals (CU-86dwbejz7)
@@ -964,7 +968,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.3...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.4...HEAD
+[12.2.4]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.3...12.2.4
 [12.2.3]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.1...v12.2.3
 [12.2.2]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.1...v12.2.2
 [12.2.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.0...v12.2.1
