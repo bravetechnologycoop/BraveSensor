@@ -19,7 +19,7 @@
   "dependencies": {
     "@sentry/node": "^6.2.5",
     "@sentry/tracing": "^6.2.5",
-    "axios": "^1.8.2",
+    "axios": "^1.12.2",
     "chalk": "^4.1.0",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
