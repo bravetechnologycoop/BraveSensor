@@ -13,7 +13,6 @@ const db = require('./db/db')
 const { EVENT_TYPE, SESSION_STATUS, SERVICES } = require('./enums/index')
 const { cancelRemindersForSession } = require('./sensorEvents')
 const { resetMonitoring, resetStateToZero } = require('./particle')
-const { map } = require('lodash')
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Helper Functions
