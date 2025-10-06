@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Contact Details - {{name}}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" crossorigin="anonymous">
+    {{> css}}
+</head>
+
+<body>
+    {{> nav}}
+    <div class="content-area">
+        <div class="content-wrapper">
+
+            {{#contact}}
+                <h3>Contact: {{name}}</h3>
+                <a href="/contacts/{{contact_id}}/update" class="btn btn-secondary btn-sm" role="button">Update Contact</a>
+                <a href="/clients/{{client_id}}" class="btn btn-secondary btn-sm" role="button">View Client</a>
+                <br>
+                <br>
+                <br>
+
+                <h5>Contact Details</h5>
+                <div class="info-box">
+                    <p><strong>Organization:</strong> {{organization}}</p>
+                    <p><strong>Email:</strong> <a href="mailto:{{email}}">{{email}}</a></p>
+                    <p><strong>Phone Number:</strong> {{phoneNumber}}</p>
+                    <p><strong>Tags:</strong> {{#tags}}{{.}}, {{/tags}}{{^tags}}No tags assigned{{/tags}}</p>
+                </div>
+                <br>
+            {{/contact}}
+            {{^contact}}
+                <h5>Sorry, this contact does not appear to exist.</h5>
+            {{/contact}}
+
+        </div>
+    </div>
+
+    <script>
+        function reloadPage() {
+            location.reload(true)
+        }
+        setInterval(reloadPage, 30000)
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" crossorigin="anonymous"></script>
+</body>
+
+</html>

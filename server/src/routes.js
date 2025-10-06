@@ -30,6 +30,11 @@ function configureRoutes(app) {
   app.get('/sessions/:sessionId', dashboard.sessionChecker, dashboard.renderSessionDetailsPage)
   app.get('/login', dashboard.renderLoginPage)
   app.get('/logout', dashboard.submitLogout)
+  
+
+  app.get('/contacts/new', dashboard.sessionChecker, dashboard.renderNewContactPage) // Must be configured before /contacts/:contactId
+  app.post('/contacts', dashboard.validateNewContact, dashboard.submitNewContact)
+  app.get('/contacts/:contactId', dashboard.sessionChecker, dashboard.renderContactDetailsPage)
 
   app.post('/clients', dashboard.validateNewClient, dashboard.submitNewClient)
   app.post('/clients/:clientId', dashboard.validateUpdateClient, dashboard.submitUpdateClient)

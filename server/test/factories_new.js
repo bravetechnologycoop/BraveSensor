@@ -5,8 +5,6 @@
  * These are primarily used for unit and integration testing.
  */
 
-// TODO: Refactor these functions to not use the  suffix
-
 // In-house dependencies
 const db = require('../src/db/db')
 const { Client, ClientExtension, Device, Session, Event, Vital, Notification } = require('../src/models')

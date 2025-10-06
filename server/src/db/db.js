@@ -4,7 +4,7 @@ const pg = require('pg')
 // In-house dependencies
 const helpers = require('../utils/helpers')
 const { SESSION_STATUS, EVENT_TYPE, NOTIFICATION_TYPE } = require('../enums/index')
-const { Client, ClientExtension, Device, Session, Event, TeamsEvent, Vital, Notification } = require('../models/index')
+const { Client, ClientExtension, Device, Session, Event, TeamsEvent, Vital, Notification, Contact} = require('../models/index')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -1934,6 +1934,116 @@ async function getLatestNotificationOfType(deviceId, notificationType, pgClient)
   }
 }
 
+async function createContact(
+  contactName,
+  organization,
+  clientId,
+  contactEmail,
+  contactPhoneNumber,
+  tags,
+  pgClient // optional, do not set a default
+) {
+  try {
+    const queryText = `
+      INSERT INTO contacts (
+        contact_name, 
+        organization, 
+        client_id, 
+        contact_email, 
+        contact_phone_number, 
+        tags
+      ) 
+      VALUES ($1, $2, $3, $4, $5, $6) 
+      RETURNING *;`;
+
+    const queryParams = [
+      contactName,
+      organization,
+      clientId,
+      contactEmail,
+      contactPhoneNumber,
+      tags,
+    ];
+    const results = await helpers.runQuery('createContact', queryText, queryParams, pool, pgClient);
+
+    if (!results || results.rows.length === 0) {
+      return null;
+    }
+
+    return createContactFromRow(results.rows[0]);
+  } catch (err) {
+    helpers.logError(`Error running the createContact query: ${err.toString()}`);
+    return null; 
+  }
+}
+
+
+async function createContactFromRow(r) {
+  return new Contact(
+    r.contact_id,
+    r.contact_name,
+    r.organization,
+    r.client_id,
+    r.contact_email,
+    r.contact_phone_number,
+    r.tags,
+  )
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+
+async function getOrganizations(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getOrganizations',
+      `
+      SELECT DISTINCT organization
+      FROM clients_extension
+      WHERE organization IS NOT NULL AND organization <> ''
+      ORDER BY organization
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => row.organization)
+  } catch (err) {
+    helpers.logError(`Error running the getOrganizations query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getContactWithContactId(contactId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'contactId',
+      `
+      SELECT *
+      FROM contacts
+      WHERE contact_id = $1
+      `,
+      [contactId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createContactFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getContactWithContactId query: ${err.toString()}`)
+    return null
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 module.exports = {
@@ -2000,4 +2110,8 @@ module.exports = {
   getLatestConnectionNotification,
   getLatestConnectionNotificationsForDeviceIds,
   getLatestNotificationOfType,
+
+  createContact,
+  getOrganizations,
+  getContactWithContactId,
 }

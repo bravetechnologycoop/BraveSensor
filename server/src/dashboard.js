@@ -32,6 +32,8 @@ const updateDevicePageTemplate = fs.readFileSync(`${__dirname}/mustache-template
 const deviceDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/deviceDetailsPage.mst`, 'utf-8')
 const deviceNotificationsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/deviceNotificationsPage.mst`, 'utf-8')
 const sessionDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/sessionDetailsPage.mst`, 'utf-8')
+const contactDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/contactDetailsPage.mst`, 'utf-8')
+const newContactPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newContactPage.mst`, 'utf-8')
 
 function setupDashboardSessions(app) {
   app.use(cookieParser())
@@ -829,6 +831,118 @@ async function submitUpdateDevice(req, res) {
   }
 }
 
+async function renderNewContactPage(req, res) {
+  try {
+    const clients = await db.getClients()
+    const displayedClients = clients.filter(client => client.isDisplayed)
+    //TODO Add organizations
+
+    const organizations = await db.getOrganizations()
+    //console.log('Organizations:', organizations)
+
+    //TODO: Make organization selection dynamic based on client selection or vice versa
+
+    const viewParams = { clients: displayedClients, organizations: organizations}
+
+    res.send(Mustache.render(newContactPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
+const validateNewContact = [
+  Validator.body(['name', 'organization', 'clientId']).trim().notEmpty().withMessage('is required'),
+  Validator.body(['email']).trim().isEmail().optional({ nullable: true }).withMessage('must be a valid email'),
+  Validator.body(['contactPhoneNumber']).trim().optional({ nullable: true }),
+  Validator.body(['tags']).trim().optional({ nullable: true }),
+]
+
+async function submitNewContact(req, res) {
+  try {
+    if (!req.session.user || !req.cookies.user_sid) {
+      helpers.logError('Unauthorized')
+      return res.status(401).send('Unauthorized')
+    }
+
+    // Extract validation errors
+    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+
+    if (!validationErrors.isEmpty()) {
+      // Log each validation error for debugging
+      console.log('Validation Errors:', validationErrors.array())
+
+      // Improved error message: Join errors in a single string
+      const errorMessage = `Bad request to ${req.path}: ${validationErrors.array().join(', ')}`
+      helpers.log(errorMessage)
+      return res.status(400).send(errorMessage)
+    }
+
+    const data = req.body
+
+    // Trimming and sanitizing input, matching form field names
+    const contactName = data.name ? data.name.trim() : ''
+    const organization = data.organization ? data.organization.trim() : ''
+    const clientId = data.clientId ? data.clientId.trim() : ''
+    const contactEmail = data.email ? data.email.trim() : null
+    const contactPhoneNumber = data.contactPhoneNumber ? data.contactPhoneNumber.trim() : null
+    const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : []
+
+    // Check for missing organization or clientId in the body
+    if (!organization || !clientId) {
+      const errorMessage = `Organization and Client are required.`
+      helpers.log(errorMessage)
+      return res.status(400).send(errorMessage)
+    }
+
+    // Create the contact
+    const newContact = await db.createContact(
+      contactName,
+      organization,
+      clientId,
+      contactEmail,
+      contactPhoneNumber,
+      tags,
+    )
+
+    if (!newContact) {
+      throw new Error('Contact creation failed')
+    }
+
+    console.log('New contact created:', newContact)
+    res.redirect(`/contacts/${newContact.contact_id}`)  // You should ensure this route exists
+
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    return res.status(500).send('Internal Server Error')
+  }
+}
+
+
+async function renderContactDetailsPage(req, res) {
+  try {
+    const contactId = req.params.contactId
+    console.log('Rendering details for contactId:', contactId)
+
+    const contact = await db.getContactWithContactId(contactId)
+    if (!contact) {
+      res.status(404).send('Contact not found')
+      return
+    }
+
+    console.log('Contact details:', contact)
+    //TODO add related client and organization info
+
+    const viewParams = { contact }
+
+    res.send(Mustache.render(contactDetailsPageTemplate, { ...viewParams, ...dateFormatters }, { nav: navPartial, css: pageCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
+
 module.exports = {
   setupDashboardSessions,
   sessionChecker,
@@ -852,6 +966,11 @@ module.exports = {
 
   renderDeviceNotificationsPage,
   renderSessionDetailsPage,
+
+  renderNewContactPage,
+  validateNewContact,
+  submitNewContact,
+  renderContactDetailsPage,
 
   validateNewClient,
   submitNewClient,

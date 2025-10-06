@@ -1,5 +1,3 @@
-// TODO rename to device, remove suffix in all references
-
 class Device {
   constructor(
     deviceId,
