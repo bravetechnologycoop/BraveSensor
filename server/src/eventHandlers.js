@@ -1118,7 +1118,6 @@ async function handleEvent(client, device, session, respondedEvent, message, dat
     // now we now that the session is active and either unresponded or responded via the responding service
     // based on the eventTypeDetails of the respondedEvent, select event handler and process the message
     const eventTypeDetails = respondedEvent.eventTypeDetails
-    helpers.log(`handleEvent: Processing eventTypeDetails: ${eventTypeDetails} for sessionId: ${session.sessionId}`)
     const handler = getEventHandler(eventTypeDetails)
     if (!handler) {
       throw new Error(`Unhandled event type with message key: ${eventTypeDetails}`)
