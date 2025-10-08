@@ -435,6 +435,10 @@ async function renderSessionDetailsPage(req, res) {
       'durationAlertSurveyDoorOpened',
       'stillnessAlertSurvey',
       'stillnessAlertSurveyDoorOpened',
+      'invalidResponseTryAgainDurationAlertSurveyDoorOpened',
+      'invalidResponseTryAgainDurationAlertSurvey',
+      'invalidResponseTryAgainStillnessAlertSurveyDoorOpened',
+      'invalidResponseTryAgainStillnessAlertSurvey',
     ]
     const eventsWithMessages = allEvents.map(event => {
       if (event.eventType === 'MSG_RECEIVED') {

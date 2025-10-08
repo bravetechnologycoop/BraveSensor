@@ -419,7 +419,7 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, session, res
     if (data.service === SERVICES.TWILIO) {
       const { isValid, value: messageIndex } = helpers.parseDigits(message)
       if (!isValid || messageIndex < 0 || messageIndex > client.surveyCategories.length) {
-        await handleTwilioInvalidResponse(client, device, session, data, pgClient)
+        await handleTwilioInvalidResponse(client, device, session, data, pgClient, 'stillness', true)
         return
       }
 
@@ -445,7 +445,7 @@ async function handleStillnessAlertSurveyDoorOpened(client, device, session, res
           twilioMessageKey = 'reportIssue'
           break
         default:
-          await handleTwilioInvalidResponse(client, device, session, data, pgClient)
+          await handleTwilioInvalidResponse(client, device, session, data, pgClient, 'stillness', true)
           return
       }
       const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
@@ -684,7 +684,7 @@ async function handleDurationAlertSurvey(client, device, session, respondedEvent
     if (data.service === SERVICES.TWILIO) {
       const { isValid, value: messageIndex } = helpers.parseDigits(message)
       if (!isValid || messageIndex < 0 || messageIndex > client.surveyCategories.length) {
-        await handleTwilioInvalidResponse(client, device, session, data, pgClient)
+        await handleTwilioInvalidResponse(client, device, session, data, pgClient, 'duration', false)
         return
       }
 
@@ -712,7 +712,7 @@ async function handleDurationAlertSurvey(client, device, session, respondedEvent
           twilioMessageKey = 'reportIssue'
           break
         default:
-          await handleTwilioInvalidResponse(client, device, session, data, pgClient)
+          await handleTwilioInvalidResponse(client, device, session, data, pgClient, 'duration', false)
           return
       }
       const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
@@ -805,7 +805,7 @@ async function handleDurationAlertSurveyDoorOpened(client, device, session, resp
     if (data.service === SERVICES.TWILIO) {
       const { isValid, value: messageIndex } = helpers.parseDigits(message)
       if (!isValid || messageIndex < 0 || messageIndex > client.surveyCategories.length) {
-        await handleTwilioInvalidResponse(client, device, session, data, pgClient)
+        await handleTwilioInvalidResponse(client, device, session, data, pgClient, 'duration', true)
         return
       }
 
@@ -831,7 +831,7 @@ async function handleDurationAlertSurveyDoorOpened(client, device, session, resp
           twilioMessageKey = 'reportIssue'
           break
         default:
-          await handleTwilioInvalidResponse(client, device, session, data, pgClient)
+          await handleTwilioInvalidResponse(client, device, session, data, pgClient, 'duration', true)
           return
       }
       const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
