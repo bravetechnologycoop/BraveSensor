@@ -146,13 +146,9 @@ async function handleTwilioInvalidResponse(client, device, session, data, pgClie
   try {
     let twilioMessageKey = 'invalidResponseTryAgain'
     if (alertType === 'duration') {
-      twilioMessageKey = doorOpened
-        ? 'invalidResponseTryAgainDurationAlertSurveyDoorOpened'
-        : 'invalidResponseTryAgainDurationAlertSurvey'
+      twilioMessageKey = doorOpened ? 'invalidResponseTryAgainDurationAlertSurveyDoorOpened' : 'invalidResponseTryAgainDurationAlertSurvey'
     } else if (alertType === 'stillness') {
-      twilioMessageKey = doorOpened
-        ? 'invalidResponseTryAgainStillnessAlertSurveyDoorOpened'
-        : 'invalidResponseTryAgainStillnessAlertSurvey'
+      twilioMessageKey = doorOpened ? 'invalidResponseTryAgainStillnessAlertSurveyDoorOpened' : 'invalidResponseTryAgainStillnessAlertSurvey'
     }
     const textMessage = helpers.translateMessageKeyToMessage('invalidResponseTryAgain', client, device)
     await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
@@ -1007,7 +1003,6 @@ async function handleDurationAlertSurveyOtherFollowup(client, device, session, r
     throw new Error(`handleDurationAlertSurveyOtherFollowup: ${error.message}`)
   }
 }
-
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
