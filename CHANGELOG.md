@@ -968,8 +968,9 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.4...HEAD
-[12.2.4]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.3...12.2.4
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.5...HEAD
+[12.2.5]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.4...v12.2.5
+[12.2.4]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.3...v12.2.4
 [12.2.3]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.1...v12.2.3
 [12.2.2]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.1...v12.2.2
 [12.2.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.0...v12.2.1
