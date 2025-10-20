@@ -11,6 +11,9 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.2.5] - 2025-10-20
+- Fixed an issue where "invalid response" would not take further input (ending the flow), now "invalid response" will still expect a survey response (CU-86dxrczhv)
+
 ## [12.2.4] - 2025-07-21
 - Remove survey delay and add survey reminder (CU-86dx034d5)
 - Upgrade to device OS 6.2.1 (CU-86dx3n9c6)
