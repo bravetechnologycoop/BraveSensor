@@ -28,6 +28,22 @@
                     <p><strong>Organization:</strong> {{organization}}</p>
                     <p><strong>Email:</strong> <a href="mailto:{{email}}">{{email}}</a></p>
                     <p><strong>Phone Number:</strong> {{phoneNumber}}</p>
+
+                    <p><strong>Shipping Address:</strong>
+                        {{#shippingAddress}}{{shippingAddress}}{{/shippingAddress}}
+                        {{^shippingAddress}}Not set{{/shippingAddress}}
+                    </p>
+
+                    <p><strong>Last Touchpoint:</strong>
+                        {{#lastTouchpoint}}{{lastTouchpoint}}{{/lastTouchpoint}}
+                        {{^lastTouchpoint}}Not set{{/lastTouchpoint}}
+                    </p>
+
+                    <p><strong>Shipping Date:</strong>
+                        {{#shippingDate}}{{shippingDate}}{{/shippingDate}}
+                        {{^shippingDate}}Not set{{/shippingDate}}
+                    </p>
+
                     <p><strong>Tags:</strong> {{#tags}}{{.}}, {{/tags}}{{^tags}}No tags assigned{{/tags}}</p>
                 </div>
                 <br>

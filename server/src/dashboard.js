@@ -860,6 +860,9 @@ const validateNewContact = [
   Validator.body(['email']).trim().isEmail().optional({ nullable: true }).withMessage('must be a valid email'),
   Validator.body(['contactPhoneNumber']).trim().optional({ nullable: true }),
   Validator.body(['tags']).trim().optional({ nullable: true }),
+  Validator.body('shippingAddress').trim().optional({ nullable: true }),
+  Validator.body('lastTouchpoint').optional({ nullable: true }).isISO8601().withMessage('must be a valid date').toDate(),
+  Validator.body('shippingDate').optional({ nullable: true }).isISO8601().withMessage('must be a valid date').toDate(),
 ]
 
 async function submitNewContact(req, res) {
@@ -890,7 +893,11 @@ async function submitNewContact(req, res) {
     const clientId = data.clientId ? data.clientId.trim() : ''
     const contactEmail = data.email ? data.email.trim() : null
     const contactPhoneNumber = data.contactPhoneNumber ? data.contactPhoneNumber.trim() : null
+    const notes = data.notes ? data.notes.trim() : null
     const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : []
+    const shippingAddress = data.shippingAddress && data.shippingAddress.trim() !== '' ? data.shippingAddress.trim() : null
+    const lastTouchpoint = data.lastTouchpoint ? new Date(data.lastTouchpoint).toISOString() : null
+    const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0,10) : null // store as YYYY-MM-DD
 
     // Check for missing organization or clientId in the body
     if (!organization || !clientId) {
@@ -899,13 +906,19 @@ async function submitNewContact(req, res) {
       return res.status(400).send(errorMessage)
     }
 
-    // Create the contact
+
+
+    // Create the contact — pass new fields to DB layer
     const newContact = await db.createContact(
       contactName,
       organization,
       clientId,
       contactEmail,
       contactPhoneNumber,
+      notes,
+      shippingAddress,
+      lastTouchpoint,
+      shippingDate,
       tags,
     )
 
@@ -914,7 +927,7 @@ async function submitNewContact(req, res) {
     }
 
     console.log('New contact created:', newContact)
-    res.redirect(`/contacts/${newContact.contact_id}`)  // You should ensure this route exists
+    res.redirect(`/contacts/${newContact.contact_id}`)  //TODO: Ensure this route exists
 
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)

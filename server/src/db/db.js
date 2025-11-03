@@ -1934,26 +1934,35 @@ async function getLatestNotificationOfType(deviceId, notificationType, pgClient)
   }
 }
 
+
 async function createContact(
-  contactName,
-  organization,
-  clientId,
-  contactEmail,
-  contactPhoneNumber,
-  tags,
-  pgClient // optional, do not set a default
+    contactName,
+    organization,
+    clientId,
+    contactEmail,
+    contactPhoneNumber,
+    notes,
+    shippingAddress,
+    lastTouchpoint,
+    shippingDate,
+    tags,
+    pgClient,
 ) {
   try {
     const queryText = `
       INSERT INTO contacts (
-        contact_name, 
-        organization, 
-        client_id, 
-        contact_email, 
-        contact_phone_number, 
+        name,
+        organization,
+        client_id,
+        email,
+        phone_number,
+        notes,
+        shipping_address,
+        last_touchpoint,
+        shipping_date,
         tags
-      ) 
-      VALUES ($1, $2, $3, $4, $5, $6) 
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *;`;
 
     const queryParams = [
@@ -1962,8 +1971,13 @@ async function createContact(
       clientId,
       contactEmail,
       contactPhoneNumber,
+      notes,
+      shippingAddress,
+      lastTouchpoint,
+      shippingDate,
       tags,
     ];
+
     const results = await helpers.runQuery('createContact', queryText, queryParams, pool, pgClient);
 
     if (!results || results.rows.length === 0) {
@@ -1973,7 +1987,7 @@ async function createContact(
     return createContactFromRow(results.rows[0]);
   } catch (err) {
     helpers.logError(`Error running the createContact query: ${err.toString()}`);
-    return null; 
+    return null;
   }
 }
 
@@ -1981,12 +1995,18 @@ async function createContact(
 async function createContactFromRow(r) {
   return new Contact(
     r.contact_id,
-    r.contact_name,
+    r.name,
     r.organization,
     r.client_id,
-    r.contact_email,
-    r.contact_phone_number,
+    r.email,
+    r.phone_number,
+    r.notes,
+    r.shipping_address,
+    r.last_touchpoint,
+    r.shipping_date,
     r.tags,
+    r.created_at,
+    r.updated_at,
   )
 }
 

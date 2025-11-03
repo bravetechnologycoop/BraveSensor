@@ -35,6 +35,8 @@ function configureRoutes(app) {
   app.get('/contacts/new', dashboard.sessionChecker, dashboard.renderNewContactPage) // Must be configured before /contacts/:contactId
   app.post('/contacts', dashboard.validateNewContact, dashboard.submitNewContact)
   app.get('/contacts/:contactId', dashboard.sessionChecker, dashboard.renderContactDetailsPage)
+  //app.get('/contacts/:contactId/update', dashboard.sessionChecker, dashboard.renderUpdateContactPage) //TODO: implement update contact page
+  //app.post('/contacts/:contactId', dashboard.validateUpdateContact, dashboard.submitUpdateContact) //TODO: implement update contact submission
 
   app.post('/clients', dashboard.validateNewClient, dashboard.submitNewClient)
   app.post('/clients/:clientId', dashboard.validateUpdateClient, dashboard.submitUpdateClient)
