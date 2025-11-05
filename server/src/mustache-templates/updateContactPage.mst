@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <title>Update Contact - {{#contact}}{{name}}{{/contact}}</title>
     <meta charset="utf-8">
@@ -32,10 +31,22 @@
                     </div>
                 </div>
 
+                <!-- Organization: replaced input with select -->
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="organization" class="col-sm-3 col-form-label">Organization:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="organization" placeholder="Organization" value="{{organization}}">
+                        <select class="form-control" name="organization" required>
+                            {{#organization}}
+                                <!-- current organization shown first and selected -->
+                                <option value="{{organization}}" selected>{{organization}}</option>
+                            {{/organization}}
+                            {{^organization}}
+                                <option value="" disabled selected>Select an organization</option>
+                            {{/organization}}
+                            {{#organizations}}
+                                <option value="{{.}}">{{.}}</option>
+                            {{/organizations}}
+                        </select>
                     </div>
                 </div>
 

@@ -160,11 +160,13 @@ const stringFormatters = {
 
 async function renderLandingPage(req, res) {
   try {
-    const [mergedClients, mergedDevices, contacts] = await Promise.all([db.getMergedClientsWithExtensions(), db.getMergedDevicesWithVitals()/*, db.getMergedContacts()*/]) //TODO add contacts
+    const [mergedClients, mergedDevices, contacts] = await Promise.all([db.getMergedClientsWithExtensions(), db.getMergedDevicesWithVitals(), db.getContactsForLanding()])
 
     const uniqueFunders = filterUniqueItems(mergedClients, 'funder')
     const uniqueProjects = filterUniqueItems(mergedClients, 'project')
     const uniqueOrganizations = filterUniqueItems(mergedClients, 'organization')
+
+    console.log("contacts", contacts);
     
     const viewParams = {
       clients: mergedClients,
@@ -858,13 +860,8 @@ async function renderNewContactPage(req, res) {
 }
 
 const validateNewContact = [
-  Validator.body(['name', 'organization', 'clientId']).trim().notEmpty().withMessage('is required'),
-  Validator.body(['email']).trim().isEmail().optional({ nullable: true }).withMessage('must be a valid email'),
-  Validator.body(['contactPhoneNumber']).trim().optional({ nullable: true }),
-  Validator.body(['tags']).trim().optional({ nullable: true }),
-  Validator.body('shippingAddress').trim().optional({ nullable: true }),
-  Validator.body('lastTouchpoint').optional({ nullable: true }).isISO8601().withMessage('must be a valid date').toDate(),
-  Validator.body('shippingDate').optional({ nullable: true }).isISO8601().withMessage('must be a valid date').toDate(),
+  Validator.body(['name', 'organization', 'clientId']).trim().notEmpty(),
+  Validator.body(['email','contactPhoneNumber','tags','shippingAddress','lastTouchpoint','shippingDate']).trim().optional({ nullable: true }),
 ]
 
 async function submitNewContact(req, res) {
@@ -964,14 +961,18 @@ async function renderContactDetailsPage(req, res) {
 async function renderUpdateContactPage(req, res) {
   try {
     const contactId = req.params.contactId
-    
+
     const contact = await db.getContactWithContactId(contactId)
     if (!contact) {
       res.status(404).send('Contact not found')
       return
     }
-    const viewParams = { contact }
-    
+
+    // fetch organizations (same source used by newContact page)
+    const organizations = await db.getOrganizations()
+
+    const viewParams = { contact, organizations }
+
     res.send(Mustache.render(updateContactPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
@@ -980,13 +981,8 @@ async function renderUpdateContactPage(req, res) {
 }
 
 const validateUpdateContact = [
-  Validator.body(['name', 'organization', 'clientId']).trim().notEmpty().withMessage('is required'),
-  Validator.body(['email']).trim().isEmail().optional({ nullable: true }).withMessage('must be a valid email'),
-  Validator.body(['contactPhoneNumber']).trim().optional({ nullable: true }),
-  Validator.body(['tags']).trim().optional({ nullable: true }),
-  Validator.body('shippingAddress').trim().optional({ nullable: true }),
-  Validator.body('lastTouchpoint').optional({ nullable: true }).isISO8601().withMessage('must be a valid date').toDate(),
-  Validator.body('shippingDate').optional({ nullable: true }).isISO8601().withMessage('must be a valid date').toDate(),
+  Validator.body(['name', 'organization', 'clientId']).trim().notEmpty(),
+  Validator.body(['email','contactPhoneNumber', 'tags', 'shippingAddress', 'lastTouchpoint', 'shippingDate']).trim().optional({ nullable: true }),
 ]
 
 async function submitUpdateContact(req, res) {

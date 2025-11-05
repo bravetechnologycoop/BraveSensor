@@ -1992,7 +1992,7 @@ async function createContact(
 }
 
 
-async function createContactFromRow(r) {
+function createContactFromRow(r) {
   return new Contact(
     r.contact_id,
     r.name,
@@ -2146,6 +2146,36 @@ async function getContacts() {
   }
 }
 
+async function getContactsForLanding(pgClient) {
+  try {
+    const queryText = `
+      SELECT
+        contact_id,
+        name,
+        organization,
+        client_id,
+        email,
+        phone_number,
+        notes,
+        shipping_address,
+        last_touchpoint,
+        shipping_date,
+        tags,
+        created_at,
+        updated_at
+      FROM contacts
+      ORDER BY created_at DESC;
+    `
+    const results = await helpers.runQuery('getContactsForLanding', queryText, [], pool, pgClient)
+    if (!results || !results.rows) return []
+    // createContactFromRow is synchronous (returns Contact), map rows directly
+    return results.rows.map(createContactFromRow)
+  } catch (err) {
+    helpers.logError(`Error running getContactsForLanding: ${err.toString()}`)
+    return []
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 module.exports = {
@@ -2218,4 +2248,5 @@ module.exports = {
   getContactWithContactId,
   updateContact,
   getContacts,
+  getContactsForLanding,
 }

@@ -27,7 +27,7 @@
                 <div class="form-group row">
                     <label for="organization" class="col-sm-3 col-form-label">Organization:</label>
                     <div class="col-sm-5">
-                        <select class="form-control" name="organization">
+                        <select class="form-control" name="organization" required>
                             <option value="" disabled selected>Select an organization</option>
                                 {{#organizations}}
                                     <option value="{{.}}">{{.}}</option>
