@@ -2064,6 +2064,88 @@ async function getContactWithContactId(contactId, pgClient) {
   }
 }
 
+async function updateContact(
+    contactId,
+    contactName,
+    organization,
+    clientId,
+    contactEmail,
+    contactPhoneNumber,
+    notes,
+    shippingAddress,
+    lastTouchpoint,
+    shippingDate,
+    tags,
+    pgClient,
+) {
+  try {
+    const queryText = `
+      UPDATE contacts
+      SET
+        name = $2,
+        organization = $3,
+        client_id = $4,
+        email = $5,
+        phone_number = $6,
+        notes = $7,
+        shipping_address = $8,
+        last_touchpoint = $9,
+        shipping_date = $10,
+        tags = $11
+      WHERE contact_id = $1
+      RETURNING *;`;
+
+    const queryParams = [
+      contactId,
+      contactName,
+      organization,
+      clientId,
+      contactEmail,
+      contactPhoneNumber,
+      notes,
+      shippingAddress,
+      lastTouchpoint,
+      shippingDate,
+      tags,
+    ];
+
+    const results = await helpers.runQuery('updateContact', queryText, queryParams, pool, pgClient);
+
+    if (!results || results.rows.length === 0) {
+      return null;
+    }
+
+    return createContactFromRow(results.rows[0]);
+  } catch (err) {
+    helpers.logError(`Error running the updateContact query: ${err.toString()}`);
+    return null;
+  }
+}
+
+async function getContacts() {
+  try {
+    const results = await helpers.runQuery(
+      'getContacts',
+      `
+      SELECT *
+      FROM contacts
+      ORDER BY created_at DESC
+      `,
+      [],
+      pool,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createContactFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error getting contacts: ${err.toString()}`)
+    return []
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 module.exports = {
@@ -2134,4 +2216,6 @@ module.exports = {
   createContact,
   getOrganizations,
   getContactWithContactId,
+  updateContact,
+  getContacts,
 }

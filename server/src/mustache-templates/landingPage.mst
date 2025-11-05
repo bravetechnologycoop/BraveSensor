@@ -28,6 +28,7 @@
                         <option value="organization" selected>Organization</option>
                         <option value="client">Client</option>
                         <option value="device">Devices</option>
+                        <option value="contact">Contacts</option>
                     </select>
                 </div>
             </div>
@@ -109,7 +110,16 @@
                     </tr>
                 `;
                 viewTitle = 'Device View';
-            } 
+            } else if (view === 'contact') {
+                headerHtml = `
+                    <tr class="table-header" scope="row">
+                        <th scope="col">Contact Name</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Phone Number</th>
+                    </tr>
+                `;
+                viewTitle = 'Contact View';
+            }
 
             viewHeader.innerText = viewTitle;
             tableHeader.innerHTML = headerHtml;
@@ -168,6 +178,16 @@
                         </tr>
                     {{/devices}}
                 `;
+            } else if (view === 'contact') {
+                bodyHtml = `
+                    {{#contacts}}
+                        <tr class="table-data contact-row">
+                            <th scope="row"><a href="/contacts/{{contactId}}">{{#decodeHTMLEntities}}{{name}}{{/decodeHTMLEntities}}</a></th>
+                            <td>{{#email}}{{email}}{{/email}}{{^email}}N/A{{/email}}</td>
+                            <td>{{#phone_number}}{{phone_number}}{{/phone_number}}{{^phone_number}}N/A{{/phone_number}}</td>
+                        </tr>
+                    {{/contacts}}
+                `;
             }
         
             tableBody.innerHTML = bodyHtml;
@@ -195,7 +215,10 @@
                 } else if (view === 'device') {
                     textToSearch = row.querySelector('th').innerText.toLowerCase();
                     row.style.display = row.classList.contains('device-row') && textToSearch.includes(searchTerm) ? '' : 'none';
-                } 
+                } else if (view === 'contact') {
+                    textToSearch = row.querySelector('th').innerText.toLowerCase();
+                    row.style.display = row.classList.contains('contact-row') && textToSearch.includes(searchTerm) ? '' : 'none';
+                }
             });
         }
 

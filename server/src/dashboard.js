@@ -34,6 +34,7 @@ const deviceNotificationsPageTemplate = fs.readFileSync(`${__dirname}/mustache-t
 const sessionDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/sessionDetailsPage.mst`, 'utf-8')
 const contactDetailsPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/contactDetailsPage.mst`, 'utf-8')
 const newContactPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/newContactPage.mst`, 'utf-8')
+const updateContactPageTemplate = fs.readFileSync(`${__dirname}/mustache-templates/updateContactPage.mst`, 'utf-8')
 
 function setupDashboardSessions(app) {
   app.use(cookieParser())
@@ -159,18 +160,19 @@ const stringFormatters = {
 
 async function renderLandingPage(req, res) {
   try {
-    const [mergedClients, mergedDevices] = await Promise.all([db.getMergedClientsWithExtensions(), db.getMergedDevicesWithVitals()])
+    const [mergedClients, mergedDevices, contacts] = await Promise.all([db.getMergedClientsWithExtensions(), db.getMergedDevicesWithVitals()/*, db.getMergedContacts()*/]) //TODO add contacts
 
     const uniqueFunders = filterUniqueItems(mergedClients, 'funder')
     const uniqueProjects = filterUniqueItems(mergedClients, 'project')
     const uniqueOrganizations = filterUniqueItems(mergedClients, 'organization')
-
+    
     const viewParams = {
       clients: mergedClients,
       devices: mergedDevices,
       uniqueFunders,
       uniqueProjects,
       uniqueOrganizations,
+      contacts,
       ...stringFormatters,
     }
 
@@ -959,6 +961,104 @@ async function renderContactDetailsPage(req, res) {
   }
 }
 
+async function renderUpdateContactPage(req, res) {
+  try {
+    const contactId = req.params.contactId
+    
+    const contact = await db.getContactWithContactId(contactId)
+    if (!contact) {
+      res.status(404).send('Contact not found')
+      return
+    }
+    const viewParams = { contact }
+    
+    res.send(Mustache.render(updateContactPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    res.status(500).send()
+  }
+}
+
+const validateUpdateContact = [
+  Validator.body(['name', 'organization', 'clientId']).trim().notEmpty().withMessage('is required'),
+  Validator.body(['email']).trim().isEmail().optional({ nullable: true }).withMessage('must be a valid email'),
+  Validator.body(['contactPhoneNumber']).trim().optional({ nullable: true }),
+  Validator.body(['tags']).trim().optional({ nullable: true }),
+  Validator.body('shippingAddress').trim().optional({ nullable: true }),
+  Validator.body('lastTouchpoint').optional({ nullable: true }).isISO8601().withMessage('must be a valid date').toDate(),
+  Validator.body('shippingDate').optional({ nullable: true }).isISO8601().withMessage('must be a valid date').toDate(),
+]
+
+async function submitUpdateContact(req, res) {
+  try {
+    if (!req.session.user || !req.cookies.user_sid) {
+      helpers.logError('Unauthorized')
+      return res.status(401).send('Unauthorized')
+    }
+
+    // Extract validation errors
+    const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
+
+    if (!validationErrors.isEmpty()) {
+      // Log each validation error for debugging
+      console.log('Validation Errors:', validationErrors.array())
+
+      // Improved error message: Join errors in a single string
+      const errorMessage = `Bad request to ${req.path}: ${validationErrors.array().join(', ')}`
+      helpers.log(errorMessage)
+      return res.status(400).send(errorMessage)
+    }
+
+    const contactId = req.params.contactId
+    const data = req.body
+
+    // Trimming and sanitizing input, matching form field names
+    const contactName = data.name ? data.name.trim() : ''
+    const organization = data.organization ? data.organization.trim() : ''
+    const clientId = data.clientId ? data.clientId.trim() : ''
+    const contactEmail = data.email ? data.email.trim() : null
+    const contactPhoneNumber = data.contactPhoneNumber ? data.contactPhoneNumber.trim() : null
+    const notes = data.notes ? data.notes.trim() : null
+    const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : []
+    const shippingAddress = data.shippingAddress && data.shippingAddress.trim() !== '' ? data.shippingAddress.trim() : null
+    const lastTouchpoint = data.lastTouchpoint ? new Date(data.lastTouchpoint).toISOString() : null
+    const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0,10) : null // store as YYYY-MM-DD
+
+    // Check for missing organization or clientId in the body
+    if (!organization || !clientId) {
+      const errorMessage = `Organization and Client are required.`
+      helpers.log(errorMessage)
+      return res.status(400).send(errorMessage)
+    }
+
+    // Update the contact — pass updated fields to DB layer
+    const updatedContact = await db.updateContact(
+      contactId,
+      contactName,
+      organization,
+      clientId,
+      contactEmail,
+      contactPhoneNumber,
+      notes,
+      shippingAddress,
+      lastTouchpoint,
+      shippingDate,
+      tags,
+    )
+
+    if (!updatedContact) {
+      throw new Error('Contact update failed')
+    }
+
+    console.log('Contact updated:', updatedContact)
+    res.redirect(`/contacts/${contactId}`)  //TODO: Ensure this route exists
+
+  } catch (err) {
+    helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
+    return res.status(500).send('Internal Server Error')
+  }
+}
+
 
 module.exports = {
   setupDashboardSessions,
@@ -988,6 +1088,9 @@ module.exports = {
   validateNewContact,
   submitNewContact,
   renderContactDetailsPage,
+  renderUpdateContactPage,
+  validateUpdateContact,
+  submitUpdateContact,
 
   validateNewClient,
   submitNewClient,
@@ -998,4 +1101,6 @@ module.exports = {
   submitNewDevice,
   validateUpdateDevice,
   submitUpdateDevice,
+
+  
 }
