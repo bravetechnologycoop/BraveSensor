@@ -114,8 +114,8 @@
                 headerHtml = `
                     <tr class="table-header" scope="row">
                         <th scope="col">Contact Name</th>
-                        <th scope="col">Email</th>
-                        <th scope="col">Phone Number</th>
+                        <th scope="col">Organization</th>
+                        <th scope="col">Client ID</th>
                     </tr>
                 `;
                 viewTitle = 'Contact View';
@@ -182,9 +182,9 @@
                 bodyHtml = `
                     {{#contacts}}
                         <tr class="table-data contact-row">
-                            <th scope="row"><a href="/contacts/{{contactId}}">{{#decodeHTMLEntities}}{{name}}{{/decodeHTMLEntities}}</a></th>
-                            <td>{{#email}}{{email}}{{/email}}{{^email}}N/A{{/email}}</td>
-                            <td>{{#phone_number}}{{phone_number}}{{/phone_number}}{{^phone_number}}N/A{{/phone_number}}</td>
+                            <th scope="row"><a href="/contacts/{{contact_id}}">{{#decodeHTMLEntities}}{{name}}{{/decodeHTMLEntities}}</a></th>
+                            <td>{{#organization}}{{organization}}{{/organization}}{{^organization}}N/A{{/organization}}</td>
+                            <td>{{#client_display_name}}{{client_display_name}}{{/client_display_name}}{{^client_display_name}}{{#client_id}}{{client_id}}{{/client_id}}{{^client_id}}N/A{{/client_id}}{{/client_display_name}}</td>
                         </tr>
                     {{/contacts}}
                 `;

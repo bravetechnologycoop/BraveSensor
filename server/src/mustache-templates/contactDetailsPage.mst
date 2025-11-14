@@ -18,7 +18,8 @@
             {{#contact}}
                 <h3>Contact: {{name}}</h3>
                 <a href="/contacts/{{contact_id}}/update" class="btn btn-secondary btn-sm" role="button">Update Contact</a>
-                <a href="/clients/{{client_id}}" class="btn btn-secondary btn-sm" role="button">View Client</a>
+                <!-- View Organization button (replaces "View Client") -->
+                <a id="view-organization" data-organization="{{organization}}" class="btn btn-secondary btn-sm" role="button">View Organization</a>
                 <br>
                 <br>
                 <br>
@@ -56,6 +57,18 @@
     </div>
 
     <script>
+        // Set the View Organization link href using encodeURIComponent
+        document.addEventListener('DOMContentLoaded', function () {
+            var el = document.getElementById('view-organization');
+            if (!el) return;
+            var org = el.getAttribute('data-organization');
+            if (org && org.trim()) {
+                el.href = '/clients?organization=' + encodeURIComponent(org.trim());
+            } else {
+                el.style.display = 'none';
+            }
+        });
+
         function reloadPage() {
             location.reload(true)
         }

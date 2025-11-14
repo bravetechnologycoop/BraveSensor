@@ -19,8 +19,8 @@ BEGIN
         CREATE TABLE IF NOT EXISTS contacts (
             contact_id      UUID            NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
             name            TEXT            NOT NULL,
-            organization    TEXT,
-            client_id       UUID            NOT NULL REFERENCES clients(client_id) ON DELETE CASCADE,
+            organization    TEXT            NOT NULL,
+            client_id       UUID            REFERENCES clients(client_id) ON DELETE SET NULL,
             email           VARCHAR(320),
             phone_number    TEXT,
             notes           TEXT,

@@ -53,9 +53,12 @@
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="clientId" class="col-sm-3 col-form-label">Client:</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="clientId" value="{{client_id}}" disabled>
-                        <input type="hidden" name="clientId" value="{{client_id}}">
-                        <small class="form-text text-muted">Client: <a href="/clients/{{client_id}}">View client</a></small>
+                        <select class="form-control" name="clientId">
+                            <option value="">-- No client / None --</option>
+                            {{#clients}}
+                                <option value="{{client_id}}" {{#selected}}selected{{/selected}}>{{display_name}}</option>
+                            {{/clients}}
+                        </select>
                     </div>
                 </div>
 

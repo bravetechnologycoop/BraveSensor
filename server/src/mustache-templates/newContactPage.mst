@@ -39,7 +39,8 @@
             <div class="form-group row">
                 <label for="clientId" class="col-sm-3 col-form-label">Client:</label>
                     <div class="col-sm-5">
-                        <select class="form-control" name="clientId" required>
+                        <select class="form-control" name="clientId">
+                            <option value="">-- No client / None --</option>
                             {{#clients}}
                                 <option value="{{clientId}}">{{displayName}}</option>
                             {{/clients}}

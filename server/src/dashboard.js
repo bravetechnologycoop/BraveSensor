@@ -168,13 +168,27 @@ async function renderLandingPage(req, res) {
 
     console.log("contacts", contacts);
     
+    // after you load contacts (or mergedClients)
+    const clients = await db.getClients()
+    const clientById = new Map(
+      clients.map(c => [
+        c.client_id || c.clientId,
+        c.display_name || c.displayName || c.displayName,
+      ])
+    )
+
+    const contactsForView = contacts.map(ct => ({
+      ...ct,
+      client_display_name: clientById.get(ct.client_id || ct.clientId) || null,
+    }))
+
     const viewParams = {
       clients: mergedClients,
       devices: mergedDevices,
       uniqueFunders,
       uniqueProjects,
       uniqueOrganizations,
-      contacts,
+      contacts: contactsForView,
       ...stringFormatters,
     }
 
@@ -860,7 +874,8 @@ async function renderNewContactPage(req, res) {
 }
 
 const validateNewContact = [
-  Validator.body(['name', 'organization', 'clientId']).trim().notEmpty(),
+  Validator.body(['name', 'organization']).trim().notEmpty(),
+  Validator.body('clientId').trim().optional({ nullable: true }),
   Validator.body(['email','contactPhoneNumber','tags','shippingAddress','lastTouchpoint','shippingDate']).trim().optional({ nullable: true }),
 ]
 
@@ -871,14 +886,10 @@ async function submitNewContact(req, res) {
       return res.status(401).send('Unauthorized')
     }
 
-    // Extract validation errors
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (!validationErrors.isEmpty()) {
-      // Log each validation error for debugging
       console.log('Validation Errors:', validationErrors.array())
-
-      // Improved error message: Join errors in a single string
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array().join(', ')}`
       helpers.log(errorMessage)
       return res.status(400).send(errorMessage)
@@ -889,23 +900,21 @@ async function submitNewContact(req, res) {
     // Trimming and sanitizing input, matching form field names
     const contactName = data.name ? data.name.trim() : ''
     const organization = data.organization ? data.organization.trim() : ''
-    const clientId = data.clientId ? data.clientId.trim() : ''
+    const clientId = data.clientId ? data.clientId.trim() : null   // now optional
     const contactEmail = data.email ? data.email.trim() : null
     const contactPhoneNumber = data.contactPhoneNumber ? data.contactPhoneNumber.trim() : null
     const notes = data.notes ? data.notes.trim() : null
     const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : []
     const shippingAddress = data.shippingAddress && data.shippingAddress.trim() !== '' ? data.shippingAddress.trim() : null
     const lastTouchpoint = data.lastTouchpoint ? new Date(data.lastTouchpoint).toISOString() : null
-    const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0,10) : null // store as YYYY-MM-DD
+    const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0,10) : null
 
-    // Check for missing organization or clientId in the body
-    if (!organization || !clientId) {
-      const errorMessage = `Organization and Client are required.`
+    // Require organization and name, but clientId may be null
+    if (!contactName || !organization) {
+      const errorMessage = `Name and Organization are required.`
       helpers.log(errorMessage)
       return res.status(400).send(errorMessage)
     }
-
-
 
     // Create the contact — pass new fields to DB layer
     const newContact = await db.createContact(
@@ -926,7 +935,7 @@ async function submitNewContact(req, res) {
     }
 
     console.log('New contact created:', newContact)
-    res.redirect(`/contacts/${newContact.contact_id}`)  //TODO: Ensure this route exists
+    res.redirect(`/contacts/${newContact.contact_id}`)
 
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
@@ -961,17 +970,31 @@ async function renderContactDetailsPage(req, res) {
 async function renderUpdateContactPage(req, res) {
   try {
     const contactId = req.params.contactId
-
     const contact = await db.getContactWithContactId(contactId)
     if (!contact) {
-      res.status(404).send('Contact not found')
-      return
+      helpers.logError(`Contact ${contactId} not found`)
+      return res.status(404).send('Not found')
     }
 
-    // fetch organizations (same source used by newContact page)
+    // load clients and organizations as in renderNewContactPage
+    const clients = await db.getClients()
+    const displayedClients = clients.filter(c => c.isDisplayed)
+
+    // mark selected client for the template
+    const clientsForView = displayedClients.map(c => ({
+      client_id: c.client_id || c.clientId || c.clientId, // tolerate naming in DB
+      display_name: c.display_name || c.displayName || c.displayName,
+      selected: (c.client_id || c.clientId) === contact.client_id,
+    }))
+
     const organizations = await db.getOrganizations()
 
-    const viewParams = { contact, organizations }
+    const viewParams = {
+      contact,
+      clients: clientsForView,
+      organizations,
+      // ... any formatters used elsewhere
+    }
 
     res.send(Mustache.render(updateContactPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
@@ -981,25 +1004,20 @@ async function renderUpdateContactPage(req, res) {
 }
 
 const validateUpdateContact = [
-  Validator.body(['name', 'organization', 'clientId']).trim().notEmpty(),
-  Validator.body(['email','contactPhoneNumber', 'tags', 'shippingAddress', 'lastTouchpoint', 'shippingDate']).trim().optional({ nullable: true }),
+  Validator.body(['name', 'organization']).trim().notEmpty(),
+  Validator.body('clientId').trim().optional({ nullable: true }),
+  Validator.body(['email','contactPhoneNumber','tags','shippingAddress','lastTouchpoint','shippingDate']).trim().optional({ nullable: true }),
 ]
 
 async function submitUpdateContact(req, res) {
   try {
     if (!req.session.user || !req.cookies.user_sid) {
       helpers.logError('Unauthorized')
-      return res.status(401).send('Unauthorized')
+      return res.status(401).send()
     }
 
-    // Extract validation errors
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
-
     if (!validationErrors.isEmpty()) {
-      // Log each validation error for debugging
-      console.log('Validation Errors:', validationErrors.array())
-
-      // Improved error message: Join errors in a single string
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array().join(', ')}`
       helpers.log(errorMessage)
       return res.status(400).send(errorMessage)
@@ -1008,27 +1026,31 @@ async function submitUpdateContact(req, res) {
     const contactId = req.params.contactId
     const data = req.body
 
-    // Trimming and sanitizing input, matching form field names
     const contactName = data.name ? data.name.trim() : ''
     const organization = data.organization ? data.organization.trim() : ''
-    const clientId = data.clientId ? data.clientId.trim() : ''
+    const clientId = data.clientId ? data.clientId.trim() : null
     const contactEmail = data.email ? data.email.trim() : null
     const contactPhoneNumber = data.contactPhoneNumber ? data.contactPhoneNumber.trim() : null
     const notes = data.notes ? data.notes.trim() : null
-    const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : []
+    const tags = data.tags ? data.tags.split(',').map(t => t.trim()) : []
     const shippingAddress = data.shippingAddress && data.shippingAddress.trim() !== '' ? data.shippingAddress.trim() : null
     const lastTouchpoint = data.lastTouchpoint ? new Date(data.lastTouchpoint).toISOString() : null
-    const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0,10) : null // store as YYYY-MM-DD
+    const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0,10) : null
 
-    // Check for missing organization or clientId in the body
-    if (!organization || !clientId) {
-      const errorMessage = `Organization and Client are required.`
+    if (!contactName || !organization) {
+      const errorMessage = `Name and Organization are required.`
       helpers.log(errorMessage)
       return res.status(400).send(errorMessage)
     }
 
-    // Update the contact — pass updated fields to DB layer
-    const updatedContact = await db.updateContact(
+    const existing = await db.getContactWithContactId(contactId)
+    if (!existing) {
+      const errorMessage = `Contact ID '${contactId}' does not exist`
+      helpers.log(errorMessage)
+      return res.status(404).send(errorMessage)
+    }
+
+    const updated = await db.updateContact(
       contactId,
       contactName,
       organization,
@@ -1042,16 +1064,14 @@ async function submitUpdateContact(req, res) {
       tags,
     )
 
-    if (!updatedContact) {
+    if (!updated) {
       throw new Error('Contact update failed')
     }
 
-    console.log('Contact updated:', updatedContact)
-    res.redirect(`/contacts/${contactId}`)  //TODO: Ensure this route exists
-
+    res.redirect(`/contacts/${updated.contact_id}`)
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
-    return res.status(500).send('Internal Server Error')
+    res.status(500).send('Internal Server Error')
   }
 }
 
