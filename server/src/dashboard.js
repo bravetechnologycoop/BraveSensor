@@ -857,12 +857,8 @@ async function renderNewContactPage(req, res) {
   try {
     const clients = await db.getClients()
     const displayedClients = clients.filter(client => client.isDisplayed)
-    //TODO Add organizations
 
     const organizations = await db.getOrganizations()
-    //console.log('Organizations:', organizations)
-
-    //TODO: Make organization selection dynamic based on client selection or vice versa
 
     const viewParams = { clients: displayedClients, organizations: organizations}
 
@@ -889,7 +885,6 @@ async function submitNewContact(req, res) {
     const validationErrors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
 
     if (!validationErrors.isEmpty()) {
-      console.log('Validation Errors:', validationErrors.array())
       const errorMessage = `Bad request to ${req.path}: ${validationErrors.array().join(', ')}`
       helpers.log(errorMessage)
       return res.status(400).send(errorMessage)
@@ -897,14 +892,17 @@ async function submitNewContact(req, res) {
 
     const data = req.body
 
-    // Trimming and sanitizing input, matching form field names
+    // Trimming and sanitizing input, accept either form field name variants
     const contactName = data.name ? data.name.trim() : ''
     const organization = data.organization ? data.organization.trim() : ''
-    const clientId = data.clientId ? data.clientId.trim() : null   // now optional
+    // accept phoneNumber (template) or contactPhoneNumber (legacy)
+    const contactPhoneNumber = data.contactPhoneNumber
+      ? data.contactPhoneNumber.trim()
+      : (data.phoneNumber ? data.phoneNumber.trim() : null)
+    const clientId = data.clientId ? data.clientId.trim() : null
     const contactEmail = data.email ? data.email.trim() : null
-    const contactPhoneNumber = data.contactPhoneNumber ? data.contactPhoneNumber.trim() : null
     const notes = data.notes ? data.notes.trim() : null
-    const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()) : []
+    const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(t => t) : []
     const shippingAddress = data.shippingAddress && data.shippingAddress.trim() !== '' ? data.shippingAddress.trim() : null
     const lastTouchpoint = data.lastTouchpoint ? new Date(data.lastTouchpoint).toISOString() : null
     const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0,10) : null
@@ -916,7 +914,19 @@ async function submitNewContact(req, res) {
       return res.status(400).send(errorMessage)
     }
 
-    // Create the contact — pass new fields to DB layer
+    // Duplicate check (case-insensitive on name + organization)
+    const allContacts = await db.getContacts()
+    const duplicate = allContacts.find(c =>
+      (c.name || '').trim().toLowerCase() === contactName.toLowerCase() &&
+      (c.organization || '').trim().toLowerCase() === organization.toLowerCase()
+    )
+    if (duplicate) {
+      const errorMessage = `Contact '${contactName}' for organization '${organization}' already exists`
+      helpers.log(errorMessage)
+      return res.status(400).send(errorMessage)
+    }
+
+    // Create the contact — pass normalized fields to DB layer
     const newContact = await db.createContact(
       contactName,
       organization,
@@ -927,7 +937,7 @@ async function submitNewContact(req, res) {
       shippingAddress,
       lastTouchpoint,
       shippingDate,
-      tags,
+      tags
     )
 
     if (!newContact) {
@@ -1061,7 +1071,7 @@ async function submitUpdateContact(req, res) {
       shippingAddress,
       lastTouchpoint,
       shippingDate,
-      tags,
+      tags
     )
 
     if (!updated) {

@@ -204,6 +204,27 @@ async function eventNewDBFactory(overrides = {}, pgClient) {
   return event
 }
 
+async function contactNewDBFactory(overrides = {}, pgClient) {
+  const contact = await db.createContact(
+    // required
+    overrides.name !== undefined ? overrides.name : 'Fake Contact',
+    overrides.organization !== undefined ? overrides.organization : 'Fake Organization',
+    // optional client, accept either client_id or clientId
+    overrides.clientId !== undefined ? overrides.clientId : (overrides.client_id !== undefined ? overrides.client_id : null),
+    // optional fields
+    overrides.email !== undefined ? overrides.email : (overrides.contactEmail !== undefined ? overrides.contactEmail : null),
+    overrides.phoneNumber !== undefined ? overrides.phoneNumber : (overrides.contactPhoneNumber !== undefined ? overrides.contactPhoneNumber : null),
+    overrides.notes !== undefined ? overrides.notes : null,
+    overrides.shippingAddress !== undefined ? overrides.shippingAddress : null,
+    overrides.lastTouchpoint !== undefined ? overrides.lastTouchpoint : null,
+    overrides.shippingDate !== undefined ? overrides.shippingDate : null,
+    // tags: allow passing array or comma string
+    Array.isArray(overrides.tags) ? overrides.tags : (overrides.tags !== undefined ? String(overrides.tags).split(',').map(t => t.trim()).filter(t => t) : []),
+    pgClient,
+  )
+  return contact
+}
+
 async function vitalNewDBFactory(overrides = {}, pgClient) {
   const vital = await db.createVital(
     overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId',
@@ -241,6 +262,7 @@ module.exports = {
   deviceNewDBFactory,
   sessionNewDBFactory,
   eventNewDBFactory,
+  contactNewDBFactory, // added export
   vitalNewDBFactory,
   notificationNewDBFactory,
 }

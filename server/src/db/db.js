@@ -359,6 +359,7 @@ async function clearAllTables(pgClient) {
       DELETE FROM devices;
       DELETE FROM clients_extension;
       DELETE FROM clients;
+      DELETE FROM contacts;
       `,
       [],
       pool,
