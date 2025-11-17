@@ -166,7 +166,6 @@ async function renderLandingPage(req, res) {
     const uniqueProjects = filterUniqueItems(mergedClients, 'project')
     const uniqueOrganizations = filterUniqueItems(mergedClients, 'organization')
 
-    console.log("contacts", contacts);
     
     // after you load contacts (or mergedClients)
     const clients = await db.getClients()
@@ -943,8 +942,6 @@ async function submitNewContact(req, res) {
     if (!newContact) {
       throw new Error('Contact creation failed')
     }
-
-    console.log('New contact created:', newContact)
     res.redirect(`/contacts/${newContact.contact_id}`)
 
   } catch (err) {
@@ -957,7 +954,6 @@ async function submitNewContact(req, res) {
 async function renderContactDetailsPage(req, res) {
   try {
     const contactId = req.params.contactId
-    console.log('Rendering details for contactId:', contactId)
 
     const contact = await db.getContactWithContactId(contactId)
     if (!contact) {
@@ -965,7 +961,6 @@ async function renderContactDetailsPage(req, res) {
       return
     }
 
-    console.log('Contact details:', contact)
     //TODO add related client and organization info
 
     const viewParams = { contact }
