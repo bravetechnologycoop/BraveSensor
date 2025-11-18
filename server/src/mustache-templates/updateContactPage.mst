@@ -86,7 +86,7 @@
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="shippingAddress" class="col-sm-3 col-form-label">Shipping Address:</label>
                     <div class="col-sm-5">
-                        <textarea class="form-control" name="shippingAddress" placeholder="Street, City, State, ZIP">{{shippingAddress}}</textarea>
+                        <textarea class="form-control" name="shippingAddress" placeholder="Shipping Address">{{shippingAddress}}</textarea>
                     </div>
                 </div>
 
