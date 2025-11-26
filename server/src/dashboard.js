@@ -160,21 +160,19 @@ const stringFormatters = {
 
 async function renderLandingPage(req, res) {
   try {
-    const [mergedClients, mergedDevices, contacts] = await Promise.all([db.getMergedClientsWithExtensions(), db.getMergedDevicesWithVitals(), db.getContactsForLanding()])
+    const [mergedClients, mergedDevices, contacts] = await Promise.all([
+      db.getMergedClientsWithExtensions(),
+      db.getMergedDevicesWithVitals(),
+      db.getContactsForLanding(),
+    ])
 
     const uniqueFunders = filterUniqueItems(mergedClients, 'funder')
     const uniqueProjects = filterUniqueItems(mergedClients, 'project')
     const uniqueOrganizations = filterUniqueItems(mergedClients, 'organization')
 
-    
     // after you load contacts (or mergedClients)
     const clients = await db.getClients()
-    const clientById = new Map(
-      clients.map(c => [
-        c.client_id || c.clientId,
-        c.display_name || c.displayName || c.displayName,
-      ])
-    )
+    const clientById = new Map(clients.map(c => [c.client_id || c.clientId, c.display_name || c.displayName || c.displayName]))
 
     const contactsForView = contacts.map(ct => ({
       ...ct,
@@ -859,7 +857,7 @@ async function renderNewContactPage(req, res) {
 
     const organizations = await db.getOrganizations()
 
-    const viewParams = { clients: displayedClients, organizations: organizations}
+    const viewParams = { clients: displayedClients, organizations }
 
     res.send(Mustache.render(newContactPageTemplate, viewParams, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
@@ -871,7 +869,7 @@ async function renderNewContactPage(req, res) {
 const validateNewContact = [
   Validator.body(['name', 'organization']).trim().notEmpty(),
   Validator.body('clientId').trim().optional({ nullable: true }),
-  Validator.body(['email','contactPhoneNumber','tags','shippingAddress','lastTouchpoint','shippingDate']).trim().optional({ nullable: true }),
+  Validator.body(['email', 'contactPhoneNumber', 'tags', 'shippingAddress', 'lastTouchpoint', 'shippingDate']).trim().optional({ nullable: true }),
 ]
 
 async function submitNewContact(req, res) {
@@ -895,16 +893,19 @@ async function submitNewContact(req, res) {
     const contactName = data.name ? data.name.trim() : ''
     const organization = data.organization ? data.organization.trim() : ''
     // accept phoneNumber (template) or contactPhoneNumber (legacy)
-    const contactPhoneNumber = data.contactPhoneNumber
-      ? data.contactPhoneNumber.trim()
-      : (data.phoneNumber ? data.phoneNumber.trim() : null)
+    const contactPhoneNumber = data.contactPhoneNumber ? data.contactPhoneNumber.trim() : data.phoneNumber ? data.phoneNumber.trim() : null
     const clientId = data.clientId ? data.clientId.trim() : null
     const contactEmail = data.email ? data.email.trim() : null
     const notes = data.notes ? data.notes.trim() : null
-    const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(t => t) : []
+    const tags = data.tags
+      ? data.tags
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(t => t)
+      : []
     const shippingAddress = data.shippingAddress && data.shippingAddress.trim() !== '' ? data.shippingAddress.trim() : null
     const lastTouchpoint = data.lastTouchpoint ? new Date(data.lastTouchpoint).toISOString() : null
-    const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0,10) : null
+    const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0, 10) : null
 
     // Require organization and name, but clientId may be null
     if (!contactName || !organization) {
@@ -915,9 +916,10 @@ async function submitNewContact(req, res) {
 
     // Duplicate check (case-insensitive on name + organization)
     const allContacts = await db.getContacts()
-    const duplicate = allContacts.find(c =>
-      (c.name || '').trim().toLowerCase() === contactName.toLowerCase() &&
-      (c.organization || '').trim().toLowerCase() === organization.toLowerCase()
+    const duplicate = allContacts.find(
+      c =>
+        (c.name || '').trim().toLowerCase() === contactName.toLowerCase() &&
+        (c.organization || '').trim().toLowerCase() === organization.toLowerCase(),
     )
     if (duplicate) {
       const errorMessage = `Contact '${contactName}' for organization '${organization}' already exists`
@@ -936,20 +938,18 @@ async function submitNewContact(req, res) {
       shippingAddress,
       lastTouchpoint,
       shippingDate,
-      tags
+      tags,
     )
 
     if (!newContact) {
       throw new Error('Contact creation failed')
     }
     res.redirect(`/contacts/${newContact.contact_id}`)
-
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)
     return res.status(500).send('Internal Server Error')
   }
 }
-
 
 async function renderContactDetailsPage(req, res) {
   try {
@@ -961,7 +961,7 @@ async function renderContactDetailsPage(req, res) {
       return
     }
 
-    //TODO add related client and organization info
+    // TODO add related client and organization info
 
     const viewParams = { contact }
 
@@ -1011,7 +1011,7 @@ async function renderUpdateContactPage(req, res) {
 const validateUpdateContact = [
   Validator.body(['name', 'organization']).trim().notEmpty(),
   Validator.body('clientId').trim().optional({ nullable: true }),
-  Validator.body(['email','contactPhoneNumber','tags','shippingAddress','lastTouchpoint','shippingDate']).trim().optional({ nullable: true }),
+  Validator.body(['email', 'contactPhoneNumber', 'tags', 'shippingAddress', 'lastTouchpoint', 'shippingDate']).trim().optional({ nullable: true }),
 ]
 
 async function submitUpdateContact(req, res) {
@@ -1040,7 +1040,7 @@ async function submitUpdateContact(req, res) {
     const tags = data.tags ? data.tags.split(',').map(t => t.trim()) : []
     const shippingAddress = data.shippingAddress && data.shippingAddress.trim() !== '' ? data.shippingAddress.trim() : null
     const lastTouchpoint = data.lastTouchpoint ? new Date(data.lastTouchpoint).toISOString() : null
-    const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0,10) : null
+    const shippingDate = data.shippingDate ? new Date(data.shippingDate).toISOString().slice(0, 10) : null
 
     if (!contactName || !organization) {
       const errorMessage = `Name and Organization are required.`
@@ -1066,7 +1066,7 @@ async function submitUpdateContact(req, res) {
       shippingAddress,
       lastTouchpoint,
       shippingDate,
-      tags
+      tags,
     )
 
     if (!updated) {
@@ -1079,7 +1079,6 @@ async function submitUpdateContact(req, res) {
     res.status(500).send('Internal Server Error')
   }
 }
-
 
 module.exports = {
   setupDashboardSessions,
@@ -1122,6 +1121,4 @@ module.exports = {
   submitNewDevice,
   validateUpdateDevice,
   submitUpdateDevice,
-
-  
 }

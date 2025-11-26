@@ -4,7 +4,7 @@ const pg = require('pg')
 // In-house dependencies
 const helpers = require('../utils/helpers')
 const { SESSION_STATUS, EVENT_TYPE, NOTIFICATION_TYPE } = require('../enums/index')
-const { Client, ClientExtension, Device, Session, Event, TeamsEvent, Vital, Notification, Contact} = require('../models/index')
+const { Client, ClientExtension, Device, Session, Event, TeamsEvent, Vital, Notification, Contact } = require('../models/index')
 
 const pool = new pg.Pool({
   host: helpers.getEnvVar('PG_HOST'),
@@ -1935,19 +1935,18 @@ async function getLatestNotificationOfType(deviceId, notificationType, pgClient)
   }
 }
 
-
 async function createContact(
-    contactName,
-    organization,
-    clientId,
-    contactEmail,
-    contactPhoneNumber,
-    notes,
-    shippingAddress,
-    lastTouchpoint,
-    shippingDate,
-    tags,
-    pgClient,
+  contactName,
+  organization,
+  clientId,
+  contactEmail,
+  contactPhoneNumber,
+  notes,
+  shippingAddress,
+  lastTouchpoint,
+  shippingDate,
+  tags,
+  pgClient,
 ) {
   try {
     const queryText = `
@@ -1964,7 +1963,7 @@ async function createContact(
         tags
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *;`;
+      RETURNING *;`
 
     const queryParams = [
       contactName,
@@ -1977,21 +1976,20 @@ async function createContact(
       lastTouchpoint,
       shippingDate,
       tags,
-    ];
+    ]
 
-    const results = await helpers.runQuery('createContact', queryText, queryParams, pool, pgClient);
+    const results = await helpers.runQuery('createContact', queryText, queryParams, pool, pgClient)
 
     if (!results || results.rows.length === 0) {
-      return null;
+      return null
     }
 
-    return createContactFromRow(results.rows[0]);
+    return createContactFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the createContact query: ${err.toString()}`);
-    return null;
+    helpers.logError(`Error running the createContact query: ${err.toString()}`)
+    return null
   }
 }
-
 
 function createContactFromRow(r) {
   return new Contact(
@@ -2012,7 +2010,6 @@ function createContactFromRow(r) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
-
 
 async function getOrganizations(pgClient) {
   try {
@@ -2066,18 +2063,18 @@ async function getContactWithContactId(contactId, pgClient) {
 }
 
 async function updateContact(
-    contactId,
-    contactName,
-    organization,
-    clientId,
-    contactEmail,
-    contactPhoneNumber,
-    notes,
-    shippingAddress,
-    lastTouchpoint,
-    shippingDate,
-    tags,
-    pgClient,
+  contactId,
+  contactName,
+  organization,
+  clientId,
+  contactEmail,
+  contactPhoneNumber,
+  notes,
+  shippingAddress,
+  lastTouchpoint,
+  shippingDate,
+  tags,
+  pgClient,
 ) {
   try {
     const queryText = `
@@ -2094,7 +2091,7 @@ async function updateContact(
         shipping_date = $10,
         tags = $11
       WHERE contact_id = $1
-      RETURNING *;`;
+      RETURNING *;`
 
     const queryParams = [
       contactId,
@@ -2108,18 +2105,18 @@ async function updateContact(
       lastTouchpoint,
       shippingDate,
       tags,
-    ];
+    ]
 
-    const results = await helpers.runQuery('updateContact', queryText, queryParams, pool, pgClient);
+    const results = await helpers.runQuery('updateContact', queryText, queryParams, pool, pgClient)
 
     if (!results || results.rows.length === 0) {
-      return null;
+      return null
     }
 
-    return createContactFromRow(results.rows[0]);
+    return createContactFromRow(results.rows[0])
   } catch (err) {
-    helpers.logError(`Error running the updateContact query: ${err.toString()}`);
-    return null;
+    helpers.logError(`Error running the updateContact query: ${err.toString()}`)
+    return null
   }
 }
 
