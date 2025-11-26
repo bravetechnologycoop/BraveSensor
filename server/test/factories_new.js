@@ -205,28 +205,53 @@ async function eventNewDBFactory(overrides = {}, pgClient) {
 }
 
 async function contactNewDBFactory(overrides = {}, pgClient) {
+  // optional client, accept either client_id or clientId
+  let clientId = null
+  if (overrides.clientId !== undefined) {
+    clientId = overrides.clientId
+  } else if (overrides.client_id !== undefined) {
+    clientId = overrides.client_id
+  }
+
+  // optional email field
+  let email = null
+  if (overrides.email !== undefined) {
+    email = overrides.email
+  } else if (overrides.contactEmail !== undefined) {
+    email = overrides.contactEmail
+  }
+
+  // optional phone number field
+  const phoneNumber = overrides.contactPhoneNumber !== undefined ? overrides.contactPhoneNumber : null
+
+  // tags: allow passing array or comma string
+  let tags
+  if (Array.isArray(overrides.tags)) {
+    tags = overrides.tags
+  } else if (overrides.tags !== undefined) {
+    tags = String(overrides.tags)
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t)
+  } else {
+    tags = []
+  }
+
   const contact = await db.createContact(
     // required
     overrides.name !== undefined ? overrides.name : 'Fake Contact',
     overrides.organization !== undefined ? overrides.organization : 'Fake Organization',
-    // optional client, accept either client_id or clientId
-    overrides.clientId !== undefined ? overrides.clientId : overrides.client_id !== undefined ? overrides.client_id : null,
+    // optional client
+    clientId,
     // optional fields
-    overrides.email !== undefined ? overrides.email : overrides.contactEmail !== undefined ? overrides.contactEmail : null,
-    overrides.phoneNumber !== undefined ? overrides.phoneNumber : overrides.contactPhoneNumber !== undefined ? overrides.contactPhoneNumber : null,
+    email,
+    phoneNumber,
     overrides.notes !== undefined ? overrides.notes : null,
     overrides.shippingAddress !== undefined ? overrides.shippingAddress : null,
     overrides.lastTouchpoint !== undefined ? overrides.lastTouchpoint : null,
     overrides.shippingDate !== undefined ? overrides.shippingDate : null,
-    // tags: allow passing array or comma string
-    Array.isArray(overrides.tags)
-      ? overrides.tags
-      : overrides.tags !== undefined
-      ? String(overrides.tags)
-          .split(',')
-          .map(t => t.trim())
-          .filter(t => t)
-      : [],
+    // tags
+    tags,
     pgClient,
   )
   return contact

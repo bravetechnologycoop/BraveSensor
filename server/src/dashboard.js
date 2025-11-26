@@ -889,11 +889,10 @@ async function submitNewContact(req, res) {
 
     const data = req.body
 
-    // Trimming and sanitizing input, accept either form field name variants
+    // Trimming and sanitizing input
     const contactName = data.name ? data.name.trim() : ''
     const organization = data.organization ? data.organization.trim() : ''
-    // accept phoneNumber (template) or contactPhoneNumber (legacy)
-    const contactPhoneNumber = data.contactPhoneNumber ? data.contactPhoneNumber.trim() : data.phoneNumber ? data.phoneNumber.trim() : null
+    const contactPhoneNumber = data.contactPhoneNumber ? data.contactPhoneNumber.trim() : null
     const clientId = data.clientId ? data.clientId.trim() : null
     const contactEmail = data.email ? data.email.trim() : null
     const notes = data.notes ? data.notes.trim() : null

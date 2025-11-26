@@ -1935,6 +1935,24 @@ async function getLatestNotificationOfType(deviceId, notificationType, pgClient)
   }
 }
 
+function createContactFromRow(r) {
+  return new Contact(
+    r.contact_id,
+    r.name,
+    r.organization,
+    r.client_id,
+    r.email,
+    r.phone_number,
+    r.notes,
+    r.shipping_address,
+    r.last_touchpoint,
+    r.shipping_date,
+    r.tags,
+    r.created_at,
+    r.updated_at,
+  )
+}
+
 async function createContact(
   contactName,
   organization,
@@ -1989,24 +2007,6 @@ async function createContact(
     helpers.logError(`Error running the createContact query: ${err.toString()}`)
     return null
   }
-}
-
-function createContactFromRow(r) {
-  return new Contact(
-    r.contact_id,
-    r.name,
-    r.organization,
-    r.client_id,
-    r.email,
-    r.phone_number,
-    r.notes,
-    r.shipping_address,
-    r.last_touchpoint,
-    r.shipping_date,
-    r.tags,
-    r.created_at,
-    r.updated_at,
-  )
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
