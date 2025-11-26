@@ -102,8 +102,8 @@
                     <tr class="table-header" scope="row">
                         <th scope="col">Device Name</th>
                         <th scope="col">Device Type</th>
-                        <th scope="col">Device Last Seen At</th>
-                        <th scope="col">Door Last Seen At</th>
+                        <th scope="col" style="cursor: pointer;" onclick="toggleSort('device')">Device Last Seen At <span id="deviceSortIndicator">▼</span></th>
+                        <th scope="col" style="cursor: pointer;" onclick="toggleSort('door')">Door Last Seen At <span id="doorSortIndicator">▼</span></th>
                         <th scope="col">Sends Alerts?</th>
                         <th scope="col">Sends Vitals?</th>
                     </tr>
@@ -197,6 +197,72 @@
                     row.style.display = row.classList.contains('device-row') && textToSearch.includes(searchTerm) ? '' : 'none';
                 } 
             });
+        }
+
+        let deviceSortAscending = true;
+        let doorSortAscending = true;
+
+        function toggleSort(column) {
+            if (column === 'device') {
+                deviceSortAscending = !deviceSortAscending;
+                const sortIndicator = document.getElementById('deviceSortIndicator');
+                sortIndicator.innerText = deviceSortAscending ? '▲' : '▼';
+                sortByLastSeen('device', deviceSortAscending);
+            } else if (column === 'door') {
+                doorSortAscending = !doorSortAscending;
+                const sortIndicator = document.getElementById('doorSortIndicator');
+                sortIndicator.innerText = doorSortAscending ? '▲' : '▼';
+                sortByLastSeen('door', doorSortAscending);
+            }
+        }
+
+        function parseTimestamp(timestampText) {
+            if (timestampText === 'N/A' || !timestampText) {
+                return Infinity; // Place N/A at the end when sorting
+            }
+            
+            // Parse the timestamp string like "0 hours, 8 minutes, 18 seconds ago"
+            const parts = timestampText.split(',').map(part => part.trim());
+            let totalMinutes = 0;
+            
+            parts.forEach(part => {
+                const match = part.match(/(\d+)\s+(day|hour|minute|second)/);
+                if (match) {
+                    const value = parseInt(match[1]);
+                    const unit = match[2];
+                    
+                    if (unit === 'day') {
+                        totalMinutes += value * 24 * 60;
+                    } else if (unit === 'hour') {
+                        totalMinutes += value * 60;
+                    } else if (unit === 'minute') {
+                        totalMinutes += value;
+                    } else if (unit === 'second') {
+                        totalMinutes += value / 60;
+                    }
+                }
+            });
+            
+            return totalMinutes;
+        }
+
+        function sortByLastSeen(column, ascending) {
+            const tableBody = document.getElementById('tableBody');
+            const rows = Array.from(tableBody.querySelectorAll('.device-row'));
+            const columnIndex = column === 'device' ? 2 : 3; // Device Last Seen At is column 2, Door Last Seen At is column 3
+            
+            rows.sort((a, b) => {
+                const aText = a.cells[columnIndex].innerText;
+                const bText = b.cells[columnIndex].innerText;
+                
+                const aValue = parseTimestamp(aText);
+                const bValue = parseTimestamp(bText);
+                
+                return ascending ? (aValue - bValue) : (bValue - aValue);
+            });
+            
+            // Re-append rows in sorted order
+            rows.forEach(row => tableBody.appendChild(row));
         }
 
         // Initialize the table header and body based on the default view
