@@ -176,7 +176,7 @@ describe('dashboard.js integration tests: submitNewContactTest', () => {
         organization: 'TestOrg',
         clientId: client.client_id || client.clientId,
         email: 'jane@example.com',
-        phoneNumber: '+15551234567',
+        contactPhoneNumber: '+15551234567',
         tags: 'manager,program',
         shippingAddress: '123 Main St',
         lastTouchpoint: new Date().toISOString(),
