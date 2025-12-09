@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Brave Sensor Dashboard</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" crossorigin="anonymous">
+    {{> css}}
+</head>
+
+<body>
+    {{> nav}}
+    <div class="content-area">
+        <div class="content-wrapper">
+            <h4 class="no-locations">Add A Contact</h4>
+            <h6>Please fill in the form below.</h6>
+            <br>
+            <form class="needs-validation" action="/contacts" method="POST">
+                <div class="form-group row">
+                    <label for="name" class="col-sm-3 col-form-label">Name:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="name" placeholder="Full Name" required>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="organization" class="col-sm-3 col-form-label">Organization:</label>
+                    <div class="col-sm-5">
+                        <select class="form-control" name="organization" required>
+                            <option value="" disabled selected>Select an organization</option>
+                                {{#organizations}}
+                                    <option value="{{.}}">{{.}}</option>
+                                {{/organizations}}
+                            </select>
+                        </div>
+                    </div>
+
+            <div class="form-group row">
+                <label for="clientId" class="col-sm-3 col-form-label">Client:</label>
+                    <div class="col-sm-5">
+                        <select class="form-control" name="clientId">
+                            <option value="">-- No client / None --</option>
+                            {{#clients}}
+                                <option value="{{clientId}}">{{displayName}}</option>
+                            {{/clients}}
+                        </select>
+                    </div>
+            </div>
+                <div class="form-group row">
+                    <label for="email" class="col-sm-3 col-form-label">Contact Email:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="email" placeholder="Email Address">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="contactPhoneNumber" class="col-sm-3 col-form-label">Contact Phone Number:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="contactPhoneNumber" placeholder="+1XXXXXXXXXX">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="notes" class="col-sm-3 col-form-label">Notes:</label>
+                    <div class="col-sm-5">
+                        <textarea class="form-control" name="notes" placeholder="Notes"></textarea>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="shippingAddress" class="col-sm-3 col-form-label">Shipping Address:</label>
+                    <div class="col-sm-5">
+                        <textarea class="form-control" name="shippingAddress" placeholder="Shipping Address"></textarea>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="lastTouchpoint" class="col-sm-3 col-form-label">Last Touchpoint:</label>
+                    <div class="col-sm-5">
+                        <input type="date" class="form-control" name="lastTouchpoint" placeholder="YYYY-MM-DD">
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="shippingDate" class="col-sm-3 col-form-label">Shipping Date:</label>
+                    <div class="col-sm-5">
+                        <input type="date" class="form-control" name="shippingDate" placeholder="YYYY-MM-DD">
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="tags" class="col-sm-3 col-form-label">Tags:</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="tags" placeholder="Comma-separated tags">
+                        <small class="form-text text-muted">e.g., program manager</small>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-large">Submit</button>
+            </form>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+</body>
+
+</html>

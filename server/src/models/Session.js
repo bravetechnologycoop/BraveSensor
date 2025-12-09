@@ -1,5 +1,3 @@
-// TODO rename to Session, remove suffix in all references
-
 class Session {
   constructor(
     sessionId,
