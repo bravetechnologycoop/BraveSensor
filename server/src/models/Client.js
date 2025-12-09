@@ -1,5 +1,3 @@
-// TODO rename to client, remove suffix in all references
-
 class Client {
   constructor(
     clientId,

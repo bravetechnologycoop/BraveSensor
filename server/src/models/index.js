@@ -8,6 +8,7 @@ const Event = require('./Event')
 const TeamsEvent = require('./TeamsEvent')
 const Vital = require('./Vital')
 const Notification = require('./Notification')
+const Contact = require('./Contact')
 
 module.exports = {
   Client,
@@ -18,4 +19,5 @@ module.exports = {
   TeamsEvent,
   Vital,
   Notification,
+  Contact,
 }
