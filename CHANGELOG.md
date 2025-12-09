@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.2.6] - 2025-12-09
+- Add contacts page
+- Add sort devices by last seen and door last seen
+
 ## [12.2.5] - 2025-10-20
 - Fixed an issue where "invalid response" would not take further input (ending the flow), now "invalid response" will still expect a survey response (CU-86dxrczhv)
 
@@ -971,7 +975,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.5...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.6...HEAD
+[12.2.6]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.5...v12.2.6
 [12.2.5]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.4...v12.2.5
 [12.2.4]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.3...v12.2.4
 [12.2.3]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.1...v12.2.3
