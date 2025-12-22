@@ -165,7 +165,7 @@ async function clientExtensionNewDBFactory(overrides = {}, pgClient) {
 
 async function deviceNewDBFactory(overrides = {}, pgClient) {
   const device = await db.createDevice(
-    overrides.locationId !== undefined ? overrides.locationId : 'fakeLocationId',
+    overrides.locationId !== undefined ? overrides.locationId : `fakeLocationId_${Date.now()}_${Math.random()}`,
     overrides.displayName !== undefined ? overrides.displayName : 'fakeDeviceDisplayName',
     overrides.clientId !== undefined ? overrides.clientId : 'fakeClientId',
     overrides.particleDeviceId !== undefined ? overrides.particleDeviceId : 'e00111111111111111111111',
@@ -182,12 +182,6 @@ async function deviceNewDBFactory(overrides = {}, pgClient) {
 async function sessionNewDBFactory(overrides = {}, pgClient) {
   const session = await db.createSession(
     overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId',
-    overrides.sessionStatus !== undefined ? overrides.sessionStatus : SESSION_STATUS.ACTIVE,
-    overrides.attendingResponderNumber !== undefined ? overrides.attendingResponderNumber : '+11234567890',
-    overrides.doorOpened !== undefined ? overrides.doorOpened : false,
-    overrides.surveySent !== undefined ? overrides.surveySent : false,
-    overrides.selectedSurveyCategory !== undefined ? overrides.selectedSurveyCategory : null,
-    overrides.responseTime !== undefined ? overrides.responseTime : null,
     pgClient,
   )
   return session

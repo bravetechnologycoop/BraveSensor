@@ -13,6 +13,7 @@ const sensorEvents = require('./sensorEvents')
 const twilioEvents = require('./twilioEvents')
 const teamsEvents = require('./teamsEvents')
 const smokeTest = require('../test/smokeTest')
+const api = require('./api')
 
 function configureRoutes(app) {
   app.get('/', dashboard.sessionChecker, dashboard.redirectToHomePage)
@@ -34,8 +35,8 @@ function configureRoutes(app) {
   app.get('/contacts/new', dashboard.sessionChecker, dashboard.renderNewContactPage) // Must be configured before /contacts/:contactId
   app.post('/contacts', dashboard.validateNewContact, dashboard.submitNewContact)
   app.get('/contacts/:contactId', dashboard.sessionChecker, dashboard.renderContactDetailsPage)
-  app.get('/contacts/:contactId/update', dashboard.sessionChecker, dashboard.renderUpdateContactPage) // TODO: implement update contact page
-  app.post('/contacts/:contactId', dashboard.validateUpdateContact, dashboard.submitUpdateContact) // TODO: implement update contact submission
+  app.get('/contacts/:contactId/update', dashboard.sessionChecker, dashboard.renderUpdateContactPage)
+  app.post('/contacts/:contactId', dashboard.validateUpdateContact, dashboard.submitUpdateContact)
 
   app.post('/clients', dashboard.validateNewClient, dashboard.submitNewClient)
   app.post('/clients/:clientId', dashboard.validateUpdateClient, dashboard.submitUpdateClient)
@@ -48,9 +49,29 @@ function configureRoutes(app) {
 
   app.post('/api/sensorEvent', sensorEvents.validateSensorEvent, sensorEvents.handleSensorEvent)
   app.post('/alert/sms', twilioEvents.validateTwilioEvent, twilioEvents.handleTwilioEvent)
-  // app.post('/alert/sms', twilioEvents.handleTwilioEvent)
   app.post('/alert/teams', teamsEvents.validateTeamsEvent, teamsEvents.handleTeamsEvent)
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
+
+  // Brave Sensor API endpoints
+  // Client endpoints
+  app.get('/api/clients', api.validatePagination, api.authorize, api.handleGetClients)
+  app.get('/api/clients/:clientId', api.validateGetClient, api.authorize, api.handleGetClient)
+
+  // Device endpoints
+  app.get('/api/devices', api.validatePagination, api.authorize, api.handleGetDevices)
+  app.get('/api/clients/:clientId/devices', api.validateGetClientDevices, api.authorize, api.handleGetClientDevices)
+  app.get('/api/clients/:clientId/devices/:deviceId', api.validateGetClientDevice, api.authorize, api.handleGetClientDevice)
+
+  // Session endpoints
+  app.get('/api/sessions', api.validatePagination, api.authorize, api.handleGetSessions)
+  app.get('/api/clients/:clientId/sessions', api.validateGetClientSessions, api.authorize, api.handleGetClientSessions)
+  app.get('/api/clients/:clientId/devices/:deviceId/sessions', api.validateGetClientDeviceSessions, api.authorize, api.handleGetClientDeviceSessions)
+  app.get('/api/sessions/:sessionId', api.validateGetSession, api.authorize, api.handleGetSession)
+
+  // Contact endpoints
+  app.get('/api/contacts', api.validatePagination, api.authorize, api.handleGetContacts)
+  app.get('/api/contacts/:contactId', api.validateGetContact, api.authorize, api.handleGetContact)
+  app.get('/api/clients/:clientId/contacts', api.validateGetClientContacts, api.authorize, api.handleGetClientContacts)
 
   app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
   app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)
