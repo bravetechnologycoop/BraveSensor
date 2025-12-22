@@ -49,9 +49,7 @@ describe('API Client Endpoints', () => {
 
     describe('with valid authorization and no clients', () => {
       beforeEach(async () => {
-        this.response = await this.agent
-          .get('/api/clients')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/clients').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -71,9 +69,7 @@ describe('API Client Endpoints', () => {
         await factories.clientNewDBFactory()
         await factories.clientNewDBFactory({ displayName: 'Second Client' })
 
-        this.response = await this.agent
-          .get('/api/clients')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/clients').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -93,9 +89,7 @@ describe('API Client Endpoints', () => {
       beforeEach(async () => {
         this.client = await factories.clientNewDBFactory()
 
-        this.response = await this.agent
-          .get(`/api/clients/${this.client.clientId}`)
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get(`/api/clients/${this.client.clientId}`).set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -111,9 +105,7 @@ describe('API Client Endpoints', () => {
 
     describe('with valid authorization and non-existent client', () => {
       beforeEach(async () => {
-        this.response = await this.agent
-          .get('/api/clients/non-existent-id')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/clients/non-existent-id').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 404', () => {

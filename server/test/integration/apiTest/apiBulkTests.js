@@ -49,9 +49,7 @@ describe('API Bulk Endpoints', () => {
 
     describe('with valid authorization and no devices', () => {
       beforeEach(async () => {
-        this.response = await this.agent
-          .get('/api/devices')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/devices').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -74,9 +72,7 @@ describe('API Bulk Endpoints', () => {
         await factories.deviceNewDBFactory({ clientId: client1.clientId, displayName: 'Device 1B' })
         await factories.deviceNewDBFactory({ clientId: client2.clientId, displayName: 'Device 2A' })
 
-        this.response = await this.agent
-          .get('/api/devices')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/devices').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -102,9 +98,7 @@ describe('API Bulk Endpoints', () => {
         await factories.deviceNewDBFactory({ clientId: client2.clientId, displayName: 'Device 4' })
         await factories.deviceNewDBFactory({ clientId: client2.clientId, displayName: 'Device 5' })
 
-        this.response = await this.agent
-          .get('/api/devices?limit=2&offset=1')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/devices?limit=2&offset=1').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -131,9 +125,7 @@ describe('API Bulk Endpoints', () => {
         const client = await factories.clientNewDBFactory()
         await factories.deviceNewDBFactory({ clientId: client.clientId })
 
-        this.response = await this.agent
-          .get('/api/devices?limit=2000&offset=-5')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/devices?limit=2000&offset=-5').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 400', () => {
@@ -159,9 +151,7 @@ describe('API Bulk Endpoints', () => {
 
     describe('with valid authorization and no sessions', () => {
       beforeEach(async () => {
-        this.response = await this.agent
-          .get('/api/sessions')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/sessions').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -189,9 +179,7 @@ describe('API Bulk Endpoints', () => {
         await factories.sessionNewDBFactory({ deviceId: device2.deviceId })
         await factories.sessionNewDBFactory({ deviceId: device3.deviceId })
 
-        this.response = await this.agent
-          .get('/api/sessions')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/sessions').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -219,9 +207,7 @@ describe('API Bulk Endpoints', () => {
         await factories.sessionNewDBFactory({ deviceId: device2.deviceId })
         await factories.sessionNewDBFactory({ deviceId: device2.deviceId })
 
-        this.response = await this.agent
-          .get('/api/sessions?limit=3&offset=2')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/sessions?limit=3&offset=2').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {

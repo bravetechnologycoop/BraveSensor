@@ -89,10 +89,7 @@ async function handleGetClients(req, res) {
     const limit = req.query.limit || null
     const offset = req.query.offset || null
 
-    const [clients, totalCount] = await Promise.all([
-      db.getClients(limit, offset),
-      limit !== null ? db.getClientsCount() : Promise.resolve(null),
-    ])
+    const [clients, totalCount] = await Promise.all([db.getClients(limit, offset), limit !== null ? db.getClientsCount() : Promise.resolve(null)])
 
     const response = { status: 'success', data: clients }
 
@@ -159,10 +156,7 @@ async function handleGetDevices(req, res) {
     const limit = req.query.limit || null
     const offset = req.query.offset || null
 
-    const [devices, totalCount] = await Promise.all([
-      db.getDevices(limit, offset),
-      limit !== null ? db.getDevicesCount() : Promise.resolve(null),
-    ])
+    const [devices, totalCount] = await Promise.all([db.getDevices(limit, offset), limit !== null ? db.getDevicesCount() : Promise.resolve(null)])
 
     const response = { status: 'success', data: devices || [] }
 
@@ -249,10 +243,7 @@ async function handleGetSessions(req, res) {
     const limit = req.query.limit || null
     const offset = req.query.offset || null
 
-    const [sessions, totalCount] = await Promise.all([
-      db.getSessions(limit, offset),
-      limit !== null ? db.getSessionsCount() : Promise.resolve(null),
-    ])
+    const [sessions, totalCount] = await Promise.all([db.getSessions(limit, offset), limit !== null ? db.getSessionsCount() : Promise.resolve(null)])
 
     const response = { status: 'success', data: sessions || [] }
 

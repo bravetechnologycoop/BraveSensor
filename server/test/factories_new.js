@@ -180,10 +180,7 @@ async function deviceNewDBFactory(overrides = {}, pgClient) {
 }
 
 async function sessionNewDBFactory(overrides = {}, pgClient) {
-  const session = await db.createSession(
-    overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId',
-    pgClient,
-  )
+  const session = await db.createSession(overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId', pgClient)
   return session
 }
 

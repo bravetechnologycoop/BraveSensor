@@ -43,9 +43,7 @@ describe('API Device Endpoints', () => {
         await factories.deviceNewDBFactory({ clientId: this.client.clientId })
         await factories.deviceNewDBFactory({ clientId: this.client.clientId, displayName: 'Second Device' })
 
-        this.response = await this.agent
-          .get(`/api/clients/${this.client.clientId}/devices`)
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get(`/api/clients/${this.client.clientId}/devices`).set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -61,9 +59,7 @@ describe('API Device Endpoints', () => {
 
     describe('with valid authorization and no devices', () => {
       beforeEach(async () => {
-        this.response = await this.agent
-          .get(`/api/clients/${this.client.clientId}/devices`)
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get(`/api/clients/${this.client.clientId}/devices`).set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {

@@ -40,9 +40,7 @@ describe('API Contact Endpoints', () => {
   describe('GET /api/contacts - Get All Contacts', () => {
     describe('with valid authorization and no contacts', () => {
       beforeEach(async () => {
-        this.response = await this.agent
-          .get('/api/contacts')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/contacts').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -61,9 +59,7 @@ describe('API Contact Endpoints', () => {
         await db.createContact('Contact 1', 'Org1', this.client.clientId, null, null, null, [], null, null, null)
         await db.createContact('Contact 2', 'Org2', this.client.clientId, null, null, null, [], null, null, null)
 
-        this.response = await this.agent
-          .get('/api/contacts')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/contacts').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -81,22 +77,9 @@ describe('API Contact Endpoints', () => {
   describe('GET /api/contacts/:contactId - Get Specific Contact', () => {
     describe('with valid authorization and existing contact', () => {
       beforeEach(async () => {
-        this.contact = await db.createContact(
-          'Test Contact',
-          'Test Org',
-          this.client.clientId,
-          'test@example.com',
-          null,
-          null,
-          [],
-          null,
-          null,
-          null,
-        )
+        this.contact = await db.createContact('Test Contact', 'Test Org', this.client.clientId, 'test@example.com', null, null, [], null, null, null)
 
-        this.response = await this.agent
-          .get(`/api/contacts/${this.contact.contact_id}`)
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get(`/api/contacts/${this.contact.contact_id}`).set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -112,9 +95,7 @@ describe('API Contact Endpoints', () => {
 
     describe('with non-existent contact', () => {
       beforeEach(async () => {
-        this.response = await this.agent
-          .get('/api/contacts/non-existent-id')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/contacts/non-existent-id').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 404', () => {
@@ -133,9 +114,7 @@ describe('API Contact Endpoints', () => {
         const otherClient = await factories.clientNewDBFactory({ displayName: 'Other Client' })
         await db.createContact('Other Contact', 'Org3', otherClient.clientId, null, null, null, [], null, null, null)
 
-        this.response = await this.agent
-          .get(`/api/clients/${this.client.clientId}/contacts`)
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get(`/api/clients/${this.client.clientId}/contacts`).set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {

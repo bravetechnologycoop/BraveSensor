@@ -533,24 +533,18 @@ async function getClients(limit = null, offset = null, pgClient) {
       ORDER BY display_name
     `
     const params = []
-    
+
     if (limit !== null) {
       params.push(limit)
       queryText += ` LIMIT $${params.length}`
     }
-    
+
     if (offset !== null) {
       params.push(offset)
       queryText += ` OFFSET $${params.length}`
     }
 
-    const results = await helpers.runQuery(
-      'getClients',
-      queryText,
-      params,
-      pool,
-      pgClient,
-    )
+    const results = await helpers.runQuery('getClients', queryText, params, pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return []
@@ -565,13 +559,7 @@ async function getClients(limit = null, offset = null, pgClient) {
 
 async function getClientsCount(pgClient) {
   try {
-    const results = await helpers.runQuery(
-      'getClientsCount',
-      `SELECT COUNT(*) as count FROM clients`,
-      [],
-      pool,
-      pgClient,
-    )
+    const results = await helpers.runQuery('getClientsCount', `SELECT COUNT(*) as count FROM clients`, [], pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return 0
@@ -1015,24 +1003,18 @@ async function getDevices(limit = null, offset = null, pgClient) {
       ORDER BY c.display_name, d.display_name
     `
     const params = []
-    
+
     if (limit !== null) {
       params.push(limit)
       queryText += ` LIMIT $${params.length}`
     }
-    
+
     if (offset !== null) {
       params.push(offset)
       queryText += ` OFFSET $${params.length}`
     }
 
-    const results = await helpers.runQuery(
-      'getDevices',
-      queryText,
-      params,
-      pool,
-      pgClient,
-    )
+    const results = await helpers.runQuery('getDevices', queryText, params, pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return []
@@ -1047,13 +1029,7 @@ async function getDevices(limit = null, offset = null, pgClient) {
 
 async function getDevicesCount(pgClient) {
   try {
-    const results = await helpers.runQuery(
-      'getDevicesCount',
-      `SELECT COUNT(*) as count FROM devices`,
-      [],
-      pool,
-      pgClient,
-    )
+    const results = await helpers.runQuery('getDevicesCount', `SELECT COUNT(*) as count FROM devices`, [], pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return 0
@@ -2061,7 +2037,7 @@ async function createContact(
       shippingAddress,
       lastTouchpoint,
       shippingDate,
-      tags || [],  // Changed from tags,
+      tags || [], // Changed from tags,
     ]
 
     const results = await helpers.runQuery('createContact', queryText, queryParams, pool, pgClient)
@@ -2233,17 +2209,17 @@ async function getContactsForLanding(limit = null, offset = null, pgClient) {
       ORDER BY created_at DESC
     `
     const params = []
-    
+
     if (limit !== null) {
       params.push(limit)
       queryText += ` LIMIT $${params.length}`
     }
-    
+
     if (offset !== null) {
       params.push(offset)
       queryText += ` OFFSET $${params.length}`
     }
-    
+
     const results = await helpers.runQuery('getContactsForLanding', queryText, params, pool, pgClient)
     if (!results || !results.rows) return []
     // createContactFromRow is synchronous (returns Contact), map rows directly
@@ -2256,13 +2232,7 @@ async function getContactsForLanding(limit = null, offset = null, pgClient) {
 
 async function getContactsCount(pgClient) {
   try {
-    const results = await helpers.runQuery(
-      'getContactsCount',
-      `SELECT COUNT(*) as count FROM contacts`,
-      [],
-      pool,
-      pgClient,
-    )
+    const results = await helpers.runQuery('getContactsCount', `SELECT COUNT(*) as count FROM contacts`, [], pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return 0
@@ -2309,24 +2279,18 @@ async function getSessions(limit = null, offset = null, pgClient) {
       ORDER BY s.created_at DESC
     `
     const params = []
-    
+
     if (limit !== null) {
       params.push(limit)
       queryText += ` LIMIT $${params.length}`
     }
-    
+
     if (offset !== null) {
       params.push(offset)
       queryText += ` OFFSET $${params.length}`
     }
 
-    const results = await helpers.runQuery(
-      'getSessions',
-      queryText,
-      params,
-      pool,
-      pgClient,
-    )
+    const results = await helpers.runQuery('getSessions', queryText, params, pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return []
@@ -2341,13 +2305,7 @@ async function getSessions(limit = null, offset = null, pgClient) {
 
 async function getSessionsCount(pgClient) {
   try {
-    const results = await helpers.runQuery(
-      'getSessionsCount',
-      `SELECT COUNT(*) as count FROM sessions`,
-      [],
-      pool,
-      pgClient,
-    )
+    const results = await helpers.runQuery('getSessionsCount', `SELECT COUNT(*) as count FROM sessions`, [], pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return 0
@@ -2438,7 +2396,7 @@ module.exports = {
   getStillnessSurveyFollowupDelay,
   clearClientWithClientId,
 
-  createClientExtension,  // Add this line
+  createClientExtension, // Add this line
   updateClientExtension,
   getClientExtensionWithClientId,
 
@@ -2454,6 +2412,8 @@ module.exports = {
   getDeviceWithDeviceTwilioNumber,
 
   createSession,
+  getSessions,
+  getSessionsCount,
   getSessionsForDevice,
   getSessionWithSessionId,
   getSessionsWithClientId,
@@ -2493,13 +2453,4 @@ module.exports = {
   getContacts,
   getContactsForLanding,
   getContactsCount,
-
-  createSession,
-  getSessions,
-  getSessionsCount,
-  getSessionsForDevice,
-  getSessionWithSessionId,
-  getSessionsWithClientId,
-  getSessionsWithDeviceId,
-  getLatestSessionWithDeviceId,
 }

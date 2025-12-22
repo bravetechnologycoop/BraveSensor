@@ -44,9 +44,7 @@ describe('API Session Endpoints', () => {
         await factories.sessionNewDBFactory({ deviceId: this.device.deviceId })
         await factories.sessionNewDBFactory({ deviceId: this.device.deviceId })
 
-        this.response = await this.agent
-          .get(`/api/clients/${this.client.clientId}/sessions`)
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get(`/api/clients/${this.client.clientId}/sessions`).set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -62,9 +60,7 @@ describe('API Session Endpoints', () => {
 
     describe('with non-existent client', () => {
       beforeEach(async () => {
-        this.response = await this.agent
-          .get('/api/clients/non-existent-id/sessions')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/clients/non-existent-id/sessions').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 404', () => {
@@ -113,9 +109,7 @@ describe('API Session Endpoints', () => {
       beforeEach(async () => {
         this.session = await factories.sessionNewDBFactory({ deviceId: this.device.deviceId })
 
-        this.response = await this.agent
-          .get(`/api/sessions/${this.session.sessionId}`)
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get(`/api/sessions/${this.session.sessionId}`).set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 200', () => {
@@ -130,9 +124,7 @@ describe('API Session Endpoints', () => {
 
     describe('with non-existent session', () => {
       beforeEach(async () => {
-        this.response = await this.agent
-          .get('/api/sessions/non-existent-id')
-          .set('Authorization', BRAVE_API_KEY)
+        this.response = await this.agent.get('/api/sessions/non-existent-id').set('Authorization', BRAVE_API_KEY)
       })
 
       it('should return 404', () => {
