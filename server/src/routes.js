@@ -65,8 +65,21 @@ function configureRoutes(app) {
   // Session endpoints
   app.get('/api/sessions', api.validatePagination, api.authorize, api.handleGetSessions)
   app.get('/api/clients/:clientId/sessions', api.validateGetClientSessions, api.authorize, api.handleGetClientSessions)
+  app.get('/api/devices/:deviceId/sessions', api.validateGetDeviceSessions, api.authorize, api.handleGetDeviceSessions)
   app.get('/api/clients/:clientId/devices/:deviceId/sessions', api.validateGetClientDeviceSessions, api.authorize, api.handleGetClientDeviceSessions)
   app.get('/api/sessions/:sessionId', api.validateGetSession, api.authorize, api.handleGetSession)
+
+  // Event endpoints
+  app.get('/api/events', api.validatePagination, api.authorize, api.handleGetEvents)
+  app.get('/api/sessions/:sessionId/events', api.validateGetSessionEvents, api.authorize, api.handleGetSessionEvents)
+
+  // Notification endpoints
+  app.get('/api/notifications', api.validatePagination, api.authorize, api.handleGetNotifications)
+  app.get('/api/devices/:deviceId/notifications', api.validateGetDeviceNotifications, api.authorize, api.handleGetDeviceNotifications)
+
+  // Vitals endpoints
+  app.get('/api/vitals', api.validatePagination, api.authorize, api.handleGetVitals)
+  app.get('/api/devices/:deviceId/vitals', api.validatePagination, api.validateGetDeviceVitals, api.authorize, api.handleGetDeviceVitals)
 
   // Contact endpoints
   app.get('/api/contacts', api.validatePagination, api.authorize, api.handleGetContacts)

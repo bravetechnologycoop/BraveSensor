@@ -88,8 +88,12 @@ async function handleGetClients(req, res) {
   try {
     const limit = req.query.limit || null
     const offset = req.query.offset || null
+    const organization = req.query.organization || null
 
-    const [clients, totalCount] = await Promise.all([db.getClients(limit, offset), limit !== null ? db.getClientsCount() : Promise.resolve(null)])
+    const [clients, totalCount] = await Promise.all([
+      db.getClients(limit, offset, organization),
+      limit !== null ? db.getClientsCount(organization) : Promise.resolve(null),
+    ])
 
     const response = { status: 'success', data: clients }
 
@@ -220,6 +224,26 @@ async function handleGetClientDeviceSessions(req, res) {
   }
 }
 
+const validateGetDeviceSessions = Validator.param(['deviceId']).notEmpty()
+
+async function handleGetDeviceSessions(req, res) {
+  try {
+    const device = await db.getDeviceWithDeviceId(req.params.deviceId)
+
+    if (!device) {
+      res.status(404).send({ status: 'error', message: 'Not Found' })
+      return
+    }
+
+    const sessions = await db.getSessionsWithDeviceId(req.params.deviceId)
+
+    res.status(200).send({ status: 'success', data: sessions || [] })
+  } catch (error) {
+    helpers.logError(`Error getting device sessions: ${error.message}`)
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+  }
+}
+
 const validateGetSession = Validator.param(['sessionId']).notEmpty()
 
 async function handleGetSession(req, res) {
@@ -242,6 +266,7 @@ async function handleGetSessions(req, res) {
   try {
     const limit = req.query.limit || null
     const offset = req.query.offset || null
+    // Note: startDate, endDate, organization filtering removed for performance
 
     const [sessions, totalCount] = await Promise.all([db.getSessions(limit, offset), limit !== null ? db.getSessionsCount() : Promise.resolve(null)])
 
@@ -259,6 +284,168 @@ async function handleGetSessions(req, res) {
     res.status(200).send(response)
   } catch (error) {
     helpers.logError(`Error getting all sessions: ${error.message}`)
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+  }
+}
+
+// ============================================================
+// EVENT ENDPOINTS
+// ============================================================
+
+async function handleGetEvents(req, res) {
+  try {
+    const limit = req.query.limit || null
+    const offset = req.query.offset || null
+
+    const [events, totalCount] = await Promise.all([db.getEvents(limit, offset), limit !== null ? db.getEventsCount() : Promise.resolve(null)])
+
+    const response = { status: 'success', data: events || [] }
+
+    if (limit !== null) {
+      response.pagination = {
+        limit,
+        offset: offset || 0,
+        total: totalCount,
+        returned: events.length,
+      }
+    }
+
+    res.status(200).send(response)
+  } catch (error) {
+    helpers.logError(`Error getting all events: ${error.message}`)
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+  }
+}
+
+async function handleGetSessionEvents(req, res) {
+  try {
+    const { sessionId } = req.params
+    const session = await db.getSessionWithSessionId(sessionId)
+
+    if (!session) {
+      res.status(404).send({ status: 'error', message: 'Not Found' })
+      return
+    }
+
+    const events = await db.getEventsForSession(sessionId)
+    res.status(200).send({ status: 'success', data: events || [] })
+  } catch (error) {
+    helpers.logError(`Error getting events for session: ${error.message}`)
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+  }
+}
+
+// ============================================================
+// NOTIFICATION ENDPOINTS
+// ============================================================
+
+async function handleGetNotifications(req, res) {
+  try {
+    const limit = req.query.limit || null
+    const offset = req.query.offset || null
+
+    const [notifications, totalCount] = await Promise.all([
+      db.getNotifications(limit, offset),
+      limit !== null ? db.getNotificationsCount() : Promise.resolve(null),
+    ])
+
+    const response = { status: 'success', data: notifications || [] }
+
+    if (limit !== null) {
+      response.pagination = {
+        limit,
+        offset: offset || 0,
+        total: totalCount,
+        returned: notifications.length,
+      }
+    }
+
+    res.status(200).send(response)
+  } catch (error) {
+    helpers.logError(`Error getting all notifications: ${error.message}`)
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+  }
+}
+
+const validateGetDeviceNotifications = Validator.param(['deviceId']).notEmpty()
+
+async function handleGetDeviceNotifications(req, res) {
+  try {
+    const device = await db.getDeviceWithDeviceId(req.params.deviceId)
+
+    if (!device) {
+      res.status(404).send({ status: 'error', message: 'Not Found' })
+      return
+    }
+
+    const notifications = await db.getNotificationsForDevice(req.params.deviceId)
+
+    res.status(200).send({ status: 'success', data: notifications || [] })
+  } catch (error) {
+    helpers.logError(`Error getting device notifications: ${error.message}`)
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+  }
+}
+
+// ============================================================
+// VITALS ENDPOINTS
+// ============================================================
+
+async function handleGetVitals(req, res) {
+  try {
+    const limit = req.query.limit || null
+    const offset = req.query.offset || null
+
+    const [vitals, totalCount] = await Promise.all([db.getVitals(limit, offset), limit !== null ? db.getVitalsCount() : Promise.resolve(null)])
+
+    const response = { status: 'success', data: vitals || [] }
+
+    if (limit !== null) {
+      response.pagination = {
+        limit,
+        offset: offset || 0,
+        total: totalCount,
+        returned: vitals.length,
+      }
+    }
+
+    res.status(200).send(response)
+  } catch (error) {
+    helpers.logError(`Error getting all vitals: ${error.message}`)
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+  }
+}
+
+const validateGetDeviceVitals = Validator.param(['deviceId']).notEmpty()
+
+async function handleGetDeviceVitals(req, res) {
+  try {
+    const device = await db.getDeviceWithDeviceId(req.params.deviceId)
+
+    if (!device) {
+      res.status(404).send({ status: 'error', message: 'Not Found' })
+      return
+    }
+
+    const limit = req.query.limit || null
+    const offset = req.query.offset || null
+
+    const vitals = await db.getVitalsForDevice(req.params.deviceId, limit, offset)
+
+    const response = { status: 'success', data: vitals || [] }
+
+    // Note: Not including total count for per-device queries to keep it simple
+    if (limit !== null) {
+      response.pagination = {
+        limit,
+        offset: offset || 0,
+        returned: vitals.length,
+      }
+    }
+
+    res.status(200).send(response)
+  } catch (error) {
+    helpers.logError(`Error getting device vitals: ${error.message}`)
     res.status(500).send({ status: 'error', message: 'Internal Server Error' })
   }
 }
@@ -349,11 +536,25 @@ module.exports = {
   // Session endpoints
   handleGetClientSessions,
   handleGetClientDeviceSessions,
+  handleGetDeviceSessions,
   handleGetSession,
   handleGetSessions,
   validateGetClientSessions,
   validateGetClientDeviceSessions,
+  validateGetDeviceSessions,
   validateGetSession,
+  // Event endpoints
+  handleGetEvents,
+  handleGetSessionEvents,
+  validateGetSessionEvents: Validator.param('sessionId').notEmpty(),
+  // Notification endpoints
+  handleGetNotifications,
+  handleGetDeviceNotifications,
+  validateGetDeviceNotifications,
+  // Vitals endpoints
+  handleGetVitals,
+  handleGetDeviceVitals,
+  validateGetDeviceVitals,
   // Contact endpoints
   handleGetContact,
   handleGetContacts,

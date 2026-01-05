@@ -525,14 +525,30 @@ async function updateClient(
   }
 }
 
-async function getClients(limit = null, offset = null, pgClient) {
+async function getClients(limit = null, offset = null, organization = null, pgClient) {
   try {
     let queryText = `
-      SELECT *
-      FROM clients
-      ORDER BY display_name
+      SELECT 
+        c.*,
+        ce.country,
+        ce.country_subdivision,
+        ce.building_type,
+        ce.city,
+        ce.postal_code,
+        ce.funder,
+        ce.project,
+        ce.organization
+      FROM clients c
+      LEFT JOIN clients_extension ce ON c.client_id = ce.client_id
     `
     const params = []
+
+    if (organization !== null) {
+      params.push(organization)
+      queryText += ` WHERE (c.display_name = $${params.length} OR ce.organization = $${params.length})`
+    }
+
+    queryText += ` ORDER BY c.display_name`
 
     if (limit !== null) {
       params.push(limit)
@@ -550,16 +566,35 @@ async function getClients(limit = null, offset = null, pgClient) {
       return []
     }
 
-    return results.rows.map(r => createClientFromRow(r))
+    return results.rows.map(row => ({
+      ...createClientFromRow(row),
+      country: row.country || null,
+      countrySubdivision: row.country_subdivision || null,
+      buildingType: row.building_type || null,
+      city: row.city || null,
+      postalCode: row.postal_code || null,
+      funder: row.funder || null,
+      project: row.project || null,
+      organization: row.organization || null,
+    }))
   } catch (err) {
     helpers.logError(`Error running the getClients query: ${err.toString()}`)
     return []
   }
 }
 
-async function getClientsCount(pgClient) {
+async function getClientsCount(organization = null, pgClient) {
   try {
-    const results = await helpers.runQuery('getClientsCount', `SELECT COUNT(*) as count FROM clients`, [], pool, pgClient)
+    let queryText = `SELECT COUNT(*) as count FROM clients c`
+    const params = []
+
+    if (organization !== null) {
+      queryText += ` LEFT JOIN clients_extension ce ON c.client_id = ce.client_id`
+      params.push(organization)
+      queryText += ` WHERE (c.display_name = $${params.length} OR ce.organization = $${params.length})`
+    }
+
+    const results = await helpers.runQuery('getClientsCount', queryText, params, pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return 0
@@ -1528,6 +1563,53 @@ async function createEvent(sessionId, eventType, eventTypeDetails, phoneNumbers,
   }
 }
 
+async function getEvents(limit = null, offset = null, pgClient) {
+  try {
+    let queryText = `
+      SELECT *
+      FROM events
+      ORDER BY event_sent_at DESC
+    `
+    const params = []
+
+    if (limit !== null) {
+      params.push(limit)
+      queryText += ` LIMIT $${params.length}`
+    }
+
+    if (offset !== null) {
+      params.push(offset)
+      queryText += ` OFFSET $${params.length}`
+    }
+
+    const results = await helpers.runQuery('getEvents', queryText, params, pool, pgClient)
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createEventFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getEvents query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getEventsCount(pgClient) {
+  try {
+    const results = await helpers.runQuery('getEventsCount', `SELECT COUNT(*) as count FROM events`, [], pool, pgClient)
+
+    if (results === undefined || results.rows.length === 0) {
+      return 0
+    }
+
+    return parseInt(results.rows[0].count, 10)
+  } catch (err) {
+    helpers.logError(`Error running the getEventsCount query: ${err.toString()}`)
+    return 0
+  }
+}
+
 async function getEventsForSession(sessionId, pgClient) {
   try {
     // Note: Events ordered by ascending, first event to latest event
@@ -1748,6 +1830,86 @@ async function createVital(
   }
 }
 
+async function getVitals(limit = null, offset = null, pgClient) {
+  try {
+    let queryText = `
+      SELECT *
+      FROM vitals_cache
+      ORDER BY created_at DESC
+    `
+    const params = []
+
+    if (limit !== null) {
+      params.push(limit)
+      queryText += ` LIMIT $${params.length}`
+    }
+
+    if (offset !== null) {
+      params.push(offset)
+      queryText += ` OFFSET $${params.length}`
+    }
+
+    const results = await helpers.runQuery('getVitals', queryText, params, pool, pgClient)
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createVitalFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getVitals query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getVitalsCount(pgClient) {
+  try {
+    const results = await helpers.runQuery('getVitalsCount', `SELECT COUNT(*) as count FROM vitals_cache`, [], pool, pgClient)
+
+    if (results === undefined || results.rows.length === 0) {
+      return 0
+    }
+
+    return parseInt(results.rows[0].count, 10)
+  } catch (err) {
+    helpers.logError(`Error running the getVitalsCount query: ${err.toString()}`)
+    return 0
+  }
+}
+
+async function getVitalsForDevice(deviceId, limit = null, offset = null, pgClient) {
+  try {
+    let queryText = `
+      SELECT *
+      FROM vitals_cache
+      WHERE device_id = $1
+      ORDER BY created_at DESC
+    `
+    const params = [deviceId]
+
+    if (limit !== null) {
+      params.push(limit)
+      queryText += ` LIMIT $${params.length}`
+    }
+
+    if (offset !== null) {
+      params.push(offset)
+      queryText += ` OFFSET $${params.length}`
+    }
+
+    const results = await helpers.runQuery('getVitalsForDevice', queryText, params, pool, pgClient)
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createVitalFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getVitalsForDevice query: ${err.toString()}`)
+    return []
+  }
+}
+
 async function getLatestVitalWithDeviceId(deviceId, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -1827,6 +1989,53 @@ async function createNotification(deviceId, notificationType, pgClient) {
   } catch (err) {
     helpers.logError(`Error running the createNotification query: ${err.toString()}`)
     return null
+  }
+}
+
+async function getNotifications(limit = null, offset = null, pgClient) {
+  try {
+    let queryText = `
+      SELECT *
+      FROM notifications
+      ORDER BY notification_sent_at DESC
+    `
+    const params = []
+
+    if (limit !== null) {
+      params.push(limit)
+      queryText += ` LIMIT $${params.length}`
+    }
+
+    if (offset !== null) {
+      params.push(offset)
+      queryText += ` OFFSET $${params.length}`
+    }
+
+    const results = await helpers.runQuery('getNotifications', queryText, params, pool, pgClient)
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createNotificationFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getNotifications query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getNotificationsCount(pgClient) {
+  try {
+    const results = await helpers.runQuery('getNotificationsCount', `SELECT COUNT(*) as count FROM notifications`, [], pool, pgClient)
+
+    if (results === undefined || results.rows.length === 0) {
+      return 0
+    }
+
+    return parseInt(results.rows[0].count, 10)
+  } catch (err) {
+    helpers.logError(`Error running the getNotificationsCount query: ${err.toString()}`)
+    return 0
   }
 }
 
@@ -2273,11 +2482,7 @@ async function getContactsWithClientId(clientId, pgClient) {
 
 async function getSessions(limit = null, offset = null, pgClient) {
   try {
-    let queryText = `
-      SELECT s.*
-      FROM sessions s
-      ORDER BY s.created_at DESC
-    `
+    let queryText = 'SELECT * FROM sessions ORDER BY created_at DESC'
     const params = []
 
     if (limit !== null) {
@@ -2305,7 +2510,9 @@ async function getSessions(limit = null, offset = null, pgClient) {
 
 async function getSessionsCount(pgClient) {
   try {
-    const results = await helpers.runQuery('getSessionsCount', `SELECT COUNT(*) as count FROM sessions`, [], pool, pgClient)
+    const queryText = 'SELECT COUNT(*) as count FROM sessions'
+
+    const results = await helpers.runQuery('getSessionsCount', queryText, [], pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return 0
@@ -2426,6 +2633,8 @@ module.exports = {
   updateSessionRespondedVia,
 
   createEvent,
+  getEvents,
+  getEventsCount,
   getEventsForSession,
   getLatestRespondableTwilioEvent,
   checkEventExists,
@@ -2435,10 +2644,15 @@ module.exports = {
   getTeamsEventWithMessageId,
 
   createVital,
+  getVitals,
+  getVitalsCount,
+  getVitalsForDevice,
   getLatestVitalWithDeviceId,
   getLatestVitalsForDeviceIds,
 
   createNotification,
+  getNotifications,
+  getNotificationsCount,
   getNotificationsForDevice,
   getLatestNotification,
   getLatestConnectionNotification,
