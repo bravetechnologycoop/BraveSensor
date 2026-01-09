@@ -754,6 +754,13 @@ async function submitNewDevice(req, res) {
         return res.status(400).send(errorMessage)
       }
 
+      const existingDevice = await db.getDeviceWithParticleDeviceId(data.particleDeviceId)
+      if (existingDevice) {
+        const errorMessage = `Particle Device ID '${data.particleDeviceId}' already exists`
+        helpers.log(errorMessage)
+        return res.status(400).send(errorMessage)
+      }
+
       // default values for new devices created using dashboard
       const isDisplayed = true
       const isSendingAlerts = false
@@ -821,6 +828,13 @@ async function submitUpdateDevice(req, res) {
       const client = await db.getClientWithClientId(data.clientId)
       if (!client) {
         const errorMessage = `Client ID '${data.clientId}' does not exist`
+        helpers.log(errorMessage)
+        return res.status(400).send(errorMessage)
+      }
+
+      const existingDevice = await db.getDeviceWithParticleDeviceId(data.particleDeviceId)
+      if (existingDevice && existingDevice.deviceId !== deviceId) {
+        const errorMessage = `Particle Device ID '${data.particleDeviceId}' already exists`
         helpers.log(errorMessage)
         return res.status(400).send(errorMessage)
       }

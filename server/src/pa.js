@@ -84,6 +84,13 @@ async function handleCreateSensorLocation(req, res) {
 
     if (paApiKeys.includes(braveAPIKey) && paPasswords.includes(password)) {
       try {
+        const existingDevice = await db.getDeviceWithParticleDeviceId(particleDeviceID)
+        if (existingDevice) {
+          const errorMessage = `Particle Device ID '${particleDeviceID}' already exists`
+          helpers.log(errorMessage)
+          return res.status(409).send({ message: errorMessage })
+        }
+
         const newDevice = await db.createDevice(
           locationId,
           deviceDisplayName,
