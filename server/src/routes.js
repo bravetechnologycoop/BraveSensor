@@ -52,39 +52,96 @@ function configureRoutes(app) {
   app.post('/alert/teams', teamsEvents.validateTeamsEvent, teamsEvents.handleTeamsEvent)
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
 
-  // Brave Sensor API endpoints
-  // Client endpoints
-  app.get('/api/clients', api.validatePagination, api.authorize, api.handleGetClients)
-  app.get('/api/clients/:clientId', api.validateGetClient, api.authorize, api.handleGetClient)
+  // Brave Sensor API endpoints (legacy /api and versioned /api/v1)
+  const apiBases = ['/api', '/api/v1']
 
-  // Device endpoints
-  app.get('/api/devices', api.validatePagination, api.authorize, api.handleGetDevices)
-  app.get('/api/clients/:clientId/devices', api.validateGetClientDevices, api.authorize, api.handleGetClientDevices)
-  app.get('/api/clients/:clientId/devices/:deviceId', api.validateGetClientDevice, api.authorize, api.handleGetClientDevice)
+  apiBases.forEach(base => {
+    // Client endpoints
+    app.get(`${base}/clients`, api.validatePagination, api.authorize, api.handleGetClients)
+    app.get(`${base}/clients/:clientId`, api.validateGetClient, api.authorize, api.handleGetClient)
+    if (base === '/api/v1') {
+      app.get(`${base}/clients/:clientId/stats`, api.validateGetClient, api.authorize, api.handleGetClientStats)
+      app.get(
+        `${base}/clients/:clientId/timeline`,
+        api.validateGetClient,
+        api.validateTimeline,
+        api.authorize,
+        api.handleGetClientTimeline,
+      )
+    }
 
-  // Session endpoints
-  app.get('/api/sessions', api.validatePagination, api.authorize, api.handleGetSessions)
-  app.get('/api/clients/:clientId/sessions', api.validateGetClientSessions, api.authorize, api.handleGetClientSessions)
-  app.get('/api/devices/:deviceId/sessions', api.validateGetDeviceSessions, api.authorize, api.handleGetDeviceSessions)
-  app.get('/api/clients/:clientId/devices/:deviceId/sessions', api.validateGetClientDeviceSessions, api.authorize, api.handleGetClientDeviceSessions)
-  app.get('/api/sessions/:sessionId', api.validateGetSession, api.authorize, api.handleGetSession)
+    // Device endpoints
+    app.get(`${base}/devices`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetDevices)
+    app.get(
+      `${base}/clients/:clientId/devices`,
+      api.validateGetClientDevices,
+      api.validateFilters,
+      api.authorize,
+      api.handleGetClientDevices,
+    )
+    app.get(
+      `${base}/clients/:clientId/devices/:deviceId`,
+      api.validateGetClientDevice,
+      api.validateFilters,
+      api.authorize,
+      api.handleGetClientDevice,
+    )
 
-  // Event endpoints
-  app.get('/api/events', api.validatePagination, api.authorize, api.handleGetEvents)
-  app.get('/api/sessions/:sessionId/events', api.validateGetSessionEvents, api.authorize, api.handleGetSessionEvents)
+    // Session endpoints
+    app.get(`${base}/sessions`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetSessions)
+    app.get(
+      `${base}/clients/:clientId/sessions`,
+      api.validateGetClientSessions,
+      api.validateFilters,
+      api.authorize,
+      api.handleGetClientSessions,
+    )
+    app.get(
+      `${base}/devices/:deviceId/sessions`,
+      api.validateGetDeviceSessions,
+      api.validateFilters,
+      api.authorize,
+      api.handleGetDeviceSessions,
+    )
+    app.get(
+      `${base}/clients/:clientId/devices/:deviceId/sessions`,
+      api.validateGetClientDeviceSessions,
+      api.validateFilters,
+      api.authorize,
+      api.handleGetClientDeviceSessions,
+    )
+    app.get(`${base}/sessions/:sessionId`, api.validateGetSession, api.validateFilters, api.authorize, api.handleGetSession)
 
-  // Notification endpoints
-  app.get('/api/notifications', api.validatePagination, api.authorize, api.handleGetNotifications)
-  app.get('/api/devices/:deviceId/notifications', api.validateGetDeviceNotifications, api.authorize, api.handleGetDeviceNotifications)
+    // Event endpoints
+    app.get(`${base}/events`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetEvents)
+    app.get(`${base}/sessions/:sessionId/events`, api.validateGetSessionEvents, api.validateFilters, api.authorize, api.handleGetSessionEvents)
 
-  // Vitals endpoints
-  app.get('/api/vitals', api.validatePagination, api.authorize, api.handleGetVitals)
-  app.get('/api/devices/:deviceId/vitals', api.validatePagination, api.validateGetDeviceVitals, api.authorize, api.handleGetDeviceVitals)
+    // Notification endpoints
+    app.get(`${base}/notifications`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetNotifications)
+    app.get(
+      `${base}/devices/:deviceId/notifications`,
+      api.validateGetDeviceNotifications,
+      api.validateFilters,
+      api.authorize,
+      api.handleGetDeviceNotifications,
+    )
 
-  // Contact endpoints
-  app.get('/api/contacts', api.validatePagination, api.authorize, api.handleGetContacts)
-  app.get('/api/contacts/:contactId', api.validateGetContact, api.authorize, api.handleGetContact)
-  app.get('/api/clients/:clientId/contacts', api.validateGetClientContacts, api.authorize, api.handleGetClientContacts)
+    // Vitals endpoints
+    app.get(`${base}/vitals`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetVitals)
+    app.get(
+      `${base}/devices/:deviceId/vitals`,
+      api.validatePagination,
+      api.validateFilters,
+      api.validateGetDeviceVitals,
+      api.authorize,
+      api.handleGetDeviceVitals,
+    )
+
+    // Contact endpoints
+    app.get(`${base}/contacts`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetContacts)
+    app.get(`${base}/contacts/:contactId`, api.validateGetContact, api.validateFilters, api.authorize, api.handleGetContact)
+    app.get(`${base}/clients/:clientId/contacts`, api.validateGetClientContacts, api.validateFilters, api.authorize, api.handleGetClientContacts)
+  })
 
   app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
   app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)
