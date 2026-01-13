@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+- Add unique constraint on particle device id (CU-86dxzrvv7)
+
 ## [12.2.6] - 2025-12-09
 - Add contacts page
 - Add sort devices by last seen and door last seen
