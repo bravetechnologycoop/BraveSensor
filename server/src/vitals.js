@@ -122,8 +122,7 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
 
     // Check time window only for reminder notifications, not initial disconnection alerts
     const isReminderNotification =
-      notificationType === NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER ||
-      notificationType === NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
+      notificationType === NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER || notificationType === NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
 
     if (isReminderNotification && !helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime) && twilioMessageKey) {
       // Log that reminder notifications were skipped due to time window
