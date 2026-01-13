@@ -11,6 +11,8 @@ the code was deployed.
 
 ## [Unreleased]
 
+- Initial disconnection messages now bypass operating hours time window, while disconnection reminders remain within the operating (CU-86dz84kvf)
+
 ## [12.2.6] - 2025-12-09
 - Add contacts page
 - Add sort devices by last seen and door last seen
