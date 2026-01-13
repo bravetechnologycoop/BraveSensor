@@ -120,10 +120,15 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
       notificationType = isInitialDoorAlert ? NOTIFICATION_TYPE.DOOR_DISCONNECTED : NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
     }
 
-    if (!helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime) && twilioMessageKey) {
-      // Log that notifications were skipped due to time window
+    // Check time window only for reminder notifications, not initial disconnection alerts
+    const isReminderNotification = 
+      notificationType === NOTIFICATION_TYPE.DEVICE_DISCONNECTED_REMINDER || 
+      notificationType === NOTIFICATION_TYPE.DOOR_DISCONNECTED_REMINDER
+
+    if (isReminderNotification && !helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime) && twilioMessageKey) {
+      // Log that reminder notifications were skipped due to time window
       helpers.log(
-        `Notification ${twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`,
+        `Reminder notification ${twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`,
       )
       return
     }
