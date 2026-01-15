@@ -51,6 +51,8 @@
                             <th scope="col">Session Status</th>
                             <th scope="col">Response Time</th>
                             <th scope="col">Survey Category</th>
+                            <th scope="col">Send Message</th>
+                            <th scope="col">Send Test Alert</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,6 +63,12 @@
                             <td>{{sessionStatus}}</td>
                             <td>{{#responseTime}}{{responseTime.minutes}}m {{responseTime.seconds}}s{{/responseTime}}{{^responseTime}}N/A{{/responseTime}}</td>
                             <td>{{#selectedSurveyCategory}}{{selectedSurveyCategory}}{{/selectedSurveyCategory}}{{^selectedSurveyCategory}}N/A{{/selectedSurveyCategory}}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="showMessageModal('{{deviceId}}')">Send Message</button>
+                            </td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="showTestAlertModal('{{deviceId}}')">Send Test Alert</button>
+                            </td>
                         </tr>
                     {{/allSessions}}
                     </tbody>
