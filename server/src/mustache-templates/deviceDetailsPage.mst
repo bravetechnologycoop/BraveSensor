@@ -51,6 +51,8 @@
                             <th scope="col">Session Status</th>
                             <th scope="col">Response Time</th>
                             <th scope="col">Survey Category</th>
+                            <th scope="col">Send Message</th>
+                            <th scope="col">Send Test Alert</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,10 +63,23 @@
                             <td>{{sessionStatus}}</td>
                             <td>{{#responseTime}}{{responseTime.minutes}}m {{responseTime.seconds}}s{{/responseTime}}{{^responseTime}}N/A{{/responseTime}}</td>
                             <td>{{#selectedSurveyCategory}}{{selectedSurveyCategory}}{{/selectedSurveyCategory}}{{^selectedSurveyCategory}}N/A{{/selectedSurveyCategory}}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="showMessageModal('{{deviceId}}')">Send Message</button>
+                            </td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="showTestAlertModal('{{deviceId}}')">Send Test Alert</button>
+                            </td>
                         </tr>
                     {{/allSessions}}
                     </tbody>
                 </table>
+            </div>
+            <br>
+            
+            <h5>Troubleshooting</h5>
+            <div class="info-box">
+                <button class="btn btn-primary" onclick="showMessageModal('{{deviceId}}')">Send Custom Message</button>
+                <button class="btn btn-warning" onclick="showTestAlertModal('{{deviceId}}')">Send Test Alert</button>
             </div>
             <br>
 
@@ -74,6 +89,116 @@
         {{/device}}
         </div>
     </div>
+    
+    <!-- Message Modal -->
+    <div class="modal fade" id="messageModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Custom Message</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form id="messageForm" method="POST" action="/devices/{{device.deviceId}}/send-message">
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <strong>Device:</strong> {{device.displayName}}<br>
+                            You can include the device name in your message using <code>{deviceName}</code>
+                            {{#client.responderPhoneNumbers}}
+                            <hr>
+                            <strong>Message will be sent to:</strong><br>
+                            {{#client.responderPhoneNumbers}}
+                            <span class="badge badge-primary">{{.}}</span>
+                            {{/client.responderPhoneNumbers}}
+                            {{/client.responderPhoneNumbers}}
+                            {{^client.responderPhoneNumbers}}
+                            <hr>
+                            <strong class="text-danger">⚠️ No responder phone numbers configured</strong>
+                            {{/client.responderPhoneNumbers}}
+                        </div>
+                        <div class="form-group">
+                            <label for="messageText">Message:</label>
+                            <textarea class="form-control" id="messageText" name="message" rows="4" required></textarea>
+                            <small class="form-text text-muted">Use {deviceName} to insert the device name</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Send Message</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Test Alert Modal -->
+    <div class="modal fade" id="testAlertModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Test Alert</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form id="testAlertForm" method="POST" action="/devices/{{device.deviceId}}/send-test-alert">
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <strong>⚠️ Warning:</strong> This will send a <strong>TEST ALERT</strong> to all responders for device <strong>{{device.displayName}}</strong>.<br>
+                            The alert will be clearly labeled as a test and will auto-populate the survey category as "test".
+                            {{#client.responderPhoneNumbers}}
+                            <hr>
+                            <strong>Alert will be sent to:</strong><br>
+                            {{#client.responderPhoneNumbers}}
+                            <span class="badge badge-warning">{{.}}</span>
+                            {{/client.responderPhoneNumbers}}
+                            {{/client.responderPhoneNumbers}}
+                            {{^client.responderPhoneNumbers}}
+                            <hr>
+                            <strong class="text-danger">⚠️ No responder phone numbers configured</strong>
+                            {{/client.responderPhoneNumbers}}
+                        </div>
+                        <div class="form-group">
+                            <label for="alertType">Alert Type:</label>
+                            <select class="form-control" id="alertType" name="alertType" required>
+                                <option value="stillness">Stillness Alert</option>
+                                <option value="duration">Duration Alert</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">Send Test Alert</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showMessageModal(deviceId) {
+            $('#messageModal').modal('show')
+        }
+        
+        function showTestAlertModal(deviceId) {
+            $('#testAlertModal').modal('show')
+        }
+        
+        $('#messageForm').on('submit', function(e) {
+            if (!confirm('Are you sure you want to send this message?')) {
+                e.preventDefault()
+                return false
+            }
+        })
+        
+        $('#testAlertForm').on('submit', function(e) {
+            if (!confirm('Are you sure you want to send a TEST ALERT? This will notify all responders.')) {
+                e.preventDefault()
+                return false
+            }
+        })
+    </script>
     
     <script>
         function reloadPage() {
