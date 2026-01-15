@@ -193,6 +193,40 @@ describe('dashboard.js integration tests: submitNewDeviceTest', () => {
     })
   })
 
+  describe('for a valid request with existing particle device ID', () => {
+    beforeEach(async () => {
+      await factories.deviceNewDBFactory({
+        locationId: 'existingLocation123',
+        clientId: this.defaultClient.clientId,
+        particleDeviceId: 'duplicateParticle456',
+      })
+
+      await this.agent.post('/login').send({
+        username: helpers.getEnvVar('WEB_USERNAME'),
+        password: helpers.getEnvVar('WEB_PASSWORD'),
+      })
+
+      const duplicateRequest = {
+        locationId: 'newLocation456',
+        displayName: 'New Device',
+        clientId: this.defaultClient.clientId,
+        particleDeviceId: 'duplicateParticle456',
+        deviceType: DEVICE_TYPE.SENSOR_SINGLESTALL,
+        deviceTwilioNumber: '+11234567890',
+      }
+
+      this.response = await this.agent.post('/devices').send(duplicateRequest)
+    })
+
+    it('should return 400', () => {
+      expect(this.response).to.have.status(400)
+    })
+
+    it('should return appropriate error message', () => {
+      expect(this.response.text).to.equal("Particle Device ID 'duplicateParticle456' already exists")
+    })
+  })
+
   describe('for a valid request', () => {
     beforeEach(async () => {
       await this.agent.post('/login').send({
