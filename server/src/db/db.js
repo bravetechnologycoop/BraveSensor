@@ -607,6 +607,86 @@ async function getClientsCount(organization = null, pgClient) {
   }
 }
 
+async function getDeviceCountsByClient(clientIds, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getDeviceCountsByClient',
+      `
+      SELECT client_id, COUNT(*)::int AS count
+      FROM devices
+      WHERE client_id = ANY($1::uuid[])
+      GROUP BY client_id
+      `,
+      [clientIds],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return {}
+    }
+
+    return Object.fromEntries(results.rows.map(r => [r.client_id, r.count]))
+  } catch (err) {
+    helpers.logError(`Error running the getDeviceCountsByClient query: ${err.toString()}`)
+    return {}
+  }
+}
+
+async function getSessionCountsByClient(clientIds, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getSessionCountsByClient',
+      `
+      SELECT d.client_id, COUNT(*)::int AS count
+      FROM sessions s
+      JOIN devices d ON d.device_id = s.device_id
+      WHERE d.client_id = ANY($1::uuid[])
+      GROUP BY d.client_id
+      `,
+      [clientIds],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return {}
+    }
+
+    return Object.fromEntries(results.rows.map(r => [r.client_id, r.count]))
+  } catch (err) {
+    helpers.logError(`Error running the getSessionCountsByClient query: ${err.toString()}`)
+    return {}
+  }
+}
+
+async function getNotificationCountsByClient(clientIds, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getNotificationCountsByClient',
+      `
+      SELECT d.client_id, COUNT(*)::int AS count
+      FROM notifications n
+      JOIN devices d ON d.device_id = n.device_id
+      WHERE d.client_id = ANY($1::uuid[])
+      GROUP BY d.client_id
+      `,
+      [clientIds],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return {}
+    }
+
+    return Object.fromEntries(results.rows.map(r => [r.client_id, r.count]))
+  } catch (err) {
+    helpers.logError(`Error running the getNotificationCountsByClient query: ${err.toString()}`)
+    return {}
+  }
+}
+
 async function getActiveClients(pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -1787,6 +1867,32 @@ async function getTeamsEventWithMessageId(messageId, pgClient) {
   }
 }
 
+async function getTeamsEventsForSession(sessionId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getTeamsEventsForSession',
+      `
+      SELECT *
+      FROM teams_events
+      WHERE session_id = $1
+      ORDER BY event_sent_at DESC
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createTeamsEventFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getTeamsEventsForSession query: ${err.toString()}`)
+    return []
+  }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function createVital(
@@ -1959,6 +2065,77 @@ async function getLatestVitalsForDeviceIds(deviceIds, pgClient) {
     return results.rows.map(row => createVitalFromRow(row))
   } catch (err) {
     helpers.logError(`Error running the getLatestVitalsForDeviceIds query: ${err.toString()}`)
+    return []
+  }
+}
+
+async function getLatestVitalForDevice(deviceId, pgClient) {
+  try {
+    // First try vitals_cache
+    const cacheResults = await helpers.runQuery(
+      'getLatestVitalForDevice_cache',
+      `
+      SELECT *
+      FROM vitals_cache
+      WHERE device_id = $1
+      LIMIT 1
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (cacheResults && cacheResults.rows.length > 0) {
+      return createVitalFromRow(cacheResults.rows[0])
+    }
+
+    // Fallback to vitals table
+    const vitalResults = await helpers.runQuery(
+      'getLatestVitalForDevice_vitals',
+      `
+      SELECT *
+      FROM vitals
+      WHERE device_id = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (vitalResults && vitalResults.rows.length > 0) {
+      return createVitalFromRow(vitalResults.rows[0])
+    }
+
+    return null
+  } catch (err) {
+    helpers.logError(`Error running the getLatestVitalForDevice query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getAllVitalsCache(pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getAllVitalsCache',
+      `
+      SELECT *
+      FROM vitals_cache
+      ORDER BY created_at DESC
+      `,
+      [],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createVitalFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getAllVitalsCache query: ${err.toString()}`)
     return []
   }
 }
@@ -2480,10 +2657,24 @@ async function getContactsWithClientId(clientId, pgClient) {
   }
 }
 
-async function getSessions(limit = null, offset = null, pgClient) {
+async function getSessions(limit = null, offset = null, filters = {}, pgClient) {
   try {
-    let queryText = 'SELECT * FROM sessions ORDER BY created_at DESC'
+    const { category, status } = filters
+    const conditions = []
     const params = []
+
+    if (category) {
+      params.push(category)
+      conditions.push(`selected_survey_category = $${params.length}`)
+    }
+
+    if (status) {
+      params.push(status)
+      conditions.push(`session_status = $${params.length}`)
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    let queryText = `SELECT * FROM sessions ${where} ORDER BY created_at DESC`
 
     if (limit !== null) {
       params.push(limit)
@@ -2508,11 +2699,26 @@ async function getSessions(limit = null, offset = null, pgClient) {
   }
 }
 
-async function getSessionsCount(pgClient) {
+async function getSessionsCount(filters = {}, pgClient) {
   try {
-    const queryText = 'SELECT COUNT(*) as count FROM sessions'
+    const { category, status } = filters
+    const conditions = []
+    const params = []
 
-    const results = await helpers.runQuery('getSessionsCount', queryText, [], pool, pgClient)
+    if (category) {
+      params.push(category)
+      conditions.push(`selected_survey_category = $${params.length}`)
+    }
+
+    if (status) {
+      params.push(status)
+      conditions.push(`session_status = $${params.length}`)
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    const queryText = `SELECT COUNT(*) as count FROM sessions ${where}`
+
+    const results = await helpers.runQuery('getSessionsCount', queryText, params, pool, pgClient)
 
     if (results === undefined || results.rows.length === 0) {
       return 0
@@ -2594,6 +2800,9 @@ module.exports = {
   updateClient,
   getClients,
   getClientsCount,
+  getDeviceCountsByClient,
+  getSessionCountsByClient,
+  getNotificationCountsByClient,
   getActiveClients,
   getMergedClientsWithExtensions,
   getClientsWithResponderPhoneNumber,
@@ -2642,6 +2851,7 @@ module.exports = {
   createTeamsEvent,
   getLatestRespondableTeamsEvent,
   getTeamsEventWithMessageId,
+  getTeamsEventsForSession,
 
   createVital,
   getVitals,
@@ -2649,6 +2859,8 @@ module.exports = {
   getVitalsForDevice,
   getLatestVitalWithDeviceId,
   getLatestVitalsForDeviceIds,
+  getLatestVitalForDevice,
+  getAllVitalsCache,
 
   createNotification,
   getNotifications,

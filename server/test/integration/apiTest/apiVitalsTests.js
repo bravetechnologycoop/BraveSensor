@@ -181,4 +181,113 @@ describe('API Vitals Endpoints', () => {
       })
     })
   })
+
+  describe('GET /api/devices/:deviceId/vitals/latest - Get Latest Vital for Device', () => {
+    describe('with valid authorization and existing vitals', () => {
+      beforeEach(async () => {
+        const client = await factories.clientNewDBFactory()
+        this.device = await factories.deviceNewDBFactory({ clientId: client.clientId })
+
+        // Create multiple vitals - latest should be returned
+        await db.createVital(this.device.deviceId, 'POWER_ON', new Date(), false, false, 0, 0)
+        await new Promise(resolve => setTimeout(resolve, 10)) // Small delay
+        const latestVital = await db.createVital(this.device.deviceId, 'POWER_ON', new Date(), false, false, 0, 0)
+        
+        this.latestVitalId = latestVital.vitalId
+
+        this.response = await this.agent.get(`/api/devices/${this.device.deviceId}/vitals/latest`).set('Authorization', BRAVE_API_KEY)
+      })
+
+      it('should return 200', () => {
+        expect(this.response).to.have.status(200)
+      })
+
+      it('should return the latest vital only', () => {
+        expect(this.response.body.status).to.equal('success')
+        expect(this.response.body.data).to.be.an('object')
+        expect(this.response.body.data.deviceId).to.equal(this.device.deviceId)
+        expect(this.response.body.data.vitalId).to.equal(this.latestVitalId)
+      })
+    })
+
+    describe('with valid authorization and no vitals', () => {
+      beforeEach(async () => {
+        const client = await factories.clientNewDBFactory()
+        this.device = await factories.deviceNewDBFactory({ clientId: client.clientId })
+
+        this.response = await this.agent.get(`/api/devices/${this.device.deviceId}/vitals/latest`).set('Authorization', BRAVE_API_KEY)
+      })
+
+      it('should return 200', () => {
+        expect(this.response).to.have.status(200)
+      })
+
+      it('should return null', () => {
+        expect(this.response.body.status).to.equal('success')
+        expect(this.response.body.data).to.be.null
+      })
+    })
+
+    describe('with non-existent device', () => {
+      beforeEach(async () => {
+        this.response = await this.agent.get('/api/devices/non-existent-id/vitals/latest').set('Authorization', BRAVE_API_KEY)
+      })
+
+      it('should return 404', () => {
+        expect(this.response).to.have.status(404)
+      })
+    })
+  })
+
+  describe('GET /api/vitals-cache - Get All Cached Vitals', () => {
+    describe('without authorization', () => {
+      beforeEach(async () => {
+        this.response = await this.agent.get('/api/vitals-cache')
+      })
+
+      it('should return 401', () => {
+        expect(this.response).to.have.status(401)
+      })
+    })
+
+    describe('with valid authorization and no vitals', () => {
+      beforeEach(async () => {
+        this.response = await this.agent.get('/api/vitals-cache').set('Authorization', BRAVE_API_KEY)
+      })
+
+      it('should return 200', () => {
+        expect(this.response).to.have.status(200)
+      })
+
+      it('should return empty array', () => {
+        expect(this.response.body.status).to.equal('success')
+        expect(this.response.body.data).to.be.an('array')
+        expect(this.response.body.data).to.have.length(0)
+      })
+    })
+
+    describe('with valid authorization and existing cached vitals', () => {
+      beforeEach(async () => {
+        const client = await factories.clientNewDBFactory()
+        const device1 = await factories.deviceNewDBFactory({ clientId: client.clientId })
+        const device2 = await factories.deviceNewDBFactory({ clientId: client.clientId })
+
+        // Create vitals for multiple devices
+        await db.createVital(device1.deviceId, 'POWER_ON', new Date(), false, false, 0, 0)
+        await db.createVital(device2.deviceId, 'POWER_ON', new Date(), false, false, 0, 0)
+
+        this.response = await this.agent.get('/api/vitals-cache').set('Authorization', BRAVE_API_KEY)
+      })
+
+      it('should return 200', () => {
+        expect(this.response).to.have.status(200)
+      })
+
+      it('should return all cached vitals', () => {
+        expect(this.response.body.status).to.equal('success')
+        expect(this.response.body.data).to.be.an('array')
+        expect(this.response.body.data.length).to.be.at.least(2)
+      })
+    })
+  })
 })

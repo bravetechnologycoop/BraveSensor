@@ -115,6 +115,7 @@ function configureRoutes(app) {
     // Event endpoints
     app.get(`${base}/events`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetEvents)
     app.get(`${base}/sessions/:sessionId/events`, api.validateGetSessionEvents, api.validateFilters, api.authorize, api.handleGetSessionEvents)
+    app.get(`${base}/sessions/:sessionId/teams-events`, api.validateGetSessionTeamsEvents, api.validateFilters, api.authorize, api.handleGetSessionTeamsEvents)
 
     // Notification endpoints
     app.get(`${base}/notifications`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetNotifications)
@@ -128,6 +129,7 @@ function configureRoutes(app) {
 
     // Vitals endpoints
     app.get(`${base}/vitals`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetVitals)
+    app.get(`${base}/vitals-cache`, api.authorize, api.handleGetVitalsCache)
     app.get(
       `${base}/devices/:deviceId/vitals`,
       api.validatePagination,
@@ -135,6 +137,12 @@ function configureRoutes(app) {
       api.validateGetDeviceVitals,
       api.authorize,
       api.handleGetDeviceVitals,
+    )
+    app.get(
+      `${base}/devices/:deviceId/vitals/latest`,
+      api.validateGetDeviceLatestVital,
+      api.authorize,
+      api.handleGetDeviceLatestVital,
     )
 
     // Contact endpoints

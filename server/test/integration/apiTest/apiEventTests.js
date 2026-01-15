@@ -159,4 +159,65 @@ describe('API Event Endpoints', () => {
       })
     })
   })
+
+  describe('GET /api/sessions/:sessionId/teams-events - Get Teams Events for Session', () => {
+    describe('with valid authorization and existing teams events', () => {
+      beforeEach(async () => {
+        const client = await factories.clientNewDBFactory()
+        const device = await factories.deviceNewDBFactory({ clientId: client.clientId })
+        this.session = await factories.sessionNewDBFactory({ deviceId: device.deviceId })
+        const otherSession = await factories.sessionNewDBFactory({ deviceId: device.deviceId })
+
+        // Create teams events for this session
+        await db.createTeamsEvent(this.session.sessionId, 'DURATION_ALERT', null, 'msg-123')
+        await db.createTeamsEvent(this.session.sessionId, 'STILLNESS_ALERT', null, 'msg-456')
+
+        // Create teams event for other session (should not be returned)
+        await db.createTeamsEvent(otherSession.sessionId, 'DURATION_ALERT', null, 'msg-789')
+
+        this.response = await this.agent.get(`/api/sessions/${this.session.sessionId}/teams-events`).set('Authorization', BRAVE_API_KEY)
+      })
+
+      it('should return 200', () => {
+        expect(this.response).to.have.status(200)
+      })
+
+      it('should return teams events for the session only', () => {
+        expect(this.response.body.status).to.equal('success')
+        expect(this.response.body.data).to.be.an('array')
+        expect(this.response.body.data).to.have.length(2)
+        expect(this.response.body.data.every(event => event.sessionId === this.session.sessionId)).to.be.true
+      })
+    })
+
+    describe('with valid authorization and no teams events', () => {
+      beforeEach(async () => {
+        const client = await factories.clientNewDBFactory()
+        const device = await factories.deviceNewDBFactory({ clientId: client.clientId })
+        this.session = await factories.sessionNewDBFactory({ deviceId: device.deviceId })
+
+        this.response = await this.agent.get(`/api/sessions/${this.session.sessionId}/teams-events`).set('Authorization', BRAVE_API_KEY)
+      })
+
+      it('should return 200', () => {
+        expect(this.response).to.have.status(200)
+      })
+
+      it('should return empty array', () => {
+        expect(this.response.body.status).to.equal('success')
+        expect(this.response.body.data).to.be.an('array')
+        expect(this.response.body.data).to.have.length(0)
+      })
+    })
+
+    describe('with non-existent session', () => {
+      beforeEach(async () => {
+        this.response = await this.agent.get('/api/sessions/00000000-0000-0000-0000-000000000000/teams-events').set('Authorization', BRAVE_API_KEY)
+      })
+
+      it('should return 404', () => {
+        expect(this.response).to.have.status(404)
+      })
+    })
+  })
 })

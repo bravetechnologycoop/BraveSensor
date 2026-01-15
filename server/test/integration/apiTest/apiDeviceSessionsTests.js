@@ -182,3 +182,79 @@ describe('API endpoint for device sessions: GET /api/devices/:deviceId/sessions'
     expect(response2.body.data[0].deviceId).to.equal(this.device2.deviceId)
   })
 })
+
+describe('API endpoint for all sessions with filters: GET /api/sessions', () => {
+  beforeEach(async function beforeEachSetup() {
+    this.agent = await chai.request.agent(server)
+    sandbox.spy(helpers, 'logError')
+    await db.clearAllTables()
+
+    // Create test clients, devices and sessions with different categories and statuses
+    const client = await factories.clientNewDBFactory({ displayName: 'Test Client' })
+    const device = await factories.deviceNewDBFactory({ clientId: client.clientId })
+
+    this.session1 = await factories.sessionNewDBFactory({
+      deviceId: device.deviceId,
+      sessionStatus: 'ACTIVE',
+      selectedSurveyCategory: 'DURATION',
+    })
+    this.session2 = await factories.sessionNewDBFactory({
+      deviceId: device.deviceId,
+      sessionStatus: 'COMPLETED',
+      selectedSurveyCategory: 'DURATION',
+    })
+    this.session3 = await factories.sessionNewDBFactory({
+      deviceId: device.deviceId,
+      sessionStatus: 'ACTIVE',
+      selectedSurveyCategory: 'STILLNESS',
+    })
+  })
+
+  afterEach(async () => {
+    await db.clearAllTables()
+    sandbox.restore()
+  })
+
+  it('should filter sessions by category', async function testFilterByCategory() {
+    const response = await this.agent.get('/api/sessions?category=DURATION').set('Authorization', braveApiKey)
+
+    expect(response).to.have.status(200)
+    expect(response.body.status).to.equal('success')
+    expect(response.body.data).to.be.an('array')
+    expect(response.body.data).to.have.length(2)
+    expect(response.body.data.every(s => s.selectedSurveyCategory === 'DURATION')).to.be.true
+  })
+
+  it('should filter sessions by status', async function testFilterByStatus() {
+    const response = await this.agent.get('/api/sessions?status=ACTIVE').set('Authorization', braveApiKey)
+
+    expect(response).to.have.status(200)
+    expect(response.body.status).to.equal('success')
+    expect(response.body.data).to.be.an('array')
+    expect(response.body.data).to.have.length(2)
+    expect(response.body.data.every(s => s.sessionStatus === 'ACTIVE')).to.be.true
+  })
+
+  it('should filter sessions by both category and status', async function testFilterByCategoryAndStatus() {
+    const response = await this.agent.get('/api/sessions?category=DURATION&status=ACTIVE').set('Authorization', braveApiKey)
+
+    expect(response).to.have.status(200)
+    expect(response.body.status).to.equal('success')
+    expect(response.body.data).to.be.an('array')
+    expect(response.body.data).to.have.length(1)
+    expect(response.body.data[0].sessionId).to.equal(this.session1.sessionId)
+    expect(response.body.data[0].selectedSurveyCategory).to.equal('DURATION')
+    expect(response.body.data[0].sessionStatus).to.equal('ACTIVE')
+  })
+
+  it('should include selectedSurveyCategory in light fields', async function testLightFieldsIncludeCategory() {
+    const response = await this.agent.get('/api/sessions?fields=light').set('Authorization', braveApiKey)
+
+    expect(response).to.have.status(200)
+    expect(response.body.status).to.equal('success')
+    expect(response.body.data).to.be.an('array')
+    expect(response.body.data).to.have.length(3)
+    expect(response.body.data[0]).to.have.property('selectedSurveyCategory')
+    expect(response.body.data[0]).to.not.have.property('alertReason')
+  })
+})

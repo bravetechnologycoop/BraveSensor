@@ -153,6 +153,8 @@ const validateFilters = [
   Validator.query('fields').optional().isIn(['light', 'full']),
   Validator.query('date_from').optional().isISO8601().toDate(),
   Validator.query('date_to').optional().isISO8601().toDate(),
+  Validator.query('category').optional().isString(),
+  Validator.query('status').optional().isString(),
 ]
 
 const validateTimeline = [
@@ -205,6 +207,7 @@ async function handleGetClients(req, res) {
     const limit = req.query.limit || null
     const offset = req.query.offset || null
     const organization = req.query.organization || null
+    const includeStats = req.query.include === 'stats'
 
     const [clients, totalCount] = await Promise.all([
       db.getClients(limit, offset, organization),
@@ -215,14 +218,32 @@ async function handleGetClients(req, res) {
     const scopedClients =
       Array.isArray(allowed) && allowed.length > 0 ? clients.filter(c => allowed.includes(c.clientId)) : clients
 
-    const response = { status: 'success', data: scopedClients }
+    // If stats requested, fetch aggregated counts
+    let enrichedClients = scopedClients
+    if (includeStats && scopedClients.length > 0) {
+      const clientIds = scopedClients.map(c => c.clientId)
+      const [deviceCounts, sessionCounts, notificationCounts] = await Promise.all([
+        db.getDeviceCountsByClient(clientIds),
+        db.getSessionCountsByClient(clientIds),
+        db.getNotificationCountsByClient(clientIds),
+      ])
+
+      enrichedClients = scopedClients.map(client => ({
+        ...client,
+        deviceCount: deviceCounts[client.clientId] || 0,
+        sessionCount: sessionCounts[client.clientId] || 0,
+        notificationCount: notificationCounts[client.clientId] || 0,
+      }))
+    }
+
+    const response = { status: 'success', data: enrichedClients }
 
     if (limit !== null) {
       response.pagination = {
         limit,
         offset: offset || 0,
         total: Array.isArray(allowed) && allowed.length > 0 ? scopedClients.length : totalCount,
-        returned: scopedClients.length,
+        returned: enrichedClients.length,
       }
     }
 
@@ -512,11 +533,13 @@ async function handleGetSessions(req, res) {
     const offset = req.query.offset || null
     const dateFrom = req.query.date_from || null
     const dateTo = req.query.date_to || null
+    const category = req.query.category || null
+    const status = req.query.status || null
     const fields = req.query.fields === 'light' ? 'light' : 'full'
 
     const [sessionsRaw, totalCount] = await Promise.all([
-      db.getSessions(limit, offset),
-      limit !== null ? db.getSessionsCount() : Promise.resolve(null),
+      db.getSessions(limit, offset, { category, status }),
+      limit !== null ? db.getSessionsCount({ category, status }) : Promise.resolve(null),
     ])
 
     const sessionsDateFiltered = applyDateFilter(
@@ -534,6 +557,7 @@ async function handleGetSessions(req, res) {
             createdAt: s.createdAt,
             updatedAt: s.updatedAt,
             sessionStatus: s.sessionStatus,
+            selectedSurveyCategory: s.selectedSurveyCategory,
           }))
         : sessionsDateFiltered
 
@@ -621,6 +645,37 @@ async function handleGetSessionEvents(req, res) {
     res.status(200).send({ status: 'success', data: events || [] })
   } catch (error) {
     helpers.logError(`Error getting events for session: ${error.message}`)
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+  }
+}
+
+const validateGetSessionTeamsEvents = Validator.param('sessionId').notEmpty()
+
+async function handleGetSessionTeamsEvents(req, res) {
+  try {
+    const { sessionId } = req.params
+    const session = await db.getSessionWithSessionId(sessionId)
+
+    if (!session) {
+      res.status(404).send({ status: 'error', message: 'Not Found' })
+      return
+    }
+
+    if (Array.isArray(req.apiAuth?.allowedClientIds) && req.apiAuth.allowedClientIds.length > 0) {
+      const device = await db.getDeviceWithDeviceId(session.deviceId)
+      if (!device || !req.apiAuth.allowedClientIds.includes(device.clientId)) {
+        return forbidden(res, 'Client access denied for this key')
+      }
+    }
+
+    const dateFrom = req.query.date_from || null
+    const dateTo = req.query.date_to || null
+
+    const eventsRaw = await db.getTeamsEventsForSession(sessionId)
+    const events = applyDateFilter(eventsRaw || [], dateFrom, dateTo, e => e.eventSentAt || null)
+    res.status(200).send({ status: 'success', data: events || [] })
+  } catch (error) {
+    helpers.logError(`Error getting teams events for session: ${error.message}`)
     res.status(500).send({ status: 'error', message: 'Internal Server Error' })
   }
 }
@@ -768,6 +823,42 @@ async function handleGetDeviceVitals(req, res) {
     res.status(200).send(response)
   } catch (error) {
     helpers.logError(`Error getting device vitals: ${error.message}`)
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+  }
+}
+
+const validateGetDeviceLatestVital = Validator.param('deviceId').notEmpty()
+
+async function handleGetDeviceLatestVital(req, res) {
+  try {
+    const device = await db.getDeviceWithDeviceId(req.params.deviceId)
+
+    if (!device) {
+      res.status(404).send({ status: 'error', message: 'Not Found' })
+      return
+    }
+
+    if (!ensureClientAccess(req, res, device.clientId)) return
+
+    const vital = await db.getLatestVitalForDevice(req.params.deviceId)
+    res.status(200).send({ status: 'success', data: vital || null })
+  } catch (error) {
+    helpers.logError(`Error getting latest vital: ${error.message}`)
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+  }
+}
+
+async function handleGetVitalsCache(req, res) {
+  try {
+    const allowed = req.apiAuth?.allowedClientIds
+    if (Array.isArray(allowed) && allowed.length > 0) {
+      return forbidden(res, 'Use device-scoped vitals endpoint for this key')
+    }
+
+    const vitals = await db.getAllVitalsCache()
+    res.status(200).send({ status: 'success', data: vitals || [] })
+  } catch (error) {
+    helpers.logError(`Error getting vitals cache: ${error.message}`)
     res.status(500).send({ status: 'error', message: 'Internal Server Error' })
   }
 }
@@ -958,7 +1049,9 @@ module.exports = {
   // Event endpoints
   handleGetEvents,
   handleGetSessionEvents,
+  handleGetSessionTeamsEvents,
   validateGetSessionEvents: Validator.param('sessionId').notEmpty(),
+  validateGetSessionTeamsEvents,
   // Notification endpoints
   handleGetNotifications,
   handleGetDeviceNotifications,
@@ -966,7 +1059,10 @@ module.exports = {
   // Vitals endpoints
   handleGetVitals,
   handleGetDeviceVitals,
+  handleGetDeviceLatestVital,
+  handleGetVitalsCache,
   validateGetDeviceVitals,
+  validateGetDeviceLatestVital,
   // Contact endpoints
   handleGetContact,
   handleGetContacts,
