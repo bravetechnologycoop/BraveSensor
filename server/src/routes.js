@@ -12,6 +12,7 @@ const vitals = require('./vitals')
 const sensorEvents = require('./sensorEvents')
 const twilioEvents = require('./twilioEvents')
 const teamsEvents = require('./teamsEvents')
+const troubleshooting = require('./troubleshooting')
 const smokeTest = require('../test/smokeTest')
 
 function configureRoutes(app) {
@@ -37,8 +38,8 @@ function configureRoutes(app) {
   app.get('/contacts/:contactId/update', dashboard.sessionChecker, dashboard.renderUpdateContactPage)
   app.post('/contacts/:contactId', dashboard.validateUpdateContact, dashboard.submitUpdateContact)
 
-  app.post('/devices/:deviceId/send-message', dashboard.validateSendMessage, dashboard.submitSendMessage)
-  app.post('/devices/:deviceId/send-test-alert', dashboard.validateSendTestAlert, dashboard.submitSendTestAlert)
+  app.post('/devices/:deviceId/send-message', troubleshooting.validateSendMessage, troubleshooting.submitSendMessage)
+  app.post('/devices/:deviceId/send-test-alert', troubleshooting.validateSendTestAlert, troubleshooting.submitSendTestAlert)
   app.post('/clients', dashboard.validateNewClient, dashboard.submitNewClient)
   app.post('/clients/:clientId', dashboard.validateUpdateClient, dashboard.submitUpdateClient)
   app.post('/devices', dashboard.validateNewDevice, dashboard.submitNewDevice)
