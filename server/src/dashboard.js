@@ -1186,7 +1186,7 @@ async function submitSendTestAlert(req, res) {
       }
 
       // Mark session as a test by updating selected survey category
-      await db.updateSessionSelectedSurveyCategory(testSession.sessionId, 'test', pgClient)
+      await db.updateSessionSelectedSurveyCategory(testSession.sessionId, 'Test', pgClient)
 
       const eventType = alertType === 'stillness' ? EVENT_TYPE.STILLNESS_ALERT : EVENT_TYPE.DURATION_ALERT
       const twilioMessageKey = alertType === 'stillness' ? 'stillnessAlert' : 'durationAlert'
@@ -1197,7 +1197,8 @@ async function submitSendTestAlert(req, res) {
 
       // Send Twilio message
       if (client.responderPhoneNumbers && client.responderPhoneNumbers.length > 0) {
-        const textMessage = testPrefix + helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
+        const messageData = alertType === 'duration' ? { occupancyDuration: 15 } : {}
+        const textMessage = testPrefix + helpers.translateMessageKeyToMessage(twilioMessageKey, client, device, messageData)
         await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
         await db.createEvent(testSession.sessionId, eventType, twilioMessageKey, client.responderPhoneNumbers, pgClient)
       }

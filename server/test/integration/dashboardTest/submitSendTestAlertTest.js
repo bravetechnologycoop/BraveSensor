@@ -195,7 +195,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
     it('should still create a test session', async () => {
       const sessions = await db.getSessionsForDevice(this.deviceForClient.deviceId)
       expect(sessions.length).to.equal(1)
-      expect(sessions[0].selectedSurveyCategory).to.equal('test')
+      expect(sessions[0].selectedSurveyCategory).to.equal('Test')
     })
 
     it('should not send any messages', () => {
@@ -234,7 +234,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
 
     it('should set survey category to "test"', async () => {
       const sessions = await db.getSessionsForDevice(this.defaultDevice.deviceId)
-      expect(sessions[0].selectedSurveyCategory).to.equal('test')
+      expect(sessions[0].selectedSurveyCategory).to.equal('Test')
     })
 
     it('should send alert with TEST prefix', () => {
@@ -288,7 +288,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
 
     it('should set survey category to "test"', async () => {
       const sessions = await db.getSessionsForDevice(this.defaultDevice.deviceId)
-      expect(sessions[0].selectedSurveyCategory).to.equal('test')
+      expect(sessions[0].selectedSurveyCategory).to.equal('Test')
     })
 
     it('should send alert with TEST prefix', () => {
