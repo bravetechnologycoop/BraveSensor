@@ -173,7 +173,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
         responderPhoneNumbers: [],
       })
       this.deviceForClient = await factories.deviceNewDBFactory({
-        locationId: `locationNoRespAlert${Date.now()}`,
+        locationId: `locationNoRespAlert${Date.now()}-${Math.random()}`,
         clientId: this.clientWithNoNumbers.clientId,
       })
 
@@ -315,7 +315,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
         teamsAlertChannelId: 'test-channel-id',
       })
       this.deviceForClient = await factories.deviceNewDBFactory({
-        locationId: `locationTeamsTest${Date.now()}`,
+        locationId: `locationTeamsTest${Date.now()}-${Math.random()}`,
         clientId: this.clientWithTeams.clientId,
       })
 
