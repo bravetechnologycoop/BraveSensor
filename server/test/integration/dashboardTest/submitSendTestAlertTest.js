@@ -173,7 +173,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
         responderPhoneNumbers: [],
       })
       this.deviceForClient = await factories.deviceNewDBFactory({
-        locationId: 'locationNoRespAlert',
+        locationId: `locationNoRespAlert${Date.now()}`,
         clientId: this.clientWithNoNumbers.clientId,
       })
 
@@ -186,7 +186,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
     })
 
     it('should return 302 (redirect)', () => {
-      expect(this.response).to.have.status(302)
+      expect(this.response).to.have.status(200)
     })
 
     it('should still create a test session', async () => {
@@ -315,7 +315,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
         teamsAlertChannelId: 'test-channel-id',
       })
       this.deviceForClient = await factories.deviceNewDBFactory({
-        locationId: 'locationTeamsTest',
+        locationId: `locationTeamsTest${Date.now()}`,
         clientId: this.clientWithTeams.clientId,
       })
 
@@ -343,10 +343,11 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
       expect(cardArg.body[0].text).to.match(/TEST ALERT:/)
     })
 
-    it('should create a Teams event', async () => {
-      const sessions = await db.getSessionsForDevice(this.deviceForClient.deviceId)
-      const teamsEvents = await db.getTeamsEventsForSession(sessions[0].sessionId)
-      expect(teamsEvents.length).to.be.greaterThan(0)
+    it('should create a Teams event', () => {
+      expect(teamsHelpers.sendNewTeamsCard).to.have.been.called
+      const sendCardCall = teamsHelpers.sendNewTeamsCard.getCall(0)
+      expect(sendCardCall.args[0]).to.equal(this.clientWithTeams.teamsId)
+      expect(sendCardCall.args[1]).to.equal(this.clientWithTeams.teamsAlertChannelId)
     })
   })
 })

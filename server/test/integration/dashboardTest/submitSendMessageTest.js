@@ -147,7 +147,7 @@ describe('dashboard.js integration tests: submitSendMessageTest', () => {
         responderPhoneNumbers: [],
       })
       const deviceForClient = await factories.deviceNewDBFactory({
-        locationId: 'locationNoRespMessage',
+        locationId: `locationNoRespMessage${Date.now()}`,
         clientId: clientWithNoNumbers.clientId,
       })
 
