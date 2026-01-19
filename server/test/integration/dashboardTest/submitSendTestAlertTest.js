@@ -168,9 +168,9 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
       })
 
       // Create client with no responder phone numbers
-      this.clientWithNoNumbers = await factories.clientNewDBFactory({ 
+      this.clientWithNoNumbers = await factories.clientNewDBFactory({
         displayName: 'clientWithNoNumbers',
-        responderPhoneNumbers: [] 
+        responderPhoneNumbers: [],
       })
       this.deviceForClient = await factories.deviceNewDBFactory({
         locationId: 'locationNoRespAlert',

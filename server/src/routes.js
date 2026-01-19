@@ -26,8 +26,6 @@ function configureRoutes(app) {
   app.get('/devices/new', dashboard.sessionChecker, dashboard.renderNewDevicePage) // Must be configured before /devices/:deviceId
   app.get('/devices/:deviceId/update', dashboard.sessionChecker, dashboard.renderUpdateDevicePage)
   app.get('/devices/:deviceId', dashboard.sessionChecker, dashboard.renderDeviceDetailsPage)
-  app.post('/devices/:deviceId/send-message', dashboard.validateSendMessage, dashboard.submitSendMessage)
-  app.post('/devices/:deviceId/send-test-alert', dashboard.validateSendTestAlert, dashboard.submitSendTestAlert)
   app.get('/notifications/:deviceId', dashboard.sessionChecker, dashboard.renderDeviceNotificationsPage)
   app.get('/sessions/:sessionId', dashboard.sessionChecker, dashboard.renderSessionDetailsPage)
   app.get('/login', dashboard.renderLoginPage)
@@ -36,9 +34,11 @@ function configureRoutes(app) {
   app.get('/contacts/new', dashboard.sessionChecker, dashboard.renderNewContactPage) // Must be configured before /contacts/:contactId
   app.post('/contacts', dashboard.validateNewContact, dashboard.submitNewContact)
   app.get('/contacts/:contactId', dashboard.sessionChecker, dashboard.renderContactDetailsPage)
-  app.get('/contacts/:contactId/update', dashboard.sessionChecker, dashboard.renderUpdateContactPage) // TODO: implement update contact page
-  app.post('/contacts/:contactId', dashboard.validateUpdateContact, dashboard.submitUpdateContact) // TODO: implement update contact submission
+  app.get('/contacts/:contactId/update', dashboard.sessionChecker, dashboard.renderUpdateContactPage)
+  app.post('/contacts/:contactId', dashboard.validateUpdateContact, dashboard.submitUpdateContact)
 
+  app.post('/devices/:deviceId/send-message', dashboard.validateSendMessage, dashboard.submitSendMessage)
+  app.post('/devices/:deviceId/send-test-alert', dashboard.validateSendTestAlert, dashboard.submitSendTestAlert)
   app.post('/clients', dashboard.validateNewClient, dashboard.submitNewClient)
   app.post('/clients/:clientId', dashboard.validateUpdateClient, dashboard.submitUpdateClient)
   app.post('/devices', dashboard.validateNewDevice, dashboard.submitNewDevice)

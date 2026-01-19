@@ -10,7 +10,6 @@ const helpers = require('../../../src/utils/helpers')
 const twilioHelpers = require('../../../src/utils/twilioHelpers')
 const db = require('../../../src/db/db')
 const factories = require('../../factories_new')
-const { DEVICE_TYPE } = require('../../../src/enums/index')
 
 const { server } = require('../../../index')
 
@@ -143,9 +142,9 @@ describe('dashboard.js integration tests: submitSendMessageTest', () => {
       })
 
       // Create client with no responder phone numbers
-      const clientWithNoNumbers = await factories.clientNewDBFactory({ 
+      const clientWithNoNumbers = await factories.clientNewDBFactory({
         displayName: 'clientWithNoNumbersForMessage',
-        responderPhoneNumbers: [] 
+        responderPhoneNumbers: [],
       })
       const deviceForClient = await factories.deviceNewDBFactory({
         locationId: 'locationNoRespMessage',
