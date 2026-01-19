@@ -26,8 +26,8 @@ function configureRoutes(app) {
   app.get('/devices/new', dashboard.sessionChecker, dashboard.renderNewDevicePage) // Must be configured before /devices/:deviceId
   app.get('/devices/:deviceId/update', dashboard.sessionChecker, dashboard.renderUpdateDevicePage)
   app.get('/devices/:deviceId', dashboard.sessionChecker, dashboard.renderDeviceDetailsPage)
-  app.post('/devices/:deviceId/send-message', dashboard.sessionChecker, dashboard.validateSendMessage, dashboard.submitSendMessage)
-  app.post('/devices/:deviceId/send-test-alert', dashboard.sessionChecker, dashboard.validateSendTestAlert, dashboard.submitSendTestAlert)
+  app.post('/devices/:deviceId/send-message', dashboard.validateSendMessage, dashboard.submitSendMessage)
+  app.post('/devices/:deviceId/send-test-alert', dashboard.validateSendTestAlert, dashboard.submitSendTestAlert)
   app.get('/notifications/:deviceId', dashboard.sessionChecker, dashboard.renderDeviceNotificationsPage)
   app.get('/sessions/:sessionId', dashboard.sessionChecker, dashboard.renderSessionDetailsPage)
   app.get('/login', dashboard.renderLoginPage)

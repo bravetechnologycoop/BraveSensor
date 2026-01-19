@@ -1102,7 +1102,13 @@ const validateSendMessage = [Validator.param('deviceId').notEmpty(), Validator.b
 
 async function submitSendMessage(req, res) {
   try {
-    const errors = Validator.validationResult(req).formatWith(helpers.errorFormatter)
+    if (!req.session.user || !req.cookies.user_sid) {
+      helpers.logError('Unauthorized')
+      res.status(401).send()
+      return
+    }
+
+    const errors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() })
     }
@@ -1142,7 +1148,13 @@ const validateSendTestAlert = [Validator.param('deviceId').notEmpty(), Validator
 
 async function submitSendTestAlert(req, res) {
   try {
-    const errors = Validator.validationResult(req).formatWith(helpers.errorFormatter)
+    if (!req.session.user || !req.cookies.user_sid) {
+      helpers.logError('Unauthorized')
+      res.status(401).send()
+      return
+    }
+
+    const errors = Validator.validationResult(req).formatWith(helpers.formatExpressValidationErrors)
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() })
     }
@@ -1181,7 +1193,7 @@ async function submitSendTestAlert(req, res) {
       const teamsMessageKey = alertType === 'stillness' ? 'teamsStillnessAlert' : 'teamsDurationAlert'
 
       // Prepend TEST label to messages
-      const testPrefix = '🧪 TEST ALERT: '
+      const testPrefix = 'TEST ALERT: '
 
       // Send Twilio message
       if (client.responderPhoneNumbers && client.responderPhoneNumbers.length > 0) {
