@@ -96,6 +96,7 @@
                     <div class="modal-body">
                         <div class="alert alert-info">
                             <strong>Device:</strong> {{device.displayName}}<br>
+                            <strong>Device Twilio Number:</strong> {{device.deviceTwilioNumber}}<br>
                             You can include the device name in your message using <code>{deviceName}</code>
                             {{#client.responderPhoneNumbers}}
                             <hr>
@@ -138,6 +139,7 @@
                     <div class="modal-body">
                         <div class="alert alert-warning">
                             <strong>⚠️ Warning:</strong> This will send a <strong>TEST ALERT</strong> to all responders for device <strong>{{device.displayName}}</strong>.<br>
+                            <strong>Device Twilio Number:</strong> {{device.deviceTwilioNumber}}<br>
                             The alert will be clearly labeled as a test and will auto-populate the survey category as "test".
                             {{#client.responderPhoneNumbers}}
                             <hr>
