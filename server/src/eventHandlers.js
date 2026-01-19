@@ -378,30 +378,36 @@ async function handleStillnessAlertSurvey(client, device, session, respondedEven
       await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
-    // update session
-    await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
-
-    // if door is closed and 'Occupant Okay', reset monitoring and clear session state
-    // if door is closed and any category except 'Other' and 'Occupant Okay', reset state to zero and end session
-    // if door is opened and any category except 'Other', update session status to completed
-    // for any other case, don't do anything
-    if (!session.doorOpened && selectedCategory === 'Occupant Okay') {
-      await resetMonitoring(device.particleDeviceId)
-
-      // Clear session state (to allow alerts to published again, to all services)
-      await db.updateSessionRespondedVia(session.sessionId, null, pgClient)
-      await db.updateSessionAttendingResponder(session.sessionId, null, pgClient)
-      await db.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, session.doorOpened, false, pgClient)
-    } else if (!session.doorOpened && selectedCategory !== 'Occupant Okay' && selectedCategory !== 'Other') {
-      await resetStateToZero(device.particleDeviceId)
-
-      // update the session's door opened to true as the state is now reset
-      // update session status to completed
-      // NOTE: this may not be true and the door could still be closed
-      await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, session.surveySent, pgClient)
-    } else if (session.doorOpened && selectedCategory !== 'Other') {
-      // update session status to completed
+    // update session - but keep Test sessions marked as Test
+    if (session.selectedSurveyCategory === 'Test') {
+      helpers.log(`Test session ${session.sessionId}: User selected category '${selectedCategory}' - keeping Test marker`)
+      // For test sessions, mark as completed without triggering production logic
       await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+    } else {
+      await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
+
+      // if door is closed and 'Occupant Okay', reset monitoring and clear session state
+      // if door is closed and any category except 'Other' and 'Occupant Okay', reset state to zero and end session
+      // if door is opened and any category except 'Other', update session status to completed
+      // for any other case, don't do anything
+      if (!session.doorOpened && selectedCategory === 'Occupant Okay') {
+        await resetMonitoring(device.particleDeviceId)
+
+        // Clear session state (to allow alerts to published again, to all services)
+        await db.updateSessionRespondedVia(session.sessionId, null, pgClient)
+        await db.updateSessionAttendingResponder(session.sessionId, null, pgClient)
+        await db.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, session.doorOpened, false, pgClient)
+      } else if (!session.doorOpened && selectedCategory !== 'Occupant Okay' && selectedCategory !== 'Other') {
+        await resetStateToZero(device.particleDeviceId)
+
+        // update the session's door opened to true as the state is now reset
+        // update session status to completed
+        // NOTE: this may not be true and the door could still be closed
+        await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, session.surveySent, pgClient)
+      } else if (session.doorOpened && selectedCategory !== 'Other') {
+        // update session status to completed
+        await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+      }
     }
   } catch (error) {
     throw new Error(`handleStillnessAlertSurvey: ${error.message}`)
@@ -764,30 +770,36 @@ async function handleDurationAlertSurvey(client, device, session, respondedEvent
       await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
-    // update session
-    await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
-
-    // if door is closed and 'Occupant Okay', reset monitoring and clear session state
-    // if door is closed and any category except 'Other' and 'Occupant Okay', reset state to zero and end session
-    // if door is opened and any category except 'Other', update session status to completed
-    // for any other case, don't do anything
-    if (!session.doorOpened && selectedCategory === 'Occupant Okay') {
-      await resetMonitoring(device.particleDeviceId)
-
-      // Clear session state (to allow alerts to published again, to all services)
-      await db.updateSessionRespondedVia(session.sessionId, null, pgClient)
-      await db.updateSessionAttendingResponder(session.sessionId, null, pgClient)
-      await db.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, session.doorOpened, false, pgClient)
-    } else if (!session.doorOpened && selectedCategory !== 'Occupant Okay' && selectedCategory !== 'Other') {
-      await resetStateToZero(device.particleDeviceId)
-
-      // update the session's door opened to true as the state is now reset
-      // update session status to completed
-      // NOTE: this may not be true and the door could still be closed
-      await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, session.surveySent, pgClient)
-    } else if (session.doorOpened && selectedCategory !== 'Other') {
-      // update session status to completed
+    // update session - but keep Test sessions marked as Test
+    if (session.selectedSurveyCategory === 'Test') {
+      helpers.log(`Test session ${session.sessionId}: User selected category '${selectedCategory}' - keeping Test marker`)
+      // For test sessions, mark as completed without triggering production logic
       await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+    } else {
+      await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
+
+      // if door is closed and 'Occupant Okay', reset monitoring and clear session state
+      // if door is closed and any category except 'Other' and 'Occupant Okay', reset state to zero and end session
+      // if door is opened and any category except 'Other', update session status to completed
+      // for any other case, don't do anything
+      if (!session.doorOpened && selectedCategory === 'Occupant Okay') {
+        await resetMonitoring(device.particleDeviceId)
+
+        // Clear session state (to allow alerts to published again, to all services)
+        await db.updateSessionRespondedVia(session.sessionId, null, pgClient)
+        await db.updateSessionAttendingResponder(session.sessionId, null, pgClient)
+        await db.updateSession(session.sessionId, SESSION_STATUS.ACTIVE, session.doorOpened, false, pgClient)
+      } else if (!session.doorOpened && selectedCategory !== 'Occupant Okay' && selectedCategory !== 'Other') {
+        await resetStateToZero(device.particleDeviceId)
+
+        // update the session's door opened to true as the state is now reset
+        // update session status to completed
+        // NOTE: this may not be true and the door could still be closed
+        await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, true, session.surveySent, pgClient)
+      } else if (session.doorOpened && selectedCategory !== 'Other') {
+        // update session status to completed
+        await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+      }
     }
   } catch (error) {
     throw new Error(`handleDurationAlertSurvey: ${error.message}`)
@@ -886,13 +898,19 @@ async function handleDurationAlertSurveyDoorOpened(client, device, session, resp
       await setSessionAsResponded(client, device, session, data, pgClient)
     }
 
-    // update session
-    await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
-
-    // if door is opened and any category except 'Other', update session status to completed
-    // for any other case, don't do anything
-    if (session.doorOpened && selectedCategory !== 'Other') {
+    // update session - but keep Test sessions marked as Test
+    if (session.selectedSurveyCategory === 'Test') {
+      helpers.log(`Test session ${session.sessionId}: User selected category '${selectedCategory}' - keeping Test marker`)
+      // For test sessions, mark as completed without triggering production logic
       await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+    } else {
+      await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
+
+      // if door is opened and any category except 'Other', update session status to completed
+      // for any other case, don't do anything
+      if (session.doorOpened && selectedCategory !== 'Other') {
+        await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+      }
     }
   } catch (error) {
     throw new Error(`handleDurationAlertSurveyDoorOpened: ${error.message}`)
