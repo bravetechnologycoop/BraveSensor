@@ -1093,9 +1093,6 @@ async function submitUpdateContact(req, res) {
   }
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-// Troubleshooting Features
-
 module.exports = {
   setupDashboardSessions,
   sessionChecker,
