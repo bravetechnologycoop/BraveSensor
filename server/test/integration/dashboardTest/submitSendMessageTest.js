@@ -142,12 +142,15 @@ describe('dashboard.js integration tests: submitSendMessageTest', () => {
       })
 
       // Create client with no responder phone numbers
+      const uniqueId = `${Date.now()}`
       const clientWithNoNumbers = await factories.clientNewDBFactory({
-        displayName: 'clientWithNoNumbersForMessage',
+        displayName: `clientWithNoNumbersForMessage-${uniqueId}`,
         responderPhoneNumbers: [],
       })
       const deviceForClient = await factories.deviceNewDBFactory({
-        locationId: `locationNoRespMessage${Date.now()}-${Math.random()}`,
+        locationId: `locationNoRespMessage-${uniqueId}`,
+        displayName: `deviceNoRespMessage-${uniqueId}`,
+        particleDeviceId: `particle-${uniqueId}`,
         clientId: clientWithNoNumbers.clientId,
       })
 

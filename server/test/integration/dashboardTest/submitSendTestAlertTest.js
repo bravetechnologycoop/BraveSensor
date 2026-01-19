@@ -168,12 +168,15 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
       })
 
       // Create client with no responder phone numbers
+      const uniqueId = `${Date.now()}`
       this.clientWithNoNumbers = await factories.clientNewDBFactory({
-        displayName: 'clientWithNoNumbers',
+        displayName: `clientWithNoNumbers-${uniqueId}`,
         responderPhoneNumbers: [],
       })
       this.deviceForClient = await factories.deviceNewDBFactory({
-        locationId: `locationNoRespAlert${Date.now()}-${Math.random()}`,
+        locationId: `locationNoRespAlert-${uniqueId}`,
+        displayName: `deviceNoRespAlert-${uniqueId}`,
+        particleDeviceId: `particle-${uniqueId}`,
         clientId: this.clientWithNoNumbers.clientId,
       })
 
@@ -309,13 +312,16 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
       })
 
       // Create client with Teams configured
+      const uniqueId = `${Date.now()}`
       this.clientWithTeams = await factories.clientNewDBFactory({
-        displayName: 'clientWithTeams',
+        displayName: `clientWithTeams-${uniqueId}`,
         teamsId: 'test-teams-id',
         teamsAlertChannelId: 'test-channel-id',
       })
       this.deviceForClient = await factories.deviceNewDBFactory({
-        locationId: `locationTeamsTest${Date.now()}-${Math.random()}`,
+        locationId: `locationTeamsTest-${uniqueId}`,
+        displayName: `deviceTeamsTest-${uniqueId}`,
+        particleDeviceId: `particle-${uniqueId}`,
         clientId: this.clientWithTeams.clientId,
       })
 
