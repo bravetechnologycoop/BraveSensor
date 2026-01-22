@@ -1289,15 +1289,18 @@ async function getSessionWithSessionId(sessionId, pgClient) {
   }
 }
 
-async function getLatestSessionWithDeviceId(deviceId, pgClient) {
+async function getLatestSessionWithDeviceId(deviceId, pgClient, excludeTestSessions = false) {
   try {
+    const whereClause = excludeTestSessions
+      ? `WHERE device_id = $1 AND (selected_survey_category IS NULL OR selected_survey_category != 'Test')`
+      : `WHERE device_id = $1`
+
     const results = await helpers.runQuery(
       'getLatestSessionWithDeviceId',
       `
       SELECT *
       FROM sessions
-      WHERE device_id = $1
-        AND (selected_survey_category IS NULL OR selected_survey_category != 'Test')
+      ${whereClause}
       ORDER BY created_at DESC
       LIMIT 1
       FOR UPDATE

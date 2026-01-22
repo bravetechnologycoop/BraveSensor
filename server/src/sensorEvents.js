@@ -184,7 +184,7 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
         return
       }
 
-      const currentSession = await db.getLatestSessionWithDeviceId(device.deviceId)
+      const currentSession = await db.getLatestSessionWithDeviceId(device.deviceId, null, true)
       if (!currentSession) {
         helpers.log(`No session found for device ${device.deviceId}, cancelling all reminders`)
         cancelRemindersForSession(sessionId)
@@ -524,7 +524,7 @@ async function processSensorEvent(client, device, eventType, eventData) {
       throw new Error(`More than one stillness alert received for device: ${device.deviceId}`)
     }
 
-    const latestSession = await db.getLatestSessionWithDeviceId(device.deviceId, pgClient)
+    const latestSession = await db.getLatestSessionWithDeviceId(device.deviceId, pgClient, true)
 
     let returnedSession = null
 
