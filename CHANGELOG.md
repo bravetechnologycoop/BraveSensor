@@ -13,6 +13,7 @@ the code was deployed.
 
 - Add unique constraint on particle device id (CU-86dxzrvv7)
 - Initial disconnection messages now bypass operating hours time window, while disconnection reminders remain within the operating (CU-86dz84kvf)
+- Add troubleshooting features, "Send Test Alert" and "Send Custom Message" (CU-86dz8y7wr)
 
 ## [12.2.6] - 2025-12-09
 - Add contacts page

@@ -110,6 +110,9 @@
                             <strong class="text-danger">⚠️ No responder phone numbers configured</strong>
                             {{/client.responderPhoneNumbers}}
                         </div>
+                        <div class="alert alert-warning">
+                            <small><strong>Note:</strong> This message will only be sent via SMS. It will not be sent to Microsoft Teams.</small>
+                        </div>
                         <div class="form-group">
                             <label for="messageText">Message:</label>
                             <textarea class="form-control" id="messageText" name="message" rows="4" required></textarea>
