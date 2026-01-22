@@ -1297,6 +1297,7 @@ async function getLatestSessionWithDeviceId(deviceId, pgClient) {
       SELECT *
       FROM sessions
       WHERE device_id = $1
+        AND (selected_survey_category IS NULL OR selected_survey_category != 'Test')
       ORDER BY created_at DESC
       LIMIT 1
       FOR UPDATE
