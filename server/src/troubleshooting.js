@@ -2,14 +2,19 @@
  * troubleshooting.js
  *
  * Handles troubleshooting and testing functionality for the dashboard
+ * Uses the smoke test approach: creates temporary test device and simulates Particle webhooks
  */
 
 const Validator = require('express-validator')
+const axios = require('axios').default
 const helpers = require('./utils/helpers')
 const db = require('./db/db')
 const twilioHelpers = require('./utils/twilioHelpers')
-const teamsHelpers = require('./utils/teamsHelpers')
 const { EVENT_TYPE } = require('./enums/index')
+
+const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
+// TODO: Change to environment variable TEST_TWILIO_NUMBER once configured in all environments
+const TEST_TWILIO_NUMBER = '+17787620179'
 
 const validateSendMessage = [Validator.param('deviceId').notEmpty(), Validator.body('message').trim().notEmpty()]
 
@@ -85,6 +90,11 @@ async function submitSendTestAlert(req, res) {
       return res.status(404).send('Client not found')
     }
 
+    // Generate unique identifiers for this test
+    const timestamp = Date.now()
+    const testLocationId = `TEST_${deviceId}_${timestamp}`
+    const testParticleId = `TEST_PARTICLE_${timestamp}`
+
     let pgClient
     try {
       pgClient = await db.beginTransaction()
@@ -92,48 +102,70 @@ async function submitSendTestAlert(req, res) {
         throw new Error('Failed to begin transaction')
       }
 
-      // Create a test session
-      const testSession = await db.createSession(deviceId, pgClient)
-      if (!testSession) {
-        throw new Error('Failed to create test session')
-      }
+      // Create temporary test device (smoke test approach)
+      const testDevice = await db.createDevice(
+        testLocationId,
+        `[TRAINING] ${device.displayName}`,
+        client.clientId,
+        testParticleId,
+        device.deviceType,
+        TEST_TWILIO_NUMBER,
+        true, // isDisplayed
+        true, // isSendingAlerts
+        true, // isSendingVitals
+        pgClient,
+      )
 
-      // Mark session as a test by updating selected survey category
-      await db.updateSessionSelectedSurveyCategory(testSession.sessionId, 'Test', pgClient)
-
-      const eventType = alertType === 'stillness' ? EVENT_TYPE.STILLNESS_ALERT : EVENT_TYPE.DURATION_ALERT
-      const twilioMessageKey = alertType === 'stillness' ? 'stillnessAlert' : 'durationAlert'
-      const teamsMessageKey = alertType === 'stillness' ? 'teamsStillnessAlert' : 'teamsDurationAlert'
-
-      // Prepend TEST label to messages
-      const testPrefix = 'TEST ALERT: '
-
-      // Send Twilio message
-      if (client.responderPhoneNumbers && client.responderPhoneNumbers.length > 0) {
-        const messageData = alertType === 'duration' ? { occupancyDuration: 15 } : {}
-        const textMessage = testPrefix + helpers.translateMessageKeyToMessage(twilioMessageKey, client, device, messageData)
-        await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
-        await db.createEvent(testSession.sessionId, eventType, twilioMessageKey, client.responderPhoneNumbers, pgClient)
-      }
-
-      // Send Teams message if configured
-      if (client.teamsId && client.teamsAlertChannelId) {
-        const cardType = 'New'
-        const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device)
-        if (adaptiveCard) {
-          // Add test indicator to the card title
-          if (adaptiveCard.body && adaptiveCard.body[0]) {
-            adaptiveCard.body[0].text = testPrefix + (adaptiveCard.body[0].text || '')
-          }
-          const response = await teamsHelpers.sendNewTeamsCard(client.teamsId, client.teamsAlertChannelId, adaptiveCard, testSession)
-          if (response && response.messageId) {
-            await db.createTeamsEvent(testSession.sessionId, eventType, teamsMessageKey, response.messageId, pgClient)
-          }
-        }
+      if (!testDevice) {
+        throw new Error('Failed to create test device')
       }
 
       await db.commitTransaction(pgClient)
-      helpers.log(`Troubleshooting: Sent ${alertType} test alert for device ${deviceId}, session ${testSession.sessionId}`)
+
+      // Simulate Particle webhook (like smoke test)
+      const eventData =
+        alertType === 'stillness'
+          ? {
+              alertSentFromState: 3,
+              numStillnessAlertsSent: 1,
+              numDurationAlertsSent: 0,
+              occupancyDuration: 0,
+            }
+          : {
+              alertSentFromState: 3,
+              numStillnessAlertsSent: 0,
+              numDurationAlertsSent: 1,
+              occupancyDuration: 15,
+            }
+
+      // Post to sensor event endpoint (simulates Particle webhook)
+      const serverUrl = `https://${helpers.getEnvVar('DOMAIN')}`
+      await axios.post(
+        `${serverUrl}/api/sensorEvent`,
+        {
+          event: alertType === 'stillness' ? 'Stillness Alert' : 'Duration Alert',
+          data: JSON.stringify(eventData),
+          coreid: testParticleId,
+          api_key: particleWebhookAPIKey,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
+      )
+
+      helpers.log(`Troubleshooting: Sent ${alertType} test alert for device ${deviceId}, test device ${testDevice.deviceId}`)
+
+      // Schedule cleanup after 1 hour
+      setTimeout(async () => {
+        try {
+          await db.deleteDevice(testDevice.deviceId)
+          helpers.log(`Cleaned up test device ${testDevice.deviceId}`)
+        } catch (err) {
+          helpers.logError(`Failed to cleanup test device: ${err}`)
+        }
+      }, 3600000)
     } catch (err) {
       if (pgClient) {
         await db.rollbackTransaction(pgClient)
