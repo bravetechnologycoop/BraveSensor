@@ -28,7 +28,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
     this.defaultClient = await factories.clientNewDBFactory()
     this.defaultDevice = await factories.deviceNewDBFactory(this.defaultClient)
     this.agent = chai.request.agent(server)
-    
+
     // Stub axios to prevent actual HTTP calls during tests
     sandbox.stub(axios, 'post').resolves({ status: 200, data: {} })
   })

@@ -10,7 +10,6 @@ const axios = require('axios').default
 const helpers = require('./utils/helpers')
 const db = require('./db/db')
 const twilioHelpers = require('./utils/twilioHelpers')
-const { EVENT_TYPE } = require('./enums/index')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 // TODO: Change to environment variable TEST_TWILIO_NUMBER once configured in all environments
