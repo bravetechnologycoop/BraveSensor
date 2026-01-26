@@ -29,4 +29,7 @@ int stillness_alert_time_set(String);
 
 int im21_door_id_set(String);
 
+int auto_correct_enable(String);
+int auto_correct_persist(String);
+
 #endif

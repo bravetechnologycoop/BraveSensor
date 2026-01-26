@@ -11,6 +11,7 @@
 #include "flashAddresses.h"
 #include "stateMachine.h"
 #include "imDoorSensor.h"
+#include "insAutoCorrect.h"
 
 void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
@@ -28,6 +29,9 @@ void setupConsoleFunctions() {
     Particle.function("Stillness_Time", stillness_alert_time_set);
 
     Particle.function("IM21_Door_ID", im21_door_id_set);
+
+    Particle.function("Auto_Correct_Enable", auto_correct_enable);
+    Particle.function("Auto_Correct_Persist", auto_correct_persist);
 }
 
 int force_reset(String command) {
@@ -458,4 +462,42 @@ int im21_door_id_set(String command) {
 
     // return door ID as int
     return (int)strtol(buffer, NULL, 16);
+}
+
+// Enable/disable auto-correction of stillness threshold
+// Input: '1' to enable, '0' to disable, 'e' to echo current state
+// Returns: 1 if enabled, 0 if disabled, -1 on error
+int auto_correct_enable(String input) {
+    int returnFlag = -1;
+    const char* holder = input.c_str();
+
+    if (*holder == 'e') {
+        returnFlag = isAutoCorrectEnabled() ? 1 : 0;
+    }
+    else if (*holder == '0') {
+        setAutoCorrectEnabled(false);
+        returnFlag = 0;
+    }
+    else if (*holder == '1') {
+        setAutoCorrectEnabled(true);
+        returnFlag = 1;
+    }
+
+    return returnFlag;
+}
+
+// Persist current stillness threshold to EEPROM
+// Input: '1' to persist
+// Returns: current threshold value on success, -1 on error
+int auto_correct_persist(String input) {
+    int returnFlag = -1;
+    const char* holder = input.c_str();
+
+    if (*holder == '1') {
+        EEPROM.put(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
+        Log.warn("Auto-correct: Persisted threshold %lu to EEPROM", stillness_ins_threshold);
+        returnFlag = (int)stillness_ins_threshold;
+    }
+
+    return returnFlag;
 }

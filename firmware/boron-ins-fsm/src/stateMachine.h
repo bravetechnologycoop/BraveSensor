@@ -15,7 +15,7 @@
 #define INITIALIZATION_FLAG_HIGH_CONF       0x9999
 
 // Initial values for state machine, can be changed via console function
-#define STILLNESS_INS_THRESHOLD             60         
+#define STILLNESS_INS_THRESHOLD             30         
 #define OCCUPANCY_DETECTION_INS_THRESHOLD   60         
 
 #define STATE0_OCCUPANCY_DETECTION_TIME     60000       // 1 min

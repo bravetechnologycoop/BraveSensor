@@ -12,6 +12,7 @@
 #include "consoleFunctions.h"
 #include "tpl5010watchdog.h"
 #include "statusRGB.h"
+#include "insAutoCorrect.h"
 
 // See versioning in README.md
 #define BRAVE_FIRMWARE_VERSION  12021
@@ -30,6 +31,7 @@ void setup() {
     setupINS3331();
     setupConsoleFunctions();
     setupStateMachine();
+    setupInsAutoCorrect();
     setupWatchdog();
     setupStatusRGB();
 

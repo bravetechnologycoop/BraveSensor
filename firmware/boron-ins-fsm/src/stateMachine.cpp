@@ -12,6 +12,7 @@
 #include "imDoorSensor.h"
 #include "ins3331.h"
 #include "stateMachine.h"
+#include "insAutoCorrect.h"
 #include "Particle.h"
 
 #define PARTICLE_MAX_MESSAGE_LENGTH    622
@@ -260,6 +261,11 @@ void state0_idle() {
     Log.info("State 0 (Idle): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
     publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, timeInState0);
 
+    // Auto-correct stillness threshold based on baseline readings
+    processAutoCorrection(checkINS.iAverage,
+        !isDoorOpen(checkDoor.doorStatus) && !isDoorStatusUnknown(checkDoor.doorStatus),
+        timeInState0);
+
     // Check state transition conditions
     // Transition to state 1 if:
     // 1. The door has been closed for less than the occupancy detection time (person has entered and washroom is now occupied).
@@ -275,6 +281,9 @@ void state0_idle() {
         
         Log.warn("State 0 --> State 1: Door closed and seeing movement");
         publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
+
+        // Reset auto-correction collection before leaving State 0
+        resetAutoCorrection();
 
         // Update state 1 timer and transition to state 1
         state1_start_time = millis();
