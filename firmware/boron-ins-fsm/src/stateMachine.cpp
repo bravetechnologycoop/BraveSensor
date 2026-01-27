@@ -22,6 +22,7 @@ StateHandler stateHandler = state0_idle;
 // State machine constants firmware code
 unsigned long occupancy_detection_ins_threshold = OCCUPANCY_DETECTION_INS_THRESHOLD;
 unsigned long stillness_ins_threshold = STILLNESS_INS_THRESHOLD;
+
 unsigned long state0_occupancy_detection_time = STATE0_OCCUPANCY_DETECTION_TIME;
 unsigned long state1_initial_time = STATE1_INITIAL_TIME;
 unsigned long duration_alert_time = DURATION_ALERT_TIME;
@@ -151,6 +152,7 @@ void initializeStateMachineConsts() {
         EEPROM.get(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
         Log.warn("Occupancy Detection INS Threshold read from EEPROM.");
     }
+
 }
 
 /*
@@ -257,24 +259,24 @@ void state0_idle() {
     }
     
     // Log current state
-    Log.info("State 0 (Idle): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
-    publishDebugMessage(0, checkDoor.doorStatus, checkINS.iAverage, timeInState0);
+    Log.info("State 0 (Idle): Door Status = 0x%02X, INS Magnitude = %f", checkDoor.doorStatus, checkINS.magnitude);
+    publishDebugMessage(0, checkDoor.doorStatus, checkINS.magnitude, timeInState0);
 
     // Check state transition conditions
     // Transition to state 1 if:
     // 1. The door has been closed for less than the occupancy detection time (person has entered and washroom is now occupied).
-    // 2. The INS data indicates movement (iAverage > occupancy_detection_ins_threshold).
+    // 2. The INS magnitude indicates movement (using high threshold for hysteresis).
     // 3. The door is closed.
     // 4. The door status is known.
     // 5. State transitions are enabled.
-    if (timeInState0 < state0_occupancy_detection_time && 
-        ((unsigned long)checkINS.iAverage > occupancy_detection_ins_threshold) &&
-        !isDoorOpen(checkDoor.doorStatus) && 
+    if (timeInState0 < state0_occupancy_detection_time &&
+        (checkINS.magnitude > (occupancy_detection_ins_threshold + HYSTERESIS_OFFSET)) &&
+        !isDoorOpen(checkDoor.doorStatus) &&
         !isDoorStatusUnknown(checkDoor.doorStatus) &&
         allowTransitionToStateOne) {
         
         Log.warn("State 0 --> State 1: Door closed and seeing movement");
-        publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.magnitude);
 
         // Update state 1 timer and transition to state 1
         state1_start_time = millis();
@@ -299,25 +301,25 @@ void state1_initial_countdown() {
     timeInState1 = calculateTimeSince(state1_start_time);
 
     // Log current state
-    Log.info("State 1 (Countdown): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
-    publishDebugMessage(1, checkDoor.doorStatus, checkINS.iAverage, timeInState1);
+    Log.info("State 1 (Countdown): Door Status = 0x%02X, INS Magnitude = %f", checkDoor.doorStatus, checkINS.magnitude);
+    publishDebugMessage(1, checkDoor.doorStatus, checkINS.magnitude, timeInState1);
 
     // Check state transition conditions
-    // Transition to state 0 if no movement is detected OR the door is opened.
-    if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < occupancy_detection_ins_threshold) {
+    // Transition to state 0 if no movement is detected (using low threshold for hysteresis) OR the door is opened.
+    if (checkINS.magnitude > 0 && checkINS.magnitude < (occupancy_detection_ins_threshold - HYSTERESIS_OFFSET)) {
         Log.warn("State 1 --> State 0: No movement detected");
-        publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.magnitude);
         stateHandler = state0_idle;
     }
     else if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("State 1 --> State 0: Door opened, session over");
-        publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.magnitude);
         stateHandler = state0_idle;
     }
     // Transition to state 2 if the door remains closed and movement is detected for the maximum allowed time.
     else if (timeInState1 >= state1_initial_time) {
         Log.warn("State 1 --> State 2: Movemented detected for max detection time");
-        publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(1, 2, checkDoor.doorStatus, checkINS.magnitude);
 
         // Reset state 2 timer and transition to state 2
         state2_start_time = millis();
@@ -343,14 +345,14 @@ void state2_monitoring() {
     updateDurationAlertStatus(); 
 
     // Log current state
-    Log.info("State 2 (Monitoring): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
-    publishDebugMessage(2, checkDoor.doorStatus, checkINS.iAverage, timeInState2);
+    Log.info("State 2 (Monitoring): Door Status = 0x%02X, INS Magnitude = %f", checkDoor.doorStatus, checkINS.magnitude);
+    publishDebugMessage(2, checkDoor.doorStatus, checkINS.magnitude, timeInState2);
 
     // Check state transition conditions
     // Transition to state 0 if the door is opened
     if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("State 2 --> State 0: Door opened, session over");
-        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.magnitude);
 
         // Publish door opened message to particle 
         unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
@@ -363,10 +365,10 @@ void state2_monitoring() {
         // Transition to state 0
         stateHandler = state0_idle;
     }
-    // Transition to state 3 if stillness is detected
-    else if ((unsigned long)checkINS.iAverage > 0 && (unsigned long)checkINS.iAverage < stillness_ins_threshold) {
+    // Transition to state 3 if stillness is detected (using low threshold for hysteresis)
+    else if (checkINS.magnitude > 0 && checkINS.magnitude < (stillness_ins_threshold - HYSTERESIS_OFFSET)) {
         Log.warn("State 2 --> State 3: Stillness detected");
-        publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(2, 3, checkDoor.doorStatus, checkINS.magnitude);
 
         // Reset the state 3 timer and transition to state 3
         state3_start_time = millis();
@@ -408,14 +410,14 @@ void state3_stillness() {
     updateDurationAlertStatus(); 
     updateStillnessAlertStatus();
     
-    Log.info("State 3 (Stillness): Door Status = 0x%02X, INS Average = %f", checkDoor.doorStatus, checkINS.iAverage);
-    publishDebugMessage(3, checkDoor.doorStatus, checkINS.iAverage, timeInState3);
+    Log.info("State 3 (Stillness): Door Status = 0x%02X, INS Magnitude = %f", checkDoor.doorStatus, checkINS.magnitude);
+    publishDebugMessage(3, checkDoor.doorStatus, checkINS.magnitude, timeInState3);
 
     // Check state transition conditions  
     // Transition to state 0 if the door is opened
     if (isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("State 3 --> State 0: Door opened, session over");
-        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.magnitude);
 
         // Publish door opened message to particle
         unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
@@ -428,10 +430,10 @@ void state3_stillness() {
         // Transition to state 0
         stateHandler = state0_idle;
     } 
-    // Transition to state 2 if movement exceeds the stillness threshold
-    else if ((unsigned long)checkINS.iAverage > stillness_ins_threshold) {
+    // Transition to state 2 if movement exceeds the stillness threshold (using high threshold for hysteresis)
+    else if (checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET)) {
         Log.warn("State 3 --> State 2: Motion detected again.");
-        publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.iAverage);
+        publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.magnitude);
 
         // Reset the state 2 timer and transition to state 2
         state2_start_time = millis();
@@ -581,7 +583,7 @@ void getHeartbeat() {
 
         // If a previous hearbeat has been published, then log if the INS is zero
         filteredINSData checkINS = checkINS3331();
-        bool isINSZero = (checkINS.iAverage < 0.0001);
+        bool isINSZero = (checkINS.magnitude < 0.0001);
         writer.name("isINSZero").value(isINSZero && lastHeartbeatPublish > 0);
 
         // Add consecutive open door heartbeat count

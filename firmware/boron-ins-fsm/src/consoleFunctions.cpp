@@ -459,3 +459,4 @@ int im21_door_id_set(String command) {
     // return door ID as int
     return (int)strtol(buffer, NULL, 16);
 }
+
