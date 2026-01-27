@@ -406,7 +406,7 @@ async function renderDeviceDetailsPage(req, res) {
       })
     }
 
-    const viewParams = { device, client, latestVital, allSessions }
+    const viewParams = { device, client, latestVital, allSessions, testTwilioNumber: helpers.getEnvVar('TEST_TWILIO_NUMBER') || '+17787620179' }
     res.send(Mustache.render(deviceDetailsPageTemplate, { ...viewParams, ...dateFormatters }, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
     helpers.logError(`Error calling ${req.path}: ${err.toString()}`)

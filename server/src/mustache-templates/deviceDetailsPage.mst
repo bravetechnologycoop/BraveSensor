@@ -141,20 +141,20 @@
                 <form id="testAlertForm" method="POST" action="/devices/{{device.deviceId}}/send-test-alert">
                     <div class="modal-body">
                         <div class="alert alert-warning">
-                            <strong>⚠️ Warning:</strong> This will send a <strong>TEST ALERT</strong> to all responders for device <strong>{{device.displayName}}</strong>.<br>
-                            <strong>Device Twilio Number:</strong> {{device.deviceTwilioNumber}}<br>
-                            The alert will be clearly labeled as a test and will auto-populate the survey category as "test".
-                            {{#client.responderPhoneNumbers}}
+                            <strong>⚠️ Warning:</strong> This will send a <strong>TRAINING ALERT</strong> to a dedicated test number for device <strong>{{device.displayName}}</strong>.<br>
+                            <strong>Test Number:</strong> {{testTwilioNumber}}<br>
+                            <br>
+                            A temporary training device will be created (labeled "[TRAINING] {{device.displayName}}") that uses the test number.<br>
+                            The alert will trigger the full emergency response workflow, and the training device will be automatically cleaned up when the session completes.
                             <hr>
-                            <strong>Alert will be sent to:</strong><br>
-                            {{#client.responderPhoneNumbers}}
-                            <span class="badge badge-warning">{{.}}</span>
-                            {{/client.responderPhoneNumbers}}
-                            {{/client.responderPhoneNumbers}}
-                            {{^client.responderPhoneNumbers}}
-                            <hr>
-                            <strong class="text-danger">⚠️ No responder phone numbers configured</strong>
-                            {{/client.responderPhoneNumbers}}
+                            <strong>How it works:</strong>
+                            <ul>
+                                <li>✓ Creates temporary test device with unique Particle ID</li>
+                                <li>✓ Simulates sensor webhook (just like real alerts)</li>
+                                <li>✓ Sends alert to test number only (not to real responders)</li>
+                                <li>✓ Full survey flow works normally</li>
+                                <li>✓ Device auto-deleted when session completes</li>
+                            </ul>
                         </div>
                         <div class="form-group">
                             <label for="alertType">Alert Type:</label>
@@ -190,7 +190,7 @@
         })
         
         $('#testAlertForm').on('submit', function(e) {
-            if (!confirm('Are you sure you want to send a TEST ALERT? This will notify all responders.')) {
+            if (!confirm('Are you sure you want to send a TRAINING ALERT? This will create a temporary test device and send an alert to the test number ({{testTwilioNumber}}).')) {
                 e.preventDefault()
                 return false
             }

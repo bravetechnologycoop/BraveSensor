@@ -12,8 +12,7 @@ const db = require('./db/db')
 const twilioHelpers = require('./utils/twilioHelpers')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
-// TODO: Change to environment variable TEST_TWILIO_NUMBER once configured in all environments
-const TEST_TWILIO_NUMBER = '+17787620179'
+const TEST_TWILIO_NUMBER = helpers.getEnvVar('TEST_TWILIO_NUMBER') || '+17787620179'
 
 const validateSendMessage = [Validator.param('deviceId').notEmpty(), Validator.body('message').trim().notEmpty()]
 
@@ -157,6 +156,20 @@ async function submitSendTestAlert(req, res) {
 
       helpers.log(`Troubleshooting: Sent ${alertType} test alert for device ${deviceId}, test device ${testDevice.deviceId}`)
       helpers.log(`Test device will be cleaned up when the session completes`)
+
+      // Fallback cleanup after 1 hour in case session doesn't complete
+      setTimeout(async () => {
+        try {
+          // Check if device still exists before deleting
+          const existingDevice = await db.getDeviceWithDeviceId(testDevice.deviceId)
+          if (existingDevice) {
+            await db.deleteDevice(testDevice.deviceId)
+            helpers.log(`Fallback cleanup: Deleted test device ${testDevice.deviceId} after 1 hour timeout`)
+          }
+        } catch (err) {
+          helpers.logError(`Failed to cleanup test device ${testDevice.deviceId} in fallback: ${err}`)
+        }
+      }, 3600000) // 1 hour
     } catch (err) {
       if (pgClient) {
         await db.rollbackTransaction(pgClient)
