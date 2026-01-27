@@ -971,6 +971,31 @@ async function updateDevice(
   }
 }
 
+async function deleteDevice(deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'deleteDevice',
+      `
+      DELETE FROM devices
+      WHERE device_id = $1
+      RETURNING *
+      `,
+      [deviceId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the deleteDevice query: ${err.toString()}`)
+    return null
+  }
+}
+
 async function getDevices(pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -2203,6 +2228,7 @@ module.exports = {
 
   createDevice,
   updateDevice,
+  deleteDevice,
   getDevices,
   getDevicesForClient,
   getMergedDevicesWithVitals,

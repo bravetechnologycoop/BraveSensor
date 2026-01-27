@@ -378,11 +378,18 @@ async function handleStillnessAlertSurvey(client, device, session, respondedEven
       await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
-    // update session - but keep Test sessions marked as Test
-    if (session.selectedSurveyCategory === 'Test') {
-      helpers.log(`Test session ${session.sessionId}: User selected category '${selectedCategory}' - keeping Test marker`)
+    // update session - check if this is a test device
+    const isTestDevice = device.displayName && device.displayName.includes('[TRAINING]')
+    
+    if (isTestDevice) {
+      helpers.log(`Test session ${session.sessionId}: User selected category '${selectedCategory}' - marking as completed`)
       // For test sessions, mark as completed without triggering production logic
+      await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
       await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+      
+      // Cleanup the test device immediately
+      await db.deleteDevice(device.deviceId)
+      helpers.log(`Cleaned up test device ${device.deviceId} after session completion`)
     } else {
       await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
 
@@ -770,11 +777,18 @@ async function handleDurationAlertSurvey(client, device, session, respondedEvent
       await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, teamsMessageKey, response.messageId, pgClient)
     }
 
-    // update session - but keep Test sessions marked as Test
-    if (session.selectedSurveyCategory === 'Test') {
-      helpers.log(`Test session ${session.sessionId}: User selected category '${selectedCategory}' - keeping Test marker`)
+    // update session - check if this is a test device
+    const isTestDevice = device.displayName && device.displayName.includes('[TRAINING]')
+    
+    if (isTestDevice) {
+      helpers.log(`Test session ${session.sessionId}: User selected category '${selectedCategory}' - marking as completed`)
       // For test sessions, mark as completed without triggering production logic
+      await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
       await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+      
+      // Cleanup the test device immediately
+      await db.deleteDevice(device.deviceId)
+      helpers.log(`Cleaned up test device ${device.deviceId} after session completion`)
     } else {
       await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
 
@@ -898,11 +912,18 @@ async function handleDurationAlertSurveyDoorOpened(client, device, session, resp
       await setSessionAsResponded(client, device, session, data, pgClient)
     }
 
-    // update session - but keep Test sessions marked as Test
-    if (session.selectedSurveyCategory === 'Test') {
-      helpers.log(`Test session ${session.sessionId}: User selected category '${selectedCategory}' - keeping Test marker`)
+    // update session - check if this is a test device
+    const isTestDevice = device.displayName && device.displayName.includes('[TRAINING]')
+    
+    if (isTestDevice) {
+      helpers.log(`Test session ${session.sessionId}: User selected category '${selectedCategory}' - marking as completed`)
       // For test sessions, mark as completed without triggering production logic
+      await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
       await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
+      
+      // Cleanup the test device immediately
+      await db.deleteDevice(device.deviceId)
+      helpers.log(`Cleaned up test device ${device.deviceId} after session completion`)
     } else {
       await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
 

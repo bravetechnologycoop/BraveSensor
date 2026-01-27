@@ -120,6 +120,7 @@ async function submitSendTestAlert(req, res) {
       }
 
       await db.commitTransaction(pgClient)
+      pgClient = null // Mark as committed so we don't try to rollback
 
       // Simulate Particle webhook (like smoke test)
       const eventData =
@@ -155,16 +156,7 @@ async function submitSendTestAlert(req, res) {
       )
 
       helpers.log(`Troubleshooting: Sent ${alertType} test alert for device ${deviceId}, test device ${testDevice.deviceId}`)
-
-      // Schedule cleanup after 1 hour
-      setTimeout(async () => {
-        try {
-          await db.deleteDevice(testDevice.deviceId)
-          helpers.log(`Cleaned up test device ${testDevice.deviceId}`)
-        } catch (err) {
-          helpers.logError(`Failed to cleanup test device: ${err}`)
-        }
-      }, 3600000)
+      helpers.log(`Test device will be cleaned up when the session completes`)
     } catch (err) {
       if (pgClient) {
         await db.rollbackTransaction(pgClient)
