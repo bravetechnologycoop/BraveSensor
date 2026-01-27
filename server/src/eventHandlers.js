@@ -387,9 +387,16 @@ async function handleStillnessAlertSurvey(client, device, session, respondedEven
       await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
       await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
 
-      // Cleanup the test device immediately
-      await db.deleteDevice(device.deviceId)
-      helpers.log(`Cleaned up test device ${device.deviceId} after session completion`)
+      // Schedule cleanup after transaction completes (avoid cascade issues)
+      const deviceIdToDelete = device.deviceId
+      setImmediate(async () => {
+        try {
+          await db.deleteDevice(deviceIdToDelete)
+          helpers.log(`Cleaned up test device ${deviceIdToDelete} after session completion`)
+        } catch (err) {
+          helpers.logError(`Failed to cleanup test device ${deviceIdToDelete}: ${err}`)
+        }
+      })
     } else {
       await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
 
@@ -786,9 +793,16 @@ async function handleDurationAlertSurvey(client, device, session, respondedEvent
       await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
       await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
 
-      // Cleanup the test device immediately
-      await db.deleteDevice(device.deviceId)
-      helpers.log(`Cleaned up test device ${device.deviceId} after session completion`)
+      // Schedule cleanup after transaction completes (avoid cascade issues)
+      const deviceIdToDelete = device.deviceId
+      setImmediate(async () => {
+        try {
+          await db.deleteDevice(deviceIdToDelete)
+          helpers.log(`Cleaned up test device ${deviceIdToDelete} after session completion`)
+        } catch (err) {
+          helpers.logError(`Failed to cleanup test device ${deviceIdToDelete}: ${err}`)
+        }
+      })
     } else {
       await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
 
@@ -921,9 +935,16 @@ async function handleDurationAlertSurveyDoorOpened(client, device, session, resp
       await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
       await db.updateSession(session.sessionId, SESSION_STATUS.COMPLETED, session.doorOpened, session.surveySent, pgClient)
 
-      // Cleanup the test device immediately
-      await db.deleteDevice(device.deviceId)
-      helpers.log(`Cleaned up test device ${device.deviceId} after session completion`)
+      // Schedule cleanup after transaction completes (avoid cascade issues)
+      const deviceIdToDelete = device.deviceId
+      setImmediate(async () => {
+        try {
+          await db.deleteDevice(deviceIdToDelete)
+          helpers.log(`Cleaned up test device ${deviceIdToDelete} after session completion`)
+        } catch (err) {
+          helpers.logError(`Failed to cleanup test device ${deviceIdToDelete}: ${err}`)
+        }
+      })
     } else {
       await db.updateSessionSelectedSurveyCategory(session.sessionId, selectedCategory, pgClient)
 
