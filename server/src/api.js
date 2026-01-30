@@ -71,10 +71,10 @@ const rateLimitBuckets = new Map()
 
 function isRateLimited(key) {
   const now = Date.now()
-  const bucket = rateLimitBuckets.get(key) || { count: 0, resetAt: now + 60_000 }
+  const bucket = rateLimitBuckets.get(key) || { count: 0, resetAt: now + 60000 }
   if (now > bucket.resetAt) {
     bucket.count = 0
-    bucket.resetAt = now + 60_000
+    bucket.resetAt = now + 60000
   }
   bucket.count += 1
   rateLimitBuckets.set(key, bucket)
@@ -157,9 +157,7 @@ const validateFilters = [
   Validator.query('status').optional().isString(),
 ]
 
-const validateTimeline = [
-  Validator.query('months').optional().isInt({ min: 1, max: 24 }).toInt(),
-]
+const validateTimeline = [Validator.query('months').optional().isInt({ min: 1, max: 24 }).toInt()]
 
 function applyDateFilter(items, dateFrom, dateTo, accessor) {
   if (!dateFrom && !dateTo) return items
@@ -215,8 +213,7 @@ async function handleGetClients(req, res) {
     ])
 
     const allowed = req.apiAuth?.allowedClientIds
-    const scopedClients =
-      Array.isArray(allowed) && allowed.length > 0 ? clients.filter(c => allowed.includes(c.clientId)) : clients
+    const scopedClients = Array.isArray(allowed) && allowed.length > 0 ? clients.filter(c => allowed.includes(c.clientId)) : clients
 
     // If stats requested, fetch aggregated counts
     let enrichedClients = scopedClients
@@ -292,9 +289,7 @@ async function handleGetClientDevices(req, res) {
     const deviceType = normalizeDeviceType(req.query.deviceType || null)
     const fields = req.query.fields === 'light' ? 'light' : 'full'
     const devicesRaw = await db.getDevicesForClient(req.params.clientId)
-    const devicesFiltered = deviceType
-      ? devicesRaw.filter(d => normalizeDeviceType(d.deviceType) === deviceType)
-      : devicesRaw
+    const devicesFiltered = deviceType ? devicesRaw.filter(d => normalizeDeviceType(d.deviceType) === deviceType) : devicesRaw
     const devices =
       fields === 'light'
         ? devicesFiltered.map(d => ({
@@ -323,17 +318,11 @@ async function handleGetDevices(req, res) {
     const fields = req.query.fields === 'light' ? 'light' : 'full'
     const allowed = req.apiAuth?.allowedClientIds
 
-    const [devicesRaw, totalCount] = await Promise.all([
-      db.getDevices(limit, offset),
-      limit !== null ? db.getDevicesCount() : Promise.resolve(null),
-    ])
+    const [devicesRaw, totalCount] = await Promise.all([db.getDevices(limit, offset), limit !== null ? db.getDevicesCount() : Promise.resolve(null)])
 
-    const devicesScoped =
-      Array.isArray(allowed) && allowed.length > 0 ? devicesRaw.filter(d => allowed.includes(d.clientId)) : devicesRaw
+    const devicesScoped = Array.isArray(allowed) && allowed.length > 0 ? devicesRaw.filter(d => allowed.includes(d.clientId)) : devicesRaw
 
-    const devicesFiltered = deviceType
-      ? devicesScoped.filter(d => normalizeDeviceType(d.deviceType) === deviceType)
-      : devicesScoped
+    const devicesFiltered = deviceType ? devicesScoped.filter(d => normalizeDeviceType(d.deviceType) === deviceType) : devicesScoped
 
     const devices =
       fields === 'light'
@@ -387,12 +376,7 @@ async function handleGetClientSessions(req, res) {
     const fields = req.query.fields === 'light' ? 'light' : 'full'
 
     const sessionsRaw = await db.getSessionsWithClientId(req.params.clientId)
-    const sessionsDateFiltered = applyDateFilter(
-      sessionsRaw || [],
-      dateFrom,
-      dateTo,
-      s => s.createdAt || s.updatedAt || null,
-    )
+    const sessionsDateFiltered = applyDateFilter(sessionsRaw || [], dateFrom, dateTo, s => s.createdAt || s.updatedAt || null)
 
     const sessions =
       fields === 'light'
@@ -429,12 +413,7 @@ async function handleGetClientDeviceSessions(req, res) {
     const fields = req.query.fields === 'light' ? 'light' : 'full'
 
     const sessionsRaw = await db.getSessionsWithDeviceId(req.params.deviceId)
-    const sessionsDateFiltered = applyDateFilter(
-      sessionsRaw || [],
-      dateFrom,
-      dateTo,
-      s => s.createdAt || s.updatedAt || null,
-    )
+    const sessionsDateFiltered = applyDateFilter(sessionsRaw || [], dateFrom, dateTo, s => s.createdAt || s.updatedAt || null)
 
     const sessions =
       fields === 'light'
@@ -472,12 +451,7 @@ async function handleGetDeviceSessions(req, res) {
     const fields = req.query.fields === 'light' ? 'light' : 'full'
 
     const sessionsRaw = await db.getSessionsWithDeviceId(req.params.deviceId)
-    const sessionsDateFiltered = applyDateFilter(
-      sessionsRaw || [],
-      dateFrom,
-      dateTo,
-      s => s.createdAt || s.updatedAt || null,
-    )
+    const sessionsDateFiltered = applyDateFilter(sessionsRaw || [], dateFrom, dateTo, s => s.createdAt || s.updatedAt || null)
 
     const sessions =
       fields === 'light'
@@ -542,12 +516,7 @@ async function handleGetSessions(req, res) {
       limit !== null ? db.getSessionsCount({ category, status }) : Promise.resolve(null),
     ])
 
-    const sessionsDateFiltered = applyDateFilter(
-      sessionsRaw || [],
-      dateFrom,
-      dateTo,
-      s => s.createdAt || s.updatedAt || null,
-    )
+    const sessionsDateFiltered = applyDateFilter(sessionsRaw || [], dateFrom, dateTo, s => s.createdAt || s.updatedAt || null)
 
     const sessions =
       fields === 'light'
@@ -595,10 +564,7 @@ async function handleGetEvents(req, res) {
     const dateFrom = req.query.date_from || null
     const dateTo = req.query.date_to || null
 
-    const [eventsRaw, totalCount] = await Promise.all([
-      db.getEvents(limit, offset),
-      limit !== null ? db.getEventsCount() : Promise.resolve(null),
-    ])
+    const [eventsRaw, totalCount] = await Promise.all([db.getEvents(limit, offset), limit !== null ? db.getEventsCount() : Promise.resolve(null)])
 
     const events = applyDateFilter(eventsRaw || [], dateFrom, dateTo, e => e.eventSentAt || null)
 
@@ -763,10 +729,7 @@ async function handleGetVitals(req, res) {
     const dateFrom = req.query.date_from || null
     const dateTo = req.query.date_to || null
 
-    const [vitalsRaw, totalCount] = await Promise.all([
-      db.getVitals(limit, offset),
-      limit !== null ? db.getVitalsCount() : Promise.resolve(null),
-    ])
+    const [vitalsRaw, totalCount] = await Promise.all([db.getVitals(limit, offset), limit !== null ? db.getVitalsCount() : Promise.resolve(null)])
 
     const vitals = applyDateFilter(vitalsRaw || [], dateFrom, dateTo, v => v.createdAt || null)
 

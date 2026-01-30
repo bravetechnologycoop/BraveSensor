@@ -61,48 +61,18 @@ function configureRoutes(app) {
     app.get(`${base}/clients/:clientId`, api.validateGetClient, api.authorize, api.handleGetClient)
     if (base === '/api/v1') {
       app.get(`${base}/clients/:clientId/stats`, api.validateGetClient, api.authorize, api.handleGetClientStats)
-      app.get(
-        `${base}/clients/:clientId/timeline`,
-        api.validateGetClient,
-        api.validateTimeline,
-        api.authorize,
-        api.handleGetClientTimeline,
-      )
+      app.get(`${base}/clients/:clientId/timeline`, api.validateGetClient, api.validateTimeline, api.authorize, api.handleGetClientTimeline)
     }
 
     // Device endpoints
     app.get(`${base}/devices`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetDevices)
-    app.get(
-      `${base}/clients/:clientId/devices`,
-      api.validateGetClientDevices,
-      api.validateFilters,
-      api.authorize,
-      api.handleGetClientDevices,
-    )
-    app.get(
-      `${base}/clients/:clientId/devices/:deviceId`,
-      api.validateGetClientDevice,
-      api.validateFilters,
-      api.authorize,
-      api.handleGetClientDevice,
-    )
+    app.get(`${base}/clients/:clientId/devices`, api.validateGetClientDevices, api.validateFilters, api.authorize, api.handleGetClientDevices)
+    app.get(`${base}/clients/:clientId/devices/:deviceId`, api.validateGetClientDevice, api.validateFilters, api.authorize, api.handleGetClientDevice)
 
     // Session endpoints
     app.get(`${base}/sessions`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetSessions)
-    app.get(
-      `${base}/clients/:clientId/sessions`,
-      api.validateGetClientSessions,
-      api.validateFilters,
-      api.authorize,
-      api.handleGetClientSessions,
-    )
-    app.get(
-      `${base}/devices/:deviceId/sessions`,
-      api.validateGetDeviceSessions,
-      api.validateFilters,
-      api.authorize,
-      api.handleGetDeviceSessions,
-    )
+    app.get(`${base}/clients/:clientId/sessions`, api.validateGetClientSessions, api.validateFilters, api.authorize, api.handleGetClientSessions)
+    app.get(`${base}/devices/:deviceId/sessions`, api.validateGetDeviceSessions, api.validateFilters, api.authorize, api.handleGetDeviceSessions)
     app.get(
       `${base}/clients/:clientId/devices/:deviceId/sessions`,
       api.validateGetClientDeviceSessions,
@@ -115,7 +85,13 @@ function configureRoutes(app) {
     // Event endpoints
     app.get(`${base}/events`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetEvents)
     app.get(`${base}/sessions/:sessionId/events`, api.validateGetSessionEvents, api.validateFilters, api.authorize, api.handleGetSessionEvents)
-    app.get(`${base}/sessions/:sessionId/teams-events`, api.validateGetSessionTeamsEvents, api.validateFilters, api.authorize, api.handleGetSessionTeamsEvents)
+    app.get(
+      `${base}/sessions/:sessionId/teams-events`,
+      api.validateGetSessionTeamsEvents,
+      api.validateFilters,
+      api.authorize,
+      api.handleGetSessionTeamsEvents,
+    )
 
     // Notification endpoints
     app.get(`${base}/notifications`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetNotifications)
@@ -138,12 +114,7 @@ function configureRoutes(app) {
       api.authorize,
       api.handleGetDeviceVitals,
     )
-    app.get(
-      `${base}/devices/:deviceId/vitals/latest`,
-      api.validateGetDeviceLatestVital,
-      api.authorize,
-      api.handleGetDeviceLatestVital,
-    )
+    app.get(`${base}/devices/:deviceId/vitals/latest`, api.validateGetDeviceLatestVital, api.authorize, api.handleGetDeviceLatestVital)
 
     // Contact endpoints
     app.get(`${base}/contacts`, api.validatePagination, api.validateFilters, api.authorize, api.handleGetContacts)

@@ -192,7 +192,7 @@ describe('API Vitals Endpoints', () => {
         await db.createVital(this.device.deviceId, 'POWER_ON', new Date(), false, false, 0, 0)
         await new Promise(resolve => setTimeout(resolve, 10)) // Small delay
         const latestVital = await db.createVital(this.device.deviceId, 'POWER_ON', new Date(), false, false, 0, 0)
-        
+
         this.latestVitalId = latestVital.vitalId
 
         this.response = await this.agent.get(`/api/devices/${this.device.deviceId}/vitals/latest`).set('Authorization', BRAVE_API_KEY)

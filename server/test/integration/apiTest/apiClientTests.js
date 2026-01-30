@@ -88,12 +88,12 @@ describe('API Client Endpoints', () => {
         // Create test client with devices and sessions
         this.client = await factories.clientNewDBFactory()
         const device1 = await factories.deviceNewDBFactory({ clientId: this.client.clientId })
-        const device2 = await factories.deviceNewDBFactory({ clientId: this.client.clientId })
-        
+        await factories.deviceNewDBFactory({ clientId: this.client.clientId })
+
         // Create sessions for device1
-        const session1 = await factories.sessionNewDBFactory({ deviceId: device1.deviceId })
         await factories.sessionNewDBFactory({ deviceId: device1.deviceId })
-        
+        await factories.sessionNewDBFactory({ deviceId: device1.deviceId })
+
         // Create notifications for device1
         await db.createNotification(device1.deviceId, 'CONNECTION_ALERT')
         await db.createNotification(device1.deviceId, 'CONNECTION_ALERT')
@@ -109,7 +109,7 @@ describe('API Client Endpoints', () => {
         expect(this.response.body.status).to.equal('success')
         expect(this.response.body.data).to.be.an('array')
         expect(this.response.body.data).to.have.length(1)
-        
+
         const clientData = this.response.body.data[0]
         expect(clientData.clientId).to.equal(this.client.clientId)
         expect(clientData.deviceCount).to.equal(2)
