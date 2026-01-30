@@ -95,8 +95,8 @@ describe('API Client Endpoints', () => {
         await factories.sessionNewDBFactory({ deviceId: device1.deviceId })
 
         // Create notifications for device1
-        await db.createNotification(device1.deviceId, 'CONNECTION_ALERT')
-        await db.createNotification(device1.deviceId, 'CONNECTION_ALERT')
+        await db.createNotification(device1.deviceId, 'DEVICE_DISCONNECTED')
+        await db.createNotification(device1.deviceId, 'DEVICE_DISCONNECTED')
 
         this.response = await this.agent.get('/api/clients?include=stats').set('Authorization', BRAVE_API_KEY)
       })

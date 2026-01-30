@@ -181,6 +181,19 @@ async function deviceNewDBFactory(overrides = {}, pgClient) {
 
 async function sessionNewDBFactory(overrides = {}, pgClient) {
   const session = await db.createSession(overrides.deviceId !== undefined ? overrides.deviceId : 'fakeDeviceId', pgClient)
+
+  // Apply sessionStatus override if provided
+  if (overrides.sessionStatus !== undefined) {
+    await db.updateSession(session.sessionId, overrides.sessionStatus, session.doorOpened, session.surveySent, pgClient)
+    session.sessionStatus = overrides.sessionStatus
+  }
+
+  // Apply selectedSurveyCategory override if provided
+  if (overrides.selectedSurveyCategory !== undefined) {
+    await db.updateSessionSelectedSurveyCategory(session.sessionId, overrides.selectedSurveyCategory, pgClient)
+    session.selectedSurveyCategory = overrides.selectedSurveyCategory
+  }
+
   return session
 }
 

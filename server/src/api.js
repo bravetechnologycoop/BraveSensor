@@ -87,7 +87,7 @@ function findApiKey(authorizationHeader) {
 }
 
 function unauthorized(res, message = 'Unauthorized') {
-  return res.status(401).send({ status: 'error', code: 'unauthorized', message })
+  return res.status(401).send({ status: 'error', message })
 }
 
 function forbidden(res, message = 'Forbidden') {
