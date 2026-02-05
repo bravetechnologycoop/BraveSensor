@@ -95,9 +95,8 @@ async function submitSendTestAlert(req, res) {
 
     // Check for existing test devices for this device
     const allDevices = await db.getDevicesForClient(client.clientId)
-    const existingTestDevices = allDevices.filter(
-      d => d.displayName && d.displayName.includes('[TRAINING]') && d.displayName.includes(device.displayName),
-    )
+    const expectedTestDeviceName = `[TRAINING] ${device.displayName}`
+    const existingTestDevices = allDevices.filter(d => d.displayName && d.displayName === expectedTestDeviceName)
 
     if (existingTestDevices.length > 0) {
       const testDeviceNames = existingTestDevices.map(d => d.displayName).join(', ')
@@ -142,6 +141,21 @@ async function submitSendTestAlert(req, res) {
       await db.commitTransaction(pgClient)
       pgClient = null // Mark as committed so we don't try to rollback
 
+      // Schedule fallback cleanup after 1 hour in case session doesn't complete normally
+      // This must be set immediately after commit to ensure cleanup even if webhook simulation fails
+      setTimeout(async () => {
+        try {
+          // Check if device still exists before deleting
+          const existingDevice = await db.getDeviceWithDeviceId(testDevice.deviceId)
+          if (existingDevice) {
+            await db.deleteDevice(testDevice.deviceId)
+            helpers.log(`Fallback cleanup: Deleted test device ${testDevice.deviceId} after 1 hour timeout`)
+          }
+        } catch (err) {
+          helpers.logError(`Failed to cleanup test device ${testDevice.deviceId} in fallback: ${err}`)
+        }
+      }, 3600000) // 1 hour
+
       // Simulate Particle webhook (like smoke test)
       const eventData =
         alertType === 'stillness'
@@ -176,21 +190,7 @@ async function submitSendTestAlert(req, res) {
       )
 
       helpers.log(`Troubleshooting: Sent ${alertType} test alert for device ${deviceId}, test device ${testDevice.deviceId}`)
-      helpers.log(`Test device will be cleaned up when the session completes`)
-
-      // Fallback cleanup after 1 hour in case session doesn't complete
-      setTimeout(async () => {
-        try {
-          // Check if device still exists before deleting
-          const existingDevice = await db.getDeviceWithDeviceId(testDevice.deviceId)
-          if (existingDevice) {
-            await db.deleteDevice(testDevice.deviceId)
-            helpers.log(`Fallback cleanup: Deleted test device ${testDevice.deviceId} after 1 hour timeout`)
-          }
-        } catch (err) {
-          helpers.logError(`Failed to cleanup test device ${testDevice.deviceId} in fallback: ${err}`)
-        }
-      }, 3600000) // 1 hour
+      helpers.log(`Test device will be cleaned up when the session completes (with 1 hour fallback timeout)`)
     } catch (err) {
       if (pgClient) {
         await db.rollbackTransaction(pgClient)
