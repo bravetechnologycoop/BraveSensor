@@ -151,7 +151,8 @@
                             <ul>
                                 <li>✓ Creates temporary test device with unique Particle ID</li>
                                 <li>✓ Simulates sensor webhook (just like real alerts)</li>
-                                <li>✓ Sends alert to test number only (not to real responders)</li>
+                                <li>⚠️ Sends alerts to REAL responders and Teams channels (full production workflow)</li>
+                                <li>✓ Uses test number as the "from" number ({{testTwilioNumber}})</li>
                                 <li>✓ Full survey flow works normally</li>
                                 <li>✓ Device auto-deleted when session completes</li>
                             </ul>

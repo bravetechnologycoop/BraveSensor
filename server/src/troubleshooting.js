@@ -88,6 +88,27 @@ async function submitSendTestAlert(req, res) {
       return res.status(404).send('Client not found')
     }
 
+    // Prevent running tests on test devices
+    if (device.displayName && device.displayName.includes('[TRAINING]')) {
+      return res.status(400).send('Cannot run test on a test device. Please use the original device.')
+    }
+
+    // Check for existing test devices for this device
+    const allDevices = await db.getDevicesWithClientId(client.clientId)
+    const existingTestDevices = allDevices.filter(d => 
+      d.displayName && 
+      d.displayName.includes('[TRAINING]') && 
+      d.displayName.includes(device.displayName)
+    )
+
+    if (existingTestDevices.length > 0) {
+      const testDeviceNames = existingTestDevices.map(d => d.displayName).join(', ')
+      return res.status(400).send(
+        `A test is already running for this device (${testDeviceNames}). ` +
+        `Please wait for the existing test session to complete before starting another test.`
+      )
+    }
+
     // Generate unique identifiers for this test
     const timestamp = Date.now()
     const testLocationId = `TEST_${deviceId}_${timestamp}`
