@@ -94,7 +94,7 @@ async function submitSendTestAlert(req, res) {
     }
 
     // Check for existing test devices for this device
-    const allDevices = await db.getDevicesWithClientId(client.clientId)
+    const allDevices = await db.getDevicesForClient(client.clientId)
     const existingTestDevices = allDevices.filter(
       d => d.displayName && d.displayName.includes('[TRAINING]') && d.displayName.includes(device.displayName),
     )
