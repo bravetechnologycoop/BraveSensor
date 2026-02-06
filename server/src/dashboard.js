@@ -49,6 +49,7 @@ function setupDashboardSessions(app) {
       cookie: {
         secure: !helpers.isTestEnvironment(),
         httpOnly: true,
+        sameSite: 'lax', // CSRF protection: prevents cookie from being sent in cross-site requests
         expires: 8 * 60 * 60 * 1000,
       },
     }),

@@ -43,8 +43,8 @@
             
             <h5>Troubleshooting</h5>
             <div class="info-box">
-                <button class="btn btn-primary" onclick="showMessageModal('{{deviceId}}')">Send Custom Message</button>
-                <button class="btn btn-warning" onclick="showTestAlertModal('{{deviceId}}')">Send Test Alert</button>
+                <button class="btn btn-primary" onclick="showMessageModal()">Send Custom Message</button>
+                <button class="btn btn-warning" onclick="showTestAlertModal()">Send Test Alert</button>
             </div>
             <br>
             
@@ -98,17 +98,17 @@
                             <strong>Device:</strong> {{device.displayName}}<br>
                             <strong>Device Twilio Number:</strong> {{device.deviceTwilioNumber}}<br>
                             You can include the device name in your message using <code>{deviceName}</code>
-                            {{#client.responderPhoneNumbers}}
+                            {{#client.responderPhoneNumbers.length}}
                             <hr>
                             <strong>Message will be sent to:</strong><br>
                             {{#client.responderPhoneNumbers}}
                             <span class="badge badge-primary">{{.}}</span>
                             {{/client.responderPhoneNumbers}}
-                            {{/client.responderPhoneNumbers}}
-                            {{^client.responderPhoneNumbers}}
+                            {{/client.responderPhoneNumbers.length}}
+                            {{^client.responderPhoneNumbers.length}}
                             <hr>
                             <strong class="text-danger">⚠️ No responder phone numbers configured</strong>
-                            {{/client.responderPhoneNumbers}}
+                            {{/client.responderPhoneNumbers.length}}
                         </div>
                         <div class="alert alert-warning">
                             <small><strong>Note:</strong> This message will only be sent via SMS. It will not be sent to Microsoft Teams.</small>
@@ -138,7 +138,7 @@
                         <span>&times;</span>
                     </button>
                 </div>
-                <form id="testAlertForm" method="POST" action="/devices/{{device.deviceId}}/send-test-alert">
+                <form id="testAlertForm" method="POST" action="/devices/{{device.deviceId}}/send-test-alert" data-test-number="{{testTwilioNumber}}">
                     <div class="modal-body">
                         <div class="alert alert-warning">
                             <strong>⚠️ Warning:</strong> This will send a <strong>TRAINING ALERT</strong> to a dedicated test number for device <strong>{{device.displayName}}</strong>.<br>
@@ -175,11 +175,11 @@
     </div>
     
     <script>
-        function showMessageModal(deviceId) {
+        function showMessageModal() {
             $('#messageModal').modal('show')
         }
         
-        function showTestAlertModal(deviceId) {
+        function showTestAlertModal() {
             $('#testAlertModal').modal('show')
         }
         
@@ -191,7 +191,8 @@
         })
         
         $('#testAlertForm').on('submit', function(e) {
-            if (!confirm('Are you sure you want to send a TRAINING ALERT? This will create a temporary test device and send an alert to the test number ({{testTwilioNumber}}).')) {
+            const testNumber = $(this).data('test-number')
+            if (!confirm('Are you sure you want to send a TRAINING ALERT? This will create a temporary test device and send an alert to the test number (' + testNumber + ').')) {
                 e.preventDefault()
                 return false
             }

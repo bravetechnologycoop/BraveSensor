@@ -133,7 +133,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
       this.response = await this.agent.post(`/devices/${this.defaultDevice.deviceId}/send-test-alert`).send(goodRequest)
     })
 
-    it('should return 302 (redirect)', () => {
+    it('should return 200 (after redirect)', () => {
       expect(this.response).to.have.status(200)
     })
 
@@ -174,7 +174,7 @@ describe('dashboard.js integration tests: submitSendTestAlertTest', () => {
       this.response = await this.agent.post(`/devices/${this.defaultDevice.deviceId}/send-test-alert`).send(goodRequest)
     })
 
-    it('should return 302 (redirect)', () => {
+    it('should return 200 (after redirect)', () => {
       expect(this.response).to.have.status(200)
     })
 
