@@ -12,6 +12,7 @@ const vitals = require('./vitals')
 const sensorEvents = require('./sensorEvents')
 const twilioEvents = require('./twilioEvents')
 const teamsEvents = require('./teamsEvents')
+const troubleshooting = require('./troubleshooting')
 const smokeTest = require('../test/smokeTest')
 
 function configureRoutes(app) {
@@ -34,9 +35,11 @@ function configureRoutes(app) {
   app.get('/contacts/new', dashboard.sessionChecker, dashboard.renderNewContactPage) // Must be configured before /contacts/:contactId
   app.post('/contacts', dashboard.validateNewContact, dashboard.submitNewContact)
   app.get('/contacts/:contactId', dashboard.sessionChecker, dashboard.renderContactDetailsPage)
-  app.get('/contacts/:contactId/update', dashboard.sessionChecker, dashboard.renderUpdateContactPage) // TODO: implement update contact page
-  app.post('/contacts/:contactId', dashboard.validateUpdateContact, dashboard.submitUpdateContact) // TODO: implement update contact submission
+  app.get('/contacts/:contactId/update', dashboard.sessionChecker, dashboard.renderUpdateContactPage)
+  app.post('/contacts/:contactId', dashboard.validateUpdateContact, dashboard.submitUpdateContact)
 
+  app.post('/devices/:deviceId/send-message', troubleshooting.validateSendMessage, troubleshooting.submitSendMessage)
+  app.post('/devices/:deviceId/send-test-alert', troubleshooting.validateSendTestAlert, troubleshooting.submitSendTestAlert)
   app.post('/clients', dashboard.validateNewClient, dashboard.submitNewClient)
   app.post('/clients/:clientId', dashboard.validateUpdateClient, dashboard.submitUpdateClient)
   app.post('/devices', dashboard.validateNewDevice, dashboard.submitNewDevice)
