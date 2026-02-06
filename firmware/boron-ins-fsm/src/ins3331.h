@@ -24,20 +24,27 @@
 #define APPLICATION_STOP  0xE4
 #define APPLICATION_START 0xEB
 
-// Number of samples for the average, buffer size must be at least one larger than sample size
-#define MOVING_AVERAGE_SAMPLE_SIZE 25
-#define MOVING_AVERAGE_BUFFER_SIZE 26
+// Filter configuration
+#define MEDIAN_FILTER_SIZE 5          // Odd number for median calculation
+#define MOVING_AVERAGE_SAMPLE_SIZE 20 // MA window after median filter
+#define MOVING_AVERAGE_BUFFER_SIZE 21 // Buffer size = sample size + 1
+
+// Outlier rejection (IQR-based)
+#define IQR_MULTIPLIER 1.5f           // Samples outside Q1-1.5*IQR to Q3+1.5*IQR are rejected
+#define QUARTILE_BUFFER_SIZE 50       // Samples used for quartile estimation
 
 // ***************************** Global typedefs *****************************
 
 typedef struct rawINSData {
-    int inPhase;
-    int quadrature;
+    int16_t inPhase;
+    int16_t quadrature;
+    bool isValid;         // Checksum validation result
 } rawINSData;
 
 typedef struct filteredINSData {
     float iAverage;
     float qAverage;
+    float magnitude;      // sqrt(I² + Q²) - primary metric for motion detection
     unsigned long timestamp;
 } filteredINSData;
 

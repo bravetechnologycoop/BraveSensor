@@ -211,6 +211,10 @@ int occupancy_detection_ins_threshold_set(String input) {
         else if (threshold < 0) {
             returnFlag = -1;
         }
+        else if (threshold <= HYSTERESIS_OFFSET) {
+            // Threshold must be greater than HYSTERESIS_OFFSET to prevent underflow
+            returnFlag = -1;
+        }
         else {
             EEPROM.put(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, threshold);
             occupancy_detection_ins_threshold = threshold;
@@ -242,6 +246,10 @@ int stillness_ins_threshold_set(String input) {
             returnFlag = -1;
         }
         else if (threshold < 0) {
+            returnFlag = -1;
+        }
+        else if (threshold <= HYSTERESIS_OFFSET) {
+            // Threshold must be greater than HYSTERESIS_OFFSET to prevent underflow
             returnFlag = -1;
         }
         else {
@@ -459,3 +467,4 @@ int im21_door_id_set(String command) {
     // return door ID as int
     return (int)strtol(buffer, NULL, 16);
 }
+

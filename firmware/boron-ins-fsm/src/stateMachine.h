@@ -15,8 +15,11 @@
 #define INITIALIZATION_FLAG_HIGH_CONF       0x9999
 
 // Initial values for state machine, can be changed via console function
-#define STILLNESS_INS_THRESHOLD             60         
-#define OCCUPANCY_DETECTION_INS_THRESHOLD   60         
+#define STILLNESS_INS_THRESHOLD             20
+#define OCCUPANCY_DETECTION_INS_THRESHOLD   60
+
+// Hysteresis offset: thresholds become base ± this value
+#define HYSTERESIS_OFFSET                   5
 
 #define STATE0_OCCUPANCY_DETECTION_TIME     60000       // 1 min
 #define STATE1_INITIAL_TIME                 5000        // 5 secs
@@ -47,6 +50,7 @@ extern StateHandler stateHandler;
 // State machine constants firmware code definition
 extern unsigned long stillness_ins_threshold;
 extern unsigned long occupancy_detection_ins_threshold;
+
 extern unsigned long state0_occupancy_detection_time;
 extern unsigned long state1_initial_time;
 extern unsigned long duration_alert_time;
