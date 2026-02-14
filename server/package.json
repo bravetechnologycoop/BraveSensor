@@ -39,7 +39,7 @@
     "mustache": "^3.2.1",
     "particle-api-js": "^10.0.0",
     "pg": "^8.2.0",
-    "qs": "^6.14.1",
+    "qs": "^6.14.2",
     "twilio": "^4.7.1"
   },
   "devDependencies": {
