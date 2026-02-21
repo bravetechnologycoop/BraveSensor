@@ -103,4 +103,6 @@ void state3_stillness();
 void publishDebugMessage(int, unsigned char, float, unsigned long);
 void publishStateTransition(int, int, unsigned char, float);
 
+void publishOccupancyEvent(bool occupied, int state, unsigned char doorStatus, float insValue);
+
 #endif
