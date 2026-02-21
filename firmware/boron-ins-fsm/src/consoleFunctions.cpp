@@ -484,13 +484,13 @@ int toggle_occupancy_events(String command) {
     else if (*holder == '1') {
         returnFlag = 1;
         occupancyEventsEnabled = true;
-        EEPROM.put(ADDR_OCCUPANCY_EVENTS_ENABLED, (uint8_t)1);
+        EEPROM.put(ADDR_OCCUPANCY_EVENTS_ENABLED, (bool)true);
         Particle.publish("Occupancy Events Enabled", "true", PRIVATE);
     }
     else if (*holder == '0') {
         returnFlag = 0;
         occupancyEventsEnabled = false;
-        EEPROM.put(ADDR_OCCUPANCY_EVENTS_ENABLED, (uint8_t)0);
+        EEPROM.put(ADDR_OCCUPANCY_EVENTS_ENABLED, (bool)false);
         Particle.publish("Occupancy Events Disabled", "false", PRIVATE);
     }
     else if (*holder == 'e') {
