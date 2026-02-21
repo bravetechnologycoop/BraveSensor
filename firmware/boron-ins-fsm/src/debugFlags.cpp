@@ -13,3 +13,5 @@ unsigned long debugFlagTurnedOnAt;
 // Initialize constants to sensible defaults. This will be overwritten
 bool stateMachineDebugFlag = false;
 unsigned long lastDebugPublish = 0;
+bool occupancyEventsEnabled = false;
+unsigned long lastOccupancyEventPublish = 0;

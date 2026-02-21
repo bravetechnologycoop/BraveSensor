@@ -63,6 +63,12 @@ int resetReason = System.resetReason();
 void setupStateMachine() {
     // From debugFlags.h (default to not publish debug messages)
     stateMachineDebugFlag = 0;
+    
+    // Load occupancy events setting from EEPROM
+    EEPROM.get(ADDR_OCCUPANCY_EVENTS_ENABLED, occupancyEventsEnabled);
+    if (occupancyEventsEnabled != 0 && occupancyEventsEnabled != 1) {
+        occupancyEventsEnabled = 0;  // Default to disabled if invalid
+    }
 
     state0_start_time = 0;
     state1_start_time = 0;
@@ -86,6 +92,30 @@ void setupStateMachine() {
     isStillnessAlertThresholdExceeded = false;
 
     allowTransitionToStateOne = true;
+}
+
+void publishOccupancyEvent(bool occupied, int state, unsigned char doorStatus, float insValue) {
+    if (!occupancyEventsEnabled) {
+        return;
+    }
+    
+    // Rate limiting: don't publish more than once every 500ms
+    unsigned long now = millis();
+    if (now - lastOccupancyEventPublish < 500) {
+        return;
+    }
+    lastOccupancyEventPublish = now;
+    
+    char buf[256];
+    snprintf(buf, sizeof(buf), 
+        "{\"occupied\":\"%s\",\"state\":\"%d\",\"door_status\":\"0x%02X\",\"INS_val\":\"%f\",\"timestamp\":\"%lu\"}",
+        occupied ? "true" : "false",
+        state,
+        doorStatus,
+        insValue,
+        now);
+    
+    Particle.publish("Occupancy Changed", buf, PRIVATE);
 }
 
 void initializeStateMachineConsts() {
@@ -281,6 +311,7 @@ void state0_idle() {
         // Update state 1 timer and transition to state 1
         state1_start_time = millis();
         stateHandler = state1_initial_countdown;
+        publishOccupancyEvent(true, 1, checkDoor.doorStatus, checkINS.magnitude);
     }
 }
 
@@ -315,6 +346,7 @@ void state1_initial_countdown() {
         Log.warn("State 1 --> State 0: Door opened, session over");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.magnitude);
         stateHandler = state0_idle;
+        publishOccupancyEvent(false, 0, checkDoor.doorStatus, checkINS.magnitude);
     }
     // Transition to state 2 if the door remains closed and movement is detected for the maximum allowed time.
     else if (timeInState1 >= state1_initial_time) {
@@ -324,6 +356,7 @@ void state1_initial_countdown() {
         // Reset state 2 timer and transition to state 2
         state2_start_time = millis();
         stateHandler = state2_monitoring;
+        publishOccupancyEvent(true, 2, checkDoor.doorStatus, checkINS.magnitude);
     }
 }
 
@@ -364,6 +397,7 @@ void state2_monitoring() {
 
         // Transition to state 0
         stateHandler = state0_idle;
+        publishOccupancyEvent(false, 0, checkDoor.doorStatus, checkINS.magnitude);
     }
     // Transition to state 3 if stillness is detected (using low threshold for hysteresis)
     else if (checkINS.magnitude > 0 && checkINS.magnitude < (stillness_ins_threshold - HYSTERESIS_OFFSET)) {
@@ -429,6 +463,7 @@ void state3_stillness() {
 
         // Transition to state 0
         stateHandler = state0_idle;
+        publishOccupancyEvent(false, 0, checkDoor.doorStatus, checkINS.magnitude);
     } 
     // Transition to state 2 if movement exceeds the stillness threshold (using high threshold for hysteresis)
     else if (checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET)) {
