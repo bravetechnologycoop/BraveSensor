@@ -29,4 +29,8 @@ int stillness_alert_time_set(String);
 
 int im21_door_id_set(String);
 
+int baseline_offset_set(String);
+int baseline_enabled_set(String);
+int baseline_info(String);
+
 #endif

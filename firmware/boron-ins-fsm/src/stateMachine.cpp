@@ -57,6 +57,12 @@ bool isStillnessAlertThresholdExceeded = false;
 // Allow state transitions
 bool allowTransitionToStateOne = true;
 
+// Adaptive baseline variables
+float baselineMagnitude = DEFAULT_BASELINE_MAGNITUDE;
+unsigned long baselineStillnessOffset = DEFAULT_BASELINE_STILLNESS_OFFSET;
+bool baselineAdaptiveEnabled = true;
+int baselineSampleCount = 0;
+
 // Reset reason
 int resetReason = System.resetReason();
 
@@ -130,7 +136,7 @@ void initializeStateMachineConsts() {
     EEPROM.get(ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG, initializeOccupancyDetectionINSThresholdFlag);
     EEPROM.get(ADDR_INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG, initializeHighConfINSThresholdFlag);
     Log.warn("OccupancyDetectionINSThresholdFlag is 0x%04X", initializeOccupancyDetectionINSThresholdFlag);
-    
+
     if (initializeOccupancyDetectionINSThresholdFlag != INITIALIZATION_FLAG_SET) {
         // firmware was never v1924
         if (initializeHighConfINSThresholdFlag != INITIALIZATION_FLAG_HIGH_CONF) {
@@ -138,7 +144,7 @@ void initializeStateMachineConsts() {
             EEPROM.put(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
             Log.warn("Occupancy Detection INS Threshold initialized and written to EEPROM.");
         }
-        // firmware was previously v1924 
+        // firmware was previously v1924
         else {
             EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
             EEPROM.get(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
@@ -152,6 +158,35 @@ void initializeStateMachineConsts() {
         EEPROM.get(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
         Log.warn("Occupancy Detection INS Threshold read from EEPROM.");
     }
+
+    // Initialize adaptive baseline
+    uint16_t initializeBaselineFlag;
+    EEPROM.get(ADDR_INITIALIZE_BASELINE_FLAG, initializeBaselineFlag);
+    Log.warn("Baseline initialization flag read: 0x%04X", initializeBaselineFlag);
+    if (initializeBaselineFlag != INITIALIZATION_FLAG_SET) {
+        uint32_t defaultMagX100 = (uint32_t)(DEFAULT_BASELINE_MAGNITUDE * 100);
+        EEPROM.put(ADDR_BASELINE_MAGNITUDE_X100, defaultMagX100);
+        EEPROM.put(ADDR_BASELINE_STILLNESS_OFFSET, (uint32_t)DEFAULT_BASELINE_STILLNESS_OFFSET);
+        uint8_t enabled = 1;
+        EEPROM.put(ADDR_BASELINE_ENABLED, enabled);
+        initializeBaselineFlag = INITIALIZATION_FLAG_SET;
+        EEPROM.put(ADDR_INITIALIZE_BASELINE_FLAG, initializeBaselineFlag);
+        baselineMagnitude = DEFAULT_BASELINE_MAGNITUDE;
+        baselineStillnessOffset = DEFAULT_BASELINE_STILLNESS_OFFSET;
+        baselineAdaptiveEnabled = true;
+        Log.warn("Adaptive baseline initialized with defaults.");
+    } else {
+        uint32_t magX100;
+        EEPROM.get(ADDR_BASELINE_MAGNITUDE_X100, magX100);
+        baselineMagnitude = magX100 / 100.0f;
+        EEPROM.get(ADDR_BASELINE_STILLNESS_OFFSET, baselineStillnessOffset);
+        uint8_t enabled;
+        EEPROM.get(ADDR_BASELINE_ENABLED, enabled);
+        baselineAdaptiveEnabled = (enabled == 1);
+        Log.warn("Adaptive baseline read from EEPROM: magnitude=%.2f, offset=%lu, enabled=%d",
+                 baselineMagnitude, baselineStillnessOffset, baselineAdaptiveEnabled);
+    }
+    baselineSampleCount = 0;
 
 }
 
@@ -258,6 +293,47 @@ void state0_idle() {
         timeInState0 = 0;
     }
     
+    // Adaptive baseline learning - learn noise floor while idle
+    static unsigned long lastBaselineSample = 0;
+    static unsigned long lastBaselineSave = 0;
+
+    if (baselineAdaptiveEnabled && checkINS.magnitude > 0.001f &&
+        !isDoorOpen(checkDoor.doorStatus) && !isDoorStatusUnknown(checkDoor.doorStatus)) {
+        unsigned long now = millis();
+        if (now - lastBaselineSample >= BASELINE_SAMPLE_INTERVAL) {
+            lastBaselineSample = now;
+
+            // EMA update
+            if (baselineSampleCount == 0) {
+                baselineMagnitude = checkINS.magnitude;
+            } else {
+                baselineMagnitude = BASELINE_EMA_ALPHA * checkINS.magnitude
+                                  + (1.0f - BASELINE_EMA_ALPHA) * baselineMagnitude;
+            }
+            baselineSampleCount++;
+
+            // Clamp to valid range
+            if (baselineMagnitude < BASELINE_MIN) baselineMagnitude = BASELINE_MIN;
+            if (baselineMagnitude > BASELINE_MAX) baselineMagnitude = BASELINE_MAX;
+
+            // Apply learned baseline after warmup
+            if (baselineSampleCount >= BASELINE_WARMUP_SAMPLES) {
+                stillness_ins_threshold = (unsigned long)(baselineMagnitude + baselineStillnessOffset);
+                if (stillness_ins_threshold <= HYSTERESIS_OFFSET) {
+                    stillness_ins_threshold = HYSTERESIS_OFFSET + 1;
+                }
+            }
+
+            // Periodic EEPROM save
+            if (now - lastBaselineSave >= BASELINE_EEPROM_SAVE_INTERVAL) {
+                uint32_t magX100 = (uint32_t)(baselineMagnitude * 100);
+                EEPROM.put(ADDR_BASELINE_MAGNITUDE_X100, magX100);
+                lastBaselineSave = now;
+                Log.info("Baseline saved to EEPROM: %.2f (threshold: %lu)", baselineMagnitude, stillness_ins_threshold);
+            }
+        }
+    }
+
     // Log current state
     Log.info("State 0 (Idle): Door Status = 0x%02X, INS Magnitude = %f", checkDoor.doorStatus, checkINS.magnitude);
     publishDebugMessage(0, checkDoor.doorStatus, checkINS.magnitude, timeInState0);

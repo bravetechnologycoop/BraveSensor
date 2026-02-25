@@ -42,6 +42,12 @@
 #define ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD                  37 // uint32_t = 4 bytes
 #define ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG  41 // uint16_t = 2 bytes
 
-// next available address is 41 + 4 = 45
+// Adaptive baseline state
+#define ADDR_INITIALIZE_BASELINE_FLAG           43  // uint16_t = 2 bytes
+#define ADDR_BASELINE_MAGNITUDE_X100            45  // uint32_t = 4 bytes (magnitude * 100)
+#define ADDR_BASELINE_STILLNESS_OFFSET          49  // uint32_t = 4 bytes
+#define ADDR_BASELINE_ENABLED                   53  // uint8_t  = 1 byte (0=disabled, 1=enabled)
+
+// next available address is 53 + 1 = 54
 
 #endif

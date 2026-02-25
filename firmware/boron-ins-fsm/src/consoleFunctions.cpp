@@ -28,6 +28,10 @@ void setupConsoleFunctions() {
     Particle.function("Stillness_Time", stillness_alert_time_set);
 
     Particle.function("IM21_Door_ID", im21_door_id_set);
+
+    Particle.function("Baseline_Offset", baseline_offset_set);
+    Particle.function("Baseline_Enabled", baseline_enabled_set);
+    Particle.function("Baseline_Info", baseline_info);
 }
 
 int force_reset(String command) {
@@ -108,7 +112,10 @@ int reset_state_to_zero(String command) {
         // Reset door monitoring variables
         consecutiveOpenDoorHeartbeatCount = 0;
         doorMessageReceivedFlag = false;
-      
+
+        // Reset adaptive baseline warmup
+        baselineSampleCount = 0;
+
         Particle.publish("State Reset", "State has been reset to 0.", PRIVATE | WITH_ACK);
     } else {
         // anything else is bad input
@@ -255,6 +262,12 @@ int stillness_ins_threshold_set(String input) {
         else {
             EEPROM.put(ADDR_STILLNESS_INS_THRESHOLD, threshold);
             stillness_ins_threshold = threshold;
+
+            // Disable adaptive baseline when manually setting threshold
+            baselineAdaptiveEnabled = false;
+            uint8_t disabled = 0;
+            EEPROM.put(ADDR_BASELINE_ENABLED, disabled);
+
             returnFlag = stillness_ins_threshold;
         }
     }
@@ -466,5 +479,66 @@ int im21_door_id_set(String command) {
 
     // return door ID as int
     return (int)strtol(buffer, NULL, 16);
+}
+
+int baseline_offset_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_BASELINE_STILLNESS_OFFSET, baselineStillnessOffset);
+        returnFlag = (int)baselineStillnessOffset;
+    }
+    else {
+        int offset = input.toInt();
+
+        if (offset <= 0) {
+            returnFlag = -1;
+        }
+        else {
+            EEPROM.put(ADDR_BASELINE_STILLNESS_OFFSET, (uint32_t)offset);
+            baselineStillnessOffset = offset;
+            returnFlag = (int)baselineStillnessOffset;
+        }
+    }
+
+    return returnFlag;
+}
+
+int baseline_enabled_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    if (*(holder + 1) != 0) {
+        returnFlag = -1;
+    }
+    else if (*holder == 'e') {
+        returnFlag = baselineAdaptiveEnabled ? 1 : 0;
+    }
+    else if (*holder == '0') {
+        baselineAdaptiveEnabled = false;
+        uint8_t disabled = 0;
+        EEPROM.put(ADDR_BASELINE_ENABLED, disabled);
+        returnFlag = 0;
+    }
+    else if (*holder == '1') {
+        baselineAdaptiveEnabled = true;
+        baselineSampleCount = 0;
+        uint8_t enabled = 1;
+        EEPROM.put(ADDR_BASELINE_ENABLED, enabled);
+        returnFlag = 1;
+    }
+    else {
+        returnFlag = -1;
+    }
+
+    return returnFlag;
+}
+
+int baseline_info(String input) {
+    // Returns learned baseline magnitude * 100 as integer
+    return (int)(baselineMagnitude * 100);
 }
 

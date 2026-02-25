@@ -27,6 +27,16 @@
 #define DURATION_ALERT_TIME                 1200000     // 20 mins          
 #define STILLNESS_ALERT_TIME                300000      // 5 mins
 
+// Adaptive baseline parameters
+#define DEFAULT_BASELINE_MAGNITUDE          5.0f
+#define DEFAULT_BASELINE_STILLNESS_OFFSET   15
+#define BASELINE_EMA_ALPHA                  0.02f
+#define BASELINE_SAMPLE_INTERVAL            1000        // 1 second
+#define BASELINE_WARMUP_SAMPLES             60          // 1 minute
+#define BASELINE_EEPROM_SAVE_INTERVAL       300000      // 5 minutes
+#define BASELINE_MIN                        1.0f
+#define BASELINE_MAX                        50.0f
+
 // Minimize time between restart and first Heartbeat message
 #define DEVICE_RESET_THRESHOLD              540000      // 9 mins
 
@@ -84,6 +94,12 @@ extern bool isStillnessAlertThresholdExceeded;
 
 // Allow state transitions
 extern bool allowTransitionToStateOne;
+
+// Adaptive baseline variables
+extern float baselineMagnitude;
+extern unsigned long baselineStillnessOffset;
+extern bool baselineAdaptiveEnabled;
+extern int baselineSampleCount;
 
 // ************************** Function declarations **************************
 
