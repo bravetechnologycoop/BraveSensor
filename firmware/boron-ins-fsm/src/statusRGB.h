@@ -6,6 +6,9 @@
 #define GREEN_PIN   A1
 #define BLUE_PIN    A0
 
+//LED debug mode flag
+extern bool ledDebugMode;
+
 //setup functions
 void setupStatusRGB(void);
 

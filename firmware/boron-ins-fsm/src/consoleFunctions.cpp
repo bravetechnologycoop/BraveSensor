@@ -11,6 +11,7 @@
 #include "flashAddresses.h"
 #include "stateMachine.h"
 #include "imDoorSensor.h"
+#include "statusRGB.h"
 
 void setupConsoleFunctions() {
     // particle console function declarations, belongs in setup() as per docs
@@ -28,6 +29,8 @@ void setupConsoleFunctions() {
     Particle.function("Stillness_Time", stillness_alert_time_set);
 
     Particle.function("IM21_Door_ID", im21_door_id_set);
+
+    Particle.function("Toggle_LED_Debug", toggle_led_debug);
 }
 
 int force_reset(String command) {
@@ -466,5 +469,25 @@ int im21_door_id_set(String command) {
 
     // return door ID as int
     return (int)strtol(buffer, NULL, 16);
+}
+
+int toggle_led_debug(String input) {
+    const char* holder = input.c_str();
+
+    if (*holder == 'e') {
+        return ledDebugMode ? 1 : 0;
+    }
+    else if (*holder == '1') {
+        ledDebugMode = true;
+        RGB.control(true);
+        return 1;
+    }
+    else if (*holder == '0') {
+        ledDebugMode = false;
+        RGB.control(false);
+        return 0;
+    }
+
+    return -1;
 }
 
