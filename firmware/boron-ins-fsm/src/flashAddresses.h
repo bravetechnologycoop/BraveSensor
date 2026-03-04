@@ -44,4 +44,7 @@
 
 // next available address is 41 + 4 = 45
 
+// Occupancy events enabled flag (1 byte)
+#define ADDR_OCCUPANCY_EVENTS_ENABLED 45
+
 #endif

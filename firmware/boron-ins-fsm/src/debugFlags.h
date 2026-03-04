@@ -23,4 +23,10 @@ extern unsigned long debugFlagTurnedOnAt;
 // The value of millis() at the time of the most recent debug publish
 extern unsigned long lastDebugPublish;
 
+// Whether or not to publish occupancy events
+extern bool occupancyEventsEnabled;
+
+// The value of millis() at the time of the most recent occupancy event publish
+extern unsigned long lastOccupancyEventPublish;
+
 #endif

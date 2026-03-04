@@ -29,4 +29,6 @@ int stillness_alert_time_set(String);
 
 int im21_door_id_set(String);
 
+int toggle_occupancy_events(String);
+
 #endif
