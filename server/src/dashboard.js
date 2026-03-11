@@ -604,7 +604,6 @@ const validateUpdateClient = [
   Validator.body([
     'displayName',
     'language',
-    'responderPhoneNumbers',
     'vitalsTwilioNumber',
     'surveyCategories',
     'isDisplayed',
@@ -615,6 +614,7 @@ const validateUpdateClient = [
     .trim()
     .notEmpty(),
   Validator.body([
+    'responderPhoneNumbers',
     'firstDeviceLiveAt',
     'fallbackPhoneNumbers',
     'vitalsPhoneNumbers',
