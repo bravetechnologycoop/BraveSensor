@@ -68,5 +68,8 @@
     "url": "git+https://github.com/bravetechnologycoop/BraveSensor.git"
   },
   "author": "Sajan Rajdev",
-  "license": "ISC"
+  "license": "ISC",
+  "overrides": {
+    "serialize-javascript": "^7.0.3"
+  }
 }
