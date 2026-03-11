@@ -66,7 +66,7 @@
                             <th scope="row"><a href="/sessions/{{sessionId}}">{{sessionId}}</a></th>
                             <td>{{#formatDate}}{{createdAt}}{{/formatDate}}</td>
                             <td>{{sessionStatus}}</td>
-                            <td>{{#responseTime}}{{responseTime.minutes}}m {{responseTime.seconds}}s{{/responseTime}}{{^responseTime}}N/A{{/responseTime}}</td>
+                            <td>{{#responseTime}}{{#responseTime.hours}}{{responseTime.hours}}h {{/responseTime.hours}}{{responseTime.minutes}}m {{responseTime.seconds}}s{{/responseTime}}{{^responseTime}}N/A{{/responseTime}}</td>
                             <td>{{#selectedSurveyCategory}}{{selectedSurveyCategory}}{{/selectedSurveyCategory}}{{^selectedSurveyCategory}}N/A{{/selectedSurveyCategory}}</td>
                         </tr>
                     {{/allSessions}}
