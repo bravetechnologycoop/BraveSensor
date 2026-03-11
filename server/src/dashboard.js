@@ -499,7 +499,14 @@ async function renderSessionDetailsPage(req, res) {
 
 const validateNewClient = [
   Validator.body(['displayName', 'language', 'vitalsTwilioNumber', 'surveyCategories']).trim().notEmpty(),
-  Validator.body(['responderPhoneNumbers', 'fallbackPhoneNumbers', 'vitalsPhoneNumbers', 'teamsId', 'teamsAlertChannelId', 'teamsVitalChannelId']).trim(),
+  Validator.body([
+    'responderPhoneNumbers',
+    'fallbackPhoneNumbers',
+    'vitalsPhoneNumbers',
+    'teamsId',
+    'teamsAlertChannelId',
+    'teamsVitalChannelId',
+  ]).trim(),
   Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),
