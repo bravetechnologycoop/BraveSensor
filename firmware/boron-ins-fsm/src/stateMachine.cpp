@@ -57,6 +57,9 @@ bool isStillnessAlertThresholdExceeded = false;
 // Allow state transitions
 bool allowTransitionToStateOne = true;
 
+// Missed door event snapshot for false occupancy correction
+int missedDoorEventCountAtStateEntry = 0;
+
 // Reset reason
 int resetReason = System.resetReason();
 
@@ -86,6 +89,8 @@ void setupStateMachine() {
     isStillnessAlertThresholdExceeded = false;
 
     allowTransitionToStateOne = true;
+
+    missedDoorEventCountAtStateEntry = 0;
 }
 
 void initializeStateMachineConsts() {
@@ -134,7 +139,6 @@ void initializeStateMachineConsts() {
     if (initializeOccupancyDetectionINSThresholdFlag != INITIALIZATION_FLAG_SET) {
         // firmware was never v1924
         if (initializeHighConfINSThresholdFlag != INITIALIZATION_FLAG_HIGH_CONF) {
-            EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, occupancy_detection_ins_threshold);
             EEPROM.put(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
             Log.warn("Occupancy Detection INS Threshold initialized and written to EEPROM.");
         }
@@ -372,6 +376,7 @@ void state2_monitoring() {
 
         // Reset the state 3 timer and transition to state 3
         state3_start_time = millis();
+        missedDoorEventCountAtStateEntry = missedDoorEventCount;
         stateHandler = state3_stillness;
     }
     // Send duration alert if threshold is exceeded
@@ -439,8 +444,23 @@ void state3_stillness() {
         state2_start_time = millis();
         stateHandler = state2_monitoring;
     }
+    // If stillness AND a door message was missed since entering this state,
+    // the person likely left and we missed the door-open event. Reset to State 0.
+    else if (missedDoorEventCount > missedDoorEventCountAtStateEntry) {
+        Log.warn("State 3 --> State 0: Missed door event during stillness, assuming departure");
+        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.magnitude);
+
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char doorOpenedMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(doorOpenedMessage, sizeof(doorOpenedMessage),
+                "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu, \"missedDoorReset\": true}",
+                3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
+
+        stateHandler = state0_idle;
+    }
     // Duration alert condition based on time elapsed since door closed or last alert
-    else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) { 
+    else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) {
         Log.warn("--Duration Alert-- TimeSinceDoorClosed: %lu, TimeSinceLastAlert: %lu, TimeInState: %lu", timeSinceDoorClosed, timeSinceLastDurationAlert, timeInState3);
 
         // Update the duration alert counter and time
@@ -607,6 +627,7 @@ void getHeartbeat() {
         // This ensures that the count is accurate even if it changes during function execution
         int instantMissedDoorEventCount = missedDoorEventCount;
         missedDoorEventCount = 0;
+        missedDoorEventCountAtStateEntry = 0;
 
         // Log the number of missed door events since the last heartbeat
         writer.name("doorMissedCount").value(instantMissedDoorEventCount);
