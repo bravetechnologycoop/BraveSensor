@@ -19,7 +19,7 @@
 #define OCCUPANCY_DETECTION_INS_THRESHOLD   60
 
 // Hysteresis offset: thresholds become base ± this value
-#define HYSTERESIS_OFFSET                   3
+#define HYSTERESIS_OFFSET                   2
 
 #define STATE0_OCCUPANCY_DETECTION_TIME     30000       // 30 secs
 #define STATE1_INITIAL_TIME                 3000        // 3 secs
