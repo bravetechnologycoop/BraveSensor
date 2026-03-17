@@ -109,9 +109,6 @@ int reset_state_to_zero(String command) {
         consecutiveOpenDoorHeartbeatCount = 0;
         doorMessageReceivedFlag = false;
 
-        // Sync missed door event snapshot
-        missedDoorEventCountAtStateEntry = missedDoorEventCount;
-
         Particle.publish("State Reset", "State has been reset to 0.", PRIVATE | WITH_ACK);
     } else {
         // anything else is bad input
