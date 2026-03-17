@@ -70,6 +70,7 @@
   "author": "Sajan Rajdev",
   "license": "ISC",
   "overrides": {
-    "serialize-javascript": "^7.0.3"
+    "serialize-javascript": "^7.0.3",
+    "flatted": "^3.4.0"
   }
 }
