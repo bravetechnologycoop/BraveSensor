@@ -128,26 +128,13 @@ void initializeStateMachineConsts() {
     }
 
     EEPROM.get(ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG, initializeOccupancyDetectionINSThresholdFlag);
-    EEPROM.get(ADDR_INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG, initializeHighConfINSThresholdFlag);
     Log.warn("OccupancyDetectionINSThresholdFlag is 0x%04X", initializeOccupancyDetectionINSThresholdFlag);
-    
     if (initializeOccupancyDetectionINSThresholdFlag != INITIALIZATION_FLAG_SET) {
-        // firmware was never v1924
-        if (initializeHighConfINSThresholdFlag != INITIALIZATION_FLAG_HIGH_CONF) {
-            EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, occupancy_detection_ins_threshold);
-            EEPROM.put(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
-            Log.warn("Occupancy Detection INS Threshold initialized and written to EEPROM.");
-        }
-        // firmware was previously v1924 
-        else {
-            EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
-            EEPROM.get(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
-            EEPROM.put(ADDR_STILLNESS_INS_THRESHOLD, stillness_ins_threshold);
-            EEPROM.put(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
-        }
+        EEPROM.put(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
 
         initializeOccupancyDetectionINSThresholdFlag = INITIALIZATION_FLAG_SET;
         EEPROM.put(ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG, initializeOccupancyDetectionINSThresholdFlag);
+        Log.warn("Occupancy Detection INS Threshold initialize written to EEPROM");
     } else {
         EEPROM.get(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
         Log.warn("Occupancy Detection INS Threshold read from EEPROM.");
