@@ -85,9 +85,6 @@ extern bool isStillnessAlertThresholdExceeded;
 // Allow state transitions
 extern bool allowTransitionToStateOne;
 
-// Missed door event snapshot for false occupancy correction
-extern int missedDoorEventCountAtStateEntry;
-
 // ************************** Function declarations **************************
 
 // setup() functions

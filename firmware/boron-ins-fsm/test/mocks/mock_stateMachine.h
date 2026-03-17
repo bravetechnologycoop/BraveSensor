@@ -53,9 +53,6 @@ bool isStillnessAlertThresholdExceeded = false;
 // State transition control
 bool allowTransitionToStateOne = true;
 
-// Missed door event snapshot
-int missedDoorEventCountAtStateEntry = 0;
-
 // Mock state functions
 void state0_idle() {
     std::cout << "Mock state0_idle called" << std::endl;

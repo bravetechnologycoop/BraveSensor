@@ -58,7 +58,7 @@ bool isStillnessAlertThresholdExceeded = false;
 bool allowTransitionToStateOne = true;
 
 // Missed door event snapshot for false occupancy correction
-int missedDoorEventCountAtStateEntry = 0;
+
 
 // Reset reason
 int resetReason = System.resetReason();
@@ -89,8 +89,6 @@ void setupStateMachine() {
     isStillnessAlertThresholdExceeded = false;
 
     allowTransitionToStateOne = true;
-
-    missedDoorEventCountAtStateEntry = 0;
 }
 
 void initializeStateMachineConsts() {
@@ -327,6 +325,7 @@ void state1_initial_countdown() {
 
         // Reset state 2 timer and transition to state 2
         state2_start_time = millis();
+        allowTransitionToStateOne = false;
         stateHandler = state2_monitoring;
     }
 }
@@ -369,6 +368,21 @@ void state2_monitoring() {
         // Transition to state 0
         stateHandler = state0_idle;
     }
+    // A new door close event while in State 2 means the door opened and closed
+    // without us seeing the open. Reset to State 0 to end the session.
+    else if (allowTransitionToStateOne) {
+        Log.warn("State 2 --> State 0: Door close event detected, missed door open");
+        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.magnitude);
+
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char doorOpenedMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(doorOpenedMessage, sizeof(doorOpenedMessage),
+                "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu, \"missedDoorReset\": true}",
+                2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
+
+        stateHandler = state0_idle;
+    }
     // Transition to state 3 if stillness is detected (using low threshold for hysteresis)
     else if (checkINS.magnitude > 0 && checkINS.magnitude < (stillness_ins_threshold - HYSTERESIS_OFFSET)) {
         Log.warn("State 2 --> State 3: Stillness detected");
@@ -376,7 +390,6 @@ void state2_monitoring() {
 
         // Reset the state 3 timer and transition to state 3
         state3_start_time = millis();
-        missedDoorEventCountAtStateEntry = missedDoorEventCount;
         stateHandler = state3_stillness;
     }
     // Send duration alert if threshold is exceeded
@@ -435,19 +448,10 @@ void state3_stillness() {
         // Transition to state 0
         stateHandler = state0_idle;
     } 
-    // Transition to state 2 if movement exceeds the stillness threshold (using high threshold for hysteresis)
-    else if (checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET)) {
-        Log.warn("State 3 --> State 2: Motion detected again.");
-        publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.magnitude);
-
-        // Reset the state 2 timer and transition to state 2
-        state2_start_time = millis();
-        stateHandler = state2_monitoring;
-    }
-    // If stillness AND a door message was missed since entering this state,
-    // the person likely left and we missed the door-open event. Reset to State 0.
-    else if (missedDoorEventCount > missedDoorEventCountAtStateEntry) {
-        Log.warn("State 3 --> State 0: Missed door event during stillness, assuming departure");
+    // A new door close event while in State 3 means the door opened and closed
+    // without us seeing the open. Reset to State 0 to end the session.
+    else if (allowTransitionToStateOne) {
+        Log.warn("State 3 --> State 0: Door close event detected, missed door open");
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.magnitude);
 
         unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
@@ -458,6 +462,15 @@ void state3_stillness() {
         Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
 
         stateHandler = state0_idle;
+    }
+    // Transition to state 2 if movement exceeds the stillness threshold (using high threshold for hysteresis)
+    else if (checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET)) {
+        Log.warn("State 3 --> State 2: Motion detected again.");
+        publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.magnitude);
+
+        // Reset the state 2 timer and transition to state 2
+        state2_start_time = millis();
+        stateHandler = state2_monitoring;
     }
     // Duration alert condition based on time elapsed since door closed or last alert
     else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) {
@@ -627,7 +640,6 @@ void getHeartbeat() {
         // This ensures that the count is accurate even if it changes during function execution
         int instantMissedDoorEventCount = missedDoorEventCount;
         missedDoorEventCount = 0;
-        missedDoorEventCountAtStateEntry = 0;
 
         // Log the number of missed door events since the last heartbeat
         writer.name("doorMissedCount").value(instantMissedDoorEventCount);
