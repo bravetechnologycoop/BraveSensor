@@ -108,7 +108,7 @@ int reset_state_to_zero(String command) {
         // Reset door monitoring variables
         consecutiveOpenDoorHeartbeatCount = 0;
         doorMessageReceivedFlag = false;
-      
+
         Particle.publish("State Reset", "State has been reset to 0.", PRIVATE | WITH_ACK);
     } else {
         // anything else is bad input
