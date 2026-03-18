@@ -127,21 +127,33 @@
 
                 {{!Teams}}
                 <div class="form-group row justify-content-start row-no-gutters">
+                    <label class="col-sm-3 col-form-label">Paste Alerts Channel URL</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="teamsAlertsUrl" placeholder="https://teams.cloud.microsoft/l/channel/...">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
+                    <label class="col-sm-3 col-form-label">Paste Vitals Channel URL</label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" id="teamsVitalsUrl" placeholder="https://teams.cloud.microsoft/l/channel/...">
+                    </div>
+                </div>
+                <div class="form-group row justify-content-start row-no-gutters">
                     <label for="teamsid" class="col-sm-3 col-form-label">TeamsID</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="teamsId" placeholder="teamsId">
+                        <input type="text" class="form-control" name="teamsId" id="teamsId" placeholder="teamsId">
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="teamsAlertChannelId" class="col-sm-3 col-form-label">Teams Alert Channel Id</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="teamsAlertChannelId" placeholder="teamsAlertChannelId">
+                        <input type="text" class="form-control" name="teamsAlertChannelId" id="teamsAlertChannelId" placeholder="teamsAlertChannelId">
                     </div>
                 </div>
                 <div class="form-group row justify-content-start row-no-gutters">
                     <label for="teamsVitalChannelId" class="col-sm-3 col-form-label">Teams Vital Channel Id</label>
                     <div class="col-sm-5">
-                        <input type="text" class="form-control" name="teamsVitalChannelId" placeholder="teamsVitalChannelId">
+                        <input type="text" class="form-control" name="teamsVitalChannelId" id="teamsVitalChannelId" placeholder="teamsVitalChannelId">
                     </div>
                 </div>
                 <br>
@@ -154,5 +166,36 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script>
+        function parseTeamsChannelUrl(url) {
+            try {
+                const parsed = new URL(url);
+                const pathParts = parsed.pathname.split('/');
+                // pathname: /l/channel/{channelId}/{channelName}
+                const channelIdIndex = pathParts.indexOf('channel') + 1;
+                const channelId = channelIdIndex > 0 ? pathParts[channelIdIndex] : null;
+                const groupId = parsed.searchParams.get('groupId');
+                return { channelId, groupId };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        document.getElementById('teamsAlertsUrl').addEventListener('input', function() {
+            const result = parseTeamsChannelUrl(this.value);
+            if (result) {
+                if (result.channelId) document.getElementById('teamsAlertChannelId').value = result.channelId;
+                if (result.groupId)   document.getElementById('teamsId').value = result.groupId;
+            }
+        });
+
+        document.getElementById('teamsVitalsUrl').addEventListener('input', function() {
+            const result = parseTeamsChannelUrl(this.value);
+            if (result) {
+                if (result.channelId) document.getElementById('teamsVitalChannelId').value = result.channelId;
+                if (result.groupId)   document.getElementById('teamsId').value = result.groupId;
+            }
+        });
+    </script>
 </body>
 </html>
