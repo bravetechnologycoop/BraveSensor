@@ -147,7 +147,7 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
           try {
             await sendTeamsVital(client, device, teamsMessageKey)
           } catch (teamsError) {
-            helpers.logError(`handleDeviceConnectionVitals: Teams notification failed for device ${device.deviceId}: ${teamsError.message}`)
+            helpers.logError(`handleDeviceDisconnectionVitals: Teams notification failed for device ${device.deviceId}: ${teamsError.message}`)
           }
         }
       } catch (error) {
@@ -155,7 +155,7 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
       }
     }
   } catch (error) {
-    throw new Error(`handleDeviceConnectionVitals: ${error.message}`)
+    throw new Error(`handleDeviceDisconnectionVitals: ${error.message}`)
   }
 }
 
