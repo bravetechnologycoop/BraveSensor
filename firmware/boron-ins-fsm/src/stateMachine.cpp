@@ -134,7 +134,6 @@ void initializeStateMachineConsts() {
     if (initializeOccupancyDetectionINSThresholdFlag != INITIALIZATION_FLAG_SET) {
         // firmware was never v1924
         if (initializeHighConfINSThresholdFlag != INITIALIZATION_FLAG_HIGH_CONF) {
-            EEPROM.get(ADDR_STILLNESS_INS_THRESHOLD, occupancy_detection_ins_threshold);
             EEPROM.put(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
             Log.warn("Occupancy Detection INS Threshold initialized and written to EEPROM.");
         }
@@ -323,6 +322,7 @@ void state1_initial_countdown() {
 
         // Reset state 2 timer and transition to state 2
         state2_start_time = millis();
+        allowTransitionToStateOne = false;
         stateHandler = state2_monitoring;
     }
 }
@@ -363,6 +363,21 @@ void state2_monitoring() {
         Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
 
         // Transition to state 0
+        stateHandler = state0_idle;
+    }
+    // A new door close event while in State 2 means the door opened and closed
+    // without us seeing the open. Reset to State 0 to end the session.
+    else if (allowTransitionToStateOne) {
+        Log.warn("State 2 --> State 0: Door close event detected, missed door open");
+        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.magnitude);
+
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char doorOpenedMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(doorOpenedMessage, sizeof(doorOpenedMessage),
+                "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu, \"missedDoorReset\": true}",
+                2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
+
         stateHandler = state0_idle;
     }
     // Transition to state 3 if stillness is detected (using low threshold for hysteresis)
@@ -430,6 +445,21 @@ void state3_stillness() {
         // Transition to state 0
         stateHandler = state0_idle;
     } 
+    // A new door close event while in State 3 means the door opened and closed
+    // without us seeing the open. Reset to State 0 to end the session.
+    else if (allowTransitionToStateOne) {
+        Log.warn("State 3 --> State 0: Door close event detected, missed door open");
+        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.magnitude);
+
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char doorOpenedMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(doorOpenedMessage, sizeof(doorOpenedMessage),
+                "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu, \"missedDoorReset\": true}",
+                3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
+
+        stateHandler = state0_idle;
+    }
     // Transition to state 2 if movement exceeds the stillness threshold (using high threshold for hysteresis)
     else if (checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET)) {
         Log.warn("State 3 --> State 2: Motion detected again.");
@@ -440,7 +470,7 @@ void state3_stillness() {
         stateHandler = state2_monitoring;
     }
     // Duration alert condition based on time elapsed since door closed or last alert
-    else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) { 
+    else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) {
         Log.warn("--Duration Alert-- TimeSinceDoorClosed: %lu, TimeSinceLastAlert: %lu, TimeInState: %lu", timeSinceDoorClosed, timeSinceLastDurationAlert, timeInState3);
 
         // Update the duration alert counter and time
