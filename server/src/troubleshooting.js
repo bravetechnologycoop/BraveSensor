@@ -93,6 +93,14 @@ async function submitSendTestAlert(req, res) {
       return res.status(400).send('Cannot run test on a test device. Please use the original device.')
     }
 
+    if (!client.devicesSendingAlerts) {
+      return res.status(400).send('Cannot send test alert: "Is Sending Alerts" is disabled at the client level.')
+    }
+
+    if (!device.isSendingAlerts) {
+      return res.status(400).send('Cannot send test alert: "Is Sending Alerts" is disabled for this device.')
+    }
+
     // Check for existing test devices for this device
     const allDevices = await db.getDevicesForClient(client.clientId)
     const expectedTestDeviceName = `[TRAINING] ${device.displayName}`

@@ -51,13 +51,15 @@ async function setSessionAsResponded(client, device, session, data, pgClient) {
 
         // update the latest teams event card
         const latestTeamsEvent = await db.getLatestRespondableTeamsEvent(session.sessionId, pgClient)
-        const response = await teamsHelpers.sendUpdateTeamsCard(client.teamsId, client.teamsAlertChannelId, latestTeamsEvent.messageId, adaptiveCard)
-        if (!response || !response.messageId) {
-          throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)
-        }
+        if (latestTeamsEvent) {
+          const response = await teamsHelpers.sendUpdateTeamsCard(client.teamsId, client.teamsAlertChannelId, latestTeamsEvent.messageId, adaptiveCard)
+          if (!response || !response.messageId) {
+            throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)
+          }
 
-        // log message sent event
-        await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, 'alertRespondedViaTwilio', response.messageId, pgClient)
+          // log message sent event
+          await db.createTeamsEvent(session.sessionId, EVENT_TYPE.MSG_SENT, 'alertRespondedViaTwilio', response.messageId, pgClient)
+        }
       }
     } else if (data.service === SERVICES.TEAMS && client.teamsId && client.teamsAlertChannelId) {
       // alert all responder phone numbers
@@ -85,17 +87,19 @@ async function handleNoResponseExpected(client, device, session, data) {
       // do not log this event
       // update the sending card with no response expected
       const latestTeamsEvent = await db.getLatestRespondableTeamsEvent(session.sessionId)
-      const teamsMessageKey = 'teamsNoResponseExpected'
-      const cardType = 'Update'
-      const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device)
-      if (!adaptiveCard) {
-        throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
-      }
+      if (latestTeamsEvent) {
+        const teamsMessageKey = 'teamsNoResponseExpected'
+        const cardType = 'Update'
+        const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device)
+        if (!adaptiveCard) {
+          throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
+        }
 
-      // update the card
-      const response = await teamsHelpers.sendUpdateTeamsCard(client.teamsId, client.teamsAlertChannelId, latestTeamsEvent.messageId, adaptiveCard)
-      if (!response || !response.messageId) {
-        throw new Error(`Failed to update Teams card or invalid response received.`)
+        // update the card
+        const response = await teamsHelpers.sendUpdateTeamsCard(client.teamsId, client.teamsAlertChannelId, latestTeamsEvent.messageId, adaptiveCard)
+        if (!response || !response.messageId) {
+          throw new Error(`Failed to update Teams card or invalid response received.`)
+        }
       }
     }
   } catch (error) {

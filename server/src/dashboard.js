@@ -498,8 +498,15 @@ async function renderSessionDetailsPage(req, res) {
 }
 
 const validateNewClient = [
-  Validator.body(['displayName', 'language', 'responderPhoneNumbers', 'vitalsTwilioNumber', 'surveyCategories']).trim().notEmpty(),
-  Validator.body(['fallbackPhoneNumbers', 'vitalsPhoneNumbers', 'teamsId', 'teamsAlertChannelId', 'teamsVitalChannelId']).trim(),
+  Validator.body(['displayName', 'language', 'vitalsTwilioNumber', 'surveyCategories']).trim().notEmpty(),
+  Validator.body([
+    'responderPhoneNumbers',
+    'fallbackPhoneNumbers',
+    'vitalsPhoneNumbers',
+    'teamsId',
+    'teamsAlertChannelId',
+    'teamsVitalChannelId',
+  ]).trim(),
   Validator.body(['country', 'countrySubdivision', 'buildingType', 'city', 'postalCode', 'funder', 'project', 'organization'])
     .trim()
     .optional({ nullable: true }),
@@ -597,7 +604,6 @@ const validateUpdateClient = [
   Validator.body([
     'displayName',
     'language',
-    'responderPhoneNumbers',
     'vitalsTwilioNumber',
     'surveyCategories',
     'isDisplayed',
@@ -608,6 +614,7 @@ const validateUpdateClient = [
     .trim()
     .notEmpty(),
   Validator.body([
+    'responderPhoneNumbers',
     'firstDeviceLiveAt',
     'fallbackPhoneNumbers',
     'vitalsPhoneNumbers',

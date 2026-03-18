@@ -29,7 +29,7 @@
                     <p><strong>Session Status:</strong> {{sessionStatus}}</p>
                     <p><strong>Door Opened:</strong> {{#doorOpened}}Yes{{/doorOpened}}{{^doorOpened}}No{{/doorOpened}}</p>
                     <p><strong>Survey Sent:</strong> {{#surveySent}}Yes{{/surveySent}}{{^surveySent}}No{{/surveySent}}</p>
-                    <p><strong>Response Time:</strong> {{#responseTime}}{{responseTime.minutes}}m {{responseTime.seconds}}s{{/responseTime}}{{^responseTime}}N/A{{/responseTime}}</p>
+                    <p><strong>Response Time:</strong> {{#responseTime}}{{#responseTime.hours}}{{responseTime.hours}}h {{/responseTime.hours}}{{responseTime.minutes}}m {{responseTime.seconds}}s{{/responseTime}}{{^responseTime}}N/A{{/responseTime}}</p>
                     <p><strong>Started At:</strong> {{#formatDate}}{{createdAt}}{{/formatDate}}</p>
                     <p><strong>Ended At:</strong> {{#sessionEndedAt}}{{#formatDate}}{{sessionEndedAt}}{{/formatDate}}{{/sessionEndedAt}}{{^sessionEndedAt}}Ongoing{{/sessionEndedAt}}</p>
                 </div>

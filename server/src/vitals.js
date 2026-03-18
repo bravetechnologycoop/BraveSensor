@@ -144,14 +144,18 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
 
         // check and send if teams is configured
         if (client.teamsId && client.teamsVitalChannelId) {
-          await sendTeamsVital(client, device, teamsMessageKey)
+          try {
+            await sendTeamsVital(client, device, teamsMessageKey)
+          } catch (teamsError) {
+            helpers.logError(`handleDeviceDisconnectionVitals: Teams notification failed for device ${device.deviceId}: ${teamsError.message}`)
+          }
         }
       } catch (error) {
         throw new Error(`Error sending notification: ${error.message}`)
       }
     }
   } catch (error) {
-    throw new Error(`handleDeviceConnectionVitals: ${error.message}`)
+    throw new Error(`handleDeviceDisconnectionVitals: ${error.message}`)
   }
 }
 
@@ -334,7 +338,11 @@ async function handleVitalNotifications(
 
         // check and send if teams is configured
         if (client.teamsId && client.teamsVitalChannelId) {
-          await sendTeamsVital(client, device, notification.teamsMessageKey)
+          try {
+            await sendTeamsVital(client, device, notification.teamsMessageKey)
+          } catch (teamsError) {
+            helpers.logError(`handleVitalNotifications: Teams notification failed for device ${device.deviceId}: ${teamsError.message}`)
+          }
         }
       } catch (error) {
         throw new Error(`Error sending notification: ${error.message}`)
