@@ -12,6 +12,14 @@ the code was deployed.
 ## [Unreleased]
 
 ## [12.3.0] - 2026-03-18
+ - Add particle keep alive function
+ - Add handling for missed door states
+ - Add handling for Invalid teams IDs
+ - Add warning messages for Send Test Message
+ - Responder phone number optional
+ - Response time now includes hours
+ - MS Teams URL auto populate
+
 
 ## [12.2.7] - 2026-02-09
 
