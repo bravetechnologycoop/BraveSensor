@@ -52,7 +52,12 @@ async function setSessionAsResponded(client, device, session, data, pgClient) {
         // update the latest teams event card
         const latestTeamsEvent = await db.getLatestRespondableTeamsEvent(session.sessionId, pgClient)
         if (latestTeamsEvent) {
-          const response = await teamsHelpers.sendUpdateTeamsCard(client.teamsId, client.teamsAlertChannelId, latestTeamsEvent.messageId, adaptiveCard)
+          const response = await teamsHelpers.sendUpdateTeamsCard(
+            client.teamsId,
+            client.teamsAlertChannelId,
+            latestTeamsEvent.messageId,
+            adaptiveCard,
+          )
           if (!response || !response.messageId) {
             throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)
           }

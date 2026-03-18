@@ -11,6 +11,10 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.3.0] - 2026-03-18
+
+## [12.2.7] - 2026-02-09
+
 - Add unique constraint on particle device id (CU-86dxzrvv7)
 - Initial disconnection messages now bypass operating hours time window, while disconnection reminders remain within the operating (CU-86dz84kvf)
 - Add troubleshooting features, "Send Test Alert" and "Send Custom Message" (CU-86dz8y7wr)
@@ -979,7 +983,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.7...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.0...HEAD
+[12.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.7...v12.3.0
 [12.2.7]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.6...v12.2.7
 [12.2.6]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.5...v12.2.6
 [12.2.5]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.4...v12.2.5
