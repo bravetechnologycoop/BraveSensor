@@ -32,5 +32,5 @@ compile_commands.json
 # ignore build
 build
 
-#claude
+# claude
 .claude/
