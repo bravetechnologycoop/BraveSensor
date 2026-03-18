@@ -57,9 +57,6 @@ bool isStillnessAlertThresholdExceeded = false;
 // Allow state transitions
 bool allowTransitionToStateOne = true;
 
-// Missed door event snapshot for false occupancy correction
-
-
 // Reset reason
 int resetReason = System.resetReason();
 
