@@ -21,11 +21,11 @@
 // Hysteresis offset: thresholds become base ± this value
 #define HYSTERESIS_OFFSET                   2
 
-#define STATE0_OCCUPANCY_DETECTION_TIME     30000       // 1 min
-#define STATE1_INITIAL_TIME                 3000        // 5 secs
+#define STATE0_OCCUPANCY_DETECTION_TIME     30000       // 30 secs
+#define STATE1_INITIAL_TIME                 3000        // 3 secs
 
 #define DURATION_ALERT_TIME                 1200000     // 20 mins          
-#define STILLNESS_ALERT_TIME                180000      // 5 mins
+#define STILLNESS_ALERT_TIME                180000      // 3 mins
 
 // Minimize time between restart and first Heartbeat message
 #define DEVICE_RESET_THRESHOLD              540000      // 9 mins
