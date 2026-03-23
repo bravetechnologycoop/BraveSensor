@@ -42,6 +42,6 @@
 #define ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD                  37 // uint32_t = 4 bytes
 #define ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG  41 // uint16_t = 2 bytes
 
-// next available address is 41 + 4 = 45
+// next available address is 41 + 4 = 45 testing
 
 #endif
