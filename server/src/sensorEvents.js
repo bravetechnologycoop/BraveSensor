@@ -395,9 +395,13 @@ async function handleExistingSession(client, device, eventType, eventData, lates
 
     const { twilioMessageKey, teamsMessageKey } = messageKeys
 
-    // only send the door opened surveys if survey was NOT sent
+    // if survey was already sent, only update door opened without sending another survey
     if (latestSession.surveySent && (twilioMessageKey === 'stillnessAlertSurveyDoorOpened' || twilioMessageKey === 'durationAlertSurveyDoorOpened')) {
-      throw new Error('Attempting to send door opened survey, but survey was already sent')
+      const updatedSession = await db.updateSession(latestSession.sessionId, latestSession.sessionStatus, true, latestSession.surveySent, pgClient)
+      if (!updatedSession) {
+        throw new Error(`Failed to update session ${latestSession.sessionId}`)
+      }
+      return updatedSession
     }
 
     // if the session is in progress, then send the message via the selected service
@@ -532,14 +536,10 @@ async function processSensorEvent(client, device, eventType, eventData) {
     if (!latestSession) {
       returnedSession = await handleNewSession(client, device, eventType, eventData, pgClient)
     }
-    // If door was opened, create a new session and mark pervious one as stale
+    // If door was opened, create a new session and mark previous one as stale
     else if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && latestSession.doorOpened) {
       returnedSession = await handleNewSession(client, device, eventType, eventData, pgClient)
-      if (!returnedSession) {
-        await db.commitTransaction(pgClient)
-        return
-      }
-      helpers.log(`Created new session, marking previous session ${latestSession.sessionId} as stale.`)
+      helpers.log(`Marking previous session ${latestSession.sessionId} as stale.`)
       await db.updateSession(latestSession.sessionId, SESSION_STATUS.STALE, latestSession.doorOpened, latestSession.surveySent, pgClient)
     }
     // Create new session if previous one was completed
