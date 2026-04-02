@@ -326,7 +326,7 @@ async function getMessageKeysForExistingSession(eventType, latestSession, pgClie
         if (latestSession.sessionRespondedVia === SERVICES.TEAMS) {
           latestEvent = await db.getLatestRespondableTeamsEvent(latestSession.sessionId, pgClient)
         } else {
-          latestEvent = await db.getLatestRespondableTwilioEvent(latestSession.sessionId, null, pgClient)
+          latestEvent = await db.getLatestRespondableTwilioEvent(latestSession.sessionId, latestSession.attendingResponderNumber, pgClient)
         }
 
         if (!latestEvent || !latestEvent.eventTypeDetails) {
