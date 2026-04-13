@@ -12,7 +12,7 @@
 #define DEBUG_PUBLISH_INTERVAL      1500    // 1.5 sec
 
 // Max length of time to publish debug messages
-#define DEBUG_AUTO_OFF_THRESHOLD    28800000    // 8 hours
+#define DEBUG_AUTO_OFF_THRESHOLD    1800000    // 30 min
 
 // Whether or not to publish debug messages
 extern bool stateMachineDebugFlag;

@@ -27,7 +27,7 @@ void setup() {
     BLE.selectAntenna(BleAntennaType::INTERNAL);
 
     // Keep cellular NAT mapping alive so incoming cloud messages (function calls) can reach the device
-    Particle.keepAlive(30);
+    Particle.keepAlive(90);
 
     setupIM();
     setupINS3331();
