@@ -471,12 +471,6 @@ async function renderSessionDetailsPage(req, res) {
           message: 'Responded to sent message',
         }
       }
-      if (event.eventTypeDetails === 'stillnessAlertFollowup') {
-        return {
-          ...event,
-          message: `Thanks, we'll follow up in ${client.stillnessSurveyFollowupDelay / 60} minutes.`,
-        }
-      }
       return {
         ...event,
         message: helpers.translateMessageKeyToMessage(event.eventTypeDetails, client, device),

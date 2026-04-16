@@ -181,10 +181,13 @@ async function handleTwilioNonAttendingResponderConfirmation(client, device, ses
 // ----------------------------------------------------------------------------------------------------------------------------
 
 async function scheduleStillnessAlertSurvey(client, device, callerSession) {
-  async function sendSurvey(session) {
+  async function sendSurvey(session, isReminder = false) {
     if (session.sessionRespondedVia === SERVICES.TWILIO && session.attendingResponderNumber) {
       const twilioMessageKey = 'stillnessAlertSurvey'
-      const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
+      let textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device)
+      if (isReminder) {
+        textMessage = `Reminder: ${textMessage}`
+      }
       await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, session.attendingResponderNumber, textMessage)
       await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, session.attendingResponderNumber)
     } else if (session.sessionRespondedVia === SERVICES.TEAMS) {
@@ -193,6 +196,13 @@ async function scheduleStillnessAlertSurvey(client, device, callerSession) {
       const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device)
       if (!adaptiveCard) {
         throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
+      }
+
+      if (isReminder) {
+        const bodyTextBlock = adaptiveCard.body[0].items.find(item => item.type === 'TextBlock' && item.text && !item.weight)
+        if (bodyTextBlock) {
+          bodyTextBlock.text = `Reminder: ${bodyTextBlock.text}`
+        }
       }
 
       const response = await teamsHelpers.sendNewTeamsCard(client.teamsId, client.teamsAlertChannelId, adaptiveCard, session)
@@ -207,7 +217,7 @@ async function scheduleStillnessAlertSurvey(client, device, callerSession) {
     await db.updateSession(session.sessionId, session.sessionStatus, session.doorOpened, true)
   }
 
-  async function checkAndSendSurvey() {
+  async function checkAndSendSurvey(isReminder = false) {
     const session = await db.getLatestSessionWithDeviceId(device.deviceId)
     if (!session || session.sessionId !== callerSession.sessionId) {
       helpers.log(`Session changed or expired, cancelling survey for ${callerSession.sessionId}`)
@@ -220,7 +230,7 @@ async function scheduleStillnessAlertSurvey(client, device, callerSession) {
     }
 
     if (session.sessionStatus === SESSION_STATUS.ACTIVE && !session.doorOpened) {
-      await sendSurvey(session)
+      await sendSurvey(session, isReminder)
     } else {
       helpers.log(`Session completed or door opened, cancelling survey for ${session.sessionId}`)
     }
@@ -232,7 +242,7 @@ async function scheduleStillnessAlertSurvey(client, device, callerSession) {
       await checkAndSendSurvey()
     } else {
       await checkAndSendSurvey() // Send survey immediately
-      setTimeout(checkAndSendSurvey, client.stillnessSurveyFollowupDelay * 1000) // Send survey after delay
+      setTimeout(() => checkAndSendSurvey(true), client.stillnessSurveyFollowupDelay * 1000) // Send reminder survey after delay
     }
   } catch (error) {
     helpers.logError(`scheduleStillnessAlertSurvey: ${error.message}`)
@@ -251,41 +261,9 @@ async function handleStillnessAlert(client, device, session, respondedEvent, mes
 
       // log message received event
       await db.createEvent(session.sessionId, EVENT_TYPE.MSG_RECEIVED, respondedEvent.eventTypeDetails, data.responderPhoneNumber, pgClient)
-
-      // Only send followup message if there will be a delay
-      // Otherwise the schedule stillness survey will be sent
-      // !!! 2025-07-10 we now send a survey immediately, above comment is no longer valid, keeping in case reverted.
-      if (client.stillnessSurveyFollowupDelay > 0) {
-        const twilioMessageKey = 'stillnessAlertFollowup'
-        const messageData = { stillnessAlertFollowupTimer: Math.round(client.stillnessSurveyFollowupDelay || 0) / 60 }
-        const textMessage = helpers.translateMessageKeyToMessage(twilioMessageKey, client, device, messageData)
-
-        // send message to responder phone number and log message sent event
-        await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, data.responderPhoneNumber, textMessage)
-        await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, data.responderPhoneNumber, pgClient)
-      }
     } else if (data.service === SERVICES.TEAMS) {
       if (message !== 'I am on my way!') {
         throw new Error('Wrong message received for teams event')
-      }
-
-      // Update the event to say survey will be published after delay if any
-      // Otherwise new card will be sent for the survey in schedule stillness alert survey
-      // !!! 2025-07-10 we now send a survey immediately, above comment is no longer valid, keeping in case reverted.
-      if (client.stillnessSurveyFollowupDelay > 0) {
-        const teamsMessageKey = 'teamsStillnessAlertFollowup'
-        const cardType = 'Update'
-        const messageData = { stillnessAlertFollowupTimer: Math.round(client.stillnessSurveyFollowupDelay || 0) / 60 }
-        const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device, messageData)
-        if (!adaptiveCard) {
-          throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
-        }
-
-        // send card to teams alert channel
-        const response = await teamsHelpers.sendUpdateTeamsCard(client.teamsId, client.teamsAlertChannelId, respondedEvent.messageId, adaptiveCard)
-        if (!response || !response.messageId) {
-          throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)
-        }
       }
     }
 
