@@ -530,26 +530,24 @@ async function processSensorEvent(client, device, eventType, eventData) {
 
     const latestSession = await db.getLatestSessionWithDeviceId(device.deviceId, pgClient)
 
-    let returnedSession = null
-
     // Create new session if none exists
     if (!latestSession) {
-      returnedSession = await handleNewSession(client, device, eventType, eventData, pgClient)
+      await handleNewSession(client, device, eventType, eventData, pgClient)
     }
     // If door was opened, create a new session and mark previous one as stale
     else if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && latestSession.doorOpened) {
-      returnedSession = await handleNewSession(client, device, eventType, eventData, pgClient)
+      await handleNewSession(client, device, eventType, eventData, pgClient)
       helpers.log(`Marking previous session ${latestSession.sessionId} as stale.`)
       await db.updateSession(latestSession.sessionId, SESSION_STATUS.STALE, latestSession.doorOpened, latestSession.surveySent, pgClient)
     }
     // Create new session if previous one was completed
     else if (latestSession.sessionStatus === SESSION_STATUS.COMPLETED && latestSession.doorOpened) {
       helpers.log(`Creating new session after completed session ${latestSession.sessionId}`)
-      returnedSession = await handleNewSession(client, device, eventType, eventData, pgClient)
+      await handleNewSession(client, device, eventType, eventData, pgClient)
     }
     // Handle event for existing active session
     else {
-      returnedSession = await handleExistingSession(client, device, eventType, eventData, latestSession, pgClient)
+      await handleExistingSession(client, device, eventType, eventData, latestSession, pgClient)
     }
 
     await db.commitTransaction(pgClient)

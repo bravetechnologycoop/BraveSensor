@@ -97,12 +97,7 @@ describe('sensorEvents.js integration tests: handleSensorEvent', () => {
       await db.updateSession(this.session.sessionId, SESSION_STATUS.ACTIVE, false, true)
       await db.updateSessionRespondedVia(this.session.sessionId, SERVICES.TWILIO)
       await db.updateSessionAttendingResponder(this.session.sessionId, this.client.responderPhoneNumbers[0])
-      await db.createEvent(
-        this.session.sessionId,
-        EVENT_TYPE.DURATION_ALERT,
-        'durationAlert',
-        this.client.responderPhoneNumbers,
-      )
+      await db.createEvent(this.session.sessionId, EVENT_TYPE.DURATION_ALERT, 'durationAlert', this.client.responderPhoneNumbers)
 
       this.response = await chai.request(server).post('/api/sensorEvent').send(doorOpenedPayload())
     })
