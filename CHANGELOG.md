@@ -11,6 +11,12 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.3.1] - 2026-04-16
+ - Twilio message reduction
+ - increase keepAlive interval 30->90s, reduce particle debug logging timeout from 8hr -> 30m
+ - Reduce all messages to 1 twilio segment (160 char), (some long device names could make us exceed 160)
+ - Fixed a bug where all alerts will be appended to a session under certain duration alert conditions
+
 ## [12.3.0] - 2026-03-18
  - Add particle keep alive function
  - Add handling for missed door states
@@ -991,7 +997,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.0...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.1...HEAD
+[12.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.0...v12.3.1
 [12.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.7...v12.3.0
 [12.2.7]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.6...v12.2.7
 [12.2.6]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.5...v12.2.6
