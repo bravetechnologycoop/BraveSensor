@@ -545,6 +545,11 @@ async function processSensorEvent(client, device, eventType, eventData) {
       helpers.log(`Creating new session after completed session ${latestSession.sessionId}`)
       await handleNewSession(client, device, eventType, eventData, pgClient)
     }
+    // Create new session if previous one was stale (orphaned - no successor was created)
+    else if (latestSession.sessionStatus === SESSION_STATUS.STALE) {
+      helpers.log(`Creating new session after stale session ${latestSession.sessionId}`)
+      await handleNewSession(client, device, eventType, eventData, pgClient)
+    }
     // Handle event for existing active session
     else {
       await handleExistingSession(client, device, eventType, eventData, latestSession, pgClient)
