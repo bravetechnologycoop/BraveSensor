@@ -36,6 +36,20 @@ function doorOpenedPayload(overrides = {}) {
   }
 }
 
+function durationAlertPayload(overrides = {}) {
+  return {
+    event: 'Duration Alert',
+    coreid: overrides.particleDeviceId || 'e00111111111111111111111',
+    api_key: webhookAPIKey,
+    data: JSON.stringify({
+      alertSentFromState: overrides.alertSentFromState || 2,
+      numDurationAlertsSent: overrides.numDurationAlertsSent || 1,
+      numStillnessAlertsSent: overrides.numStillnessAlertsSent || 0,
+      occupancyDuration: overrides.occupancyDuration || 30,
+    }),
+  }
+}
+
 describe('sensorEvents.js integration tests: handleSensorEvent', () => {
   beforeEach(async () => {
     sandbox.spy(helpers, 'log')
@@ -118,6 +132,41 @@ describe('sensorEvents.js integration tests: handleSensorEvent', () => {
 
     it('should not send a Twilio message', () => {
       expect(twilioHelpers.sendMessageToPhoneNumbers).to.not.have.been.called
+    })
+  })
+
+  describe('Duration Alert event when latest session is STALE', () => {
+    // Regression test for the orphaned stale session bug:
+    // After the previous fix, an ACTIVE+doorOpened session could be marked STALE
+    // without a new session being created (happens on a DOOR_OPENED event, since
+    // handleNewSession returns null for door-opened-as-first-alert). Subsequent
+    // alerts would then hit the `else` branch and pile onto the STALE session forever.
+    // Fix: when the latest session is STALE, create a new session for incoming alerts.
+
+    beforeEach(async () => {
+      this.staleSession = await db.createSession(this.device.deviceId)
+      await db.updateSession(this.staleSession.sessionId, SESSION_STATUS.STALE, true, true)
+
+      this.response = await chai.request(server).post('/api/sensorEvent').send(durationAlertPayload())
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should create a new session', async () => {
+      const sessions = await db.getSessionsForDevice(this.device.deviceId)
+      expect(sessions.length).to.equal(2)
+    })
+
+    it('should leave the stale session as STALE', async () => {
+      const session = await db.getSessionWithSessionId(this.staleSession.sessionId)
+      expect(session.sessionStatus).to.equal(SESSION_STATUS.STALE)
+    })
+
+    it('should attach the new event to the new session, not the stale one', async () => {
+      const staleSessionEvents = await db.getEventsForSession(this.staleSession.sessionId)
+      expect(staleSessionEvents.length).to.equal(0)
     })
   })
 })
