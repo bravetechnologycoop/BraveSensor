@@ -36,25 +36,59 @@
                 <br>
                 
                 <h5>Event Timeline</h5>
-                <div class="table-responsive">
-                    <table class="table table-striped table-sm table-fixed">
-                        <thead>
-                            <tr class="table-header" scope="row">
-                                <th scope="col">Event Type</th>
-                                <th scope="col">Message</th>
-                                <th scope="col">Sent At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {{#events}}
-                            <tr class="table-data">
-                                <td>{{eventType}}</td>
-                                <td>{{message}}</td>
-                                <td>{{#formatDate}}{{eventSentAt}}{{/formatDate}}</td>
-                            </tr>
-                        {{/events}}
-                        </tbody>
-                    </table>
+                <ul class="nav nav-tabs" id="eventsTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="sms-tab" data-toggle="tab" href="#sms" role="tab" aria-controls="sms" aria-selected="true">SMS Events</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="teams-tab" data-toggle="tab" href="#teams" role="tab" aria-controls="teams" aria-selected="false">Teams Events</a>
+                    </li>
+                </ul>
+                <div class="tab-content" id="eventsTabContent">
+                    <div class="tab-pane fade show active" id="sms" role="tabpanel" aria-labelledby="sms-tab">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm table-fixed">
+                                <thead>
+                                    <tr class="table-header" scope="row">
+                                        <th scope="col">Event Type</th>
+                                        <th scope="col">Message</th>
+                                        <th scope="col">Sent At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {{#events}}
+                                    <tr class="table-data">
+                                        <td>{{eventType}}</td>
+                                        <td>{{message}}</td>
+                                        <td>{{#formatDate}}{{eventSentAt}}{{/formatDate}}</td>
+                                    </tr>
+                                {{/events}}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="teams" role="tabpanel" aria-labelledby="teams-tab">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm table-fixed">
+                                <thead>
+                                    <tr class="table-header" scope="row">
+                                        <th scope="col">Event Type</th>
+                                        <th scope="col">Message</th>
+                                        <th scope="col">Sent At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {{#teamsEvents}}
+                                    <tr class="table-data">
+                                        <td>{{eventType}}</td>
+                                        <td>{{message}}</td>
+                                        <td>{{#formatDate}}{{eventSentAt}}{{/formatDate}}</td>
+                                    </tr>
+                                {{/teamsEvents}}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             {{/session}}
             {{^session}}
@@ -73,5 +107,16 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    <script>
+        // Restore the active tab from the URL hash (preserves selection across the 30s auto-reload)
+        var hash = window.location.hash
+        if (hash === '#sms' || hash === '#teams') {
+            var tab = document.querySelector('a[data-toggle="tab"][href="' + hash + '"]')
+            if (tab) {
+                $(tab).tab('show')
+            }
+        }
+    </script>
 </body>
 </html>

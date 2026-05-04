@@ -67,11 +67,13 @@ async function setSessionAsResponded(client, device, session, data, pgClient) {
         }
       }
     } else if (data.service === SERVICES.TEAMS && client.teamsId && client.teamsAlertChannelId) {
-      // alert all responder phone numbers
-      const messageKey = 'respondedViaTeams'
-      const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
-      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, messageKey, client.responderPhoneNumbers, pgClient)
+      // alert all responder phone numbers (only if any are configured)
+      if (client.responderPhoneNumbers && client.responderPhoneNumbers.length > 0) {
+        const messageKey = 'respondedViaTeams'
+        const textMessage = helpers.translateMessageKeyToMessage(messageKey, client, device)
+        await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, client.responderPhoneNumbers, textMessage)
+        await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, messageKey, client.responderPhoneNumbers, pgClient)
+      }
     } else {
       throw new Error(`Unhandled service type: ${data.service}`)
     }
