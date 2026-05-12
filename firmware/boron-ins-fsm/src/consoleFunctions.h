@@ -21,6 +21,7 @@ int reset_monitoring(String);
 
 int occupancy_detection_ins_threshold_set(String);
 int stillness_ins_threshold_set(String);
+int micro_motion_threshold_set(String);
 
 int occupancy_detection_time_set(String);
 int initial_time_set(String);

@@ -98,7 +98,12 @@ filteredINSData checkINS3331() {
     // Quartile update counter (update every 10 samples for efficiency)
     static int sampleCount = 0;
 
-    static filteredINSData returnINSData = {0, 0, 0, 0};
+    // Band-pass filter state for micro-motion energy
+    static float bpfHpfState = 0.0f;
+    static float bpfLpfState = 0.0f;
+    static float bpfEnergy = 0.0f;
+
+    static filteredINSData returnINSData = {0, 0, 0, 0, 0};
 
     if (os_queue_take(insQueue, &dataToParse, 0, 0) == 0) {
         // Skip invalid frames (checksum failed)
@@ -139,6 +144,9 @@ filteredINSData checkINS3331() {
         float iMedian = calculateMedian(iMedianBuffer);
         float qMedian = calculateMedian(qMedianBuffer);
 
+        // Instantaneous magnitude (pre-MA) used as BPF input
+        float newMag = sqrtf(iMedian * iMedian + qMedian * qMedian);
+
         // Stage 2: Push median values to moving average buffer
         iMABuffer.push(iMedian);
         qMABuffer.push(qMedian);
@@ -168,6 +176,18 @@ filteredINSData checkINS3331() {
             returnINSData.magnitude = sqrtf(returnINSData.iAverage * returnINSData.iAverage +
                                             returnINSData.qAverage * returnINSData.qAverage);
             returnINSData.timestamp = millis();
+        }
+
+        // Stage 3: Band-pass filter for micro-motion energy.
+        // magDelta is the deviation of the instantaneous magnitude from the smoothed mean,
+        // isolating rapid fluctuations that the MA suppresses (e.g. breathing, micro-movement).
+        if (returnINSData.magnitude > 0.0f) {
+            float magDelta = newMag - returnINSData.magnitude;
+            float hpfOut = HPF_ALPHA * bpfHpfState + (1.0f - HPF_ALPHA) * magDelta;
+            bpfHpfState = hpfOut;
+            bpfLpfState = LPF_ALPHA * hpfOut + (1.0f - LPF_ALPHA) * bpfLpfState;
+            bpfEnergy = BPF_DECAY * bpfEnergy + (1.0f - BPF_DECAY) * (bpfLpfState * bpfLpfState);
+            returnINSData.microMotionEnergy = bpfEnergy;
         }
     }
 

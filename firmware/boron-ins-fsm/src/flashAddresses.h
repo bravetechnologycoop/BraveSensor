@@ -37,11 +37,14 @@
 #define ADDR_STATE0_OCCUPANCY_DETECTION_TIME                    31 // uint32_t = 4 bytes
 
 // New state machine constant and its initialization flag
-// High conf flag for sensors that had v1924
 #define ADDR_INITIALIZE_HIGH_CONF_INS_THRESHOLD_FLAG            35 // uint16_t = 2 bytes
 #define ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD                  37 // uint32_t = 4 bytes
 #define ADDR_INITIALIZE_OCCUPANCY_DETECTION_INS_THRESHOLD_FLAG  41 // uint16_t = 2 bytes
 
-// next available address is 41 + 4 = 45
+// New state machine constant and its initialization flag
+#define ADDR_INITIALIZE_MICRO_MOTION_THRESHOLD_FLAG             45 // uint16_t = 2 bytes
+#define ADDR_MICRO_MOTION_THRESHOLD                             47 // float = 4 bytes
+
+// next available address is 51
 
 #endif

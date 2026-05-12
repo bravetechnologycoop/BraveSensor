@@ -33,6 +33,11 @@
 #define IQR_MULTIPLIER 1.5f           // Samples outside Q1-1.5*IQR to Q3+1.5*IQR are rejected
 #define QUARTILE_BUFFER_SIZE 50       // Samples used for quartile estimation
 
+// Band-pass filter for micro-motion energy
+#define BPF_DECAY  0.95f  // Energy decay per sample
+#define HPF_ALPHA  0.10f  // High-pass smoothing factor
+#define LPF_ALPHA  0.30f  // Low-pass smoothing factor
+
 // ***************************** Global typedefs *****************************
 
 typedef struct rawINSData {
@@ -44,7 +49,8 @@ typedef struct rawINSData {
 typedef struct filteredINSData {
     float iAverage;
     float qAverage;
-    float magnitude;      // sqrt(I² + Q²) - primary metric for motion detection
+    float magnitude;           // sqrt(I² + Q²) - primary metric for motion detection
+    float microMotionEnergy;   // band-pass filtered energy - sensitive to subtle motion
     unsigned long timestamp;
 } filteredINSData;
 

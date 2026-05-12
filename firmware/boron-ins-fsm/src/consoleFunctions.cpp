@@ -21,6 +21,7 @@ void setupConsoleFunctions() {
 
     Particle.function("Occupancy_INS_Threshold", occupancy_detection_ins_threshold_set);
     Particle.function("Stillness_INS_Threshold", stillness_ins_threshold_set);
+    Particle.function("MicroMotion_Threshold", micro_motion_threshold_set);
 
     Particle.function("Occupancy_Time", occupancy_detection_time_set);
     Particle.function("Initial_Time", initial_time_set);
@@ -393,6 +394,32 @@ int stillness_alert_time_set(String input) {
             returnFlag = stillness_alert_time / 1000;
         }
     }
+    return returnFlag;
+}
+
+// returns threshold * 1000 as int if valid input is given (e.g. 500 = 0.5), otherwise -1
+// accepts float input (e.g. "0.5"); use "e" to echo the current value
+int micro_motion_threshold_set(String input) {
+    int returnFlag = -1;
+
+    const char* holder = input.c_str();
+
+    if (*holder == 'e') {
+        EEPROM.get(ADDR_MICRO_MOTION_THRESHOLD, micro_motion_threshold);
+        returnFlag = (int)(micro_motion_threshold * 1000);
+    } else {
+        float threshold = input.toFloat();
+
+        if (threshold <= 0.0f) {
+            // toFloat() returns 0.0 on parse failure; a threshold of 0 is also invalid
+            returnFlag = -1;
+        } else {
+            EEPROM.put(ADDR_MICRO_MOTION_THRESHOLD, threshold);
+            micro_motion_threshold = threshold;
+            returnFlag = (int)(micro_motion_threshold * 1000);
+        }
+    }
+
     return returnFlag;
 }
 

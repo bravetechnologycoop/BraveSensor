@@ -22,6 +22,7 @@ StateHandler stateHandler = state0_idle;
 // State machine constants firmware code
 unsigned long occupancy_detection_ins_threshold = OCCUPANCY_DETECTION_INS_THRESHOLD;
 unsigned long stillness_ins_threshold = STILLNESS_INS_THRESHOLD;
+float micro_motion_threshold = MICRO_MOTION_THRESHOLD;
 
 unsigned long state0_occupancy_detection_time = STATE0_OCCUPANCY_DETECTION_TIME;
 unsigned long state1_initial_time = STATE1_INITIAL_TIME;
@@ -94,6 +95,7 @@ void initializeStateMachineConsts() {
     uint16_t initializeHighConfINSThresholdFlag;
     uint16_t initializeOccupancyDetectionINSThresholdFlag;
     uint16_t initializeAlertTimeFlag;
+    uint16_t initializeMicroMotionThresholdFlag;
 
     EEPROM.get(ADDR_INITIALIZE_SM_CONSTS_FLAG, initializeConstsFlag);
     Log.warn("State machine initialization flag read: 0x%04X", initializeConstsFlag);
@@ -138,6 +140,18 @@ void initializeStateMachineConsts() {
     } else {
         EEPROM.get(ADDR_OCCUPANCY_DETECTION_INS_THRESHOLD, occupancy_detection_ins_threshold);
         Log.warn("Occupancy Detection INS Threshold read from EEPROM.");
+    }
+
+    EEPROM.get(ADDR_INITIALIZE_MICRO_MOTION_THRESHOLD_FLAG, initializeMicroMotionThresholdFlag);
+    Log.warn("MicroMotionThresholdFlag is 0x%04X", initializeMicroMotionThresholdFlag);
+    if (initializeMicroMotionThresholdFlag != INITIALIZATION_FLAG_SET) {
+        EEPROM.put(ADDR_MICRO_MOTION_THRESHOLD, micro_motion_threshold);
+        initializeMicroMotionThresholdFlag = INITIALIZATION_FLAG_SET;
+        EEPROM.put(ADDR_INITIALIZE_MICRO_MOTION_THRESHOLD_FLAG, initializeMicroMotionThresholdFlag);
+        Log.warn("Micro-motion threshold initialized and written to EEPROM.");
+    } else {
+        EEPROM.get(ADDR_MICRO_MOTION_THRESHOLD, micro_motion_threshold);
+        Log.warn("Micro-motion threshold read from EEPROM.");
     }
 
 }
@@ -247,7 +261,7 @@ void state0_idle() {
     
     // Log current state
     Log.info("State 0 (Idle): Door Status = 0x%02X, INS Magnitude = %f", checkDoor.doorStatus, checkINS.magnitude);
-    publishDebugMessage(0, checkDoor.doorStatus, checkINS.magnitude, timeInState0);
+    publishDebugMessage(0, checkDoor.doorStatus, checkINS.magnitude, checkINS.microMotionEnergy, timeInState0);
 
     // Check state transition conditions
     // Transition to state 1 if:
@@ -289,7 +303,7 @@ void state1_initial_countdown() {
 
     // Log current state
     Log.info("State 1 (Countdown): Door Status = 0x%02X, INS Magnitude = %f", checkDoor.doorStatus, checkINS.magnitude);
-    publishDebugMessage(1, checkDoor.doorStatus, checkINS.magnitude, timeInState1);
+    publishDebugMessage(1, checkDoor.doorStatus, checkINS.magnitude, checkINS.microMotionEnergy, timeInState1);
 
     // Check state transition conditions
     // Transition to state 0 if no movement is detected (using low threshold for hysteresis) OR the door is opened.
@@ -334,7 +348,7 @@ void state2_monitoring() {
 
     // Log current state
     Log.info("State 2 (Monitoring): Door Status = 0x%02X, INS Magnitude = %f", checkDoor.doorStatus, checkINS.magnitude);
-    publishDebugMessage(2, checkDoor.doorStatus, checkINS.magnitude, timeInState2);
+    publishDebugMessage(2, checkDoor.doorStatus, checkINS.magnitude, checkINS.microMotionEnergy, timeInState2);
 
     // Check state transition conditions
     // Transition to state 0 if the door is opened
@@ -413,8 +427,8 @@ void state3_stillness() {
     updateDurationAlertStatus(); 
     updateStillnessAlertStatus();
     
-    Log.info("State 3 (Stillness): Door Status = 0x%02X, INS Magnitude = %f", checkDoor.doorStatus, checkINS.magnitude);
-    publishDebugMessage(3, checkDoor.doorStatus, checkINS.magnitude, timeInState3);
+    Log.info("State 3 (Stillness): Door Status = 0x%02X, INS Magnitude = %f, Micro-Motion Energy = %f", checkDoor.doorStatus, checkINS.magnitude, checkINS.microMotionEnergy);
+    publishDebugMessage(3, checkDoor.doorStatus, checkINS.magnitude, checkINS.microMotionEnergy, timeInState3);
 
     // Check state transition conditions  
     // Transition to state 0 if the door is opened
@@ -448,9 +462,12 @@ void state3_stillness() {
 
         stateHandler = state0_idle;
     }
-    // Transition to state 2 if movement exceeds the stillness threshold (using high threshold for hysteresis)
-    else if (checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET)) {
-        Log.warn("State 3 --> State 2: Motion detected again.");
+    // Transition to state 2 if gross motion exceeds the stillness threshold, or if
+    // micro-motion energy is detected (occupant is breathing/subtly moving — not truly still)
+    else if (checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET) ||
+             checkINS.microMotionEnergy > micro_motion_threshold) {
+        Log.warn("State 3 --> State 2: %s detected.",
+                 checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET) ? "Motion" : "Micro-motion");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.magnitude);
 
         // Reset the state 2 timer and transition to state 2
@@ -469,8 +486,8 @@ void state3_stillness() {
         unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
         char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
         snprintf(alertMessage, sizeof(alertMessage),
-                    "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
-                    3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+                    "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu, \"microMotionEnergy\": %f}",
+                    3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration, checkINS.microMotionEnergy);
         Particle.publish("Duration Alert", alertMessage, PRIVATE);
     }
     // Stillness alert condition based on time elapsed since entering state 3
@@ -486,9 +503,9 @@ void state3_stillness() {
         // Publish stillness alert to particle
         unsigned long occupancy_duration = timeSinceDoorClosed / 60000; // Convert to minutes
         char alertMessage[PARTICLE_MAX_MESSAGE_LENGTH];
-        snprintf(alertMessage, sizeof(alertMessage), 
-                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
-                 3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        snprintf(alertMessage, sizeof(alertMessage),
+                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu, \"microMotionEnergy\": %f}",
+                 3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration, checkINS.microMotionEnergy);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
     }
 }
@@ -508,7 +525,7 @@ void publishStateTransition(int prevState, int nextState, unsigned char doorStat
     }
 }
 
-void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, unsigned long state_timer) {
+void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, float microMotionEnergy, unsigned long state_timer) {
     if (stateMachineDebugFlag) {
         if (calculateTimeSince(debugFlagTurnedOnAt) > DEBUG_AUTO_OFF_THRESHOLD) {
             stateMachineDebugFlag = false;
@@ -521,6 +538,7 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
                         "\"door_status\":\"0x%02X\", "
                         "\"time_in_curr_state\":\"%lu\", "
                         "\"INS_val\":\"%f\", "
+                        "\"micro_motion_energy\":\"%f\", "
                         "\"occupancy_detection_INS\":\"%lu\", "
                         "\"stillness_INS\":\"%lu\", "
                         "\"occupancy_detection_timer\":\"%lu\", "
@@ -528,8 +546,8 @@ void publishDebugMessage(int state, unsigned char doorStatus, float INSValue, un
                         "\"duration_alert_time\":\"%lu\", "
                         "\"stillness_alert_time\":\"%lu\" "
                      "}",
-                     state, doorStatus, state_timer, INSValue, occupancy_detection_ins_threshold, stillness_ins_threshold,
-                     state0_occupancy_detection_time, state1_initial_time, 
+                     state, doorStatus, state_timer, INSValue, microMotionEnergy, occupancy_detection_ins_threshold, stillness_ins_threshold,
+                     state0_occupancy_detection_time, state1_initial_time,
                      duration_alert_time, stillness_alert_time);
             Particle.publish("Debug Message", debugMessage, PRIVATE);
             lastDebugPublish = millis();

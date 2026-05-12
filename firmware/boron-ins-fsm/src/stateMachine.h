@@ -21,6 +21,12 @@
 // Hysteresis offset: thresholds become base ± this value
 #define HYSTERESIS_OFFSET                   2
 
+// Micro-motion energy threshold for State 3 -> State 2 transition.
+// If microMotionEnergy exceeds this, the occupant has detectable micro-motions
+// (breathing, subtle movement) and is not truly still — return to State 2.
+// Needs empirical calibration; start low and raise until false transitions stop.
+#define MICRO_MOTION_THRESHOLD              1.0f
+
 #define STATE0_OCCUPANCY_DETECTION_TIME     30000       // 30 secs
 #define STATE1_INITIAL_TIME                 3000        // 3 secs
 
@@ -50,6 +56,7 @@ extern StateHandler stateHandler;
 // State machine constants firmware code definition
 extern unsigned long stillness_ins_threshold;
 extern unsigned long occupancy_detection_ins_threshold;
+extern float micro_motion_threshold;
 
 extern unsigned long state0_occupancy_detection_time;
 extern unsigned long state1_initial_time;
@@ -100,7 +107,7 @@ void state1_initial_countdown();
 void state2_monitoring();
 void state3_stillness();
 
-void publishDebugMessage(int, unsigned char, float, unsigned long);
+void publishDebugMessage(int, unsigned char, float, float, unsigned long);
 void publishStateTransition(int, int, unsigned char, float);
 
 #endif
