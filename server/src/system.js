@@ -7,13 +7,13 @@
 
 const crypto = require('crypto')
 const os = require('os')
-const path = require('path')
 
 const helpers = require('./utils/helpers')
 const db = require('./db/db')
+const pkg = require('../package.json')
 
-const SERVICE_VERSION = require(path.join(__dirname, '..', 'package.json')).version
-const SERVICE_NAME = require(path.join(__dirname, '..', 'package.json')).name
+const SERVICE_VERSION = pkg.version
+const SERVICE_NAME = pkg.name
 
 function timingSafeEqualStr(a, b) {
   const ab = Buffer.from(a)
@@ -41,7 +41,9 @@ async function handleHealthCheck(req, res) {
   const uptimeSeconds = Math.floor(process.uptime())
   const startedAt = new Date(Date.now() - uptimeSeconds * 1000).toISOString()
   const mem = process.memoryUsage()
-  const toMb = bytes => Math.round(bytes / (1024 * 1024))
+  function toMb(bytes) {
+    return Math.round(bytes / (1024 * 1024))
+  }
 
   const service = {
     name: SERVICE_NAME,
