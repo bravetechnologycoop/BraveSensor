@@ -271,6 +271,17 @@ async function beginTransaction() {
   }
 }
 
+// Returns a snapshot of the pg pool's internal counters for introspection.
+// Synchronous and side-effect free; safe to call from a health endpoint.
+function getPoolStats() {
+  return {
+    max: pool.options.max,
+    total: pool.totalCount,
+    idle: pool.idleCount,
+    waiting: pool.waitingCount,
+  }
+}
+
 // Checks the database connection, if not able to connect will throw an error
 async function getCurrentTimeForHealthCheck() {
   if (helpers.isDbLogging()) {
@@ -2234,6 +2245,7 @@ module.exports = {
   rollbackTransaction,
 
   getCurrentTimeForHealthCheck,
+  getPoolStats,
   getCurrentTime,
   getFormattedTimeDifference,
   clearAllTables,
