@@ -11,6 +11,11 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.3.2] - 2026-05-14
+ - MS Teams events now displayed in dashboard
+ - Added health endpoint for status monitoring
+ - Survey response search for a single digit number and extract. Rather than looking for an exact match
+
 ## [12.3.1] - 2026-04-16
  - Twilio message reduction
  - increase keepAlive interval 30->90s, reduce particle debug logging timeout from 8hr -> 30m
@@ -997,8 +1002,9 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.1...HEAD
-[12.4.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.0...v12.3.1
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.2...HEAD
+[12.3.2]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.1...v12.3.2
+[12.3.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.0...v12.3.1
 [12.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.7...v12.3.0
 [12.2.7]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.6...v12.2.7
 [12.2.6]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.5...v12.2.6
