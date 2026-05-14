@@ -271,6 +271,17 @@ async function beginTransaction() {
   }
 }
 
+// Returns a snapshot of the pg pool's internal counters for introspection.
+// Synchronous and side-effect free; safe to call from a health endpoint.
+function getPoolStats() {
+  return {
+    max: pool.options.max,
+    total: pool.totalCount,
+    idle: pool.idleCount,
+    waiting: pool.waitingCount,
+  }
+}
+
 // Checks the database connection, if not able to connect will throw an error
 async function getCurrentTimeForHealthCheck() {
   if (helpers.isDbLogging()) {
@@ -1660,6 +1671,33 @@ async function getLatestRespondableTeamsEvent(sessionId, pgClient) {
   }
 }
 
+async function getTeamsEventsForSession(sessionId, pgClient) {
+  try {
+    // Note: Events ordered by ascending, first event to latest event
+    const results = await helpers.runQuery(
+      'getTeamsEventsForSession',
+      `
+      SELECT *
+      FROM teams_events
+      WHERE session_id = $1
+      ORDER BY event_sent_at ASC
+      `,
+      [sessionId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createTeamsEventFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error getting teams events for session: ${err.toString()}`)
+    return []
+  }
+}
+
 async function getTeamsEventWithMessageId(messageId, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -2207,6 +2245,7 @@ module.exports = {
   rollbackTransaction,
 
   getCurrentTimeForHealthCheck,
+  getPoolStats,
   getCurrentTime,
   getFormattedTimeDifference,
   clearAllTables,
@@ -2254,6 +2293,7 @@ module.exports = {
 
   createTeamsEvent,
   getLatestRespondableTeamsEvent,
+  getTeamsEventsForSession,
   getTeamsEventWithMessageId,
 
   createVital,

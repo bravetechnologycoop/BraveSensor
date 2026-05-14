@@ -150,12 +150,12 @@ function formatDateTimeForDashboard(date) {
 }
 
 function parseDigits(message) {
-  if (!message.match(/^\d+$/)) {
+  const matches = typeof message === 'string' ? message.match(/\d+/g) : null
+  if (!matches || matches.length !== 1) {
     return { isValid: false, value: null }
   }
 
-  const value = parseInt(message, 10)
-  return { isValid: true, value }
+  return { isValid: true, value: parseInt(matches[0], 10) }
 }
 
 function translateMessageKeyToMessage(messageKey, client, device, messageData = {}) {

@@ -13,6 +13,7 @@ const sensorEvents = require('./sensorEvents')
 const twilioEvents = require('./twilioEvents')
 const teamsEvents = require('./teamsEvents')
 const troubleshooting = require('./troubleshooting')
+const system = require('./system')
 const smokeTest = require('../test/smokeTest')
 
 function configureRoutes(app) {
@@ -64,6 +65,8 @@ function configureRoutes(app) {
   app.post('/pa/get-client-devices', pa.validateGetClientDevices, googleHelpers.paAuthorize, pa.handleGetClientDevices)
   app.post('/pa/message-clients', pa.validateMessageClients, googleHelpers.paAuthorize, pa.handleMessageClients)
   app.post('/pa/health', pa.validateCheckDatabaseConnection, googleHelpers.paAuthorize, pa.handleCheckDatabaseConnection)
+
+  app.get('/system/health', system.validateHealthToken, system.handleHealthCheck)
 }
 
 module.exports = {

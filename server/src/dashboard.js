@@ -441,10 +441,11 @@ async function renderSessionDetailsPage(req, res) {
       return
     }
 
-    const [client, device, allEvents] = await Promise.all([
+    const [client, device, allEvents, allTeamsEvents] = await Promise.all([
       db.getClientWithDeviceId(session.deviceId),
       db.getDeviceWithDeviceId(session.deviceId),
       db.getEventsForSession(sessionId),
+      db.getTeamsEventsForSession(sessionId),
     ])
 
     // Process events
@@ -457,8 +458,31 @@ async function renderSessionDetailsPage(req, res) {
       'invalidResponseTryAgainDurationAlertSurvey',
       'invalidResponseTryAgainStillnessAlertSurveyDoorOpened',
       'invalidResponseTryAgainStillnessAlertSurvey',
+      'teamsDurationAlertSurvey',
+      'teamsDurationAlertSurveyDoorOpened',
+      'teamsStillnessAlertSurvey',
+      'teamsStillnessAlertSurveyDoorOpened',
     ]
     const eventsWithMessages = allEvents.map(event => {
+      if (event.eventType === 'MSG_RECEIVED') {
+        if (expectedSurveyResponseEvents.includes(event.eventTypeDetails)) {
+          return {
+            ...event,
+            message: `Responded to sent message - Selected Category: ${session.selectedSurveyCategory}`,
+          }
+        }
+        return {
+          ...event,
+          message: 'Responded to sent message',
+        }
+      }
+      return {
+        ...event,
+        message: helpers.translateMessageKeyToMessage(event.eventTypeDetails, client, device),
+      }
+    })
+
+    const teamsEventsWithMessages = allTeamsEvents.map(event => {
       if (event.eventType === 'MSG_RECEIVED') {
         if (expectedSurveyResponseEvents.includes(event.eventTypeDetails)) {
           return {
@@ -482,7 +506,7 @@ async function renderSessionDetailsPage(req, res) {
       sessionEndedAt: session.sessionStatus === SESSION_STATUS.COMPLETED ? session.updatedAt : null,
     }
 
-    const viewParams = { session: sessionWithEndDate, events: eventsWithMessages }
+    const viewParams = { session: sessionWithEndDate, events: eventsWithMessages, teamsEvents: teamsEventsWithMessages }
 
     res.send(Mustache.render(sessionDetailsPageTemplate, { ...viewParams, ...dateFormatters }, { nav: navPartial, css: pageCSSPartial }))
   } catch (err) {
