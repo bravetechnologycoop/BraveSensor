@@ -150,7 +150,7 @@ function formatDateTimeForDashboard(date) {
 }
 
 function parseDigits(message) {
-  const matches = (message ?? '').match(/\d+/g)
+  const matches = typeof message === 'string' ? message.match(/\d+/g) : null
   if (!matches || matches.length !== 1) {
     return { isValid: false, value: null }
   }
