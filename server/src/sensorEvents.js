@@ -212,10 +212,17 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
       }
 
       // get latest event based on the session's attending via service
-      const latestEvent =
-        currentSession.sessionRespondedVia === SERVICES.TEAMS
-          ? await db.getLatestRespondableTeamsEvent(currentSession.sessionId, null)
-          : await db.getLatestRespondableTwilioEvent(currentSession.sessionId, null)
+      // if no responder has picked up yet (sessionRespondedVia is null), fall back to Teams
+      // events when there's no Twilio event — Teams-only clients have no rows in `events`
+      let latestEvent
+      if (currentSession.sessionRespondedVia === SERVICES.TEAMS) {
+        latestEvent = await db.getLatestRespondableTeamsEvent(currentSession.sessionId, null)
+      } else {
+        latestEvent = await db.getLatestRespondableTwilioEvent(currentSession.sessionId, null)
+        if (!latestEvent) {
+          latestEvent = await db.getLatestRespondableTeamsEvent(currentSession.sessionId, null)
+        }
+      }
 
       // make sure the latest event is a stillness alert
       if (!latestEvent || !latestEvent.eventType || latestEvent.eventType !== EVENT_TYPE.STILLNESS_ALERT) {
@@ -327,6 +334,11 @@ async function getMessageKeysForExistingSession(eventType, latestSession, pgClie
           latestEvent = await db.getLatestRespondableTeamsEvent(latestSession.sessionId, pgClient)
         } else {
           latestEvent = await db.getLatestRespondableTwilioEvent(latestSession.sessionId, null, pgClient)
+          // Teams-only clients have no row in `events` (no responder phone numbers configured),
+          // so fall back to teams_events when no responder has picked up yet
+          if (!latestEvent) {
+            latestEvent = await db.getLatestRespondableTeamsEvent(latestSession.sessionId, pgClient)
+          }
         }
 
         if (!latestEvent || !latestEvent.eventTypeDetails) {

@@ -9,6 +9,7 @@ const { afterEach, beforeEach, describe, it } = require('mocha')
 const helpers = require('../../../src/utils/helpers')
 const db = require('../../../src/db/db')
 const twilioHelpers = require('../../../src/utils/twilioHelpers')
+const teamsHelpers = require('../../../src/utils/teamsHelpers')
 const factories = require('../../factories_new')
 const { EVENT_TYPE, SESSION_STATUS, SERVICES } = require('../../../src/enums')
 
@@ -167,6 +168,71 @@ describe('sensorEvents.js integration tests: handleSensorEvent', () => {
     it('should attach the new event to the new session, not the stale one', async () => {
       const staleSessionEvents = await db.getEventsForSession(this.staleSession.sessionId)
       expect(staleSessionEvents.length).to.equal(0)
+    })
+  })
+
+  describe('Door Opened event on a Teams-only client (no responder phone numbers) before anyone responds', () => {
+    // Regression test for the Teams-only stuck-session bug:
+    // 1. Client has no responder_phone_numbers (Teams-only).
+    // 2. Stillness alert fires → only a teams_events row is created; events table is empty.
+    // 3. Door opens BEFORE anyone clicks the Teams card → sessionRespondedVia is still null.
+    // 4. getMessageKeysForExistingSession used to query only the Twilio events table, find
+    //    nothing, throw "No latest event found", and roll back the transaction. door_opened
+    //    was never set to true, so the session got stuck ACTIVE forever.
+    // Fix: when no Twilio event exists, fall back to the teams_events table.
+
+    beforeEach(async () => {
+      this.teamsOnlyClient = await factories.clientNewDBFactory({
+        displayName: 'teamsOnlyClient',
+        responderPhoneNumbers: [],
+        fallbackPhoneNumbers: [],
+      })
+      this.teamsOnlyDevice = await factories.deviceNewDBFactory({
+        clientId: this.teamsOnlyClient.clientId,
+        locationId: 'teamsOnlyLocationId',
+        particleDeviceId: 'e00222222222222222222222',
+        deviceTwilioNumber: '+10000000001',
+      })
+
+      // Simulate the post-stillness-alert state for a Teams-only client:
+      // an ACTIVE session with a teams_events row and no events row.
+      this.teamsOnlySession = await db.createSession(this.teamsOnlyDevice.deviceId)
+      await db.createTeamsEvent(this.teamsOnlySession.sessionId, EVENT_TYPE.STILLNESS_ALERT, 'teamsStillnessAlert', 'fakeInitialMessageId')
+
+      sandbox.stub(teamsHelpers, 'sendNewTeamsCard').resolves({ messageId: 'fakeSurveyMessageId' })
+
+      this.response = await chai
+        .request(server)
+        .post('/api/sensorEvent')
+        .send(doorOpenedPayload({ particleDeviceId: 'e00222222222222222222222' }))
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should set door_opened to true on the session', async () => {
+      const session = await db.getSessionWithSessionId(this.teamsOnlySession.sessionId)
+      expect(session.doorOpened).to.be.true
+    })
+
+    it('should set survey_sent to true on the session', async () => {
+      const session = await db.getSessionWithSessionId(this.teamsOnlySession.sessionId)
+      expect(session.surveySent).to.be.true
+    })
+
+    it('should send the Teams door-opened survey card', () => {
+      expect(teamsHelpers.sendNewTeamsCard).to.have.been.called
+    })
+
+    it('should not send any Twilio messages', () => {
+      expect(twilioHelpers.sendMessageToPhoneNumbers).to.not.have.been.called
+    })
+
+    it('should record the survey in teams_events', async () => {
+      const teamsEvents = await db.getTeamsEventsForSession(this.teamsOnlySession.sessionId)
+      const surveyEvents = teamsEvents.filter(e => e.eventTypeDetails === 'teamsStillnessAlertSurveyDoorOpened')
+      expect(surveyEvents.length).to.equal(1)
     })
   })
 })
