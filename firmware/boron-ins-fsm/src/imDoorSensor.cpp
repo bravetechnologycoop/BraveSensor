@@ -224,3 +224,10 @@ int isDoorOpen(int doorStatus) {
 int isDoorStatusUnknown(int doorStatus) {
     return (doorStatus == INITIAL_DOOR_STATUS);
 }
+
+// Return whether the door sensor has not sent a message within the offline threshold.
+// doorLastMessage is 0 on boot, so millis() - 0 = millis(), which exceeds the threshold
+// after 20 minutes — correctly treating a never-seen sensor as offline.
+bool isDoorSensorOffline() {
+    return (millis() - doorLastMessage) > DOOR_SENSOR_OFFLINE_THRESHOLD;
+}

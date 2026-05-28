@@ -58,6 +58,9 @@ bool isStillnessAlertThresholdExceeded = false;
 // Allow state transitions
 bool allowTransitionToStateOne = true;
 
+// Radar exit timer for offline fallback mode (0 = not running)
+unsigned long radarExitStartTime = 0;
+
 // Reset reason
 int resetReason = System.resetReason();
 
@@ -210,16 +213,34 @@ void updateStillnessAlertStatus() {
 }
 
 /*
+ * Radar Exit Helper (offline fallback mode)
+ * Returns true when both magnitude and microMotionEnergy have been below their
+ * thresholds continuously for RADAR_EXIT_CONFIRMATION_TIME, indicating the room
+ * is likely empty. Resets the timer whenever signals rise above threshold.
+ */
+bool checkRadarExit(filteredINSData& ins) {
+    bool signalsLow = ins.magnitude < stillness_ins_threshold &&
+                      ins.microMotionEnergy < micro_motion_threshold;
+    if (!signalsLow) {
+        radarExitStartTime = 0;
+        return false;
+    }
+    if (radarExitStartTime == 0) radarExitStartTime = millis();
+    return calculateTimeSince(radarExitStartTime) >= RADAR_EXIT_CONFIRMATION_TIME;
+}
+
+/*
  * State 0 - Idle State
  * This is the normal state of the sensor where:
  * Door is open/closed and we don't see any movement inside the washroom stall.
  */
 void state0_idle() {
-    // Check if device needs to be reset
+    // Check if device needs to be reset.
+    // Suppress reset enablement in offline mode — we're knowingly running without a door sensor.
     unsigned long timeSinceDoorHeartbeat = calculateTimeSince(doorHeartbeatReceived);
-    if (timeSinceDoorHeartbeat > DEVICE_RESET_THRESHOLD) {
+    if (!isDoorSensorOffline() && timeSinceDoorHeartbeat > DEVICE_RESET_THRESHOLD) {
         System.enableReset();
-    } 
+    }
     else {
         System.disableReset();
     }
@@ -262,6 +283,40 @@ void state0_idle() {
     // Log current state
     Log.info("State 0 (Idle): Door Status = 0x%02X, INS Magnitude = %f", checkDoor.doorStatus, checkINS.magnitude);
     publishDebugMessage(0, checkDoor.doorStatus, checkINS.magnitude, checkINS.microMotionEnergy, timeInState0);
+
+    // Check state transition conditions
+    // --- Offline fallback mode: door sensor has not been heard from ---
+    if (isDoorSensorOffline()) {
+        // Publish a one-time notification when offline mode is first entered
+        static bool offlineNotified = false;
+        if (!offlineNotified) {
+            Log.warn("Door sensor offline - switching to radar-only fallback mode");
+            Particle.publish("Door Sensor Offline", "{\"mode\":\"radar_fallback\"}", PRIVATE);
+            offlineNotified = true;
+        }
+
+        // Radar-based entry: require magnitude above threshold for a confirmation dwell time
+        static unsigned long radarPresenceStartTime = 0;
+        bool presenceDetected = checkINS.magnitude > (occupancy_detection_ins_threshold + HYSTERESIS_OFFSET);
+
+        if (!presenceDetected) {
+            radarPresenceStartTime = 0;
+        } else if (radarPresenceStartTime == 0) {
+            radarPresenceStartTime = millis();
+        }
+
+        if (radarPresenceStartTime > 0 &&
+            calculateTimeSince(radarPresenceStartTime) >= state1_initial_time) {
+            Log.warn("State 0 --> State 1 (offline): Radar presence confirmed");
+            publishStateTransition(0, 1, checkDoor.doorStatus, checkINS.magnitude);
+            radarPresenceStartTime = 0;
+            radarExitStartTime = 0;
+            timeWhenDoorClosed = millis();
+            state1_start_time = millis();
+            stateHandler = state1_initial_countdown;
+        }
+        return;
+    }
 
     // Check state transition conditions
     // Transition to state 1 if:
@@ -312,7 +367,7 @@ void state1_initial_countdown() {
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.magnitude);
         stateHandler = state0_idle;
     }
-    else if (isDoorOpen(checkDoor.doorStatus)) {
+    else if (!isDoorSensorOffline() && isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("State 1 --> State 0: Door opened, session over");
         publishStateTransition(1, 0, checkDoor.doorStatus, checkINS.magnitude);
         stateHandler = state0_idle;
@@ -324,6 +379,7 @@ void state1_initial_countdown() {
 
         // Reset state 2 timer and transition to state 2
         state2_start_time = millis();
+        radarExitStartTime = 0;
         allowTransitionToStateOne = false;
         stateHandler = state2_monitoring;
     }
@@ -352,7 +408,7 @@ void state2_monitoring() {
 
     // Check state transition conditions
     // Transition to state 0 if the door is opened
-    if (isDoorOpen(checkDoor.doorStatus)) {
+    if (!isDoorSensorOffline() && isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("State 2 --> State 0: Door opened, session over");
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.magnitude);
 
@@ -369,7 +425,7 @@ void state2_monitoring() {
     }
     // A new door close event while in State 2 means the door opened and closed
     // without us seeing the open. Reset to State 0 to end the session.
-    else if (allowTransitionToStateOne) {
+    else if (!isDoorSensorOffline() && allowTransitionToStateOne) {
         Log.warn("State 2 --> State 0: Door close event detected, missed door open");
         publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.magnitude);
 
@@ -390,6 +446,19 @@ void state2_monitoring() {
         // Reset the state 3 timer and transition to state 3
         state3_start_time = millis();
         stateHandler = state3_stillness;
+    }
+    // Offline fallback: both radar signals have been low long enough to declare the room empty
+    else if (isDoorSensorOffline() && checkRadarExit(checkINS)) {
+        Log.warn("State 2 --> State 0 (offline): Radar exit confirmed");
+        publishStateTransition(2, 0, checkDoor.doorStatus, checkINS.magnitude);
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char exitMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(exitMessage, sizeof(exitMessage),
+                "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
+                2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        Particle.publish("Radar Exit", exitMessage, PRIVATE);
+        allowTransitionToStateOne = true;
+        stateHandler = state0_idle;
     }
     // Send duration alert if threshold is exceeded
     else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) {
@@ -430,9 +499,9 @@ void state3_stillness() {
     Log.info("State 3 (Stillness): Door Status = 0x%02X, INS Magnitude = %f, Micro-Motion Energy = %f", checkDoor.doorStatus, checkINS.magnitude, checkINS.microMotionEnergy);
     publishDebugMessage(3, checkDoor.doorStatus, checkINS.magnitude, checkINS.microMotionEnergy, timeInState3);
 
-    // Check state transition conditions  
+    // Check state transition conditions
     // Transition to state 0 if the door is opened
-    if (isDoorOpen(checkDoor.doorStatus)) {
+    if (!isDoorSensorOffline() && isDoorOpen(checkDoor.doorStatus)) {
         Log.warn("State 3 --> State 0: Door opened, session over");
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.magnitude);
 
@@ -449,7 +518,7 @@ void state3_stillness() {
     } 
     // A new door close event while in State 3 means the door opened and closed
     // without us seeing the open. Reset to State 0 to end the session.
-    else if (allowTransitionToStateOne) {
+    else if (!isDoorSensorOffline() && allowTransitionToStateOne) {
         Log.warn("State 3 --> State 0: Door close event detected, missed door open");
         publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.magnitude);
 
@@ -464,15 +533,26 @@ void state3_stillness() {
     }
     // Transition to state 2 if gross motion exceeds the stillness threshold, or if
     // micro-motion energy is detected (occupant is breathing/subtly moving — not truly still)
-    else if (checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET) ||
-             checkINS.microMotionEnergy > micro_motion_threshold) {
-        Log.warn("State 3 --> State 2: %s detected.",
-                 checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET) ? "Motion" : "Micro-motion");
+    else if (checkINS.magnitude > (stillness_ins_threshold + HYSTERESIS_OFFSET)) {
+        Log.warn("State 3 --> State 2: Motion detected.");
         publishStateTransition(3, 2, checkDoor.doorStatus, checkINS.magnitude);
 
         // Reset the state 2 timer and transition to state 2
         state2_start_time = millis();
         stateHandler = state2_monitoring;
+    }
+    // Offline fallback: both radar signals have been low long enough to declare the room empty
+    else if (isDoorSensorOffline() && checkRadarExit(checkINS)) {
+        Log.warn("State 3 --> State 0 (offline): Radar exit confirmed");
+        publishStateTransition(3, 0, checkDoor.doorStatus, checkINS.magnitude);
+        unsigned long occupancy_duration = timeSinceDoorClosed / 60000;
+        char exitMessage[PARTICLE_MAX_MESSAGE_LENGTH];
+        snprintf(exitMessage, sizeof(exitMessage),
+                "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
+                3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
+        Particle.publish("Radar Exit", exitMessage, PRIVATE);
+        allowTransitionToStateOne = true;
+        stateHandler = state0_idle;
     }
     // Duration alert condition based on time elapsed since door closed or last alert
     else if (isStillnessAlertActive && isDurationAlertThresholdExceeded) {

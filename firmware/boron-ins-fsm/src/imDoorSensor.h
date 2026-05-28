@@ -28,6 +28,10 @@
 // Threshold for triggering state machine heartbeat
 #define MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD  540000  // 9 mins in ms
 
+// Threshold for declaring the door sensor offline (2 missed heartbeats).
+// Set to 0 to force radar-only fallback mode permanently (for testing).
+#define DOOR_SENSOR_OFFLINE_THRESHOLD       0           // 0 = always offline; restore to 1200000 for production
+
 // ***************************** Global typedefs ******************************
 
 typedef struct doorData {
@@ -73,5 +77,6 @@ void threadBLEScanner(void *param);
 // Door Sensor Utility Functions
 int isDoorOpen(int doorStatus);
 int isDoorStatusUnknown(int doorStatus);
+bool isDoorSensorOffline();
 
 #endif

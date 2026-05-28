@@ -135,11 +135,13 @@ int toggle_debugging_publishes(String command) {
     }
     else if (*holder == '0') {
         stateMachineDebugFlag = false;
+        Particle.publish("Debug Publish", "OFF", PRIVATE);
         returnFlag = 0;
     }
     else if (*holder == '1') {
         stateMachineDebugFlag = true;
         debugFlagTurnedOnAt = millis();
+        Particle.publish("Debug Publish", "ON", PRIVATE);
         returnFlag = 1;
     }
     else {

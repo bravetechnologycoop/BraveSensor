@@ -14,7 +14,7 @@
 #include "statusRGB.h"
 
 // See versioning in README.md
-#define BRAVE_FIRMWARE_VERSION  8922
+#define BRAVE_FIRMWARE_VERSION  8925
 #define DEBUG_LEVEL             LOG_LEVEL_WARN
 
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);

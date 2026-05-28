@@ -30,6 +30,9 @@
 #define STATE0_OCCUPANCY_DETECTION_TIME     30000       // 30 secs
 #define STATE1_INITIAL_TIME                 3000        // 3 secs
 
+// Radar-only fallback mode timing (used when door sensor is offline)
+#define RADAR_EXIT_CONFIRMATION_TIME        30000       // 30 sec continuous low signals before declaring empty
+
 #define DURATION_ALERT_TIME                 1200000     // 20 mins          
 #define STILLNESS_ALERT_TIME                180000      // 3 mins
 
@@ -91,6 +94,9 @@ extern bool isStillnessAlertThresholdExceeded;
 
 // Allow state transitions
 extern bool allowTransitionToStateOne;
+
+// Radar exit timer for offline fallback mode (0 = not running)
+extern unsigned long radarExitStartTime;
 
 // ************************** Function declarations **************************
 
