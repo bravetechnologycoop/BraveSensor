@@ -577,6 +577,16 @@ void getHeartbeat() {
     static int pendingMissedDoorEventCount = 0;
     static bool pendingDidMiss = false;
 
+    // Async publish state. The publish result is held in a Future, NOT a bool:
+    // testing a bool return from Particle.publish() blocks this (application)
+    // thread until the publish resolves, which would freeze stateHandler() and
+    // stop checkIM() from draining the BLE queue while the scanner thread keeps
+    // filling it. Instead we kick the publish off and poll the Future across
+    // loop iterations, so the loop keeps running at full speed.
+    static particle::Future<bool> publishFuture;
+    static bool publishInFlight = false;
+    static unsigned long publishStartedAt = 0;
+
     // Build a new heartbeat message only when there is no pending retry.
     // Conditions to build:
     // 1. This is the first heartbeat since startup.
@@ -634,32 +644,50 @@ void getHeartbeat() {
         hasPendingHeartbeat = true;
     }
 
-    // Attempt to publish the pending heartbeat only when connected.
-    // On failure the message is retained so the next loop iteration retries automatically.
-    if (hasPendingHeartbeat && Particle.connected()) {
-        Log.warn(pendingHeartbeat);
-        bool published = Particle.publish("Heartbeat", pendingHeartbeat, PRIVATE);
-        if (published) {
-            // Advance timer and clear flags only after a confirmed publish
-            lastHeartbeatPublish = millis();
-            doorMessageReceivedFlag = false;
+    // Resolve an in-flight publish without blocking.
+    if (publishInFlight) {
+        if (publishFuture.isDone()) {
+            if (publishFuture.isSucceeded()) {
+                // Advance timer and clear flags only after a confirmed publish
+                lastHeartbeatPublish = millis();
+                doorMessageReceivedFlag = false;
 
-            // Reset reason is only logged once after startup
-            resetReason = RESET_REASON_NONE;
+                // Reset reason is only logged once after startup
+                resetReason = RESET_REASON_NONE;
 
-            // Subtract only what was captured; any misses that arrived during a retry are
-            // preserved for the next heartbeat
-            missedDoorEventCount -= pendingMissedDoorEventCount;
+                // Subtract only what was captured; any misses that arrived during a retry are
+                // preserved for the next heartbeat
+                missedDoorEventCount -= pendingMissedDoorEventCount;
 
-            // Update the missed door events queue
-            if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
-                if (didMissQueue.front()) didMissQueueSum--;
-                didMissQueue.pop();
+                // Update the missed door events queue
+                if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
+                    if (didMissQueue.front()) didMissQueueSum--;
+                    didMissQueue.pop();
+                }
+                didMissQueueSum += (int)pendingDidMiss;
+                didMissQueue.push(pendingDidMiss);
+
+                hasPendingHeartbeat = false;
             }
-            didMissQueueSum += (int)pendingDidMiss;
-            didMissQueue.push(pendingDidMiss);
-
-            hasPendingHeartbeat = false;
+            // On failure hasPendingHeartbeat stays true, so the message is retried below.
+            publishInFlight = false;
+        } else if (calculateTimeSince(publishStartedAt) > HEARTBEAT_PUBLISH_TIMEOUT) {
+            // Defensive: a Future that never resolves would wedge every future
+            // heartbeat. Abandon it and let the retry path start a fresh publish.
+            Log.warn("Heartbeat publish timed out; will retry");
+            publishInFlight = false;
         }
+    }
+
+    // Start (or retry) a publish attempt when one is needed and we are connected.
+    // Kicking off the publish and storing the Future does NOT block; the result
+    // is collected above on a later loop iteration. The retry-interval guard
+    // spaces attempts out so a fast-failing publish cannot hit the rate limit.
+    if (hasPendingHeartbeat && !publishInFlight && Particle.connected() &&
+        calculateTimeSince(publishStartedAt) >= HEARTBEAT_PUBLISH_RETRY_INTERVAL) {
+        Log.warn(pendingHeartbeat);
+        publishFuture = Particle.publish("Heartbeat", pendingHeartbeat, PRIVATE);
+        publishInFlight = true;
+        publishStartedAt = millis();
     }
 }
