@@ -35,6 +35,16 @@
 #define SM_HEARTBEAT_DID_MISS_QUEUE_SIZE    3           // Track last 3 heartbeats
 #define SM_HEARTBEAT_DID_MISS_THRESHOLD     1           // Threshold for missed heartbeats
 
+// Minimum spacing between heartbeat publish attempts, so a fast-failing publish
+// while connected cannot spin and exhaust the cloud publish rate limit (1/sec)
+#define HEARTBEAT_PUBLISH_RETRY_INTERVAL    2000        // 2 sec
+
+// Defensive upper bound on waiting for an in-flight async publish to resolve.
+// Device OS normally resolves the publish Future well within this window; this
+// only guards against a Future that never completes, which would otherwise
+// wedge every future heartbeat.
+#define HEARTBEAT_PUBLISH_TIMEOUT           30000       // 30 sec
+
 // The IM door sensor always broadcasts 3 of the same messages
 // This delay restrict SM heartbeat to being published once from 3 IM Door Sensor broadcasts
 #define HEARTBEAT_PUBLISH_DELAY             1000        // 1 sec

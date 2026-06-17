@@ -569,22 +569,38 @@ const char *resetReasonString(int resetReason) {
 }
 
 void getHeartbeat() {
-    // Static variable, retained across function calls
     static unsigned long lastHeartbeatPublish = 0;
+    static unsigned int didMissQueueSum = 0;
+    static std::queue<bool> didMissQueue;
+    static char pendingHeartbeat[PARTICLE_MAX_MESSAGE_LENGTH] = {0};
+    static bool hasPendingHeartbeat = false;
+    static int pendingMissedDoorEventCount = 0;
+    static bool pendingDidMiss = false;
 
-    // Publish a heartbeat message if at least one of these condition meet:
+    // Async publish state. The publish result is held in a Future, NOT a bool:
+    // testing a bool return from Particle.publish() blocks this (application)
+    // thread until the publish resolves, which would freeze stateHandler() and
+    // stop checkIM() from draining the BLE queue while the scanner thread keeps
+    // filling it. Instead we kick the publish off and poll the Future across
+    // loop iterations, so the loop keeps running at full speed.
+    static particle::Future<bool> publishFuture;
+    static bool publishInFlight = false;
+    static unsigned long publishStartedAt = 0;
+
+    // Build a new heartbeat message only when there is no pending retry.
+    // Conditions to build:
     // 1. This is the first heartbeat since startup.
     // 2. A door message was received and enough time has passed since the last "door" heartbeat.
-    //    The delay (HEARTBEAT_PUBLISH_DELAY) is to restrict the door heartbeat publish to 1 instead of 3 because the door broadcasts 3 messages. 
+    //    The delay (HEARTBEAT_PUBLISH_DELAY) is to restrict the door heartbeat publish to 1 instead of 3 because the door broadcasts 3 messages.
     //    The doorMessageReceivedFlag is set to true when any IM Door Sensor message is received, but only after a certain threshold (see checkIM function)
     // 3. The heartbeat hasn't been published in the last SM_HEARTBEAT_INTERVAL.
-    if (lastHeartbeatPublish == 0 || 
+    if (!hasPendingHeartbeat && (
+        lastHeartbeatPublish == 0 ||
         (doorMessageReceivedFlag && (calculateTimeSince(doorHeartbeatReceived) >= HEARTBEAT_PUBLISH_DELAY)) ||
-        (calculateTimeSince(lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL)) {
-            
-        // Prepare the heartbeat message
-        char heartbeatMessage[PARTICLE_MAX_MESSAGE_LENGTH] = {0};
-        JSONBufferWriter writer(heartbeatMessage, sizeof(heartbeatMessage) - 1);
+        (calculateTimeSince(lastHeartbeatPublish) > SM_HEARTBEAT_INTERVAL))) {
+
+        memset(pendingHeartbeat, 0, sizeof(pendingHeartbeat));
+        JSONBufferWriter writer(pendingHeartbeat, sizeof(pendingHeartbeat) - 1);
         writer.beginObject();
 
         // Log the time since the last door message, battery status, and tamper status
@@ -599,59 +615,79 @@ void getHeartbeat() {
             writer.name("doorTampered").value(doorTamperedFlag);
         }
 
-        // If a previous hearbeat has been published, then log if the INS is zero
+        // If a previous heartbeat has been published, then log if the INS is zero
         filteredINSData checkINS = checkINS3331();
         bool isINSZero = (checkINS.magnitude < 0.0001);
         writer.name("isINSZero").value(isINSZero && lastHeartbeatPublish > 0);
 
         // Add consecutive open door heartbeat count
         writer.name("consecutiveOpenDoorHeartbeatCount").value(consecutiveOpenDoorHeartbeatCount);
-        
-        // Queue to track missed door events
-        static unsigned int didMissQueueSum = 0;
-        static std::queue<bool> didMissQueue;
 
-        // Manage the queue of missed door events
+        // Snapshot missed door event count — do not reset yet; reset only after confirmed publish
+        pendingMissedDoorEventCount = missedDoorEventCount;
+        pendingDidMiss = pendingMissedDoorEventCount > 0;
+        writer.name("doorMissedCount").value(pendingMissedDoorEventCount);
+
+        // Preview what the queue sum will be after this heartbeat is confirmed, so that
+        // doorMissedFrequently reflects the current heartbeat (matching original behaviour)
+        unsigned int previewSum = didMissQueueSum;
         if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
-            // If the oldest value in the queue indicates a missed event, decrement the sum
-            if (didMissQueue.front()) {
-                didMissQueueSum--;
-            }
-            // Remove the oldest value from the queue
-            didMissQueue.pop();
+            if (didMissQueue.front()) previewSum--;
         }
-
-        // Store the current missed door event count and reset it
-        // This ensures that the count is accurate even if it changes during function execution
-        int instantMissedDoorEventCount = missedDoorEventCount;
-        missedDoorEventCount = 0;
-
-        // Log the number of missed door events since the last heartbeat
-        writer.name("doorMissedCount").value(instantMissedDoorEventCount);
-
-        // Update the missed door events queue
-        // Add the current missed event status to the queue and update the sum
-        bool didMiss = instantMissedDoorEventCount > 0;
-        didMissQueueSum += (int)didMiss;
-        didMissQueue.push(didMiss);
-
-        // Log whether the sensor is frequently missing door events
-        // This is determined by comparing the sum of missed events in the queue to a threshold
-        writer.name("doorMissedFrequently").value(didMissQueueSum > SM_HEARTBEAT_DID_MISS_THRESHOLD);
+        previewSum += (int)pendingDidMiss;
+        writer.name("doorMissedFrequently").value(previewSum > SM_HEARTBEAT_DID_MISS_THRESHOLD);
 
         // Log the reason for the last reset
         writer.name("resetReason").value(resetReasonString(resetReason));
 
-        // Reset reason is only logged once after startup
-        resetReason = RESET_REASON_NONE;
-
-        // Publish the heartbeat message to particle
         writer.endObject();
-        Log.warn(heartbeatMessage);
-        Particle.publish("Heartbeat", heartbeatMessage, PRIVATE);
+        hasPendingHeartbeat = true;
+    }
 
-        // Update the last heartbeat publish time
-        lastHeartbeatPublish = millis();
-        doorMessageReceivedFlag = false;
+    // Resolve an in-flight publish without blocking.
+    if (publishInFlight) {
+        if (publishFuture.isDone()) {
+            if (publishFuture.isSucceeded()) {
+                // Advance timer and clear flags only after a confirmed publish
+                lastHeartbeatPublish = millis();
+                doorMessageReceivedFlag = false;
+
+                // Reset reason is only logged once after startup
+                resetReason = RESET_REASON_NONE;
+
+                // Subtract only what was captured; any misses that arrived during a retry are
+                // preserved for the next heartbeat
+                missedDoorEventCount -= pendingMissedDoorEventCount;
+
+                // Update the missed door events queue
+                if (didMissQueue.size() > SM_HEARTBEAT_DID_MISS_QUEUE_SIZE) {
+                    if (didMissQueue.front()) didMissQueueSum--;
+                    didMissQueue.pop();
+                }
+                didMissQueueSum += (int)pendingDidMiss;
+                didMissQueue.push(pendingDidMiss);
+
+                hasPendingHeartbeat = false;
+            }
+            // On failure hasPendingHeartbeat stays true, so the message is retried below.
+            publishInFlight = false;
+        } else if (calculateTimeSince(publishStartedAt) > HEARTBEAT_PUBLISH_TIMEOUT) {
+            // Defensive: a Future that never resolves would wedge every future
+            // heartbeat. Abandon it and let the retry path start a fresh publish.
+            Log.warn("Heartbeat publish timed out; will retry");
+            publishInFlight = false;
+        }
+    }
+
+    // Start (or retry) a publish attempt when one is needed and we are connected.
+    // Kicking off the publish and storing the Future does NOT block; the result
+    // is collected above on a later loop iteration. The retry-interval guard
+    // spaces attempts out so a fast-failing publish cannot hit the rate limit.
+    if (hasPendingHeartbeat && !publishInFlight && Particle.connected() &&
+        calculateTimeSince(publishStartedAt) >= HEARTBEAT_PUBLISH_RETRY_INTERVAL) {
+        Log.warn(pendingHeartbeat);
+        publishFuture = Particle.publish("Heartbeat", pendingHeartbeat, PRIVATE);
+        publishInFlight = true;
+        publishStartedAt = millis();
     }
 }
