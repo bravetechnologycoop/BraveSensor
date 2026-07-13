@@ -30,11 +30,20 @@ pool.on('error', err => {
 
 let activeConnections = 0
 
-pool.on('connect', () => {
+pool.on('connect', client => {
   activeConnections += 1
   if (helpers.isDbLogging()) {
     helpers.log(`[${new Date().toISOString()}] New connection established. Active: ${activeConnections}`)
   }
+  // Handle connection-level errors on the checked-out client. Without this, an
+  // unexpected termination (e.g. Postgres closing a connection that exceeded
+  // idle_in_transaction_session_timeout while an external call was held inside a
+  // transaction) surfaces as an unhandled 'error' event -> uncaughtException ->
+  // process exit(1). pool.on('error') above does NOT cover checked-out clients.
+  // Attached once per physical connection, so no listener accumulation on reuse.
+  client.on('error', err => {
+    helpers.logError(`Database client connection error: ${err.message}`)
+  })
 })
 
 pool.on('release', () => {
