@@ -94,6 +94,27 @@ function sleep(millis) {
   return new Promise(resolve => setTimeout(resolve, millis))
 }
 
+// Executes external sends (Twilio/Teams) that were collected DURING a database
+// transaction and deferred until AFTER commit, so no pooled pg client is held
+// open across the (often slow) network call. Each descriptor is { describe, run }.
+// Per-send isolation: one failed send never aborts another, and this never throws
+// (so it can't turn a webhook's 200 into an error or roll back the committed tx).
+async function flushDeferredSends(deferredSends) {
+  if (!Array.isArray(deferredSends) || deferredSends.length === 0) {
+    return
+  }
+
+  await Promise.allSettled(
+    deferredSends.map(async deferredSend => {
+      try {
+        await deferredSend.run()
+      } catch (error) {
+        logError(`flushDeferredSends: deferred send failed (${deferredSend.describe}): ${error.message}`)
+      }
+    }),
+  )
+}
+
 async function runQuery(functionName, queryString, queryParams, pool, clientParam) {
   if (isDbLogging()) {
     log(`STARTED: ${functionName}`)
@@ -205,6 +226,7 @@ module.exports = {
   logSentry,
   runQuery,
   sleep,
+  flushDeferredSends,
   setupSentry,
   formatExpressValidationErrors,
   differenceInSeconds,
