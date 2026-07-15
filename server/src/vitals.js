@@ -129,31 +129,40 @@ async function handleDeviceDisconnectionVitals(device, client, currentDBTime, la
       helpers.log(
         `Reminder notification ${twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`,
       )
-      return
+      return []
     }
 
     if (notificationType && twilioMessageKey && teamsMessageKey) {
-      try {
-        const twilioResponse = await sendTwilioVital(client, device, twilioMessageKey)
-        if (twilioResponse.skipped) {
-          return
-        }
-
-        // log the notification
-        await db.createNotification(device.deviceId, notificationType, pgClient)
-
-        // check and send if teams is configured
-        if (client.teamsId && client.teamsVitalChannelId) {
-          try {
-            await sendTeamsVital(client, device, teamsMessageKey)
-          } catch (teamsError) {
-            helpers.logError(`handleDeviceDisconnectionVitals: Teams notification failed for device ${device.deviceId}: ${teamsError.message}`)
-          }
-        }
-      } catch (error) {
-        throw new Error(`Error sending notification: ${error.message}`)
+      // Determine target numbers in-tx (a config value); mirrors sendTwilioVital's skip check
+      // so we don't record a notification when there is nowhere to send it.
+      const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
+      if (phoneNumbers.length === 0) {
+        return []
       }
+
+      // log the notification in-transaction; defer the sends until after commit
+      await db.createNotification(device.deviceId, notificationType, pgClient)
+
+      return [
+        {
+          describe: `vital ${twilioMessageKey} for device ${device.deviceId}`,
+          run: async () => {
+            await sendTwilioVital(client, device, twilioMessageKey)
+
+            // check and send if teams is configured
+            if (client.teamsId && client.teamsVitalChannelId) {
+              try {
+                await sendTeamsVital(client, device, teamsMessageKey)
+              } catch (teamsError) {
+                helpers.logError(`handleDeviceDisconnectionVitals: Teams notification failed for device ${device.deviceId}: ${teamsError.message}`)
+              }
+            }
+          },
+        },
+      ]
     }
+
+    return []
   } catch (error) {
     throw new Error(`handleDeviceDisconnectionVitals: ${error.message}`)
   }
@@ -197,7 +206,7 @@ async function checkDeviceDisconnectionVitals() {
     }, {})
 
     // Process devices in parallel with all data available
-    await Promise.all(
+    const perDeviceSends = await Promise.all(
       devicesWithClients.map(async ({ device, client }) => {
         try {
           const latestVital = vitalsMap[device.deviceId]
@@ -205,14 +214,20 @@ async function checkDeviceDisconnectionVitals() {
             throw new Error('No vitals found.')
           }
 
-          await handleDeviceDisconnectionVitals(device, client, currentDBTime, latestVital, notificationsMap[device.deviceId], pgClient)
+          return await handleDeviceDisconnectionVitals(device, client, currentDBTime, latestVital, notificationsMap[device.deviceId], pgClient)
         } catch (error) {
           helpers.log(`Error processing device ${device.deviceId}: ${error.message}`)
+          return []
         }
       }),
     )
+    const deferredSends = perDeviceSends.flat()
 
     await db.commitTransaction(pgClient)
+    pgClient = null // committed - the catch must not roll back
+
+    // Sends were deferred so no pg client is held during the (possibly slow, concurrent) network calls; flush never throws.
+    await helpers.flushDeferredSends(deferredSends)
   } catch (error) {
     if (pgClient) {
       try {
@@ -318,36 +333,46 @@ async function handleVitalNotifications(
       })
     }
     // Send all accumulated notifications
-    for (const notification of notifications) {
-      try {
-        if (!helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime) && notification.twilioMessageKey) {
-          // Log that notifications were skipped due to time window
-          helpers.log(
-            `Notification ${notification.twilioMessageKey} skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`,
-          )
-          return
-        }
-
-        const twilioResponse = await sendTwilioVital(client, device, notification.twilioMessageKey)
-        if (twilioResponse.skipped) {
-          return
-        }
-
-        // log the notification
-        await db.createNotification(device.deviceId, notification.notificationType, pgClient)
-
-        // check and send if teams is configured
-        if (client.teamsId && client.teamsVitalChannelId) {
-          try {
-            await sendTeamsVital(client, device, notification.teamsMessageKey)
-          } catch (teamsError) {
-            helpers.logError(`handleVitalNotifications: Teams notification failed for device ${device.deviceId}: ${teamsError.message}`)
-          }
-        }
-      } catch (error) {
-        throw new Error(`Error sending notification: ${error.message}`)
-      }
+    if (notifications.length === 0) {
+      return []
     }
+
+    // Time window and configured phone numbers are constant for this device call, so evaluate
+    // them once up front. This preserves the original behavior, where the first notification
+    // failing either check exited the whole loop (no notifications sent or recorded).
+    if (!helpers.isWithinTimeWindow(vitalsStartTime, vitalsEndTime)) {
+      helpers.log(`Notifications skipped for device ${device.deviceId} due to being outside the time window (${vitalsStartTime} - ${vitalsEndTime})`)
+      return []
+    }
+
+    const phoneNumbers = [...new Set([...(client.vitalsPhoneNumbers || []), ...(client.responderPhoneNumbers || [])])]
+    if (phoneNumbers.length === 0) {
+      return []
+    }
+
+    const deferredSends = []
+    for (const notification of notifications) {
+      // log the notification in-transaction; defer the sends until after commit
+      await db.createNotification(device.deviceId, notification.notificationType, pgClient)
+
+      deferredSends.push({
+        describe: `vital ${notification.twilioMessageKey} for device ${device.deviceId}`,
+        run: async () => {
+          await sendTwilioVital(client, device, notification.twilioMessageKey)
+
+          // check and send if teams is configured
+          if (client.teamsId && client.teamsVitalChannelId) {
+            try {
+              await sendTeamsVital(client, device, notification.teamsMessageKey)
+            } catch (teamsError) {
+              helpers.logError(`handleVitalNotifications: Teams notification failed for device ${device.deviceId}: ${teamsError.message}`)
+            }
+          }
+        },
+      })
+    }
+
+    return deferredSends
   } catch (error) {
     throw new Error(`handleVitalNotifications: ${error.message}`)
   }
@@ -369,6 +394,7 @@ async function processHeartbeat(eventData, client, device) {
   } = eventData
 
   let pgClient
+  let deferredSends = []
   try {
     pgClient = await db.beginTransaction()
     if (!pgClient) {
@@ -404,8 +430,8 @@ async function processHeartbeat(eventData, client, device) {
     }
 
     if (client.devicesSendingVitals && device.isSendingVitals) {
-      // Handle vital notifications
-      await handleVitalNotifications(
+      // Handle vital notifications (sends deferred until after commit)
+      deferredSends = await handleVitalNotifications(
         currDoorLastSeenAt,
         currDoorLowBattery,
         currDoorTampered,
@@ -431,6 +457,7 @@ async function processHeartbeat(eventData, client, device) {
     )
 
     await db.commitTransaction(pgClient)
+    pgClient = null // committed - the catch must not roll back
   } catch (error) {
     if (pgClient) {
       try {
@@ -443,6 +470,10 @@ async function processHeartbeat(eventData, client, device) {
     }
     throw new Error(`processHeartbeat: ${error.message}`)
   }
+
+  // Sends were deferred to here so no pg client is held during the network calls.
+  // Only reached on a successful commit; flush never throws.
+  await helpers.flushDeferredSends(deferredSends)
 }
 
 function logHeartbeatWarnings(eventData, device) {

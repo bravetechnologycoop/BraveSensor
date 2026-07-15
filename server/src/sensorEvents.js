@@ -256,6 +256,9 @@ async function scheduleStillnessAlertReminders(client, device, sessionId) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
+// Writes the event row in-transaction (its inputs are all known before the send) and
+// returns a deferred-send descriptor for the Twilio message, or null when there are no
+// target numbers. The actual network send runs after commit (no pg client held).
 async function sendTwilioAlertForSession(session, eventType, eventData, twilioMessageKey, client, device, pgClient) {
   if (!session || !session.sessionId || !twilioMessageKey || !client || !device) {
     throw new Error(`sendTwilioAlert: Missing required parameters (session, key, client, or device)`)
@@ -270,18 +273,26 @@ async function sendTwilioAlertForSession(session, eventType, eventData, twilioMe
     const targetNumbers = session.attendingResponderNumber ? session.attendingResponderNumber : client.responderPhoneNumbers
     if (!targetNumbers || (Array.isArray(targetNumbers) && targetNumbers.length === 0)) {
       helpers.log(`Skipping Twilio alert ${twilioMessageKey} for session ${session.sessionId}: No target phone numbers found.`)
-      return
+      return null
     }
 
-    // send alert to targetNumbers and log event
-    await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage)
+    // log the event in-transaction; the send itself is deferred until after commit
     await db.createEvent(session.sessionId, eventType, twilioMessageKey, targetNumbers, pgClient)
+
+    return {
+      describe: `twilio ${twilioMessageKey} for session ${session.sessionId}`,
+      run: () => twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage),
+    }
   } catch (error) {
     throw new Error(`sendTwilioAlertForExistingSession: ${error.message}`)
   }
 }
 
-async function sendTeamsAlertForSession(session, eventType, eventData, teamsMessageKey, client, device, pgClient) {
+// Builds the adaptive card in-transaction (synchronous, no I/O) and returns a deferred-send
+// descriptor that both sends the card and logs the teams_event with the returned messageId
+// AFTER commit (they must move together — the write depends on the messageId). Returns null
+// when Teams is not configured for the client.
+function sendTeamsAlertForSession(session, eventType, eventData, teamsMessageKey, client, device) {
   if (!session || !session.sessionId || !teamsMessageKey || !client || !device) {
     throw new Error(`sendTeamsAlert: Missing required parameters (session, key, client, or device)`)
   }
@@ -289,29 +300,29 @@ async function sendTeamsAlertForSession(session, eventType, eventData, teamsMess
   // check if teams is configured
   if (!client.teamsId || !client.teamsAlertChannelId) {
     helpers.log(`Skipping Teams update for session ${session.sessionId}: Teams not configured for client ${client.clientId}`)
-    return
+    return null
   }
 
-  try {
-    // create a 'New' card with additional messageData
-    const messageData = { occupancyDuration: Math.round(eventData.occupancyDuration || 0) }
-    const cardType = 'New'
-    const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device, messageData)
-    if (!adaptiveCard) {
-      throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
-    }
+  // create a 'New' card with additional messageData
+  const messageData = { occupancyDuration: Math.round(eventData.occupancyDuration || 0) }
+  const cardType = 'New'
+  const adaptiveCard = teamsHelpers.createAdaptiveCard(teamsMessageKey, cardType, client, device, messageData)
+  if (!adaptiveCard) {
+    throw new Error(`Failed to create adaptive card for teams event: ${teamsMessageKey}`)
+  }
 
-    // send card to teams alert channel
-    // Note: when sending a 'New' teams card, it automatically expires the last alert
-    const response = await teamsHelpers.sendNewTeamsCard(client.teamsId, client.teamsAlertChannelId, adaptiveCard, session)
-    if (!response || !response.messageId) {
-      throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)
-    }
+  return {
+    describe: `teams ${teamsMessageKey} for session ${session.sessionId}`,
+    run: async () => {
+      // Note: when sending a 'New' teams card, it automatically expires the last alert
+      const response = await teamsHelpers.sendNewTeamsCard(client.teamsId, client.teamsAlertChannelId, adaptiveCard, session)
+      if (!response || !response.messageId) {
+        throw new Error(`Failed to send new Teams card or invalid response received for session ${session.sessionId}`)
+      }
 
-    // log teams event with its messageId
-    await db.createTeamsEvent(session.sessionId, eventType, teamsMessageKey, response.messageId, pgClient)
-  } catch (error) {
-    throw new Error(`sendTeamsAlertForNewSession: ${error.message}`)
+      // log teams event with its messageId (no pgClient -> autocommit, runs after commit)
+      await db.createTeamsEvent(session.sessionId, eventType, teamsMessageKey, response.messageId)
+    },
   }
 }
 
@@ -391,7 +402,7 @@ async function handleExistingSession(client, device, eventType, eventData, lates
     const messageKeys = await getMessageKeysForExistingSession(eventType, latestSession, pgClient)
 
     // If messageKey is null, only update door opened status for DOOR_OPENED events and exit
-    // For other event types, do nothing and return null
+    // For other event types, do nothing
     if (!messageKeys && eventType === EVENT_TYPE.DOOR_OPENED) {
       const updatedSession = await db.updateSession(latestSession.sessionId, latestSession.sessionStatus, true, latestSession.surveySent, pgClient)
 
@@ -399,10 +410,10 @@ async function handleExistingSession(client, device, eventType, eventData, lates
         throw new Error(`Failed to update session ${latestSession.sessionId}`)
       }
 
-      return updatedSession
+      return []
     }
     if (!messageKeys) {
-      return null
+      return []
     }
 
     const { twilioMessageKey, teamsMessageKey } = messageKeys
@@ -413,24 +424,27 @@ async function handleExistingSession(client, device, eventType, eventData, lates
       if (!updatedSession) {
         throw new Error(`Failed to update session ${latestSession.sessionId}`)
       }
-      return updatedSession
+      return []
     }
 
     // if the session is in progress, then send the message via the selected service
     // otherwise, send using all methods (twilio, teams)
+    // Twilio event rows are written in-tx by the builders; the network sends are deferred to after commit.
+    let deferredSends = []
     if (!latestSession.sessionRespondedVia) {
-      await Promise.allSettled([
-        sendTwilioAlertForSession(latestSession, eventType, eventData, twilioMessageKey, client, device, pgClient),
-        sendTeamsAlertForSession(latestSession, eventType, eventData, teamsMessageKey, client, device, pgClient),
-      ])
+      deferredSends = [
+        await sendTwilioAlertForSession(latestSession, eventType, eventData, twilioMessageKey, client, device, pgClient),
+        sendTeamsAlertForSession(latestSession, eventType, eventData, teamsMessageKey, client, device),
+      ].filter(Boolean)
     } else if (latestSession.sessionRespondedVia === SERVICES.TWILIO) {
-      await sendTwilioAlertForSession(latestSession, eventType, eventData, twilioMessageKey, client, device, pgClient)
+      deferredSends = [await sendTwilioAlertForSession(latestSession, eventType, eventData, twilioMessageKey, client, device, pgClient)].filter(
+        Boolean,
+      )
     } else if (latestSession.sessionRespondedVia === SERVICES.TEAMS) {
-      await sendTeamsAlertForSession(latestSession, eventType, eventData, teamsMessageKey, client, device, pgClient)
+      deferredSends = [sendTeamsAlertForSession(latestSession, eventType, eventData, teamsMessageKey, client, device)].filter(Boolean)
     }
 
     // update the session
-    let updatedSession = null
     if (eventType === EVENT_TYPE.DOOR_OPENED) {
       const sessionUpdates = {
         doorOpened: true,
@@ -440,7 +454,7 @@ async function handleExistingSession(client, device, eventType, eventData, lates
             : latestSession.surveySent,
       }
 
-      updatedSession = await db.updateSession(
+      const updatedSession = await db.updateSession(
         latestSession.sessionId,
         latestSession.sessionStatus,
         sessionUpdates.doorOpened,
@@ -459,7 +473,7 @@ async function handleExistingSession(client, device, eventType, eventData, lates
       scheduleStillnessAlertReminders(client, device, latestSession.sessionId)
     }
 
-    return updatedSession
+    return deferredSends
   } catch (error) {
     throw new Error(`handleExistingSession: Error handling existing session with session ID ${latestSession.sessionId}: ${error.message}`)
   }
@@ -493,7 +507,7 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
     const messageKeys = getMessageKeysForNewSession(eventType, device)
     if (!messageKeys) {
       helpers.log(`handleNewSession: No initial action determined for eventType ${eventType}.`)
-      return null
+      return []
     }
 
     const { twilioMessageKey, teamsMessageKey } = messageKeys
@@ -504,11 +518,12 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
       throw new Error(`Failed to create a new session`)
     }
 
-    // send initial alerts
-    await Promise.allSettled([
-      sendTwilioAlertForSession(newSession, eventType, eventData, twilioMessageKey, client, device, pgClient),
-      sendTeamsAlertForSession(newSession, eventType, eventData, teamsMessageKey, client, device, pgClient),
-    ])
+    // build initial alerts: Twilio event rows are written in-tx by the builders;
+    // the network sends are deferred and flushed after commit (no pg client held)
+    const deferredSends = [
+      await sendTwilioAlertForSession(newSession, eventType, eventData, twilioMessageKey, client, device, pgClient),
+      sendTeamsAlertForSession(newSession, eventType, eventData, teamsMessageKey, client, device),
+    ].filter(Boolean)
 
     // if we sent a stillness alert was sent, then schedule stillness reminders and fallbacks
     // NOTE: these are scheduled outside this transaction
@@ -517,7 +532,7 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
       scheduleStillnessAlertReminders(client, device, newSession.sessionId)
     }
 
-    return newSession
+    return deferredSends
   } catch (error) {
     throw new Error(`handleNewSession: Error handling new session for device ID: ${device.deviceId} - ${error.message}`)
   }
@@ -527,6 +542,7 @@ async function handleNewSession(client, device, eventType, eventData, pgClient) 
 
 async function processSensorEvent(client, device, eventType, eventData) {
   let pgClient
+  let deferredSends = []
 
   try {
     pgClient = await db.beginTransaction()
@@ -544,30 +560,31 @@ async function processSensorEvent(client, device, eventType, eventData) {
 
     // Create new session if none exists
     if (!latestSession) {
-      await handleNewSession(client, device, eventType, eventData, pgClient)
+      deferredSends = await handleNewSession(client, device, eventType, eventData, pgClient)
     }
     // If door was opened, create a new session and mark previous one as stale
     else if (latestSession.sessionStatus === SESSION_STATUS.ACTIVE && latestSession.doorOpened) {
-      await handleNewSession(client, device, eventType, eventData, pgClient)
+      deferredSends = await handleNewSession(client, device, eventType, eventData, pgClient)
       helpers.log(`Marking previous session ${latestSession.sessionId} as stale.`)
       await db.updateSession(latestSession.sessionId, SESSION_STATUS.STALE, latestSession.doorOpened, latestSession.surveySent, pgClient)
     }
     // Create new session if previous one was completed
     else if (latestSession.sessionStatus === SESSION_STATUS.COMPLETED && latestSession.doorOpened) {
       helpers.log(`Creating new session after completed session ${latestSession.sessionId}`)
-      await handleNewSession(client, device, eventType, eventData, pgClient)
+      deferredSends = await handleNewSession(client, device, eventType, eventData, pgClient)
     }
     // Create new session if previous one was stale (orphaned - no successor was created)
     else if (latestSession.sessionStatus === SESSION_STATUS.STALE) {
       helpers.log(`Creating new session after stale session ${latestSession.sessionId}`)
-      await handleNewSession(client, device, eventType, eventData, pgClient)
+      deferredSends = await handleNewSession(client, device, eventType, eventData, pgClient)
     }
     // Handle event for existing active session
     else {
-      await handleExistingSession(client, device, eventType, eventData, latestSession, pgClient)
+      deferredSends = await handleExistingSession(client, device, eventType, eventData, latestSession, pgClient)
     }
 
     await db.commitTransaction(pgClient)
+    pgClient = null // committed - the catch must not roll back
   } catch (error) {
     if (pgClient) {
       try {
@@ -578,6 +595,10 @@ async function processSensorEvent(client, device, eventType, eventData) {
     }
     throw new Error(`processSensorEvent: ${error.message}`)
   }
+
+  // Sends were deferred to here so no pg client is held during the (possibly slow) network calls.
+  // Only reached on a successful commit; flush never throws.
+  await helpers.flushDeferredSends(deferredSends)
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
