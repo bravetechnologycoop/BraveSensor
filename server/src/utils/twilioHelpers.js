@@ -26,6 +26,10 @@ async function sendTwilioMessage(toPhoneNumber, fromPhoneNumber, message) {
       to: toPhoneNumber,
       from: fromPhoneNumber,
       body: message,
+      // Twilio POSTs delivery-status updates (queued/sent/delivered/undelivered/failed) here so we
+      // can record when the SMS actually reached the handset. URL must exactly match the registered
+      // route for the callback's signature to validate.
+      statusCallback: `https://${helpers.getEnvVar('DOMAIN')}/twilio/status`,
     })
 
     helpers.log(`Sent by Twilio: ${response.sid}`)

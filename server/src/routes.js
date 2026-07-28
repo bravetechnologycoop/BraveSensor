@@ -53,6 +53,7 @@ function configureRoutes(app) {
   app.post('/api/sensorEvent', sensorEvents.validateSensorEvent, sensorEvents.handleSensorEvent)
   app.post('/alert/sms', twilioEvents.validateTwilioEvent, twilioEvents.handleTwilioEvent)
   // app.post('/alert/sms', twilioEvents.handleTwilioEvent)
+  app.post('/twilio/status', twilioEvents.validateTwilioStatusCallback, twilioEvents.handleTwilioStatusCallback)
   app.post('/alert/teams', teamsEvents.validateTeamsEvent, teamsEvents.handleTeamsEvent)
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
 

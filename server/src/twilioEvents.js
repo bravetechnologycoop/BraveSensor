@@ -133,8 +133,41 @@ async function handleTwilioEvent(request, response) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+// Twilio delivery-status callbacks (/twilio/status)
+
+function validateTwilioStatusCallback(request, response, next) {
+  if (twilio.validateExpressRequest(request, TWILIO_TOKEN)) {
+    next()
+  } else {
+    const errorMessage = `Status callback sender is not Twilio (MessageSid ${request.body.MessageSid})`
+    helpers.logError(`Error on ${request.path}: ${errorMessage}`)
+    response.status(401).send(errorMessage)
+  }
+}
+
+async function handleTwilioStatusCallback(request, response) {
+  // Twilio fires this several times per message (queued/sent/delivered/...). Always answer 200
+  // quickly and never throw on an unknown SID — retries and errors here just create webhook noise.
+  try {
+    const twilioSid = request.body.MessageSid
+    const messageStatus = request.body.MessageStatus
+    const errorCode = request.body.ErrorCode
+
+    if (twilioSid && messageStatus) {
+      await db.updateMessageDeliveryStatus(twilioSid, messageStatus, errorCode)
+    }
+  } catch (error) {
+    helpers.logError(`Error on ${request.path}: ${error.message}`)
+  }
+
+  response.status(200).json('OK')
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
 
 module.exports = {
   validateTwilioEvent,
   handleTwilioEvent,
+  validateTwilioStatusCallback,
+  handleTwilioStatusCallback,
 }

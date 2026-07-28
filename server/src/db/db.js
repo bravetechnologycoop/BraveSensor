@@ -146,7 +146,7 @@ function createSessionFromRow(r) {
 }
 
 function createEventFromRow(r) {
-  return new Event(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.phone_numbers)
+  return new Event(r.event_id, r.session_id, r.event_type, r.event_type_details, r.event_sent_at, r.phone_numbers, r.received_at)
 }
 
 function createTeamsEventFromRow(r) {
@@ -1529,16 +1529,84 @@ async function createEvent(sessionId, eventType, eventTypeDetails, phoneNumbers,
   }
 }
 
+// Records the outbound Twilio message(s) for an event so their delivery can be tracked. Called
+// AFTER the send returns (post-commit for deferred sends), when the Twilio SIDs are known.
+// Upserts on twilio_sid: if the delivery callback raced ahead and already inserted the row, we
+// backfill the send-side fields without clobbering an already-advanced status/received_at.
+async function recordMessageDeliveries(eventId, messageKey, sendResult) {
+  const responses = (sendResult && sendResult.successfulResponses) || []
+  if (responses.length === 0) {
+    return
+  }
+
+  try {
+    await Promise.all(
+      responses.map(({ response }) =>
+        helpers.runQuery(
+          'recordMessageDeliveries',
+          `
+          INSERT INTO message_deliveries (event_id, twilio_sid, to_number, from_number, message_key, status, sent_at)
+          VALUES ($1, $2, $3, $4, $5, $6, NOW())
+          ON CONFLICT (twilio_sid) DO UPDATE SET
+            event_id = COALESCE(message_deliveries.event_id, EXCLUDED.event_id),
+            to_number = COALESCE(message_deliveries.to_number, EXCLUDED.to_number),
+            from_number = COALESCE(message_deliveries.from_number, EXCLUDED.from_number),
+            message_key = COALESCE(message_deliveries.message_key, EXCLUDED.message_key),
+            sent_at = COALESCE(message_deliveries.sent_at, EXCLUDED.sent_at),
+            updated_at = NOW()
+          `,
+          [eventId, response.sid, response.to, response.from, messageKey, response.status],
+          pool,
+        ),
+      ),
+    )
+  } catch (err) {
+    // Delivery tracking is best-effort; never let it break the send path.
+    helpers.logError(`Error running the recordMessageDeliveries query: ${err.toString()}`)
+  }
+}
+
+// Applies a Twilio delivery status callback. Upserts on twilio_sid so a callback that arrives
+// before recordMessageDeliveries still creates the row. received_at is stamped when status
+// becomes 'delivered' and is never cleared by a later callback.
+async function updateMessageDeliveryStatus(twilioSid, status, errorCode) {
+  try {
+    await helpers.runQuery(
+      'updateMessageDeliveryStatus',
+      `
+      INSERT INTO message_deliveries (twilio_sid, status, error_code, received_at, updated_at)
+      VALUES ($1, $2, $3, CASE WHEN $2 = 'delivered' THEN NOW() ELSE NULL END, NOW())
+      ON CONFLICT (twilio_sid) DO UPDATE SET
+        status = EXCLUDED.status,
+        error_code = EXCLUDED.error_code,
+        received_at = CASE WHEN EXCLUDED.status = 'delivered' THEN NOW() ELSE message_deliveries.received_at END,
+        updated_at = NOW()
+      `,
+      [twilioSid, status, errorCode || null],
+      pool,
+    )
+  } catch (err) {
+    helpers.logError(`Error running the updateMessageDeliveryStatus query: ${err.toString()}`)
+  }
+}
+
 async function getEventsForSession(sessionId, pgClient) {
   try {
-    // Note: Events ordered by ascending, first event to latest event
+    // Note: Events ordered by ascending, first event to latest event.
+    // received_at is the latest delivery time across this event's Twilio message(s), or NULL if
+    // none have a delivery receipt yet (or the event is not an outbound SMS).
     const results = await helpers.runQuery(
       'getEventsForSession',
       `
-      SELECT *
-      FROM events
-      WHERE session_id = $1
-      ORDER BY event_sent_at ASC
+      SELECT e.*, md.received_at
+      FROM events e
+      LEFT JOIN LATERAL (
+        SELECT MAX(received_at) AS received_at
+        FROM message_deliveries
+        WHERE event_id = e.event_id
+      ) md ON TRUE
+      WHERE e.session_id = $1
+      ORDER BY e.event_sent_at ASC
       `,
       [sessionId],
       pool,
@@ -2296,6 +2364,8 @@ module.exports = {
   updateSessionRespondedVia,
 
   createEvent,
+  recordMessageDeliveries,
+  updateMessageDeliveryStatus,
   getEventsForSession,
   getLatestRespondableTwilioEvent,
   checkEventExists,

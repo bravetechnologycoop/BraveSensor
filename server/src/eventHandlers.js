@@ -190,8 +190,12 @@ async function scheduleStillnessAlertSurvey(client, device, callerSession) {
       if (isReminder) {
         textMessage = `Reminder: ${textMessage}`
       }
-      await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, session.attendingResponderNumber, textMessage)
-      await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, session.attendingResponderNumber)
+      const sendResult = await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, session.attendingResponderNumber, textMessage)
+      const surveyEvent = await db.createEvent(session.sessionId, EVENT_TYPE.MSG_SENT, twilioMessageKey, session.attendingResponderNumber)
+      // Record the Twilio SID(s) so the /twilio/status callback can stamp received_at on this event.
+      if (surveyEvent) {
+        await db.recordMessageDeliveries(surveyEvent.eventId, twilioMessageKey, sendResult)
+      }
     } else if (session.sessionRespondedVia === SERVICES.TEAMS) {
       const teamsMessageKey = 'teamsStillnessAlertSurvey'
       const cardType = 'New'

@@ -277,11 +277,18 @@ async function sendTwilioAlertForSession(session, eventType, eventData, twilioMe
     }
 
     // log the event in-transaction; the send itself is deferred until after commit
-    await db.createEvent(session.sessionId, eventType, twilioMessageKey, targetNumbers, pgClient)
+    const alertEvent = await db.createEvent(session.sessionId, eventType, twilioMessageKey, targetNumbers, pgClient)
 
     return {
       describe: `twilio ${twilioMessageKey} for session ${session.sessionId}`,
-      run: () => twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage),
+      run: async () => {
+        const sendResult = await twilioHelpers.sendMessageToPhoneNumbers(device.deviceTwilioNumber, targetNumbers, textMessage)
+        // Record the Twilio SID(s) post-send so the /twilio/status callback can stamp received_at.
+        if (alertEvent) {
+          await db.recordMessageDeliveries(alertEvent.eventId, twilioMessageKey, sendResult)
+        }
+        return sendResult
+      },
     }
   } catch (error) {
     throw new Error(`sendTwilioAlertForExistingSession: ${error.message}`)
