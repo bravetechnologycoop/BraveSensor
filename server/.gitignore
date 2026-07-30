@@ -7,3 +7,4 @@ cluster-setup/sensor-ingress.yaml
 .pgpass
 .nyc_output
 coverage
+.sc

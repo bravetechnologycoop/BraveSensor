@@ -53,6 +53,7 @@
                                         <th scope="col">Event Type</th>
                                         <th scope="col">Message</th>
                                         <th scope="col">Sent At</th>
+                                        <th scope="col">Received At</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -61,6 +62,7 @@
                                         <td>{{eventType}}</td>
                                         <td>{{message}}</td>
                                         <td>{{#formatDate}}{{eventSentAt}}{{/formatDate}}</td>
+                                        <td>{{#receivedAt}}{{#formatDate}}{{receivedAt}}{{/formatDate}}{{/receivedAt}}{{^receivedAt}}&mdash;{{/receivedAt}}</td>
                                     </tr>
                                 {{/events}}
                                 </tbody>
