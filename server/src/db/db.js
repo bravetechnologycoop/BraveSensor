@@ -96,6 +96,16 @@ function createClientFromRow(r) {
   )
 }
 
+function createPortalAlertRecipientsFromRow(r) {
+  return {
+    client_id: r.client_id,
+    display_name: r.display_name,
+    responder_phone_numbers: r.responder_phone_numbers,
+    fallback_phone_numbers: r.fallback_phone_numbers,
+    heartbeat_phone_numbers: r.vitals_phone_numbers,
+  }
+}
+
 function createClientExtensionFromRow(r) {
   return new ClientExtension(
     r.client_id,
@@ -722,6 +732,75 @@ async function getClientWithClientId(clientId, pgClient) {
     return createClientFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getClientWithClientId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getPortalAlertRecipients(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getPortalAlertRecipients',
+      `
+      SELECT client_id, display_name, responder_phone_numbers, fallback_phone_numbers, vitals_phone_numbers
+      FROM clients
+      WHERE client_id = $1
+      AND is_displayed = true
+      AND devices_sending_alerts = true
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createPortalAlertRecipientsFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getPortalAlertRecipients query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updatePortalAlertRecipients(clientId, fields, pgClient) {
+  try {
+    const current = await getPortalAlertRecipients(clientId, pgClient)
+
+    if (!current) {
+      return null
+    }
+
+    const results = await helpers.runQuery(
+      'updatePortalAlertRecipients',
+      `
+      UPDATE clients
+      SET responder_phone_numbers = $2,
+          fallback_phone_numbers = $3,
+          vitals_phone_numbers = $4
+      WHERE client_id = $1
+      AND is_displayed = true
+      AND devices_sending_alerts = true
+      RETURNING client_id, display_name, responder_phone_numbers, fallback_phone_numbers, vitals_phone_numbers
+      `,
+      [
+        clientId,
+        fields.responder_phone_numbers !== undefined ? fields.responder_phone_numbers : current.responder_phone_numbers,
+        fields.fallback_phone_numbers !== undefined ? fields.fallback_phone_numbers : current.fallback_phone_numbers,
+        fields.heartbeat_phone_numbers !== undefined ? fields.heartbeat_phone_numbers : current.heartbeat_phone_numbers,
+      ],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    helpers.log(`Portal alert recipients for client ${clientId} successfully updated`)
+    return createPortalAlertRecipientsFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updatePortalAlertRecipients query: ${err.toString()}`)
     return null
   }
 }
@@ -2335,6 +2414,8 @@ module.exports = {
   getClientsWithResponderPhoneNumber,
   getClientWithDisplayName,
   getClientWithClientId,
+  getPortalAlertRecipients,
+  updatePortalAlertRecipients,
   getClientWithDeviceId,
   getStillnessSurveyFollowupDelay,
   clearClientWithClientId,

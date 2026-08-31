@@ -33,7 +33,14 @@ function setupMiddleware(app) {
   // Body Parser Middleware
   // http-proxy-middleware stops working if this middleware is added before it
   // (ref: https://github.com/chimurai/http-proxy-middleware/issues/458#issuecomment-718919866)
-  app.use(express.json())
+  app.use(
+    express.json({
+      limit: '10kb',
+      verify: (req, res, buf) => {
+        req.rawBody = buf
+      },
+    }),
+  )
   app.use(express.urlencoded({ extended: true })) // Allow body to contain any type of value
 
   // CORS Middleware (Cross Origin Resource Sharing)

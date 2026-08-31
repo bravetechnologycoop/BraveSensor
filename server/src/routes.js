@@ -12,6 +12,7 @@ const vitals = require('./vitals')
 const sensorEvents = require('./sensorEvents')
 const twilioEvents = require('./twilioEvents')
 const teamsEvents = require('./teamsEvents')
+const portalApi = require('./portalApi')
 const troubleshooting = require('./troubleshooting')
 const system = require('./system')
 const smokeTest = require('../test/smokeTest')
@@ -56,6 +57,19 @@ function configureRoutes(app) {
   app.post('/twilio/status', twilioEvents.validateTwilioStatusCallback, twilioEvents.handleTwilioStatusCallback)
   app.post('/alert/teams', teamsEvents.validateTeamsEvent, teamsEvents.handleTeamsEvent)
   app.post('/api/heartbeat', vitals.validateHeartbeat, vitals.handleHeartbeat)
+
+  app.get(
+    '/api/portal/clients/:clientId/alert-recipients',
+    portalApi.portalAuthorize,
+    portalApi.portalRateLimit,
+    portalApi.handleGetPortalAlertRecipients,
+  )
+  app.put(
+    '/api/portal/clients/:clientId/alert-recipients',
+    portalApi.portalAuthorize,
+    portalApi.portalRateLimit,
+    portalApi.handleUpdatePortalAlertRecipients,
+  )
 
   app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
   app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)
