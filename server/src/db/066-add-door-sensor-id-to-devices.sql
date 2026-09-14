@@ -1,0 +1,2 @@
+ALTER TABLE devices
+ADD COLUMN IF NOT EXISTS door_sensor_id TEXT;

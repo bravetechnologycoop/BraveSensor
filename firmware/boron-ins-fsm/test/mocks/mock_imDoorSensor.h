@@ -31,6 +31,11 @@ unsigned long doorHeartbeatReceived = 0;
 unsigned long doorLastMessage = 0;
 unsigned long timeWhenDoorClosed = 0;
 unsigned long consecutiveOpenDoorHeartbeatCount = 0;
+IMDoorID stagedDoorID = {DOORID_BYTE1, DOORID_BYTE2, DOORID_BYTE3};
+bool stagedDoorIDActive = false;
+bool stagedDoorIDSawOpen = false;
+bool stagedDoorIDSawClosed = false;
+unsigned long stagedDoorIDStartedAt = 0;
 
 // Function implementations
 int isDoorOpen(int doorStatus) {
@@ -39,4 +44,29 @@ int isDoorOpen(int doorStatus) {
 
 int isDoorStatusUnknown(int doorStatus) {
     return (doorStatus == INITIAL_DOOR_STATUS);
+}
+
+int stage_door_id(String command) {
+    IMDoorID parsedDoorID;
+    if (!parseIMDoorID(command, &parsedDoorID, true)) {
+        return -1;
+    }
+    stagedDoorID = parsedDoorID;
+    stagedDoorIDActive = true;
+    stagedDoorIDSawOpen = false;
+    stagedDoorIDSawClosed = false;
+    stagedDoorIDStartedAt = millis();
+    return imDoorIDToInt(stagedDoorID);
+}
+
+void clearStagedDoorID(void) {
+    stagedDoorID = {DOORID_BYTE1, DOORID_BYTE2, DOORID_BYTE3};
+    stagedDoorIDActive = false;
+    stagedDoorIDSawOpen = false;
+    stagedDoorIDSawClosed = false;
+    stagedDoorIDStartedAt = 0;
+}
+
+void handleStagedDoorIDMessage(unsigned char doorStatus, unsigned char controlByte) {
+    return;
 }

@@ -70,6 +70,12 @@ function configureRoutes(app) {
     portalApi.portalRateLimit,
     portalApi.handleUpdatePortalAlertRecipients,
   )
+  app.post(
+    '/api/portal/clients/:clientId/devices/:deviceId/door-sensor/stage',
+    portalApi.portalAuthorize,
+    portalApi.portalRateLimit,
+    portalApi.handleStagePortalDoorSensor,
+  )
 
   app.post('/pa/get-google-tokens', pa.validateGetGoogleTokens, pa.getGoogleTokens)
   app.post('/pa/get-google-payload', pa.validateGetGooglePayload, pa.getGooglePayload)

@@ -136,6 +136,7 @@ function createDeviceFromRow(r) {
     r.is_displayed,
     r.is_sending_alerts,
     r.is_sending_vitals,
+    r.door_sensor_id,
   )
 }
 
@@ -1275,6 +1276,63 @@ async function getDeviceWithDeviceId(deviceId, pgClient) {
     return createDeviceFromRow(results.rows[0])
   } catch (err) {
     helpers.logError(`Error running the getDeviceWithDeviceId query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function getPortalDevice(clientId, deviceId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getPortalDevice',
+      `
+      SELECT d.*
+      FROM devices d
+      JOIN clients c ON d.client_id = c.client_id
+      WHERE d.device_id = $1
+      AND d.client_id = $2
+      AND d.is_displayed = true
+      AND c.is_displayed = true
+      AND c.devices_sending_alerts = true
+      `,
+      [deviceId, clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the getPortalDevice query: ${err.toString()}`)
+    return null
+  }
+}
+
+async function updateDeviceDoorSensorId(deviceId, doorSensorId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'updateDeviceDoorSensorId',
+      `
+      UPDATE devices
+      SET door_sensor_id = $2
+      WHERE device_id = $1
+      AND (door_sensor_id IS NULL OR door_sensor_id <> $2)
+      RETURNING *
+      `,
+      [deviceId, doorSensorId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return null
+    }
+
+    return createDeviceFromRow(results.rows[0])
+  } catch (err) {
+    helpers.logError(`Error running the updateDeviceDoorSensorId query: ${err.toString()}`)
     return null
   }
 }
@@ -2431,8 +2489,10 @@ module.exports = {
   getMergedDevicesWithVitals,
   getActiveVitalDevicesWithClients,
   getDeviceWithDeviceId,
+  getPortalDevice,
   getDeviceWithParticleDeviceId,
   getDeviceWithDeviceTwilioNumber,
+  updateDeviceDoorSensorId,
 
   createSession,
   getSessionsForDevice,

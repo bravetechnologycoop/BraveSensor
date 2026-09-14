@@ -27,6 +27,7 @@ const disconnectionReminderThreshold = helpers.getEnvVar('DISCONNECTION_REMINDER
 
 const vitalsStartTime = helpers.getEnvVar('VITALS_START_TIME')
 const vitalsEndTime = helpers.getEnvVar('VITALS_END_TIME')
+const canonicalDoorSensorIdRegex = /^[0-9A-F]{2},[0-9A-F]{2},[0-9A-F]{2}$/
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -391,6 +392,7 @@ async function processHeartbeat(eventData, client, device) {
     doorTampered,
     doorMissedCount,
     consecutiveOpenDoorHeartbeatCount,
+    doorId,
   } = eventData
 
   let pgClient
@@ -405,6 +407,13 @@ async function processHeartbeat(eventData, client, device) {
 
     const currentDBTime = await db.getCurrentTime()
     const previousVital = await db.getLatestVitalWithDeviceId(device.deviceId, pgClient)
+
+    if (doorId && device.doorSensorId !== doorId) {
+      const updatedDevice = await db.updateDeviceDoorSensorId(device.deviceId, doorId, pgClient)
+      if (updatedDevice) {
+        helpers.log(`Door sensor ID for device ${device.deviceId} reconciled from heartbeat: ${doorId}`)
+      }
+    }
 
     let currDoorLastSeenAt
     let currDoorTampered
@@ -520,6 +529,10 @@ function parseSensorHeartbeatData(receivedEventData) {
     if (!(field in eventData)) {
       throw new Error(`Missing required field: ${field}`)
     }
+  }
+
+  if (eventData.doorId !== undefined && !canonicalDoorSensorIdRegex.test(eventData.doorId)) {
+    throw new Error('Invalid doorId field')
   }
 
   return eventData

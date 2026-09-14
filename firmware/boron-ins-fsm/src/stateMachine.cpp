@@ -603,6 +603,10 @@ void getHeartbeat() {
         JSONBufferWriter writer(pendingHeartbeat, sizeof(pendingHeartbeat) - 1);
         writer.beginObject();
 
+        char doorIDBuffer[9];
+        formatIMDoorID(doorIDBuffer, sizeof(doorIDBuffer), globalDoorID);
+        writer.name("doorId").value(doorIDBuffer);
+
         // Log the time since the last door message, battery status, and tamper status
         // if a door message has been received, otherwise default to -1
         if (doorLastMessage == 0) {

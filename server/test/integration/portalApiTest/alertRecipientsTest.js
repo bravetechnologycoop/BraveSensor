@@ -7,12 +7,14 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 
 process.env.SENSORS_CONFIG_HMAC_SECRET_TEST = process.env.SENSORS_CONFIG_HMAC_SECRET_TEST || 'test-sensors-config-secret'
+process.env.PARTICLE_WEBHOOK_API_KEY_TEST = process.env.PARTICLE_WEBHOOK_API_KEY_TEST || 'test-particle-webhook-key'
 
 // In-house dependencies
 const helpers = require('../../../src/utils/helpers')
 const db = require('../../../src/db/db')
 const factories = require('../../factories_new')
 const portalApi = require('../../../src/portalApi')
+const particle = require('../../../src/particle')
 const { server } = require('../../../index')
 
 chai.use(chaiHttp)
@@ -42,6 +44,18 @@ function portalPutRequest(route, body, timestamp = Math.floor(Date.now() / 1000)
     .send(rawBody)
 }
 
+function portalPostRequest(route, body, timestamp = Math.floor(Date.now() / 1000).toString()) {
+  const rawBody = JSON.stringify(body)
+
+  return chai
+    .request(server)
+    .post(route)
+    .set('Content-Type', 'application/json')
+    .set('X-Portal-Timestamp', timestamp)
+    .set('X-Portal-Signature', getPortalSignature(timestamp, rawBody))
+    .send(rawBody)
+}
+
 describe('portalApi.js integration tests: alertRecipientsTest', () => {
   beforeEach(async () => {
     portalApi.resetPortalRateLimits()
@@ -56,6 +70,12 @@ describe('portalApi.js integration tests: alertRecipientsTest', () => {
       vitalsPhoneNumbers: ['+18889997777'],
       vitalsTwilioNumber: '+17780000000',
       devicesSendingAlerts: true,
+    })
+    this.device = await factories.deviceNewDBFactory({
+      clientId: this.client.clientId,
+      particleDeviceId: 'e00111111111111111111111',
+      isDisplayed: true,
+      isSendingAlerts: true,
     })
   })
 
@@ -282,6 +302,67 @@ describe('portalApi.js integration tests: alertRecipientsTest', () => {
         code: 'RATE_LIMITED',
         message: 'Too Many Requests',
       })
+    })
+  })
+
+  describe('for /api/portal/clients/:clientId/devices/:deviceId/door-sensor/stage', () => {
+    it('should stage a normalized door sensor ID through Particle', async () => {
+      sandbox.stub(particle, 'stageDoorId').resolves(11259375)
+
+      const res = await portalPostRequest(`/api/portal/clients/${this.client.clientId}/devices/${this.device.deviceId}/door-sensor/stage`, {
+        acting_email: 'operator@example.org',
+        door_sensor_id: 'ab,cd,ef',
+      })
+
+      expect(res).to.have.status(200)
+      expect(res.body).to.deep.equal({
+        status: 'success',
+        data: {
+          device_id: this.device.deviceId,
+          door_sensor_id: 'AB,CD,EF',
+          particle_return_value: 11259375,
+          verification: 'waiting_for_open_close',
+        },
+      })
+      expect(particle.stageDoorId).to.have.been.calledWithExactly(this.device.particleDeviceId, 'AB,CD,EF')
+    })
+
+    it('should normalize a scanned 8-character sticker value before staging', async () => {
+      sandbox.stub(particle, 'stageDoorId').resolves(1715004)
+
+      const res = await portalPostRequest(`/api/portal/clients/${this.client.clientId}/devices/${this.device.deviceId}/door-sensor/stage`, {
+        acting_email: 'operator@example.org',
+        door_sensor_id: '1a2b3c45',
+      })
+
+      expect(res).to.have.status(200)
+      expect(particle.stageDoorId).to.have.been.calledWithExactly(this.device.particleDeviceId, '1A,2B,3C')
+    })
+
+    it('should reject the uninitialized default door sensor ID', async () => {
+      const res = await portalPostRequest(`/api/portal/clients/${this.client.clientId}/devices/${this.device.deviceId}/door-sensor/stage`, {
+        acting_email: 'operator@example.org',
+        door_sensor_id: 'AA,AA,AA',
+      })
+
+      expect(res).to.have.status(422)
+      expect(res.body.code).to.equal('INVALID_DOOR_SENSOR_ID')
+    })
+
+    it('should return 404 when the device is not owned by the client', async () => {
+      sandbox.stub(particle, 'stageDoorId').resolves(11259375)
+      const otherClient = await factories.clientNewDBFactory({
+        displayName: 'Other Portal Client',
+        devicesSendingAlerts: true,
+      })
+
+      const res = await portalPostRequest(`/api/portal/clients/${otherClient.clientId}/devices/${this.device.deviceId}/door-sensor/stage`, {
+        acting_email: 'operator@example.org',
+        door_sensor_id: 'AB,CD,EF',
+      })
+
+      expect(res).to.have.status(404)
+      expect(particle.stageDoorId).not.to.have.been.called
     })
   })
 })

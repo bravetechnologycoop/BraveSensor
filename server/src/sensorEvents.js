@@ -16,6 +16,7 @@ const { EVENT_TYPE, SESSION_STATUS, SERVICES } = require('./enums/index')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
 const stillnessReminderinSeconds = helpers.getEnvVar('STILLNESS_ALERT_REMINDER')
+const canonicalDoorSensorIdRegex = /^[0-9A-F]{2},[0-9A-F]{2},[0-9A-F]{2}$/
 
 // ----------------------------------------------------------------------------------------------------------------------------
 
@@ -616,7 +617,7 @@ const validateSensorEvent = [
     .exists()
     .isString()
     .custom(value => {
-      const validEvents = ['Duration Alert', 'Stillness Alert', 'Door Opened']
+      const validEvents = ['Duration Alert', 'Stillness Alert', 'Door Opened', 'Door ID Committed']
       return validEvents.includes(value)
     }),
   Validator.body('data').exists().isString(),
@@ -650,6 +651,26 @@ function parseSensorEventData(receivedEventData) {
   return eventData
 }
 
+function parseDoorIDCommittedData(receivedEventData) {
+  const eventData = typeof receivedEventData === 'string' ? JSON.parse(receivedEventData) : receivedEventData
+  if (!eventData || !canonicalDoorSensorIdRegex.test(eventData.doorId)) {
+    throw new Error('Invalid Door ID Committed event data')
+  }
+  return eventData
+}
+
+async function processDoorIDCommittedEvent(device, eventData) {
+  const updatedDevice = await db.updateDeviceDoorSensorId(device.deviceId, eventData.doorId)
+
+  if (updatedDevice) {
+    helpers.log(`Door sensor ID for device ${device.deviceId} updated to ${eventData.doorId} from firmware commit event.`)
+  } else if (device.doorSensorId === eventData.doorId) {
+    helpers.log(`Door sensor ID for device ${device.deviceId} already matches firmware commit event: ${eventData.doorId}.`)
+  } else {
+    throw new Error(`Failed to update door sensor ID for device ${device.deviceId}`)
+  }
+}
+
 async function handleSensorEvent(request, response) {
   try {
     const validationErrors = Validator.validationResult(request).formatWith(helpers.formatExpressValidationErrors)
@@ -662,13 +683,20 @@ async function handleSensorEvent(request, response) {
       throw new Error('Access not allowed: Invalid API key')
     }
 
-    const eventType = parseSensorEventType(receivedEventType)
-    const eventData = parseSensorEventData(receivedEventData)
-
     const device = await db.getDeviceWithParticleDeviceId(particleDeviceID)
     if (!device) {
       throw new Error(`No device matches the coreID: ${particleDeviceID}`)
     }
+
+    if (receivedEventType === 'Door ID Committed') {
+      const eventData = parseDoorIDCommittedData(receivedEventData)
+      await processDoorIDCommittedEvent(device, eventData)
+      response.status(200).json('OK')
+      return
+    }
+
+    const eventType = parseSensorEventType(receivedEventType)
+    const eventData = parseSensorEventData(receivedEventData)
 
     const client = await db.getClientWithClientId(device.clientId)
     if (!client) {

@@ -103,6 +103,7 @@ void setupStateMachine();
 // loop() functions
 void initializeStateMachineConsts();
 void getHeartbeat();
+unsigned long calculateTimeSince(unsigned long startTime);
 
 // state functions, called by stateHandler
 void state0_idle();

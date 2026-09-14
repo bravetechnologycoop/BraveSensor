@@ -4,10 +4,12 @@ const crypto = require('crypto')
 // In-house dependencies
 const db = require('./db/db')
 const helpers = require('./utils/helpers')
+const particle = require('./particle')
 
 const portalHmacToleranceSeconds = 5 * 60
 const portalAlertRecipientFields = ['responder_phone_numbers', 'fallback_phone_numbers', 'heartbeat_phone_numbers']
 const portalAlertRecipientPutFields = ['acting_email'].concat(portalAlertRecipientFields)
+const portalDoorSensorStageFields = ['acting_email', 'door_sensor_id']
 const portalMaxPhoneNumbersByField = {
   responder_phone_numbers: 5,
   fallback_phone_numbers: 5,
@@ -20,6 +22,7 @@ const portalRateLimitMaxRequests = {
 }
 const portalRateLimitBuckets = new Map()
 const e164PhoneRegex = /^\+[1-9]\d{6,14}$/
+const canonicalDoorSensorIdRegex = /^[0-9A-F]{2},[0-9A-F]{2},[0-9A-F]{2}$/
 
 class PortalValidationError extends Error {
   constructor(code, field, message) {
@@ -202,6 +205,68 @@ function getPortalAlertRecipientUpdates(body) {
   }, {})
 }
 
+function normalizeDoorSensorId(value) {
+  if (typeof value !== 'string') {
+    throw new PortalValidationError('INVALID_DOOR_SENSOR_ID_TYPE', 'door_sensor_id', 'door_sensor_id must be a string')
+  }
+
+  const trimmedValue = value.trim()
+  if (trimmedValue === '') {
+    throw new PortalValidationError('BLANK_DOOR_SENSOR_ID', 'door_sensor_id', 'door_sensor_id must not be blank')
+  }
+
+  const commaMatch = trimmedValue.match(/^([0-9a-fA-F]{2}),([0-9a-fA-F]{2}),([0-9a-fA-F]{2})$/)
+  if (commaMatch) {
+    return commaMatch
+      .slice(1)
+      .map(part => part.toUpperCase())
+      .join(',')
+  }
+
+  const colonParts = trimmedValue.split(':')
+  if (colonParts.length === 6 && colonParts.every(part => /^[0-9a-fA-F]{2}$/.test(part))) {
+    return colonParts
+      .slice(3)
+      .map(part => part.toUpperCase())
+      .join(',')
+  }
+
+  const hexOnly = trimmedValue.replace(/\s/g, '')
+  if (/^[0-9a-fA-F]{6}$/.test(hexOnly) || /^[0-9a-fA-F]{8}$/.test(hexOnly)) {
+    const doorSensorParts = hexOnly.slice(0, 6).match(/.{2}/g)
+    return doorSensorParts.map(part => part.toUpperCase()).join(',')
+  }
+
+  throw new PortalValidationError('INVALID_DOOR_SENSOR_ID', 'door_sensor_id', 'door_sensor_id must be a valid 3-byte hex door sensor ID')
+}
+
+function getPortalDoorSensorStageBody(body) {
+  const bodyFields = Object.keys(body || {})
+  const unknownField = bodyFields.find(field => !portalDoorSensorStageFields.includes(field))
+
+  if (unknownField) {
+    throw new PortalValidationError('UNKNOWN_FIELD', unknownField, `Unknown field: ${unknownField}`)
+  }
+
+  if (!body || typeof body.acting_email !== 'string' || body.acting_email.trim() === '') {
+    throw new PortalValidationError('ACTING_EMAIL_REQUIRED', 'acting_email', 'acting_email is required')
+  }
+
+  const doorSensorId = normalizeDoorSensorId(body.door_sensor_id)
+  if (!canonicalDoorSensorIdRegex.test(doorSensorId) || doorSensorId === 'AA,AA,AA') {
+    throw new PortalValidationError(
+      'INVALID_DOOR_SENSOR_ID',
+      'door_sensor_id',
+      'door_sensor_id must be a valid non-default 3-byte hex door sensor ID',
+    )
+  }
+
+  return {
+    actingEmail: body.acting_email.trim(),
+    doorSensorId,
+  }
+}
+
 async function handleGetPortalAlertRecipients(req, res) {
   try {
     const alertRecipients = await db.getPortalAlertRecipients(req.params.clientId)
@@ -255,10 +320,55 @@ async function handleUpdatePortalAlertRecipients(req, res) {
   }
 }
 
+async function handleStagePortalDoorSensor(req, res) {
+  let stageBody
+
+  try {
+    stageBody = getPortalDoorSensorStageBody(req.body)
+  } catch (error) {
+    res.status(422).send({
+      status: 'error',
+      code: error.code || 'VALIDATION_ERROR',
+      field: error.field,
+      detail: error.message,
+      message: error.message,
+    })
+    helpers.logError(`Bad portal door sensor request to ${req.path}: ${error.message}`)
+    return
+  }
+
+  try {
+    const device = await db.getPortalDevice(req.params.clientId, req.params.deviceId)
+
+    if (!device) {
+      res.status(404).send({ status: 'error', message: 'Not Found' })
+      return
+    }
+
+    const particleReturnValue = await particle.stageDoorId(device.particleDeviceId, stageBody.doorSensorId)
+
+    helpers.log(`Portal door sensor staged by ${stageBody.actingEmail} for device ${req.params.deviceId}; candidate: ${stageBody.doorSensorId}`)
+    res.status(200).send({
+      status: 'success',
+      data: {
+        device_id: device.deviceId,
+        door_sensor_id: stageBody.doorSensorId,
+        particle_return_value: particleReturnValue,
+        verification: 'waiting_for_open_close',
+      },
+    })
+  } catch (error) {
+    res.status(502).send({ status: 'error', message: 'Could not stage door sensor ID' })
+    helpers.logError(`Portal door sensor staging failed at ${req.path}: ${error.message}`)
+  }
+}
+
 module.exports = {
   portalAuthorize,
   portalRateLimit,
   resetPortalRateLimits,
   handleGetPortalAlertRecipients,
   handleUpdatePortalAlertRecipients,
+  handleStagePortalDoorSensor,
+  normalizeDoorSensorId,
 }

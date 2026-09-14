@@ -58,7 +58,28 @@ async function resetStateToZero(particleDeviceId) {
   }
 }
 
+async function stageDoorId(particleDeviceId, doorSensorId) {
+  try {
+    const response = await particleApi.callFunction({
+      deviceId: particleDeviceId,
+      name: 'Stage_Door_ID',
+      argument: doorSensorId,
+      product: productId,
+      auth: particleAccessToken,
+    })
+
+    if (!response || !response.body || response.body.return_value < 0) {
+      throw new Error(`Error staging door ID for device with particleDeviceId: ${particleDeviceId}`)
+    }
+
+    return response.body.return_value
+  } catch (error) {
+    throw new Error(`stageDoorId: ${error.message}`)
+  }
+}
+
 module.exports = {
   resetMonitoring,
   resetStateToZero,
+  stageDoorId,
 }
