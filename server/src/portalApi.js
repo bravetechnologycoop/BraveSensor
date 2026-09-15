@@ -3,6 +3,7 @@ const crypto = require('crypto')
 
 // In-house dependencies
 const db = require('./db/db')
+const doorSensorPairing = require('./doorSensorPairing')
 const helpers = require('./utils/helpers')
 const particle = require('./particle')
 
@@ -346,6 +347,7 @@ async function handleStagePortalDoorSensor(req, res) {
     }
 
     const particleReturnValue = await particle.stageDoorId(device.particleDeviceId, stageBody.doorSensorId)
+    const verificationAttempt = doorSensorPairing.startAttempt(device.deviceId, stageBody.doorSensorId)
 
     helpers.log(`Portal door sensor staged by ${stageBody.actingEmail} for device ${req.params.deviceId}; candidate: ${stageBody.doorSensorId}`)
     res.status(200).send({
@@ -354,12 +356,34 @@ async function handleStagePortalDoorSensor(req, res) {
         device_id: device.deviceId,
         door_sensor_id: stageBody.doorSensorId,
         particle_return_value: particleReturnValue,
-        verification: 'waiting_for_open_close',
+        ...verificationAttempt,
       },
     })
   } catch (error) {
     res.status(502).send({ status: 'error', message: 'Could not stage door sensor ID' })
     helpers.logError(`Portal door sensor staging failed at ${req.path}: ${error.message}`)
+  }
+}
+
+async function handleGetPortalDoorSensorStageStatus(req, res) {
+  try {
+    const device = await db.getPortalDevice(req.params.clientId, req.params.deviceId)
+
+    if (!device) {
+      res.status(404).send({ status: 'error', message: 'Not Found' })
+      return
+    }
+
+    const verificationAttempt = doorSensorPairing.getAttempt(device.deviceId, req.params.verificationId)
+    if (!verificationAttempt) {
+      res.status(404).send({ status: 'error', message: 'Not Found' })
+      return
+    }
+
+    res.status(200).send({ status: 'success', data: verificationAttempt })
+  } catch (error) {
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+    helpers.logError(`Internal server error at ${req.path}: ${error.message}`)
   }
 }
 
@@ -370,5 +394,6 @@ module.exports = {
   handleGetPortalAlertRecipients,
   handleUpdatePortalAlertRecipients,
   handleStagePortalDoorSensor,
+  handleGetPortalDoorSensorStageStatus,
   normalizeDoorSensorId,
 }

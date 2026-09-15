@@ -12,6 +12,7 @@ process.env.PARTICLE_WEBHOOK_API_KEY_TEST = process.env.PARTICLE_WEBHOOK_API_KEY
 // In-house dependencies
 const helpers = require('../../../src/utils/helpers')
 const db = require('../../../src/db/db')
+const doorSensorPairing = require('../../../src/doorSensorPairing')
 const factories = require('../../factories_new')
 const portalApi = require('../../../src/portalApi')
 const particle = require('../../../src/particle')
@@ -56,9 +57,26 @@ function portalPostRequest(route, body, timestamp = Math.floor(Date.now() / 1000
     .send(rawBody)
 }
 
+function doorIDCommittedPayload(particleDeviceId, doorId = 'AB,CD,EF') {
+  return {
+    event: 'Door ID Committed',
+    coreid: particleDeviceId,
+    api_key: helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY'),
+    data: JSON.stringify({
+      previousDoorId: 'AA,AA,AA',
+      doorId,
+      sawOpen: true,
+      sawClosed: true,
+      doorStatus: 0,
+      controlByte: 1,
+    }),
+  }
+}
+
 describe('portalApi.js integration tests: alertRecipientsTest', () => {
   beforeEach(async () => {
     portalApi.resetPortalRateLimits()
+    doorSensorPairing.reset()
     sandbox.spy(helpers, 'log')
     sandbox.spy(helpers, 'logError')
     await db.clearAllTables()
@@ -315,16 +333,61 @@ describe('portalApi.js integration tests: alertRecipientsTest', () => {
       })
 
       expect(res).to.have.status(200)
-      expect(res.body).to.deep.equal({
-        status: 'success',
-        data: {
-          device_id: this.device.deviceId,
-          door_sensor_id: 'AB,CD,EF',
-          particle_return_value: 11259375,
-          verification: 'waiting_for_open_close',
-        },
+      expect(res.body.status).to.equal('success')
+      expect(res.body.data).to.include({
+        device_id: this.device.deviceId,
+        door_sensor_id: 'AB,CD,EF',
+        particle_return_value: 11259375,
+        verification: 'waiting_for_open_close',
       })
+      expect(res.body.data.verification_id).to.be.a('string')
+      expect(res.body.data.expires_at).to.be.a('string')
       expect(particle.stageDoorId).to.have.been.calledWithExactly(this.device.particleDeviceId, 'AB,CD,EF')
+    })
+
+    it('should return staged door sensor verification status', async () => {
+      sandbox.stub(particle, 'stageDoorId').resolves(11259375)
+
+      const stageRes = await portalPostRequest(`/api/portal/clients/${this.client.clientId}/devices/${this.device.deviceId}/door-sensor/stage`, {
+        acting_email: 'operator@example.org',
+        door_sensor_id: 'AB,CD,EF',
+      })
+
+      const statusRes = await portalGetRequest(
+        `/api/portal/clients/${this.client.clientId}/devices/${this.device.deviceId}/door-sensor/stage/${stageRes.body.data.verification_id}`,
+      )
+
+      expect(statusRes).to.have.status(200)
+      expect(statusRes.body.data).to.include({
+        verification_id: stageRes.body.data.verification_id,
+        device_id: this.device.deviceId,
+        door_sensor_id: 'AB,CD,EF',
+        verification: 'waiting_for_open_close',
+      })
+    })
+
+    it('should resolve staged status when the firmware commit event arrives for an already paired door ID', async () => {
+      sandbox.stub(particle, 'stageDoorId').resolves(11259375)
+      await db.updateDeviceDoorSensorId(this.device.deviceId, 'AB,CD,EF')
+
+      const stageRes = await portalPostRequest(`/api/portal/clients/${this.client.clientId}/devices/${this.device.deviceId}/door-sensor/stage`, {
+        acting_email: 'operator@example.org',
+        door_sensor_id: 'AB,CD,EF',
+      })
+      await chai.request(server).post('/api/sensorEvent').send(doorIDCommittedPayload(this.device.particleDeviceId, 'AB,CD,EF'))
+
+      const statusRes = await portalGetRequest(
+        `/api/portal/clients/${this.client.clientId}/devices/${this.device.deviceId}/door-sensor/stage/${stageRes.body.data.verification_id}`,
+      )
+
+      expect(statusRes).to.have.status(200)
+      expect(statusRes.body.data).to.include({
+        verification_id: stageRes.body.data.verification_id,
+        device_id: this.device.deviceId,
+        door_sensor_id: 'AB,CD,EF',
+        verification: 'verified',
+      })
+      expect(statusRes.body.data.verified_at).to.be.a('string')
     })
 
     it('should normalize a scanned 8-character sticker value before staging', async () => {

@@ -12,6 +12,7 @@ const helpers = require('./utils/helpers')
 const twilioHelpers = require('./utils/twilioHelpers')
 const teamsHelpers = require('./utils/teamsHelpers')
 const db = require('./db/db')
+const doorSensorPairing = require('./doorSensorPairing')
 const { EVENT_TYPE, SESSION_STATUS, SERVICES } = require('./enums/index')
 
 const particleWebhookAPIKey = helpers.getEnvVar('PARTICLE_WEBHOOK_API_KEY')
@@ -661,6 +662,7 @@ function parseDoorIDCommittedData(receivedEventData) {
 
 async function processDoorIDCommittedEvent(device, eventData) {
   const updatedDevice = await db.updateDeviceDoorSensorId(device.deviceId, eventData.doorId)
+  doorSensorPairing.verifyAttempt(device.deviceId, eventData.doorId)
 
   if (updatedDevice) {
     helpers.log(`Door sensor ID for device ${device.deviceId} updated to ${eventData.doorId} from firmware commit event.`)
