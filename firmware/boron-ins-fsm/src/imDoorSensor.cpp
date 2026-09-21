@@ -45,23 +45,23 @@ static particle::Future<bool> doorIDEventPublishFuture;
 static bool doorIDEventPublishInFlight = false;
 static unsigned long doorIDEventPublishStartedAt = 0;
 
-static bool doesAdvertisingDataMatchDoorID(unsigned char *doorAdvertisingData, IMDoorID doorID) {
-    return doorAdvertisingData[1] == doorID.byte3 &&
-           doorAdvertisingData[2] == doorID.byte2 &&
-           doorAdvertisingData[3] == doorID.byte1;
-}
-
-static void addDoorIDToScanFilter(BleScanFilter *filter, IMDoorID doorID) {
+static bool doesBLEAddressMatchDoorID(const BleAddress &bleAddress, IMDoorID doorID) {
     char address[18];
 
     sprintf(address, "B8:7C:6F:%02X:%02X:%02X", doorID.byte3, doorID.byte2, doorID.byte1);
-    filter->deviceName("iSensor ").address(address);
+    if (bleAddress == address) {
+        return true;
+    }
     sprintf(address, "8C:9A:22:%02X:%02X:%02X", doorID.byte3, doorID.byte2, doorID.byte1);
-    filter->address(address);
+    if (bleAddress == address) {
+        return true;
+    }
     sprintf(address, "AC:9A:22:%02X:%02X:%02X", doorID.byte3, doorID.byte2, doorID.byte1);
-    filter->address(address);
+    if (bleAddress == address) {
+        return true;
+    }
     sprintf(address, "80:FB:F1:%02X:%02X:%02X", doorID.byte3, doorID.byte2, doorID.byte1);
-    filter->address(address);
+    return bleAddress == address;
 }
 
 static void writeGlobalDoorIDToEEPROM() {
@@ -345,71 +345,81 @@ void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorDat
              currentDoorData.controlByte);
 }
 
-static void processDoorScanResults(const spark::Vector<BleScanResult> &scanResults) {
-    unsigned char doorAdvertisingData[BLE_MAX_ADV_DATA_LEN];
-
-    for (const BleScanResult &scanResult : scanResults) {
-        // Extract manufacturer-specific data from BLE scan result
-        // More info: https://drive.google.com/file/d/1ZbnHi7uA_xMWVIiMbQjZlbT3OOoykbr4/view?usp=sharing
-        // dooradvertisingdata structure:
-        // [0]: Firmware Version
-        // [1-3]: Last 3 bytes of door sensor address
-        // [4]: Type ID (sensor type)
-        // [5]: Event Data (bit[0]: tamper, bit[1]: door open, bit[2]: low battery, bit[3]: heartbeat)
-        // [6]: Control Data
-        scanResult.advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN);
-
-        bool isConfiguredDoorIDMessage = doesAdvertisingDataMatchDoorID(doorAdvertisingData, globalDoorID);
-        bool isStagedDoorIDMessage = stagedDoorIDActive && doesAdvertisingDataMatchDoorID(doorAdvertisingData, stagedDoorID);
-
-        if (!isConfiguredDoorIDMessage && !isStagedDoorIDMessage) {
-            continue;
-        }
-
-        doorData scanThreadDoorData;
-        scanThreadDoorData.doorStatus = doorAdvertisingData[5];
-        scanThreadDoorData.controlByte = doorAdvertisingData[6];
-
-        if (isStagedDoorIDMessage) {
-            handleStagedDoorIDMessage(scanThreadDoorData.doorStatus, scanThreadDoorData.controlByte);
-        }
-        
-        // If the 4th bit of the door status byte is set (indicating a door heartbeat every 10 minutes)
-        // and debugging is enabled, publish a debug message with the BLE advertising data.
-        if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0 && stateMachineDebugFlag) {
-            char debugMessage[622] = "";
-            for (int i = 0; i < BLE_MAX_ADV_DATA_LEN; i++) {
-                snprintf(debugMessage + strlen(debugMessage), sizeof(debugMessage), "%02X ", doorAdvertisingData[i]);
-            }
-            Particle.publish("Door Heartbeat Received", debugMessage, PRIVATE);
-        }
-
-        if (isConfiguredDoorIDMessage) {
-            // Put the active door sensor data into a queue for further processing.
-            if (os_queue_put(bleQueue, (void *)&scanThreadDoorData, 0, 0) != 0) {
-                Log.error("Failed to put data into the queue.");
-            }
-        }
-    }
-}
-
 void threadBLEScanner(void *param) {
+    doorData scanThreadDoorData;
+    unsigned char doorAdvertisingData[BLE_MAX_ADV_DATA_LEN];
     BLE.setScanTimeout(5);
 
     while (true) {
         expireStagedDoorIDIfNeeded();
 
-        BleScanFilter configuredFilter;
-        addDoorIDToScanFilter(&configuredFilter, globalDoorID);
+        // Create a BLE scan filter
+        BleScanFilter filter;
+        char address[18];
+
+        // Format and add multiple types of valid BLE addresses to the filter
+        sprintf(address, "B8:7C:6F:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
+        filter.deviceName("iSensor ").address(address);
+        sprintf(address, "8C:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
+        filter.address(address);
+        sprintf(address, "AC:9A:22:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
+        filter.address(address);
+        sprintf(address, "80:FB:F1:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
+        filter.address(address);
 
         if (stagedDoorIDActive) {
-            BleScanFilter stagedFilter;
-            addDoorIDToScanFilter(&stagedFilter, stagedDoorID);
-            configuredFilter.addresses(stagedFilter.addresses());
+            sprintf(address, "B8:7C:6F:%02X:%02X:%02X", stagedDoorID.byte3, stagedDoorID.byte2, stagedDoorID.byte1);
+            filter.deviceName("iSensor ").address(address);
+            sprintf(address, "8C:9A:22:%02X:%02X:%02X", stagedDoorID.byte3, stagedDoorID.byte2, stagedDoorID.byte1);
+            filter.address(address);
+            sprintf(address, "AC:9A:22:%02X:%02X:%02X", stagedDoorID.byte3, stagedDoorID.byte2, stagedDoorID.byte1);
+            filter.address(address);
+            sprintf(address, "80:FB:F1:%02X:%02X:%02X", stagedDoorID.byte3, stagedDoorID.byte2, stagedDoorID.byte1);
+            filter.address(address);
         }
 
-        spark::Vector<BleScanResult> scanResults = BLE.scanWithFilter(configuredFilter);
-        processDoorScanResults(scanResults);
+        // Scan for BLE devices matching the filter
+        spark::Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter);
+
+        for (BleScanResult scanResult : scanResults) {
+            // Extract manufacturer-specific data from BLE scan result
+            // More info: https://drive.google.com/file/d/1ZbnHi7uA_xMWVIiMbQjZlbT3OOoykbr4/view?usp=sharing
+            // dooradvertisingdata structure:
+            // [0]: Firmware Version
+            // [1-3]: Last 3 bytes of door sensor address
+            // [4]: Type ID (sensor type)
+            // [5]: Event Data (bit[0]: tamper, bit[1]: door open, bit[2]: low battery, bit[3]: heartbeat)
+            // [6]: Control Data
+            scanResult.advertisingData().get(BleAdvertisingDataType::MANUFACTURER_SPECIFIC_DATA, doorAdvertisingData, BLE_MAX_ADV_DATA_LEN);
+
+            // Load the neccessary data to the scannerThreadDoorData (doorData struct)
+            scanThreadDoorData.doorStatus = doorAdvertisingData[5];
+            scanThreadDoorData.controlByte = doorAdvertisingData[6];
+
+            bool isConfiguredDoorIDMessage = doesBLEAddressMatchDoorID(scanResult.address(), globalDoorID);
+            bool isStagedDoorIDMessage = stagedDoorIDActive && doesBLEAddressMatchDoorID(scanResult.address(), stagedDoorID);
+
+            if (isStagedDoorIDMessage) {
+                handleStagedDoorIDMessage(scanThreadDoorData.doorStatus, scanThreadDoorData.controlByte);
+            }
+            
+            // If the 4th bit of the door status byte is set (indicating a door heartbeat every 10 minutes)
+            // and debugging is enabled, publish a debug message with the BLE advertising data.
+            if ((scanThreadDoorData.doorStatus & (1 << 3)) != 0 && stateMachineDebugFlag) {
+                char debugMessage[622] = "";
+                for (int i = 0; i < BLE_MAX_ADV_DATA_LEN; i++) {
+                    snprintf(debugMessage + strlen(debugMessage), sizeof(debugMessage), "%02X ", doorAdvertisingData[i]);
+                }
+                Particle.publish("Door Heartbeat Received", debugMessage, PRIVATE);
+            }
+
+            if (isConfiguredDoorIDMessage) {
+                // Put the active door sensor data into a queue for further processing.
+                if (os_queue_put(bleQueue, (void *)&scanThreadDoorData, 0, 0) != 0) {
+                    Log.error("Failed to put data into the queue.");
+                }
+            }
+        }
 
         // Yield the thread to allow other threads to run
         os_thread_yield();
