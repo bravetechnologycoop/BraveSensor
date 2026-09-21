@@ -390,6 +390,29 @@ describe('portalApi.js integration tests: alertRecipientsTest', () => {
       expect(statusRes.body.data.verified_at).to.be.a('string')
     })
 
+    it('should resolve staged status when the device row already has the staged door ID', async () => {
+      sandbox.stub(particle, 'stageDoorId').resolves(11259375)
+
+      const stageRes = await portalPostRequest(`/api/portal/clients/${this.client.clientId}/devices/${this.device.deviceId}/door-sensor/stage`, {
+        acting_email: 'operator@example.org',
+        door_sensor_id: 'AB,CD,EF',
+      })
+      await db.updateDeviceDoorSensorId(this.device.deviceId, 'AB,CD,EF')
+
+      const statusRes = await portalGetRequest(
+        `/api/portal/clients/${this.client.clientId}/devices/${this.device.deviceId}/door-sensor/stage/${stageRes.body.data.verification_id}`,
+      )
+
+      expect(statusRes).to.have.status(200)
+      expect(statusRes.body.data).to.include({
+        verification_id: stageRes.body.data.verification_id,
+        device_id: this.device.deviceId,
+        door_sensor_id: 'AB,CD,EF',
+        verification: 'verified',
+      })
+      expect(statusRes.body.data.verified_at).to.be.a('string')
+    })
+
     it('should normalize a scanned 8-character sticker value before staging', async () => {
       sandbox.stub(particle, 'stageDoorId').resolves(1715004)
 

@@ -374,7 +374,7 @@ async function handleGetPortalDoorSensorStageStatus(req, res) {
       return
     }
 
-    const verificationAttempt = doorSensorPairing.getAttempt(device.deviceId, req.params.verificationId)
+    const verificationAttempt = doorSensorPairing.getAttempt(device.deviceId, req.params.verificationId, device.doorSensorId)
     if (!verificationAttempt) {
       res.status(404).send({ status: 'error', message: 'Not Found' })
       return
