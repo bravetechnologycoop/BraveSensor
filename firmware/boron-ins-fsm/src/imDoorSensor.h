@@ -28,6 +28,9 @@
 // Threshold for triggering state machine heartbeat
 #define MSG_TRIGGER_SM_HEARTBEAT_THRESHOLD  540000  // 9 mins in ms
 #define STAGED_DOOR_ID_TIMEOUT              300000  // 5 mins in ms
+#define DOOR_ID_EVENT_PUBLISH_RETRY_INTERVAL 1500   // 1.5 seconds in ms
+#define DOOR_ID_EVENT_PUBLISH_TIMEOUT        15000  // 15 seconds in ms
+#define DOOR_ID_EVENT_QUEUE_SIZE             4
 
 // ***************************** Global typedefs ******************************
 
@@ -127,6 +130,7 @@ void initializeDoorID(void);
 doorData checkIM(void);
 void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorData);
 void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData);
+void publishPendingDoorIDEvents(void);
 
 // threads
 void threadBLEScanner(void *param);
