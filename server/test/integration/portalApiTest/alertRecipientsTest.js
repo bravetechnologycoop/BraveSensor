@@ -323,6 +323,83 @@ describe('portalApi.js integration tests: alertRecipientsTest', () => {
     })
   })
 
+  describe('for /api/portal/clients/:clientId/devices', () => {
+    it('should return displayed portal devices with saved door sensor IDs', async () => {
+      await db.updateDeviceDoorSensorId(this.device.deviceId, 'B5,EB,8A')
+
+      const res = await portalGetRequest(`/api/portal/clients/${this.client.clientId}/devices`)
+
+      expect(res).to.have.status(200)
+      expect(res.body).to.deep.equal({
+        status: 'success',
+        data: {
+          devices: [
+            {
+              device_id: this.device.deviceId,
+              display_name: this.device.displayName,
+              location: this.device.displayName,
+              door_sensor_id: 'B5,EB,8A',
+            },
+          ],
+        },
+      })
+    })
+
+    it('should not return hidden or other-client devices', async () => {
+      await factories.deviceNewDBFactory({
+        clientId: this.client.clientId,
+        locationId: 'hidden-device-location',
+        displayName: 'Hidden Device',
+        particleDeviceId: 'e00222222222222222222222',
+        isDisplayed: false,
+      })
+      const otherClient = await factories.clientNewDBFactory({
+        displayName: 'Other Portal Client',
+        devicesSendingAlerts: true,
+      })
+      await factories.deviceNewDBFactory({
+        clientId: otherClient.clientId,
+        locationId: 'other-device-location',
+        displayName: 'Other Device',
+        particleDeviceId: 'e00333333333333333333333',
+        isDisplayed: true,
+      })
+
+      const res = await portalGetRequest(`/api/portal/clients/${this.client.clientId}/devices`)
+
+      expect(res).to.have.status(200)
+      expect(res.body.data.devices).to.have.length(1)
+      expect(res.body.data.devices[0]).to.include({
+        device_id: this.device.deviceId,
+        display_name: this.device.displayName,
+      })
+    })
+
+    it('should return an empty list when the client is not portal-visible', async () => {
+      const hiddenClient = await factories.clientNewDBFactory({
+        displayName: 'Hidden Portal Client',
+        devicesSendingAlerts: false,
+      })
+      await factories.deviceNewDBFactory({
+        clientId: hiddenClient.clientId,
+        locationId: 'hidden-client-device-location',
+        displayName: 'Hidden Client Device',
+        particleDeviceId: 'e00444444444444444444444',
+        isDisplayed: true,
+      })
+
+      const res = await portalGetRequest(`/api/portal/clients/${hiddenClient.clientId}/devices`)
+
+      expect(res).to.have.status(200)
+      expect(res.body).to.deep.equal({
+        status: 'success',
+        data: {
+          devices: [],
+        },
+      })
+    })
+  })
+
   describe('for /api/portal/clients/:clientId/devices/:deviceId/door-sensor/stage', () => {
     it('should stage a normalized door sensor ID through Particle', async () => {
       sandbox.stub(particle, 'stageDoorId').resolves(11259375)

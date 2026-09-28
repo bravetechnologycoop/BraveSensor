@@ -70,6 +70,7 @@ function configureRoutes(app) {
     portalApi.portalRateLimit,
     portalApi.handleUpdatePortalAlertRecipients,
   )
+  app.get('/api/portal/clients/:clientId/devices', portalApi.portalAuthorize, portalApi.portalRateLimit, portalApi.handleGetPortalDevices)
   app.post(
     '/api/portal/clients/:clientId/devices/:deviceId/door-sensor/stage',
     portalApi.portalAuthorize,

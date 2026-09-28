@@ -1310,6 +1310,36 @@ async function getPortalDevice(clientId, deviceId, pgClient) {
   }
 }
 
+async function getPortalDevices(clientId, pgClient) {
+  try {
+    const results = await helpers.runQuery(
+      'getPortalDevices',
+      `
+      SELECT d.*
+      FROM devices d
+      JOIN clients c ON d.client_id = c.client_id
+      WHERE d.client_id = $1
+      AND d.is_displayed = true
+      AND c.is_displayed = true
+      AND c.devices_sending_alerts = true
+      ORDER BY d.display_name
+      `,
+      [clientId],
+      pool,
+      pgClient,
+    )
+
+    if (results === undefined || results.rows.length === 0) {
+      return []
+    }
+
+    return results.rows.map(row => createDeviceFromRow(row))
+  } catch (err) {
+    helpers.logError(`Error running the getPortalDevices query: ${err.toString()}`)
+    return []
+  }
+}
+
 async function updateDeviceDoorSensorId(deviceId, doorSensorId, pgClient) {
   try {
     const results = await helpers.runQuery(
@@ -2490,6 +2520,7 @@ module.exports = {
   getActiveVitalDevicesWithClients,
   getDeviceWithDeviceId,
   getPortalDevice,
+  getPortalDevices,
   getDeviceWithParticleDeviceId,
   getDeviceWithDeviceTwilioNumber,
   updateDeviceDoorSensorId,

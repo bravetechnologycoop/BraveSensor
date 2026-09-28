@@ -150,6 +150,15 @@ function formatPortalAlertRecipients(alertRecipients) {
   }
 }
 
+function formatPortalDevice(device) {
+  return {
+    device_id: device.deviceId,
+    display_name: device.displayName,
+    location: device.displayName,
+    door_sensor_id: device.doorSensorId,
+  }
+}
+
 function normalizePortalPhoneArray(fieldName, value) {
   if (!Array.isArray(value)) {
     throw new PortalValidationError('INVALID_FIELD_TYPE', fieldName, `${fieldName} must be an array`)
@@ -284,6 +293,22 @@ async function handleGetPortalAlertRecipients(req, res) {
   }
 }
 
+async function handleGetPortalDevices(req, res) {
+  try {
+    const devices = await db.getPortalDevices(req.params.clientId)
+
+    res.status(200).send({
+      status: 'success',
+      data: {
+        devices: devices.map(formatPortalDevice),
+      },
+    })
+  } catch (error) {
+    res.status(500).send({ status: 'error', message: 'Internal Server Error' })
+    helpers.logError(`Internal server error at ${req.path}: ${error.message}`)
+  }
+}
+
 async function handleUpdatePortalAlertRecipients(req, res) {
   let updates
 
@@ -392,6 +417,7 @@ module.exports = {
   portalRateLimit,
   resetPortalRateLimits,
   handleGetPortalAlertRecipients,
+  handleGetPortalDevices,
   handleUpdatePortalAlertRecipients,
   handleStagePortalDoorSensor,
   handleGetPortalDoorSensorStageStatus,
