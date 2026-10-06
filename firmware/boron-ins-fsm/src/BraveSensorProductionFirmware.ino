@@ -14,7 +14,7 @@
 #include "statusRGB.h"
 
 // See versioning in README.md
-#define BRAVE_FIRMWARE_VERSION  12031
+#define BRAVE_FIRMWARE_VERSION  1541
 #define DEBUG_LEVEL             LOG_LEVEL_WARN
 
 PRODUCT_VERSION(BRAVE_FIRMWARE_VERSION);
@@ -27,7 +27,7 @@ void setup() {
     BLE.selectAntenna(BleAntennaType::INTERNAL);
 
     // Keep cellular NAT mapping alive so incoming cloud messages (function calls) can reach the device
-    Particle.keepAlive(30);
+    Particle.keepAlive(60);
 
     setupIM();
     setupINS3331();
