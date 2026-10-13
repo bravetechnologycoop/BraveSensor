@@ -28,6 +28,7 @@ void setupConsoleFunctions() {
     Particle.function("Stillness_Time", stillness_alert_time_set);
 
     Particle.function("IM21_Door_ID", im21_door_id_set);
+    Particle.function("Stage_Door_ID", stage_door_id);
 }
 
 int force_reset(String command) {
@@ -398,20 +399,11 @@ int stillness_alert_time_set(String input) {
 
 // helper function
 bool isValidIM21Id(String input) {
-    if (input.equals("")) {
-        return false;
-    }
-
     if (input.equals("e")) {
         return true;
     }
-    else {
-        if (!(input.length() == 8)) {
-            return false;
-        }
-    }
-
-    return true;
+    IMDoorID parsedDoorID;
+    return parseIMDoorID(input, &parsedDoorID, false);
 }
 
 // particle console function to get/set door sensor ID
@@ -441,18 +433,11 @@ int im21_door_id_set(String command) {
     }
     // else not echo, so we have a new door ID to parse
     else {
-        // parse input string and update global door ID
-        int split1 = command.indexOf(',');                            // get index of first comma to delimit input
-        String byteholder1 = command.substring(0, split1);            // get first byte of input and copy to holder variable
-        globalDoorID.byte3 = (uint8_t)strtol(byteholder1.c_str(), NULL, 16);  // convert it to hex and set the third byte of the door ID
-
-        int split2 = command.indexOf(',', split1 + 1);
-        String byteholder2 = command.substring(split1 + 1, split2);
-        globalDoorID.byte2 = (uint8_t)strtol(byteholder2.c_str(), NULL, 16);
-
-        int split3 = command.indexOf(',', split2 + 1);
-        String byteholder3 = command.substring(split2 + 1, split3);
-        globalDoorID.byte1 = (uint8_t)strtol(byteholder3.c_str(), NULL, 16);
+        IMDoorID parsedDoorID;
+        if (!parseIMDoorID(command, &parsedDoorID, false)) {
+            return -1;
+        }
+        globalDoorID = parsedDoorID;
 
         // write new global door ID to flash
         EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);
@@ -467,4 +452,3 @@ int im21_door_id_set(String command) {
     // return door ID as int
     return (int)strtol(buffer, NULL, 16);
 }
-

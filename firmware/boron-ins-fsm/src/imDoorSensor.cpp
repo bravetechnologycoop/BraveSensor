@@ -13,6 +13,7 @@
 
 // Global variables
 IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
+IMDoorID stagedDoorID = {0xAA, 0xAA, 0xAA};
 os_queue_t bleQueue;
 
 int missedDoorEventCount = 0;
@@ -25,6 +26,135 @@ unsigned long doorHeartbeatReceived = 0;
 unsigned long doorLastMessage = 0;
 unsigned long timeWhenDoorClosed = 0;
 unsigned long consecutiveOpenDoorHeartbeatCount = 0;
+bool stagedDoorIDActive = false;
+bool stagedDoorIDSawOpen = false;
+bool stagedDoorIDSawClosed = false;
+unsigned long stagedDoorIDStartedAt = 0;
+static bool stagedDoorIDHasInitialDoorState = false;
+static bool stagedDoorIDInitialDoorOpen = false;
+
+typedef struct pendingDoorIDEvent {
+    char eventName[32];
+    char eventData[192];
+} pendingDoorIDEvent;
+
+static pendingDoorIDEvent pendingDoorIDEvents[DOOR_ID_EVENT_QUEUE_SIZE];
+static int pendingDoorIDEventHead = 0;
+static int pendingDoorIDEventCount = 0;
+static particle::Future<bool> doorIDEventPublishFuture;
+static bool doorIDEventPublishInFlight = false;
+static unsigned long doorIDEventPublishStartedAt = 0;
+
+static bool doesBLEAddressMatchDoorID(const BleAddress &bleAddress, IMDoorID doorID) {
+    char address[18];
+
+    sprintf(address, "B8:7C:6F:%02X:%02X:%02X", doorID.byte3, doorID.byte2, doorID.byte1);
+    if (bleAddress == address) {
+        return true;
+    }
+    sprintf(address, "8C:9A:22:%02X:%02X:%02X", doorID.byte3, doorID.byte2, doorID.byte1);
+    if (bleAddress == address) {
+        return true;
+    }
+    sprintf(address, "AC:9A:22:%02X:%02X:%02X", doorID.byte3, doorID.byte2, doorID.byte1);
+    if (bleAddress == address) {
+        return true;
+    }
+    sprintf(address, "80:FB:F1:%02X:%02X:%02X", doorID.byte3, doorID.byte2, doorID.byte1);
+    return bleAddress == address;
+}
+
+static void writeGlobalDoorIDToEEPROM() {
+    EEPROM.put(ADDR_IM_DOORID, globalDoorID.byte1);
+    EEPROM.put((ADDR_IM_DOORID + 1), globalDoorID.byte2);
+    EEPROM.put((ADDR_IM_DOORID + 2), globalDoorID.byte3);
+}
+
+void clearStagedDoorID() {
+    stagedDoorID = {DOORID_BYTE1, DOORID_BYTE2, DOORID_BYTE3};
+    stagedDoorIDActive = false;
+    stagedDoorIDSawOpen = false;
+    stagedDoorIDSawClosed = false;
+    stagedDoorIDStartedAt = 0;
+    stagedDoorIDHasInitialDoorState = false;
+    stagedDoorIDInitialDoorOpen = false;
+}
+
+static int pendingDoorIDEventTail() {
+    return (pendingDoorIDEventHead + pendingDoorIDEventCount) % DOOR_ID_EVENT_QUEUE_SIZE;
+}
+
+static void discardOldestPendingDoorIDEvent() {
+    if (pendingDoorIDEventCount == 0) {
+        return;
+    }
+
+    pendingDoorIDEventHead = (pendingDoorIDEventHead + 1) % DOOR_ID_EVENT_QUEUE_SIZE;
+    pendingDoorIDEventCount--;
+}
+
+static void queueDoorIDEvent(const char *eventName, const char *eventData) {
+    if (pendingDoorIDEventCount >= DOOR_ID_EVENT_QUEUE_SIZE) {
+        discardOldestPendingDoorIDEvent();
+    }
+
+    int tail = pendingDoorIDEventTail();
+    snprintf(pendingDoorIDEvents[tail].eventName, sizeof(pendingDoorIDEvents[tail].eventName), "%s", eventName);
+    snprintf(pendingDoorIDEvents[tail].eventData, sizeof(pendingDoorIDEvents[tail].eventData), "%s", eventData);
+    pendingDoorIDEventCount++;
+}
+
+static void publishDoorIDEvent(const char *eventName, IMDoorID previousDoorID, IMDoorID newDoorID, unsigned char doorStatus, unsigned char controlByte) {
+    char previousDoorIDBuffer[9];
+    char newDoorIDBuffer[9];
+    char publishBuffer[192];
+
+    formatIMDoorID(previousDoorIDBuffer, sizeof(previousDoorIDBuffer), previousDoorID);
+    formatIMDoorID(newDoorIDBuffer, sizeof(newDoorIDBuffer), newDoorID);
+    snprintf(
+        publishBuffer,
+        sizeof(publishBuffer),
+        "{\"previousDoorId\":\"%s\",\"doorId\":\"%s\",\"sawOpen\":%s,\"sawClosed\":%s,\"doorStatus\":%u,\"controlByte\":%u}",
+        previousDoorIDBuffer,
+        newDoorIDBuffer,
+        stagedDoorIDSawOpen ? "true" : "false",
+        stagedDoorIDSawClosed ? "true" : "false",
+        doorStatus,
+        controlByte
+    );
+    queueDoorIDEvent(eventName, publishBuffer);
+}
+
+void publishPendingDoorIDEvents() {
+    if (doorIDEventPublishInFlight) {
+        if (doorIDEventPublishFuture.isDone()) {
+            if (doorIDEventPublishFuture.isSucceeded() && doorIDEventPublishFuture.result(false)) {
+                discardOldestPendingDoorIDEvent();
+            }
+            doorIDEventPublishInFlight = false;
+        } else if (calculateTimeSince(doorIDEventPublishStartedAt) > DOOR_ID_EVENT_PUBLISH_TIMEOUT) {
+            Log.warn("Door ID event publish timed out; will retry");
+            doorIDEventPublishInFlight = false;
+        }
+    }
+
+    if (pendingDoorIDEventCount > 0 &&
+        !doorIDEventPublishInFlight &&
+        Particle.connected() &&
+        calculateTimeSince(doorIDEventPublishStartedAt) >= DOOR_ID_EVENT_PUBLISH_RETRY_INTERVAL) {
+        pendingDoorIDEvent *event = &pendingDoorIDEvents[pendingDoorIDEventHead];
+        doorIDEventPublishFuture = Particle.publish(event->eventName, event->eventData, PRIVATE);
+        doorIDEventPublishInFlight = true;
+        doorIDEventPublishStartedAt = millis();
+    }
+}
+
+static void expireStagedDoorIDIfNeeded() {
+    if (stagedDoorIDActive && calculateTimeSince(stagedDoorIDStartedAt) > STAGED_DOOR_ID_TIMEOUT) {
+        publishDoorIDEvent("Door ID Stage Expired", globalDoorID, stagedDoorID, 0, 0);
+        clearStagedDoorID();
+    }
+}
 
 void setupIM() {
     os_queue_create(&bleQueue, sizeof(doorData), 25, 0);
@@ -43,6 +173,7 @@ void initializeDoorID() {
         EEPROM.put(ADDR_IM_DOORID, doorID_byte1);
         EEPROM.put((ADDR_IM_DOORID + 1), doorID_byte2);
         EEPROM.put((ADDR_IM_DOORID + 2), doorID_byte3);
+        globalDoorID = {doorID_byte1, doorID_byte2, doorID_byte3};
 
         initializeDoorIDFlag = INITIALIZE_DOOR_ID_FLAG;
         EEPROM.put(ADDR_INITIALIZE_DOOR_ID_FLAG, initializeDoorIDFlag);
@@ -52,6 +183,64 @@ void initializeDoorID() {
         EEPROM.get((ADDR_IM_DOORID + 1), globalDoorID.byte2);
         EEPROM.get((ADDR_IM_DOORID + 2), globalDoorID.byte3);
         Log.warn("Door ID read from EEPROM.");
+    }
+}
+
+int stage_door_id(String command) {
+    IMDoorID parsedDoorID;
+
+    if (!parseIMDoorID(command, &parsedDoorID, true)) {
+        return -1;
+    }
+
+    stagedDoorID = parsedDoorID;
+    stagedDoorIDActive = true;
+    stagedDoorIDSawOpen = false;
+    stagedDoorIDSawClosed = false;
+    stagedDoorIDStartedAt = millis();
+    stagedDoorIDHasInitialDoorState = false;
+    stagedDoorIDInitialDoorOpen = false;
+
+    publishDoorIDEvent("Door ID Staged", globalDoorID, stagedDoorID, 0, 0);
+    return imDoorIDToInt(stagedDoorID);
+}
+
+static void commitStagedDoorID(unsigned char doorStatus, unsigned char controlByte) {
+    IMDoorID previousDoorID = globalDoorID;
+    globalDoorID = stagedDoorID;
+    writeGlobalDoorIDToEEPROM();
+    publishDoorIDEvent("Door ID Committed", previousDoorID, globalDoorID, doorStatus, controlByte);
+    clearStagedDoorID();
+}
+
+void handleStagedDoorIDMessage(unsigned char doorStatus, unsigned char controlByte) {
+    if (!stagedDoorIDActive) {
+        return;
+    }
+
+    bool wasProgressChanged = false;
+    bool doorIsOpen = isDoorOpen(doorStatus);
+
+    if (!stagedDoorIDHasInitialDoorState) {
+        stagedDoorIDHasInitialDoorState = true;
+        stagedDoorIDInitialDoorOpen = doorIsOpen;
+    }
+
+    if (doorIsOpen && !stagedDoorIDSawOpen) {
+        stagedDoorIDSawOpen = true;
+        wasProgressChanged = true;
+    } else if (!doorIsOpen && !stagedDoorIDSawClosed) {
+        stagedDoorIDSawClosed = true;
+        wasProgressChanged = true;
+    }
+
+    if (wasProgressChanged) {
+        publishDoorIDEvent("Door ID Stage Progress", globalDoorID, stagedDoorID, doorStatus, controlByte);
+    }
+
+    if ((stagedDoorIDSawOpen && stagedDoorIDSawClosed) ||
+        (stagedDoorIDHasInitialDoorState && doorIsOpen != stagedDoorIDInitialDoorOpen)) {
+        commitStagedDoorID(doorStatus, controlByte);
     }
 }
 
@@ -162,6 +351,8 @@ void threadBLEScanner(void *param) {
     BLE.setScanTimeout(5);
 
     while (true) {
+        expireStagedDoorIDIfNeeded();
+
         // Create a BLE scan filter
         BleScanFilter filter;
         char address[18];
@@ -175,6 +366,17 @@ void threadBLEScanner(void *param) {
         filter.address(address);
         sprintf(address, "80:FB:F1:%02X:%02X:%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
         filter.address(address);
+
+        if (stagedDoorIDActive) {
+            sprintf(address, "B8:7C:6F:%02X:%02X:%02X", stagedDoorID.byte3, stagedDoorID.byte2, stagedDoorID.byte1);
+            filter.deviceName("iSensor ").address(address);
+            sprintf(address, "8C:9A:22:%02X:%02X:%02X", stagedDoorID.byte3, stagedDoorID.byte2, stagedDoorID.byte1);
+            filter.address(address);
+            sprintf(address, "AC:9A:22:%02X:%02X:%02X", stagedDoorID.byte3, stagedDoorID.byte2, stagedDoorID.byte1);
+            filter.address(address);
+            sprintf(address, "80:FB:F1:%02X:%02X:%02X", stagedDoorID.byte3, stagedDoorID.byte2, stagedDoorID.byte1);
+            filter.address(address);
+        }
 
         // Scan for BLE devices matching the filter
         spark::Vector<BleScanResult> scanResults = BLE.scanWithFilter(filter);
@@ -193,6 +395,13 @@ void threadBLEScanner(void *param) {
             // Load the neccessary data to the scannerThreadDoorData (doorData struct)
             scanThreadDoorData.doorStatus = doorAdvertisingData[5];
             scanThreadDoorData.controlByte = doorAdvertisingData[6];
+
+            bool isConfiguredDoorIDMessage = doesBLEAddressMatchDoorID(scanResult.address(), globalDoorID);
+            bool isStagedDoorIDMessage = stagedDoorIDActive && doesBLEAddressMatchDoorID(scanResult.address(), stagedDoorID);
+
+            if (isStagedDoorIDMessage) {
+                handleStagedDoorIDMessage(scanThreadDoorData.doorStatus, scanThreadDoorData.controlByte);
+            }
             
             // If the 4th bit of the door status byte is set (indicating a door heartbeat every 10 minutes)
             // and debugging is enabled, publish a debug message with the BLE advertising data.
@@ -204,9 +413,11 @@ void threadBLEScanner(void *param) {
                 Particle.publish("Door Heartbeat Received", debugMessage, PRIVATE);
             }
 
-            // Put the door sensor data into a queue for further processing
-            if (os_queue_put(bleQueue, (void *)&scanThreadDoorData, 0, 0) != 0) {
-                Log.error("Failed to put data into the queue.");
+            if (isConfiguredDoorIDMessage) {
+                // Put the active door sensor data into a queue for further processing.
+                if (os_queue_put(bleQueue, (void *)&scanThreadDoorData, 0, 0) != 0) {
+                    Log.error("Failed to put data into the queue.");
+                }
             }
         }
 

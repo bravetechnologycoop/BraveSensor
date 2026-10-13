@@ -743,5 +743,57 @@ SCENARIO("Change_IM21_Door_ID", "[change door id]") {
                 REQUIRE(returnVal == -1);
             }
         }
+
+        WHEN("the function is called with non-hex bytes in a well-formed string") {
+            int returnVal = im21_door_id_set("1G,2B,3C");
+
+            THEN("the function should return -1 for the invalid input") {
+                REQUIRE(returnVal == -1);
+            }
+        }
+
+        WHEN("the function is called without comma separators") {
+            int returnVal = im21_door_id_set("1A2B3C");
+
+            THEN("the function should return -1 for the invalid input") {
+                REQUIRE(returnVal == -1);
+            }
+        }
+    }
+}
+
+SCENARIO("Stage_Door_ID", "[stage door id]") {
+    GIVEN("A candidate door ID") {
+        clearStagedDoorID();
+
+        WHEN("the function is called with a valid non-default door ID") {
+            int returnVal = stage_door_id("AB,CD,EF");
+
+            THEN("the staged ID should be saved in RAM") {
+                REQUIRE(returnVal == 11259375);
+                REQUIRE(stagedDoorIDActive == true);
+                REQUIRE(stagedDoorID.byte3 == 0xAB);
+                REQUIRE(stagedDoorID.byte2 == 0xCD);
+                REQUIRE(stagedDoorID.byte1 == 0xEF);
+            }
+        }
+
+        WHEN("the function is called with the uninitialized default ID") {
+            int returnVal = stage_door_id("AA,AA,AA");
+
+            THEN("the staged ID should be rejected") {
+                REQUIRE(returnVal == -1);
+                REQUIRE(stagedDoorIDActive == false);
+            }
+        }
+
+        WHEN("the function is called with malformed input") {
+            int returnVal = stage_door_id("AB-CD-EF");
+
+            THEN("the staged ID should be rejected") {
+                REQUIRE(returnVal == -1);
+                REQUIRE(stagedDoorIDActive == false);
+            }
+        }
     }
 }

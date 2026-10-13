@@ -5,6 +5,8 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 const { afterEach, beforeEach, describe, it } = require('mocha')
 
+process.env.PARTICLE_WEBHOOK_API_KEY_TEST = process.env.PARTICLE_WEBHOOK_API_KEY_TEST || 'test-particle-webhook-key'
+
 // In-house dependencies
 const helpers = require('../../../src/utils/helpers')
 const db = require('../../../src/db/db')
@@ -47,6 +49,22 @@ function durationAlertPayload(overrides = {}) {
       numDurationAlertsSent: overrides.numDurationAlertsSent || 1,
       numStillnessAlertsSent: overrides.numStillnessAlertsSent || 0,
       occupancyDuration: overrides.occupancyDuration || 30,
+    }),
+  }
+}
+
+function doorIDCommittedPayload(overrides = {}) {
+  return {
+    event: 'Door ID Committed',
+    coreid: overrides.particleDeviceId || 'e00111111111111111111111',
+    api_key: webhookAPIKey,
+    data: JSON.stringify({
+      previousDoorId: overrides.previousDoorId || 'AA,AA,AA',
+      doorId: overrides.doorId || 'AB,CD,EF',
+      sawOpen: true,
+      sawClosed: true,
+      doorStatus: 0,
+      controlByte: 1,
     }),
   }
 }
@@ -97,6 +115,26 @@ describe('sensorEvents.js integration tests: handleSensorEvent', () => {
     it('should not create a new session', async () => {
       const sessions = await db.getSessionsForDevice(this.device.deviceId)
       expect(sessions.length).to.equal(1)
+    })
+  })
+
+  describe('Door ID Committed event', () => {
+    beforeEach(async () => {
+      this.response = await chai.request(server).post('/api/sensorEvent').send(doorIDCommittedPayload())
+    })
+
+    it('should return 200', () => {
+      expect(this.response).to.have.status(200)
+    })
+
+    it('should update the device door sensor ID', async () => {
+      const device = await db.getDeviceWithDeviceId(this.device.deviceId)
+      expect(device.doorSensorId).to.equal('AB,CD,EF')
+    })
+
+    it('should not create a sensor session', async () => {
+      const sessions = await db.getSessionsForDevice(this.device.deviceId)
+      expect(sessions.length).to.equal(0)
     })
   })
 

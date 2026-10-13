@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint .",
     "start": "NODE_ENV=test node index.js",
-    "test": "NODE_ENV=test mocha --exit --timeout 10000 'test/**/*.js'",
+    "test": "NODE_ENV=test mocha --exit --timeout 10000 --require test/mochaFixtures.js 'test/**/*.js'",
     "test:unit": "NODE_ENV=test mocha --exit --timeout 10000 'test/unit/**/*.js'",
     "test:integration": "NODE_ENV=test mocha --exit --timeout 10000 --require \"test/mochaFixtures.js\" 'test/integration/**/*.js'",
     "test:coverage": "NODE_ENV=test nyc --reporter=html --reporter=text mocha --exit --timeout 10000 'test/**/*.js'",

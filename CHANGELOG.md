@@ -11,6 +11,11 @@ the code was deployed.
 
 ## [Unreleased]
 
+## [12.3.3] - 2026-07-30
+ - Added "received time" to dashboard
+ - Updated the troubleshooting phone number
+ - Particle KeepAlive to 30s
+
 ## [12.3.2] - 2026-05-14
  - MS Teams events now displayed in dashboard
  - Added health endpoint for status monitoring
@@ -1002,7 +1007,8 @@ the code was deployed.
 - Battery life monitoring for Door sensors
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
-[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.2...HEAD
+[unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.3...HEAD
+[12.3.3]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.1...v12.3.3
 [12.3.2]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.1...v12.3.2
 [12.3.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.0...v12.3.1
 [12.3.0]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.2.7...v12.3.0

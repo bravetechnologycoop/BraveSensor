@@ -12,6 +12,7 @@ class Device {
     isDisplayed,
     isSendingAlerts,
     isSendingVitals,
+    doorSensorId = null,
   ) {
     this.deviceId = deviceId
     this.locationId = locationId
@@ -25,6 +26,7 @@ class Device {
     this.isDisplayed = isDisplayed
     this.isSendingAlerts = isSendingAlerts
     this.isSendingVitals = isSendingVitals
+    this.doorSensorId = doorSensorId
   }
 }
 
