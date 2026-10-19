@@ -444,6 +444,9 @@ int im21_door_id_set(String command) {
         EEPROM.put((ADDR_IM_DOORID + 1), globalDoorID.byte2);
         EEPROM.put((ADDR_IM_DOORID + 2), globalDoorID.byte3);
 
+        // new sensor has its own control byte counter, so reset door data tracking
+        notifyDoorIDChanged();
+
         // put door ID in buffer for return value
         snprintf(buffer, sizeof(buffer), "%02X%02X%02X", globalDoorID.byte3, globalDoorID.byte2, globalDoorID.byte1);
 

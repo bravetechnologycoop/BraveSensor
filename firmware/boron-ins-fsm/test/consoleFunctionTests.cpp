@@ -712,10 +712,25 @@ SCENARIO("Change_IM21_Door_ID", "[change door id]") {
         String doorID = "AB,CD,EF";
 
         WHEN("the function is called with a valid door ID") {
+            int countBefore = doorIDChangedCount;
             int returnVal = im21_door_id_set(doorID);
 
             THEN("The function should return the door ID converted to a decimal number") {
                 REQUIRE(returnVal == 11259375);
+            }
+
+            THEN("The door sensor state should be told to reset for the new sensor") {
+                REQUIRE(doorIDChangedCount == countBefore + 1);
+            }
+        }
+
+        WHEN("the function is called with an invalid door ID or echo") {
+            int countBefore = doorIDChangedCount;
+            im21_door_id_set("GH,IJ");
+            im21_door_id_set("e");
+
+            THEN("The door sensor state should not be reset") {
+                REQUIRE(doorIDChangedCount == countBefore);
             }
         }
 
