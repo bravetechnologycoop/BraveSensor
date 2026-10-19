@@ -480,6 +480,11 @@ void state3_stillness() {
         // Update the stillness alert counter
         numStillnessAlertSent += 1;
 
+        // Restore the persisted stillness time in case a low test value was set
+        if (stillness_alert_time < MIN_PERSISTED_STILLNESS_ALERT_TIME) {
+            EEPROM.get(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
+        }
+
         // Turning off this flag will pause both duration and stillness alerts
         isStillnessAlertActive = false;
 

@@ -26,6 +26,7 @@
 
 #define DURATION_ALERT_TIME                 1200000     // 20 mins          
 #define STILLNESS_ALERT_TIME                180000      // 3 mins
+#define MIN_PERSISTED_STILLNESS_ALERT_TIME  30000       // values below this are test values, not saved to EEPROM
 
 // Minimize time between restart and first Heartbeat message
 #define DEVICE_RESET_THRESHOLD              540000      // 9 mins

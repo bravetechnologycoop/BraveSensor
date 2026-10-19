@@ -389,7 +389,11 @@ int stillness_alert_time_set(String input) {
             returnFlag = -1;
         }
         else {
-            EEPROM.put(ADDR_STILLNESS_ALERT_TIME, time);
+            // Values below the minimum are treated as test values: they apply
+            // in RAM only and are restored from EEPROM when a stillness alert fires
+            if (time >= MIN_PERSISTED_STILLNESS_ALERT_TIME) {
+                EEPROM.put(ADDR_STILLNESS_ALERT_TIME, time);
+            }
             stillness_alert_time = time;
             returnFlag = stillness_alert_time / 1000;
         }
