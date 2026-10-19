@@ -27,6 +27,7 @@
 
             <h5>Latest Vital</h5>
             <div class="info-box">
+                <p><strong>Door Sensor ID:</strong> {{#doorSensorId}}{{doorSensorId}}{{/doorSensorId}}{{^doorSensorId}}Not paired{{/doorSensorId}}</p>
                 {{#latestVital}}
                 <p><strong>Device Last Seen At:</strong> {{timeSinceLastVital}}</p>
                 <p><strong>Door Last Seen At:</strong> {{timeSinceLastDoorContact}}</p>
