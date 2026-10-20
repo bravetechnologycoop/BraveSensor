@@ -131,6 +131,7 @@ doorData checkIM(void);
 void logAndPublishDoorWarning(doorData previousDoorData, doorData currentDoorData);
 void logAndPublishDoorData(doorData previousDoorData, doorData currentDoorData);
 void publishPendingDoorIDEvents(void);
+void notifyDoorIDChanged(void);
 
 // threads
 void threadBLEScanner(void *param);

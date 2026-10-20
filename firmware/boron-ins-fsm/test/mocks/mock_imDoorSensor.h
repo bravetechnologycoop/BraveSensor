@@ -59,6 +59,11 @@ int stage_door_id(String command) {
     return imDoorIDToInt(stagedDoorID);
 }
 
+int doorIDChangedCount = 0;
+void notifyDoorIDChanged(void) {
+    doorIDChangedCount++;
+}
+
 void clearStagedDoorID(void) {
     stagedDoorID = {DOORID_BYTE1, DOORID_BYTE2, DOORID_BYTE3};
     stagedDoorIDActive = false;

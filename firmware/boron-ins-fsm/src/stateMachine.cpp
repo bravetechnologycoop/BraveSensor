@@ -27,6 +27,8 @@ unsigned long state0_occupancy_detection_time = STATE0_OCCUPANCY_DETECTION_TIME;
 unsigned long state1_initial_time = STATE1_INITIAL_TIME;
 unsigned long duration_alert_time = DURATION_ALERT_TIME;
 unsigned long stillness_alert_time = STILLNESS_ALERT_TIME;
+unsigned long stillness_alert_time_restore_value = STILLNESS_ALERT_TIME;
+bool isStillnessAlertTimeTestOverrideActive = false;
 
 // Start timers for different states
 unsigned long state0_start_time;
@@ -59,6 +61,17 @@ bool allowTransitionToStateOne = true;
 
 // Reset reason
 int resetReason = System.resetReason();
+
+void restoreStillnessAlertTimeIfTestOverride() {
+    if (!isStillnessAlertTimeTestOverrideActive) {
+        return;
+    }
+
+    // The persisted value in EEPROM was never overwritten, so only restore RAM
+    stillness_alert_time = stillness_alert_time_restore_value;
+    isStillnessAlertTimeTestOverrideActive = false;
+    Log.warn("Temporary stillness alert time test override restored to %lu ms", stillness_alert_time);
+}
 
 void setupStateMachine() {
     // From debugFlags.h (default to not publish debug messages)
@@ -111,6 +124,12 @@ void initializeStateMachineConsts() {
         EEPROM.get(ADDR_STATE1_INITIAL_TIME, state1_initial_time);
         EEPROM.get(ADDR_DURATION_ALERT_TIME, duration_alert_time);
         EEPROM.get(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
+        if (stillness_alert_time < MIN_PERSISTENT_STILLNESS_ALERT_TIME) {
+            Log.warn("Stored stillness alert time %lu ms is below persistent minimum; restoring default %lu ms",
+                     stillness_alert_time, (unsigned long)STILLNESS_ALERT_TIME);
+            stillness_alert_time = STILLNESS_ALERT_TIME;
+            EEPROM.put(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
+        }
         Log.warn("State machine constants read from EEPROM.");
     }
 
@@ -349,6 +368,7 @@ void state2_monitoring() {
                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
                 2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
+        restoreStillnessAlertTimeIfTestOverride();
 
         // Transition to state 0
         stateHandler = state0_idle;
@@ -365,6 +385,7 @@ void state2_monitoring() {
                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu, \"missedDoorReset\": true}",
                 2, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
+        restoreStillnessAlertTimeIfTestOverride();
 
         stateHandler = state0_idle;
     }
@@ -429,6 +450,7 @@ void state3_stillness() {
                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}",
                 3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
+        restoreStillnessAlertTimeIfTestOverride();
 
         // Transition to state 0
         stateHandler = state0_idle;
@@ -445,6 +467,7 @@ void state3_stillness() {
                 "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu, \"missedDoorReset\": true}",
                 3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Door Opened", doorOpenedMessage, PRIVATE);
+        restoreStillnessAlertTimeIfTestOverride();
 
         stateHandler = state0_idle;
     }
@@ -490,6 +513,7 @@ void state3_stillness() {
                  "{\"alertSentFromState\": %d, \"numDurationAlertsSent\": %lu, \"numStillnessAlertsSent\": %lu, \"occupancyDuration\": %lu}", 
                  3, numDurationAlertSent, numStillnessAlertSent, occupancy_duration);
         Particle.publish("Stillness Alert", alertMessage, PRIVATE);
+        restoreStillnessAlertTimeIfTestOverride();
     }
 }
 
