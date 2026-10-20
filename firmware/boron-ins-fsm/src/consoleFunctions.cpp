@@ -109,6 +109,7 @@ int reset_state_to_zero(String command) {
         // Reset door monitoring variables
         consecutiveOpenDoorHeartbeatCount = 0;
         doorMessageReceivedFlag = false;
+        restoreStillnessAlertTimeIfTestOverride();
 
         Particle.publish("State Reset", "State has been reset to 0.", PRIVATE | WITH_ACK);
     } else {
@@ -173,6 +174,7 @@ int reset_monitoring(String command) {
             numStillnessAlertSent = 0;
             state3_start_time = millis();
             isStillnessAlertActive = true;
+            restoreStillnessAlertTimeIfTestOverride();
 
             // Publish reset message
             Particle.publish("Reset Monitoring", "Monitoring has been reset.", PRIVATE | WITH_ACK);
@@ -371,7 +373,9 @@ int stillness_alert_time_set(String input) {
 
     // if e, echo the current time
     if (*holder == 'e') {
-        EEPROM.get(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
+        if (!isStillnessAlertTimeTestOverrideActive) {
+            EEPROM.get(ADDR_STILLNESS_ALERT_TIME, stillness_alert_time);
+        }
         returnFlag = stillness_alert_time / 1000;
     }
     // else parse new time
@@ -388,13 +392,19 @@ int stillness_alert_time_set(String input) {
         else if (time < 0) {
             returnFlag = -1;
         }
-        else {
-            // Values below the minimum are treated as test values: they apply
-            // in RAM only and are restored from EEPROM when a stillness alert fires
-            if (time >= MIN_PERSISTED_STILLNESS_ALERT_TIME) {
-                EEPROM.put(ADDR_STILLNESS_ALERT_TIME, time);
+        else if ((unsigned long)time < MIN_PERSISTENT_STILLNESS_ALERT_TIME) {
+            if (!isStillnessAlertTimeTestOverrideActive) {
+                stillness_alert_time_restore_value = stillness_alert_time;
             }
             stillness_alert_time = time;
+            isStillnessAlertTimeTestOverrideActive = true;
+            returnFlag = stillness_alert_time / 1000;
+        }
+        else {
+            EEPROM.put(ADDR_STILLNESS_ALERT_TIME, time);
+            stillness_alert_time = time;
+            stillness_alert_time_restore_value = stillness_alert_time;
+            isStillnessAlertTimeTestOverrideActive = false;
             returnFlag = stillness_alert_time / 1000;
         }
     }

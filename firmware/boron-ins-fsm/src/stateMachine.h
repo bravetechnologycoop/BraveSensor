@@ -26,7 +26,7 @@
 
 #define DURATION_ALERT_TIME                 1200000     // 20 mins          
 #define STILLNESS_ALERT_TIME                180000      // 3 mins
-#define MIN_PERSISTED_STILLNESS_ALERT_TIME  30000       // values below this are test values, not saved to EEPROM
+#define MIN_PERSISTENT_STILLNESS_ALERT_TIME 30000       // 30 secs; shorter values are temporary test overrides
 
 // Minimize time between restart and first Heartbeat message
 #define DEVICE_RESET_THRESHOLD              540000      // 9 mins
@@ -66,6 +66,8 @@ extern unsigned long state0_occupancy_detection_time;
 extern unsigned long state1_initial_time;
 extern unsigned long duration_alert_time;
 extern unsigned long stillness_alert_time;
+extern unsigned long stillness_alert_time_restore_value;
+extern bool isStillnessAlertTimeTestOverrideActive;
 
 // Start timers for different states
 extern unsigned long state0_start_time;
@@ -114,5 +116,6 @@ void state3_stillness();
 
 void publishDebugMessage(int, unsigned char, float, unsigned long);
 void publishStateTransition(int, int, unsigned char, float);
+void restoreStillnessAlertTimeIfTestOverride();
 
 #endif

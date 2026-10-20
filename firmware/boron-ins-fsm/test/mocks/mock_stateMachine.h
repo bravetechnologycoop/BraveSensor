@@ -23,6 +23,8 @@ unsigned long state0_occupancy_detection_time;
 unsigned long state1_initial_time;
 unsigned long duration_alert_time;
 unsigned long stillness_alert_time;
+unsigned long stillness_alert_time_restore_value;
+bool isStillnessAlertTimeTestOverrideActive = false;
 
 // State timing variables
 unsigned long state0_start_time = 0;
@@ -68,6 +70,15 @@ void state2_monitoring() {
 
 void state3_stillness() {
     std::cout << "Mock state3_stillness called" << std::endl;
+}
+
+void restoreStillnessAlertTimeIfTestOverride() {
+    if (!isStillnessAlertTimeTestOverrideActive) {
+        return;
+    }
+
+    stillness_alert_time = stillness_alert_time_restore_value;
+    isStillnessAlertTimeTestOverrideActive = false;
 }
 
 // Initialize state handler
