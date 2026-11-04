@@ -131,4 +131,5 @@ jobs:
           g++ -std=c++17 -I../inc -I./ -I./mocks -o ConsoleTests consoleFunctionTests.cpp -lstdc++ -lm && ./ConsoleTests -s
           g++ -std=c++17 -I../inc -I./ -I./mocks -I../lib/CircularBuffer/src -o ins3331Tests ins3331Tests.cpp -lstdc++ -lm && ./ins3331Tests -s
           g++ -std=c++17 -I../inc -I./ -I./mocks -o DoorSensorTests imDoorSensorTests.cpp -lstdc++ -lm && ./DoorSensorTests -s
+          g++ -std=c++17 -I../inc -I./ -I./mocks -o DoorSensorCheckTests imDoorSensorCheckTests.cpp -lstdc++ -lm && ./DoorSensorCheckTests -s
           

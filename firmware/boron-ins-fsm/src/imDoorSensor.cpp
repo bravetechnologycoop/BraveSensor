@@ -15,6 +15,7 @@
 IMDoorID globalDoorID = {0xAA, 0xAA, 0xAA};
 IMDoorID stagedDoorID = {0xAA, 0xAA, 0xAA};
 os_queue_t bleQueue;
+static volatile bool doorIDChangedFlag = false;
 
 int missedDoorEventCount = 0;
 
@@ -62,6 +63,10 @@ static bool doesBLEAddressMatchDoorID(const BleAddress &bleAddress, IMDoorID doo
     }
     sprintf(address, "80:FB:F1:%02X:%02X:%02X", doorID.byte3, doorID.byte2, doorID.byte1);
     return bleAddress == address;
+}
+
+void notifyDoorIDChanged() {
+    doorIDChangedFlag = true;
 }
 
 static void writeGlobalDoorIDToEEPROM() {
@@ -209,6 +214,7 @@ static void commitStagedDoorID(unsigned char doorStatus, unsigned char controlBy
     IMDoorID previousDoorID = globalDoorID;
     globalDoorID = stagedDoorID;
     writeGlobalDoorIDToEEPROM();
+    notifyDoorIDChanged();
     publishDoorIDEvent("Door ID Committed", previousDoorID, globalDoorID, doorStatus, controlByte);
     clearStagedDoorID();
 }
@@ -249,12 +255,26 @@ doorData checkIM() {
     static doorData previousDoorData = {0x00, 0x00, 0};
     static doorData currentDoorData = {0x00, 0x00, 0};
     static doorData returnDoorData = {INITIAL_DOOR_STATUS, INITIAL_DOOR_STATUS, 0};
+    static int initialDoorDataFlag = 1;
+
+    // A newly paired door contact has an unrelated control byte counter, so drop all state tied to the old one
+    if (doorIDChangedFlag) {
+        doorIDChangedFlag = false;
+        doorData staleData;
+        while (os_queue_take(bleQueue, &staleData, 0, 0) == 0) {
+        }
+        previousDoorData = {0x00, 0x00, 0};
+        currentDoorData = {0x00, 0x00, 0};
+        returnDoorData = {INITIAL_DOOR_STATUS, INITIAL_DOOR_STATUS, 0};
+        initialDoorDataFlag = 1;
+        doorLastMessage = 0;
+        doorHeartbeatReceived = 0;
+        Log.warn("Door ID changed - door sensor state reset");
+    }
 
     // Process BLE queue doorData (struct) populated by the thread
-    // Thread is fast enough to load duplicate data packets so filter them out 
+    // Thread is fast enough to load duplicate data packets so filter them out
     if (os_queue_take(bleQueue, &currentDoorData, 0, 0) == 0) {
-        static int initialDoorDataFlag = 1;
-        
         // Check if door status flags are set to 1
         doorTamperedFlag = (currentDoorData.doorStatus & 0b0001) != 0;
         doorLowBatteryFlag = (currentDoorData.doorStatus & 0b0100) != 0;

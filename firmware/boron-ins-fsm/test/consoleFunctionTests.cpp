@@ -70,6 +70,9 @@ SCENARIO("Reset State to Zero", "[reset state to zero]") {
         doorMessageReceivedFlag = true;
         consecutiveOpenDoorHeartbeatCount = 3;
         allowTransitionToStateOne = true;
+        stillness_alert_time = 10000;
+        stillness_alert_time_restore_value = 180000;
+        isStillnessAlertTimeTestOverrideActive = true;
 
         WHEN("the function is called with '1'") {
             int returnFlag = reset_state_to_zero("1");
@@ -118,6 +121,11 @@ SCENARIO("Reset State to Zero", "[reset state to zero]") {
             THEN("door timing should be updated") {
                 REQUIRE(timeSinceDoorClosed == 0);
                 REQUIRE(timeWhenDoorClosed != 6000); // Should be updated to current millis
+            }
+
+            THEN("a temporary stillness alert test value should be restored") {
+                REQUIRE(stillness_alert_time == 180000);
+                REQUIRE(isStillnessAlertTimeTestOverrideActive == false);
             }
         }
     }
@@ -266,6 +274,9 @@ SCENARIO("Reset Monitoring", "[reset monitoring]") {
         numStillnessAlertSent = 3;
         state3_start_time = 4000;
         isStillnessAlertActive = false;
+        stillness_alert_time = 10000;
+        stillness_alert_time_restore_value = 180000;
+        isStillnessAlertTimeTestOverrideActive = true;
 
         WHEN("the function is called with '1'") {
             int returnFlag = reset_monitoring("1");
@@ -280,6 +291,11 @@ SCENARIO("Reset Monitoring", "[reset monitoring]") {
                 REQUIRE(numStillnessAlertSent == 0);
                 REQUIRE(isStillnessAlertActive == true);
                 REQUIRE(state3_start_time != 4000); // Should be updated to current millis
+            }
+
+            THEN("a temporary stillness alert test value should be restored") {
+                REQUIRE(stillness_alert_time == 180000);
+                REQUIRE(isStillnessAlertTimeTestOverrideActive == false);
             }
         }
     }
@@ -656,6 +672,8 @@ SCENARIO("Set Duration Alert Time", "[duration alert time]") {
 SCENARIO("Set Stillness Alert Time", "[stillness alert time]") {
     GIVEN("A starting stillness alert time of 5 minutes") {
         stillness_alert_time = 300000;
+        stillness_alert_time_restore_value = 300000;
+        isStillnessAlertTimeTestOverrideActive = false;
 
         WHEN("the function is called with 'e'") {
             int returnFlag = stillness_alert_time_set("e");
@@ -669,15 +687,71 @@ SCENARIO("Set Stillness Alert Time", "[stillness alert time]") {
             }
         }
 
-        WHEN("the function is called with a positive integer") {
+        WHEN("the function is called with a low test value") {
             int returnFlag = stillness_alert_time_set("10");
 
-            THEN("the initial stillness alert time value should be updated to the input * 1000") {
+            THEN("the runtime stillness alert time value should be updated to the input * 1000") {
                 REQUIRE(stillness_alert_time == 10000);
             }
 
             THEN("the function should return the input in seconds") {
                 REQUIRE(returnFlag == 10);
+            }
+
+            THEN("the test override should be active with the previous value saved") {
+                REQUIRE(isStillnessAlertTimeTestOverrideActive == true);
+                REQUIRE(stillness_alert_time_restore_value == 300000);
+            }
+        }
+
+        WHEN("the temporary test value is restored after testing") {
+            stillness_alert_time_set("10");
+            restoreStillnessAlertTimeIfTestOverride();
+
+            THEN("the stillness alert time should be restored to the previous value") {
+                REQUIRE(stillness_alert_time == 300000);
+                REQUIRE(isStillnessAlertTimeTestOverrideActive == false);
+            }
+        }
+
+        WHEN("an active temporary test value is echoed") {
+            stillness_alert_time_set("10");
+            int returnFlag = stillness_alert_time_set("e");
+
+            THEN("the function should return the active runtime value in seconds") {
+                REQUIRE(returnFlag == 10);
+                REQUIRE(stillness_alert_time == 10000);
+                REQUIRE(isStillnessAlertTimeTestOverrideActive == true);
+            }
+        }
+
+        WHEN("the function is called with a normal production value") {
+            stillness_alert_time_set("10");
+            int returnFlag = stillness_alert_time_set("120");
+
+            THEN("the initial stillness alert time value should be updated to the input * 1000") {
+                REQUIRE(stillness_alert_time == 120000);
+            }
+
+            THEN("the function should return the input in seconds") {
+                REQUIRE(returnFlag == 120);
+            }
+
+            THEN("the test override should be cleared") {
+                REQUIRE(isStillnessAlertTimeTestOverrideActive == false);
+                REQUIRE(stillness_alert_time_restore_value == 120000);
+            }
+        }
+
+        WHEN("the function is called with the minimum persistent value") {
+            stillness_alert_time_set("10");
+            int returnFlag = stillness_alert_time_set("30");
+
+            THEN("the stillness alert time should be stored as a normal value") {
+                REQUIRE(stillness_alert_time == 30000);
+                REQUIRE(returnFlag == 30);
+                REQUIRE(isStillnessAlertTimeTestOverrideActive == false);
+                REQUIRE(stillness_alert_time_restore_value == 30000);
             }
         }
 
@@ -712,10 +786,25 @@ SCENARIO("Change_IM21_Door_ID", "[change door id]") {
         String doorID = "AB,CD,EF";
 
         WHEN("the function is called with a valid door ID") {
+            int countBefore = doorIDChangedCount;
             int returnVal = im21_door_id_set(doorID);
 
             THEN("The function should return the door ID converted to a decimal number") {
                 REQUIRE(returnVal == 11259375);
+            }
+
+            THEN("The door sensor state should be told to reset for the new sensor") {
+                REQUIRE(doorIDChangedCount == countBefore + 1);
+            }
+        }
+
+        WHEN("the function is called with an invalid door ID or echo") {
+            int countBefore = doorIDChangedCount;
+            im21_door_id_set("GH,IJ");
+            im21_door_id_set("e");
+
+            THEN("The door sensor state should not be reset") {
+                REQUIRE(doorIDChangedCount == countBefore);
             }
         }
 
