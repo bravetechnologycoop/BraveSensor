@@ -11,6 +11,11 @@ the code was deployed.
 
 ## [Unreleased]
 
+
+## [12.3.4] - 2026-11-04
+ - New particle function: Stage_Door_ID, takes the IM21 door ID, waits for an open/close, and upon a successful detection, commits it to EEPROM as the functioning door sensor, 5 minute timeout
+ - Door sensor ID now stored in DB, surfaced in dashboard.
+
 ## [12.3.3] - 2026-07-30
  - Added "received time" to dashboard
  - Updated the troubleshooting phone number
@@ -1008,6 +1013,7 @@ the code was deployed.
 - Replay Data functionality to simulate historical data and test new state machine candidates
 
 [unreleased]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.3...HEAD
+[12.3.4]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.3...v12.3.4
 [12.3.3]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.1...v12.3.3
 [12.3.2]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.1...v12.3.2
 [12.3.1]: https://github.com/bravetechnologycoop/BraveSensor/compare/v12.3.0...v12.3.1
