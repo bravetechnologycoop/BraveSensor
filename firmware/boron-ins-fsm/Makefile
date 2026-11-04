@@ -35,7 +35,7 @@ build-dir:
 	@mkdir -p $(BUILD_DIR)
 	@echo "\n"
 
-test: console-test ins3331-test im-door-sensor-test
+test: console-test ins3331-test im-door-sensor-test im-door-sensor-check-test
 
 console-test: build-dir
 	@echo "------ Running Console Tests ------"
@@ -59,6 +59,14 @@ im-door-sensor-test: build-dir
 		$(TEST_DIR)/imDoorSensorTests.cpp -o $(BUILD_DIR)/imDoorSensorTests \
 		-lm
 	$(BUILD_DIR)/imDoorSensorTests -s
+	@echo "\n"
+
+im-door-sensor-check-test: build-dir
+	@echo "------ Running Door Sensor checkIM Tests ------"
+	g++ -std=c++17 -I$(TEST_DIR) -I$(TEST_DIR)/mocks -I$(INC_DIR) \
+		$(TEST_DIR)/imDoorSensorCheckTests.cpp -o $(BUILD_DIR)/imDoorSensorCheckTests \
+		-lm
+	$(BUILD_DIR)/imDoorSensorCheckTests -s
 	@echo "\n"
 
 compile: build-dir check-cpp test 
